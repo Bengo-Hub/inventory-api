@@ -12,7 +12,7 @@ import (
 
 func Connect(cfg config.EventsConfig) (*nats.Conn, error) {
 	opts := []nats.Option{
-		nats.Name("inventory-service"),
+		nats.Name("inventory-api"),
 		nats.Timeout(5 * time.Second),
 		nats.ReconnectWait(2 * time.Second),
 		nats.MaxReconnects(-1),
