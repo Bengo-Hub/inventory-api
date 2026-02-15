@@ -4,6 +4,7 @@ go 1.24.0
 
 // Map module path to correct GitHub repository
 replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.3.1
+
 require (
 	github.com/Bengo-Hub/httpware v0.1.1
 	github.com/Bengo-Hub/shared-auth-client v0.3.1
