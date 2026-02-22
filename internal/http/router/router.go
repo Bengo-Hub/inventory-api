@@ -14,7 +14,14 @@ import (
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 )
 
-func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.UserHandler, authMiddleware *authclient.AuthMiddleware, allowedOrigins []string) http.Handler {
+func New(
+	log *zap.Logger,
+	health *handlers.HealthHandler,
+	userHandler *handlers.UserHandler,
+	inventoryHandler *handlers.InventoryHandler,
+	authMiddleware *authclient.AuthMiddleware,
+	allowedOrigins []string,
+) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -27,7 +34,7 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID", "X-API-Key", "Idempotency-Key"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -38,31 +45,36 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Get("/metrics", health.Metrics)
 	r.Get("/v1/docs/*", handlers.SwaggerUI)
 
-	// Redirect root path to Swagger documentation
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
 	})
 
 	r.Route("/api/v1", func(api chi.Router) {
-		// Serve OpenAPI spec (public, no auth required)
 		api.Get("/openapi.json", handlers.OpenAPIJSON)
 
-		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {
-			// User management routes
 			userHandler.RegisterRoutes(tenant)
 
-			tenant.Route("/inventory", func(inventory chi.Router) {
-				// Placeholder endpoints - to be implemented
-				inventory.Get("/items", func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotImplemented)
-					w.Write([]byte("Not implemented yet"))
-				})
-			})
+			if inventoryHandler != nil {
+				inventoryHandler.RegisterRoutes(tenant)
+			}
+		})
+	})
+
+	// Also support /v1/ prefix (ordering-backend inventory client uses /v1/{tenant}/inventory/...)
+	r.Route("/v1", func(v1 chi.Router) {
+		if authMiddleware != nil {
+			v1.Use(authMiddleware.RequireAuth)
+		}
+
+		v1.Route("/{tenantID}", func(tenant chi.Router) {
+			if inventoryHandler != nil {
+				inventoryHandler.RegisterRoutes(tenant)
+			}
 		})
 	})
 

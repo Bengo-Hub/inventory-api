@@ -36,7 +36,7 @@ type HTTPConfig struct {
 	IdleTimeout    time.Duration `envconfig:"HTTP_IDLE_TIMEOUT" default:"90s"`
 	TLSCertFile    string        `envconfig:"TLS_CERT_FILE"`
 	TLSKeyFile     string        `envconfig:"TLS_KEY_FILE"`
-	AllowedOrigins []string      `envconfig:"HTTP_ALLOWED_ORIGINS" default:"https://pos.codevertexitsolutions.com,https://ordersapp.codevertexitsolutions.com,https://accounts.codevertexitsolutions.com"`
+	AllowedOrigins []string      `envconfig:"HTTP_ALLOWED_ORIGINS" default:"https://pos.codevertexitsolutions.com,https://ordersapp.codevertexitsolutions.com,https://accounts.codevertexitsolutions.com,https://theurbanloftcafe.com"`
 }
 
 type PostgresConfig struct {
@@ -56,11 +56,14 @@ type RedisConfig struct {
 }
 
 type EventsConfig struct {
-	Bus           string `envconfig:"EVENT_BUS" default:"nats"`
-	NATSURL       string `envconfig:"NATS_URL" default:"nats://localhost:4222"`
-	StreamName    string `envconfig:"NATS_STREAM" default:"inventory"`
-	DeliverGroup  string `envconfig:"NATS_DELIVER_GROUP" default:"inventory-workers"`
-	DeadLetterJet string `envconfig:"NATS_DLQ_STREAM" default:"inventory-dlq"`
+	Bus              string        `envconfig:"EVENT_BUS" default:"nats"`
+	NATSURL          string        `envconfig:"NATS_URL" default:"nats://localhost:4222"`
+	StreamName       string        `envconfig:"NATS_STREAM" default:"inventory"`
+	DeliverGroup     string        `envconfig:"NATS_DELIVER_GROUP" default:"inventory-workers"`
+	DeadLetterJet    string        `envconfig:"NATS_DLQ_STREAM" default:"inventory-dlq"`
+	OutboxEnabled    bool          `envconfig:"OUTBOX_ENABLED" default:"true"`
+	OutboxBatchSize  int           `envconfig:"OUTBOX_BATCH_SIZE" default:"100"`
+	OutboxPollPeriod time.Duration `envconfig:"OUTBOX_POLL_PERIOD" default:"5s"`
 }
 
 type TelemetryConfig struct {
