@@ -57,35 +57,6 @@ fi
 success "Prerequisite checks passed"
 
 # =============================================================================
-# Ensure devops-k8s and create service secrets BEFORE building image
-# =============================================================================
-ensure_service_secrets() {
-  if [[ "${DEPLOY}" != "true" ]]; then
-    warn "DEPLOY!=true -> skipping centralized secret creation"
-    return 0
-  fi
-
-  info "Ensuring devops-k8s repo is available for secret creation..."
-  if [[ ! -d "$DEVOPS_DIR" ]]; then
-    TOKEN="${GH_PAT:-${GIT_SECRET:-${GIT_TOKEN:-}}}"
-    CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
-    [[ -n $TOKEN ]] && CLONE_URL="https://x-access-token:${TOKEN}@github.com/${DEVOPS_REPO}.git"
-    git clone "$CLONE_URL" "$DEVOPS_DIR" || warn "Unable to clone devops repo"
-  fi
-
-  if [[ -d "$DEVOPS_DIR" && -f "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" ]]; then
-    info "Running centralized create-service-secrets for ${APP_NAME}..."
-    SERVICE_NAME="$APP_NAME" \
-    NAMESPACE="$NAMESPACE" \
-    SECRET_NAME="$ENV_SECRET_NAME" \
-    POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}" \
-    bash "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" || warn "create-service-secrets failed"
-  else
-    warn "create-service-secrets.sh not found in devops-k8s"
-  fi
-}
-
-# =============================================================================
 # Auto-sync secrets from devops-k8s
 # =============================================================================
 if [[ ${DEPLOY} == "true" ]]; then
@@ -104,9 +75,6 @@ info "Running Trivy filesystem scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 
 info "Building Docker image"
-# Ensure centralized secrets exist before building image
-ensure_service_secrets
-
 # Build from service directory - go.mod uses remote replace directive for auth-client
 DOCKER_BUILDKIT=1 docker build -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" .
 success "Docker build complete"
