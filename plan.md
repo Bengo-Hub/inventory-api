@@ -65,7 +65,7 @@
 - **Notifications Service:** Alerts for low stock, PO approvals, expiry warnings, cycle count assignments.
 - **Third-party WMS/ERP:** Connectors via webhooks/REST/EDI (future). Provide integration settings per tenant.
 - **Supplier APIs:** Automated PO submission, ASN ingestion.
-- **Auth Service:** Issues SSO tokens and tenant/outlet discovery callbacks to hydrate metadata before inventory events are processed.
+- **Auth Service:** Issues SSO tokens and tenant/outlet discovery callbacks to hydrate metadata before inventory events are processed. **RBAC:** auth-api is the source of truth for roles and permissions; inventory-api does not maintain its own role/permission seed. JWT validation and scope enforcement are done via shared auth client; frontend (inventory-ui) loads user and RBAC from auth-api `GET /me` with TanStack Query and TTL. **Redis:** Used for caching, rate limiting, reservation queues (see Technical Foundations). **Events:** NATS JetStream (outbox pattern) for stock adjustments, PO status, replenishment events; health check validates Postgres, Redis, NATS.
 - **Ecommerce & Marketplaces:** Storefront inventory updates, order reservations and cancellations, returns and RMA flows.
 - **Barcodes/IoT:** Scale/barcode scanners, temperature/humidity sensors for compliance (telemetry fed to inventory holds/alerts).
 
@@ -98,6 +98,7 @@
 - **Admin UI (future):** GraphQL proxy or REST to power management console.
 
 ### 7. API Strategy
+- **Tenant/brand for UIs**: Inventory-ui gets tenant from auth-api `GET /api/v1/tenants/by-slug/{slug}`; branding from notifications-api `GET /api/v1/{tenantId}/branding`. Tenant slug from `[orgSlug]` or `NEXT_PUBLIC_TENANT_SLUG`. Reuse notifications-ui BrandingProvider pattern.
 - RESTful endpoints: `/v1/{tenant}/inventory/items`, `/transfers`, `/reservations`, etc.
 - Bulk endpoints for CSV upload/download, asynchronous jobs with status tracking.
 - Webhooks: `inventory.low_stock`, `inventory.po.approved`, `inventory.transfer.completed`, `inventory.recall.initiated`.
