@@ -1,0 +1,560 @@
+package stock
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+
+	"github.com/bengobox/inventory-service/internal/ent"
+	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
+	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+)
+
+// ReservationRequest matches the ordering-backend client DTO.
+type ReservationRequest struct {
+	TenantID       uuid.UUID         `json:"tenant_id"`
+	OrderID        uuid.UUID         `json:"order_id"`
+	WarehouseID    uuid.UUID         `json:"warehouse_id,omitempty"`
+	Items          []ReservationItem `json:"items"`
+	ExpiresAt      *time.Time        `json:"expires_at,omitempty"`
+	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+}
+
+// ReservationItem represents a single item to reserve.
+type ReservationItem struct {
+	SKU      string `json:"sku"`
+	Quantity int    `json:"quantity"`
+}
+
+// ReservationResponse matches the ordering-backend client DTO.
+type ReservationResponse struct {
+	ID          uuid.UUID      `json:"id"`
+	TenantID    uuid.UUID      `json:"tenant_id"`
+	OrderID     uuid.UUID      `json:"order_id"`
+	Status      string         `json:"status"`
+	Items       []ReservedItem `json:"items"`
+	ExpiresAt   *time.Time     `json:"expires_at,omitempty"`
+	ConfirmedAt *time.Time     `json:"confirmed_at,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
+}
+
+// ReservedItem matches the ordering-backend client DTO.
+type ReservedItem struct {
+	SKU             string `json:"sku"`
+	RequestedQty    int    `json:"requested_qty"`
+	ReservedQty     int    `json:"reserved_qty"`
+	AvailableQty    int    `json:"available_qty"`
+	IsFullyReserved bool   `json:"is_fully_reserved"`
+}
+
+// ConsumptionRequest matches the ordering-backend client DTO.
+type ConsumptionRequest struct {
+	TenantID       uuid.UUID         `json:"tenant_id"`
+	OrderID        uuid.UUID         `json:"order_id"`
+	WarehouseID    uuid.UUID         `json:"warehouse_id,omitempty"`
+	Items          []ConsumptionItem `json:"items"`
+	Reason         string            `json:"reason,omitempty"`
+	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+}
+
+// ConsumptionItem represents an item to consume.
+type ConsumptionItem struct {
+	SKU      string  `json:"sku"`
+	Quantity float64 `json:"quantity"`
+}
+
+// ConsumptionResponse matches the ordering-backend client DTO.
+type ConsumptionResponse struct {
+	ID          uuid.UUID `json:"id"`
+	TenantID    uuid.UUID `json:"tenant_id"`
+	OrderID     uuid.UUID `json:"order_id"`
+	Status      string    `json:"status"`
+	ProcessedAt time.Time `json:"processed_at"`
+}
+
+// Service handles stock reservation and consumption business logic.
+type Service struct {
+	client *ent.Client
+	log    *zap.Logger
+}
+
+// NewService creates a new stock service.
+func NewService(client *ent.Client, log *zap.Logger) *Service {
+	return &Service{
+		client: client,
+		log:    log.Named("stock.service"),
+	}
+}
+
+// resolveWarehouseID returns the provided warehouse ID or the tenant's default warehouse.
+func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID uuid.UUID) (uuid.UUID, error) {
+	if warehouseID != uuid.Nil {
+		return warehouseID, nil
+	}
+	wh, err := s.client.Warehouse.Query().
+		Where(
+			warehouse.TenantID(tenantID),
+			warehouse.IsDefault(true),
+			warehouse.IsActive(true),
+		).
+		First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return uuid.Nil, fmt.Errorf("stock: no default warehouse for tenant")
+		}
+		return uuid.Nil, fmt.Errorf("stock: query default warehouse: %w", err)
+	}
+	return wh.ID, nil
+}
+
+// CreateReservation reserves stock for an order within a transaction.
+func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req ReservationRequest) (*ReservationResponse, error) {
+	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check idempotency
+	if req.IdempotencyKey != "" {
+		existing, err := s.client.Reservation.Query().
+			Where(reservation.IdempotencyKey(req.IdempotencyKey)).
+			First(ctx)
+		if err == nil {
+			return s.mapReservation(existing), nil
+		}
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	reservedItems := make([]entschema.ReservedItemJSON, 0, len(req.Items))
+
+	for _, ri := range req.Items {
+		itm, err := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(ri.SKU), item.IsActive(true)).
+			Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", ri.SKU, err)
+		}
+
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			First(ctx)
+
+		var availableQty int
+		if err != nil {
+			if ent.IsNotFound(err) {
+				availableQty = 0
+			} else {
+				return nil, fmt.Errorf("stock: query balance: %w", err)
+			}
+		} else {
+			availableQty = bal.Available
+		}
+
+		reserveQty := ri.Quantity
+		if reserveQty > availableQty {
+			reserveQty = availableQty
+		}
+
+		if bal != nil && reserveQty > 0 {
+			_, err = tx.InventoryBalance.UpdateOne(bal).
+				SetAvailable(bal.Available - reserveQty).
+				SetReserved(bal.Reserved + reserveQty).
+				Save(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+			}
+		}
+
+		reservedItems = append(reservedItems, entschema.ReservedItemJSON{
+			SKU:             ri.SKU,
+			RequestedQty:    ri.Quantity,
+			ReservedQty:     reserveQty,
+			AvailableQty:    availableQty,
+			IsFullyReserved: reserveQty >= ri.Quantity,
+		})
+	}
+
+	builder := tx.Reservation.Create().
+		SetTenantID(tenantID).
+		SetOrderID(req.OrderID).
+		SetWarehouseID(whID).
+		SetStatus("pending").
+		SetItems(reservedItems)
+
+	if req.ExpiresAt != nil {
+		builder.SetExpiresAt(*req.ExpiresAt)
+	}
+	if req.IdempotencyKey != "" {
+		builder.SetIdempotencyKey(req.IdempotencyKey)
+	}
+
+	resv, err := builder.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: create reservation: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("stock: commit reservation: %w", err)
+	}
+
+	s.log.Info("reservation created",
+		zap.String("reservation_id", resv.ID.String()),
+		zap.String("order_id", req.OrderID.String()),
+		zap.Int("items", len(reservedItems)),
+	)
+
+	return s.mapReservation(resv), nil
+}
+
+// GetReservation returns a reservation by ID.
+func (s *Service) GetReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*ReservationResponse, error) {
+	resv, err := s.client.Reservation.Query().
+		Where(
+			reservation.ID(reservationID),
+			reservation.TenantID(tenantID),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("stock: reservation not found")
+		}
+		return nil, fmt.Errorf("stock: query reservation: %w", err)
+	}
+	return s.mapReservation(resv), nil
+}
+
+// GetReservationsByOrderID returns reservations for an order.
+func (s *Service) GetReservationsByOrderID(ctx context.Context, tenantID, orderID uuid.UUID) ([]ReservationResponse, error) {
+	reservations, err := s.client.Reservation.Query().
+		Where(
+			reservation.TenantID(tenantID),
+			reservation.OrderID(orderID),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: query reservations by order: %w", err)
+	}
+
+	result := make([]ReservationResponse, len(reservations))
+	for i, r := range reservations {
+		result[i] = *s.mapReservation(r)
+	}
+	return result, nil
+}
+
+// ReleaseReservation releases a stock reservation, restoring available quantities.
+func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("stock: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	resv, err := tx.Reservation.Query().
+		Where(
+			reservation.ID(reservationID),
+			reservation.TenantID(tenantID),
+			reservation.StatusIn("pending", "confirmed"),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("stock: reservation not found or already released")
+		}
+		return fmt.Errorf("stock: query reservation: %w", err)
+	}
+
+	whID := uuid.Nil
+	if resv.WarehouseID != nil {
+		whID = *resv.WarehouseID
+	}
+
+	for _, ri := range resv.Items {
+		if ri.ReservedQty <= 0 {
+			continue
+		}
+
+		itm, err := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(ri.SKU)).
+			Only(ctx)
+		if err != nil {
+			continue
+		}
+
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			First(ctx)
+		if err != nil {
+			continue
+		}
+
+		_, err = tx.InventoryBalance.UpdateOne(bal).
+			SetAvailable(bal.Available + ri.ReservedQty).
+			SetReserved(max(0, bal.Reserved-ri.ReservedQty)).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+		}
+	}
+
+	_, err = tx.Reservation.UpdateOne(resv).
+		SetStatus("released").
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("stock: update reservation status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("stock: commit release: %w", err)
+	}
+
+	s.log.Info("reservation released",
+		zap.String("reservation_id", reservationID.String()),
+		zap.String("reason", reason),
+	)
+	return nil
+}
+
+// ConsumeReservation converts a reservation to actual consumption, deducting on-hand stock.
+func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("stock: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	resv, err := tx.Reservation.Query().
+		Where(
+			reservation.ID(reservationID),
+			reservation.TenantID(tenantID),
+			reservation.StatusIn("pending", "confirmed"),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("stock: reservation not found or already consumed")
+		}
+		return fmt.Errorf("stock: query reservation: %w", err)
+	}
+
+	whID := uuid.Nil
+	if resv.WarehouseID != nil {
+		whID = *resv.WarehouseID
+	}
+
+	for _, ri := range resv.Items {
+		if ri.ReservedQty <= 0 {
+			continue
+		}
+
+		itm, err := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(ri.SKU)).
+			Only(ctx)
+		if err != nil {
+			continue
+		}
+
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			First(ctx)
+		if err != nil {
+			continue
+		}
+
+		_, err = tx.InventoryBalance.UpdateOne(bal).
+			SetOnHand(max(0, bal.OnHand-ri.ReservedQty)).
+			SetReserved(max(0, bal.Reserved-ri.ReservedQty)).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+		}
+	}
+
+	now := time.Now()
+	_, err = tx.Reservation.UpdateOne(resv).
+		SetStatus("consumed").
+		SetConfirmedAt(now).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("stock: update reservation status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("stock: commit consume: %w", err)
+	}
+
+	s.log.Info("reservation consumed",
+		zap.String("reservation_id", reservationID.String()),
+	)
+	return nil
+}
+
+// RecordConsumption records direct stock consumption without a prior reservation.
+func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req ConsumptionRequest) (*ConsumptionResponse, error) {
+	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.IdempotencyKey != "" {
+		existing, idempErr := s.client.Consumption.Query().
+			Where(entconsumption.IdempotencyKeyEQ(req.IdempotencyKey)).
+			First(ctx)
+		if idempErr == nil {
+			return &ConsumptionResponse{
+				ID:          existing.ID,
+				TenantID:    existing.TenantID,
+				OrderID:     existing.OrderID,
+				Status:      existing.Status,
+				ProcessedAt: existing.ProcessedAt,
+			}, nil
+		}
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	consumptionItems := make([]entschema.ConsumptionItemJSON, len(req.Items))
+	for i, ci := range req.Items {
+		itm, err := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(ci.SKU)).
+			Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", ci.SKU, err)
+		}
+
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			First(ctx)
+		if err == nil {
+			deduct := int(ci.Quantity)
+			_, err = tx.InventoryBalance.UpdateOne(bal).
+				SetOnHand(max(0, bal.OnHand-deduct)).
+				SetAvailable(max(0, bal.Available-deduct)).
+				Save(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ci.SKU, err)
+			}
+		}
+
+		consumptionItems[i] = entschema.ConsumptionItemJSON{
+			SKU:      ci.SKU,
+			Quantity: ci.Quantity,
+		}
+	}
+
+	reason := req.Reason
+	if reason == "" {
+		reason = "sale"
+	}
+
+	now := time.Now()
+	builder := tx.Consumption.Create().
+		SetTenantID(tenantID).
+		SetOrderID(req.OrderID).
+		SetItems(consumptionItems).
+		SetReason(reason).
+		SetStatus("processed").
+		SetProcessedAt(now)
+
+	if whID != uuid.Nil {
+		builder.SetWarehouseID(whID)
+	}
+	if req.IdempotencyKey != "" {
+		builder.SetIdempotencyKey(req.IdempotencyKey)
+	}
+
+	cons, err := builder.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: create consumption: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("stock: commit consumption: %w", err)
+	}
+
+	s.log.Info("consumption recorded",
+		zap.String("consumption_id", cons.ID.String()),
+		zap.String("order_id", req.OrderID.String()),
+	)
+
+	return &ConsumptionResponse{
+		ID:          cons.ID,
+		TenantID:    cons.TenantID,
+		OrderID:     cons.OrderID,
+		Status:      cons.Status,
+		ProcessedAt: cons.ProcessedAt,
+	}, nil
+}
+
+func (s *Service) mapReservation(r *ent.Reservation) *ReservationResponse {
+	resp := &ReservationResponse{
+		ID:        r.ID,
+		TenantID:  r.TenantID,
+		OrderID:   r.OrderID,
+		Status:    r.Status,
+		ExpiresAt: r.ExpiresAt,
+		ConfirmedAt: r.ConfirmedAt,
+		CreatedAt: r.CreatedAt,
+	}
+
+	resp.Items = make([]ReservedItem, len(r.Items))
+	for i, ri := range r.Items {
+		resp.Items[i] = ReservedItem{
+			SKU:             ri.SKU,
+			RequestedQty:    ri.RequestedQty,
+			ReservedQty:     ri.ReservedQty,
+			AvailableQty:    ri.AvailableQty,
+			IsFullyReserved: ri.IsFullyReserved,
+		}
+	}
+
+	return resp
+}

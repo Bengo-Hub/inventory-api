@@ -2,33 +2,46 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+
 	"github.com/bengobox/inventory-service/internal/config"
+	"github.com/bengobox/inventory-service/internal/ent"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
+	"github.com/bengobox/inventory-service/internal/modules/items"
+	"github.com/bengobox/inventory-service/internal/modules/outbox"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
+	"github.com/bengobox/inventory-service/internal/services/rbac"
+	"github.com/bengobox/inventory-service/internal/services/usersync"
 	"github.com/bengobox/inventory-service/internal/shared/logger"
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 )
 
 type App struct {
-	cfg        *config.Config
-	log        *zap.Logger
-	httpServer *http.Server
-	db         *pgxpool.Pool
-	cache      *redis.Client
-	events     *nats.Conn
+	cfg             *config.Config
+	log             *zap.Logger
+	httpServer      *http.Server
+	db              *pgxpool.Pool
+	cache           *redis.Client
+	events          *nats.Conn
+	orm             *ent.Client
+	outboxPublisher *outbox.Publisher
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -54,7 +67,51 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("event bus connection failed", zap.Error(err))
 	}
 
+	// Initialize outbox background publisher (Transactional Outbox Pattern)
+	var outboxPublisher *outbox.Publisher
+	if natsConn != nil && cfg.Events.OutboxEnabled {
+		outboxRepo := outbox.NewPgxRepository(dbPool)
+		outboxNatsPublisher := events.NewOutboxPublisher(natsConn, log)
+		outboxCfg := outbox.PublisherConfig{
+			BatchSize:  cfg.Events.OutboxBatchSize,
+			PollPeriod: cfg.Events.OutboxPollPeriod,
+		}
+		outboxPublisher = outbox.NewPublisher(outboxRepo, outboxNatsPublisher, log, outboxCfg)
+		outboxPublisher.Start(ctx)
+		log.Info("outbox background publisher started",
+			zap.Int("batch_size", cfg.Events.OutboxBatchSize),
+			zap.Duration("poll_period", cfg.Events.OutboxPollPeriod))
+	}
+
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
+
+	// Initialize user management services
+	rbacService := rbac.NewService(log)
+	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
+	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+
+	// Initialize Ent ORM client
+	sqlDB, err := sql.Open("pgx", cfg.Postgres.URL)
+	if err != nil {
+		return nil, fmt.Errorf("ent driver init: %w", err)
+	}
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+
+	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
+	ormClient := ent.NewClient(ent.Driver(drv))
+
+	// Run auto-migrations on startup
+	if err := ormClient.Schema.Create(ctx); err != nil {
+		return nil, fmt.Errorf("ent schema create: %w", err)
+	}
+	log.Info("ent migrations completed")
+
+	// Initialize business modules
+	itemsSvc := items.NewService(ormClient, log)
+	stockSvc := stock.NewService(ormClient, log)
+	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc)
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
@@ -70,9 +127,15 @@ func New(ctx context.Context) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("auth validator init: %w", err)
 	}
-	authMiddleware = authclient.NewAuthMiddleware(validator)
 
-	chiRouter := router.New(log, healthHandler, authMiddleware)
+	if cfg.Auth.EnableAPIKeyAuth {
+		apiKeyValidator := authclient.NewAPIKeyValidator(cfg.Auth.ServiceURL, nil)
+		authMiddleware = authclient.NewAuthMiddlewareWithAPIKey(validator, apiKeyValidator)
+	} else {
+		authMiddleware = authclient.NewAuthMiddleware(validator)
+	}
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, authMiddleware, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -84,12 +147,14 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:        cfg,
-		log:        log,
-		httpServer: httpServer,
-		db:         dbPool,
-		cache:      redisClient,
-		events:     natsConn,
+		cfg:             cfg,
+		log:             log,
+		httpServer:      httpServer,
+		db:              dbPool,
+		cache:           redisClient,
+		events:          natsConn,
+		orm:             ormClient,
+		outboxPublisher: outboxPublisher,
 	}, nil
 }
 
@@ -130,6 +195,12 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) Close() {
+	// Stop outbox publisher first (before NATS connection)
+	if a.outboxPublisher != nil {
+		a.outboxPublisher.Stop()
+		a.log.Info("outbox publisher stopped")
+	}
+
 	if a.events != nil {
 		if err := a.events.Drain(); err != nil {
 			a.log.Warn("nats drain failed", zap.Error(err))
@@ -147,6 +218,11 @@ func (a *App) Close() {
 		a.db.Close()
 	}
 
+	if a.orm != nil {
+		if err := a.orm.Close(); err != nil {
+			a.log.Warn("ent client close failed", zap.Error(err))
+		}
+	}
+
 	_ = a.log.Sync()
 }
-
