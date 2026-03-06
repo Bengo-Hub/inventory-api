@@ -15,6 +15,12 @@ type InventoryBalance func(*sql.Selector)
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 
+// Recipe is the predicate function for recipe builders.
+type Recipe func(*sql.Selector)
+
+// RecipeIngredient is the predicate function for recipeingredient builders.
+type RecipeIngredient func(*sql.Selector)
+
 // Reservation is the predicate function for reservation builders.
 type Reservation func(*sql.Selector)
 

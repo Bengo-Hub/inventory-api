@@ -15,6 +15,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -33,6 +35,8 @@ const (
 	TypeConsumption      = "Consumption"
 	TypeInventoryBalance = "InventoryBalance"
 	TypeItem             = "Item"
+	TypeRecipe           = "Recipe"
+	TypeRecipeIngredient = "RecipeIngredient"
 	TypeReservation      = "Reservation"
 	TypeWarehouse        = "Warehouse"
 )
@@ -1773,29 +1777,32 @@ func (m *InventoryBalanceMutation) ResetEdge(name string) error {
 // ItemMutation represents an operation that mutates the Item nodes in the graph.
 type ItemMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	tenant_id       *uuid.UUID
-	sku             *string
-	name            *string
-	description     *string
-	category        *string
-	price           *float64
-	addprice        *float64
-	unit_of_measure *string
-	is_active       *bool
-	image_url       *string
-	metadata        *map[string]interface{}
-	created_at      *time.Time
-	updated_at      *time.Time
-	clearedFields   map[string]struct{}
-	balances        map[uuid.UUID]struct{}
-	removedbalances map[uuid.UUID]struct{}
-	clearedbalances bool
-	done            bool
-	oldValue        func(context.Context) (*Item, error)
-	predicates      []predicate.Item
+	op                        Op
+	typ                       string
+	id                        *uuid.UUID
+	tenant_id                 *uuid.UUID
+	sku                       *string
+	name                      *string
+	description               *string
+	category                  *string
+	price                     *float64
+	addprice                  *float64
+	unit_of_measure           *string
+	is_active                 *bool
+	image_url                 *string
+	metadata                  *map[string]interface{}
+	created_at                *time.Time
+	updated_at                *time.Time
+	clearedFields             map[string]struct{}
+	balances                  map[uuid.UUID]struct{}
+	removedbalances           map[uuid.UUID]struct{}
+	clearedbalances           bool
+	recipe_ingredients        map[uuid.UUID]struct{}
+	removedrecipe_ingredients map[uuid.UUID]struct{}
+	clearedrecipe_ingredients bool
+	done                      bool
+	oldValue                  func(context.Context) (*Item, error)
+	predicates                []predicate.Item
 }
 
 var _ ent.Mutation = (*ItemMutation)(nil)
@@ -2447,6 +2454,60 @@ func (m *ItemMutation) ResetBalances() {
 	m.removedbalances = nil
 }
 
+// AddRecipeIngredientIDs adds the "recipe_ingredients" edge to the RecipeIngredient entity by ids.
+func (m *ItemMutation) AddRecipeIngredientIDs(ids ...uuid.UUID) {
+	if m.recipe_ingredients == nil {
+		m.recipe_ingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.recipe_ingredients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRecipeIngredients clears the "recipe_ingredients" edge to the RecipeIngredient entity.
+func (m *ItemMutation) ClearRecipeIngredients() {
+	m.clearedrecipe_ingredients = true
+}
+
+// RecipeIngredientsCleared reports if the "recipe_ingredients" edge to the RecipeIngredient entity was cleared.
+func (m *ItemMutation) RecipeIngredientsCleared() bool {
+	return m.clearedrecipe_ingredients
+}
+
+// RemoveRecipeIngredientIDs removes the "recipe_ingredients" edge to the RecipeIngredient entity by IDs.
+func (m *ItemMutation) RemoveRecipeIngredientIDs(ids ...uuid.UUID) {
+	if m.removedrecipe_ingredients == nil {
+		m.removedrecipe_ingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.recipe_ingredients, ids[i])
+		m.removedrecipe_ingredients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRecipeIngredients returns the removed IDs of the "recipe_ingredients" edge to the RecipeIngredient entity.
+func (m *ItemMutation) RemovedRecipeIngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedrecipe_ingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RecipeIngredientsIDs returns the "recipe_ingredients" edge IDs in the mutation.
+func (m *ItemMutation) RecipeIngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.recipe_ingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRecipeIngredients resets all changes to the "recipe_ingredients" edge.
+func (m *ItemMutation) ResetRecipeIngredients() {
+	m.recipe_ingredients = nil
+	m.clearedrecipe_ingredients = false
+	m.removedrecipe_ingredients = nil
+}
+
 // Where appends a list predicates to the ItemMutation builder.
 func (m *ItemMutation) Where(ps ...predicate.Item) {
 	m.predicates = append(m.predicates, ps...)
@@ -2803,9 +2864,12 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.balances != nil {
 		edges = append(edges, item.EdgeBalances)
+	}
+	if m.recipe_ingredients != nil {
+		edges = append(edges, item.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -2820,15 +2884,24 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeRecipeIngredients:
+		ids := make([]ent.Value, 0, len(m.recipe_ingredients))
+		for id := range m.recipe_ingredients {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedbalances != nil {
 		edges = append(edges, item.EdgeBalances)
+	}
+	if m.removedrecipe_ingredients != nil {
+		edges = append(edges, item.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -2843,15 +2916,24 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeRecipeIngredients:
+		ids := make([]ent.Value, 0, len(m.removedrecipe_ingredients))
+		for id := range m.removedrecipe_ingredients {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedbalances {
 		edges = append(edges, item.EdgeBalances)
+	}
+	if m.clearedrecipe_ingredients {
+		edges = append(edges, item.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -2862,6 +2944,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 	switch name {
 	case item.EdgeBalances:
 		return m.clearedbalances
+	case item.EdgeRecipeIngredients:
+		return m.clearedrecipe_ingredients
 	}
 	return false
 }
@@ -2881,8 +2965,1773 @@ func (m *ItemMutation) ResetEdge(name string) error {
 	case item.EdgeBalances:
 		m.ResetBalances()
 		return nil
+	case item.EdgeRecipeIngredients:
+		m.ResetRecipeIngredients()
+		return nil
 	}
 	return fmt.Errorf("unknown Item edge %s", name)
+}
+
+// RecipeMutation represents an operation that mutates the Recipe nodes in the graph.
+type RecipeMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	tenant_id          *uuid.UUID
+	sku                *string
+	name               *string
+	output_qty         *float64
+	addoutput_qty      *float64
+	unit_of_measure    *string
+	is_active          *bool
+	metadata           *map[string]interface{}
+	created_at         *time.Time
+	updated_at         *time.Time
+	clearedFields      map[string]struct{}
+	ingredients        map[uuid.UUID]struct{}
+	removedingredients map[uuid.UUID]struct{}
+	clearedingredients bool
+	done               bool
+	oldValue           func(context.Context) (*Recipe, error)
+	predicates         []predicate.Recipe
+}
+
+var _ ent.Mutation = (*RecipeMutation)(nil)
+
+// recipeOption allows management of the mutation configuration using functional options.
+type recipeOption func(*RecipeMutation)
+
+// newRecipeMutation creates new mutation for the Recipe entity.
+func newRecipeMutation(c config, op Op, opts ...recipeOption) *RecipeMutation {
+	m := &RecipeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRecipe,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRecipeID sets the ID field of the mutation.
+func withRecipeID(id uuid.UUID) recipeOption {
+	return func(m *RecipeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Recipe
+		)
+		m.oldValue = func(ctx context.Context) (*Recipe, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Recipe.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRecipe sets the old Recipe of the mutation.
+func withRecipe(node *Recipe) recipeOption {
+	return func(m *RecipeMutation) {
+		m.oldValue = func(context.Context) (*Recipe, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RecipeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RecipeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Recipe entities.
+func (m *RecipeMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RecipeMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RecipeMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Recipe.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *RecipeMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *RecipeMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *RecipeMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetSku sets the "sku" field.
+func (m *RecipeMutation) SetSku(s string) {
+	m.sku = &s
+}
+
+// Sku returns the value of the "sku" field in the mutation.
+func (m *RecipeMutation) Sku() (r string, exists bool) {
+	v := m.sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSku returns the old "sku" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSku: %w", err)
+	}
+	return oldValue.Sku, nil
+}
+
+// ResetSku resets all changes to the "sku" field.
+func (m *RecipeMutation) ResetSku() {
+	m.sku = nil
+}
+
+// SetName sets the "name" field.
+func (m *RecipeMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *RecipeMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *RecipeMutation) ResetName() {
+	m.name = nil
+}
+
+// SetOutputQty sets the "output_qty" field.
+func (m *RecipeMutation) SetOutputQty(f float64) {
+	m.output_qty = &f
+	m.addoutput_qty = nil
+}
+
+// OutputQty returns the value of the "output_qty" field in the mutation.
+func (m *RecipeMutation) OutputQty() (r float64, exists bool) {
+	v := m.output_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutputQty returns the old "output_qty" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldOutputQty(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutputQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutputQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutputQty: %w", err)
+	}
+	return oldValue.OutputQty, nil
+}
+
+// AddOutputQty adds f to the "output_qty" field.
+func (m *RecipeMutation) AddOutputQty(f float64) {
+	if m.addoutput_qty != nil {
+		*m.addoutput_qty += f
+	} else {
+		m.addoutput_qty = &f
+	}
+}
+
+// AddedOutputQty returns the value that was added to the "output_qty" field in this mutation.
+func (m *RecipeMutation) AddedOutputQty() (r float64, exists bool) {
+	v := m.addoutput_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOutputQty resets all changes to the "output_qty" field.
+func (m *RecipeMutation) ResetOutputQty() {
+	m.output_qty = nil
+	m.addoutput_qty = nil
+}
+
+// SetUnitOfMeasure sets the "unit_of_measure" field.
+func (m *RecipeMutation) SetUnitOfMeasure(s string) {
+	m.unit_of_measure = &s
+}
+
+// UnitOfMeasure returns the value of the "unit_of_measure" field in the mutation.
+func (m *RecipeMutation) UnitOfMeasure() (r string, exists bool) {
+	v := m.unit_of_measure
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitOfMeasure returns the old "unit_of_measure" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldUnitOfMeasure(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitOfMeasure is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitOfMeasure requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitOfMeasure: %w", err)
+	}
+	return oldValue.UnitOfMeasure, nil
+}
+
+// ResetUnitOfMeasure resets all changes to the "unit_of_measure" field.
+func (m *RecipeMutation) ResetUnitOfMeasure() {
+	m.unit_of_measure = nil
+}
+
+// SetIsActive sets the "is_active" field.
+func (m *RecipeMutation) SetIsActive(b bool) {
+	m.is_active = &b
+}
+
+// IsActive returns the value of the "is_active" field in the mutation.
+func (m *RecipeMutation) IsActive() (r bool, exists bool) {
+	v := m.is_active
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsActive returns the old "is_active" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldIsActive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsActive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsActive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
+	}
+	return oldValue.IsActive, nil
+}
+
+// ResetIsActive resets all changes to the "is_active" field.
+func (m *RecipeMutation) ResetIsActive() {
+	m.is_active = nil
+}
+
+// SetMetadata sets the "metadata" field.
+func (m *RecipeMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *RecipeMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *RecipeMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[recipe.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *RecipeMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[recipe.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *RecipeMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, recipe.FieldMetadata)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RecipeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RecipeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RecipeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RecipeMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RecipeMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RecipeMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// AddIngredientIDs adds the "ingredients" edge to the RecipeIngredient entity by ids.
+func (m *RecipeMutation) AddIngredientIDs(ids ...uuid.UUID) {
+	if m.ingredients == nil {
+		m.ingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.ingredients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearIngredients clears the "ingredients" edge to the RecipeIngredient entity.
+func (m *RecipeMutation) ClearIngredients() {
+	m.clearedingredients = true
+}
+
+// IngredientsCleared reports if the "ingredients" edge to the RecipeIngredient entity was cleared.
+func (m *RecipeMutation) IngredientsCleared() bool {
+	return m.clearedingredients
+}
+
+// RemoveIngredientIDs removes the "ingredients" edge to the RecipeIngredient entity by IDs.
+func (m *RecipeMutation) RemoveIngredientIDs(ids ...uuid.UUID) {
+	if m.removedingredients == nil {
+		m.removedingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.ingredients, ids[i])
+		m.removedingredients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedIngredients returns the removed IDs of the "ingredients" edge to the RecipeIngredient entity.
+func (m *RecipeMutation) RemovedIngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// IngredientsIDs returns the "ingredients" edge IDs in the mutation.
+func (m *RecipeMutation) IngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.ingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetIngredients resets all changes to the "ingredients" edge.
+func (m *RecipeMutation) ResetIngredients() {
+	m.ingredients = nil
+	m.clearedingredients = false
+	m.removedingredients = nil
+}
+
+// Where appends a list predicates to the RecipeMutation builder.
+func (m *RecipeMutation) Where(ps ...predicate.Recipe) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RecipeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RecipeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Recipe, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RecipeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RecipeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Recipe).
+func (m *RecipeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RecipeMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.tenant_id != nil {
+		fields = append(fields, recipe.FieldTenantID)
+	}
+	if m.sku != nil {
+		fields = append(fields, recipe.FieldSku)
+	}
+	if m.name != nil {
+		fields = append(fields, recipe.FieldName)
+	}
+	if m.output_qty != nil {
+		fields = append(fields, recipe.FieldOutputQty)
+	}
+	if m.unit_of_measure != nil {
+		fields = append(fields, recipe.FieldUnitOfMeasure)
+	}
+	if m.is_active != nil {
+		fields = append(fields, recipe.FieldIsActive)
+	}
+	if m.metadata != nil {
+		fields = append(fields, recipe.FieldMetadata)
+	}
+	if m.created_at != nil {
+		fields = append(fields, recipe.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, recipe.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RecipeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case recipe.FieldTenantID:
+		return m.TenantID()
+	case recipe.FieldSku:
+		return m.Sku()
+	case recipe.FieldName:
+		return m.Name()
+	case recipe.FieldOutputQty:
+		return m.OutputQty()
+	case recipe.FieldUnitOfMeasure:
+		return m.UnitOfMeasure()
+	case recipe.FieldIsActive:
+		return m.IsActive()
+	case recipe.FieldMetadata:
+		return m.Metadata()
+	case recipe.FieldCreatedAt:
+		return m.CreatedAt()
+	case recipe.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RecipeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case recipe.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case recipe.FieldSku:
+		return m.OldSku(ctx)
+	case recipe.FieldName:
+		return m.OldName(ctx)
+	case recipe.FieldOutputQty:
+		return m.OldOutputQty(ctx)
+	case recipe.FieldUnitOfMeasure:
+		return m.OldUnitOfMeasure(ctx)
+	case recipe.FieldIsActive:
+		return m.OldIsActive(ctx)
+	case recipe.FieldMetadata:
+		return m.OldMetadata(ctx)
+	case recipe.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case recipe.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Recipe field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecipeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case recipe.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case recipe.FieldSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSku(v)
+		return nil
+	case recipe.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case recipe.FieldOutputQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutputQty(v)
+		return nil
+	case recipe.FieldUnitOfMeasure:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitOfMeasure(v)
+		return nil
+	case recipe.FieldIsActive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsActive(v)
+		return nil
+	case recipe.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
+	case recipe.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case recipe.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Recipe field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RecipeMutation) AddedFields() []string {
+	var fields []string
+	if m.addoutput_qty != nil {
+		fields = append(fields, recipe.FieldOutputQty)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RecipeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case recipe.FieldOutputQty:
+		return m.AddedOutputQty()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecipeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case recipe.FieldOutputQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOutputQty(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Recipe numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RecipeMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(recipe.FieldMetadata) {
+		fields = append(fields, recipe.FieldMetadata)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RecipeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RecipeMutation) ClearField(name string) error {
+	switch name {
+	case recipe.FieldMetadata:
+		m.ClearMetadata()
+		return nil
+	}
+	return fmt.Errorf("unknown Recipe nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RecipeMutation) ResetField(name string) error {
+	switch name {
+	case recipe.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case recipe.FieldSku:
+		m.ResetSku()
+		return nil
+	case recipe.FieldName:
+		m.ResetName()
+		return nil
+	case recipe.FieldOutputQty:
+		m.ResetOutputQty()
+		return nil
+	case recipe.FieldUnitOfMeasure:
+		m.ResetUnitOfMeasure()
+		return nil
+	case recipe.FieldIsActive:
+		m.ResetIsActive()
+		return nil
+	case recipe.FieldMetadata:
+		m.ResetMetadata()
+		return nil
+	case recipe.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case recipe.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Recipe field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RecipeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.ingredients != nil {
+		edges = append(edges, recipe.EdgeIngredients)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RecipeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case recipe.EdgeIngredients:
+		ids := make([]ent.Value, 0, len(m.ingredients))
+		for id := range m.ingredients {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RecipeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedingredients != nil {
+		edges = append(edges, recipe.EdgeIngredients)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RecipeMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case recipe.EdgeIngredients:
+		ids := make([]ent.Value, 0, len(m.removedingredients))
+		for id := range m.removedingredients {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RecipeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedingredients {
+		edges = append(edges, recipe.EdgeIngredients)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RecipeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case recipe.EdgeIngredients:
+		return m.clearedingredients
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RecipeMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Recipe unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RecipeMutation) ResetEdge(name string) error {
+	switch name {
+	case recipe.EdgeIngredients:
+		m.ResetIngredients()
+		return nil
+	}
+	return fmt.Errorf("unknown Recipe edge %s", name)
+}
+
+// RecipeIngredientMutation represents an operation that mutates the RecipeIngredient nodes in the graph.
+type RecipeIngredientMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	item_sku         *string
+	quantity         *float64
+	addquantity      *float64
+	unit_of_measure  *string
+	notes            *string
+	display_order    *int
+	adddisplay_order *int
+	clearedFields    map[string]struct{}
+	recipe           *uuid.UUID
+	clearedrecipe    bool
+	item             *uuid.UUID
+	cleareditem      bool
+	done             bool
+	oldValue         func(context.Context) (*RecipeIngredient, error)
+	predicates       []predicate.RecipeIngredient
+}
+
+var _ ent.Mutation = (*RecipeIngredientMutation)(nil)
+
+// recipeingredientOption allows management of the mutation configuration using functional options.
+type recipeingredientOption func(*RecipeIngredientMutation)
+
+// newRecipeIngredientMutation creates new mutation for the RecipeIngredient entity.
+func newRecipeIngredientMutation(c config, op Op, opts ...recipeingredientOption) *RecipeIngredientMutation {
+	m := &RecipeIngredientMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRecipeIngredient,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRecipeIngredientID sets the ID field of the mutation.
+func withRecipeIngredientID(id uuid.UUID) recipeingredientOption {
+	return func(m *RecipeIngredientMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RecipeIngredient
+		)
+		m.oldValue = func(ctx context.Context) (*RecipeIngredient, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RecipeIngredient.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRecipeIngredient sets the old RecipeIngredient of the mutation.
+func withRecipeIngredient(node *RecipeIngredient) recipeingredientOption {
+	return func(m *RecipeIngredientMutation) {
+		m.oldValue = func(context.Context) (*RecipeIngredient, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RecipeIngredientMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RecipeIngredientMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RecipeIngredient entities.
+func (m *RecipeIngredientMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RecipeIngredientMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RecipeIngredientMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RecipeIngredient.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (m *RecipeIngredientMutation) SetRecipeID(u uuid.UUID) {
+	m.recipe = &u
+}
+
+// RecipeID returns the value of the "recipe_id" field in the mutation.
+func (m *RecipeIngredientMutation) RecipeID() (r uuid.UUID, exists bool) {
+	v := m.recipe
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipeID returns the old "recipe_id" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldRecipeID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipeID: %w", err)
+	}
+	return oldValue.RecipeID, nil
+}
+
+// ResetRecipeID resets all changes to the "recipe_id" field.
+func (m *RecipeIngredientMutation) ResetRecipeID() {
+	m.recipe = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *RecipeIngredientMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *RecipeIngredientMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *RecipeIngredientMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetItemSku sets the "item_sku" field.
+func (m *RecipeIngredientMutation) SetItemSku(s string) {
+	m.item_sku = &s
+}
+
+// ItemSku returns the value of the "item_sku" field in the mutation.
+func (m *RecipeIngredientMutation) ItemSku() (r string, exists bool) {
+	v := m.item_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemSku returns the old "item_sku" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldItemSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemSku: %w", err)
+	}
+	return oldValue.ItemSku, nil
+}
+
+// ResetItemSku resets all changes to the "item_sku" field.
+func (m *RecipeIngredientMutation) ResetItemSku() {
+	m.item_sku = nil
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *RecipeIngredientMutation) SetQuantity(f float64) {
+	m.quantity = &f
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *RecipeIngredientMutation) Quantity() (r float64, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldQuantity(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds f to the "quantity" field.
+func (m *RecipeIngredientMutation) AddQuantity(f float64) {
+	if m.addquantity != nil {
+		*m.addquantity += f
+	} else {
+		m.addquantity = &f
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *RecipeIngredientMutation) AddedQuantity() (r float64, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *RecipeIngredientMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetUnitOfMeasure sets the "unit_of_measure" field.
+func (m *RecipeIngredientMutation) SetUnitOfMeasure(s string) {
+	m.unit_of_measure = &s
+}
+
+// UnitOfMeasure returns the value of the "unit_of_measure" field in the mutation.
+func (m *RecipeIngredientMutation) UnitOfMeasure() (r string, exists bool) {
+	v := m.unit_of_measure
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitOfMeasure returns the old "unit_of_measure" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldUnitOfMeasure(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitOfMeasure is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitOfMeasure requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitOfMeasure: %w", err)
+	}
+	return oldValue.UnitOfMeasure, nil
+}
+
+// ResetUnitOfMeasure resets all changes to the "unit_of_measure" field.
+func (m *RecipeIngredientMutation) ResetUnitOfMeasure() {
+	m.unit_of_measure = nil
+}
+
+// SetNotes sets the "notes" field.
+func (m *RecipeIngredientMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *RecipeIngredientMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *RecipeIngredientMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[recipeingredient.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *RecipeIngredientMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[recipeingredient.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *RecipeIngredientMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, recipeingredient.FieldNotes)
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (m *RecipeIngredientMutation) SetDisplayOrder(i int) {
+	m.display_order = &i
+	m.adddisplay_order = nil
+}
+
+// DisplayOrder returns the value of the "display_order" field in the mutation.
+func (m *RecipeIngredientMutation) DisplayOrder() (r int, exists bool) {
+	v := m.display_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayOrder returns the old "display_order" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldDisplayOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayOrder: %w", err)
+	}
+	return oldValue.DisplayOrder, nil
+}
+
+// AddDisplayOrder adds i to the "display_order" field.
+func (m *RecipeIngredientMutation) AddDisplayOrder(i int) {
+	if m.adddisplay_order != nil {
+		*m.adddisplay_order += i
+	} else {
+		m.adddisplay_order = &i
+	}
+}
+
+// AddedDisplayOrder returns the value that was added to the "display_order" field in this mutation.
+func (m *RecipeIngredientMutation) AddedDisplayOrder() (r int, exists bool) {
+	v := m.adddisplay_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDisplayOrder resets all changes to the "display_order" field.
+func (m *RecipeIngredientMutation) ResetDisplayOrder() {
+	m.display_order = nil
+	m.adddisplay_order = nil
+}
+
+// ClearRecipe clears the "recipe" edge to the Recipe entity.
+func (m *RecipeIngredientMutation) ClearRecipe() {
+	m.clearedrecipe = true
+	m.clearedFields[recipeingredient.FieldRecipeID] = struct{}{}
+}
+
+// RecipeCleared reports if the "recipe" edge to the Recipe entity was cleared.
+func (m *RecipeIngredientMutation) RecipeCleared() bool {
+	return m.clearedrecipe
+}
+
+// RecipeIDs returns the "recipe" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RecipeID instead. It exists only for internal usage by the builders.
+func (m *RecipeIngredientMutation) RecipeIDs() (ids []uuid.UUID) {
+	if id := m.recipe; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRecipe resets all changes to the "recipe" edge.
+func (m *RecipeIngredientMutation) ResetRecipe() {
+	m.recipe = nil
+	m.clearedrecipe = false
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *RecipeIngredientMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[recipeingredient.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *RecipeIngredientMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *RecipeIngredientMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *RecipeIngredientMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// Where appends a list predicates to the RecipeIngredientMutation builder.
+func (m *RecipeIngredientMutation) Where(ps ...predicate.RecipeIngredient) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RecipeIngredientMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RecipeIngredientMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RecipeIngredient, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RecipeIngredientMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RecipeIngredientMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RecipeIngredient).
+func (m *RecipeIngredientMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RecipeIngredientMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.recipe != nil {
+		fields = append(fields, recipeingredient.FieldRecipeID)
+	}
+	if m.item != nil {
+		fields = append(fields, recipeingredient.FieldItemID)
+	}
+	if m.item_sku != nil {
+		fields = append(fields, recipeingredient.FieldItemSku)
+	}
+	if m.quantity != nil {
+		fields = append(fields, recipeingredient.FieldQuantity)
+	}
+	if m.unit_of_measure != nil {
+		fields = append(fields, recipeingredient.FieldUnitOfMeasure)
+	}
+	if m.notes != nil {
+		fields = append(fields, recipeingredient.FieldNotes)
+	}
+	if m.display_order != nil {
+		fields = append(fields, recipeingredient.FieldDisplayOrder)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RecipeIngredientMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case recipeingredient.FieldRecipeID:
+		return m.RecipeID()
+	case recipeingredient.FieldItemID:
+		return m.ItemID()
+	case recipeingredient.FieldItemSku:
+		return m.ItemSku()
+	case recipeingredient.FieldQuantity:
+		return m.Quantity()
+	case recipeingredient.FieldUnitOfMeasure:
+		return m.UnitOfMeasure()
+	case recipeingredient.FieldNotes:
+		return m.Notes()
+	case recipeingredient.FieldDisplayOrder:
+		return m.DisplayOrder()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RecipeIngredientMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case recipeingredient.FieldRecipeID:
+		return m.OldRecipeID(ctx)
+	case recipeingredient.FieldItemID:
+		return m.OldItemID(ctx)
+	case recipeingredient.FieldItemSku:
+		return m.OldItemSku(ctx)
+	case recipeingredient.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case recipeingredient.FieldUnitOfMeasure:
+		return m.OldUnitOfMeasure(ctx)
+	case recipeingredient.FieldNotes:
+		return m.OldNotes(ctx)
+	case recipeingredient.FieldDisplayOrder:
+		return m.OldDisplayOrder(ctx)
+	}
+	return nil, fmt.Errorf("unknown RecipeIngredient field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecipeIngredientMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case recipeingredient.FieldRecipeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipeID(v)
+		return nil
+	case recipeingredient.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case recipeingredient.FieldItemSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemSku(v)
+		return nil
+	case recipeingredient.FieldQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case recipeingredient.FieldUnitOfMeasure:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitOfMeasure(v)
+		return nil
+	case recipeingredient.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case recipeingredient.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RecipeIngredientMutation) AddedFields() []string {
+	var fields []string
+	if m.addquantity != nil {
+		fields = append(fields, recipeingredient.FieldQuantity)
+	}
+	if m.adddisplay_order != nil {
+		fields = append(fields, recipeingredient.FieldDisplayOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RecipeIngredientMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case recipeingredient.FieldQuantity:
+		return m.AddedQuantity()
+	case recipeingredient.FieldDisplayOrder:
+		return m.AddedDisplayOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RecipeIngredientMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case recipeingredient.FieldQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	case recipeingredient.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDisplayOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RecipeIngredientMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(recipeingredient.FieldNotes) {
+		fields = append(fields, recipeingredient.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RecipeIngredientMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RecipeIngredientMutation) ClearField(name string) error {
+	switch name {
+	case recipeingredient.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RecipeIngredientMutation) ResetField(name string) error {
+	switch name {
+	case recipeingredient.FieldRecipeID:
+		m.ResetRecipeID()
+		return nil
+	case recipeingredient.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case recipeingredient.FieldItemSku:
+		m.ResetItemSku()
+		return nil
+	case recipeingredient.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case recipeingredient.FieldUnitOfMeasure:
+		m.ResetUnitOfMeasure()
+		return nil
+	case recipeingredient.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case recipeingredient.FieldDisplayOrder:
+		m.ResetDisplayOrder()
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RecipeIngredientMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.recipe != nil {
+		edges = append(edges, recipeingredient.EdgeRecipe)
+	}
+	if m.item != nil {
+		edges = append(edges, recipeingredient.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RecipeIngredientMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case recipeingredient.EdgeRecipe:
+		if id := m.recipe; id != nil {
+			return []ent.Value{*id}
+		}
+	case recipeingredient.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RecipeIngredientMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RecipeIngredientMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RecipeIngredientMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedrecipe {
+		edges = append(edges, recipeingredient.EdgeRecipe)
+	}
+	if m.cleareditem {
+		edges = append(edges, recipeingredient.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RecipeIngredientMutation) EdgeCleared(name string) bool {
+	switch name {
+	case recipeingredient.EdgeRecipe:
+		return m.clearedrecipe
+	case recipeingredient.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RecipeIngredientMutation) ClearEdge(name string) error {
+	switch name {
+	case recipeingredient.EdgeRecipe:
+		m.ClearRecipe()
+		return nil
+	case recipeingredient.EdgeItem:
+		m.ClearItem()
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RecipeIngredientMutation) ResetEdge(name string) error {
+	switch name {
+	case recipeingredient.EdgeRecipe:
+		m.ResetRecipe()
+		return nil
+	case recipeingredient.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown RecipeIngredient edge %s", name)
 }
 
 // ReservationMutation represents an operation that mutates the Reservation nodes in the graph.

@@ -18,6 +18,10 @@ type Tx struct {
 	InventoryBalance *InventoryBalanceClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// Recipe is the client for interacting with the Recipe builders.
+	Recipe *RecipeClient
+	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
+	RecipeIngredient *RecipeIngredientClient
 	// Reservation is the client for interacting with the Reservation builders.
 	Reservation *ReservationClient
 	// Warehouse is the client for interacting with the Warehouse builders.
@@ -156,6 +160,8 @@ func (tx *Tx) init() {
 	tx.Consumption = NewConsumptionClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.Recipe = NewRecipeClient(tx.config)
+	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
 	tx.Reservation = NewReservationClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
 }

@@ -10,33 +10,27 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/google/uuid"
 )
 
-// Item is the model entity for the Item schema.
-type Item struct {
+// Recipe is the model entity for the Recipe schema.
+type Recipe struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// Owning tenant
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
-	// Stock keeping unit, unique per tenant
+	// Matches MenuItem.sku in ordering-service — unique per tenant
 	Sku string `json:"sku,omitempty"`
-	// Name holds the value of the "name" field.
+	// Human-readable recipe name (mirrors menu item name)
 	Name string `json:"name,omitempty"`
-	// Description holds the value of the "description" field.
-	Description string `json:"description,omitempty"`
-	// Item category for grouping
-	Category string `json:"category,omitempty"`
-	// Unit price in smallest currency unit
-	Price float64 `json:"price,omitempty"`
-	// PIECE, KG, LITRE, PORTION
+	// How many portions this recipe produces (usually 1)
+	OutputQty float64 `json:"output_qty,omitempty"`
+	// Unit for output: PORTION, KG, LITRE
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
-	// ImageURL holds the value of the "image_url" field.
-	ImageURL string `json:"image_url,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -44,56 +38,45 @@ type Item struct {
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the ItemQuery when eager-loading is set.
-	Edges        ItemEdges `json:"edges"`
+	// The values are being populated by the RecipeQuery when eager-loading is set.
+	Edges        RecipeEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// ItemEdges holds the relations/edges for other nodes in the graph.
-type ItemEdges struct {
-	// Balances holds the value of the balances edge.
-	Balances []*InventoryBalance `json:"balances,omitempty"`
-	// RecipeIngredients holds the value of the recipe_ingredients edge.
-	RecipeIngredients []*RecipeIngredient `json:"recipe_ingredients,omitempty"`
+// RecipeEdges holds the relations/edges for other nodes in the graph.
+type RecipeEdges struct {
+	// Ingredients holds the value of the ingredients edge.
+	Ingredients []*RecipeIngredient `json:"ingredients,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
-// BalancesOrErr returns the Balances value or an error if the edge
+// IngredientsOrErr returns the Ingredients value or an error if the edge
 // was not loaded in eager-loading.
-func (e ItemEdges) BalancesOrErr() ([]*InventoryBalance, error) {
+func (e RecipeEdges) IngredientsOrErr() ([]*RecipeIngredient, error) {
 	if e.loadedTypes[0] {
-		return e.Balances, nil
+		return e.Ingredients, nil
 	}
-	return nil, &NotLoadedError{edge: "balances"}
-}
-
-// RecipeIngredientsOrErr returns the RecipeIngredients value or an error if the edge
-// was not loaded in eager-loading.
-func (e ItemEdges) RecipeIngredientsOrErr() ([]*RecipeIngredient, error) {
-	if e.loadedTypes[1] {
-		return e.RecipeIngredients, nil
-	}
-	return nil, &NotLoadedError{edge: "recipe_ingredients"}
+	return nil, &NotLoadedError{edge: "ingredients"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Item) scanValues(columns []string) ([]any, error) {
+func (*Recipe) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldMetadata:
+		case recipe.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsActive:
+		case recipe.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case item.FieldPrice:
+		case recipe.FieldOutputQty:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldCategory, item.FieldUnitOfMeasure, item.FieldImageURL:
+		case recipe.FieldSku, recipe.FieldName, recipe.FieldUnitOfMeasure:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt:
+		case recipe.FieldCreatedAt, recipe.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case item.FieldID, item.FieldTenantID:
+		case recipe.FieldID, recipe.FieldTenantID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -103,74 +86,56 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Item fields.
-func (_m *Item) assignValues(columns []string, values []any) error {
+// to the Recipe fields.
+func (_m *Recipe) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldID:
+		case recipe.FieldID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case item.FieldTenantID:
+		case recipe.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
 				_m.TenantID = *value
 			}
-		case item.FieldSku:
+		case recipe.FieldSku:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field sku", values[i])
 			} else if value.Valid {
 				_m.Sku = value.String
 			}
-		case item.FieldName:
+		case recipe.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case item.FieldDescription:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field description", values[i])
-			} else if value.Valid {
-				_m.Description = value.String
-			}
-		case item.FieldCategory:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field category", values[i])
-			} else if value.Valid {
-				_m.Category = value.String
-			}
-		case item.FieldPrice:
+		case recipe.FieldOutputQty:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field price", values[i])
+				return fmt.Errorf("unexpected type %T for field output_qty", values[i])
 			} else if value.Valid {
-				_m.Price = value.Float64
+				_m.OutputQty = value.Float64
 			}
-		case item.FieldUnitOfMeasure:
+		case recipe.FieldUnitOfMeasure:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field unit_of_measure", values[i])
 			} else if value.Valid {
 				_m.UnitOfMeasure = value.String
 			}
-		case item.FieldIsActive:
+		case recipe.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
 			}
-		case item.FieldImageURL:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field image_url", values[i])
-			} else if value.Valid {
-				_m.ImageURL = value.String
-			}
-		case item.FieldMetadata:
+		case recipe.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
@@ -178,13 +143,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
-		case item.FieldCreatedAt:
+		case recipe.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case item.FieldUpdatedAt:
+		case recipe.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
@@ -197,44 +162,39 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the Item.
+// Value returns the ent.Value that was dynamically selected and assigned to the Recipe.
 // This includes values selected through modifiers, order, etc.
-func (_m *Item) Value(name string) (ent.Value, error) {
+func (_m *Recipe) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryBalances queries the "balances" edge of the Item entity.
-func (_m *Item) QueryBalances() *InventoryBalanceQuery {
-	return NewItemClient(_m.config).QueryBalances(_m)
+// QueryIngredients queries the "ingredients" edge of the Recipe entity.
+func (_m *Recipe) QueryIngredients() *RecipeIngredientQuery {
+	return NewRecipeClient(_m.config).QueryIngredients(_m)
 }
 
-// QueryRecipeIngredients queries the "recipe_ingredients" edge of the Item entity.
-func (_m *Item) QueryRecipeIngredients() *RecipeIngredientQuery {
-	return NewItemClient(_m.config).QueryRecipeIngredients(_m)
-}
-
-// Update returns a builder for updating this Item.
-// Note that you need to call Item.Unwrap() before calling this method if this Item
+// Update returns a builder for updating this Recipe.
+// Note that you need to call Recipe.Unwrap() before calling this method if this Recipe
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Item) Update() *ItemUpdateOne {
-	return NewItemClient(_m.config).UpdateOne(_m)
+func (_m *Recipe) Update() *RecipeUpdateOne {
+	return NewRecipeClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the Item entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Recipe entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Item) Unwrap() *Item {
+func (_m *Recipe) Unwrap() *Recipe {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Item is not a transactional entity")
+		panic("ent: Recipe is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *Item) String() string {
+func (_m *Recipe) String() string {
 	var builder strings.Builder
-	builder.WriteString("Item(")
+	builder.WriteString("Recipe(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("tenant_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
@@ -245,23 +205,14 @@ func (_m *Item) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
-	builder.WriteString(", ")
-	builder.WriteString("category=")
-	builder.WriteString(_m.Category)
-	builder.WriteString(", ")
-	builder.WriteString("price=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Price))
+	builder.WriteString("output_qty=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OutputQty))
 	builder.WriteString(", ")
 	builder.WriteString("unit_of_measure=")
 	builder.WriteString(_m.UnitOfMeasure)
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
-	builder.WriteString(", ")
-	builder.WriteString("image_url=")
-	builder.WriteString(_m.ImageURL)
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
@@ -275,5 +226,5 @@ func (_m *Item) String() string {
 	return builder.String()
 }
 
-// Items is a parsable slice of Item.
-type Items []*Item
+// Recipes is a parsable slice of Recipe.
+type Recipes []*Recipe

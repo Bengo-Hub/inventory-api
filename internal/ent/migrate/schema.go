@@ -122,6 +122,85 @@ var (
 			},
 		},
 	}
+	// RecipesColumns holds the columns for the "recipes" table.
+	RecipesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "sku", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString, Size: 255},
+		{Name: "output_qty", Type: field.TypeFloat64, Default: 1},
+		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PORTION"},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// RecipesTable holds the schema information for the "recipes" table.
+	RecipesTable = &schema.Table{
+		Name:       "recipes",
+		Columns:    RecipesColumns,
+		PrimaryKey: []*schema.Column{RecipesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "recipe_tenant_id_sku",
+				Unique:  true,
+				Columns: []*schema.Column{RecipesColumns[1], RecipesColumns[2]},
+			},
+			{
+				Name:    "recipe_tenant_id_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{RecipesColumns[1], RecipesColumns[6]},
+			},
+		},
+	}
+	// RecipeIngredientsColumns holds the columns for the "recipe_ingredients" table.
+	RecipeIngredientsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "item_sku", Type: field.TypeString, Size: 100},
+		{Name: "quantity", Type: field.TypeFloat64},
+		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PIECE"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "display_order", Type: field.TypeInt, Default: 0},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "recipe_id", Type: field.TypeUUID},
+	}
+	// RecipeIngredientsTable holds the schema information for the "recipe_ingredients" table.
+	RecipeIngredientsTable = &schema.Table{
+		Name:       "recipe_ingredients",
+		Columns:    RecipeIngredientsColumns,
+		PrimaryKey: []*schema.Column{RecipeIngredientsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "recipe_ingredients_items_recipe_ingredients",
+				Columns:    []*schema.Column{RecipeIngredientsColumns[6]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "recipe_ingredients_recipes_ingredients",
+				Columns:    []*schema.Column{RecipeIngredientsColumns[7]},
+				RefColumns: []*schema.Column{RecipesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "recipeingredient_recipe_id_item_id",
+				Unique:  true,
+				Columns: []*schema.Column{RecipeIngredientsColumns[7], RecipeIngredientsColumns[6]},
+			},
+			{
+				Name:    "recipeingredient_recipe_id",
+				Unique:  false,
+				Columns: []*schema.Column{RecipeIngredientsColumns[7]},
+			},
+			{
+				Name:    "recipeingredient_item_sku",
+				Unique:  false,
+				Columns: []*schema.Column{RecipeIngredientsColumns[1]},
+			},
+		},
+	}
 	// ReservationsColumns holds the columns for the "reservations" table.
 	ReservationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -207,6 +286,8 @@ var (
 		ConsumptionsTable,
 		InventoryBalancesTable,
 		ItemsTable,
+		RecipesTable,
+		RecipeIngredientsTable,
 		ReservationsTable,
 		WarehousesTable,
 	}
@@ -215,5 +296,7 @@ var (
 func init() {
 	InventoryBalancesTable.ForeignKeys[0].RefTable = ItemsTable
 	InventoryBalancesTable.ForeignKeys[1].RefTable = WarehousesTable
+	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
+	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
 }

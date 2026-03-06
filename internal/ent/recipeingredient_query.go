@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,61 +11,61 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/google/uuid"
 )
 
-// ItemQuery is the builder for querying Item entities.
-type ItemQuery struct {
+// RecipeIngredientQuery is the builder for querying RecipeIngredient entities.
+type RecipeIngredientQuery struct {
 	config
-	ctx                   *QueryContext
-	order                 []item.OrderOption
-	inters                []Interceptor
-	predicates            []predicate.Item
-	withBalances          *InventoryBalanceQuery
-	withRecipeIngredients *RecipeIngredientQuery
+	ctx        *QueryContext
+	order      []recipeingredient.OrderOption
+	inters     []Interceptor
+	predicates []predicate.RecipeIngredient
+	withRecipe *RecipeQuery
+	withItem   *ItemQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the ItemQuery builder.
-func (_q *ItemQuery) Where(ps ...predicate.Item) *ItemQuery {
+// Where adds a new predicate for the RecipeIngredientQuery builder.
+func (_q *RecipeIngredientQuery) Where(ps ...predicate.RecipeIngredient) *RecipeIngredientQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *ItemQuery) Limit(limit int) *ItemQuery {
+func (_q *RecipeIngredientQuery) Limit(limit int) *RecipeIngredientQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *ItemQuery) Offset(offset int) *ItemQuery {
+func (_q *RecipeIngredientQuery) Offset(offset int) *RecipeIngredientQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *ItemQuery) Unique(unique bool) *ItemQuery {
+func (_q *RecipeIngredientQuery) Unique(unique bool) *RecipeIngredientQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *ItemQuery) Order(o ...item.OrderOption) *ItemQuery {
+func (_q *RecipeIngredientQuery) Order(o ...recipeingredient.OrderOption) *RecipeIngredientQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryBalances chains the current query on the "balances" edge.
-func (_q *ItemQuery) QueryBalances() *InventoryBalanceQuery {
-	query := (&InventoryBalanceClient{config: _q.config}).Query()
+// QueryRecipe chains the current query on the "recipe" edge.
+func (_q *RecipeIngredientQuery) QueryRecipe() *RecipeQuery {
+	query := (&RecipeClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,9 +75,9 @@ func (_q *ItemQuery) QueryBalances() *InventoryBalanceQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(inventorybalance.Table, inventorybalance.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.BalancesTable, item.BalancesColumn),
+			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, selector),
+			sqlgraph.To(recipe.Table, recipe.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.RecipeTable, recipeingredient.RecipeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -86,9 +85,9 @@ func (_q *ItemQuery) QueryBalances() *InventoryBalanceQuery {
 	return query
 }
 
-// QueryRecipeIngredients chains the current query on the "recipe_ingredients" edge.
-func (_q *ItemQuery) QueryRecipeIngredients() *RecipeIngredientQuery {
-	query := (&RecipeIngredientClient{config: _q.config}).Query()
+// QueryItem chains the current query on the "item" edge.
+func (_q *RecipeIngredientQuery) QueryItem() *ItemQuery {
+	query := (&ItemClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -98,9 +97,9 @@ func (_q *ItemQuery) QueryRecipeIngredients() *RecipeIngredientQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(item.Table, item.FieldID, selector),
-			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, item.RecipeIngredientsTable, item.RecipeIngredientsColumn),
+			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, selector),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.ItemTable, recipeingredient.ItemColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -108,21 +107,21 @@ func (_q *ItemQuery) QueryRecipeIngredients() *RecipeIngredientQuery {
 	return query
 }
 
-// First returns the first Item entity from the query.
-// Returns a *NotFoundError when no Item was found.
-func (_q *ItemQuery) First(ctx context.Context) (*Item, error) {
+// First returns the first RecipeIngredient entity from the query.
+// Returns a *NotFoundError when no RecipeIngredient was found.
+func (_q *RecipeIngredientQuery) First(ctx context.Context) (*RecipeIngredient, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{item.Label}
+		return nil, &NotFoundError{recipeingredient.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *ItemQuery) FirstX(ctx context.Context) *Item {
+func (_q *RecipeIngredientQuery) FirstX(ctx context.Context) *RecipeIngredient {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -130,22 +129,22 @@ func (_q *ItemQuery) FirstX(ctx context.Context) *Item {
 	return node
 }
 
-// FirstID returns the first Item ID from the query.
-// Returns a *NotFoundError when no Item ID was found.
-func (_q *ItemQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first RecipeIngredient ID from the query.
+// Returns a *NotFoundError when no RecipeIngredient ID was found.
+func (_q *RecipeIngredientQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{item.Label}
+		err = &NotFoundError{recipeingredient.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *ItemQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *RecipeIngredientQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -153,10 +152,10 @@ func (_q *ItemQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single Item entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Item entity is found.
-// Returns a *NotFoundError when no Item entities are found.
-func (_q *ItemQuery) Only(ctx context.Context) (*Item, error) {
+// Only returns a single RecipeIngredient entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one RecipeIngredient entity is found.
+// Returns a *NotFoundError when no RecipeIngredient entities are found.
+func (_q *RecipeIngredientQuery) Only(ctx context.Context) (*RecipeIngredient, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -165,14 +164,14 @@ func (_q *ItemQuery) Only(ctx context.Context) (*Item, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{item.Label}
+		return nil, &NotFoundError{recipeingredient.Label}
 	default:
-		return nil, &NotSingularError{item.Label}
+		return nil, &NotSingularError{recipeingredient.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *ItemQuery) OnlyX(ctx context.Context) *Item {
+func (_q *RecipeIngredientQuery) OnlyX(ctx context.Context) *RecipeIngredient {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -180,10 +179,10 @@ func (_q *ItemQuery) OnlyX(ctx context.Context) *Item {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Item ID in the query.
-// Returns a *NotSingularError when more than one Item ID is found.
+// OnlyID is like Only, but returns the only RecipeIngredient ID in the query.
+// Returns a *NotSingularError when more than one RecipeIngredient ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *ItemQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *RecipeIngredientQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -192,15 +191,15 @@ func (_q *ItemQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{item.Label}
+		err = &NotFoundError{recipeingredient.Label}
 	default:
-		err = &NotSingularError{item.Label}
+		err = &NotSingularError{recipeingredient.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *ItemQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *RecipeIngredientQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -208,18 +207,18 @@ func (_q *ItemQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of Items.
-func (_q *ItemQuery) All(ctx context.Context) ([]*Item, error) {
+// All executes the query and returns a list of RecipeIngredients.
+func (_q *RecipeIngredientQuery) All(ctx context.Context) ([]*RecipeIngredient, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Item, *ItemQuery]()
-	return withInterceptors[[]*Item](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*RecipeIngredient, *RecipeIngredientQuery]()
+	return withInterceptors[[]*RecipeIngredient](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *ItemQuery) AllX(ctx context.Context) []*Item {
+func (_q *RecipeIngredientQuery) AllX(ctx context.Context) []*RecipeIngredient {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -227,20 +226,20 @@ func (_q *ItemQuery) AllX(ctx context.Context) []*Item {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Item IDs.
-func (_q *ItemQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of RecipeIngredient IDs.
+func (_q *RecipeIngredientQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(item.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(recipeingredient.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *ItemQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *RecipeIngredientQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -249,16 +248,16 @@ func (_q *ItemQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *ItemQuery) Count(ctx context.Context) (int, error) {
+func (_q *RecipeIngredientQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*ItemQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*RecipeIngredientQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *ItemQuery) CountX(ctx context.Context) int {
+func (_q *RecipeIngredientQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -267,7 +266,7 @@ func (_q *ItemQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *ItemQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *RecipeIngredientQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -280,7 +279,7 @@ func (_q *ItemQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *ItemQuery) ExistX(ctx context.Context) bool {
+func (_q *RecipeIngredientQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -288,45 +287,45 @@ func (_q *ItemQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the ItemQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the RecipeIngredientQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *ItemQuery) Clone() *ItemQuery {
+func (_q *RecipeIngredientQuery) Clone() *RecipeIngredientQuery {
 	if _q == nil {
 		return nil
 	}
-	return &ItemQuery{
-		config:                _q.config,
-		ctx:                   _q.ctx.Clone(),
-		order:                 append([]item.OrderOption{}, _q.order...),
-		inters:                append([]Interceptor{}, _q.inters...),
-		predicates:            append([]predicate.Item{}, _q.predicates...),
-		withBalances:          _q.withBalances.Clone(),
-		withRecipeIngredients: _q.withRecipeIngredients.Clone(),
+	return &RecipeIngredientQuery{
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]recipeingredient.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.RecipeIngredient{}, _q.predicates...),
+		withRecipe: _q.withRecipe.Clone(),
+		withItem:   _q.withItem.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithBalances tells the query-builder to eager-load the nodes that are connected to
-// the "balances" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithBalances(opts ...func(*InventoryBalanceQuery)) *ItemQuery {
-	query := (&InventoryBalanceClient{config: _q.config}).Query()
+// WithRecipe tells the query-builder to eager-load the nodes that are connected to
+// the "recipe" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RecipeIngredientQuery) WithRecipe(opts ...func(*RecipeQuery)) *RecipeIngredientQuery {
+	query := (&RecipeClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withBalances = query
+	_q.withRecipe = query
 	return _q
 }
 
-// WithRecipeIngredients tells the query-builder to eager-load the nodes that are connected to
-// the "recipe_ingredients" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ItemQuery) WithRecipeIngredients(opts ...func(*RecipeIngredientQuery)) *ItemQuery {
-	query := (&RecipeIngredientClient{config: _q.config}).Query()
+// WithItem tells the query-builder to eager-load the nodes that are connected to
+// the "item" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RecipeIngredientQuery) WithItem(opts ...func(*ItemQuery)) *RecipeIngredientQuery {
+	query := (&ItemClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withRecipeIngredients = query
+	_q.withItem = query
 	return _q
 }
 
@@ -336,19 +335,19 @@ func (_q *ItemQuery) WithRecipeIngredients(opts ...func(*RecipeIngredientQuery))
 // Example:
 //
 //	var v []struct {
-//		TenantID uuid.UUID `json:"tenant_id,omitempty"`
+//		RecipeID uuid.UUID `json:"recipe_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Item.Query().
-//		GroupBy(item.FieldTenantID).
+//	client.RecipeIngredient.Query().
+//		GroupBy(recipeingredient.FieldRecipeID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *ItemQuery) GroupBy(field string, fields ...string) *ItemGroupBy {
+func (_q *RecipeIngredientQuery) GroupBy(field string, fields ...string) *RecipeIngredientGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &ItemGroupBy{build: _q}
+	grbuild := &RecipeIngredientGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = item.Label
+	grbuild.label = recipeingredient.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -359,26 +358,26 @@ func (_q *ItemQuery) GroupBy(field string, fields ...string) *ItemGroupBy {
 // Example:
 //
 //	var v []struct {
-//		TenantID uuid.UUID `json:"tenant_id,omitempty"`
+//		RecipeID uuid.UUID `json:"recipe_id,omitempty"`
 //	}
 //
-//	client.Item.Query().
-//		Select(item.FieldTenantID).
+//	client.RecipeIngredient.Query().
+//		Select(recipeingredient.FieldRecipeID).
 //		Scan(ctx, &v)
-func (_q *ItemQuery) Select(fields ...string) *ItemSelect {
+func (_q *RecipeIngredientQuery) Select(fields ...string) *RecipeIngredientSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &ItemSelect{ItemQuery: _q}
-	sbuild.label = item.Label
+	sbuild := &RecipeIngredientSelect{RecipeIngredientQuery: _q}
+	sbuild.label = recipeingredient.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a ItemSelect configured with the given aggregations.
-func (_q *ItemQuery) Aggregate(fns ...AggregateFunc) *ItemSelect {
+// Aggregate returns a RecipeIngredientSelect configured with the given aggregations.
+func (_q *RecipeIngredientQuery) Aggregate(fns ...AggregateFunc) *RecipeIngredientSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *ItemQuery) prepareQuery(ctx context.Context) error {
+func (_q *RecipeIngredientQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -390,7 +389,7 @@ func (_q *ItemQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !item.ValidColumn(f) {
+		if !recipeingredient.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -404,20 +403,20 @@ func (_q *ItemQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, error) {
+func (_q *RecipeIngredientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RecipeIngredient, error) {
 	var (
-		nodes       = []*Item{}
+		nodes       = []*RecipeIngredient{}
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			_q.withBalances != nil,
-			_q.withRecipeIngredients != nil,
+			_q.withRecipe != nil,
+			_q.withItem != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Item).scanValues(nil, columns)
+		return (*RecipeIngredient).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Item{config: _q.config}
+		node := &RecipeIngredient{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -431,85 +430,81 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withBalances; query != nil {
-		if err := _q.loadBalances(ctx, query, nodes,
-			func(n *Item) { n.Edges.Balances = []*InventoryBalance{} },
-			func(n *Item, e *InventoryBalance) { n.Edges.Balances = append(n.Edges.Balances, e) }); err != nil {
+	if query := _q.withRecipe; query != nil {
+		if err := _q.loadRecipe(ctx, query, nodes, nil,
+			func(n *RecipeIngredient, e *Recipe) { n.Edges.Recipe = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withRecipeIngredients; query != nil {
-		if err := _q.loadRecipeIngredients(ctx, query, nodes,
-			func(n *Item) { n.Edges.RecipeIngredients = []*RecipeIngredient{} },
-			func(n *Item, e *RecipeIngredient) { n.Edges.RecipeIngredients = append(n.Edges.RecipeIngredients, e) }); err != nil {
+	if query := _q.withItem; query != nil {
+		if err := _q.loadItem(ctx, query, nodes, nil,
+			func(n *RecipeIngredient, e *Item) { n.Edges.Item = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *ItemQuery) loadBalances(ctx context.Context, query *InventoryBalanceQuery, nodes []*Item, init func(*Item), assign func(*Item, *InventoryBalance)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
+func (_q *RecipeIngredientQuery) loadRecipe(ctx context.Context, query *RecipeQuery, nodes []*RecipeIngredient, init func(*RecipeIngredient), assign func(*RecipeIngredient, *Recipe)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*RecipeIngredient)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].RecipeID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(inventorybalance.FieldItemID)
+	if len(ids) == 0 {
+		return nil
 	}
-	query.Where(predicate.InventoryBalance(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.BalancesColumn), fks...))
-	}))
+	query.Where(recipe.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.ItemID
-		node, ok := nodeids[fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "recipe_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
-func (_q *ItemQuery) loadRecipeIngredients(ctx context.Context, query *RecipeIngredientQuery, nodes []*Item, init func(*Item), assign func(*Item, *RecipeIngredient)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Item)
+func (_q *RecipeIngredientQuery) loadItem(ctx context.Context, query *ItemQuery, nodes []*RecipeIngredient, init func(*RecipeIngredient), assign func(*RecipeIngredient, *Item)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*RecipeIngredient)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].ItemID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(recipeingredient.FieldItemID)
+	if len(ids) == 0 {
+		return nil
 	}
-	query.Where(predicate.RecipeIngredient(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(item.RecipeIngredientsColumn), fks...))
-	}))
+	query.Where(item.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.ItemID
-		node, ok := nodeids[fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "item_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 
-func (_q *ItemQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *RecipeIngredientQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -518,8 +513,8 @@ func (_q *ItemQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(item.Table, item.Columns, sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID))
+func (_q *RecipeIngredientQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(recipeingredient.Table, recipeingredient.Columns, sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -528,11 +523,17 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, item.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, recipeingredient.FieldID)
 		for i := range fields {
-			if fields[i] != item.FieldID {
+			if fields[i] != recipeingredient.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withRecipe != nil {
+			_spec.Node.AddColumnOnce(recipeingredient.FieldRecipeID)
+		}
+		if _q.withItem != nil {
+			_spec.Node.AddColumnOnce(recipeingredient.FieldItemID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -558,12 +559,12 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *ItemQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *RecipeIngredientQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(item.Table)
+	t1 := builder.Table(recipeingredient.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = item.Columns
+		columns = recipeingredient.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -590,28 +591,28 @@ func (_q *ItemQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// ItemGroupBy is the group-by builder for Item entities.
-type ItemGroupBy struct {
+// RecipeIngredientGroupBy is the group-by builder for RecipeIngredient entities.
+type RecipeIngredientGroupBy struct {
 	selector
-	build *ItemQuery
+	build *RecipeIngredientQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *ItemGroupBy) Aggregate(fns ...AggregateFunc) *ItemGroupBy {
+func (_g *RecipeIngredientGroupBy) Aggregate(fns ...AggregateFunc) *RecipeIngredientGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *ItemGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *RecipeIngredientGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*ItemQuery, *ItemGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*RecipeIngredientQuery, *RecipeIngredientGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *ItemGroupBy) sqlScan(ctx context.Context, root *ItemQuery, v any) error {
+func (_g *RecipeIngredientGroupBy) sqlScan(ctx context.Context, root *RecipeIngredientQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -638,28 +639,28 @@ func (_g *ItemGroupBy) sqlScan(ctx context.Context, root *ItemQuery, v any) erro
 	return sql.ScanSlice(rows, v)
 }
 
-// ItemSelect is the builder for selecting fields of Item entities.
-type ItemSelect struct {
-	*ItemQuery
+// RecipeIngredientSelect is the builder for selecting fields of RecipeIngredient entities.
+type RecipeIngredientSelect struct {
+	*RecipeIngredientQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *ItemSelect) Aggregate(fns ...AggregateFunc) *ItemSelect {
+func (_s *RecipeIngredientSelect) Aggregate(fns ...AggregateFunc) *RecipeIngredientSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *ItemSelect) Scan(ctx context.Context, v any) error {
+func (_s *RecipeIngredientSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*ItemQuery, *ItemSelect](ctx, _s.ItemQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*RecipeIngredientQuery, *RecipeIngredientSelect](ctx, _s.RecipeIngredientQuery, _s, _s.inters, v)
 }
 
-func (_s *ItemSelect) sqlScan(ctx context.Context, root *ItemQuery, v any) error {
+func (_s *RecipeIngredientSelect) sqlScan(ctx context.Context, root *RecipeIngredientQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

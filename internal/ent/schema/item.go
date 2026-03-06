@@ -58,6 +58,7 @@ func (Item) Fields() []ent.Field {
 func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("balances", InventoryBalance.Type),
+		edge.To("recipe_ingredients", RecipeIngredient.Type),
 	}
 }
 

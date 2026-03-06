@@ -45,6 +45,30 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
 }
 
+// The RecipeFunc type is an adapter to allow the use of ordinary
+// function as Recipe mutator.
+type RecipeFunc func(context.Context, *ent.RecipeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RecipeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RecipeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RecipeMutation", m)
+}
+
+// The RecipeIngredientFunc type is an adapter to allow the use of ordinary
+// function as RecipeIngredient mutator.
+type RecipeIngredientFunc func(context.Context, *ent.RecipeIngredientMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RecipeIngredientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RecipeIngredientMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RecipeIngredientMutation", m)
+}
+
 // The ReservationFunc type is an adapter to allow the use of ordinary
 // function as Reservation mutator.
 type ReservationFunc func(context.Context, *ent.ReservationMutation) (ent.Value, error)

@@ -78,9 +78,9 @@ func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID) 
 
 	_, err = client.Warehouse.Create().
 		SetTenantID(tenantID).
-		SetName("Urban Loft Main Kitchen").
+		SetName("Urban Loft Busia Kitchen").
 		SetCode("MAIN").
-		SetAddress("Nairobi CBD, Kenya").
+		SetAddress("Busia, Kenya").
 		SetIsDefault(true).
 		SetIsActive(true).
 		Save(ctx)

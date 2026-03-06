@@ -8,6 +8,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -112,6 +114,106 @@ func init() {
 	itemDescID := itemFields[0].Descriptor()
 	// item.DefaultID holds the default value on creation for the id field.
 	item.DefaultID = itemDescID.Default.(func() uuid.UUID)
+	recipeFields := schema.Recipe{}.Fields()
+	_ = recipeFields
+	// recipeDescSku is the schema descriptor for sku field.
+	recipeDescSku := recipeFields[2].Descriptor()
+	// recipe.SkuValidator is a validator for the "sku" field. It is called by the builders before save.
+	recipe.SkuValidator = recipeDescSku.Validators[0].(func(string) error)
+	// recipeDescName is the schema descriptor for name field.
+	recipeDescName := recipeFields[3].Descriptor()
+	// recipe.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	recipe.NameValidator = func() func(string) error {
+		validators := recipeDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// recipeDescOutputQty is the schema descriptor for output_qty field.
+	recipeDescOutputQty := recipeFields[4].Descriptor()
+	// recipe.DefaultOutputQty holds the default value on creation for the output_qty field.
+	recipe.DefaultOutputQty = recipeDescOutputQty.Default.(float64)
+	// recipe.OutputQtyValidator is a validator for the "output_qty" field. It is called by the builders before save.
+	recipe.OutputQtyValidator = recipeDescOutputQty.Validators[0].(func(float64) error)
+	// recipeDescUnitOfMeasure is the schema descriptor for unit_of_measure field.
+	recipeDescUnitOfMeasure := recipeFields[5].Descriptor()
+	// recipe.DefaultUnitOfMeasure holds the default value on creation for the unit_of_measure field.
+	recipe.DefaultUnitOfMeasure = recipeDescUnitOfMeasure.Default.(string)
+	// recipe.UnitOfMeasureValidator is a validator for the "unit_of_measure" field. It is called by the builders before save.
+	recipe.UnitOfMeasureValidator = recipeDescUnitOfMeasure.Validators[0].(func(string) error)
+	// recipeDescIsActive is the schema descriptor for is_active field.
+	recipeDescIsActive := recipeFields[6].Descriptor()
+	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
+	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
+	// recipeDescMetadata is the schema descriptor for metadata field.
+	recipeDescMetadata := recipeFields[7].Descriptor()
+	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
+	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
+	// recipeDescCreatedAt is the schema descriptor for created_at field.
+	recipeDescCreatedAt := recipeFields[8].Descriptor()
+	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
+	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
+	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
+	recipeDescUpdatedAt := recipeFields[9].Descriptor()
+	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
+	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	recipe.UpdateDefaultUpdatedAt = recipeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// recipeDescID is the schema descriptor for id field.
+	recipeDescID := recipeFields[0].Descriptor()
+	// recipe.DefaultID holds the default value on creation for the id field.
+	recipe.DefaultID = recipeDescID.Default.(func() uuid.UUID)
+	recipeingredientFields := schema.RecipeIngredient{}.Fields()
+	_ = recipeingredientFields
+	// recipeingredientDescItemSku is the schema descriptor for item_sku field.
+	recipeingredientDescItemSku := recipeingredientFields[3].Descriptor()
+	// recipeingredient.ItemSkuValidator is a validator for the "item_sku" field. It is called by the builders before save.
+	recipeingredient.ItemSkuValidator = func() func(string) error {
+		validators := recipeingredientDescItemSku.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(item_sku string) error {
+			for _, fn := range fns {
+				if err := fn(item_sku); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// recipeingredientDescQuantity is the schema descriptor for quantity field.
+	recipeingredientDescQuantity := recipeingredientFields[4].Descriptor()
+	// recipeingredient.QuantityValidator is a validator for the "quantity" field. It is called by the builders before save.
+	recipeingredient.QuantityValidator = recipeingredientDescQuantity.Validators[0].(func(float64) error)
+	// recipeingredientDescUnitOfMeasure is the schema descriptor for unit_of_measure field.
+	recipeingredientDescUnitOfMeasure := recipeingredientFields[5].Descriptor()
+	// recipeingredient.DefaultUnitOfMeasure holds the default value on creation for the unit_of_measure field.
+	recipeingredient.DefaultUnitOfMeasure = recipeingredientDescUnitOfMeasure.Default.(string)
+	// recipeingredient.UnitOfMeasureValidator is a validator for the "unit_of_measure" field. It is called by the builders before save.
+	recipeingredient.UnitOfMeasureValidator = recipeingredientDescUnitOfMeasure.Validators[0].(func(string) error)
+	// recipeingredientDescNotes is the schema descriptor for notes field.
+	recipeingredientDescNotes := recipeingredientFields[6].Descriptor()
+	// recipeingredient.NotesValidator is a validator for the "notes" field. It is called by the builders before save.
+	recipeingredient.NotesValidator = recipeingredientDescNotes.Validators[0].(func(string) error)
+	// recipeingredientDescDisplayOrder is the schema descriptor for display_order field.
+	recipeingredientDescDisplayOrder := recipeingredientFields[7].Descriptor()
+	// recipeingredient.DefaultDisplayOrder holds the default value on creation for the display_order field.
+	recipeingredient.DefaultDisplayOrder = recipeingredientDescDisplayOrder.Default.(int)
+	// recipeingredientDescID is the schema descriptor for id field.
+	recipeingredientDescID := recipeingredientFields[0].Descriptor()
+	// recipeingredient.DefaultID holds the default value on creation for the id field.
+	recipeingredient.DefaultID = recipeingredientDescID.Default.(func() uuid.UUID)
 	reservationFields := schema.Reservation{}.Fields()
 	_ = reservationFields
 	// reservationDescStatus is the schema descriptor for status field.
