@@ -75,7 +75,7 @@ info "Running Trivy filesystem scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 
 info "Building Docker image"
-# Build from service directory - go.mod uses remote replace directive for auth-client
+# Repo root is inventory-api; Dockerfile uses online tagged auth-client (go.mod replace)
 DOCKER_BUILDKIT=1 docker build -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" .
 success "Docker build complete"
 
@@ -161,16 +161,18 @@ if ! kubectl -n "$NAMESPACE" get secret "$ENV_SECRET_NAME" >/dev/null 2>&1; then
   fi
 fi
 
-TOKEN="${GH_PAT:-${GIT_SECRET:-${GIT_TOKEN:-}}}"
-CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
-[[ -n $TOKEN ]] && CLONE_URL="https://x-access-token:${TOKEN}@github.com/${DEVOPS_REPO}.git"
-
-# Source centralized Helm values update script
-source "${HOME}/devops-k8s/scripts/helm/update-values.sh" 2>/dev/null || {
-  warn "Centralized helm update script not available"
-}
+# Clone devops-k8s if needed for helm update
+if [[ ! -d "$DEVOPS_DIR" ]]; then
+  TOKEN="${GH_PAT:-${GIT_SECRET:-${GITHUB_TOKEN:-}}}"
+  CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
+  [[ -n $TOKEN ]] && CLONE_URL="https://x-access-token:${TOKEN}@github.com/${DEVOPS_REPO}.git"
+  git clone "$CLONE_URL" "$DEVOPS_DIR" || { warn "Unable to clone devops repo for helm values update"; DEVOPS_DIR=""; }
+fi
 
 # Update Helm values using centralized script
+source "${HOME}/devops-k8s/scripts/helm/update-values.sh" 2>/dev/null || {
+  [[ -n "${DEVOPS_DIR:-}" && -d "$DEVOPS_DIR" ]] && source "${DEVOPS_DIR}/scripts/helm/update-values.sh" 2>/dev/null
+}
 if declare -f update_helm_values >/dev/null 2>&1; then
   update_helm_values "$APP_NAME" "$GIT_COMMIT_ID" "$IMAGE_REPO"
 else

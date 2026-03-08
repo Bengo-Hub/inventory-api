@@ -1,4 +1,4 @@
-name: Build and Deploy Inventory Service
+name: Build and Deploy Inventory API
 
 on:
   push:
@@ -15,7 +15,6 @@ jobs:
         id: sync
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
-          # Map required secrets to detect empty values (gh secret list can't check values)
           _REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           _REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
           _REGISTRY_EMAIL: ${{ secrets.REGISTRY_EMAIL }}
@@ -26,11 +25,6 @@ jobs:
         run: |
           REQUIRED_SECRETS="REGISTRY_USERNAME REGISTRY_PASSWORD REGISTRY_EMAIL POSTGRES_PASSWORD REDIS_PASSWORD RABBITMQ_PASSWORD KUBE_CONFIG"
 
-          # Step 1: Delete any secrets that exist but have empty values.
-          # gh secret list reports empty-value secrets as "existing", so the
-          # name-only check passes but deployment fails with empty values.
-          # By deleting them, the existence check below will find them missing
-          # and trigger the devops-k8s sync to recreate them with real values.
           echo "Checking for empty-valued secrets..."
           EXISTING=$(gh secret list --repo "${{ github.repository }}" --json name -q '.[].name' 2>/dev/null || echo "")
           for secret in $REQUIRED_SECRETS; do
@@ -42,7 +36,6 @@ jobs:
             fi
           done
 
-          # Step 2: Re-check which secrets actually exist with values
           echo ""
           echo "Checking which deployment secrets exist..."
           EXISTING=$(gh secret list --repo "${{ github.repository }}" --json name -q '.[].name' 2>/dev/null || echo "")
@@ -108,20 +101,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           echo "Secrets were just synced in this workflow run."
-          echo "GitHub loads secret values at job start — newly created secrets"
-          echo "are not available until the next run."
-          echo ""
           echo "Re-triggering workflow so the deploy job picks up the new values..."
           gh workflow run deploy.yml --repo "${{ github.repository }}" --ref "${{ github.ref }}"
-          echo "Workflow re-triggered. This run will exit gracefully."
           exit 0
 
       - name: Abort if sync was partial
         if: needs.sync-secrets.outputs.result == 'partial'
         run: |
-          echo "Secret sync timed out — some secrets may not have been created."
-          echo "Check the devops-k8s sync-secrets workflow run for errors:"
-          echo "  https://github.com/Bengo-Hub/devops-k8s/actions"
+          echo "Secret sync timed out — check https://github.com/Bengo-Hub/devops-k8s/actions"
           exit 1
 
       - name: Checkout code
@@ -153,36 +140,19 @@ jobs:
         if: needs.sync-secrets.outputs.result != 'synced'
         run: |
           echo "Verifying deployment secrets..."
-          echo "Sync result: ${{ needs.sync-secrets.outputs.result }}"
-          echo ""
           FAIL=0
-
-          check_secret() {
-            local name="$1" min_len="$2" value="$3"
-            if [[ -z "$value" ]]; then
-              echo "❌ $name — empty"
-              FAIL=1
-            elif [[ ${#value} -lt $min_len ]]; then
-              echo "⚠️  $name — ${#value} chars (need >=$min_len)"
-              FAIL=1
-            else
-              echo "✅ $name (${#value} chars)"
-            fi
+          check_secret() { local name="$1" min_len="$2" value="$3"
+            if [[ -z "$value" ]]; then echo "❌ $name — empty"; FAIL=1
+            elif [[ ${#value} -lt $min_len ]]; then echo "⚠️  $name — ${#value} chars (need >=$min_len)"; FAIL=1
+            else echo "✅ $name (${#value} chars)"; fi
           }
-
           check_secret "REGISTRY_USERNAME"  5    "$REGISTRY_USERNAME"
-          check_secret "REGISTRY_PASSWORD"  20   "$REGISTRY_PASSWORD"
+          check_secret "REGISTRY_PASSWORD"  12   "$REGISTRY_PASSWORD"
           check_secret "KUBE_CONFIG"        1000 "$KUBE_CONFIG"
           check_secret "POSTGRES_PASSWORD"  8    "$POSTGRES_PASSWORD"
           check_secret "REDIS_PASSWORD"     8    "$REDIS_PASSWORD"
-
-          if [[ $FAIL -eq 1 ]]; then
-            echo ""
-            echo "❌ Secret verification failed — re-run workflow if secrets were just synced"
-            exit 1
-          fi
-          echo ""
-          echo "✅ All secrets verified"
+          if [[ $FAIL -eq 1 ]]; then echo ""; echo "❌ Secret verification failed"; exit 1; fi
+          echo ""; echo "✅ All secrets verified"
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
@@ -200,7 +170,6 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           DEPLOY: true
           SETUP_DATABASES: true
-          DB_TYPES: postgres,redis
           NAMESPACE: inventory
           ENV_SECRET_NAME: inventory-api-secrets
           REGISTRY_SERVER: docker.io
@@ -209,7 +178,6 @@ jobs:
           APP_NAME: inventory-api
           GIT_USER: ${{ secrets.GIT_USER || 'Inventory Bot' }}
           GIT_EMAIL: ${{ secrets.GIT_EMAIL || 'dev@bengobox.com' }}
-          # Database passwords from shared infrastructure
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
@@ -228,7 +196,6 @@ jobs:
           set -e
           IMAGE_REPO="${REGISTRY_SERVER}/${REGISTRY_NAMESPACE}/inventory-api"
           SHORT_SHA=${GITHUB_SHA::8}
-          echo "Tagging ${IMAGE_REPO}:${SHORT_SHA} as :latest"
           echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_SERVER" -u "$REGISTRY_USERNAME" --password-stdin
           docker pull "${IMAGE_REPO}:${SHORT_SHA}" || true
           docker tag "${IMAGE_REPO}:${SHORT_SHA}" "${IMAGE_REPO}:latest"
@@ -241,26 +208,14 @@ jobs:
           NS: inventory
           APP_NAME: inventory-api
         run: |
-          if [ -z "${KUBE_CONFIG_B64}" ]; then
-            echo "⏭️ Skipping ArgoCD check - no KUBE_CONFIG available"
-            exit 0
-          fi
-
-          echo "::group::ArgoCD Application Status"
+          if [ -z "${KUBE_CONFIG_B64}" ]; then exit 0; fi
           mkdir -p ~/.kube
           echo "$KUBE_CONFIG_B64" | base64 -d > ~/.kube/config
-
           if kubectl get application ${APP_NAME} -n argocd >/dev/null 2>&1; then
-            echo "✓ ArgoCD Application '${APP_NAME}' found"
             kubectl patch application ${APP_NAME} -n argocd --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}' || true
-            SYNC_STATUS=$(kubectl get application ${APP_NAME} -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
-            HEALTH_STATUS=$(kubectl get application ${APP_NAME} -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
-            echo "Current Status - Sync: ${SYNC_STATUS}, Health: ${HEALTH_STATUS}"
           else
             echo "⚠️ ArgoCD Application '${APP_NAME}' not found"
-            echo "Trigger provisioning: gh workflow run provision.yml --repo Bengo-Hub/devops-k8s"
           fi
-          echo "::endgroup::"
 
       - name: Verify API health
         if: success() && needs.sync-secrets.outputs.result != 'synced'
@@ -268,31 +223,16 @@ jobs:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG }}
           NS: inventory
         run: |
-          if [ -z "${KUBE_CONFIG_B64}" ]; then
-            echo "⏭️ Skipping health check - no KUBE_CONFIG available"
-            exit 0
-          fi
-
-          echo "::group::Health check"
+          if [ -z "${KUBE_CONFIG_B64}" ]; then exit 0; fi
           mkdir -p ~/.kube
           echo "$KUBE_CONFIG_B64" | base64 -d > ~/.kube/config
-
-          if kubectl get deployment inventory-api-app -n ${NS} >/dev/null 2>&1; then
-            kubectl rollout status deployment/inventory-api-app -n ${NS} --timeout=300s
+          if kubectl get deployment inventory-api -n ${NS} >/dev/null 2>&1; then
+            kubectl rollout status deployment/inventory-api -n ${NS} --timeout=300s
             HOSTS=$(kubectl get ingress -n ${NS} -o jsonpath='{.items[*].spec.rules[*].host}' | tr ' ' '\n' | grep -E 'inventory' || true)
             if [ -n "$HOSTS" ]; then
               for H in $HOSTS; do
                 echo "Checking https://$H/healthz ..."
-                if curl -sk --max-time 10 "https://$H/healthz" | grep -qi "ok"; then
-                  echo "✅ Health OK for $H"
-                  break
-                fi
+                curl -sk --max-time 10 "https://$H/healthz" | grep -qi "ok" && echo "✅ Health OK for $H" && break
               done
-            else
-              echo "No ingress host found; skipping external health probe"
             fi
-          else
-            echo "Deployment not found yet - ArgoCD may still be syncing"
           fi
-          echo "::endgroup::"
-
