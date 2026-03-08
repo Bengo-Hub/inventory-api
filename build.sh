@@ -75,15 +75,20 @@ info "Running Trivy filesystem scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 
 info "Building Docker image"
-# Build from workspace root to include shared/auth-client
-# For local builds: docker build -f inventory-service/Dockerfile -t inventory-service:local .
-# For CI builds: build from service directory, but Dockerfile expects workspace root context
-if [[ -d "../shared/auth-client" ]]; then
-  # We're in the service directory, build from parent (workspace root)
-  DOCKER_BUILDKIT=1 docker build -f Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" ..
+# Dockerfile expects context = repo root (COPY shared/auth-client, COPY inventory-service/...)
+# When in inventory-service/inventory-api: use context ../.. (repo root) and -f Dockerfile
+# When at repo root or CI: use context . and -f inventory-service/inventory-api/Dockerfile
+if [[ -d "../shared/auth-client" ]] || [[ -d "../../shared/auth-client" ]]; then
+  if [[ -d "../../shared/auth-client" ]]; then
+    # We're in inventory-service/inventory-api, repo root is ../..
+    DOCKER_BUILDKIT=1 docker build -f Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" ../..
+  else
+    # We're in inventory-service (parent of inventory-api)
+    DOCKER_BUILDKIT=1 docker build -f inventory-api/Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" ..
+  fi
 else
-  # We're already at workspace root or in CI
-  DOCKER_BUILDKIT=1 docker build -f inventory-service/Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" .
+  # We're at workspace root or CI: Dockerfile at inventory-service/inventory-api/Dockerfile
+  DOCKER_BUILDKIT=1 docker build -f inventory-service/inventory-api/Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" .
 fi
 success "Docker build complete"
 
