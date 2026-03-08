@@ -38,8 +38,13 @@ APIs default to `http://localhost:4102`. Configure via `INVENTORY_HTTP_PORT`.
 - `internal/modules` – bounded contexts (masterdata, stock, purchasing, reservations, compliance).
 - `docs/` – ERD, ADRs, integration contracts.
 
+## Menu–Inventory Linkage (SKU & BOM)
+
+Menu items in the **ordering service** (and cafe-website) use a **SKU** that matches an inventory item. Recipes (BOMs) are defined here: each parent item (by SKU) can have a BOM with component items and quantity per serving. When a menu item is sold, the system deducts recipe components from stock. See ordering-backend `docs/MENU-INVENTORY-LINKAGE.md` for the contract.
+
 ## Integrations
 
+- **Ordering / Cafe:** menu items reference inventory by SKU; BOM defines recipe components for stock deduction on sale.
 - **Food Delivery Backend:** inventory reservations, menu availability, substitution signals.
 - **POS Service:** stock deduction events, price book sync, drawer alerts.
 - **Logistics Service:** transfer orders, pick wave assignments, shipment confirmations.
