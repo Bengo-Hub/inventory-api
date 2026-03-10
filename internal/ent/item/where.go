@@ -131,26 +131,6 @@ func TenantIDNotIn(vs ...uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldTenantID, vs...))
 }
 
-// TenantIDGT applies the GT predicate on the "tenant_id" field.
-func TenantIDGT(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldGT(FieldTenantID, v))
-}
-
-// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
-func TenantIDGTE(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldGTE(FieldTenantID, v))
-}
-
-// TenantIDLT applies the LT predicate on the "tenant_id" field.
-func TenantIDLT(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldLT(FieldTenantID, v))
-}
-
-// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
-func TenantIDLTE(v uuid.UUID) predicate.Item {
-	return predicate.Item(sql.FieldLTE(FieldTenantID, v))
-}
-
 // SkuEQ applies the EQ predicate on the "sku" field.
 func SkuEQ(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldSku, v))
@@ -699,6 +679,29 @@ func UpdatedAtLT(v time.Time) predicate.Item {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// HasTenant applies the HasEdge predicate on the "tenant" edge.
+func HasTenant() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TenantTable, TenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
+func HasTenantWith(preds ...predicate.Tenant) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newTenantStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasBalances applies the HasEdge predicate on the "balances" edge.

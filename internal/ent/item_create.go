@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/google/uuid"
 )
 
@@ -176,6 +177,11 @@ func (_c *ItemCreate) SetNillableID(v *uuid.UUID) *ItemCreate {
 	return _c
 }
 
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (_c *ItemCreate) SetTenant(v *Tenant) *ItemCreate {
+	return _c.SetTenantID(v.ID)
+}
+
 // AddBalanceIDs adds the "balances" edge to the InventoryBalance entity by IDs.
 func (_c *ItemCreate) AddBalanceIDs(ids ...uuid.UUID) *ItemCreate {
 	_c.mutation.AddBalanceIDs(ids...)
@@ -310,6 +316,9 @@ func (_c *ItemCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Item.updated_at"`)}
 	}
+	if len(_c.mutation.TenantIDs()) == 0 {
+		return &ValidationError{Name: "tenant", err: errors.New(`ent: missing required edge "Item.tenant"`)}
+	}
 	return nil
 }
 
@@ -345,10 +354,6 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := _c.mutation.TenantID(); ok {
-		_spec.SetField(item.FieldTenantID, field.TypeUUID, value)
-		_node.TenantID = value
 	}
 	if value, ok := _c.mutation.Sku(); ok {
 		_spec.SetField(item.FieldSku, field.TypeString, value)
@@ -393,6 +398,23 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := _c.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.TenantTable,
+			Columns: []string{item.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.TenantID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.BalancesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -24,5 +24,8 @@ type RecipeIngredient func(*sql.Selector)
 // Reservation is the predicate function for reservation builders.
 type Reservation func(*sql.Selector)
 
+// Tenant is the predicate function for tenant builders.
+type Tenant func(*sql.Selector)
+
 // Warehouse is the predicate function for warehouse builders.
 type Warehouse func(*sql.Selector)

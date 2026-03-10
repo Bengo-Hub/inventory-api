@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
 )
@@ -127,6 +128,11 @@ func (_u *WarehouseUpdate) SetUpdatedAt(v time.Time) *WarehouseUpdate {
 	return _u
 }
 
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (_u *WarehouseUpdate) SetTenant(v *Tenant) *WarehouseUpdate {
+	return _u.SetTenantID(v.ID)
+}
+
 // AddBalanceIDs adds the "balances" edge to the InventoryBalance entity by IDs.
 func (_u *WarehouseUpdate) AddBalanceIDs(ids ...uuid.UUID) *WarehouseUpdate {
 	_u.mutation.AddBalanceIDs(ids...)
@@ -160,6 +166,12 @@ func (_u *WarehouseUpdate) AddReservations(v ...*Reservation) *WarehouseUpdate {
 // Mutation returns the WarehouseMutation object of the builder.
 func (_u *WarehouseUpdate) Mutation() *WarehouseMutation {
 	return _u.mutation
+}
+
+// ClearTenant clears the "tenant" edge to the Tenant entity.
+func (_u *WarehouseUpdate) ClearTenant() *WarehouseUpdate {
+	_u.mutation.ClearTenant()
+	return _u
 }
 
 // ClearBalances clears all "balances" edges to the InventoryBalance entity.
@@ -252,6 +264,9 @@ func (_u *WarehouseUpdate) check() error {
 			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Warehouse.code": %w`, err)}
 		}
 	}
+	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Warehouse.tenant"`)
+	}
 	return nil
 }
 
@@ -266,9 +281,6 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.TenantID(); ok {
-		_spec.SetField(warehouse.FieldTenantID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(warehouse.FieldName, field.TypeString, value)
@@ -290,6 +302,35 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(warehouse.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   warehouse.TenantTable,
+			Columns: []string{warehouse.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   warehouse.TenantTable,
+			Columns: []string{warehouse.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.BalancesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -497,6 +538,11 @@ func (_u *WarehouseUpdateOne) SetUpdatedAt(v time.Time) *WarehouseUpdateOne {
 	return _u
 }
 
+// SetTenant sets the "tenant" edge to the Tenant entity.
+func (_u *WarehouseUpdateOne) SetTenant(v *Tenant) *WarehouseUpdateOne {
+	return _u.SetTenantID(v.ID)
+}
+
 // AddBalanceIDs adds the "balances" edge to the InventoryBalance entity by IDs.
 func (_u *WarehouseUpdateOne) AddBalanceIDs(ids ...uuid.UUID) *WarehouseUpdateOne {
 	_u.mutation.AddBalanceIDs(ids...)
@@ -530,6 +576,12 @@ func (_u *WarehouseUpdateOne) AddReservations(v ...*Reservation) *WarehouseUpdat
 // Mutation returns the WarehouseMutation object of the builder.
 func (_u *WarehouseUpdateOne) Mutation() *WarehouseMutation {
 	return _u.mutation
+}
+
+// ClearTenant clears the "tenant" edge to the Tenant entity.
+func (_u *WarehouseUpdateOne) ClearTenant() *WarehouseUpdateOne {
+	_u.mutation.ClearTenant()
+	return _u
 }
 
 // ClearBalances clears all "balances" edges to the InventoryBalance entity.
@@ -635,6 +687,9 @@ func (_u *WarehouseUpdateOne) check() error {
 			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Warehouse.code": %w`, err)}
 		}
 	}
+	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Warehouse.tenant"`)
+	}
 	return nil
 }
 
@@ -667,9 +722,6 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
-		_spec.SetField(warehouse.FieldTenantID, field.TypeUUID, value)
-	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(warehouse.FieldName, field.TypeString, value)
 	}
@@ -690,6 +742,35 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(warehouse.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TenantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   warehouse.TenantTable,
+			Columns: []string{warehouse.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TenantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   warehouse.TenantTable,
+			Columns: []string{warehouse.TenantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tenant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.BalancesCleared() {
 		edge := &sqlgraph.EdgeSpec{

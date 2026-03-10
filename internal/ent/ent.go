@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -85,6 +86,7 @@ func checkColumn(t, c string) error {
 			recipe.Table:           recipe.ValidColumn,
 			recipeingredient.Table: recipeingredient.ValidColumn,
 			reservation.Table:      reservation.ValidColumn,
+			tenant.Table:           tenant.ValidColumn,
 			warehouse.Table:        warehouse.ValidColumn,
 		})
 	})

@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
 )
@@ -26,6 +27,7 @@ type WarehouseQuery struct {
 	order            []warehouse.OrderOption
 	inters           []Interceptor
 	predicates       []predicate.Warehouse
+	withTenant       *TenantQuery
 	withBalances     *InventoryBalanceQuery
 	withReservations *ReservationQuery
 	// intermediate query (i.e. traversal path).
@@ -62,6 +64,28 @@ func (_q *WarehouseQuery) Unique(unique bool) *WarehouseQuery {
 func (_q *WarehouseQuery) Order(o ...warehouse.OrderOption) *WarehouseQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryTenant chains the current query on the "tenant" edge.
+func (_q *WarehouseQuery) QueryTenant() *TenantQuery {
+	query := (&TenantClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(warehouse.Table, warehouse.FieldID, selector),
+			sqlgraph.To(tenant.Table, tenant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, warehouse.TenantTable, warehouse.TenantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryBalances chains the current query on the "balances" edge.
@@ -300,12 +324,24 @@ func (_q *WarehouseQuery) Clone() *WarehouseQuery {
 		order:            append([]warehouse.OrderOption{}, _q.order...),
 		inters:           append([]Interceptor{}, _q.inters...),
 		predicates:       append([]predicate.Warehouse{}, _q.predicates...),
+		withTenant:       _q.withTenant.Clone(),
 		withBalances:     _q.withBalances.Clone(),
 		withReservations: _q.withReservations.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithTenant tells the query-builder to eager-load the nodes that are connected to
+// the "tenant" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WarehouseQuery) WithTenant(opts ...func(*TenantQuery)) *WarehouseQuery {
+	query := (&TenantClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTenant = query
+	return _q
 }
 
 // WithBalances tells the query-builder to eager-load the nodes that are connected to
@@ -408,7 +444,8 @@ func (_q *WarehouseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wa
 	var (
 		nodes       = []*Warehouse{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
+			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withReservations != nil,
 		}
@@ -431,6 +468,12 @@ func (_q *WarehouseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wa
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withTenant; query != nil {
+		if err := _q.loadTenant(ctx, query, nodes, nil,
+			func(n *Warehouse, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withBalances; query != nil {
 		if err := _q.loadBalances(ctx, query, nodes,
 			func(n *Warehouse) { n.Edges.Balances = []*InventoryBalance{} },
@@ -448,6 +491,35 @@ func (_q *WarehouseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wa
 	return nodes, nil
 }
 
+func (_q *WarehouseQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Warehouse, init func(*Warehouse), assign func(*Warehouse, *Tenant)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Warehouse)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *WarehouseQuery) loadBalances(ctx context.Context, query *InventoryBalanceQuery, nodes []*Warehouse, init func(*Warehouse), assign func(*Warehouse, *InventoryBalance)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Warehouse)
@@ -536,6 +608,9 @@ func (_q *WarehouseQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != warehouse.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withTenant != nil {
+			_spec.Node.AddColumnOnce(warehouse.FieldTenantID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

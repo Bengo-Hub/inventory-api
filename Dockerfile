@@ -15,6 +15,7 @@ FROM alpine:3.20
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=builder /out/inventory /app/service
+COPY internal/ent/migrate/migrations ./internal/ent/migrate/migrations
 # TLS certificates directory (optional, can be mounted as volume)
 RUN mkdir -p ./config/certs
 USER app

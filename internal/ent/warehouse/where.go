@@ -116,26 +116,6 @@ func TenantIDNotIn(vs ...uuid.UUID) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldNotIn(FieldTenantID, vs...))
 }
 
-// TenantIDGT applies the GT predicate on the "tenant_id" field.
-func TenantIDGT(v uuid.UUID) predicate.Warehouse {
-	return predicate.Warehouse(sql.FieldGT(FieldTenantID, v))
-}
-
-// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
-func TenantIDGTE(v uuid.UUID) predicate.Warehouse {
-	return predicate.Warehouse(sql.FieldGTE(FieldTenantID, v))
-}
-
-// TenantIDLT applies the LT predicate on the "tenant_id" field.
-func TenantIDLT(v uuid.UUID) predicate.Warehouse {
-	return predicate.Warehouse(sql.FieldLT(FieldTenantID, v))
-}
-
-// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
-func TenantIDLTE(v uuid.UUID) predicate.Warehouse {
-	return predicate.Warehouse(sql.FieldLTE(FieldTenantID, v))
-}
-
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldName, v))
@@ -439,6 +419,29 @@ func UpdatedAtLT(v time.Time) predicate.Warehouse {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// HasTenant applies the HasEdge predicate on the "tenant" edge.
+func HasTenant() predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TenantTable, TenantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTenantWith applies the HasEdge predicate on the "tenant" edge with a given conditions (other predicates).
+func HasTenantWith(preds ...predicate.Tenant) predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := newTenantStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasBalances applies the HasEdge predicate on the "balances" edge.
