@@ -3,13 +3,13 @@ module github.com/bengobox/inventory-service
 go 1.24.0
 
 // Use online tagged auth-client (same as ordering-backend)
-replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.3.1
+replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.4.0
 
 require (
 	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9
 	entgo.io/ent v0.14.5
-	github.com/Bengo-Hub/httpware v0.2.0
-	github.com/Bengo-Hub/shared-auth-client v0.3.1
+	github.com/Bengo-Hub/httpware v0.3.0
+	github.com/Bengo-Hub/shared-auth-client v0.4.0
 	github.com/Bengo-Hub/shared-events v0.2.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.1
@@ -55,7 +55,6 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.11.2 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
