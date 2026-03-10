@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -29,7 +30,6 @@ func New(
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(httpware.RequestID)
-	r.Use(httpware.Tenant)
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(middleware.Timeout(30 * time.Second))
@@ -77,7 +77,19 @@ func New(
 			})
 		}
 
-		api.Route("/{tenantID}", func(tenant chi.Router) {
+		api.Route("/{tenant}", func(tenant chi.Router) {
+			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
+				ClaimsExtractor: func(ctx context.Context) (tenantID, tenantSlug string, isPlatformOwner bool, ok bool) {
+					claims, found := authclient.ClaimsFromContext(ctx)
+					if !found {
+						return "", "", false, false
+					}
+					return claims.TenantID, claims.GetTenantSlug(), claims.IsPlatformOwner, true
+				},
+				URLParamFunc: chi.URLParam,
+				Required:     true,
+			}))
+
 			userHandler.RegisterRoutes(tenant)
 
 			if inventoryHandler != nil {
@@ -92,7 +104,18 @@ func New(
 			v1.Use(authMiddleware.RequireAuth)
 		}
 
-		v1.Route("/{tenantID}", func(tenant chi.Router) {
+		v1.Route("/{tenant}", func(tenant chi.Router) {
+			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
+				ClaimsExtractor: func(ctx context.Context) (tenantID, tenantSlug string, isPlatformOwner bool, ok bool) {
+					claims, found := authclient.ClaimsFromContext(ctx)
+					if !found {
+						return "", "", false, false
+					}
+					return claims.TenantID, claims.GetTenantSlug(), claims.IsPlatformOwner, true
+				},
+				URLParamFunc: chi.URLParam,
+				Required:     true,
+			}))
 			if inventoryHandler != nil {
 				inventoryHandler.RegisterRoutes(tenant)
 			}
