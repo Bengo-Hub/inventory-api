@@ -8,7 +8,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const namespace = "INVENTORY"
+const namespace = ""
 
 // Config aggregates runtime configuration for the inventory service.
 type Config struct {
