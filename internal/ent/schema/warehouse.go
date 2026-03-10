@@ -46,6 +46,11 @@ func (Warehouse) Fields() []ent.Field {
 // Edges of the Warehouse.
 func (Warehouse) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("tenant", Tenant.Type).
+			Ref("warehouses").
+			Unique().
+			Required().
+			Field("tenant_id"),
 		edge.To("balances", InventoryBalance.Type),
 		edge.To("reservations", Reservation.Type),
 	}

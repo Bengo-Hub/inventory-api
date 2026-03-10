@@ -12,6 +12,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
 )
@@ -238,6 +239,46 @@ func init() {
 	reservationDescID := reservationFields[0].Descriptor()
 	// reservation.DefaultID holds the default value on creation for the id field.
 	reservation.DefaultID = reservationDescID.Default.(func() uuid.UUID)
+	tenantFields := schema.Tenant{}.Fields()
+	_ = tenantFields
+	// tenantDescName is the schema descriptor for name field.
+	tenantDescName := tenantFields[1].Descriptor()
+	// tenant.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tenant.NameValidator = tenantDescName.Validators[0].(func(string) error)
+	// tenantDescSlug is the schema descriptor for slug field.
+	tenantDescSlug := tenantFields[2].Descriptor()
+	// tenant.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	tenant.SlugValidator = tenantDescSlug.Validators[0].(func(string) error)
+	// tenantDescStatus is the schema descriptor for status field.
+	tenantDescStatus := tenantFields[3].Descriptor()
+	// tenant.DefaultStatus holds the default value on creation for the status field.
+	tenant.DefaultStatus = tenantDescStatus.Default.(string)
+	// tenantDescCountry is the schema descriptor for country field.
+	tenantDescCountry := tenantFields[8].Descriptor()
+	// tenant.DefaultCountry holds the default value on creation for the country field.
+	tenant.DefaultCountry = tenantDescCountry.Default.(string)
+	// tenantDescTimezone is the schema descriptor for timezone field.
+	tenantDescTimezone := tenantFields[9].Descriptor()
+	// tenant.DefaultTimezone holds the default value on creation for the timezone field.
+	tenant.DefaultTimezone = tenantDescTimezone.Default.(string)
+	// tenantDescMetadata is the schema descriptor for metadata field.
+	tenantDescMetadata := tenantFields[18].Descriptor()
+	// tenant.DefaultMetadata holds the default value on creation for the metadata field.
+	tenant.DefaultMetadata = tenantDescMetadata.Default.(map[string]interface{})
+	// tenantDescCreatedAt is the schema descriptor for created_at field.
+	tenantDescCreatedAt := tenantFields[19].Descriptor()
+	// tenant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tenant.DefaultCreatedAt = tenantDescCreatedAt.Default.(func() time.Time)
+	// tenantDescUpdatedAt is the schema descriptor for updated_at field.
+	tenantDescUpdatedAt := tenantFields[20].Descriptor()
+	// tenant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tenant.DefaultUpdatedAt = tenantDescUpdatedAt.Default.(func() time.Time)
+	// tenant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tenant.UpdateDefaultUpdatedAt = tenantDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// tenantDescID is the schema descriptor for id field.
+	tenantDescID := tenantFields[0].Descriptor()
+	// tenant.DefaultID holds the default value on creation for the id field.
+	tenant.DefaultID = tenantDescID.Default.(func() uuid.UUID)
 	warehouseFields := schema.Warehouse{}.Fields()
 	_ = warehouseFields
 	// warehouseDescName is the schema descriptor for name field.

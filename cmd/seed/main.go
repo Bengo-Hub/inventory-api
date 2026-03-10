@@ -17,7 +17,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
+
 
 func main() {
 	_ = godotenv.Load()
@@ -44,10 +46,14 @@ func main() {
 	}
 	log.Println("schema migrated")
 
-	tenantID := uuid.MustParse("00000000-0000-0000-0000-000000000001") // urban-loft default tenant
-	if envTenant := os.Getenv("SEED_TENANT_ID"); envTenant != "" {
-		tenantID = uuid.MustParse(envTenant)
+	// Resolve tenant UUID and upsert tenant row.
+	syncer := tenant.NewSyncer(client)
+	tenantID, resolveErr := syncer.SyncTenant(ctx, "urban-loft")
+	if resolveErr != nil {
+		log.Fatalf("[FATAL] Could not resolve urban-loft UUID from auth-api: %v\nRun auth-api seed before inventory-api seed.", resolveErr)
 	}
+
+	log.Printf("seeding with tenant_id = %s (urban-loft)", tenantID)
 
 	if err := seedWarehouse(ctx, client, tenantID); err != nil {
 		log.Fatalf("seed warehouse: %v", err)

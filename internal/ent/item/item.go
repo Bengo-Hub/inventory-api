@@ -39,12 +39,21 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// EdgeTenant holds the string denoting the tenant edge name in mutations.
+	EdgeTenant = "tenant"
 	// EdgeBalances holds the string denoting the balances edge name in mutations.
 	EdgeBalances = "balances"
 	// EdgeRecipeIngredients holds the string denoting the recipe_ingredients edge name in mutations.
 	EdgeRecipeIngredients = "recipe_ingredients"
 	// Table holds the table name of the item in the database.
 	Table = "items"
+	// TenantTable is the table that holds the tenant relation/edge.
+	TenantTable = "items"
+	// TenantInverseTable is the table name for the Tenant entity.
+	// It exists in this package in order to avoid circular dependency with the "tenant" package.
+	TenantInverseTable = "tenants"
+	// TenantColumn is the table column denoting the tenant relation/edge.
+	TenantColumn = "tenant_id"
 	// BalancesTable is the table that holds the balances relation/edge.
 	BalancesTable = "inventory_balances"
 	// BalancesInverseTable is the table name for the InventoryBalance entity.
@@ -174,6 +183,13 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByTenantField orders the results by tenant field.
+func ByTenantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTenantStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByBalancesCount orders the results by balances count.
 func ByBalancesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -200,6 +216,13 @@ func ByRecipeIngredients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newRecipeIngredientsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newTenantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TenantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, TenantTable, TenantColumn),
+	)
 }
 func newBalancesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

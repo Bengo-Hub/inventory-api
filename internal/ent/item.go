@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/google/uuid"
 )
 
@@ -51,19 +52,32 @@ type Item struct {
 
 // ItemEdges holds the relations/edges for other nodes in the graph.
 type ItemEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// Balances holds the value of the balances edge.
 	Balances []*InventoryBalance `json:"balances,omitempty"`
 	// RecipeIngredients holds the value of the recipe_ingredients edge.
 	RecipeIngredients []*RecipeIngredient `json:"recipe_ingredients,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // BalancesOrErr returns the Balances value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) BalancesOrErr() ([]*InventoryBalance, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Balances, nil
 	}
 	return nil, &NotLoadedError{edge: "balances"}
@@ -72,7 +86,7 @@ func (e ItemEdges) BalancesOrErr() ([]*InventoryBalance, error) {
 // RecipeIngredientsOrErr returns the RecipeIngredients value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) RecipeIngredientsOrErr() ([]*RecipeIngredient, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.RecipeIngredients, nil
 	}
 	return nil, &NotLoadedError{edge: "recipe_ingredients"}
@@ -201,6 +215,11 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Item) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Item entity.
+func (_m *Item) QueryTenant() *TenantQuery {
+	return NewItemClient(_m.config).QueryTenant(_m)
 }
 
 // QueryBalances queries the "balances" edge of the Item entity.

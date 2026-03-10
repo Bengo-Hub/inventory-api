@@ -86,7 +86,6 @@ var (
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "sku", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -98,27 +97,36 @@ var (
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tenant_id", Type: field.TypeUUID},
 	}
 	// ItemsTable holds the schema information for the "items" table.
 	ItemsTable = &schema.Table{
 		Name:       "items",
 		Columns:    ItemsColumns,
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "items_tenants_items",
+				Columns:    []*schema.Column{ItemsColumns[12]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[1], ItemsColumns[2]},
+				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[1], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[4]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[1], ItemsColumns[8]},
+				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[7]},
 			},
 		},
 	}
@@ -246,10 +254,51 @@ var (
 			},
 		},
 	}
+	// TenantsColumns holds the columns for the "tenants" table.
+	TenantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "status", Type: field.TypeString, Default: "active"},
+		{Name: "contact_email", Type: field.TypeString, Nullable: true},
+		{Name: "contact_phone", Type: field.TypeString, Nullable: true},
+		{Name: "logo_url", Type: field.TypeString, Nullable: true},
+		{Name: "website", Type: field.TypeString, Nullable: true},
+		{Name: "country", Type: field.TypeString, Nullable: true, Default: "KE"},
+		{Name: "timezone", Type: field.TypeString, Nullable: true, Default: "Africa/Nairobi"},
+		{Name: "brand_colors", Type: field.TypeJSON, Nullable: true},
+		{Name: "org_size", Type: field.TypeString, Nullable: true},
+		{Name: "use_case", Type: field.TypeString, Nullable: true},
+		{Name: "subscription_plan", Type: field.TypeString, Nullable: true},
+		{Name: "subscription_status", Type: field.TypeString, Nullable: true},
+		{Name: "subscription_expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "subscription_id", Type: field.TypeString, Nullable: true},
+		{Name: "tier_limits", Type: field.TypeJSON, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TenantsTable holds the schema information for the "tenants" table.
+	TenantsTable = &schema.Table{
+		Name:       "tenants",
+		Columns:    TenantsColumns,
+		PrimaryKey: []*schema.Column{TenantsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tenant_slug",
+				Unique:  true,
+				Columns: []*schema.Column{TenantsColumns[2]},
+			},
+			{
+				Name:    "tenant_status",
+				Unique:  false,
+				Columns: []*schema.Column{TenantsColumns[3]},
+			},
+		},
+	}
 	// WarehousesColumns holds the columns for the "warehouses" table.
 	WarehousesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
 		{Name: "code", Type: field.TypeString},
 		{Name: "address", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -257,27 +306,36 @@ var (
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tenant_id", Type: field.TypeUUID},
 	}
 	// WarehousesTable holds the schema information for the "warehouses" table.
 	WarehousesTable = &schema.Table{
 		Name:       "warehouses",
 		Columns:    WarehousesColumns,
 		PrimaryKey: []*schema.Column{WarehousesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "warehouses_tenants_warehouses",
+				Columns:    []*schema.Column{WarehousesColumns[8]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "warehouse_tenant_id_code",
 				Unique:  true,
-				Columns: []*schema.Column{WarehousesColumns[1], WarehousesColumns[3]},
+				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[2]},
 			},
 			{
 				Name:    "warehouse_tenant_id_is_default",
 				Unique:  false,
-				Columns: []*schema.Column{WarehousesColumns[1], WarehousesColumns[5]},
+				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[4]},
 			},
 			{
 				Name:    "warehouse_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{WarehousesColumns[1], WarehousesColumns[6]},
+				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[5]},
 			},
 		},
 	}
@@ -289,6 +347,7 @@ var (
 		RecipesTable,
 		RecipeIngredientsTable,
 		ReservationsTable,
+		TenantsTable,
 		WarehousesTable,
 	}
 )
@@ -296,7 +355,9 @@ var (
 func init() {
 	InventoryBalancesTable.ForeignKeys[0].RefTable = ItemsTable
 	InventoryBalancesTable.ForeignKeys[1].RefTable = WarehousesTable
+	ItemsTable.ForeignKeys[0].RefTable = TenantsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
+	WarehousesTable.ForeignKeys[0].RefTable = TenantsTable
 }

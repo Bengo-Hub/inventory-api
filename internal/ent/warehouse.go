@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
 )
@@ -42,19 +43,32 @@ type Warehouse struct {
 
 // WarehouseEdges holds the relations/edges for other nodes in the graph.
 type WarehouseEdges struct {
+	// Tenant holds the value of the tenant edge.
+	Tenant *Tenant `json:"tenant,omitempty"`
 	// Balances holds the value of the balances edge.
 	Balances []*InventoryBalance `json:"balances,omitempty"`
 	// Reservations holds the value of the reservations edge.
 	Reservations []*Reservation `json:"reservations,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
+}
+
+// TenantOrErr returns the Tenant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e WarehouseEdges) TenantOrErr() (*Tenant, error) {
+	if e.Tenant != nil {
+		return e.Tenant, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tenant.Label}
+	}
+	return nil, &NotLoadedError{edge: "tenant"}
 }
 
 // BalancesOrErr returns the Balances value or an error if the edge
 // was not loaded in eager-loading.
 func (e WarehouseEdges) BalancesOrErr() ([]*InventoryBalance, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Balances, nil
 	}
 	return nil, &NotLoadedError{edge: "balances"}
@@ -63,7 +77,7 @@ func (e WarehouseEdges) BalancesOrErr() ([]*InventoryBalance, error) {
 // ReservationsOrErr returns the Reservations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WarehouseEdges) ReservationsOrErr() ([]*Reservation, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Reservations, nil
 	}
 	return nil, &NotLoadedError{edge: "reservations"}
@@ -162,6 +176,11 @@ func (_m *Warehouse) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Warehouse) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryTenant queries the "tenant" edge of the Warehouse entity.
+func (_m *Warehouse) QueryTenant() *TenantQuery {
+	return NewWarehouseClient(_m.config).QueryTenant(_m)
 }
 
 // QueryBalances queries the "balances" edge of the Warehouse entity.

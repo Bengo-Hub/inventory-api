@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/schema"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nats-io/nats.go"
@@ -20,11 +21,13 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/config"
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/ent/migrate"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/outbox"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
+	"github.com/bengobox/inventory-service/internal/modules/tenant"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
@@ -102,11 +105,13 @@ func New(ctx context.Context) (*App, error) {
 	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
 	ormClient := ent.NewClient(ent.Driver(drv))
 
-	// Run auto-migrations on startup
-	if err := ormClient.Schema.Create(ctx); err != nil {
+	// Run versioned migrations on startup
+	if err := ormClient.Schema.Create(ctx, 
+		schema.WithDir(migrate.Dir),
+	); err != nil {
 		return nil, fmt.Errorf("ent schema create: %w", err)
 	}
-	log.Info("ent migrations completed")
+	log.Info("versioned migrations completed")
 
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log)
@@ -135,7 +140,9 @@ func New(ctx context.Context) (*App, error) {
 		authMiddleware = authclient.NewAuthMiddleware(validator)
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, authMiddleware, cfg.HTTP.AllowedOrigins)
+	tenantSyncer := tenant.NewSyncer(ormClient)
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, authMiddleware, tenantSyncer, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

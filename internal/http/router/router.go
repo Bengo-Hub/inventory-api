@@ -9,9 +9,10 @@ import (
 	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	httpware "github.com/Bengo-Hub/httpware"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
+	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
 
 func New(
@@ -20,6 +21,7 @@ func New(
 	userHandler *handlers.UserHandler,
 	inventoryHandler *handlers.InventoryHandler,
 	authMiddleware *authclient.AuthMiddleware,
+	tenantSyncer *tenant.Syncer,
 	allowedOrigins []string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -54,6 +56,25 @@ func New(
 
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
+		}
+
+		if tenantSyncer != nil {
+			api.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					claims, ok := authclient.ClaimsFromContext(r.Context())
+					if ok && claims.Subject != "" && claims.TenantID != "" {
+						slug := claims.GetTenantSlug()
+						if slug != "" {
+							// Trigger JIT tenant provisioning
+							_, syncErr := tenantSyncer.SyncTenant(r.Context(), slug)
+							if syncErr != nil {
+								log.Warn("tenant sync failed during JIT user provisioning", zap.Error(syncErr))
+							}
+						}
+					}
+					next.ServeHTTP(w, r)
+				})
+			})
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {
