@@ -52,8 +52,6 @@ func New(
 	})
 
 	r.Route("/api/v1", func(api chi.Router) {
-		api.Get("/openapi.json", handlers.OpenAPIJSON)
-
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
 		}
@@ -76,6 +74,8 @@ func New(
 				})
 			})
 		}
+
+		api.Get("/openapi.json", handlers.OpenAPIJSON)
 
 		api.Route("/{tenant}", func(tenant chi.Router) {
 			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
