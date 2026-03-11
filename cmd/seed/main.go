@@ -20,11 +20,14 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
 
-
 func main() {
 	_ = godotenv.Load()
 
-	dsn := os.Getenv("INVENTORY_POSTGRES_URL")
+	// Prefer standard POSTGRES_URL (same as main app and values), then INVENTORY_POSTGRES_URL, then default
+	dsn := os.Getenv("POSTGRES_URL")
+	if dsn == "" {
+		dsn = os.Getenv("INVENTORY_POSTGRES_URL")
+	}
 	if dsn == "" {
 		dsn = "postgres://postgres:postgres@localhost:5432/inventory?sslmode=disable"
 	}
