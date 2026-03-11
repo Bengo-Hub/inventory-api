@@ -142,13 +142,13 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 
 ## Infrastructure
 
-| Component | Config Env Prefix | Default |
-|-----------|-------------------|---------|
-| PostgreSQL | `INVENTORY_POSTGRES_*` | `localhost:5432/inventory` |
-| Redis | `INVENTORY_REDIS_*` | `localhost:6380` |
-| NATS JetStream | `INVENTORY_NATS_*` | `nats://localhost:4222` |
-| Auth/JWKS | `INVENTORY_AUTH_*` | `sso.codevertexitsolutions.com` |
-| HTTP | `INVENTORY_HTTP_*` | `0.0.0.0:4003` |
+| Component | Config Env (uniform keys) | Default |
+|-----------|----------------------------|---------|
+| PostgreSQL | `POSTGRES_URL`, `POSTGRES_MAX_OPEN_CONNS`, etc. | `localhost:5432/inventory` |
+| Redis | `REDIS_ADDR`, `REDIS_PASSWORD`, etc. | `localhost:6380` |
+| NATS JetStream | `NATS_URL`, `NATS_STREAM`, etc. | `nats://localhost:4222` |
+| Auth/JWKS | `AUTH_SERVICE_URL`, `AUTH_JWKS_URL`, etc. | `sso.codevertexitsolutions.com` |
+| HTTP | `HTTP_HOST`, `HTTP_PORT`, etc. | `0.0.0.0:4003` |
 
 ---
 
