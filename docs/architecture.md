@@ -146,7 +146,7 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 |-----------|----------------------------|---------|
 | PostgreSQL | `POSTGRES_URL`, `POSTGRES_MAX_OPEN_CONNS`, etc. | `localhost:5432/inventory` |
 | Redis | `REDIS_ADDR`, `REDIS_PASSWORD`, etc. | `localhost:6380` |
-| NATS JetStream | `NATS_URL`, `NATS_STREAM`, etc. | `nats://localhost:4222` |
+| NATS JetStream | `EVENTS_NATS_URL`, `NATS_STREAM`, etc. | `nats://localhost:4222` |
 | Auth/JWKS | `AUTH_SERVICE_URL`, `AUTH_JWKS_URL`, etc. | `sso.codevertexitsolutions.com` |
 | HTTP | `HTTP_HOST`, `HTTP_PORT`, etc. | `0.0.0.0:4003` |
 
