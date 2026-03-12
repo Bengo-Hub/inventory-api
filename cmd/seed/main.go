@@ -48,6 +48,10 @@ func main() {
 
 	// Resolve tenant UUID and upsert tenant row.
 	syncer := tenant.NewSyncer(client)
+	// Sync platform org (codevertex) so tenant row exists; platform admin has full access via JWT (tenant_slug=codevertex + superuser).
+	if _, err := syncer.SyncTenant(ctx, "codevertex"); err != nil {
+		log.Printf("[SKIP] sync codevertex (platform org): %v", err)
+	}
 	tenantID, resolveErr := syncer.SyncTenant(ctx, "urban-loft")
 	if resolveErr != nil {
 		log.Fatalf("[FATAL] Could not resolve urban-loft UUID from auth-api: %v\nRun auth-api seed before inventory-api seed.", resolveErr)
