@@ -24,22 +24,30 @@ import (
 // ─── Mock Services ──────────────────────────────────────────────────────
 
 type mockItemsSvc struct {
-	getStockFn    func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
-	bulkAvailFn   func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	GetStockAvailabilityFn func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
+	BulkAvailabilityFn     func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	GetInventorySummaryFn  func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 }
 
 func (m *mockItemsSvc) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error) {
-	if m.getStockFn != nil {
-		return m.getStockFn(ctx, tenantID, sku)
+	if m.GetStockAvailabilityFn != nil {
+		return m.GetStockAvailabilityFn(ctx, tenantID, sku)
 	}
 	return nil, fmt.Errorf("not implemented")
 }
 
 func (m *mockItemsSvc) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error) {
-	if m.bulkAvailFn != nil {
-		return m.bulkAvailFn(ctx, tenantID, skus)
+	if m.BulkAvailabilityFn != nil {
+		return m.BulkAvailabilityFn(ctx, tenantID, skus)
 	}
 	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error) {
+	if m.GetInventorySummaryFn != nil {
+		return m.GetInventorySummaryFn(ctx, tenantID)
+	}
+	return nil, nil
 }
 
 type mockStockSvc struct {

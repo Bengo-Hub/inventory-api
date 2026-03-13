@@ -10,7 +10,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/modules/items"
+	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -18,6 +20,7 @@ import (
 type ItemsServicer interface {
 	GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.
@@ -30,19 +33,31 @@ type StockServicer interface {
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 }
 
+// RecipesServicer defines the contract for recipe management.
+type RecipesServicer interface {
+	ListRecipes(ctx context.Context, tenantID uuid.UUID) ([]recipes.RecipeDTO, error)
+	GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*recipes.RecipeDTO, error)
+	CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
+	UpdateRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
+	DeleteRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID) error
+	GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*recipes.RecipeDTO, error)
+}
+
 // InventoryHandler handles all inventory-related HTTP endpoints.
 type InventoryHandler struct {
 	log      *zap.Logger
 	itemsSvc ItemsServicer
 	stockSvc StockServicer
+	recipeSvc RecipesServicer
 }
 
 // NewInventoryHandler creates a new inventory handler.
-func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer) *InventoryHandler {
+func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer, recipeSvc RecipesServicer) *InventoryHandler {
 	return &InventoryHandler{
 		log:      log.Named("inventory.handler"),
 		itemsSvc: itemsSvc,
 		stockSvc: stockSvc,
+		recipeSvc: recipeSvc,
 	}
 }
 
@@ -90,6 +105,16 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Consumption
 		inv.Post("/consumption", h.RecordConsumption)
+
+		// Summary
+		inv.Get("/summary", h.GetInventorySummary)
+
+		// Recipes
+		inv.Get("/recipes", h.ListRecipes)
+		inv.Post("/recipes", h.CreateRecipe)
+		inv.Get("/recipes/{recipeID}", h.GetRecipe)
+		inv.Put("/recipes/{recipeID}", h.UpdateRecipe)
+		inv.Delete("/recipes/{recipeID}", h.DeleteRecipe)
 	})
 }
 
@@ -324,4 +349,156 @@ func (h *InventoryHandler) RecordConsumption(w http.ResponseWriter, r *http.Requ
 	}
 
 	writeJSON(w, http.StatusCreated, result)
+}
+
+// ListRecipes handles GET /v1/{tenant}/inventory/recipes
+func (h *InventoryHandler) ListRecipes(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	sku := r.URL.Query().Get("sku")
+	if sku != "" {
+		recipe, err := h.recipeSvc.GetRecipeBySKU(r.Context(), tenantID, sku)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				writeJSON(w, http.StatusOK, []recipes.RecipeDTO{})
+				return
+			}
+			h.log.Error("get recipe by sku failed", zap.Error(err), zap.String("sku", sku))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to fetch recipe")
+			return
+		}
+		writeJSON(w, http.StatusOK, []recipes.RecipeDTO{*recipe})
+		return
+	}
+
+	results, err := h.recipeSvc.ListRecipes(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("list recipes failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list recipes")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, results)
+}
+
+// GetRecipe handles GET /v1/{tenant}/inventory/recipes/{recipeID}
+func (h *InventoryHandler) GetRecipe(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "recipeID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid recipe ID")
+		return
+	}
+
+	result, err := h.recipeSvc.GetRecipe(r.Context(), tenantID, recipeID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// CreateRecipe handles POST /v1/{tenant}/inventory/recipes
+func (h *InventoryHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req recipes.RecipeDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	result, err := h.recipeSvc.CreateRecipe(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("create recipe failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, result)
+}
+
+// UpdateRecipe handles PUT /v1/{tenant}/inventory/recipes/{recipeID}
+func (h *InventoryHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "recipeID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid recipe ID")
+		return
+	}
+
+	var req recipes.RecipeDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	result, err := h.recipeSvc.UpdateRecipe(r.Context(), tenantID, recipeID, req)
+	if err != nil {
+		h.log.Error("update recipe failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// DeleteRecipe handles DELETE /v1/{tenant}/inventory/recipes/{recipeID}
+func (h *InventoryHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	recipeID, err := uuid.Parse(chi.URLParam(r, "recipeID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid recipe ID")
+		return
+	}
+
+	if err := h.recipeSvc.DeleteRecipe(r.Context(), tenantID, recipeID); err != nil {
+		h.log.Error("delete recipe failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// GetInventorySummary handles GET /v1/{tenant}/inventory/summary
+func (h *InventoryHandler) GetInventorySummary(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	summary, err := h.itemsSvc.GetInventorySummary(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("get inventory summary failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to fetch inventory summary")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, summary)
 }
