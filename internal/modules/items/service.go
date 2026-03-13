@@ -143,3 +143,47 @@ func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus
 
 	return result, nil
 }
+// InventorySummary represents high-level stock metrics.
+type InventorySummary struct {
+	TotalItems       int `json:"total_items"`
+	LowStockItems    int `json:"low_stock_items"`
+	OutOfStockItems  int `json:"out_of_stock_items"`
+}
+
+// GetInventorySummary returns aggregated stock metrics for a tenant.
+func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*InventorySummary, error) {
+	total, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.IsActive(true)).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: count total items: %w", err)
+	}
+
+	// Assuming 10 is the default low stock threshold if not specified on item
+	lowStock, err := s.client.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.AvailableLTE(10), // Simplification: threshold = 10
+			inventorybalance.AvailableGT(0),
+		).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: count low stock: %w", err)
+	}
+
+	outOfStock, err := s.client.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.AvailableLTE(0),
+		).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: count out of stock: %w", err)
+	}
+
+	return &InventorySummary{
+		TotalItems:      total,
+		LowStockItems:   lowStock,
+		OutOfStockItems: outOfStock,
+	}, nil
+}
