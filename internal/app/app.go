@@ -29,6 +29,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
@@ -118,7 +119,8 @@ func New(ctx context.Context) (*App, error) {
 	itemsSvc := items.NewService(ormClient, log)
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)
-	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc)
+	unitSvc := units.NewService(ormClient, log)
+	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware

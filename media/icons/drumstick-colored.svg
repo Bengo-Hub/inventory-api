@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_chicken" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9a3412;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_chicken)"/>
+  <g transform="translate(200,200) rotate(-30)">
+    <path d="M-50,0 Q-50,-70 50,-70 Q100,-70 120,0 Q100,70 50,70 Q-50,70 -50,0 Z" fill="#d97706"/>
+    <rect x="-100" y="-15" width="80" height="30" rx="15" fill="#fed7aa"/>
+    <circle cx="-100" cy="0" r="25" fill="#fed7aa"/>
+  </g>
+</svg>

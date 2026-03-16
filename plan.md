@@ -68,7 +68,7 @@
 - `item_suppliers` - Supplier sourcing data
 
 **Integration Points**:
-- **Cafe Backend**: Menu items reference inventory SKUs (no duplication)
+- **Ordering-Backend**: Menu items reference inventory SKUs (no duplication)
 - **POS Service**: Catalog sync (read-only cache)
 
 ### 2. Warehouse & Location Management
@@ -105,7 +105,7 @@
 - `serial_numbers` - Serialized asset tracking
 
 **Integration Points**:
-- **Cafe Backend**: Stock availability queries
+- **Ordering-Backend**: Stock availability queries
 - **POS Service**: Real-time stock checks
 - **Logistics Service**: Zone/branch availability queries
 
@@ -144,7 +144,7 @@
 - `reservation_events` - Reservation lifecycle
 
 **Integration Points**:
-- **Cafe Backend**: Order consumption events
+- **Ordering-Backend**: Order consumption events
 - **POS Service**: Sales consumption events
 - **Logistics Service**: Transfer task creation
 
@@ -181,7 +181,7 @@
 - `reservation_events` - Reservation audit
 
 **Integration Points**:
-- **Cafe Backend**: Order reservations
+- **Ordering-Backend**: Order reservations
 - **POS Service**: Sales reservations
 
 ### 8. Compliance & Audit

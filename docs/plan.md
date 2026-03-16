@@ -29,11 +29,11 @@ The ordering-backend's inventory client (`internal/platform/inventory/client.go`
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | Recipe/BOM mapping: seed recipes linking menu-item SKUs to raw ingredient items | Backend | Not started |
+| 1 | Recipe/BOM mapping: seed recipes linking menu-item SKUs to raw ingredient items | Backend | **Done** |
 | 2 | BOM-aware stock check: availability endpoint resolves recipe ingredients, not just finished-good SKU | Backend | Not started |
-| 3 | Seed data alignment: ensure all 39 SKUs match ordering-backend menu items exactly (Busia outlet) | Backend | **Done** (ordering-backend seed has 39 items; warehouse is Busia Kitchen) |
+| 3 | Seed data alignment: ensure all 39 SKUs match ordering-backend menu items exactly (Busia outlet) | Backend | **Done** |
 | 4 | Reservation-to-consumption flow: ordering-backend emits `order.completed` -> inventory consumes reservation | Backend | Not started |
-| 5 | Atlas migration transition | Backend | **Skipped for MVP** (entrypoint.sh auto-migrate remains) |
+| 5 | Atlas migration transition | Backend | **Done** (initial schema and shared_units generated) |
 | 6 | Integration test: full reservation -> consume -> balance check round-trip | Backend | Not started |
 | 7 | NATS event publishing: emit `inventory.stock.updated` and `inventory.reservation.confirmed` on mutations | Backend | Not started |
 

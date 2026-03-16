@@ -14,8 +14,12 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -59,44 +63,44 @@ func (_c *ItemCreate) SetNillableDescription(v *string) *ItemCreate {
 	return _c
 }
 
-// SetCategory sets the "category" field.
-func (_c *ItemCreate) SetCategory(v string) *ItemCreate {
-	_c.mutation.SetCategory(v)
+// SetCategoryID sets the "category_id" field.
+func (_c *ItemCreate) SetCategoryID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetCategoryID(v)
 	return _c
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableCategory(v *string) *ItemCreate {
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableCategoryID(v *uuid.UUID) *ItemCreate {
 	if v != nil {
-		_c.SetCategory(*v)
+		_c.SetCategoryID(*v)
 	}
 	return _c
 }
 
-// SetPrice sets the "price" field.
-func (_c *ItemCreate) SetPrice(v float64) *ItemCreate {
-	_c.mutation.SetPrice(v)
+// SetUnitID sets the "unit_id" field.
+func (_c *ItemCreate) SetUnitID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetUnitID(v)
 	return _c
 }
 
-// SetNillablePrice sets the "price" field if the given value is not nil.
-func (_c *ItemCreate) SetNillablePrice(v *float64) *ItemCreate {
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableUnitID(v *uuid.UUID) *ItemCreate {
 	if v != nil {
-		_c.SetPrice(*v)
+		_c.SetUnitID(*v)
 	}
 	return _c
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (_c *ItemCreate) SetUnitOfMeasure(v string) *ItemCreate {
-	_c.mutation.SetUnitOfMeasure(v)
+// SetType sets the "type" field.
+func (_c *ItemCreate) SetType(v item.Type) *ItemCreate {
+	_c.mutation.SetType(v)
 	return _c
 }
 
-// SetNillableUnitOfMeasure sets the "unit_of_measure" field if the given value is not nil.
-func (_c *ItemCreate) SetNillableUnitOfMeasure(v *string) *ItemCreate {
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableType(v *item.Type) *ItemCreate {
 	if v != nil {
-		_c.SetUnitOfMeasure(*v)
+		_c.SetType(*v)
 	}
 	return _c
 }
@@ -212,6 +216,74 @@ func (_c *ItemCreate) AddRecipeIngredients(v ...*RecipeIngredient) *ItemCreate {
 	return _c.AddRecipeIngredientIDs(ids...)
 }
 
+// SetUnitsID sets the "units" edge to the Unit entity by ID.
+func (_c *ItemCreate) SetUnitsID(id uuid.UUID) *ItemCreate {
+	_c.mutation.SetUnitsID(id)
+	return _c
+}
+
+// SetNillableUnitsID sets the "units" edge to the Unit entity by ID if the given value is not nil.
+func (_c *ItemCreate) SetNillableUnitsID(id *uuid.UUID) *ItemCreate {
+	if id != nil {
+		_c = _c.SetUnitsID(*id)
+	}
+	return _c
+}
+
+// SetUnits sets the "units" edge to the Unit entity.
+func (_c *ItemCreate) SetUnits(v *Unit) *ItemCreate {
+	return _c.SetUnitsID(v.ID)
+}
+
+// AddVariantIDs adds the "variants" edge to the ItemVariant entity by IDs.
+func (_c *ItemCreate) AddVariantIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddVariantIDs(ids...)
+	return _c
+}
+
+// AddVariants adds the "variants" edges to the ItemVariant entity.
+func (_c *ItemCreate) AddVariants(v ...*ItemVariant) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddVariantIDs(ids...)
+}
+
+// AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
+func (_c *ItemCreate) AddTranslationIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddTranslationIDs(ids...)
+	return _c
+}
+
+// AddTranslations adds the "translations" edges to the ItemTranslation entity.
+func (_c *ItemCreate) AddTranslations(v ...*ItemTranslation) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddTranslationIDs(ids...)
+}
+
+// SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
+func (_c *ItemCreate) SetItemCategoryID(id uuid.UUID) *ItemCreate {
+	_c.mutation.SetItemCategoryID(id)
+	return _c
+}
+
+// SetNillableItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID if the given value is not nil.
+func (_c *ItemCreate) SetNillableItemCategoryID(id *uuid.UUID) *ItemCreate {
+	if id != nil {
+		_c = _c.SetItemCategoryID(*id)
+	}
+	return _c
+}
+
+// SetItemCategory sets the "item_category" edge to the ItemCategory entity.
+func (_c *ItemCreate) SetItemCategory(v *ItemCategory) *ItemCreate {
+	return _c.SetItemCategoryID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_c *ItemCreate) Mutation() *ItemMutation {
 	return _c.mutation
@@ -247,13 +319,9 @@ func (_c *ItemCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ItemCreate) defaults() {
-	if _, ok := _c.mutation.Price(); !ok {
-		v := item.DefaultPrice
-		_c.mutation.SetPrice(v)
-	}
-	if _, ok := _c.mutation.UnitOfMeasure(); !ok {
-		v := item.DefaultUnitOfMeasure
-		_c.mutation.SetUnitOfMeasure(v)
+	if _, ok := _c.mutation.GetType(); !ok {
+		v := item.DefaultType
+		_c.mutation.SetType(v)
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := item.DefaultIsActive
@@ -298,11 +366,13 @@ func (_c *ItemCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Price(); !ok {
-		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Item.price"`)}
+	if _, ok := _c.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Item.type"`)}
 	}
-	if _, ok := _c.mutation.UnitOfMeasure(); !ok {
-		return &ValidationError{Name: "unit_of_measure", err: errors.New(`ent: missing required field "Item.unit_of_measure"`)}
+	if v, ok := _c.mutation.GetType(); ok {
+		if err := item.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Item.is_active"`)}
@@ -367,17 +437,9 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := _c.mutation.Category(); ok {
-		_spec.SetField(item.FieldCategory, field.TypeString, value)
-		_node.Category = value
-	}
-	if value, ok := _c.mutation.Price(); ok {
-		_spec.SetField(item.FieldPrice, field.TypeFloat64, value)
-		_node.Price = value
-	}
-	if value, ok := _c.mutation.UnitOfMeasure(); ok {
-		_spec.SetField(item.FieldUnitOfMeasure, field.TypeString, value)
-		_node.UnitOfMeasure = value
+	if value, ok := _c.mutation.GetType(); ok {
+		_spec.SetField(item.FieldType, field.TypeEnum, value)
+		_node.Type = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)
@@ -446,6 +508,72 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UnitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.UnitsTable,
+			Columns: []string{item.UnitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UnitID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.VariantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.TranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ItemCategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemCategoryTable,
+			Columns: []string{item.ItemCategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.CategoryID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -554,51 +682,51 @@ func (u *ItemUpsert) ClearDescription() *ItemUpsert {
 	return u
 }
 
-// SetCategory sets the "category" field.
-func (u *ItemUpsert) SetCategory(v string) *ItemUpsert {
-	u.Set(item.FieldCategory, v)
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsert) SetCategoryID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldCategoryID, v)
 	return u
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateCategory() *ItemUpsert {
-	u.SetExcluded(item.FieldCategory)
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCategoryID() *ItemUpsert {
+	u.SetExcluded(item.FieldCategoryID)
 	return u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *ItemUpsert) ClearCategory() *ItemUpsert {
-	u.SetNull(item.FieldCategory)
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsert) ClearCategoryID() *ItemUpsert {
+	u.SetNull(item.FieldCategoryID)
 	return u
 }
 
-// SetPrice sets the "price" field.
-func (u *ItemUpsert) SetPrice(v float64) *ItemUpsert {
-	u.Set(item.FieldPrice, v)
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsert) SetUnitID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldUnitID, v)
 	return u
 }
 
-// UpdatePrice sets the "price" field to the value that was provided on create.
-func (u *ItemUpsert) UpdatePrice() *ItemUpsert {
-	u.SetExcluded(item.FieldPrice)
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUnitID() *ItemUpsert {
+	u.SetExcluded(item.FieldUnitID)
 	return u
 }
 
-// AddPrice adds v to the "price" field.
-func (u *ItemUpsert) AddPrice(v float64) *ItemUpsert {
-	u.Add(item.FieldPrice, v)
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsert) ClearUnitID() *ItemUpsert {
+	u.SetNull(item.FieldUnitID)
 	return u
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (u *ItemUpsert) SetUnitOfMeasure(v string) *ItemUpsert {
-	u.Set(item.FieldUnitOfMeasure, v)
+// SetType sets the "type" field.
+func (u *ItemUpsert) SetType(v item.Type) *ItemUpsert {
+	u.Set(item.FieldType, v)
 	return u
 }
 
-// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
-func (u *ItemUpsert) UpdateUnitOfMeasure() *ItemUpsert {
-	u.SetExcluded(item.FieldUnitOfMeasure)
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateType() *ItemUpsert {
+	u.SetExcluded(item.FieldType)
 	return u
 }
 
@@ -770,59 +898,59 @@ func (u *ItemUpsertOne) ClearDescription() *ItemUpsertOne {
 	})
 }
 
-// SetCategory sets the "category" field.
-func (u *ItemUpsertOne) SetCategory(v string) *ItemUpsertOne {
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsertOne) SetCategoryID(v uuid.UUID) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetCategory(v)
+		s.SetCategoryID(v)
 	})
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateCategory() *ItemUpsertOne {
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCategoryID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdateCategory()
+		s.UpdateCategoryID()
 	})
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *ItemUpsertOne) ClearCategory() *ItemUpsertOne {
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsertOne) ClearCategoryID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.ClearCategory()
+		s.ClearCategoryID()
 	})
 }
 
-// SetPrice sets the "price" field.
-func (u *ItemUpsertOne) SetPrice(v float64) *ItemUpsertOne {
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsertOne) SetUnitID(v uuid.UUID) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetPrice(v)
+		s.SetUnitID(v)
 	})
 }
 
-// AddPrice adds v to the "price" field.
-func (u *ItemUpsertOne) AddPrice(v float64) *ItemUpsertOne {
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUnitID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.AddPrice(v)
+		s.UpdateUnitID()
 	})
 }
 
-// UpdatePrice sets the "price" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdatePrice() *ItemUpsertOne {
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsertOne) ClearUnitID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdatePrice()
+		s.ClearUnitID()
 	})
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (u *ItemUpsertOne) SetUnitOfMeasure(v string) *ItemUpsertOne {
+// SetType sets the "type" field.
+func (u *ItemUpsertOne) SetType(v item.Type) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetUnitOfMeasure(v)
+		s.SetType(v)
 	})
 }
 
-// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
-func (u *ItemUpsertOne) UpdateUnitOfMeasure() *ItemUpsertOne {
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateType() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdateUnitOfMeasure()
+		s.UpdateType()
 	})
 }
 
@@ -1170,59 +1298,59 @@ func (u *ItemUpsertBulk) ClearDescription() *ItemUpsertBulk {
 	})
 }
 
-// SetCategory sets the "category" field.
-func (u *ItemUpsertBulk) SetCategory(v string) *ItemUpsertBulk {
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsertBulk) SetCategoryID(v uuid.UUID) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetCategory(v)
+		s.SetCategoryID(v)
 	})
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateCategory() *ItemUpsertBulk {
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCategoryID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdateCategory()
+		s.UpdateCategoryID()
 	})
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *ItemUpsertBulk) ClearCategory() *ItemUpsertBulk {
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsertBulk) ClearCategoryID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.ClearCategory()
+		s.ClearCategoryID()
 	})
 }
 
-// SetPrice sets the "price" field.
-func (u *ItemUpsertBulk) SetPrice(v float64) *ItemUpsertBulk {
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsertBulk) SetUnitID(v uuid.UUID) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetPrice(v)
+		s.SetUnitID(v)
 	})
 }
 
-// AddPrice adds v to the "price" field.
-func (u *ItemUpsertBulk) AddPrice(v float64) *ItemUpsertBulk {
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUnitID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.AddPrice(v)
+		s.UpdateUnitID()
 	})
 }
 
-// UpdatePrice sets the "price" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdatePrice() *ItemUpsertBulk {
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsertBulk) ClearUnitID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdatePrice()
+		s.ClearUnitID()
 	})
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (u *ItemUpsertBulk) SetUnitOfMeasure(v string) *ItemUpsertBulk {
+// SetType sets the "type" field.
+func (u *ItemUpsertBulk) SetType(v item.Type) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.SetUnitOfMeasure(v)
+		s.SetType(v)
 	})
 }
 
-// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
-func (u *ItemUpsertBulk) UpdateUnitOfMeasure() *ItemUpsertBulk {
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateType() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
-		s.UpdateUnitOfMeasure()
+		s.UpdateType()
 	})
 }
 

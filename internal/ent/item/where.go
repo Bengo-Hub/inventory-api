@@ -76,19 +76,14 @@ func Description(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldDescription, v))
 }
 
-// Category applies equality check predicate on the "category" field. It's identical to CategoryEQ.
-func Category(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldCategory, v))
+// CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
+func CategoryID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldCategoryID, v))
 }
 
-// Price applies equality check predicate on the "price" field. It's identical to PriceEQ.
-func Price(v float64) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldPrice, v))
-}
-
-// UnitOfMeasure applies equality check predicate on the "unit_of_measure" field. It's identical to UnitOfMeasureEQ.
-func UnitOfMeasure(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldUnitOfMeasure, v))
+// UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
+func UnitID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
 }
 
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
@@ -336,184 +331,84 @@ func DescriptionContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldDescription, v))
 }
 
-// CategoryEQ applies the EQ predicate on the "category" field.
-func CategoryEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldCategory, v))
+// CategoryIDEQ applies the EQ predicate on the "category_id" field.
+func CategoryIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldCategoryID, v))
 }
 
-// CategoryNEQ applies the NEQ predicate on the "category" field.
-func CategoryNEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldCategory, v))
+// CategoryIDNEQ applies the NEQ predicate on the "category_id" field.
+func CategoryIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldCategoryID, v))
 }
 
-// CategoryIn applies the In predicate on the "category" field.
-func CategoryIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldCategory, vs...))
+// CategoryIDIn applies the In predicate on the "category_id" field.
+func CategoryIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldCategoryID, vs...))
 }
 
-// CategoryNotIn applies the NotIn predicate on the "category" field.
-func CategoryNotIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldCategory, vs...))
+// CategoryIDNotIn applies the NotIn predicate on the "category_id" field.
+func CategoryIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldCategoryID, vs...))
 }
 
-// CategoryGT applies the GT predicate on the "category" field.
-func CategoryGT(v string) predicate.Item {
-	return predicate.Item(sql.FieldGT(FieldCategory, v))
+// CategoryIDIsNil applies the IsNil predicate on the "category_id" field.
+func CategoryIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldCategoryID))
 }
 
-// CategoryGTE applies the GTE predicate on the "category" field.
-func CategoryGTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldGTE(FieldCategory, v))
+// CategoryIDNotNil applies the NotNil predicate on the "category_id" field.
+func CategoryIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldCategoryID))
 }
 
-// CategoryLT applies the LT predicate on the "category" field.
-func CategoryLT(v string) predicate.Item {
-	return predicate.Item(sql.FieldLT(FieldCategory, v))
+// UnitIDEQ applies the EQ predicate on the "unit_id" field.
+func UnitIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
 }
 
-// CategoryLTE applies the LTE predicate on the "category" field.
-func CategoryLTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldLTE(FieldCategory, v))
+// UnitIDNEQ applies the NEQ predicate on the "unit_id" field.
+func UnitIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldUnitID, v))
 }
 
-// CategoryContains applies the Contains predicate on the "category" field.
-func CategoryContains(v string) predicate.Item {
-	return predicate.Item(sql.FieldContains(FieldCategory, v))
+// UnitIDIn applies the In predicate on the "unit_id" field.
+func UnitIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldUnitID, vs...))
 }
 
-// CategoryHasPrefix applies the HasPrefix predicate on the "category" field.
-func CategoryHasPrefix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasPrefix(FieldCategory, v))
+// UnitIDNotIn applies the NotIn predicate on the "unit_id" field.
+func UnitIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldUnitID, vs...))
 }
 
-// CategoryHasSuffix applies the HasSuffix predicate on the "category" field.
-func CategoryHasSuffix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasSuffix(FieldCategory, v))
+// UnitIDIsNil applies the IsNil predicate on the "unit_id" field.
+func UnitIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldUnitID))
 }
 
-// CategoryIsNil applies the IsNil predicate on the "category" field.
-func CategoryIsNil() predicate.Item {
-	return predicate.Item(sql.FieldIsNull(FieldCategory))
+// UnitIDNotNil applies the NotNil predicate on the "unit_id" field.
+func UnitIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldUnitID))
 }
 
-// CategoryNotNil applies the NotNil predicate on the "category" field.
-func CategoryNotNil() predicate.Item {
-	return predicate.Item(sql.FieldNotNull(FieldCategory))
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v Type) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldType, v))
 }
 
-// CategoryEqualFold applies the EqualFold predicate on the "category" field.
-func CategoryEqualFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldEqualFold(FieldCategory, v))
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v Type) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldType, v))
 }
 
-// CategoryContainsFold applies the ContainsFold predicate on the "category" field.
-func CategoryContainsFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldContainsFold(FieldCategory, v))
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...Type) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldType, vs...))
 }
 
-// PriceEQ applies the EQ predicate on the "price" field.
-func PriceEQ(v float64) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldPrice, v))
-}
-
-// PriceNEQ applies the NEQ predicate on the "price" field.
-func PriceNEQ(v float64) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldPrice, v))
-}
-
-// PriceIn applies the In predicate on the "price" field.
-func PriceIn(vs ...float64) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldPrice, vs...))
-}
-
-// PriceNotIn applies the NotIn predicate on the "price" field.
-func PriceNotIn(vs ...float64) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldPrice, vs...))
-}
-
-// PriceGT applies the GT predicate on the "price" field.
-func PriceGT(v float64) predicate.Item {
-	return predicate.Item(sql.FieldGT(FieldPrice, v))
-}
-
-// PriceGTE applies the GTE predicate on the "price" field.
-func PriceGTE(v float64) predicate.Item {
-	return predicate.Item(sql.FieldGTE(FieldPrice, v))
-}
-
-// PriceLT applies the LT predicate on the "price" field.
-func PriceLT(v float64) predicate.Item {
-	return predicate.Item(sql.FieldLT(FieldPrice, v))
-}
-
-// PriceLTE applies the LTE predicate on the "price" field.
-func PriceLTE(v float64) predicate.Item {
-	return predicate.Item(sql.FieldLTE(FieldPrice, v))
-}
-
-// UnitOfMeasureEQ applies the EQ predicate on the "unit_of_measure" field.
-func UnitOfMeasureEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldEQ(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureNEQ applies the NEQ predicate on the "unit_of_measure" field.
-func UnitOfMeasureNEQ(v string) predicate.Item {
-	return predicate.Item(sql.FieldNEQ(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureIn applies the In predicate on the "unit_of_measure" field.
-func UnitOfMeasureIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldIn(FieldUnitOfMeasure, vs...))
-}
-
-// UnitOfMeasureNotIn applies the NotIn predicate on the "unit_of_measure" field.
-func UnitOfMeasureNotIn(vs ...string) predicate.Item {
-	return predicate.Item(sql.FieldNotIn(FieldUnitOfMeasure, vs...))
-}
-
-// UnitOfMeasureGT applies the GT predicate on the "unit_of_measure" field.
-func UnitOfMeasureGT(v string) predicate.Item {
-	return predicate.Item(sql.FieldGT(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureGTE applies the GTE predicate on the "unit_of_measure" field.
-func UnitOfMeasureGTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldGTE(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureLT applies the LT predicate on the "unit_of_measure" field.
-func UnitOfMeasureLT(v string) predicate.Item {
-	return predicate.Item(sql.FieldLT(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureLTE applies the LTE predicate on the "unit_of_measure" field.
-func UnitOfMeasureLTE(v string) predicate.Item {
-	return predicate.Item(sql.FieldLTE(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureContains applies the Contains predicate on the "unit_of_measure" field.
-func UnitOfMeasureContains(v string) predicate.Item {
-	return predicate.Item(sql.FieldContains(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureHasPrefix applies the HasPrefix predicate on the "unit_of_measure" field.
-func UnitOfMeasureHasPrefix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasPrefix(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureHasSuffix applies the HasSuffix predicate on the "unit_of_measure" field.
-func UnitOfMeasureHasSuffix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasSuffix(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureEqualFold applies the EqualFold predicate on the "unit_of_measure" field.
-func UnitOfMeasureEqualFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldEqualFold(FieldUnitOfMeasure, v))
-}
-
-// UnitOfMeasureContainsFold applies the ContainsFold predicate on the "unit_of_measure" field.
-func UnitOfMeasureContainsFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldContainsFold(FieldUnitOfMeasure, v))
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...Type) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldType, vs...))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.
@@ -742,6 +637,98 @@ func HasRecipeIngredients() predicate.Item {
 func HasRecipeIngredientsWith(preds ...predicate.RecipeIngredient) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newRecipeIngredientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUnits applies the HasEdge predicate on the "units" edge.
+func HasUnits() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, UnitsTable, UnitsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUnitsWith applies the HasEdge predicate on the "units" edge with a given conditions (other predicates).
+func HasUnitsWith(preds ...predicate.Unit) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newUnitsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVariants applies the HasEdge predicate on the "variants" edge.
+func HasVariants() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, VariantsTable, VariantsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVariantsWith applies the HasEdge predicate on the "variants" edge with a given conditions (other predicates).
+func HasVariantsWith(preds ...predicate.ItemVariant) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newVariantsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTranslations applies the HasEdge predicate on the "translations" edge.
+func HasTranslations() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TranslationsTable, TranslationsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTranslationsWith applies the HasEdge predicate on the "translations" edge with a given conditions (other predicates).
+func HasTranslationsWith(preds ...predicate.ItemTranslation) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newTranslationsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasItemCategory applies the HasEdge predicate on the "item_category" edge.
+func HasItemCategory() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ItemCategoryTable, ItemCategoryColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasItemCategoryWith applies the HasEdge predicate on the "item_category" edge with a given conditions (other predicates).
+func HasItemCategoryWith(preds ...predicate.ItemCategory) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newItemCategoryStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

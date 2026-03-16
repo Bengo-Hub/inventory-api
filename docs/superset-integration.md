@@ -269,5 +269,5 @@ postgresql://superset_readonly:password@postgresql.infra.svc.cluster.local:5432/
 
 - [Apache Superset REST API Documentation](https://superset.apache.org/docs/api)
 - [Superset Deployment Guide](../../devops-k8s/docs/superset-deployment.md)
-- [Cafe Superset Integration](../Cafe/cafe-backend/docs/superset-integration.md)
+- [Ordering-Backend Superset Integration](../../../ordering-service/ordering-backend/docs/superset-integration.md)
 

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg2)"/>
+  <g transform="translate(200,220)">
+    <!-- Plate -->
+    <ellipse cx="0" cy="80" rx="120" ry="20" fill="#e5e7eb" opacity="0.5"/>
+    <!-- Bottom cake layer -->
+    <rect x="-90" y="10" width="180" height="60" rx="8" fill="#FDE68A"/>
+    <rect x="-90" y="10" width="180" height="8" rx="4" fill="#F59E0B" opacity="0.5"/>
+    <!-- Top cake layer -->
+    <rect x="-70" y="-40" width="140" height="55" rx="8" fill="#FBBF24"/>
+    <rect x="-70" y="-40" width="140" height="8" rx="4" fill="#F59E0B" opacity="0.5"/>
+    <!-- Cream/frosting drips -->
+    <path d="M-70,-35 Q-75,-20 -70,-5 M-40,-35 Q-48,-15 -40,5 M0,-35 Q-5,-18 0,0 M40,-35 Q45,-15 40,5 M70,-35 Q75,-20 70,-5" stroke="#FEF3C7" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- Cherry on top -->
+    <circle cx="0" cy="-55" r="14" fill="#DC2626"/>
+    <circle cx="-4" cy="-60" r="4" fill="#FCA5A5" opacity="0.6"/>
+    <!-- Mint leaves -->
+    <ellipse cx="15" cy="-50" rx="12" ry="6" fill="#22C55E" transform="rotate(-30,15,-50)"/>
+    <ellipse cx="-12" cy="-48" rx="10" ry="5" fill="#16A34A" transform="rotate(20,-12,-48)"/>
+    <!-- Pineapple pieces on sides -->
+    <rect x="-80" y="25" width="12" height="12" rx="2" fill="#FDE047" transform="rotate(15,-74,31)"/>
+    <rect x="65" y="30" width="12" height="12" rx="2" fill="#FDE047" transform="rotate(-10,71,36)"/>
+  </g>
+</svg>

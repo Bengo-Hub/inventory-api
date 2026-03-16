@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
@@ -310,6 +311,21 @@ func (_c *TenantCreate) AddItems(v ...*Item) *TenantCreate {
 	return _c.AddItemIDs(ids...)
 }
 
+// AddItemCategoryIDs adds the "item_categories" edge to the ItemCategory entity by IDs.
+func (_c *TenantCreate) AddItemCategoryIDs(ids ...uuid.UUID) *TenantCreate {
+	_c.mutation.AddItemCategoryIDs(ids...)
+	return _c
+}
+
+// AddItemCategories adds the "item_categories" edges to the ItemCategory entity.
+func (_c *TenantCreate) AddItemCategories(v ...*ItemCategory) *TenantCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddItemCategoryIDs(ids...)
+}
+
 // Mutation returns the TenantMutation object of the builder.
 func (_c *TenantCreate) Mutation() *TenantMutation {
 	return _c.mutation
@@ -484,7 +500,7 @@ func (_c *TenantCreate) createSpec() (*Tenant, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.UseCase(); ok {
 		_spec.SetField(tenant.FieldUseCase, field.TypeString, value)
-		_node.UseCase = value
+		_node.UseCase = &value
 	}
 	if value, ok := _c.mutation.SubscriptionPlan(); ok {
 		_spec.SetField(tenant.FieldSubscriptionPlan, field.TypeString, value)
@@ -543,6 +559,22 @@ func (_c *TenantCreate) createSpec() (*Tenant, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ItemCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

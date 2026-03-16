@@ -121,6 +121,33 @@ func (_u *RecipeUpdate) SetNillableIsActive(v *bool) *RecipeUpdate {
 	return _u
 }
 
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (_u *RecipeUpdate) SetPrepTimeMinutes(v int) *RecipeUpdate {
+	_u.mutation.ResetPrepTimeMinutes()
+	_u.mutation.SetPrepTimeMinutes(v)
+	return _u
+}
+
+// SetNillablePrepTimeMinutes sets the "prep_time_minutes" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillablePrepTimeMinutes(v *int) *RecipeUpdate {
+	if v != nil {
+		_u.SetPrepTimeMinutes(*v)
+	}
+	return _u
+}
+
+// AddPrepTimeMinutes adds value to the "prep_time_minutes" field.
+func (_u *RecipeUpdate) AddPrepTimeMinutes(v int) *RecipeUpdate {
+	_u.mutation.AddPrepTimeMinutes(v)
+	return _u
+}
+
+// ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
+func (_u *RecipeUpdate) ClearPrepTimeMinutes() *RecipeUpdate {
+	_u.mutation.ClearPrepTimeMinutes()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *RecipeUpdate) SetMetadata(v map[string]interface{}) *RecipeUpdate {
 	_u.mutation.SetMetadata(v)
@@ -273,6 +300,15 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
+		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPrepTimeMinutes(); ok {
+		_spec.AddField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
+	}
+	if _u.mutation.PrepTimeMinutesCleared() {
+		_spec.ClearField(recipe.FieldPrepTimeMinutes, field.TypeInt)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(recipe.FieldMetadata, field.TypeJSON, value)
@@ -436,6 +472,33 @@ func (_u *RecipeUpdateOne) SetNillableIsActive(v *bool) *RecipeUpdateOne {
 	if v != nil {
 		_u.SetIsActive(*v)
 	}
+	return _u
+}
+
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (_u *RecipeUpdateOne) SetPrepTimeMinutes(v int) *RecipeUpdateOne {
+	_u.mutation.ResetPrepTimeMinutes()
+	_u.mutation.SetPrepTimeMinutes(v)
+	return _u
+}
+
+// SetNillablePrepTimeMinutes sets the "prep_time_minutes" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillablePrepTimeMinutes(v *int) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetPrepTimeMinutes(*v)
+	}
+	return _u
+}
+
+// AddPrepTimeMinutes adds value to the "prep_time_minutes" field.
+func (_u *RecipeUpdateOne) AddPrepTimeMinutes(v int) *RecipeUpdateOne {
+	_u.mutation.AddPrepTimeMinutes(v)
+	return _u
+}
+
+// ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
+func (_u *RecipeUpdateOne) ClearPrepTimeMinutes() *RecipeUpdateOne {
+	_u.mutation.ClearPrepTimeMinutes()
 	return _u
 }
 
@@ -621,6 +684,15 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
+		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPrepTimeMinutes(); ok {
+		_spec.AddField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
+	}
+	if _u.mutation.PrepTimeMinutesCleared() {
+		_spec.ClearField(recipe.FieldPrepTimeMinutes, field.TypeInt)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(recipe.FieldMetadata, field.TypeJSON, value)

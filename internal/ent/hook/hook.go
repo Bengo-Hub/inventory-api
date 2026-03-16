@@ -45,6 +45,54 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
 }
 
+// The ItemCategoryFunc type is an adapter to allow the use of ordinary
+// function as ItemCategory mutator.
+type ItemCategoryFunc func(context.Context, *ent.ItemCategoryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemCategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemCategoryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemCategoryMutation", m)
+}
+
+// The ItemTranslationFunc type is an adapter to allow the use of ordinary
+// function as ItemTranslation mutator.
+type ItemTranslationFunc func(context.Context, *ent.ItemTranslationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemTranslationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemTranslationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemTranslationMutation", m)
+}
+
+// The ItemVariantFunc type is an adapter to allow the use of ordinary
+// function as ItemVariant mutator.
+type ItemVariantFunc func(context.Context, *ent.ItemVariantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemVariantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemVariantMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemVariantMutation", m)
+}
+
+// The OutboxEventFunc type is an adapter to allow the use of ordinary
+// function as OutboxEvent mutator.
+type OutboxEventFunc func(context.Context, *ent.OutboxEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OutboxEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OutboxEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxEventMutation", m)
+}
+
 // The RecipeFunc type is an adapter to allow the use of ordinary
 // function as Recipe mutator.
 type RecipeFunc func(context.Context, *ent.RecipeMutation) (ent.Value, error)
@@ -91,6 +139,18 @@ func (f TenantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantMutation", m)
+}
+
+// The UnitFunc type is an adapter to allow the use of ordinary
+// function as Unit mutator.
+type UnitFunc func(context.Context, *ent.UnitMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UnitMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnitMutation", m)
 }
 
 // The WarehouseFunc type is an adapter to allow the use of ordinary

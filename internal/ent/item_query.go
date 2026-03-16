@@ -14,9 +14,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -30,6 +34,10 @@ type ItemQuery struct {
 	withTenant            *TenantQuery
 	withBalances          *InventoryBalanceQuery
 	withRecipeIngredients *RecipeIngredientQuery
+	withUnits             *UnitQuery
+	withVariants          *ItemVariantQuery
+	withTranslations      *ItemTranslationQuery
+	withItemCategory      *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +133,94 @@ func (_q *ItemQuery) QueryRecipeIngredients() *RecipeIngredientQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.RecipeIngredientsTable, item.RecipeIngredientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUnits chains the current query on the "units" edge.
+func (_q *ItemQuery) QueryUnits() *UnitQuery {
+	query := (&UnitClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(unit.Table, unit.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, item.UnitsTable, item.UnitsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryVariants chains the current query on the "variants" edge.
+func (_q *ItemQuery) QueryVariants() *ItemVariantQuery {
+	query := (&ItemVariantClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(itemvariant.Table, itemvariant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.VariantsTable, item.VariantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTranslations chains the current query on the "translations" edge.
+func (_q *ItemQuery) QueryTranslations() *ItemTranslationQuery {
+	query := (&ItemTranslationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(itemtranslation.Table, itemtranslation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.TranslationsTable, item.TranslationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryItemCategory chains the current query on the "item_category" edge.
+func (_q *ItemQuery) QueryItemCategory() *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(itemcategory.Table, itemcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.ItemCategoryTable, item.ItemCategoryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +423,10 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withTenant:            _q.withTenant.Clone(),
 		withBalances:          _q.withBalances.Clone(),
 		withRecipeIngredients: _q.withRecipeIngredients.Clone(),
+		withUnits:             _q.withUnits.Clone(),
+		withVariants:          _q.withVariants.Clone(),
+		withTranslations:      _q.withTranslations.Clone(),
+		withItemCategory:      _q.withItemCategory.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +463,50 @@ func (_q *ItemQuery) WithRecipeIngredients(opts ...func(*RecipeIngredientQuery))
 		opt(query)
 	}
 	_q.withRecipeIngredients = query
+	return _q
+}
+
+// WithUnits tells the query-builder to eager-load the nodes that are connected to
+// the "units" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithUnits(opts ...func(*UnitQuery)) *ItemQuery {
+	query := (&UnitClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUnits = query
+	return _q
+}
+
+// WithVariants tells the query-builder to eager-load the nodes that are connected to
+// the "variants" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithVariants(opts ...func(*ItemVariantQuery)) *ItemQuery {
+	query := (&ItemVariantClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withVariants = query
+	return _q
+}
+
+// WithTranslations tells the query-builder to eager-load the nodes that are connected to
+// the "translations" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithTranslations(opts ...func(*ItemTranslationQuery)) *ItemQuery {
+	query := (&ItemTranslationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTranslations = query
+	return _q
+}
+
+// WithItemCategory tells the query-builder to eager-load the nodes that are connected to
+// the "item_category" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithItemCategory(opts ...func(*ItemCategoryQuery)) *ItemQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withItemCategory = query
 	return _q
 }
 
@@ -444,10 +588,14 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [7]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
+			_q.withUnits != nil,
+			_q.withVariants != nil,
+			_q.withTranslations != nil,
+			_q.withItemCategory != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -485,6 +633,32 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadRecipeIngredients(ctx, query, nodes,
 			func(n *Item) { n.Edges.RecipeIngredients = []*RecipeIngredient{} },
 			func(n *Item, e *RecipeIngredient) { n.Edges.RecipeIngredients = append(n.Edges.RecipeIngredients, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUnits; query != nil {
+		if err := _q.loadUnits(ctx, query, nodes, nil,
+			func(n *Item, e *Unit) { n.Edges.Units = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withVariants; query != nil {
+		if err := _q.loadVariants(ctx, query, nodes,
+			func(n *Item) { n.Edges.Variants = []*ItemVariant{} },
+			func(n *Item, e *ItemVariant) { n.Edges.Variants = append(n.Edges.Variants, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTranslations; query != nil {
+		if err := _q.loadTranslations(ctx, query, nodes,
+			func(n *Item) { n.Edges.Translations = []*ItemTranslation{} },
+			func(n *Item, e *ItemTranslation) { n.Edges.Translations = append(n.Edges.Translations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withItemCategory; query != nil {
+		if err := _q.loadItemCategory(ctx, query, nodes, nil,
+			func(n *Item, e *ItemCategory) { n.Edges.ItemCategory = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -580,6 +754,130 @@ func (_q *ItemQuery) loadRecipeIngredients(ctx context.Context, query *RecipeIng
 	}
 	return nil
 }
+func (_q *ItemQuery) loadUnits(ctx context.Context, query *UnitQuery, nodes []*Item, init func(*Item), assign func(*Item, *Unit)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Item)
+	for i := range nodes {
+		if nodes[i].UnitID == nil {
+			continue
+		}
+		fk := *nodes[i].UnitID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(unit.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "unit_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *ItemQuery) loadVariants(ctx context.Context, query *ItemVariantQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemVariant)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemvariant.FieldItemID)
+	}
+	query.Where(predicate.ItemVariant(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.VariantsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadTranslations(ctx context.Context, query *ItemTranslationQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemTranslation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemtranslation.FieldItemID)
+	}
+	query.Where(predicate.ItemTranslation(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.TranslationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadItemCategory(ctx context.Context, query *ItemCategoryQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemCategory)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Item)
+	for i := range nodes {
+		if nodes[i].CategoryID == nil {
+			continue
+		}
+		fk := *nodes[i].CategoryID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(itemcategory.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "category_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *ItemQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -608,6 +906,12 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withTenant != nil {
 			_spec.Node.AddColumnOnce(item.FieldTenantID)
+		}
+		if _q.withUnits != nil {
+			_spec.Node.AddColumnOnce(item.FieldUnitID)
+		}
+		if _q.withItemCategory != nil {
+			_spec.Node.AddColumnOnce(item.FieldCategoryID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -31,6 +31,8 @@ type Recipe struct {
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// Preparation time in minutes
+	PrepTimeMinutes *int `json:"prep_time_minutes,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -72,6 +74,8 @@ func (*Recipe) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case recipe.FieldOutputQty:
 			values[i] = new(sql.NullFloat64)
+		case recipe.FieldPrepTimeMinutes:
+			values[i] = new(sql.NullInt64)
 		case recipe.FieldSku, recipe.FieldName, recipe.FieldUnitOfMeasure:
 			values[i] = new(sql.NullString)
 		case recipe.FieldCreatedAt, recipe.FieldUpdatedAt:
@@ -134,6 +138,13 @@ func (_m *Recipe) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case recipe.FieldPrepTimeMinutes:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field prep_time_minutes", values[i])
+			} else if value.Valid {
+				_m.PrepTimeMinutes = new(int)
+				*_m.PrepTimeMinutes = int(value.Int64)
 			}
 		case recipe.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -213,6 +224,11 @@ func (_m *Recipe) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	if v := _m.PrepTimeMinutes; v != nil {
+		builder.WriteString("prep_time_minutes=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -22,12 +23,13 @@ import (
 // TenantQuery is the builder for querying Tenant entities.
 type TenantQuery struct {
 	config
-	ctx            *QueryContext
-	order          []tenant.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Tenant
-	withWarehouses *WarehouseQuery
-	withItems      *ItemQuery
+	ctx                *QueryContext
+	order              []tenant.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Tenant
+	withWarehouses     *WarehouseQuery
+	withItems          *ItemQuery
+	withItemCategories *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *TenantQuery) QueryItems() *ItemQuery {
 			sqlgraph.From(tenant.Table, tenant.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, tenant.ItemsTable, tenant.ItemsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryItemCategories chains the current query on the "item_categories" edge.
+func (_q *TenantQuery) QueryItemCategories() *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tenant.Table, tenant.FieldID, selector),
+			sqlgraph.To(itemcategory.Table, itemcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tenant.ItemCategoriesTable, tenant.ItemCategoriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *TenantQuery) Clone() *TenantQuery {
 		return nil
 	}
 	return &TenantQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]tenant.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.Tenant{}, _q.predicates...),
-		withWarehouses: _q.withWarehouses.Clone(),
-		withItems:      _q.withItems.Clone(),
+		config:             _q.config,
+		ctx:                _q.ctx.Clone(),
+		order:              append([]tenant.OrderOption{}, _q.order...),
+		inters:             append([]Interceptor{}, _q.inters...),
+		predicates:         append([]predicate.Tenant{}, _q.predicates...),
+		withWarehouses:     _q.withWarehouses.Clone(),
+		withItems:          _q.withItems.Clone(),
+		withItemCategories: _q.withItemCategories.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *TenantQuery) WithItems(opts ...func(*ItemQuery)) *TenantQuery {
 		opt(query)
 	}
 	_q.withItems = query
+	return _q
+}
+
+// WithItemCategories tells the query-builder to eager-load the nodes that are connected to
+// the "item_categories" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TenantQuery) WithItemCategories(opts ...func(*ItemCategoryQuery)) *TenantQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withItemCategories = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenan
 	var (
 		nodes       = []*Tenant{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWarehouses != nil,
 			_q.withItems != nil,
+			_q.withItemCategories != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -442,6 +479,13 @@ func (_q *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenan
 		if err := _q.loadItems(ctx, query, nodes,
 			func(n *Tenant) { n.Edges.Items = []*Item{} },
 			func(n *Tenant, e *Item) { n.Edges.Items = append(n.Edges.Items, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withItemCategories; query != nil {
+		if err := _q.loadItemCategories(ctx, query, nodes,
+			func(n *Tenant) { n.Edges.ItemCategories = []*ItemCategory{} },
+			func(n *Tenant, e *ItemCategory) { n.Edges.ItemCategories = append(n.Edges.ItemCategories, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -493,6 +537,36 @@ func (_q *TenantQuery) loadItems(ctx context.Context, query *ItemQuery, nodes []
 	}
 	query.Where(predicate.Item(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(tenant.ItemsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TenantID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tenant_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *TenantQuery) loadItemCategories(ctx context.Context, query *ItemCategoryQuery, nodes []*Tenant, init func(*Tenant), assign func(*Tenant, *ItemCategory)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Tenant)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemcategory.FieldTenantID)
+	}
+	query.Where(predicate.ItemCategory(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tenant.ItemCategoriesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

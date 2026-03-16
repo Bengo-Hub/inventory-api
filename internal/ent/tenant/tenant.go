@@ -59,6 +59,8 @@ const (
 	EdgeWarehouses = "warehouses"
 	// EdgeItems holds the string denoting the items edge name in mutations.
 	EdgeItems = "items"
+	// EdgeItemCategories holds the string denoting the item_categories edge name in mutations.
+	EdgeItemCategories = "item_categories"
 	// Table holds the table name of the tenant in the database.
 	Table = "tenants"
 	// WarehousesTable is the table that holds the warehouses relation/edge.
@@ -75,6 +77,13 @@ const (
 	ItemsInverseTable = "items"
 	// ItemsColumn is the table column denoting the items relation/edge.
 	ItemsColumn = "tenant_id"
+	// ItemCategoriesTable is the table that holds the item_categories relation/edge.
+	ItemCategoriesTable = "item_categories"
+	// ItemCategoriesInverseTable is the table name for the ItemCategory entity.
+	// It exists in this package in order to avoid circular dependency with the "itemcategory" package.
+	ItemCategoriesInverseTable = "item_categories"
+	// ItemCategoriesColumn is the table column denoting the item_categories relation/edge.
+	ItemCategoriesColumn = "tenant_id"
 )
 
 // Columns holds all SQL columns for tenant fields.
@@ -255,6 +264,20 @@ func ByItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newItemsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByItemCategoriesCount orders the results by item_categories count.
+func ByItemCategoriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newItemCategoriesStep(), opts...)
+	}
+}
+
+// ByItemCategories orders the results by item_categories terms.
+func ByItemCategories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newItemCategoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWarehousesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -267,5 +290,12 @@ func newItemsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ItemsTable, ItemsColumn),
+	)
+}
+func newItemCategoriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ItemCategoriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ItemCategoriesTable, ItemCategoriesColumn),
 	)
 }

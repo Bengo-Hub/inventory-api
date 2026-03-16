@@ -8,11 +8,16 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/google/uuid"
 )
@@ -85,14 +90,6 @@ func init() {
 	itemDescName := itemFields[3].Descriptor()
 	// item.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	item.NameValidator = itemDescName.Validators[0].(func(string) error)
-	// itemDescPrice is the schema descriptor for price field.
-	itemDescPrice := itemFields[6].Descriptor()
-	// item.DefaultPrice holds the default value on creation for the price field.
-	item.DefaultPrice = itemDescPrice.Default.(float64)
-	// itemDescUnitOfMeasure is the schema descriptor for unit_of_measure field.
-	itemDescUnitOfMeasure := itemFields[7].Descriptor()
-	// item.DefaultUnitOfMeasure holds the default value on creation for the unit_of_measure field.
-	item.DefaultUnitOfMeasure = itemDescUnitOfMeasure.Default.(string)
 	// itemDescIsActive is the schema descriptor for is_active field.
 	itemDescIsActive := itemFields[8].Descriptor()
 	// item.DefaultIsActive holds the default value on creation for the is_active field.
@@ -115,6 +112,116 @@ func init() {
 	itemDescID := itemFields[0].Descriptor()
 	// item.DefaultID holds the default value on creation for the id field.
 	item.DefaultID = itemDescID.Default.(func() uuid.UUID)
+	itemcategoryFields := schema.ItemCategory{}.Fields()
+	_ = itemcategoryFields
+	// itemcategoryDescName is the schema descriptor for name field.
+	itemcategoryDescName := itemcategoryFields[2].Descriptor()
+	// itemcategory.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	itemcategory.NameValidator = itemcategoryDescName.Validators[0].(func(string) error)
+	// itemcategoryDescIsActive is the schema descriptor for is_active field.
+	itemcategoryDescIsActive := itemcategoryFields[4].Descriptor()
+	// itemcategory.DefaultIsActive holds the default value on creation for the is_active field.
+	itemcategory.DefaultIsActive = itemcategoryDescIsActive.Default.(bool)
+	// itemcategoryDescCreatedAt is the schema descriptor for created_at field.
+	itemcategoryDescCreatedAt := itemcategoryFields[5].Descriptor()
+	// itemcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itemcategory.DefaultCreatedAt = itemcategoryDescCreatedAt.Default.(func() time.Time)
+	// itemcategoryDescUpdatedAt is the schema descriptor for updated_at field.
+	itemcategoryDescUpdatedAt := itemcategoryFields[6].Descriptor()
+	// itemcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemcategory.DefaultUpdatedAt = itemcategoryDescUpdatedAt.Default.(func() time.Time)
+	// itemcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemcategory.UpdateDefaultUpdatedAt = itemcategoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemcategoryDescID is the schema descriptor for id field.
+	itemcategoryDescID := itemcategoryFields[0].Descriptor()
+	// itemcategory.DefaultID holds the default value on creation for the id field.
+	itemcategory.DefaultID = itemcategoryDescID.Default.(func() uuid.UUID)
+	itemtranslationFields := schema.ItemTranslation{}.Fields()
+	_ = itemtranslationFields
+	// itemtranslationDescLocale is the schema descriptor for locale field.
+	itemtranslationDescLocale := itemtranslationFields[2].Descriptor()
+	// itemtranslation.LocaleValidator is a validator for the "locale" field. It is called by the builders before save.
+	itemtranslation.LocaleValidator = itemtranslationDescLocale.Validators[0].(func(string) error)
+	// itemtranslationDescName is the schema descriptor for name field.
+	itemtranslationDescName := itemtranslationFields[3].Descriptor()
+	// itemtranslation.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	itemtranslation.NameValidator = itemtranslationDescName.Validators[0].(func(string) error)
+	// itemtranslationDescCreatedAt is the schema descriptor for created_at field.
+	itemtranslationDescCreatedAt := itemtranslationFields[5].Descriptor()
+	// itemtranslation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itemtranslation.DefaultCreatedAt = itemtranslationDescCreatedAt.Default.(func() time.Time)
+	// itemtranslationDescUpdatedAt is the schema descriptor for updated_at field.
+	itemtranslationDescUpdatedAt := itemtranslationFields[6].Descriptor()
+	// itemtranslation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemtranslation.DefaultUpdatedAt = itemtranslationDescUpdatedAt.Default.(func() time.Time)
+	// itemtranslation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemtranslation.UpdateDefaultUpdatedAt = itemtranslationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemtranslationDescID is the schema descriptor for id field.
+	itemtranslationDescID := itemtranslationFields[0].Descriptor()
+	// itemtranslation.DefaultID holds the default value on creation for the id field.
+	itemtranslation.DefaultID = itemtranslationDescID.Default.(func() uuid.UUID)
+	itemvariantFields := schema.ItemVariant{}.Fields()
+	_ = itemvariantFields
+	// itemvariantDescSku is the schema descriptor for sku field.
+	itemvariantDescSku := itemvariantFields[2].Descriptor()
+	// itemvariant.SkuValidator is a validator for the "sku" field. It is called by the builders before save.
+	itemvariant.SkuValidator = itemvariantDescSku.Validators[0].(func(string) error)
+	// itemvariantDescName is the schema descriptor for name field.
+	itemvariantDescName := itemvariantFields[3].Descriptor()
+	// itemvariant.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	itemvariant.NameValidator = itemvariantDescName.Validators[0].(func(string) error)
+	// itemvariantDescPrice is the schema descriptor for price field.
+	itemvariantDescPrice := itemvariantFields[4].Descriptor()
+	// itemvariant.DefaultPrice holds the default value on creation for the price field.
+	itemvariant.DefaultPrice = itemvariantDescPrice.Default.(float64)
+	// itemvariantDescIsActive is the schema descriptor for is_active field.
+	itemvariantDescIsActive := itemvariantFields[5].Descriptor()
+	// itemvariant.DefaultIsActive holds the default value on creation for the is_active field.
+	itemvariant.DefaultIsActive = itemvariantDescIsActive.Default.(bool)
+	// itemvariantDescCreatedAt is the schema descriptor for created_at field.
+	itemvariantDescCreatedAt := itemvariantFields[6].Descriptor()
+	// itemvariant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itemvariant.DefaultCreatedAt = itemvariantDescCreatedAt.Default.(func() time.Time)
+	// itemvariantDescUpdatedAt is the schema descriptor for updated_at field.
+	itemvariantDescUpdatedAt := itemvariantFields[7].Descriptor()
+	// itemvariant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemvariant.DefaultUpdatedAt = itemvariantDescUpdatedAt.Default.(func() time.Time)
+	// itemvariant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemvariant.UpdateDefaultUpdatedAt = itemvariantDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemvariantDescID is the schema descriptor for id field.
+	itemvariantDescID := itemvariantFields[0].Descriptor()
+	// itemvariant.DefaultID holds the default value on creation for the id field.
+	itemvariant.DefaultID = itemvariantDescID.Default.(func() uuid.UUID)
+	outboxeventFields := schema.OutboxEvent{}.Fields()
+	_ = outboxeventFields
+	// outboxeventDescAggregateType is the schema descriptor for aggregate_type field.
+	outboxeventDescAggregateType := outboxeventFields[2].Descriptor()
+	// outboxevent.AggregateTypeValidator is a validator for the "aggregate_type" field. It is called by the builders before save.
+	outboxevent.AggregateTypeValidator = outboxeventDescAggregateType.Validators[0].(func(string) error)
+	// outboxeventDescAggregateID is the schema descriptor for aggregate_id field.
+	outboxeventDescAggregateID := outboxeventFields[3].Descriptor()
+	// outboxevent.AggregateIDValidator is a validator for the "aggregate_id" field. It is called by the builders before save.
+	outboxevent.AggregateIDValidator = outboxeventDescAggregateID.Validators[0].(func(string) error)
+	// outboxeventDescEventType is the schema descriptor for event_type field.
+	outboxeventDescEventType := outboxeventFields[4].Descriptor()
+	// outboxevent.EventTypeValidator is a validator for the "event_type" field. It is called by the builders before save.
+	outboxevent.EventTypeValidator = outboxeventDescEventType.Validators[0].(func(string) error)
+	// outboxeventDescStatus is the schema descriptor for status field.
+	outboxeventDescStatus := outboxeventFields[6].Descriptor()
+	// outboxevent.DefaultStatus holds the default value on creation for the status field.
+	outboxevent.DefaultStatus = outboxeventDescStatus.Default.(string)
+	// outboxeventDescAttempts is the schema descriptor for attempts field.
+	outboxeventDescAttempts := outboxeventFields[7].Descriptor()
+	// outboxevent.DefaultAttempts holds the default value on creation for the attempts field.
+	outboxevent.DefaultAttempts = outboxeventDescAttempts.Default.(int)
+	// outboxeventDescCreatedAt is the schema descriptor for created_at field.
+	outboxeventDescCreatedAt := outboxeventFields[11].Descriptor()
+	// outboxevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	outboxevent.DefaultCreatedAt = outboxeventDescCreatedAt.Default.(func() time.Time)
+	// outboxeventDescID is the schema descriptor for id field.
+	outboxeventDescID := outboxeventFields[0].Descriptor()
+	// outboxevent.DefaultID holds the default value on creation for the id field.
+	outboxevent.DefaultID = outboxeventDescID.Default.(func() uuid.UUID)
 	recipeFields := schema.Recipe{}.Fields()
 	_ = recipeFields
 	// recipeDescSku is the schema descriptor for sku field.
@@ -156,15 +263,15 @@ func init() {
 	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
 	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
 	// recipeDescMetadata is the schema descriptor for metadata field.
-	recipeDescMetadata := recipeFields[7].Descriptor()
+	recipeDescMetadata := recipeFields[8].Descriptor()
 	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
 	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
 	// recipeDescCreatedAt is the schema descriptor for created_at field.
-	recipeDescCreatedAt := recipeFields[8].Descriptor()
+	recipeDescCreatedAt := recipeFields[9].Descriptor()
 	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
 	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
-	recipeDescUpdatedAt := recipeFields[9].Descriptor()
+	recipeDescUpdatedAt := recipeFields[10].Descriptor()
 	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
 	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -279,6 +386,30 @@ func init() {
 	tenantDescID := tenantFields[0].Descriptor()
 	// tenant.DefaultID holds the default value on creation for the id field.
 	tenant.DefaultID = tenantDescID.Default.(func() uuid.UUID)
+	unitFields := schema.Unit{}.Fields()
+	_ = unitFields
+	// unitDescName is the schema descriptor for name field.
+	unitDescName := unitFields[1].Descriptor()
+	// unit.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	unit.NameValidator = unitDescName.Validators[0].(func(string) error)
+	// unitDescIsActive is the schema descriptor for is_active field.
+	unitDescIsActive := unitFields[3].Descriptor()
+	// unit.DefaultIsActive holds the default value on creation for the is_active field.
+	unit.DefaultIsActive = unitDescIsActive.Default.(bool)
+	// unitDescCreatedAt is the schema descriptor for created_at field.
+	unitDescCreatedAt := unitFields[4].Descriptor()
+	// unit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	unit.DefaultCreatedAt = unitDescCreatedAt.Default.(func() time.Time)
+	// unitDescUpdatedAt is the schema descriptor for updated_at field.
+	unitDescUpdatedAt := unitFields[5].Descriptor()
+	// unit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	unit.DefaultUpdatedAt = unitDescUpdatedAt.Default.(func() time.Time)
+	// unit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	unit.UpdateDefaultUpdatedAt = unitDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// unitDescID is the schema descriptor for id field.
+	unitDescID := unitFields[0].Descriptor()
+	// unit.DefaultID holds the default value on creation for the id field.
+	unit.DefaultID = unitDescID.Default.(func() uuid.UUID)
 	warehouseFields := schema.Warehouse{}.Fields()
 	_ = warehouseFields
 	// warehouseDescName is the schema descriptor for name field.

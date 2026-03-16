@@ -30,15 +30,18 @@ func (Item) Fields() []ent.Field {
 			NotEmpty(),
 		field.Text("description").
 			Optional(),
-		field.String("category").
+		field.UUID("category_id", uuid.UUID{}).
 			Optional().
-			Comment("Item category for grouping"),
-		field.Float("price").
-			Default(0).
-			Comment("Unit price in smallest currency unit"),
-		field.String("unit_of_measure").
-			Default("PIECE").
-			Comment("PIECE, KG, LITRE, PORTION"),
+			Nillable().
+			Comment("Reference to ItemCategory"),
+		field.UUID("unit_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Reference to Unit"),
+		field.Enum("type").
+			Values("GOODS", "SERVICE", "RECIPE", "INGREDIENT").
+			Default("GOODS").
+			Comment("Item type for master data classification"),
 		field.Bool("is_active").
 			Default(true),
 		field.String("image_url").
@@ -64,6 +67,16 @@ func (Item) Edges() []ent.Edge {
 			Field("tenant_id"),
 		edge.To("balances", InventoryBalance.Type),
 		edge.To("recipe_ingredients", RecipeIngredient.Type),
+		edge.To("units", Unit.Type).
+			Unique().
+			Field("unit_id").
+			Comment("Primary unit of measure"),
+		edge.To("variants", ItemVariant.Type),
+		edge.To("translations", ItemTranslation.Type),
+		edge.From("item_category", ItemCategory.Type).
+			Ref("items").
+			Unique().
+			Field("category_id"),
 	}
 }
 
@@ -71,7 +84,7 @@ func (Item) Edges() []ent.Edge {
 func (Item) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "sku").Unique(),
-		index.Fields("tenant_id", "category"),
+		index.Fields("tenant_id", "category_id"),
 		index.Fields("tenant_id", "is_active"),
 	}
 }

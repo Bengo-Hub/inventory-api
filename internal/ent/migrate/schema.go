@@ -89,14 +89,14 @@ var (
 		{Name: "sku", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "category", Type: field.TypeString, Nullable: true},
-		{Name: "price", Type: field.TypeFloat64, Default: 0},
-		{Name: "unit_of_measure", Type: field.TypeString, Default: "PIECE"},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT"}, Default: "GOODS"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "image_url", Type: field.TypeString, Nullable: true},
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "category_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "tenant_id", Type: field.TypeUUID},
 	}
 	// ItemsTable holds the schema information for the "items" table.
@@ -105,6 +105,18 @@ var (
 		Columns:    ItemsColumns,
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "items_units_units",
+				Columns:    []*schema.Column{ItemsColumns[10]},
+				RefColumns: []*schema.Column{UnitsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "items_item_categories_items",
+				Columns:    []*schema.Column{ItemsColumns[11]},
+				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 			{
 				Symbol:     "items_tenants_items",
 				Columns:    []*schema.Column{ItemsColumns[12]},
@@ -119,14 +131,146 @@ var (
 				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[1]},
 			},
 			{
-				Name:    "item_tenant_id_category",
+				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[4]},
+				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[11]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[5]},
+			},
+		},
+	}
+	// ItemCategoriesColumns holds the columns for the "item_categories" table.
+	ItemCategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tenant_id", Type: field.TypeUUID},
+	}
+	// ItemCategoriesTable holds the schema information for the "item_categories" table.
+	ItemCategoriesTable = &schema.Table{
+		Name:       "item_categories",
+		Columns:    ItemCategoriesColumns,
+		PrimaryKey: []*schema.Column{ItemCategoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_categories_tenants_item_categories",
+				Columns:    []*schema.Column{ItemCategoriesColumns[6]},
+				RefColumns: []*schema.Column{TenantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemcategory_tenant_id_name",
+				Unique:  false,
+				Columns: []*schema.Column{ItemCategoriesColumns[6], ItemCategoriesColumns[1]},
+			},
+		},
+	}
+	// ItemTranslationsColumns holds the columns for the "item_translations" table.
+	ItemTranslationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "locale", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ItemTranslationsTable holds the schema information for the "item_translations" table.
+	ItemTranslationsTable = &schema.Table{
+		Name:       "item_translations",
+		Columns:    ItemTranslationsColumns,
+		PrimaryKey: []*schema.Column{ItemTranslationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_translations_items_translations",
+				Columns:    []*schema.Column{ItemTranslationsColumns[6]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemtranslation_item_id_locale",
+				Unique:  true,
+				Columns: []*schema.Column{ItemTranslationsColumns[6], ItemTranslationsColumns[1]},
+			},
+		},
+	}
+	// ItemVariantsColumns holds the columns for the "item_variants" table.
+	ItemVariantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "sku", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "price", Type: field.TypeFloat64, Default: 0},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ItemVariantsTable holds the schema information for the "item_variants" table.
+	ItemVariantsTable = &schema.Table{
+		Name:       "item_variants",
+		Columns:    ItemVariantsColumns,
+		PrimaryKey: []*schema.Column{ItemVariantsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_variants_items_variants",
+				Columns:    []*schema.Column{ItemVariantsColumns[7]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemvariant_item_id_sku",
+				Unique:  true,
+				Columns: []*schema.Column{ItemVariantsColumns[7], ItemVariantsColumns[1]},
+			},
+		},
+	}
+	// OutboxEventsColumns holds the columns for the "outbox_events" table.
+	OutboxEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "aggregate_type", Type: field.TypeString},
+		{Name: "aggregate_id", Type: field.TypeString},
+		{Name: "event_type", Type: field.TypeString},
+		{Name: "payload", Type: field.TypeJSON},
+		{Name: "status", Type: field.TypeString, Default: "PENDING"},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+		{Name: "last_attempt_at", Type: field.TypeTime, Nullable: true},
+		{Name: "published_at", Type: field.TypeTime, Nullable: true},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// OutboxEventsTable holds the schema information for the "outbox_events" table.
+	OutboxEventsTable = &schema.Table{
+		Name:       "outbox_events",
+		Columns:    OutboxEventsColumns,
+		PrimaryKey: []*schema.Column{OutboxEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "outboxevent_status",
+				Unique:  false,
+				Columns: []*schema.Column{OutboxEventsColumns[6]},
+			},
+			{
+				Name:    "outboxevent_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OutboxEventsColumns[11]},
+			},
+			{
+				Name:    "outboxevent_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{OutboxEventsColumns[1], OutboxEventsColumns[6]},
 			},
 		},
 	}
@@ -139,6 +283,7 @@ var (
 		{Name: "output_qty", Type: field.TypeFloat64, Default: 1},
 		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PORTION"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "prep_time_minutes", Type: field.TypeInt, Nullable: true},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -296,6 +441,28 @@ var (
 			},
 		},
 	}
+	// UnitsColumns holds the columns for the "units" table.
+	UnitsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "abbreviation", Type: field.TypeString, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// UnitsTable holds the schema information for the "units" table.
+	UnitsTable = &schema.Table{
+		Name:       "units",
+		Columns:    UnitsColumns,
+		PrimaryKey: []*schema.Column{UnitsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unit_name",
+				Unique:  true,
+				Columns: []*schema.Column{UnitsColumns[1]},
+			},
+		},
+	}
 	// WarehousesColumns holds the columns for the "warehouses" table.
 	WarehousesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -344,10 +511,15 @@ var (
 		ConsumptionsTable,
 		InventoryBalancesTable,
 		ItemsTable,
+		ItemCategoriesTable,
+		ItemTranslationsTable,
+		ItemVariantsTable,
+		OutboxEventsTable,
 		RecipesTable,
 		RecipeIngredientsTable,
 		ReservationsTable,
 		TenantsTable,
+		UnitsTable,
 		WarehousesTable,
 	}
 )
@@ -355,7 +527,12 @@ var (
 func init() {
 	InventoryBalancesTable.ForeignKeys[0].RefTable = ItemsTable
 	InventoryBalancesTable.ForeignKeys[1].RefTable = WarehousesTable
-	ItemsTable.ForeignKeys[0].RefTable = TenantsTable
+	ItemsTable.ForeignKeys[0].RefTable = UnitsTable
+	ItemsTable.ForeignKeys[1].RefTable = ItemCategoriesTable
+	ItemsTable.ForeignKeys[2].RefTable = TenantsTable
+	ItemCategoriesTable.ForeignKeys[0].RefTable = TenantsTable
+	ItemTranslationsTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemVariantsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable

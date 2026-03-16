@@ -41,7 +41,7 @@ This document provides detailed integration information for all external service
 - `auth.outlet.created` - Create outlet reference
 - `auth.outlet.updated` - Update outlet metadata
 
-### Cafe Backend
+### Ordering-Backend
 
 **Integration Type**: REST API + Events (NATS)
 
@@ -431,7 +431,7 @@ This document provides detailed integration information for all external service
 ## References
 
 - [Auth Service Integration](../auth-service/auth-service/docs/integrations.md)
-- [Cafe Backend Integration](../Cafe/cafe-backend/docs/integrations.md)
+- [Ordering-Backend Integration](../../../ordering-service/ordering-backend/docs/integrations.md)
 - [Logistics Service Integration](../logistics-service/logistics-api/docs/integrations.md)
 - [Treasury App Integration](../finance-service/treasury-api/docs/integrations.md)
 

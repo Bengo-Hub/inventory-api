@@ -41,6 +41,10 @@ func (Recipe) Fields() []ent.Field {
 			Comment("Unit for output: PORTION, KG, LITRE"),
 		field.Bool("is_active").
 			Default(true),
+		field.Int("prep_time_minutes").
+			Optional().
+			Nillable().
+			Comment("Preparation time in minutes"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}).
 			Optional(),

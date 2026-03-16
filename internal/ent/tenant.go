@@ -41,8 +41,8 @@ type Tenant struct {
 	BrandColors map[string]interface{} `json:"brand_colors,omitempty"`
 	// OrgSize holds the value of the "org_size" field.
 	OrgSize string `json:"org_size,omitempty"`
-	// UseCase holds the value of the "use_case" field.
-	UseCase string `json:"use_case,omitempty"`
+	// Primary business use case: hospitality | retail | quick_service | manufacturing | warehousing | services | e_commerce | other
+	UseCase *string `json:"use_case,omitempty"`
 	// SubscriptionPlan holds the value of the "subscription_plan" field.
 	SubscriptionPlan string `json:"subscription_plan,omitempty"`
 	// SubscriptionStatus holds the value of the "subscription_status" field.
@@ -71,9 +71,11 @@ type TenantEdges struct {
 	Warehouses []*Warehouse `json:"warehouses,omitempty"`
 	// Items holds the value of the items edge.
 	Items []*Item `json:"items,omitempty"`
+	// ItemCategories holds the value of the item_categories edge.
+	ItemCategories []*ItemCategory `json:"item_categories,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WarehousesOrErr returns the Warehouses value or an error if the edge
@@ -92,6 +94,15 @@ func (e TenantEdges) ItemsOrErr() ([]*Item, error) {
 		return e.Items, nil
 	}
 	return nil, &NotLoadedError{edge: "items"}
+}
+
+// ItemCategoriesOrErr returns the ItemCategories value or an error if the edge
+// was not loaded in eager-loading.
+func (e TenantEdges) ItemCategoriesOrErr() ([]*ItemCategory, error) {
+	if e.loadedTypes[2] {
+		return e.ItemCategories, nil
+	}
+	return nil, &NotLoadedError{edge: "item_categories"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -200,7 +211,8 @@ func (_m *Tenant) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field use_case", values[i])
 			} else if value.Valid {
-				_m.UseCase = value.String
+				_m.UseCase = new(string)
+				*_m.UseCase = value.String
 			}
 		case tenant.FieldSubscriptionPlan:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -278,6 +290,11 @@ func (_m *Tenant) QueryItems() *ItemQuery {
 	return NewTenantClient(_m.config).QueryItems(_m)
 }
 
+// QueryItemCategories queries the "item_categories" edge of the Tenant entity.
+func (_m *Tenant) QueryItemCategories() *ItemCategoryQuery {
+	return NewTenantClient(_m.config).QueryItemCategories(_m)
+}
+
 // Update returns a builder for updating this Tenant.
 // Note that you need to call Tenant.Unwrap() before calling this method if this Tenant
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -334,8 +351,10 @@ func (_m *Tenant) String() string {
 	builder.WriteString("org_size=")
 	builder.WriteString(_m.OrgSize)
 	builder.WriteString(", ")
-	builder.WriteString("use_case=")
-	builder.WriteString(_m.UseCase)
+	if v := _m.UseCase; v != nil {
+		builder.WriteString("use_case=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("subscription_plan=")
 	builder.WriteString(_m.SubscriptionPlan)

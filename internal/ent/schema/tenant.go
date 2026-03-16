@@ -47,7 +47,9 @@ func (Tenant) Fields() []ent.Field {
 		field.String("org_size").
 			Optional(),
 		field.String("use_case").
-			Optional(),
+			Optional().
+			Nillable().
+			Comment("Primary business use case: hospitality | retail | quick_service | manufacturing | warehousing | services | e_commerce | other"),
 		field.String("subscription_plan").
 			Optional(),
 		field.String("subscription_status").
@@ -76,6 +78,7 @@ func (Tenant) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("warehouses", Warehouse.Type),
 		edge.To("items", Item.Type),
+		edge.To("item_categories", ItemCategory.Type),
 	}
 }
 
