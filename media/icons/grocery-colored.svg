@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_grocery" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_grocery)"/>
+  <g transform="translate(200,220)">
+    <path d="M-100,0 L100,0 L80,80 L-80,80 Z" fill="#fff" opacity="0.9"/>
+    <path d="M-60,0 Q0,-100 60,0" fill="none" stroke="#fff" stroke-width="12" opacity="0.8"/>
+    <circle cx="-30" cy="-20" r="25" fill="#ef4444"/>
+    <rect x="10" y="-40" width="30" height="60" fill="#fbbf24"/>
+  </g>
+</svg>

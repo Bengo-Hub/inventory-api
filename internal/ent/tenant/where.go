@@ -1367,6 +1367,29 @@ func HasItemsWith(preds ...predicate.Item) predicate.Tenant {
 	})
 }
 
+// HasItemCategories applies the HasEdge predicate on the "item_categories" edge.
+func HasItemCategories() predicate.Tenant {
+	return predicate.Tenant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ItemCategoriesTable, ItemCategoriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasItemCategoriesWith applies the HasEdge predicate on the "item_categories" edge with a given conditions (other predicates).
+func HasItemCategoriesWith(preds ...predicate.ItemCategory) predicate.Tenant {
+	return predicate.Tenant(func(s *sql.Selector) {
+		step := newItemCategoriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Tenant) predicate.Tenant {
 	return predicate.Tenant(sql.AndPredicates(predicates...))

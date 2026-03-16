@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -28,12 +30,12 @@ type Item struct {
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
-	// Item category for grouping
-	Category string `json:"category,omitempty"`
-	// Unit price in smallest currency unit
-	Price float64 `json:"price,omitempty"`
-	// PIECE, KG, LITRE, PORTION
-	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
+	// Reference to ItemCategory
+	CategoryID *uuid.UUID `json:"category_id,omitempty"`
+	// Reference to Unit
+	UnitID *uuid.UUID `json:"unit_id,omitempty"`
+	// Item type for master data classification
+	Type item.Type `json:"type,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// ImageURL holds the value of the "image_url" field.
@@ -58,9 +60,17 @@ type ItemEdges struct {
 	Balances []*InventoryBalance `json:"balances,omitempty"`
 	// RecipeIngredients holds the value of the recipe_ingredients edge.
 	RecipeIngredients []*RecipeIngredient `json:"recipe_ingredients,omitempty"`
+	// Primary unit of measure
+	Units *Unit `json:"units,omitempty"`
+	// Variants holds the value of the variants edge.
+	Variants []*ItemVariant `json:"variants,omitempty"`
+	// Translations holds the value of the translations edge.
+	Translations []*ItemTranslation `json:"translations,omitempty"`
+	// ItemCategory holds the value of the item_category edge.
+	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [7]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -92,18 +102,58 @@ func (e ItemEdges) RecipeIngredientsOrErr() ([]*RecipeIngredient, error) {
 	return nil, &NotLoadedError{edge: "recipe_ingredients"}
 }
 
+// UnitsOrErr returns the Units value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) UnitsOrErr() (*Unit, error) {
+	if e.Units != nil {
+		return e.Units, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: unit.Label}
+	}
+	return nil, &NotLoadedError{edge: "units"}
+}
+
+// VariantsOrErr returns the Variants value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) VariantsOrErr() ([]*ItemVariant, error) {
+	if e.loadedTypes[4] {
+		return e.Variants, nil
+	}
+	return nil, &NotLoadedError{edge: "variants"}
+}
+
+// TranslationsOrErr returns the Translations value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) TranslationsOrErr() ([]*ItemTranslation, error) {
+	if e.loadedTypes[5] {
+		return e.Translations, nil
+	}
+	return nil, &NotLoadedError{edge: "translations"}
+}
+
+// ItemCategoryOrErr returns the ItemCategory value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
+	if e.ItemCategory != nil {
+		return e.ItemCategory, nil
+	} else if e.loadedTypes[6] {
+		return nil, &NotFoundError{label: itemcategory.Label}
+	}
+	return nil, &NotLoadedError{edge: "item_category"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Item) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case item.FieldCategoryID, item.FieldUnitID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldMetadata:
 			values[i] = new([]byte)
 		case item.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case item.FieldPrice:
-			values[i] = new(sql.NullFloat64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldCategory, item.FieldUnitOfMeasure, item.FieldImageURL:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -154,23 +204,25 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Description = value.String
 			}
-		case item.FieldCategory:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field category", values[i])
+		case item.FieldCategoryID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field category_id", values[i])
 			} else if value.Valid {
-				_m.Category = value.String
+				_m.CategoryID = new(uuid.UUID)
+				*_m.CategoryID = *value.S.(*uuid.UUID)
 			}
-		case item.FieldPrice:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field price", values[i])
+		case item.FieldUnitID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_id", values[i])
 			} else if value.Valid {
-				_m.Price = value.Float64
+				_m.UnitID = new(uuid.UUID)
+				*_m.UnitID = *value.S.(*uuid.UUID)
 			}
-		case item.FieldUnitOfMeasure:
+		case item.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field unit_of_measure", values[i])
+				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
-				_m.UnitOfMeasure = value.String
+				_m.Type = item.Type(value.String)
 			}
 		case item.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -232,6 +284,26 @@ func (_m *Item) QueryRecipeIngredients() *RecipeIngredientQuery {
 	return NewItemClient(_m.config).QueryRecipeIngredients(_m)
 }
 
+// QueryUnits queries the "units" edge of the Item entity.
+func (_m *Item) QueryUnits() *UnitQuery {
+	return NewItemClient(_m.config).QueryUnits(_m)
+}
+
+// QueryVariants queries the "variants" edge of the Item entity.
+func (_m *Item) QueryVariants() *ItemVariantQuery {
+	return NewItemClient(_m.config).QueryVariants(_m)
+}
+
+// QueryTranslations queries the "translations" edge of the Item entity.
+func (_m *Item) QueryTranslations() *ItemTranslationQuery {
+	return NewItemClient(_m.config).QueryTranslations(_m)
+}
+
+// QueryItemCategory queries the "item_category" edge of the Item entity.
+func (_m *Item) QueryItemCategory() *ItemCategoryQuery {
+	return NewItemClient(_m.config).QueryItemCategory(_m)
+}
+
 // Update returns a builder for updating this Item.
 // Note that you need to call Item.Unwrap() before calling this method if this Item
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -267,14 +339,18 @@ func (_m *Item) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
 	builder.WriteString(", ")
-	builder.WriteString("category=")
-	builder.WriteString(_m.Category)
+	if v := _m.CategoryID; v != nil {
+		builder.WriteString("category_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("price=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Price))
+	if v := _m.UnitID; v != nil {
+		builder.WriteString("unit_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("unit_of_measure=")
-	builder.WriteString(_m.UnitOfMeasure)
+	builder.WriteString("type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Type))
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

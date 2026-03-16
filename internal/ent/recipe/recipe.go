@@ -27,6 +27,8 @@ const (
 	FieldUnitOfMeasure = "unit_of_measure"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldPrepTimeMinutes holds the string denoting the prep_time_minutes field in the database.
+	FieldPrepTimeMinutes = "prep_time_minutes"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -55,6 +57,7 @@ var Columns = []string{
 	FieldOutputQty,
 	FieldUnitOfMeasure,
 	FieldIsActive,
+	FieldPrepTimeMinutes,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -133,6 +136,11 @@ func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByPrepTimeMinutes orders the results by the prep_time_minutes field.
+func ByPrepTimeMinutes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrepTimeMinutes, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

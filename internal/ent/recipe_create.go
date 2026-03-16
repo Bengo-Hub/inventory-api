@@ -85,6 +85,20 @@ func (_c *RecipeCreate) SetNillableIsActive(v *bool) *RecipeCreate {
 	return _c
 }
 
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (_c *RecipeCreate) SetPrepTimeMinutes(v int) *RecipeCreate {
+	_c.mutation.SetPrepTimeMinutes(v)
+	return _c
+}
+
+// SetNillablePrepTimeMinutes sets the "prep_time_minutes" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillablePrepTimeMinutes(v *int) *RecipeCreate {
+	if v != nil {
+		_c.SetPrepTimeMinutes(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *RecipeCreate) SetMetadata(v map[string]interface{}) *RecipeCreate {
 	_c.mutation.SetMetadata(v)
@@ -319,6 +333,10 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
 	}
+	if value, ok := _c.mutation.PrepTimeMinutes(); ok {
+		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
+		_node.PrepTimeMinutes = &value
+	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(recipe.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
@@ -474,6 +492,30 @@ func (u *RecipeUpsert) SetIsActive(v bool) *RecipeUpsert {
 // UpdateIsActive sets the "is_active" field to the value that was provided on create.
 func (u *RecipeUpsert) UpdateIsActive() *RecipeUpsert {
 	u.SetExcluded(recipe.FieldIsActive)
+	return u
+}
+
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (u *RecipeUpsert) SetPrepTimeMinutes(v int) *RecipeUpsert {
+	u.Set(recipe.FieldPrepTimeMinutes, v)
+	return u
+}
+
+// UpdatePrepTimeMinutes sets the "prep_time_minutes" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdatePrepTimeMinutes() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldPrepTimeMinutes)
+	return u
+}
+
+// AddPrepTimeMinutes adds v to the "prep_time_minutes" field.
+func (u *RecipeUpsert) AddPrepTimeMinutes(v int) *RecipeUpsert {
+	u.Add(recipe.FieldPrepTimeMinutes, v)
+	return u
+}
+
+// ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
+func (u *RecipeUpsert) ClearPrepTimeMinutes() *RecipeUpsert {
+	u.SetNull(recipe.FieldPrepTimeMinutes)
 	return u
 }
 
@@ -646,6 +688,34 @@ func (u *RecipeUpsertOne) SetIsActive(v bool) *RecipeUpsertOne {
 func (u *RecipeUpsertOne) UpdateIsActive() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (u *RecipeUpsertOne) SetPrepTimeMinutes(v int) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetPrepTimeMinutes(v)
+	})
+}
+
+// AddPrepTimeMinutes adds v to the "prep_time_minutes" field.
+func (u *RecipeUpsertOne) AddPrepTimeMinutes(v int) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddPrepTimeMinutes(v)
+	})
+}
+
+// UpdatePrepTimeMinutes sets the "prep_time_minutes" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdatePrepTimeMinutes() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdatePrepTimeMinutes()
+	})
+}
+
+// ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
+func (u *RecipeUpsertOne) ClearPrepTimeMinutes() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearPrepTimeMinutes()
 	})
 }
 
@@ -990,6 +1060,34 @@ func (u *RecipeUpsertBulk) SetIsActive(v bool) *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) UpdateIsActive() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetPrepTimeMinutes sets the "prep_time_minutes" field.
+func (u *RecipeUpsertBulk) SetPrepTimeMinutes(v int) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetPrepTimeMinutes(v)
+	})
+}
+
+// AddPrepTimeMinutes adds v to the "prep_time_minutes" field.
+func (u *RecipeUpsertBulk) AddPrepTimeMinutes(v int) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddPrepTimeMinutes(v)
+	})
+}
+
+// UpdatePrepTimeMinutes sets the "prep_time_minutes" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdatePrepTimeMinutes() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdatePrepTimeMinutes()
+	})
+}
+
+// ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
+func (u *RecipeUpsertBulk) ClearPrepTimeMinutes() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearPrepTimeMinutes()
 	})
 }
 

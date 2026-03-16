@@ -18,6 +18,14 @@ type Tx struct {
 	InventoryBalance *InventoryBalanceClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemCategory is the client for interacting with the ItemCategory builders.
+	ItemCategory *ItemCategoryClient
+	// ItemTranslation is the client for interacting with the ItemTranslation builders.
+	ItemTranslation *ItemTranslationClient
+	// ItemVariant is the client for interacting with the ItemVariant builders.
+	ItemVariant *ItemVariantClient
+	// OutboxEvent is the client for interacting with the OutboxEvent builders.
+	OutboxEvent *OutboxEventClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
@@ -26,6 +34,8 @@ type Tx struct {
 	Reservation *ReservationClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
+	// Unit is the client for interacting with the Unit builders.
+	Unit *UnitClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
 
@@ -162,10 +172,15 @@ func (tx *Tx) init() {
 	tx.Consumption = NewConsumptionClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.ItemCategory = NewItemCategoryClient(tx.config)
+	tx.ItemTranslation = NewItemTranslationClient(tx.config)
+	tx.ItemVariant = NewItemVariantClient(tx.config)
+	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
 	tx.Reservation = NewReservationClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
+	tx.Unit = NewUnitClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
 }
 

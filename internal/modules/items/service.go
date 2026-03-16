@@ -10,7 +10,31 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/Bengo-Hub/shared-events"
+	"time"
 )
+
+type ItemDTO struct {
+	ID          uuid.UUID      `json:"id"`
+	SKU         string         `json:"sku"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	CategoryID  *uuid.UUID     `json:"category_id,omitempty"`
+	UnitID      *uuid.UUID     `json:"unit_id,omitempty"`
+	Type        string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
+	IsActive    bool           `json:"is_active"`
+	ImageURL    string         `json:"image_url,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+type CategoryDTO struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	IsActive    bool      `json:"is_active"`
+}
 
 // StockAvailability matches the DTO expected by the ordering-backend client.
 type StockAvailability struct {
@@ -186,4 +210,167 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 		LowStockItems:   lowStock,
 		OutOfStockItems: outOfStock,
 	}, nil
+}
+
+func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
+	return &ItemDTO{
+		ID:          i.ID,
+		SKU:         i.Sku,
+		Name:        i.Name,
+		Description: i.Description,
+		CategoryID:  i.CategoryID,
+		UnitID:      i.UnitID,
+		Type:        string(i.Type),
+		IsActive:    i.IsActive,
+		ImageURL:    i.ImageURL,
+		Metadata:    i.Metadata,
+		CreatedAt:   i.CreatedAt,
+		UpdatedAt:   i.UpdatedAt,
+	}
+}
+
+// CreateItem creates a new item and records an outbox event within a transaction.
+func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	i, err := tx.Item.Create().
+		SetTenantID(tenantID).
+		SetSku(dto.SKU).
+		SetName(dto.Name).
+		SetNillableDescription(&dto.Description).
+		SetNillableCategoryID(dto.CategoryID).
+		SetNillableUnitID(dto.UnitID).
+		SetType(item.Type(dto.Type)).
+		SetIsActive(dto.IsActive).
+		SetNillableImageURL(&dto.ImageURL).
+		SetMetadata(dto.Metadata).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: create item: %w", err)
+	}
+
+	// Publish event to outbox
+	event := &events.Event{
+		ID:            uuid.New(),
+		TenantID:      tenantID,
+		AggregateType: "item",
+		AggregateID:   i.ID,
+		EventType:     "inventory.item.created",
+		Payload: map[string]any{
+			"id":           i.ID,
+			"sku":          i.Sku,
+			"name":         i.Name,
+			"type":         i.Type,
+			"category_id":  i.CategoryID,
+			"unit_id":      i.UnitID,
+			"is_active":    i.IsActive,
+		},
+		Timestamp: time.Now().UTC(),
+	}
+
+	payload, err := event.ToJSON()
+	if err != nil {
+		return nil, fmt.Errorf("items: marshal event: %w", err)
+	}
+
+	_, err = tx.OutboxEvent.Create().
+		SetID(event.ID).
+		SetTenantID(tenantID).
+		SetAggregateType(event.AggregateType).
+		SetAggregateID(event.AggregateID.String()).
+		SetEventType(event.EventType).
+		SetPayload(payload).
+		SetStatus("PENDING").
+		SetCreatedAt(event.Timestamp).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: create outbox record: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("items: commit transaction: %w", err)
+	}
+
+	return s.mapToDTO(i), nil
+}
+
+// UpdateItem updates an item and records an outbox event within a transaction.
+func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	builder := tx.Item.UpdateOneID(id).
+		Where(item.TenantID(tenantID)).
+		SetName(dto.Name).
+		SetNillableDescription(&dto.Description).
+		SetNillableCategoryID(dto.CategoryID).
+		SetNillableUnitID(dto.UnitID).
+		SetType(item.Type(dto.Type)).
+		SetIsActive(dto.IsActive).
+		SetNillableImageURL(&dto.ImageURL).
+		SetMetadata(dto.Metadata)
+
+	i, err := builder.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: update item: %w", err)
+	}
+
+	// Publish event to outbox
+	event := &events.Event{
+		ID:            uuid.New(),
+		TenantID:      tenantID,
+		AggregateType: "item",
+		AggregateID:   i.ID,
+		EventType:     "inventory.item.updated",
+		Payload: map[string]any{
+			"id":           i.ID,
+			"sku":          i.Sku,
+			"name":         i.Name,
+			"type":         i.Type,
+			"category_id":  i.CategoryID,
+			"unit_id":      i.UnitID,
+			"is_active":    i.IsActive,
+		},
+		Timestamp: time.Now().UTC(),
+	}
+
+	payload, err := event.ToJSON()
+	if err != nil {
+		return nil, fmt.Errorf("items: marshal event: %w", err)
+	}
+
+	_, err = tx.OutboxEvent.Create().
+		SetID(event.ID).
+		SetTenantID(tenantID).
+		SetAggregateType(event.AggregateType).
+		SetAggregateID(event.AggregateID.String()).
+		SetEventType(event.EventType).
+		SetPayload(payload).
+		SetStatus("PENDING").
+		SetCreatedAt(event.Timestamp).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: create outbox record: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("items: commit transaction: %w", err)
+	}
+
+	return s.mapToDTO(i), nil
 }

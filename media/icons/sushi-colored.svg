@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_sushi" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fda4af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f43f5e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_sushi)"/>
+  <g transform="translate(200,200)">
+    <circle cx="0" cy="0" r="80" fill="#000"/>
+    <circle cx="0" cy="0" r="65" fill="#fff"/>
+    <rect x="-30" y="-30" width="60" height="60" rx="10" fill="#ef4444"/>
+    <circle cx="0" cy="0" r="15" fill="#facc15" opacity="0.6"/>
+  </g>
+</svg>

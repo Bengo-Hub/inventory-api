@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // ItemsServicer defines the contract for item availability operations.
@@ -43,21 +44,29 @@ type RecipesServicer interface {
 	GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*recipes.RecipeDTO, error)
 }
 
+// UnitsServicer defines the contract for unit management.
+type UnitsServicer interface {
+	ListUnits(ctx context.Context, tenantID uuid.UUID) ([]units.UnitDTO, error)
+	CreateUnit(ctx context.Context, tenantID uuid.UUID, dto units.UnitDTO) (*units.UnitDTO, error)
+}
+
 // InventoryHandler handles all inventory-related HTTP endpoints.
 type InventoryHandler struct {
-	log      *zap.Logger
-	itemsSvc ItemsServicer
-	stockSvc StockServicer
+	log       *zap.Logger
+	itemsSvc  ItemsServicer
+	stockSvc  StockServicer
 	recipeSvc RecipesServicer
+	unitSvc   UnitsServicer
 }
 
 // NewInventoryHandler creates a new inventory handler.
-func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer, recipeSvc RecipesServicer) *InventoryHandler {
+func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer, recipeSvc RecipesServicer, unitSvc UnitsServicer) *InventoryHandler {
 	return &InventoryHandler{
-		log:      log.Named("inventory.handler"),
-		itemsSvc: itemsSvc,
-		stockSvc: stockSvc,
+		log:       log.Named("inventory.handler"),
+		itemsSvc:  itemsSvc,
+		stockSvc:  stockSvc,
 		recipeSvc: recipeSvc,
+		unitSvc:   unitSvc,
 	}
 }
 
@@ -115,6 +124,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/recipes/{recipeID}", h.GetRecipe)
 		inv.Put("/recipes/{recipeID}", h.UpdateRecipe)
 		inv.Delete("/recipes/{recipeID}", h.DeleteRecipe)
+
+		// Units
+		inv.Get("/units", h.ListUnits)
+		inv.Post("/units", h.CreateUnit)
 	})
 }
 
@@ -501,4 +514,46 @@ func (h *InventoryHandler) GetInventorySummary(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, http.StatusOK, summary)
+}
+
+// ListUnits handles GET /v1/{tenant}/inventory/units
+func (h *InventoryHandler) ListUnits(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	results, err := h.unitSvc.ListUnits(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("list units failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list units")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, results)
+}
+
+// CreateUnit handles POST /v1/{tenant}/inventory/units
+func (h *InventoryHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req units.UnitDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	result, err := h.unitSvc.CreateUnit(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("create unit failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, result)
 }

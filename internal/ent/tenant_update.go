@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -385,6 +386,21 @@ func (_u *TenantUpdate) AddItems(v ...*Item) *TenantUpdate {
 	return _u.AddItemIDs(ids...)
 }
 
+// AddItemCategoryIDs adds the "item_categories" edge to the ItemCategory entity by IDs.
+func (_u *TenantUpdate) AddItemCategoryIDs(ids ...uuid.UUID) *TenantUpdate {
+	_u.mutation.AddItemCategoryIDs(ids...)
+	return _u
+}
+
+// AddItemCategories adds the "item_categories" edges to the ItemCategory entity.
+func (_u *TenantUpdate) AddItemCategories(v ...*ItemCategory) *TenantUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddItemCategoryIDs(ids...)
+}
+
 // Mutation returns the TenantMutation object of the builder.
 func (_u *TenantUpdate) Mutation() *TenantMutation {
 	return _u.mutation
@@ -430,6 +446,27 @@ func (_u *TenantUpdate) RemoveItems(v ...*Item) *TenantUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearItemCategories clears all "item_categories" edges to the ItemCategory entity.
+func (_u *TenantUpdate) ClearItemCategories() *TenantUpdate {
+	_u.mutation.ClearItemCategories()
+	return _u
+}
+
+// RemoveItemCategoryIDs removes the "item_categories" edge to ItemCategory entities by IDs.
+func (_u *TenantUpdate) RemoveItemCategoryIDs(ids ...uuid.UUID) *TenantUpdate {
+	_u.mutation.RemoveItemCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveItemCategories removes "item_categories" edges to ItemCategory entities.
+func (_u *TenantUpdate) RemoveItemCategories(v ...*ItemCategory) *TenantUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveItemCategoryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -680,6 +717,51 @@ func (_u *TenantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedItemCategoriesIDs(); len(nodes) > 0 && !_u.mutation.ItemCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1061,6 +1143,21 @@ func (_u *TenantUpdateOne) AddItems(v ...*Item) *TenantUpdateOne {
 	return _u.AddItemIDs(ids...)
 }
 
+// AddItemCategoryIDs adds the "item_categories" edge to the ItemCategory entity by IDs.
+func (_u *TenantUpdateOne) AddItemCategoryIDs(ids ...uuid.UUID) *TenantUpdateOne {
+	_u.mutation.AddItemCategoryIDs(ids...)
+	return _u
+}
+
+// AddItemCategories adds the "item_categories" edges to the ItemCategory entity.
+func (_u *TenantUpdateOne) AddItemCategories(v ...*ItemCategory) *TenantUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddItemCategoryIDs(ids...)
+}
+
 // Mutation returns the TenantMutation object of the builder.
 func (_u *TenantUpdateOne) Mutation() *TenantMutation {
 	return _u.mutation
@@ -1106,6 +1203,27 @@ func (_u *TenantUpdateOne) RemoveItems(v ...*Item) *TenantUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearItemCategories clears all "item_categories" edges to the ItemCategory entity.
+func (_u *TenantUpdateOne) ClearItemCategories() *TenantUpdateOne {
+	_u.mutation.ClearItemCategories()
+	return _u
+}
+
+// RemoveItemCategoryIDs removes the "item_categories" edge to ItemCategory entities by IDs.
+func (_u *TenantUpdateOne) RemoveItemCategoryIDs(ids ...uuid.UUID) *TenantUpdateOne {
+	_u.mutation.RemoveItemCategoryIDs(ids...)
+	return _u
+}
+
+// RemoveItemCategories removes "item_categories" edges to ItemCategory entities.
+func (_u *TenantUpdateOne) RemoveItemCategories(v ...*ItemCategory) *TenantUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveItemCategoryIDs(ids...)
 }
 
 // Where appends a list predicates to the TenantUpdate builder.
@@ -1386,6 +1504,51 @@ func (_u *TenantUpdateOne) sqlSave(ctx context.Context) (_node *Tenant, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedItemCategoriesIDs(); len(nodes) > 0 && !_u.mutation.ItemCategoriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemCategoriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tenant.ItemCategoriesTable,
+			Columns: []string{tenant.ItemCategoriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

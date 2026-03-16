@@ -86,6 +86,11 @@ func IsActive(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldIsActive, v))
 }
 
+// PrepTimeMinutes applies equality check predicate on the "prep_time_minutes" field. It's identical to PrepTimeMinutesEQ.
+func PrepTimeMinutes(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldPrepTimeMinutes, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldCreatedAt, v))
@@ -379,6 +384,56 @@ func IsActiveEQ(v bool) predicate.Recipe {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// PrepTimeMinutesEQ applies the EQ predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesEQ(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesNEQ applies the NEQ predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesNEQ(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesIn applies the In predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesIn(vs ...int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldPrepTimeMinutes, vs...))
+}
+
+// PrepTimeMinutesNotIn applies the NotIn predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesNotIn(vs ...int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldPrepTimeMinutes, vs...))
+}
+
+// PrepTimeMinutesGT applies the GT predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesGT(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesGTE applies the GTE predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesGTE(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesLT applies the LT predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesLT(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesLTE applies the LTE predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesLTE(v int) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldPrepTimeMinutes, v))
+}
+
+// PrepTimeMinutesIsNil applies the IsNil predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldPrepTimeMinutes))
+}
+
+// PrepTimeMinutesNotNil applies the NotNil predicate on the "prep_time_minutes" field.
+func PrepTimeMinutesNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldPrepTimeMinutes))
 }
 
 // MetadataIsNil applies the IsNil predicate on the "metadata" field.

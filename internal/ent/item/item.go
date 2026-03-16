@@ -3,6 +3,7 @@
 package item
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -23,12 +24,12 @@ const (
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldCategory holds the string denoting the category field in the database.
-	FieldCategory = "category"
-	// FieldPrice holds the string denoting the price field in the database.
-	FieldPrice = "price"
-	// FieldUnitOfMeasure holds the string denoting the unit_of_measure field in the database.
-	FieldUnitOfMeasure = "unit_of_measure"
+	// FieldCategoryID holds the string denoting the category_id field in the database.
+	FieldCategoryID = "category_id"
+	// FieldUnitID holds the string denoting the unit_id field in the database.
+	FieldUnitID = "unit_id"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldImageURL holds the string denoting the image_url field in the database.
@@ -45,6 +46,14 @@ const (
 	EdgeBalances = "balances"
 	// EdgeRecipeIngredients holds the string denoting the recipe_ingredients edge name in mutations.
 	EdgeRecipeIngredients = "recipe_ingredients"
+	// EdgeUnits holds the string denoting the units edge name in mutations.
+	EdgeUnits = "units"
+	// EdgeVariants holds the string denoting the variants edge name in mutations.
+	EdgeVariants = "variants"
+	// EdgeTranslations holds the string denoting the translations edge name in mutations.
+	EdgeTranslations = "translations"
+	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
+	EdgeItemCategory = "item_category"
 	// Table holds the table name of the item in the database.
 	Table = "items"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -68,6 +77,34 @@ const (
 	RecipeIngredientsInverseTable = "recipe_ingredients"
 	// RecipeIngredientsColumn is the table column denoting the recipe_ingredients relation/edge.
 	RecipeIngredientsColumn = "item_id"
+	// UnitsTable is the table that holds the units relation/edge.
+	UnitsTable = "items"
+	// UnitsInverseTable is the table name for the Unit entity.
+	// It exists in this package in order to avoid circular dependency with the "unit" package.
+	UnitsInverseTable = "units"
+	// UnitsColumn is the table column denoting the units relation/edge.
+	UnitsColumn = "unit_id"
+	// VariantsTable is the table that holds the variants relation/edge.
+	VariantsTable = "item_variants"
+	// VariantsInverseTable is the table name for the ItemVariant entity.
+	// It exists in this package in order to avoid circular dependency with the "itemvariant" package.
+	VariantsInverseTable = "item_variants"
+	// VariantsColumn is the table column denoting the variants relation/edge.
+	VariantsColumn = "item_id"
+	// TranslationsTable is the table that holds the translations relation/edge.
+	TranslationsTable = "item_translations"
+	// TranslationsInverseTable is the table name for the ItemTranslation entity.
+	// It exists in this package in order to avoid circular dependency with the "itemtranslation" package.
+	TranslationsInverseTable = "item_translations"
+	// TranslationsColumn is the table column denoting the translations relation/edge.
+	TranslationsColumn = "item_id"
+	// ItemCategoryTable is the table that holds the item_category relation/edge.
+	ItemCategoryTable = "items"
+	// ItemCategoryInverseTable is the table name for the ItemCategory entity.
+	// It exists in this package in order to avoid circular dependency with the "itemcategory" package.
+	ItemCategoryInverseTable = "item_categories"
+	// ItemCategoryColumn is the table column denoting the item_category relation/edge.
+	ItemCategoryColumn = "category_id"
 )
 
 // Columns holds all SQL columns for item fields.
@@ -77,9 +114,9 @@ var Columns = []string{
 	FieldSku,
 	FieldName,
 	FieldDescription,
-	FieldCategory,
-	FieldPrice,
-	FieldUnitOfMeasure,
+	FieldCategoryID,
+	FieldUnitID,
+	FieldType,
 	FieldIsActive,
 	FieldImageURL,
 	FieldMetadata,
@@ -102,10 +139,6 @@ var (
 	SkuValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultPrice holds the default value on creation for the "price" field.
-	DefaultPrice float64
-	// DefaultUnitOfMeasure holds the default value on creation for the "unit_of_measure" field.
-	DefaultUnitOfMeasure string
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
@@ -119,6 +152,34 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Type defines the type for the "type" enum field.
+type Type string
+
+// TypeGOODS is the default value of the Type enum.
+const DefaultType = TypeGOODS
+
+// Type values.
+const (
+	TypeGOODS      Type = "GOODS"
+	TypeSERVICE    Type = "SERVICE"
+	TypeRECIPE     Type = "RECIPE"
+	TypeINGREDIENT Type = "INGREDIENT"
+)
+
+func (_type Type) String() string {
+	return string(_type)
+}
+
+// TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
+func TypeValidator(_type Type) error {
+	switch _type {
+	case TypeGOODS, TypeSERVICE, TypeRECIPE, TypeINGREDIENT:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for type field: %q", _type)
+	}
+}
 
 // OrderOption defines the ordering options for the Item queries.
 type OrderOption func(*sql.Selector)
@@ -148,19 +209,19 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
-// ByCategory orders the results by the category field.
-func ByCategory(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCategory, opts...).ToFunc()
+// ByCategoryID orders the results by the category_id field.
+func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
 }
 
-// ByPrice orders the results by the price field.
-func ByPrice(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPrice, opts...).ToFunc()
+// ByUnitID orders the results by the unit_id field.
+func ByUnitID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitID, opts...).ToFunc()
 }
 
-// ByUnitOfMeasure orders the results by the unit_of_measure field.
-func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUnitOfMeasure, opts...).ToFunc()
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.
@@ -217,6 +278,48 @@ func ByRecipeIngredients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 		sqlgraph.OrderByNeighborTerms(s, newRecipeIngredientsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUnitsField orders the results by units field.
+func ByUnitsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUnitsStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByVariantsCount orders the results by variants count.
+func ByVariantsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newVariantsStep(), opts...)
+	}
+}
+
+// ByVariants orders the results by variants terms.
+func ByVariants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newVariantsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByTranslationsCount orders the results by translations count.
+func ByTranslationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTranslationsStep(), opts...)
+	}
+}
+
+// ByTranslations orders the results by translations terms.
+func ByTranslations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTranslationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByItemCategoryField orders the results by item_category field.
+func ByItemCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newItemCategoryStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -236,5 +339,33 @@ func newRecipeIngredientsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RecipeIngredientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RecipeIngredientsTable, RecipeIngredientsColumn),
+	)
+}
+func newUnitsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UnitsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, UnitsTable, UnitsColumn),
+	)
+}
+func newVariantsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(VariantsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, VariantsTable, VariantsColumn),
+	)
+}
+func newTranslationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TranslationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TranslationsTable, TranslationsColumn),
+	)
+}
+func newItemCategoryStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ItemCategoryInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ItemCategoryTable, ItemCategoryColumn),
 	)
 }

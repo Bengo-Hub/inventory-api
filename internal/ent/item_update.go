@@ -13,9 +13,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -94,57 +98,56 @@ func (_u *ItemUpdate) ClearDescription() *ItemUpdate {
 	return _u
 }
 
-// SetCategory sets the "category" field.
-func (_u *ItemUpdate) SetCategory(v string) *ItemUpdate {
-	_u.mutation.SetCategory(v)
+// SetCategoryID sets the "category_id" field.
+func (_u *ItemUpdate) SetCategoryID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetCategoryID(v)
 	return _u
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableCategory(v *string) *ItemUpdate {
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableCategoryID(v *uuid.UUID) *ItemUpdate {
 	if v != nil {
-		_u.SetCategory(*v)
+		_u.SetCategoryID(*v)
 	}
 	return _u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (_u *ItemUpdate) ClearCategory() *ItemUpdate {
-	_u.mutation.ClearCategory()
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *ItemUpdate) ClearCategoryID() *ItemUpdate {
+	_u.mutation.ClearCategoryID()
 	return _u
 }
 
-// SetPrice sets the "price" field.
-func (_u *ItemUpdate) SetPrice(v float64) *ItemUpdate {
-	_u.mutation.ResetPrice()
-	_u.mutation.SetPrice(v)
+// SetUnitID sets the "unit_id" field.
+func (_u *ItemUpdate) SetUnitID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetUnitID(v)
 	return _u
 }
 
-// SetNillablePrice sets the "price" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillablePrice(v *float64) *ItemUpdate {
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUnitID(v *uuid.UUID) *ItemUpdate {
 	if v != nil {
-		_u.SetPrice(*v)
+		_u.SetUnitID(*v)
 	}
 	return _u
 }
 
-// AddPrice adds value to the "price" field.
-func (_u *ItemUpdate) AddPrice(v float64) *ItemUpdate {
-	_u.mutation.AddPrice(v)
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *ItemUpdate) ClearUnitID() *ItemUpdate {
+	_u.mutation.ClearUnitID()
 	return _u
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (_u *ItemUpdate) SetUnitOfMeasure(v string) *ItemUpdate {
-	_u.mutation.SetUnitOfMeasure(v)
+// SetType sets the "type" field.
+func (_u *ItemUpdate) SetType(v item.Type) *ItemUpdate {
+	_u.mutation.SetType(v)
 	return _u
 }
 
-// SetNillableUnitOfMeasure sets the "unit_of_measure" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableUnitOfMeasure(v *string) *ItemUpdate {
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableType(v *item.Type) *ItemUpdate {
 	if v != nil {
-		_u.SetUnitOfMeasure(*v)
+		_u.SetType(*v)
 	}
 	return _u
 }
@@ -230,6 +233,74 @@ func (_u *ItemUpdate) AddRecipeIngredients(v ...*RecipeIngredient) *ItemUpdate {
 	return _u.AddRecipeIngredientIDs(ids...)
 }
 
+// SetUnitsID sets the "units" edge to the Unit entity by ID.
+func (_u *ItemUpdate) SetUnitsID(id uuid.UUID) *ItemUpdate {
+	_u.mutation.SetUnitsID(id)
+	return _u
+}
+
+// SetNillableUnitsID sets the "units" edge to the Unit entity by ID if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUnitsID(id *uuid.UUID) *ItemUpdate {
+	if id != nil {
+		_u = _u.SetUnitsID(*id)
+	}
+	return _u
+}
+
+// SetUnits sets the "units" edge to the Unit entity.
+func (_u *ItemUpdate) SetUnits(v *Unit) *ItemUpdate {
+	return _u.SetUnitsID(v.ID)
+}
+
+// AddVariantIDs adds the "variants" edge to the ItemVariant entity by IDs.
+func (_u *ItemUpdate) AddVariantIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddVariantIDs(ids...)
+	return _u
+}
+
+// AddVariants adds the "variants" edges to the ItemVariant entity.
+func (_u *ItemUpdate) AddVariants(v ...*ItemVariant) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddVariantIDs(ids...)
+}
+
+// AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
+func (_u *ItemUpdate) AddTranslationIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddTranslationIDs(ids...)
+	return _u
+}
+
+// AddTranslations adds the "translations" edges to the ItemTranslation entity.
+func (_u *ItemUpdate) AddTranslations(v ...*ItemTranslation) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTranslationIDs(ids...)
+}
+
+// SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
+func (_u *ItemUpdate) SetItemCategoryID(id uuid.UUID) *ItemUpdate {
+	_u.mutation.SetItemCategoryID(id)
+	return _u
+}
+
+// SetNillableItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID if the given value is not nil.
+func (_u *ItemUpdate) SetNillableItemCategoryID(id *uuid.UUID) *ItemUpdate {
+	if id != nil {
+		_u = _u.SetItemCategoryID(*id)
+	}
+	return _u
+}
+
+// SetItemCategory sets the "item_category" edge to the ItemCategory entity.
+func (_u *ItemUpdate) SetItemCategory(v *ItemCategory) *ItemUpdate {
+	return _u.SetItemCategoryID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdate) Mutation() *ItemMutation {
 	return _u.mutation
@@ -283,6 +354,60 @@ func (_u *ItemUpdate) RemoveRecipeIngredients(v ...*RecipeIngredient) *ItemUpdat
 	return _u.RemoveRecipeIngredientIDs(ids...)
 }
 
+// ClearUnits clears the "units" edge to the Unit entity.
+func (_u *ItemUpdate) ClearUnits() *ItemUpdate {
+	_u.mutation.ClearUnits()
+	return _u
+}
+
+// ClearVariants clears all "variants" edges to the ItemVariant entity.
+func (_u *ItemUpdate) ClearVariants() *ItemUpdate {
+	_u.mutation.ClearVariants()
+	return _u
+}
+
+// RemoveVariantIDs removes the "variants" edge to ItemVariant entities by IDs.
+func (_u *ItemUpdate) RemoveVariantIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveVariantIDs(ids...)
+	return _u
+}
+
+// RemoveVariants removes "variants" edges to ItemVariant entities.
+func (_u *ItemUpdate) RemoveVariants(v ...*ItemVariant) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveVariantIDs(ids...)
+}
+
+// ClearTranslations clears all "translations" edges to the ItemTranslation entity.
+func (_u *ItemUpdate) ClearTranslations() *ItemUpdate {
+	_u.mutation.ClearTranslations()
+	return _u
+}
+
+// RemoveTranslationIDs removes the "translations" edge to ItemTranslation entities by IDs.
+func (_u *ItemUpdate) RemoveTranslationIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveTranslationIDs(ids...)
+	return _u
+}
+
+// RemoveTranslations removes "translations" edges to ItemTranslation entities.
+func (_u *ItemUpdate) RemoveTranslations(v ...*ItemTranslation) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTranslationIDs(ids...)
+}
+
+// ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
+func (_u *ItemUpdate) ClearItemCategory() *ItemUpdate {
+	_u.mutation.ClearItemCategory()
+	return _u
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ItemUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -331,6 +456,11 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := item.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Item.tenant"`)
 	}
@@ -361,20 +491,8 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(item.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.Category(); ok {
-		_spec.SetField(item.FieldCategory, field.TypeString, value)
-	}
-	if _u.mutation.CategoryCleared() {
-		_spec.ClearField(item.FieldCategory, field.TypeString)
-	}
-	if value, ok := _u.mutation.Price(); ok {
-		_spec.SetField(item.FieldPrice, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedPrice(); ok {
-		_spec.AddField(item.FieldPrice, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.UnitOfMeasure(); ok {
-		_spec.SetField(item.FieldUnitOfMeasure, field.TypeString, value)
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(item.FieldType, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)
@@ -503,6 +621,154 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UnitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.UnitsTable,
+			Columns: []string{item.UnitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UnitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.UnitsTable,
+			Columns: []string{item.UnitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.VariantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedVariantsIDs(); len(nodes) > 0 && !_u.mutation.VariantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.VariantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTranslationsIDs(); len(nodes) > 0 && !_u.mutation.TranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemCategoryTable,
+			Columns: []string{item.ItemCategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemCategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemCategoryTable,
+			Columns: []string{item.ItemCategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -592,57 +858,56 @@ func (_u *ItemUpdateOne) ClearDescription() *ItemUpdateOne {
 	return _u
 }
 
-// SetCategory sets the "category" field.
-func (_u *ItemUpdateOne) SetCategory(v string) *ItemUpdateOne {
-	_u.mutation.SetCategory(v)
+// SetCategoryID sets the "category_id" field.
+func (_u *ItemUpdateOne) SetCategoryID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetCategoryID(v)
 	return _u
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableCategory(v *string) *ItemUpdateOne {
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableCategoryID(v *uuid.UUID) *ItemUpdateOne {
 	if v != nil {
-		_u.SetCategory(*v)
+		_u.SetCategoryID(*v)
 	}
 	return _u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (_u *ItemUpdateOne) ClearCategory() *ItemUpdateOne {
-	_u.mutation.ClearCategory()
+// ClearCategoryID clears the value of the "category_id" field.
+func (_u *ItemUpdateOne) ClearCategoryID() *ItemUpdateOne {
+	_u.mutation.ClearCategoryID()
 	return _u
 }
 
-// SetPrice sets the "price" field.
-func (_u *ItemUpdateOne) SetPrice(v float64) *ItemUpdateOne {
-	_u.mutation.ResetPrice()
-	_u.mutation.SetPrice(v)
+// SetUnitID sets the "unit_id" field.
+func (_u *ItemUpdateOne) SetUnitID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetUnitID(v)
 	return _u
 }
 
-// SetNillablePrice sets the "price" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillablePrice(v *float64) *ItemUpdateOne {
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUnitID(v *uuid.UUID) *ItemUpdateOne {
 	if v != nil {
-		_u.SetPrice(*v)
+		_u.SetUnitID(*v)
 	}
 	return _u
 }
 
-// AddPrice adds value to the "price" field.
-func (_u *ItemUpdateOne) AddPrice(v float64) *ItemUpdateOne {
-	_u.mutation.AddPrice(v)
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *ItemUpdateOne) ClearUnitID() *ItemUpdateOne {
+	_u.mutation.ClearUnitID()
 	return _u
 }
 
-// SetUnitOfMeasure sets the "unit_of_measure" field.
-func (_u *ItemUpdateOne) SetUnitOfMeasure(v string) *ItemUpdateOne {
-	_u.mutation.SetUnitOfMeasure(v)
+// SetType sets the "type" field.
+func (_u *ItemUpdateOne) SetType(v item.Type) *ItemUpdateOne {
+	_u.mutation.SetType(v)
 	return _u
 }
 
-// SetNillableUnitOfMeasure sets the "unit_of_measure" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableUnitOfMeasure(v *string) *ItemUpdateOne {
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableType(v *item.Type) *ItemUpdateOne {
 	if v != nil {
-		_u.SetUnitOfMeasure(*v)
+		_u.SetType(*v)
 	}
 	return _u
 }
@@ -728,6 +993,74 @@ func (_u *ItemUpdateOne) AddRecipeIngredients(v ...*RecipeIngredient) *ItemUpdat
 	return _u.AddRecipeIngredientIDs(ids...)
 }
 
+// SetUnitsID sets the "units" edge to the Unit entity by ID.
+func (_u *ItemUpdateOne) SetUnitsID(id uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetUnitsID(id)
+	return _u
+}
+
+// SetNillableUnitsID sets the "units" edge to the Unit entity by ID if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUnitsID(id *uuid.UUID) *ItemUpdateOne {
+	if id != nil {
+		_u = _u.SetUnitsID(*id)
+	}
+	return _u
+}
+
+// SetUnits sets the "units" edge to the Unit entity.
+func (_u *ItemUpdateOne) SetUnits(v *Unit) *ItemUpdateOne {
+	return _u.SetUnitsID(v.ID)
+}
+
+// AddVariantIDs adds the "variants" edge to the ItemVariant entity by IDs.
+func (_u *ItemUpdateOne) AddVariantIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddVariantIDs(ids...)
+	return _u
+}
+
+// AddVariants adds the "variants" edges to the ItemVariant entity.
+func (_u *ItemUpdateOne) AddVariants(v ...*ItemVariant) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddVariantIDs(ids...)
+}
+
+// AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
+func (_u *ItemUpdateOne) AddTranslationIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddTranslationIDs(ids...)
+	return _u
+}
+
+// AddTranslations adds the "translations" edges to the ItemTranslation entity.
+func (_u *ItemUpdateOne) AddTranslations(v ...*ItemTranslation) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddTranslationIDs(ids...)
+}
+
+// SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
+func (_u *ItemUpdateOne) SetItemCategoryID(id uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetItemCategoryID(id)
+	return _u
+}
+
+// SetNillableItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableItemCategoryID(id *uuid.UUID) *ItemUpdateOne {
+	if id != nil {
+		_u = _u.SetItemCategoryID(*id)
+	}
+	return _u
+}
+
+// SetItemCategory sets the "item_category" edge to the ItemCategory entity.
+func (_u *ItemUpdateOne) SetItemCategory(v *ItemCategory) *ItemUpdateOne {
+	return _u.SetItemCategoryID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdateOne) Mutation() *ItemMutation {
 	return _u.mutation
@@ -779,6 +1112,60 @@ func (_u *ItemUpdateOne) RemoveRecipeIngredients(v ...*RecipeIngredient) *ItemUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRecipeIngredientIDs(ids...)
+}
+
+// ClearUnits clears the "units" edge to the Unit entity.
+func (_u *ItemUpdateOne) ClearUnits() *ItemUpdateOne {
+	_u.mutation.ClearUnits()
+	return _u
+}
+
+// ClearVariants clears all "variants" edges to the ItemVariant entity.
+func (_u *ItemUpdateOne) ClearVariants() *ItemUpdateOne {
+	_u.mutation.ClearVariants()
+	return _u
+}
+
+// RemoveVariantIDs removes the "variants" edge to ItemVariant entities by IDs.
+func (_u *ItemUpdateOne) RemoveVariantIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveVariantIDs(ids...)
+	return _u
+}
+
+// RemoveVariants removes "variants" edges to ItemVariant entities.
+func (_u *ItemUpdateOne) RemoveVariants(v ...*ItemVariant) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveVariantIDs(ids...)
+}
+
+// ClearTranslations clears all "translations" edges to the ItemTranslation entity.
+func (_u *ItemUpdateOne) ClearTranslations() *ItemUpdateOne {
+	_u.mutation.ClearTranslations()
+	return _u
+}
+
+// RemoveTranslationIDs removes the "translations" edge to ItemTranslation entities by IDs.
+func (_u *ItemUpdateOne) RemoveTranslationIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveTranslationIDs(ids...)
+	return _u
+}
+
+// RemoveTranslations removes "translations" edges to ItemTranslation entities.
+func (_u *ItemUpdateOne) RemoveTranslations(v ...*ItemTranslation) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveTranslationIDs(ids...)
+}
+
+// ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
+func (_u *ItemUpdateOne) ClearItemCategory() *ItemUpdateOne {
+	_u.mutation.ClearItemCategory()
+	return _u
 }
 
 // Where appends a list predicates to the ItemUpdate builder.
@@ -842,6 +1229,11 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GetType(); ok {
+		if err := item.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Item.tenant"`)
 	}
@@ -889,20 +1281,8 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(item.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.Category(); ok {
-		_spec.SetField(item.FieldCategory, field.TypeString, value)
-	}
-	if _u.mutation.CategoryCleared() {
-		_spec.ClearField(item.FieldCategory, field.TypeString)
-	}
-	if value, ok := _u.mutation.Price(); ok {
-		_spec.SetField(item.FieldPrice, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedPrice(); ok {
-		_spec.AddField(item.FieldPrice, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.UnitOfMeasure(); ok {
-		_spec.SetField(item.FieldUnitOfMeasure, field.TypeString, value)
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(item.FieldType, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)
@@ -1031,6 +1411,154 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UnitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.UnitsTable,
+			Columns: []string{item.UnitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UnitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.UnitsTable,
+			Columns: []string{item.UnitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.VariantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedVariantsIDs(); len(nodes) > 0 && !_u.mutation.VariantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.VariantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.VariantsTable,
+			Columns: []string{item.VariantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedTranslationsIDs(); len(nodes) > 0 && !_u.mutation.TranslationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TranslationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.TranslationsTable,
+			Columns: []string{item.TranslationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemCategoryTable,
+			Columns: []string{item.ItemCategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemCategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemCategoryTable,
+			Columns: []string{item.ItemCategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f87171;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <!-- Pizza slice shape -->
+  <g transform="translate(200,210)">
+    <!-- Pizza base (triangle) -->
+    <polygon points="0,-120 -90,100 90,100" fill="#F59E0B" stroke="#D97706" stroke-width="3"/>
+    <!-- Crust -->
+    <path d="M-90,100 Q0,130 90,100" fill="#D97706" stroke="#B45309" stroke-width="2"/>
+    <!-- Cheese drip -->
+    <ellipse cx="0" cy="-20" rx="55" ry="70" fill="#FCD34D" opacity="0.7"/>
+    <!-- Pepperoni -->
+    <circle cx="-20" cy="-50" r="14" fill="#DC2626"/>
+    <circle cx="25" cy="-20" r="12" fill="#DC2626"/>
+    <circle cx="-10" cy="20" r="13" fill="#DC2626"/>
+    <circle cx="15" cy="50" r="11" fill="#DC2626"/>
+    <!-- Cheese highlights -->
+    <circle cx="-35" cy="10" r="6" fill="#FDE68A" opacity="0.6"/>
+    <circle cx="30" cy="30" r="5" fill="#FDE68A" opacity="0.6"/>
+  </g>
+  <!-- Steam lines -->
+  <g stroke="#fff" stroke-width="2.5" fill="none" opacity="0.5">
+    <path d="M170,70 Q160,50 170,30 Q180,10 170,-10"/>
+    <path d="M200,60 Q190,40 200,20 Q210,0 200,-20"/>
+    <path d="M230,70 Q220,50 230,30 Q240,10 230,-10"/>
+  </g>
+</svg>

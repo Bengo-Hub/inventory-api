@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_medicine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_medicine)"/>
+  <g transform="translate(200,200)">
+    <rect x="-80" y="-30" width="160" height="60" rx="30" fill="#fff" transform="rotate(45)"/>
+    <rect x="0" y="-30" width="80" height="60" rx="0" fill="#ef4444" transform="rotate(45)"/>
+    <path d="M-40,0 L40,0 M0,-40 L0,40" stroke="#fff" stroke-width="20" stroke-linecap="round" opacity="0.8"/>
+  </g>
+</svg>
