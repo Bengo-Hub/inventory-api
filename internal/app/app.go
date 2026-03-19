@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/migrate"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
+	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/outbox"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
@@ -47,6 +48,7 @@ type App struct {
 	events          *nats.Conn
 	orm             *ent.Client
 	outboxPublisher *outbox.Publisher
+	orderConsumer   *consumers.OrderEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -122,6 +124,9 @@ func New(ctx context.Context) (*App, error) {
 	unitSvc := units.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 
+	// Order events consumer — auto-consume/release reservations on order lifecycle
+	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -146,6 +151,15 @@ func New(ctx context.Context) (*App, error) {
 
 	tenantSyncer := tenant.NewSyncer(ormClient)
 
+	// Initialize NATS event subscribers for proactive provisioning
+	if natsConn != nil {
+		eventSub := events.NewSubscriber(natsConn, log)
+		branchSub := tenant.NewBranchSubscriber(ormClient, log)
+		if err := branchSub.RegisterSubscribers(eventSub); err != nil {
+			log.Error("failed to register branch subscribers", zap.Error(err))
+		}
+	}
+
 	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, authMiddleware, tenantSyncer, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
@@ -166,10 +180,26 @@ func New(ctx context.Context) (*App, error) {
 		events:          natsConn,
 		orm:             ormClient,
 		outboxPublisher: outboxPublisher,
+		orderConsumer:   orderConsumer,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
+	// Start order events consumer for auto-consumption/release of stock reservations
+	if a.orderConsumer != nil && a.events != nil {
+		js, err := a.events.JetStream()
+		if err != nil {
+			a.log.Warn("jetstream unavailable, order events consumer not started", zap.Error(err))
+		} else {
+			go func() {
+				if err := a.orderConsumer.Start(ctx, js); err != nil {
+					a.log.Error("order events consumer stopped", zap.Error(err))
+				}
+			}()
+			a.log.Info("order events consumer started")
+		}
+	}
+
 	errCh := make(chan error, 1)
 	if a.cfg.HTTP.TLSCertFile != "" && a.cfg.HTTP.TLSKeyFile != "" {
 		a.log.Info("inventory service starting with HTTPS",

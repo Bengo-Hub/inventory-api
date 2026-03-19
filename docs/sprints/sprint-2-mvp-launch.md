@@ -1,6 +1,6 @@
 # Sprint 2 - MVP Launch (March 17, 2026)
 
-**Status:** In Progress
+**Status:** ✅ P0 Events Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented. Seed alignment, Atlas migration, and integration tests pending.
 **Start:** 2026-03-06
 **Deadline:** 2026-03-17
 **Goal:** Ship inventory-api changes required for BengoBox MVP launch at Urban Loft Cafe (Busia outlet)
@@ -21,9 +21,9 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
   - Each menu-item SKU (e.g., `BEV-ESP-001`) gets a recipe record
   - Map composite items to their raw ingredients (e.g., Latte = espresso shot + steamed milk)
   - Simple items map 1:1 (finished good = inventory item)
-- [ ] **S2-02:** Add recipe-aware availability check
+- [x] **S2-02:** Add recipe-aware availability check ✅ DONE
   - When ordering-backend calls `GET /items/{sku}`, resolve recipe ingredients
-  - Return availability based on the limiting ingredient
+  - Return availability based on the limiting ingredient (BOM explosion in `items/service.go`)
   - Fallback to direct item lookup if no recipe exists
 - [ ] **S2-03:** Add recipe-aware reservation
   - `POST /reservations` should explode BOM and reserve raw ingredients
@@ -56,8 +56,10 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 - [ ] **S2-09:** Emit `inventory.stock.updated` after balance changes
   - Add outbox row in the same transaction as balance update
   - Payload: `{ item_id, warehouse_id, on_hand, available, reserved }`
-- [ ] **S2-10:** Emit `inventory.reservation.confirmed` after successful reservation
-  - Payload: `{ reservation_id, order_id, items, status }`
+- [x] **S2-10:** Emit `inventory.reservation.confirmed` after successful reservation ✅ DONE
+  - Also emits `inventory.reservation.released` and `inventory.stock.consumed` via outbox
+  - `ordering.order.completed` → auto-consume reservation (`consumers/order_events.go`)
+  - `ordering.order.cancelled` → auto-release reservation
 
 ### Integration Testing (P0)
 

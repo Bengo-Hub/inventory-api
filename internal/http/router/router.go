@@ -53,7 +53,8 @@ func New(
 
 	r.Route("/api/v1", func(api chi.Router) {
 		if authMiddleware != nil {
-			api.Use(authMiddleware.RequireAuth)
+			// Require auth for mutation and sensitive data, but allow public GET for master data
+			// api.Use(authMiddleware.RequireAuth) // Moved into sub-routes for granular control
 		}
 
 		if tenantSyncer != nil {
@@ -82,6 +83,8 @@ func New(
 				ClaimsExtractor: func(ctx context.Context) (tenantID, tenantSlug string, isPlatformOwner bool, ok bool) {
 					claims, found := authclient.ClaimsFromContext(ctx)
 					if !found {
+						// For public GET requests, we can't extract from claims.
+						// The TenantV2 middleware will try to resolve from URL if possible.
 						return "", "", false, false
 					}
 					return claims.TenantID, claims.GetTenantSlug(), claims.IsPlatformOwner, true
@@ -90,19 +93,42 @@ func New(
 				Required:     true,
 			}))
 
-			userHandler.RegisterRoutes(tenant)
+			// Private User Routes (Always require auth)
+			tenant.Group(func(private chi.Router) {
+				if authMiddleware != nil {
+					private.Use(authMiddleware.RequireAuth)
+				}
+				userHandler.RegisterRoutes(private)
+			})
 
+			// Inventory Routes (Granular auth)
 			if inventoryHandler != nil {
-				inventoryHandler.RegisterRoutes(tenant)
+				tenant.Group(func(g chi.Router) {
+					// Apply authentication only to non-GET requests
+					g.Use(func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							if r.Method == http.MethodGet {
+								next.ServeHTTP(w, r)
+								return
+							}
+							if authMiddleware != nil {
+								authMiddleware.RequireAuth(next).ServeHTTP(w, r)
+							} else {
+								next.ServeHTTP(w, r)
+							}
+						})
+					})
+					inventoryHandler.RegisterRoutes(g)
+				})
 			}
 		})
 	})
 
 	// Also support /v1/ prefix (ordering-backend inventory client uses /v1/{tenant}/inventory/...)
 	r.Route("/v1", func(v1 chi.Router) {
-		if authMiddleware != nil {
-			v1.Use(authMiddleware.RequireAuth)
-		}
+		// if authMiddleware != nil {
+		// 	v1.Use(authMiddleware.RequireAuth)
+		// }
 
 		v1.Route("/{tenant}", func(tenant chi.Router) {
 			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
@@ -116,8 +142,25 @@ func New(
 				URLParamFunc: chi.URLParam,
 				Required:     true,
 			}))
+
 			if inventoryHandler != nil {
-				inventoryHandler.RegisterRoutes(tenant)
+				tenant.Group(func(g chi.Router) {
+					// Apply authentication only to non-GET requests
+					g.Use(func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							if r.Method == http.MethodGet {
+								next.ServeHTTP(w, r)
+								return
+							}
+							if authMiddleware != nil {
+								authMiddleware.RequireAuth(next).ServeHTTP(w, r)
+							} else {
+								next.ServeHTTP(w, r)
+							}
+						})
+					})
+					inventoryHandler.RegisterRoutes(g)
+				})
 			}
 		})
 	})

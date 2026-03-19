@@ -39,9 +39,9 @@ func (Item) Fields() []ent.Field {
 			Nillable().
 			Comment("Reference to Unit"),
 		field.Enum("type").
-			Values("GOODS", "SERVICE", "RECIPE", "INGREDIENT").
+			Values("GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT").
 			Default("GOODS").
-			Comment("Item type for master data classification"),
+			Comment("Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)"),
 		field.Bool("is_active").
 			Default(true),
 		field.String("image_url").
@@ -72,6 +72,7 @@ func (Item) Edges() []ent.Edge {
 			Field("unit_id").
 			Comment("Primary unit of measure"),
 		edge.To("variants", ItemVariant.Type),
+		edge.To("assets", ItemAsset.Type),
 		edge.To("translations", ItemTranslation.Type),
 		edge.From("item_category", ItemCategory.Type).
 			Ref("items").

@@ -32,7 +32,7 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 	}
 }
 
-func (s *Service) ListUnits(ctx context.Context) ([]UnitDTO, error) {
+func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error) {
 	units, err := s.client.Unit.Query().
 		Where(unit.IsActive(true)).
 		All(ctx)
@@ -52,7 +52,7 @@ func (s *Service) ListUnits(ctx context.Context) ([]UnitDTO, error) {
 	return result, nil
 }
 
-func (s *Service) CreateUnit(ctx context.Context, dto UnitDTO) (*UnitDTO, error) {
+func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("units: begin transaction: %w", err)

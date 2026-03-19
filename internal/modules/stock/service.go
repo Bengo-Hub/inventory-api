@@ -2,9 +2,11 @@ package stock
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -213,6 +215,12 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		return nil, fmt.Errorf("stock: create reservation: %w", err)
 	}
 
+	s.writeOutboxEvent(ctx, tx, tenantID, resv.ID, "inventory", "reservation.confirmed", map[string]any{
+		"order_id":    req.OrderID.String(),
+		"warehouse_id": whID.String(),
+		"items":       reservedItems,
+	})
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("stock: commit reservation: %w", err)
 	}
@@ -332,6 +340,11 @@ func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationI
 		return fmt.Errorf("stock: update reservation status: %w", err)
 	}
 
+	s.writeOutboxEvent(ctx, tx, tenantID, reservationID, "inventory", "reservation.released", map[string]any{
+		"order_id": resv.OrderID.String(),
+		"reason":   reason,
+	})
+
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("stock: commit release: %w", err)
 	}
@@ -414,6 +427,12 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 	if err != nil {
 		return fmt.Errorf("stock: update reservation status: %w", err)
 	}
+
+	s.writeOutboxEvent(ctx, tx, tenantID, reservationID, "inventory", "stock.consumed", map[string]any{
+		"order_id":     resv.OrderID.String(),
+		"consumed_at":  now.UTC().Format(time.RFC3339),
+		"items_count":  len(resv.Items),
+	})
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("stock: commit consume: %w", err)
@@ -532,6 +551,27 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		Status:      cons.Status,
 		ProcessedAt: cons.ProcessedAt,
 	}, nil
+}
+
+// writeOutboxEvent stores a domain event in the outbox within an Ent transaction.
+// Non-fatal: logs on failure so the business operation still succeeds.
+func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, aggregateID uuid.UUID, aggregateType, eventType string, payload map[string]any) {
+	evt := eventslib.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
+	data, err := json.Marshal(evt)
+	if err != nil {
+		s.log.Warn("outbox: marshal event", zap.Error(err), zap.String("event_type", eventType))
+		return
+	}
+	_, err = tx.OutboxEvent.Create().
+		SetTenantID(tenantID).
+		SetAggregateType(aggregateType).
+		SetAggregateID(aggregateID.String()).
+		SetEventType(eventType).
+		SetPayload(data).
+		Save(ctx)
+	if err != nil {
+		s.log.Warn("outbox: write event", zap.Error(err), zap.String("event_type", eventType))
+	}
 }
 
 func (s *Service) mapReservation(r *ent.Reservation) *ReservationResponse {

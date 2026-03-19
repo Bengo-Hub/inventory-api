@@ -8,6 +8,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -112,6 +113,34 @@ func init() {
 	itemDescID := itemFields[0].Descriptor()
 	// item.DefaultID holds the default value on creation for the id field.
 	item.DefaultID = itemDescID.Default.(func() uuid.UUID)
+	itemassetFields := schema.ItemAsset{}.Fields()
+	_ = itemassetFields
+	// itemassetDescURL is the schema descriptor for url field.
+	itemassetDescURL := itemassetFields[3].Descriptor()
+	// itemasset.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	itemasset.URLValidator = itemassetDescURL.Validators[0].(func(string) error)
+	// itemassetDescDisplayOrder is the schema descriptor for display_order field.
+	itemassetDescDisplayOrder := itemassetFields[8].Descriptor()
+	// itemasset.DefaultDisplayOrder holds the default value on creation for the display_order field.
+	itemasset.DefaultDisplayOrder = itemassetDescDisplayOrder.Default.(int)
+	// itemassetDescIsPrimary is the schema descriptor for is_primary field.
+	itemassetDescIsPrimary := itemassetFields[9].Descriptor()
+	// itemasset.DefaultIsPrimary holds the default value on creation for the is_primary field.
+	itemasset.DefaultIsPrimary = itemassetDescIsPrimary.Default.(bool)
+	// itemassetDescCreatedAt is the schema descriptor for created_at field.
+	itemassetDescCreatedAt := itemassetFields[10].Descriptor()
+	// itemasset.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itemasset.DefaultCreatedAt = itemassetDescCreatedAt.Default.(func() time.Time)
+	// itemassetDescUpdatedAt is the schema descriptor for updated_at field.
+	itemassetDescUpdatedAt := itemassetFields[11].Descriptor()
+	// itemasset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemasset.DefaultUpdatedAt = itemassetDescUpdatedAt.Default.(func() time.Time)
+	// itemasset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemasset.UpdateDefaultUpdatedAt = itemassetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemassetDescID is the schema descriptor for id field.
+	itemassetDescID := itemassetFields[0].Descriptor()
+	// itemasset.DefaultID holds the default value on creation for the id field.
+	itemasset.DefaultID = itemassetDescID.Default.(func() uuid.UUID)
 	itemcategoryFields := schema.ItemCategory{}.Fields()
 	_ = itemcategoryFields
 	// itemcategoryDescName is the schema descriptor for name field.

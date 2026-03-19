@@ -3,15 +3,18 @@ package items
 import (
 	"context"
 	"fmt"
+	"math"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
-	"github.com/Bengo-Hub/shared-events"
-	"time"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 )
 
 type ItemDTO struct {
@@ -62,7 +65,9 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 	}
 }
 
-// GetStockAvailability returns stock availability for a single item by SKU within a tenant.
+// GetStockAvailability returns stock availability for a single item by SKU.
+// If the item type is RECIPE, it resolves the BOM and returns the minimum
+// available portions based on ingredient stock levels (BOM explosion).
 func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*StockAvailability, error) {
 	itm, err := s.client.Item.Query().
 		Where(
@@ -78,6 +83,16 @@ func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, 
 		return nil, fmt.Errorf("items: query item: %w", err)
 	}
 
+	// BOM explosion: if item type is RECIPE, compute available portions from ingredients
+	if itm.Type == item.TypeRECIPE {
+		return s.getRecipeAvailability(ctx, tenantID, itm)
+	}
+
+	return s.getDirectAvailability(ctx, tenantID, itm)
+}
+
+// getDirectAvailability returns availability for a non-recipe item directly from InventoryBalance.
+func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID, itm *ent.Item) (*StockAvailability, error) {
 	bal, err := s.client.InventoryBalance.Query().
 		Where(
 			inventorybalance.TenantID(tenantID),
@@ -93,7 +108,7 @@ func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, 
 				OnHand:        0,
 				Available:     0,
 				Reserved:      0,
-				UnitOfMeasure: itm.UnitOfMeasure,
+				UnitOfMeasure: "",
 				UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			}, nil
 		}
@@ -109,6 +124,87 @@ func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, 
 		Reserved:      bal.Reserved,
 		UnitOfMeasure: bal.UnitOfMeasure,
 		UpdatedAt:     bal.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+	}, nil
+}
+
+// getRecipeAvailability performs BOM explosion: for a RECIPE item, looks up the recipe,
+// checks each ingredient's available balance, and returns the minimum number of portions
+// that can be produced (floor(ingredient_available / ingredient_qty_per_portion)).
+func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID, itm *ent.Item) (*StockAvailability, error) {
+	rec, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.Sku(itm.Sku), recipe.IsActive(true)).
+		WithIngredients(func(q *ent.RecipeIngredientQuery) {
+			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+		}).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			// No BOM defined — fall back to direct balance check
+			return s.getDirectAvailability(ctx, tenantID, itm)
+		}
+		return nil, fmt.Errorf("items: lookup recipe for sku=%s: %w", itm.Sku, err)
+	}
+
+	if len(rec.Edges.Ingredients) == 0 {
+		return s.getDirectAvailability(ctx, tenantID, itm)
+	}
+
+	// Collect ingredient item IDs
+	ingredientIDs := make([]uuid.UUID, len(rec.Edges.Ingredients))
+	for i, ing := range rec.Edges.Ingredients {
+		ingredientIDs[i] = ing.ItemID
+	}
+
+	// Fetch all ingredient balances in one query
+	balances, err := s.client.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.ItemIDIn(ingredientIDs...),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: query ingredient balances: %w", err)
+	}
+
+	balMap := make(map[uuid.UUID]int, len(balances))
+	for _, b := range balances {
+		balMap[b.ItemID] = b.Available
+	}
+
+	// BOM explosion: compute minimum available portions
+	outputQty := rec.OutputQty
+	if outputQty <= 0 {
+		outputQty = 1
+	}
+
+	minPortions := math.MaxFloat64
+	for _, ing := range rec.Edges.Ingredients {
+		available := float64(balMap[ing.ItemID])
+		qtyPerPortion := ing.Quantity / outputQty
+		if qtyPerPortion <= 0 {
+			continue
+		}
+		portions := available / qtyPerPortion
+		if portions < minPortions {
+			minPortions = portions
+		}
+	}
+
+	if minPortions == math.MaxFloat64 {
+		minPortions = 0
+	}
+
+	availablePortions := int(math.Floor(minPortions))
+
+	return &StockAvailability{
+		ItemID:        itm.ID,
+		SKU:           itm.Sku,
+		WarehouseID:   uuid.Nil,
+		OnHand:        availablePortions,
+		Available:     availablePortions,
+		Reserved:      0,
+		UnitOfMeasure: rec.UnitOfMeasure,
+		UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}, nil
 }
 
@@ -150,10 +246,9 @@ func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus
 	result := make([]StockAvailability, 0, len(items))
 	for _, itm := range items {
 		avail := StockAvailability{
-			ItemID:        itm.ID,
-			SKU:           itm.Sku,
-			UnitOfMeasure: itm.UnitOfMeasure,
-			UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+			ItemID:    itm.ID,
+			SKU:       itm.Sku,
+			UpdatedAt: itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		}
 		if bal, ok := balMap[itm.ID]; ok {
 			avail.WarehouseID = bal.WarehouseID

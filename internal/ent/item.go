@@ -34,7 +34,7 @@ type Item struct {
 	CategoryID *uuid.UUID `json:"category_id,omitempty"`
 	// Reference to Unit
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
-	// Item type for master data classification
+	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
 	Type item.Type `json:"type,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
@@ -64,13 +64,15 @@ type ItemEdges struct {
 	Units *Unit `json:"units,omitempty"`
 	// Variants holds the value of the variants edge.
 	Variants []*ItemVariant `json:"variants,omitempty"`
+	// Assets holds the value of the assets edge.
+	Assets []*ItemAsset `json:"assets,omitempty"`
 	// Translations holds the value of the translations edge.
 	Translations []*ItemTranslation `json:"translations,omitempty"`
 	// ItemCategory holds the value of the item_category edge.
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -122,10 +124,19 @@ func (e ItemEdges) VariantsOrErr() ([]*ItemVariant, error) {
 	return nil, &NotLoadedError{edge: "variants"}
 }
 
+// AssetsOrErr returns the Assets value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) AssetsOrErr() ([]*ItemAsset, error) {
+	if e.loadedTypes[5] {
+		return e.Assets, nil
+	}
+	return nil, &NotLoadedError{edge: "assets"}
+}
+
 // TranslationsOrErr returns the Translations value or an error if the edge
 // was not loaded in eager-loading.
 func (e ItemEdges) TranslationsOrErr() ([]*ItemTranslation, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Translations, nil
 	}
 	return nil, &NotLoadedError{edge: "translations"}
@@ -136,7 +147,7 @@ func (e ItemEdges) TranslationsOrErr() ([]*ItemTranslation, error) {
 func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
 	if e.ItemCategory != nil {
 		return e.ItemCategory, nil
-	} else if e.loadedTypes[6] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: itemcategory.Label}
 	}
 	return nil, &NotLoadedError{edge: "item_category"}
@@ -292,6 +303,11 @@ func (_m *Item) QueryUnits() *UnitQuery {
 // QueryVariants queries the "variants" edge of the Item entity.
 func (_m *Item) QueryVariants() *ItemVariantQuery {
 	return NewItemClient(_m.config).QueryVariants(_m)
+}
+
+// QueryAssets queries the "assets" edge of the Item entity.
+func (_m *Item) QueryAssets() *ItemAssetQuery {
+	return NewItemClient(_m.config).QueryAssets(_m)
 }
 
 // QueryTranslations queries the "translations" edge of the Item entity.

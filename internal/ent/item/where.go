@@ -691,6 +691,29 @@ func HasVariantsWith(preds ...predicate.ItemVariant) predicate.Item {
 	})
 }
 
+// HasAssets applies the HasEdge predicate on the "assets" edge.
+func HasAssets() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AssetsTable, AssetsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAssetsWith applies the HasEdge predicate on the "assets" edge with a given conditions (other predicates).
+func HasAssetsWith(preds ...predicate.ItemAsset) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newAssetsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTranslations applies the HasEdge predicate on the "translations" edge.
 func HasTranslations() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
