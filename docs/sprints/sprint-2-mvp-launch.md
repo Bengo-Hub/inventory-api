@@ -1,8 +1,8 @@
-# Sprint 2 - MVP Launch (March 17, 2026)
+# Sprint 2 - MVP Launch (March 27, 2026)
 
 **Status:** ✅ P0 Events Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented. Seed alignment, Atlas migration, and integration tests pending.
 **Start:** 2026-03-06
-**Deadline:** 2026-03-17
+**Deadline:** 2026-03-27
 **Goal:** Ship inventory-api changes required for BengoBox MVP launch at Urban Loft Cafe (Busia outlet)
 
 ---
@@ -53,7 +53,7 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### Event Publishing (P0)
 
-- [ ] **S2-09:** Emit `inventory.stock.updated` after balance changes
+- [x] **S2-09:** Emit `inventory.stock.updated` after balance changes ✅ DONE
   - Add outbox row in the same transaction as balance update
   - Payload: `{ item_id, warehouse_id, on_hand, available, reserved }`
 - [x] **S2-10:** Emit `inventory.reservation.confirmed` after successful reservation ✅ DONE

@@ -1,7 +1,7 @@
 # Inventory API - MVP Plan
 
 **Last updated:** 2026-03-06
-**MVP deadline:** 2026-03-17
+**MVP deadline:** 2026-03-27
 **Tenant:** urban-loft (Urban Loft Cafe)
 **Active outlet:** Busia (main)
 **Production domain:** `inventoryapi.codevertexitsolutions.com`
@@ -23,7 +23,7 @@ The ordering-backend's inventory client (`internal/platform/inventory/client.go`
 
 ---
 
-## MVP Scope (March 17 Deliverables)
+## MVP Scope (March 27 Deliverables)
 
 ### P0 - Must Ship
 
@@ -35,7 +35,7 @@ The ordering-backend's inventory client (`internal/platform/inventory/client.go`
 | 4 | Reservation-to-consumption flow: ordering-backend emits `order.completed` -> inventory consumes reservation | Backend | Not started |
 | 5 | Atlas migration transition | Backend | **Done** (initial schema and shared_units generated) |
 | 6 | Integration test: full reservation -> consume -> balance check round-trip | Backend | Not started |
-| 7 | NATS event publishing: emit `inventory.stock.updated` and `inventory.reservation.confirmed` on mutations | Backend | Not started |
+| 7 | NATS event publishing: emit `inventory.stock.updated` and `inventory.reservation.confirmed` on mutations | Backend | **Done** ✅ DONE |
 
 ### P1 - Should Ship
 
