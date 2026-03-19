@@ -89,7 +89,7 @@ var (
 		{Name: "sku", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT"}, Default: "GOODS"},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT"}, Default: "GOODS"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "image_url", Type: field.TypeString, Nullable: true},
 		{Name: "metadata", Type: field.TypeJSON},
@@ -139,6 +139,52 @@ var (
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[5]},
+			},
+		},
+	}
+	// ItemAssetsColumns holds the columns for the "item_assets" table.
+	ItemAssetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "asset_type", Type: field.TypeString},
+		{Name: "url", Type: field.TypeString},
+		{Name: "file_name", Type: field.TypeString, Nullable: true},
+		{Name: "file_size", Type: field.TypeString, Nullable: true},
+		{Name: "mime_type", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "display_order", Type: field.TypeInt, Default: 0},
+		{Name: "is_primary", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ItemAssetsTable holds the schema information for the "item_assets" table.
+	ItemAssetsTable = &schema.Table{
+		Name:       "item_assets",
+		Columns:    ItemAssetsColumns,
+		PrimaryKey: []*schema.Column{ItemAssetsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_assets_items_assets",
+				Columns:    []*schema.Column{ItemAssetsColumns[11]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemasset_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemAssetsColumns[11]},
+			},
+			{
+				Name:    "itemasset_asset_type",
+				Unique:  false,
+				Columns: []*schema.Column{ItemAssetsColumns[1]},
+			},
+			{
+				Name:    "itemasset_is_primary",
+				Unique:  false,
+				Columns: []*schema.Column{ItemAssetsColumns[8]},
 			},
 		},
 	}
@@ -511,6 +557,7 @@ var (
 		ConsumptionsTable,
 		InventoryBalancesTable,
 		ItemsTable,
+		ItemAssetsTable,
 		ItemCategoriesTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
@@ -530,6 +577,7 @@ func init() {
 	ItemsTable.ForeignKeys[0].RefTable = UnitsTable
 	ItemsTable.ForeignKeys[1].RefTable = ItemCategoriesTable
 	ItemsTable.ForeignKeys[2].RefTable = TenantsTable
+	ItemAssetsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemCategoriesTable.ForeignKeys[0].RefTable = TenantsTable
 	ItemTranslationsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemVariantsTable.ForeignKeys[0].RefTable = ItemsTable

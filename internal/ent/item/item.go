@@ -50,6 +50,8 @@ const (
 	EdgeUnits = "units"
 	// EdgeVariants holds the string denoting the variants edge name in mutations.
 	EdgeVariants = "variants"
+	// EdgeAssets holds the string denoting the assets edge name in mutations.
+	EdgeAssets = "assets"
 	// EdgeTranslations holds the string denoting the translations edge name in mutations.
 	EdgeTranslations = "translations"
 	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
@@ -91,6 +93,13 @@ const (
 	VariantsInverseTable = "item_variants"
 	// VariantsColumn is the table column denoting the variants relation/edge.
 	VariantsColumn = "item_id"
+	// AssetsTable is the table that holds the assets relation/edge.
+	AssetsTable = "item_assets"
+	// AssetsInverseTable is the table name for the ItemAsset entity.
+	// It exists in this package in order to avoid circular dependency with the "itemasset" package.
+	AssetsInverseTable = "item_assets"
+	// AssetsColumn is the table column denoting the assets relation/edge.
+	AssetsColumn = "item_id"
 	// TranslationsTable is the table that holds the translations relation/edge.
 	TranslationsTable = "item_translations"
 	// TranslationsInverseTable is the table name for the ItemTranslation entity.
@@ -165,6 +174,8 @@ const (
 	TypeSERVICE    Type = "SERVICE"
 	TypeRECIPE     Type = "RECIPE"
 	TypeINGREDIENT Type = "INGREDIENT"
+	TypeVOUCHER    Type = "VOUCHER"
+	TypeEQUIPMENT  Type = "EQUIPMENT"
 )
 
 func (_type Type) String() string {
@@ -174,7 +185,7 @@ func (_type Type) String() string {
 // TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
 func TypeValidator(_type Type) error {
 	switch _type {
-	case TypeGOODS, TypeSERVICE, TypeRECIPE, TypeINGREDIENT:
+	case TypeGOODS, TypeSERVICE, TypeRECIPE, TypeINGREDIENT, TypeVOUCHER, TypeEQUIPMENT:
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for type field: %q", _type)
@@ -300,6 +311,20 @@ func ByVariants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByAssetsCount orders the results by assets count.
+func ByAssetsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAssetsStep(), opts...)
+	}
+}
+
+// ByAssets orders the results by assets terms.
+func ByAssets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAssetsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTranslationsCount orders the results by translations count.
 func ByTranslationsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -353,6 +378,13 @@ func newVariantsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VariantsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, VariantsTable, VariantsColumn),
+	)
+}
+func newAssetsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AssetsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AssetsTable, AssetsColumn),
 	)
 }
 func newTranslationsStep() *sqlgraph.Step {

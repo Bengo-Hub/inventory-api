@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -41,6 +42,7 @@ const (
 	TypeConsumption      = "Consumption"
 	TypeInventoryBalance = "InventoryBalance"
 	TypeItem             = "Item"
+	TypeItemAsset        = "ItemAsset"
 	TypeItemCategory     = "ItemCategory"
 	TypeItemTranslation  = "ItemTranslation"
 	TypeItemVariant      = "ItemVariant"
@@ -1815,6 +1817,9 @@ type ItemMutation struct {
 	variants                  map[uuid.UUID]struct{}
 	removedvariants           map[uuid.UUID]struct{}
 	clearedvariants           bool
+	assets                    map[uuid.UUID]struct{}
+	removedassets             map[uuid.UUID]struct{}
+	clearedassets             bool
 	translations              map[uuid.UUID]struct{}
 	removedtranslations       map[uuid.UUID]struct{}
 	clearedtranslations       bool
@@ -2642,6 +2647,60 @@ func (m *ItemMutation) ResetVariants() {
 	m.removedvariants = nil
 }
 
+// AddAssetIDs adds the "assets" edge to the ItemAsset entity by ids.
+func (m *ItemMutation) AddAssetIDs(ids ...uuid.UUID) {
+	if m.assets == nil {
+		m.assets = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.assets[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAssets clears the "assets" edge to the ItemAsset entity.
+func (m *ItemMutation) ClearAssets() {
+	m.clearedassets = true
+}
+
+// AssetsCleared reports if the "assets" edge to the ItemAsset entity was cleared.
+func (m *ItemMutation) AssetsCleared() bool {
+	return m.clearedassets
+}
+
+// RemoveAssetIDs removes the "assets" edge to the ItemAsset entity by IDs.
+func (m *ItemMutation) RemoveAssetIDs(ids ...uuid.UUID) {
+	if m.removedassets == nil {
+		m.removedassets = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.assets, ids[i])
+		m.removedassets[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAssets returns the removed IDs of the "assets" edge to the ItemAsset entity.
+func (m *ItemMutation) RemovedAssetsIDs() (ids []uuid.UUID) {
+	for id := range m.removedassets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AssetsIDs returns the "assets" edge IDs in the mutation.
+func (m *ItemMutation) AssetsIDs() (ids []uuid.UUID) {
+	for id := range m.assets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAssets resets all changes to the "assets" edge.
+func (m *ItemMutation) ResetAssets() {
+	m.assets = nil
+	m.clearedassets = false
+	m.removedassets = nil
+}
+
 // AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by ids.
 func (m *ItemMutation) AddTranslationIDs(ids ...uuid.UUID) {
 	if m.translations == nil {
@@ -3083,7 +3142,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.tenant != nil {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -3098,6 +3157,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.variants != nil {
 		edges = append(edges, item.EdgeVariants)
+	}
+	if m.assets != nil {
+		edges = append(edges, item.EdgeAssets)
 	}
 	if m.translations != nil {
 		edges = append(edges, item.EdgeTranslations)
@@ -3138,6 +3200,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.assets))
+		for id := range m.assets {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeTranslations:
 		ids := make([]ent.Value, 0, len(m.translations))
 		for id := range m.translations {
@@ -3154,7 +3222,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedbalances != nil {
 		edges = append(edges, item.EdgeBalances)
 	}
@@ -3163,6 +3231,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	}
 	if m.removedvariants != nil {
 		edges = append(edges, item.EdgeVariants)
+	}
+	if m.removedassets != nil {
+		edges = append(edges, item.EdgeAssets)
 	}
 	if m.removedtranslations != nil {
 		edges = append(edges, item.EdgeTranslations)
@@ -3192,6 +3263,12 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.removedassets))
+		for id := range m.removedassets {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeTranslations:
 		ids := make([]ent.Value, 0, len(m.removedtranslations))
 		for id := range m.removedtranslations {
@@ -3204,7 +3281,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedtenant {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -3219,6 +3296,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	}
 	if m.clearedvariants {
 		edges = append(edges, item.EdgeVariants)
+	}
+	if m.clearedassets {
+		edges = append(edges, item.EdgeAssets)
 	}
 	if m.clearedtranslations {
 		edges = append(edges, item.EdgeTranslations)
@@ -3243,6 +3323,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedunits
 	case item.EdgeVariants:
 		return m.clearedvariants
+	case item.EdgeAssets:
+		return m.clearedassets
 	case item.EdgeTranslations:
 		return m.clearedtranslations
 	case item.EdgeItemCategory:
@@ -3287,6 +3369,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 	case item.EdgeVariants:
 		m.ResetVariants()
 		return nil
+	case item.EdgeAssets:
+		m.ResetAssets()
+		return nil
 	case item.EdgeTranslations:
 		m.ResetTranslations()
 		return nil
@@ -3295,6 +3380,1047 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Item edge %s", name)
+}
+
+// ItemAssetMutation represents an operation that mutates the ItemAsset nodes in the graph.
+type ItemAssetMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	asset_type       *string
+	url              *string
+	file_name        *string
+	file_size        *string
+	mime_type        *string
+	metadata         *map[string]interface{}
+	display_order    *int
+	adddisplay_order *int
+	is_primary       *bool
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	item             *uuid.UUID
+	cleareditem      bool
+	done             bool
+	oldValue         func(context.Context) (*ItemAsset, error)
+	predicates       []predicate.ItemAsset
+}
+
+var _ ent.Mutation = (*ItemAssetMutation)(nil)
+
+// itemassetOption allows management of the mutation configuration using functional options.
+type itemassetOption func(*ItemAssetMutation)
+
+// newItemAssetMutation creates new mutation for the ItemAsset entity.
+func newItemAssetMutation(c config, op Op, opts ...itemassetOption) *ItemAssetMutation {
+	m := &ItemAssetMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeItemAsset,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withItemAssetID sets the ID field of the mutation.
+func withItemAssetID(id uuid.UUID) itemassetOption {
+	return func(m *ItemAssetMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ItemAsset
+		)
+		m.oldValue = func(ctx context.Context) (*ItemAsset, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ItemAsset.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withItemAsset sets the old ItemAsset of the mutation.
+func withItemAsset(node *ItemAsset) itemassetOption {
+	return func(m *ItemAssetMutation) {
+		m.oldValue = func(context.Context) (*ItemAsset, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ItemAssetMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ItemAssetMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ItemAsset entities.
+func (m *ItemAssetMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ItemAssetMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ItemAssetMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ItemAsset.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetItemID sets the "item_id" field.
+func (m *ItemAssetMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *ItemAssetMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *ItemAssetMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetAssetType sets the "asset_type" field.
+func (m *ItemAssetMutation) SetAssetType(s string) {
+	m.asset_type = &s
+}
+
+// AssetType returns the value of the "asset_type" field in the mutation.
+func (m *ItemAssetMutation) AssetType() (r string, exists bool) {
+	v := m.asset_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAssetType returns the old "asset_type" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldAssetType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAssetType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAssetType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAssetType: %w", err)
+	}
+	return oldValue.AssetType, nil
+}
+
+// ResetAssetType resets all changes to the "asset_type" field.
+func (m *ItemAssetMutation) ResetAssetType() {
+	m.asset_type = nil
+}
+
+// SetURL sets the "url" field.
+func (m *ItemAssetMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *ItemAssetMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *ItemAssetMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetFileName sets the "file_name" field.
+func (m *ItemAssetMutation) SetFileName(s string) {
+	m.file_name = &s
+}
+
+// FileName returns the value of the "file_name" field in the mutation.
+func (m *ItemAssetMutation) FileName() (r string, exists bool) {
+	v := m.file_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileName returns the old "file_name" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldFileName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileName: %w", err)
+	}
+	return oldValue.FileName, nil
+}
+
+// ClearFileName clears the value of the "file_name" field.
+func (m *ItemAssetMutation) ClearFileName() {
+	m.file_name = nil
+	m.clearedFields[itemasset.FieldFileName] = struct{}{}
+}
+
+// FileNameCleared returns if the "file_name" field was cleared in this mutation.
+func (m *ItemAssetMutation) FileNameCleared() bool {
+	_, ok := m.clearedFields[itemasset.FieldFileName]
+	return ok
+}
+
+// ResetFileName resets all changes to the "file_name" field.
+func (m *ItemAssetMutation) ResetFileName() {
+	m.file_name = nil
+	delete(m.clearedFields, itemasset.FieldFileName)
+}
+
+// SetFileSize sets the "file_size" field.
+func (m *ItemAssetMutation) SetFileSize(s string) {
+	m.file_size = &s
+}
+
+// FileSize returns the value of the "file_size" field in the mutation.
+func (m *ItemAssetMutation) FileSize() (r string, exists bool) {
+	v := m.file_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFileSize returns the old "file_size" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldFileSize(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFileSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFileSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFileSize: %w", err)
+	}
+	return oldValue.FileSize, nil
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (m *ItemAssetMutation) ClearFileSize() {
+	m.file_size = nil
+	m.clearedFields[itemasset.FieldFileSize] = struct{}{}
+}
+
+// FileSizeCleared returns if the "file_size" field was cleared in this mutation.
+func (m *ItemAssetMutation) FileSizeCleared() bool {
+	_, ok := m.clearedFields[itemasset.FieldFileSize]
+	return ok
+}
+
+// ResetFileSize resets all changes to the "file_size" field.
+func (m *ItemAssetMutation) ResetFileSize() {
+	m.file_size = nil
+	delete(m.clearedFields, itemasset.FieldFileSize)
+}
+
+// SetMimeType sets the "mime_type" field.
+func (m *ItemAssetMutation) SetMimeType(s string) {
+	m.mime_type = &s
+}
+
+// MimeType returns the value of the "mime_type" field in the mutation.
+func (m *ItemAssetMutation) MimeType() (r string, exists bool) {
+	v := m.mime_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMimeType returns the old "mime_type" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldMimeType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMimeType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMimeType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMimeType: %w", err)
+	}
+	return oldValue.MimeType, nil
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (m *ItemAssetMutation) ClearMimeType() {
+	m.mime_type = nil
+	m.clearedFields[itemasset.FieldMimeType] = struct{}{}
+}
+
+// MimeTypeCleared returns if the "mime_type" field was cleared in this mutation.
+func (m *ItemAssetMutation) MimeTypeCleared() bool {
+	_, ok := m.clearedFields[itemasset.FieldMimeType]
+	return ok
+}
+
+// ResetMimeType resets all changes to the "mime_type" field.
+func (m *ItemAssetMutation) ResetMimeType() {
+	m.mime_type = nil
+	delete(m.clearedFields, itemasset.FieldMimeType)
+}
+
+// SetMetadata sets the "metadata" field.
+func (m *ItemAssetMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *ItemAssetMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *ItemAssetMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[itemasset.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *ItemAssetMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[itemasset.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *ItemAssetMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, itemasset.FieldMetadata)
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (m *ItemAssetMutation) SetDisplayOrder(i int) {
+	m.display_order = &i
+	m.adddisplay_order = nil
+}
+
+// DisplayOrder returns the value of the "display_order" field in the mutation.
+func (m *ItemAssetMutation) DisplayOrder() (r int, exists bool) {
+	v := m.display_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayOrder returns the old "display_order" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldDisplayOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayOrder: %w", err)
+	}
+	return oldValue.DisplayOrder, nil
+}
+
+// AddDisplayOrder adds i to the "display_order" field.
+func (m *ItemAssetMutation) AddDisplayOrder(i int) {
+	if m.adddisplay_order != nil {
+		*m.adddisplay_order += i
+	} else {
+		m.adddisplay_order = &i
+	}
+}
+
+// AddedDisplayOrder returns the value that was added to the "display_order" field in this mutation.
+func (m *ItemAssetMutation) AddedDisplayOrder() (r int, exists bool) {
+	v := m.adddisplay_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDisplayOrder resets all changes to the "display_order" field.
+func (m *ItemAssetMutation) ResetDisplayOrder() {
+	m.display_order = nil
+	m.adddisplay_order = nil
+}
+
+// SetIsPrimary sets the "is_primary" field.
+func (m *ItemAssetMutation) SetIsPrimary(b bool) {
+	m.is_primary = &b
+}
+
+// IsPrimary returns the value of the "is_primary" field in the mutation.
+func (m *ItemAssetMutation) IsPrimary() (r bool, exists bool) {
+	v := m.is_primary
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPrimary returns the old "is_primary" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldIsPrimary(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPrimary is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPrimary requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPrimary: %w", err)
+	}
+	return oldValue.IsPrimary, nil
+}
+
+// ResetIsPrimary resets all changes to the "is_primary" field.
+func (m *ItemAssetMutation) ResetIsPrimary() {
+	m.is_primary = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ItemAssetMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ItemAssetMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ItemAssetMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ItemAssetMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ItemAssetMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ItemAsset entity.
+// If the ItemAsset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemAssetMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ItemAssetMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *ItemAssetMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[itemasset.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *ItemAssetMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *ItemAssetMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *ItemAssetMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// Where appends a list predicates to the ItemAssetMutation builder.
+func (m *ItemAssetMutation) Where(ps ...predicate.ItemAsset) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ItemAssetMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ItemAssetMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ItemAsset, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ItemAssetMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ItemAssetMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ItemAsset).
+func (m *ItemAssetMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ItemAssetMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.item != nil {
+		fields = append(fields, itemasset.FieldItemID)
+	}
+	if m.asset_type != nil {
+		fields = append(fields, itemasset.FieldAssetType)
+	}
+	if m.url != nil {
+		fields = append(fields, itemasset.FieldURL)
+	}
+	if m.file_name != nil {
+		fields = append(fields, itemasset.FieldFileName)
+	}
+	if m.file_size != nil {
+		fields = append(fields, itemasset.FieldFileSize)
+	}
+	if m.mime_type != nil {
+		fields = append(fields, itemasset.FieldMimeType)
+	}
+	if m.metadata != nil {
+		fields = append(fields, itemasset.FieldMetadata)
+	}
+	if m.display_order != nil {
+		fields = append(fields, itemasset.FieldDisplayOrder)
+	}
+	if m.is_primary != nil {
+		fields = append(fields, itemasset.FieldIsPrimary)
+	}
+	if m.created_at != nil {
+		fields = append(fields, itemasset.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, itemasset.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ItemAssetMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case itemasset.FieldItemID:
+		return m.ItemID()
+	case itemasset.FieldAssetType:
+		return m.AssetType()
+	case itemasset.FieldURL:
+		return m.URL()
+	case itemasset.FieldFileName:
+		return m.FileName()
+	case itemasset.FieldFileSize:
+		return m.FileSize()
+	case itemasset.FieldMimeType:
+		return m.MimeType()
+	case itemasset.FieldMetadata:
+		return m.Metadata()
+	case itemasset.FieldDisplayOrder:
+		return m.DisplayOrder()
+	case itemasset.FieldIsPrimary:
+		return m.IsPrimary()
+	case itemasset.FieldCreatedAt:
+		return m.CreatedAt()
+	case itemasset.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ItemAssetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case itemasset.FieldItemID:
+		return m.OldItemID(ctx)
+	case itemasset.FieldAssetType:
+		return m.OldAssetType(ctx)
+	case itemasset.FieldURL:
+		return m.OldURL(ctx)
+	case itemasset.FieldFileName:
+		return m.OldFileName(ctx)
+	case itemasset.FieldFileSize:
+		return m.OldFileSize(ctx)
+	case itemasset.FieldMimeType:
+		return m.OldMimeType(ctx)
+	case itemasset.FieldMetadata:
+		return m.OldMetadata(ctx)
+	case itemasset.FieldDisplayOrder:
+		return m.OldDisplayOrder(ctx)
+	case itemasset.FieldIsPrimary:
+		return m.OldIsPrimary(ctx)
+	case itemasset.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case itemasset.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ItemAsset field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ItemAssetMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case itemasset.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case itemasset.FieldAssetType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAssetType(v)
+		return nil
+	case itemasset.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case itemasset.FieldFileName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileName(v)
+		return nil
+	case itemasset.FieldFileSize:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFileSize(v)
+		return nil
+	case itemasset.FieldMimeType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMimeType(v)
+		return nil
+	case itemasset.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
+	case itemasset.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayOrder(v)
+		return nil
+	case itemasset.FieldIsPrimary:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPrimary(v)
+		return nil
+	case itemasset.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case itemasset.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ItemAssetMutation) AddedFields() []string {
+	var fields []string
+	if m.adddisplay_order != nil {
+		fields = append(fields, itemasset.FieldDisplayOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ItemAssetMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case itemasset.FieldDisplayOrder:
+		return m.AddedDisplayOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ItemAssetMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case itemasset.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDisplayOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ItemAssetMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(itemasset.FieldFileName) {
+		fields = append(fields, itemasset.FieldFileName)
+	}
+	if m.FieldCleared(itemasset.FieldFileSize) {
+		fields = append(fields, itemasset.FieldFileSize)
+	}
+	if m.FieldCleared(itemasset.FieldMimeType) {
+		fields = append(fields, itemasset.FieldMimeType)
+	}
+	if m.FieldCleared(itemasset.FieldMetadata) {
+		fields = append(fields, itemasset.FieldMetadata)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ItemAssetMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ItemAssetMutation) ClearField(name string) error {
+	switch name {
+	case itemasset.FieldFileName:
+		m.ClearFileName()
+		return nil
+	case itemasset.FieldFileSize:
+		m.ClearFileSize()
+		return nil
+	case itemasset.FieldMimeType:
+		m.ClearMimeType()
+		return nil
+	case itemasset.FieldMetadata:
+		m.ClearMetadata()
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ItemAssetMutation) ResetField(name string) error {
+	switch name {
+	case itemasset.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case itemasset.FieldAssetType:
+		m.ResetAssetType()
+		return nil
+	case itemasset.FieldURL:
+		m.ResetURL()
+		return nil
+	case itemasset.FieldFileName:
+		m.ResetFileName()
+		return nil
+	case itemasset.FieldFileSize:
+		m.ResetFileSize()
+		return nil
+	case itemasset.FieldMimeType:
+		m.ResetMimeType()
+		return nil
+	case itemasset.FieldMetadata:
+		m.ResetMetadata()
+		return nil
+	case itemasset.FieldDisplayOrder:
+		m.ResetDisplayOrder()
+		return nil
+	case itemasset.FieldIsPrimary:
+		m.ResetIsPrimary()
+		return nil
+	case itemasset.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case itemasset.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ItemAssetMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.item != nil {
+		edges = append(edges, itemasset.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ItemAssetMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case itemasset.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ItemAssetMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ItemAssetMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ItemAssetMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareditem {
+		edges = append(edges, itemasset.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ItemAssetMutation) EdgeCleared(name string) bool {
+	switch name {
+	case itemasset.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ItemAssetMutation) ClearEdge(name string) error {
+	switch name {
+	case itemasset.EdgeItem:
+		m.ClearItem()
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ItemAssetMutation) ResetEdge(name string) error {
+	switch name {
+	case itemasset.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown ItemAsset edge %s", name)
 }
 
 // ItemCategoryMutation represents an operation that mutates the ItemCategory nodes in the graph.

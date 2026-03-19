@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -267,6 +268,21 @@ func (_u *ItemUpdate) AddVariants(v ...*ItemVariant) *ItemUpdate {
 	return _u.AddVariantIDs(ids...)
 }
 
+// AddAssetIDs adds the "assets" edge to the ItemAsset entity by IDs.
+func (_u *ItemUpdate) AddAssetIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddAssetIDs(ids...)
+	return _u
+}
+
+// AddAssets adds the "assets" edges to the ItemAsset entity.
+func (_u *ItemUpdate) AddAssets(v ...*ItemAsset) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAssetIDs(ids...)
+}
+
 // AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
 func (_u *ItemUpdate) AddTranslationIDs(ids ...uuid.UUID) *ItemUpdate {
 	_u.mutation.AddTranslationIDs(ids...)
@@ -379,6 +395,27 @@ func (_u *ItemUpdate) RemoveVariants(v ...*ItemVariant) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVariantIDs(ids...)
+}
+
+// ClearAssets clears all "assets" edges to the ItemAsset entity.
+func (_u *ItemUpdate) ClearAssets() *ItemUpdate {
+	_u.mutation.ClearAssets()
+	return _u
+}
+
+// RemoveAssetIDs removes the "assets" edge to ItemAsset entities by IDs.
+func (_u *ItemUpdate) RemoveAssetIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveAssetIDs(ids...)
+	return _u
+}
+
+// RemoveAssets removes "assets" edges to ItemAsset entities.
+func (_u *ItemUpdate) RemoveAssets(v ...*ItemAsset) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAssetIDs(ids...)
 }
 
 // ClearTranslations clears all "translations" edges to the ItemTranslation entity.
@@ -695,6 +732,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !_u.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AssetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1027,6 +1109,21 @@ func (_u *ItemUpdateOne) AddVariants(v ...*ItemVariant) *ItemUpdateOne {
 	return _u.AddVariantIDs(ids...)
 }
 
+// AddAssetIDs adds the "assets" edge to the ItemAsset entity by IDs.
+func (_u *ItemUpdateOne) AddAssetIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddAssetIDs(ids...)
+	return _u
+}
+
+// AddAssets adds the "assets" edges to the ItemAsset entity.
+func (_u *ItemUpdateOne) AddAssets(v ...*ItemAsset) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAssetIDs(ids...)
+}
+
 // AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
 func (_u *ItemUpdateOne) AddTranslationIDs(ids ...uuid.UUID) *ItemUpdateOne {
 	_u.mutation.AddTranslationIDs(ids...)
@@ -1139,6 +1236,27 @@ func (_u *ItemUpdateOne) RemoveVariants(v ...*ItemVariant) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVariantIDs(ids...)
+}
+
+// ClearAssets clears all "assets" edges to the ItemAsset entity.
+func (_u *ItemUpdateOne) ClearAssets() *ItemUpdateOne {
+	_u.mutation.ClearAssets()
+	return _u
+}
+
+// RemoveAssetIDs removes the "assets" edge to ItemAsset entities by IDs.
+func (_u *ItemUpdateOne) RemoveAssetIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveAssetIDs(ids...)
+	return _u
+}
+
+// RemoveAssets removes "assets" edges to ItemAsset entities.
+func (_u *ItemUpdateOne) RemoveAssets(v ...*ItemAsset) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAssetIDs(ids...)
 }
 
 // ClearTranslations clears all "translations" edges to the ItemTranslation entity.
@@ -1485,6 +1603,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !_u.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AssetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

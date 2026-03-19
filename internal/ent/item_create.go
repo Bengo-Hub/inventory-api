@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -248,6 +249,21 @@ func (_c *ItemCreate) AddVariants(v ...*ItemVariant) *ItemCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddVariantIDs(ids...)
+}
+
+// AddAssetIDs adds the "assets" edge to the ItemAsset entity by IDs.
+func (_c *ItemCreate) AddAssetIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddAssetIDs(ids...)
+	return _c
+}
+
+// AddAssets adds the "assets" edges to the ItemAsset entity.
+func (_c *ItemCreate) AddAssets(v ...*ItemAsset) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAssetIDs(ids...)
 }
 
 // AddTranslationIDs adds the "translations" edge to the ItemTranslation entity by IDs.
@@ -536,6 +552,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemvariant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AssetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.AssetsTable,
+			Columns: []string{item.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

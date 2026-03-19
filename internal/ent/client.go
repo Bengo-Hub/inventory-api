@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -42,6 +43,8 @@ type Client struct {
 	InventoryBalance *InventoryBalanceClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// ItemAsset is the client for interacting with the ItemAsset builders.
+	ItemAsset *ItemAssetClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
 	// ItemTranslation is the client for interacting with the ItemTranslation builders.
@@ -76,6 +79,7 @@ func (c *Client) init() {
 	c.Consumption = NewConsumptionClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.ItemAsset = NewItemAssetClient(c.config)
 	c.ItemCategory = NewItemCategoryClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
 	c.ItemVariant = NewItemVariantClient(c.config)
@@ -181,6 +185,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Consumption:      NewConsumptionClient(cfg),
 		InventoryBalance: NewInventoryBalanceClient(cfg),
 		Item:             NewItemClient(cfg),
+		ItemAsset:        NewItemAssetClient(cfg),
 		ItemCategory:     NewItemCategoryClient(cfg),
 		ItemTranslation:  NewItemTranslationClient(cfg),
 		ItemVariant:      NewItemVariantClient(cfg),
@@ -213,6 +218,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Consumption:      NewConsumptionClient(cfg),
 		InventoryBalance: NewInventoryBalanceClient(cfg),
 		Item:             NewItemClient(cfg),
+		ItemAsset:        NewItemAssetClient(cfg),
 		ItemCategory:     NewItemCategoryClient(cfg),
 		ItemTranslation:  NewItemTranslationClient(cfg),
 		ItemVariant:      NewItemVariantClient(cfg),
@@ -252,9 +258,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Consumption, c.InventoryBalance, c.Item, c.ItemCategory, c.ItemTranslation,
-		c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient, c.Reservation,
-		c.Tenant, c.Unit, c.Warehouse,
+		c.Consumption, c.InventoryBalance, c.Item, c.ItemAsset, c.ItemCategory,
+		c.ItemTranslation, c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.Tenant, c.Unit, c.Warehouse,
 	} {
 		n.Use(hooks...)
 	}
@@ -264,9 +270,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Consumption, c.InventoryBalance, c.Item, c.ItemCategory, c.ItemTranslation,
-		c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient, c.Reservation,
-		c.Tenant, c.Unit, c.Warehouse,
+		c.Consumption, c.InventoryBalance, c.Item, c.ItemAsset, c.ItemCategory,
+		c.ItemTranslation, c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.Tenant, c.Unit, c.Warehouse,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -281,6 +287,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.InventoryBalance.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
+	case *ItemAssetMutation:
+		return c.ItemAsset.mutate(ctx, m)
 	case *ItemCategoryMutation:
 		return c.ItemCategory.mutate(ctx, m)
 	case *ItemTranslationMutation:
@@ -792,6 +800,22 @@ func (c *ItemClient) QueryVariants(_m *Item) *ItemVariantQuery {
 	return query
 }
 
+// QueryAssets queries the assets edge of a Item.
+func (c *ItemClient) QueryAssets(_m *Item) *ItemAssetQuery {
+	query := (&ItemAssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(itemasset.Table, itemasset.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.AssetsTable, item.AssetsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTranslations queries the translations edge of a Item.
 func (c *ItemClient) QueryTranslations(_m *Item) *ItemTranslationQuery {
 	query := (&ItemTranslationClient{config: c.config}).Query()
@@ -846,6 +870,155 @@ func (c *ItemClient) mutate(ctx context.Context, m *ItemMutation) (Value, error)
 		return (&ItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Item mutation op: %q", m.Op())
+	}
+}
+
+// ItemAssetClient is a client for the ItemAsset schema.
+type ItemAssetClient struct {
+	config
+}
+
+// NewItemAssetClient returns a client for the ItemAsset from the given config.
+func NewItemAssetClient(c config) *ItemAssetClient {
+	return &ItemAssetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itemasset.Hooks(f(g(h())))`.
+func (c *ItemAssetClient) Use(hooks ...Hook) {
+	c.hooks.ItemAsset = append(c.hooks.ItemAsset, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itemasset.Intercept(f(g(h())))`.
+func (c *ItemAssetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemAsset = append(c.inters.ItemAsset, interceptors...)
+}
+
+// Create returns a builder for creating a ItemAsset entity.
+func (c *ItemAssetClient) Create() *ItemAssetCreate {
+	mutation := newItemAssetMutation(c.config, OpCreate)
+	return &ItemAssetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemAsset entities.
+func (c *ItemAssetClient) CreateBulk(builders ...*ItemAssetCreate) *ItemAssetCreateBulk {
+	return &ItemAssetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemAssetClient) MapCreateBulk(slice any, setFunc func(*ItemAssetCreate, int)) *ItemAssetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemAssetCreateBulk{err: fmt.Errorf("calling to ItemAssetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemAssetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemAssetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemAsset.
+func (c *ItemAssetClient) Update() *ItemAssetUpdate {
+	mutation := newItemAssetMutation(c.config, OpUpdate)
+	return &ItemAssetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemAssetClient) UpdateOne(_m *ItemAsset) *ItemAssetUpdateOne {
+	mutation := newItemAssetMutation(c.config, OpUpdateOne, withItemAsset(_m))
+	return &ItemAssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemAssetClient) UpdateOneID(id uuid.UUID) *ItemAssetUpdateOne {
+	mutation := newItemAssetMutation(c.config, OpUpdateOne, withItemAssetID(id))
+	return &ItemAssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemAsset.
+func (c *ItemAssetClient) Delete() *ItemAssetDelete {
+	mutation := newItemAssetMutation(c.config, OpDelete)
+	return &ItemAssetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemAssetClient) DeleteOne(_m *ItemAsset) *ItemAssetDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemAssetClient) DeleteOneID(id uuid.UUID) *ItemAssetDeleteOne {
+	builder := c.Delete().Where(itemasset.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemAssetDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemAsset.
+func (c *ItemAssetClient) Query() *ItemAssetQuery {
+	return &ItemAssetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemAsset},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemAsset entity by its id.
+func (c *ItemAssetClient) Get(ctx context.Context, id uuid.UUID) (*ItemAsset, error) {
+	return c.Query().Where(itemasset.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemAssetClient) GetX(ctx context.Context, id uuid.UUID) *ItemAsset {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a ItemAsset.
+func (c *ItemAssetClient) QueryItem(_m *ItemAsset) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemasset.Table, itemasset.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemasset.ItemTable, itemasset.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemAssetClient) Hooks() []Hook {
+	return c.hooks.ItemAsset
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemAssetClient) Interceptors() []Interceptor {
+	return c.inters.ItemAsset
+}
+
+func (c *ItemAssetClient) mutate(ctx context.Context, m *ItemAssetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemAssetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemAssetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemAssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemAssetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ItemAsset mutation op: %q", m.Op())
 	}
 }
 
@@ -2422,13 +2595,13 @@ func (c *WarehouseClient) mutate(ctx context.Context, m *WarehouseMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Consumption, InventoryBalance, Item, ItemCategory, ItemTranslation, ItemVariant,
-		OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
+		Consumption, InventoryBalance, Item, ItemAsset, ItemCategory, ItemTranslation,
+		ItemVariant, OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
 		Warehouse []ent.Hook
 	}
 	inters struct {
-		Consumption, InventoryBalance, Item, ItemCategory, ItemTranslation, ItemVariant,
-		OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
+		Consumption, InventoryBalance, Item, ItemAsset, ItemCategory, ItemTranslation,
+		ItemVariant, OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
 		Warehouse []ent.Interceptor
 	}
 )

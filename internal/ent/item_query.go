@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -36,6 +37,7 @@ type ItemQuery struct {
 	withRecipeIngredients *RecipeIngredientQuery
 	withUnits             *UnitQuery
 	withVariants          *ItemVariantQuery
+	withAssets            *ItemAssetQuery
 	withTranslations      *ItemTranslationQuery
 	withItemCategory      *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
@@ -177,6 +179,28 @@ func (_q *ItemQuery) QueryVariants() *ItemVariantQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(itemvariant.Table, itemvariant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.VariantsTable, item.VariantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAssets chains the current query on the "assets" edge.
+func (_q *ItemQuery) QueryAssets() *ItemAssetQuery {
+	query := (&ItemAssetClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(itemasset.Table, itemasset.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.AssetsTable, item.AssetsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -425,6 +449,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withRecipeIngredients: _q.withRecipeIngredients.Clone(),
 		withUnits:             _q.withUnits.Clone(),
 		withVariants:          _q.withVariants.Clone(),
+		withAssets:            _q.withAssets.Clone(),
 		withTranslations:      _q.withTranslations.Clone(),
 		withItemCategory:      _q.withItemCategory.Clone(),
 		// clone intermediate query.
@@ -485,6 +510,17 @@ func (_q *ItemQuery) WithVariants(opts ...func(*ItemVariantQuery)) *ItemQuery {
 		opt(query)
 	}
 	_q.withVariants = query
+	return _q
+}
+
+// WithAssets tells the query-builder to eager-load the nodes that are connected to
+// the "assets" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithAssets(opts ...func(*ItemAssetQuery)) *ItemQuery {
+	query := (&ItemAssetClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAssets = query
 	return _q
 }
 
@@ -588,12 +624,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
 			_q.withUnits != nil,
 			_q.withVariants != nil,
+			_q.withAssets != nil,
 			_q.withTranslations != nil,
 			_q.withItemCategory != nil,
 		}
@@ -646,6 +683,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadVariants(ctx, query, nodes,
 			func(n *Item) { n.Edges.Variants = []*ItemVariant{} },
 			func(n *Item, e *ItemVariant) { n.Edges.Variants = append(n.Edges.Variants, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAssets; query != nil {
+		if err := _q.loadAssets(ctx, query, nodes,
+			func(n *Item) { n.Edges.Assets = []*ItemAsset{} },
+			func(n *Item, e *ItemAsset) { n.Edges.Assets = append(n.Edges.Assets, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -801,6 +845,36 @@ func (_q *ItemQuery) loadVariants(ctx context.Context, query *ItemVariantQuery, 
 	}
 	query.Where(predicate.ItemVariant(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.VariantsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadAssets(ctx context.Context, query *ItemAssetQuery, nodes []*Item, init func(*Item), assign func(*Item, *ItemAsset)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemasset.FieldItemID)
+	}
+	query.Where(predicate.ItemAsset(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.AssetsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

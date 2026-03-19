@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -88,6 +89,7 @@ func checkColumn(t, c string) error {
 			consumption.Table:      consumption.ValidColumn,
 			inventorybalance.Table: inventorybalance.ValidColumn,
 			item.Table:             item.ValidColumn,
+			itemasset.Table:        itemasset.ValidColumn,
 			itemcategory.Table:     itemcategory.ValidColumn,
 			itemtranslation.Table:  itemtranslation.ValidColumn,
 			itemvariant.Table:      itemvariant.ValidColumn,

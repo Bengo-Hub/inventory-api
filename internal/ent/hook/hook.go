@@ -45,6 +45,18 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
 }
 
+// The ItemAssetFunc type is an adapter to allow the use of ordinary
+// function as ItemAsset mutator.
+type ItemAssetFunc func(context.Context, *ent.ItemAssetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemAssetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemAssetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemAssetMutation", m)
+}
+
 // The ItemCategoryFunc type is an adapter to allow the use of ordinary
 // function as ItemCategory mutator.
 type ItemCategoryFunc func(context.Context, *ent.ItemCategoryMutation) (ent.Value, error)

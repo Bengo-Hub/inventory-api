@@ -15,6 +15,9 @@ type InventoryBalance func(*sql.Selector)
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 
+// ItemAsset is the predicate function for itemasset builders.
+type ItemAsset func(*sql.Selector)
+
 // ItemCategory is the predicate function for itemcategory builders.
 type ItemCategory func(*sql.Selector)
 
