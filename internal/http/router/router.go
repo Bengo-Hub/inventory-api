@@ -97,6 +97,8 @@ func New(
 			tenant.Group(func(private chi.Router) {
 				if authMiddleware != nil {
 					private.Use(authMiddleware.RequireAuth)
+					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
+					private.Use(authclient.RequireActiveSubscription())
 				}
 				userHandler.RegisterRoutes(private)
 			})
