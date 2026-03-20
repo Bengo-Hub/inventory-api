@@ -1,6 +1,8 @@
 # Inventory API - MVP Plan
 
-**Last updated:** 2026-03-06
+**Last updated:** 2026-03-20
+
+**March 20 update:** Added item CRUD endpoints (`GET /items`, `POST /items`, `PUT /items/{sku}`), category listing (`GET /categories`), and `ListItems`/`ListCategories` service methods. Warehouse seed now uses deterministic UUID matching ordering-backend's outlet UUID formula for cross-service ID alignment. These endpoints enable ordering-backend and pos-api to create/verify inventory items via REST when users add menu items from the UI.
 **MVP deadline:** 2026-03-27
 **Tenant:** urban-loft (Urban Loft Cafe)
 **Active outlet:** Busia (main)

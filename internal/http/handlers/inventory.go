@@ -17,11 +17,15 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
-// ItemsServicer defines the contract for item availability operations.
+// ItemsServicer defines the contract for item availability and CRUD operations.
 type ItemsServicer interface {
 	GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID) ([]items.ItemDTO, error)
+	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.
@@ -101,9 +105,15 @@ func parseTenantID(r *http.Request) (uuid.UUID, error) {
 // RegisterRoutes wires inventory routes onto the given chi.Router.
 func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/inventory", func(inv chi.Router) {
-		// Item availability
+		// Item CRUD
+		inv.Get("/items", h.ListItems)
+		inv.Post("/items", h.CreateItem)
 		inv.Get("/items/{sku}", h.GetStockAvailability)
+		inv.Put("/items/{sku}", h.UpdateItem)
 		inv.Post("/availability", h.BulkAvailability)
+
+		// Categories
+		inv.Get("/categories", h.ListCategories)
 
 		// Reservations
 		inv.Post("/reservations", h.CreateReservation)
@@ -556,4 +566,119 @@ func (h *InventoryHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, result)
+}
+
+// ListItems handles GET /v1/{tenant}/inventory/items — returns all active items for the tenant.
+func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	results, err := h.itemsSvc.ListItems(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("list items failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data":  results,
+		"total": len(results),
+	})
+}
+
+// CreateItem handles POST /v1/{tenant}/inventory/items — creates a new inventory item.
+func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req items.ItemDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	if req.SKU == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Name is required")
+		return
+	}
+	if req.Type == "" {
+		req.Type = "GOODS"
+	}
+	req.IsActive = true
+
+	result, err := h.itemsSvc.CreateItem(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("create item failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, result)
+}
+
+// UpdateItem handles PUT /v1/{tenant}/inventory/items/{sku} — updates an existing item by SKU.
+func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+
+	avail, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, sku)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		return
+	}
+
+	var req items.ItemDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	result, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, req)
+	if err != nil {
+		h.log.Error("update item failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// ListCategories handles GET /v1/{tenant}/inventory/categories — returns all active categories.
+func (h *InventoryHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	results, err := h.itemsSvc.ListCategories(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("list categories failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list categories")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data":  results,
+		"total": len(results),
+	})
 }
