@@ -165,19 +165,37 @@ func resolveUnitIDs(ctx context.Context, client *ent.Client) (map[string]uuid.UU
 // Warehouse (outlet/branch) — tenant-scoped
 // ---------------------------------------------------------------------------
 
+// warehouseUUID returns a deterministic UUID for a warehouse/outlet.
+// Uses the same formula as ordering-backend outlet seed so IDs align across services.
+func warehouseUUID(tenantSlug, outletSlug string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:cafe:outlet:%s:%s", tenantSlug, outletSlug)))
+}
+
 func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
-	exists, err := client.Warehouse.Query().
-		Where(entwarehouse.TenantID(tenantID), entwarehouse.Code("MAIN")).
-		Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		log.Println("warehouse MAIN already exists, skipping")
+	// Use deterministic UUID matching ordering-backend's outlet UUID for cross-service alignment.
+	whID := warehouseUUID("urban-loft", "busia")
+
+	existing, err := client.Warehouse.Query().
+		Where(entwarehouse.ID(whID)).
+		Only(ctx)
+	if err == nil {
+		// Update existing to ensure fields match
+		_, _ = client.Warehouse.UpdateOneID(existing.ID).
+			SetName("Urban Loft Busia Kitchen").
+			SetCode("MAIN").
+			SetAddress("Busia, Kenya").
+			SetIsDefault(true).
+			SetIsActive(true).
+			Save(ctx)
+		log.Println("warehouse MAIN updated (ID aligned with outlet)")
 		return nil
+	}
+	if !ent.IsNotFound(err) {
+		return err
 	}
 
 	_, err = client.Warehouse.Create().
+		SetID(whID).
 		SetTenantID(tenantID).
 		SetName("Urban Loft Busia Kitchen").
 		SetCode("MAIN").
@@ -188,7 +206,7 @@ func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID) 
 	if err != nil {
 		return fmt.Errorf("create warehouse: %w", err)
 	}
-	log.Println("warehouse MAIN created")
+	log.Printf("warehouse MAIN created (ID=%s, aligned with ordering-backend outlet)", whID)
 	return nil
 }
 

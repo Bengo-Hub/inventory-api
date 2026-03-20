@@ -13,6 +13,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 )
@@ -322,6 +323,42 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		CreatedAt:   i.CreatedAt,
 		UpdatedAt:   i.UpdatedAt,
 	}
+}
+
+// ListItems returns all active items for a tenant.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID) ([]ItemDTO, error) {
+	itms, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.IsActive(true)).
+		Order(ent.Asc(item.FieldSku)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: list: %w", err)
+	}
+	dtos := make([]ItemDTO, len(itms))
+	for i, it := range itms {
+		dtos[i] = *s.mapToDTO(it)
+	}
+	return dtos, nil
+}
+
+// ListCategories returns all item categories for a tenant.
+func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]CategoryDTO, error) {
+	cats, err := s.client.ItemCategory.Query().
+		Where(itemcategory.TenantID(tenantID), itemcategory.IsActive(true)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: list categories: %w", err)
+	}
+	dtos := make([]CategoryDTO, len(cats))
+	for i, c := range cats {
+		dtos[i] = CategoryDTO{
+			ID:          c.ID,
+			Name:        c.Name,
+			Description: c.Description,
+			IsActive:    c.IsActive,
+		}
+	}
+	return dtos, nil
 }
 
 // CreateItem creates a new item and records an outbox event within a transaction.
