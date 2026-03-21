@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -55,6 +56,7 @@ type StockAvailability struct {
 // Service handles item-related business logic.
 type Service struct {
 	client *ent.Client
+	cache  *sharedcache.Aside
 	log    *zap.Logger
 }
 
@@ -64,6 +66,11 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 		client: client,
 		log:    log.Named("items.service"),
 	}
+}
+
+// SetCache injects the cache helper (optional; caching is skipped if nil).
+func (s *Service) SetCache(c *sharedcache.Aside) {
+	s.cache = c
 }
 
 // GetStockAvailability returns stock availability for a single item by SKU.
@@ -325,40 +332,48 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	}
 }
 
-// ListItems returns all active items for a tenant.
+// ListItems returns all active items for a tenant (cached 1 min).
 func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID) ([]ItemDTO, error) {
-	itms, err := s.client.Item.Query().
-		Where(item.TenantID(tenantID), item.IsActive(true)).
-		Order(ent.Asc(item.FieldSku)).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: list: %w", err)
+	key := sharedcache.Key("inv", "items", tenantID.String())
+	fetch := func(ctx context.Context) ([]ItemDTO, error) {
+		itms, err := s.client.Item.Query().
+			Where(item.TenantID(tenantID), item.IsActive(true)).
+			Order(ent.Asc(item.FieldSku)).
+			All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("items: list: %w", err)
+		}
+		dtos := make([]ItemDTO, len(itms))
+		for i, it := range itms {
+			dtos[i] = *s.mapToDTO(it)
+		}
+		return dtos, nil
 	}
-	dtos := make([]ItemDTO, len(itms))
-	for i, it := range itms {
-		dtos[i] = *s.mapToDTO(it)
-	}
-	return dtos, nil
+	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLModerate, fetch)
 }
 
-// ListCategories returns all item categories for a tenant.
+// ListCategories returns all item categories for a tenant (cached 5 min).
 func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]CategoryDTO, error) {
-	cats, err := s.client.ItemCategory.Query().
-		Where(itemcategory.TenantID(tenantID), itemcategory.IsActive(true)).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: list categories: %w", err)
-	}
-	dtos := make([]CategoryDTO, len(cats))
-	for i, c := range cats {
-		dtos[i] = CategoryDTO{
-			ID:          c.ID,
-			Name:        c.Name,
-			Description: c.Description,
-			IsActive:    c.IsActive,
+	key := sharedcache.Key("inv", "categories", tenantID.String())
+	fetch := func(ctx context.Context) ([]CategoryDTO, error) {
+		cats, err := s.client.ItemCategory.Query().
+			Where(itemcategory.TenantID(tenantID), itemcategory.IsActive(true)).
+			All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("items: list categories: %w", err)
 		}
+		dtos := make([]CategoryDTO, len(cats))
+		for i, c := range cats {
+			dtos[i] = CategoryDTO{
+				ID:          c.ID,
+				Name:        c.Name,
+				Description: c.Description,
+				IsActive:    c.IsActive,
+			}
+		}
+		return dtos, nil
 	}
-	return dtos, nil
+	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLReference, fetch)
 }
 
 // CreateItem creates a new item and records an outbox event within a transaction.

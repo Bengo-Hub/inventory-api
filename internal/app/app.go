@@ -17,6 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 
 	"github.com/bengobox/inventory-service/internal/config"
@@ -102,8 +103,9 @@ func New(ctx context.Context) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ent driver init: %w", err)
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(cfg.Postgres.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(cfg.Postgres.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(cfg.Postgres.ConnMaxLifetime)
 	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 
 	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
@@ -117,8 +119,12 @@ func New(ctx context.Context) (*App, error) {
 	}
 	log.Info("versioned migrations completed")
 
+	// Initialize cache helper for read-heavy queries
+	cacheAside := sharedcache.New(redisClient, log)
+
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log)
+	itemsSvc.SetCache(cacheAside)
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)
