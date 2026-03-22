@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -10,16 +9,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/bengobox/inventory-service/internal/ent"
-	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
 
-// tenantDB is set during handler initialization for slug-to-UUID resolution.
-var tenantDB *ent.Client
+// tenantSyncerInstance resolves slugs to UUIDs by syncing from auth-api if not cached locally.
+var tenantSyncerInstance *tenant.Syncer
 
-// SetTenantDB sets the ent client used for resolving tenant slugs to UUIDs.
-func SetTenantDB(client *ent.Client) {
-	tenantDB = client
+// SetTenantDB is kept for backward compatibility but now a no-op.
+func SetTenantDB(_ interface{}) {}
+
+// SetTenantSyncer sets the tenant syncer for slug-to-UUID resolution via auth-api.
+func SetTenantSyncer(syncer *tenant.Syncer) {
+	tenantSyncerInstance = syncer
 }
 
 // ResolveTenantForRequest resolves the target tenant UUID from the request,
@@ -102,10 +103,13 @@ func parseTenantID(r *http.Request) (uuid.UUID, error) {
 		}
 	}
 
-	if slug != "" && tenantDB != nil {
-		resolved, err := resolveTenantBySlug(r.Context(), slug)
-		if err == nil {
-			return resolved, nil
+	if slug != "" {
+		// Try syncer first (queries auth-api if not cached locally)
+		if tenantSyncerInstance != nil {
+			resolved, err := tenantSyncerInstance.SyncTenant(r.Context(), slug)
+			if err == nil {
+				return resolved, nil
+			}
 		}
 	}
 
@@ -115,11 +119,3 @@ func parseTenantID(r *http.Request) (uuid.UUID, error) {
 	return uuid.Nil, errors.New("tenant context required")
 }
 
-// resolveTenantBySlug looks up tenant UUID from slug in the local tenant table.
-func resolveTenantBySlug(ctx context.Context, slug string) (uuid.UUID, error) {
-	t, err := tenantDB.Tenant.Query().Where(enttenant.SlugEQ(slug)).Only(ctx)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return t.ID, nil
-}
