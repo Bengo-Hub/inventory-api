@@ -134,6 +134,7 @@ func New(ctx context.Context) (*App, error) {
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
+	handlers.SetTenantDB(ormClient) // Enable slug-to-UUID resolution for unauthenticated requests
 
 	// Order events consumer — auto-consume/release reservations on order lifecycle
 	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
