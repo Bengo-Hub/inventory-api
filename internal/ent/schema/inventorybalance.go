@@ -37,6 +37,9 @@ func (InventoryBalance) Fields() []ent.Field {
 			Comment("Reserved for pending orders"),
 		field.String("unit_of_measure").
 			Default("PIECE"),
+		field.Int("reorder_level").
+			Default(1).
+			Comment("Threshold below which a reorder notification is triggered"),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now),

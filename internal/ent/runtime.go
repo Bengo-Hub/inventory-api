@@ -71,8 +71,12 @@ func init() {
 	inventorybalanceDescUnitOfMeasure := inventorybalanceFields[7].Descriptor()
 	// inventorybalance.DefaultUnitOfMeasure holds the default value on creation for the unit_of_measure field.
 	inventorybalance.DefaultUnitOfMeasure = inventorybalanceDescUnitOfMeasure.Default.(string)
+	// inventorybalanceDescReorderLevel is the schema descriptor for reorder_level field.
+	inventorybalanceDescReorderLevel := inventorybalanceFields[8].Descriptor()
+	// inventorybalance.DefaultReorderLevel holds the default value on creation for the reorder_level field.
+	inventorybalance.DefaultReorderLevel = inventorybalanceDescReorderLevel.Default.(int)
 	// inventorybalanceDescUpdatedAt is the schema descriptor for updated_at field.
-	inventorybalanceDescUpdatedAt := inventorybalanceFields[8].Descriptor()
+	inventorybalanceDescUpdatedAt := inventorybalanceFields[9].Descriptor()
 	// inventorybalance.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventorybalance.DefaultUpdatedAt = inventorybalanceDescUpdatedAt.Default.(func() time.Time)
 	// inventorybalance.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -147,16 +151,20 @@ func init() {
 	itemcategoryDescName := itemcategoryFields[2].Descriptor()
 	// itemcategory.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	itemcategory.NameValidator = itemcategoryDescName.Validators[0].(func(string) error)
+	// itemcategoryDescCode is the schema descriptor for code field.
+	itemcategoryDescCode := itemcategoryFields[3].Descriptor()
+	// itemcategory.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	itemcategory.CodeValidator = itemcategoryDescCode.Validators[0].(func(string) error)
 	// itemcategoryDescIsActive is the schema descriptor for is_active field.
-	itemcategoryDescIsActive := itemcategoryFields[4].Descriptor()
+	itemcategoryDescIsActive := itemcategoryFields[5].Descriptor()
 	// itemcategory.DefaultIsActive holds the default value on creation for the is_active field.
 	itemcategory.DefaultIsActive = itemcategoryDescIsActive.Default.(bool)
 	// itemcategoryDescCreatedAt is the schema descriptor for created_at field.
-	itemcategoryDescCreatedAt := itemcategoryFields[5].Descriptor()
+	itemcategoryDescCreatedAt := itemcategoryFields[6].Descriptor()
 	// itemcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
 	itemcategory.DefaultCreatedAt = itemcategoryDescCreatedAt.Default.(func() time.Time)
 	// itemcategoryDescUpdatedAt is the schema descriptor for updated_at field.
-	itemcategoryDescUpdatedAt := itemcategoryFields[6].Descriptor()
+	itemcategoryDescUpdatedAt := itemcategoryFields[7].Descriptor()
 	// itemcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	itemcategory.DefaultUpdatedAt = itemcategoryDescUpdatedAt.Default.(func() time.Time)
 	// itemcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

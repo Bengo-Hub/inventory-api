@@ -217,32 +217,33 @@ func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID) 
 type categoryDef struct {
 	Slug        string
 	Name        string
+	Code        string
 	Description string
 }
 
 var categoryDefs = []categoryDef{
-	{"hot-beverages", "Hot Beverages", "Espresso drinks, teas, and other hot beverages"},
-	{"cold-beverages", "Cold Beverages", "Iced coffees, frappes, smoothies, and fresh juices"},
-	{"pastries", "Pastries & Bakery", "Croissants, muffins, cakes, and baked goods"},
-	{"sandwiches", "Sandwiches & Wraps", "Paninis, wraps, and classic sandwiches"},
-	{"salads", "Salads", "Fresh salads and greens"},
-	{"main-courses", "Main Courses", "Grills, curries, rice dishes, and hearty mains"},
-	{"light-bites", "Light Bites", "Samosas, spring rolls, and quick snacks"},
-	{"breakfast", "Breakfast", "Full breakfasts, pancakes, oats, and morning meals"},
-	{"pizza", "Pizza", "Artisanal and classic pizzas"},
-	{"chicken", "Chicken", "Fried and grilled chicken specialties"},
-	{"sushi", "Sushi", "Fresh sushi and Japanese delicacies"},
-	{"grocery", "Grocery", "Fresh produce and household essentials"},
-	{"pharmacy", "Pharmacy", "Medication and health services"},
-	{"gifts", "Gifts", "Special gifts and hampers"},
-	{"flowers", "Flowers", "Fresh flower bouquets and arrangements"},
-	{"alcohol", "Alcohol", "Wines, spirits, and beers"},
-	{"chinese", "Chinese", "Authentic Chinese cuisine"},
-	{"indian", "Indian", "Flavorful Indian curries and specialities"},
-	{"desserts", "Desserts", "Sweet treats and delights"},
-	{"retail", "Retail", "Shopping and fashion goods"},
-	{"electronics", "Electronics", "Devices and accessories"},
-	{"fashion", "Fashion", "Clothing and apparel"},
+	{"hot-beverages", "Hot Beverages", "BEV", "Espresso drinks, teas, and other hot beverages"},
+	{"cold-beverages", "Cold Beverages", "CBV", "Iced coffees, frappes, smoothies, and fresh juices"},
+	{"pastries", "Pastries & Bakery", "PST", "Croissants, muffins, cakes, and baked goods"},
+	{"sandwiches", "Sandwiches & Wraps", "SND", "Paninis, wraps, and classic sandwiches"},
+	{"salads", "Salads", "SAL", "Fresh salads and greens"},
+	{"main-courses", "Main Courses", "MIN", "Grills, curries, rice dishes, and hearty mains"},
+	{"light-bites", "Light Bites", "BTE", "Samosas, spring rolls, and quick snacks"},
+	{"breakfast", "Breakfast", "BRK", "Full breakfasts, pancakes, oats, and morning meals"},
+	{"pizza", "Pizza", "PIZ", "Artisanal and classic pizzas"},
+	{"chicken", "Chicken", "CHK", "Fried and grilled chicken specialties"},
+	{"sushi", "Sushi", "SHI", "Fresh sushi and Japanese delicacies"},
+	{"grocery", "Grocery", "GRC", "Fresh produce and household essentials"},
+	{"pharmacy", "Pharmacy", "PHR", "Medication and health services"},
+	{"gifts", "Gifts", "GFT", "Special gifts and hampers"},
+	{"flowers", "Flowers", "FLW", "Fresh flower bouquets and arrangements"},
+	{"alcohol", "Alcohol", "ALC", "Wines, spirits, and beers"},
+	{"chinese", "Chinese", "CHN", "Authentic Chinese cuisine"},
+	{"indian", "Indian", "IND", "Flavorful Indian curries and specialities"},
+	{"desserts", "Desserts", "DST", "Sweet treats and delights"},
+	{"retail", "Retail", "RTL", "Shopping and fashion goods"},
+	{"electronics", "Electronics", "ELC", "Devices and accessories"},
+	{"fashion", "Fashion", "FSH", "Clothing and apparel"},
 }
 
 func categoryUUID(tenantID uuid.UUID, slug string) uuid.UUID {
@@ -263,6 +264,7 @@ func seedItemCategories(ctx context.Context, client *ent.Client, tenantID uuid.U
 				SetID(id).
 				SetTenantID(tenantID).
 				SetName(cat.Name).
+				SetCode(cat.Code).
 				SetDescription(cat.Description).
 				SetIsActive(true).
 				Save(ctx); createErr != nil {
@@ -272,9 +274,10 @@ func seedItemCategories(ctx context.Context, client *ent.Client, tenantID uuid.U
 		case err != nil:
 			return nil, fmt.Errorf("check category %s: %w", cat.Slug, err)
 		default:
-			// Update name/description in case they changed.
+			// Update name/description/code in case they changed.
 			if _, updateErr := client.ItemCategory.UpdateOneID(id).
 				SetName(cat.Name).
+				SetCode(cat.Code).
 				SetDescription(cat.Description).
 				Save(ctx); updateErr != nil {
 				return nil, fmt.Errorf("update category %s: %w", cat.Slug, updateErr)
@@ -560,6 +563,7 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID) e
 			SetOnHand(def.OnHand).
 			SetAvailable(def.OnHand).
 			SetReserved(0).
+			SetReorderLevel(1).
 			SetUnitOfMeasure(def.UnitName).
 			SetUpdatedAt(time.Now()).
 			Save(ctx); err != nil {

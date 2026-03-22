@@ -100,6 +100,20 @@ func (_c *InventoryBalanceCreate) SetNillableUnitOfMeasure(v *string) *Inventory
 	return _c
 }
 
+// SetReorderLevel sets the "reorder_level" field.
+func (_c *InventoryBalanceCreate) SetReorderLevel(v int) *InventoryBalanceCreate {
+	_c.mutation.SetReorderLevel(v)
+	return _c
+}
+
+// SetNillableReorderLevel sets the "reorder_level" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillableReorderLevel(v *int) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetReorderLevel(*v)
+	}
+	return _c
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_c *InventoryBalanceCreate) SetUpdatedAt(v time.Time) *InventoryBalanceCreate {
 	_c.mutation.SetUpdatedAt(v)
@@ -189,6 +203,10 @@ func (_c *InventoryBalanceCreate) defaults() {
 		v := inventorybalance.DefaultUnitOfMeasure
 		_c.mutation.SetUnitOfMeasure(v)
 	}
+	if _, ok := _c.mutation.ReorderLevel(); !ok {
+		v := inventorybalance.DefaultReorderLevel
+		_c.mutation.SetReorderLevel(v)
+	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := inventorybalance.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
@@ -221,6 +239,9 @@ func (_c *InventoryBalanceCreate) check() error {
 	}
 	if _, ok := _c.mutation.UnitOfMeasure(); !ok {
 		return &ValidationError{Name: "unit_of_measure", err: errors.New(`ent: missing required field "InventoryBalance.unit_of_measure"`)}
+	}
+	if _, ok := _c.mutation.ReorderLevel(); !ok {
+		return &ValidationError{Name: "reorder_level", err: errors.New(`ent: missing required field "InventoryBalance.reorder_level"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "InventoryBalance.updated_at"`)}
@@ -286,6 +307,10 @@ func (_c *InventoryBalanceCreate) createSpec() (*InventoryBalance, *sqlgraph.Cre
 	if value, ok := _c.mutation.UnitOfMeasure(); ok {
 		_spec.SetField(inventorybalance.FieldUnitOfMeasure, field.TypeString, value)
 		_node.UnitOfMeasure = value
+	}
+	if value, ok := _c.mutation.ReorderLevel(); ok {
+		_spec.SetField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
+		_node.ReorderLevel = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -479,6 +504,24 @@ func (u *InventoryBalanceUpsert) UpdateUnitOfMeasure() *InventoryBalanceUpsert {
 	return u
 }
 
+// SetReorderLevel sets the "reorder_level" field.
+func (u *InventoryBalanceUpsert) SetReorderLevel(v int) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldReorderLevel, v)
+	return u
+}
+
+// UpdateReorderLevel sets the "reorder_level" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdateReorderLevel() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldReorderLevel)
+	return u
+}
+
+// AddReorderLevel adds v to the "reorder_level" field.
+func (u *InventoryBalanceUpsert) AddReorderLevel(v int) *InventoryBalanceUpsert {
+	u.Add(inventorybalance.FieldReorderLevel, v)
+	return u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (u *InventoryBalanceUpsert) SetUpdatedAt(v time.Time) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldUpdatedAt, v)
@@ -655,6 +698,27 @@ func (u *InventoryBalanceUpsertOne) SetUnitOfMeasure(v string) *InventoryBalance
 func (u *InventoryBalanceUpsertOne) UpdateUnitOfMeasure() *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateUnitOfMeasure()
+	})
+}
+
+// SetReorderLevel sets the "reorder_level" field.
+func (u *InventoryBalanceUpsertOne) SetReorderLevel(v int) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetReorderLevel(v)
+	})
+}
+
+// AddReorderLevel adds v to the "reorder_level" field.
+func (u *InventoryBalanceUpsertOne) AddReorderLevel(v int) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.AddReorderLevel(v)
+	})
+}
+
+// UpdateReorderLevel sets the "reorder_level" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdateReorderLevel() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateReorderLevel()
 	})
 }
 
@@ -1003,6 +1067,27 @@ func (u *InventoryBalanceUpsertBulk) SetUnitOfMeasure(v string) *InventoryBalanc
 func (u *InventoryBalanceUpsertBulk) UpdateUnitOfMeasure() *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateUnitOfMeasure()
+	})
+}
+
+// SetReorderLevel sets the "reorder_level" field.
+func (u *InventoryBalanceUpsertBulk) SetReorderLevel(v int) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetReorderLevel(v)
+	})
+}
+
+// AddReorderLevel adds v to the "reorder_level" field.
+func (u *InventoryBalanceUpsertBulk) AddReorderLevel(v int) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.AddReorderLevel(v)
+	})
+}
+
+// UpdateReorderLevel sets the "reorder_level" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdateReorderLevel() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateReorderLevel()
 	})
 }
 

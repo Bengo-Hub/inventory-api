@@ -29,6 +29,8 @@ const (
 	FieldReserved = "reserved"
 	// FieldUnitOfMeasure holds the string denoting the unit_of_measure field in the database.
 	FieldUnitOfMeasure = "unit_of_measure"
+	// FieldReorderLevel holds the string denoting the reorder_level field in the database.
+	FieldReorderLevel = "reorder_level"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// EdgeItem holds the string denoting the item edge name in mutations.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldAvailable,
 	FieldReserved,
 	FieldUnitOfMeasure,
+	FieldReorderLevel,
 	FieldUpdatedAt,
 }
 
@@ -85,6 +88,8 @@ var (
 	DefaultReserved int
 	// DefaultUnitOfMeasure holds the default value on creation for the "unit_of_measure" field.
 	DefaultUnitOfMeasure string
+	// DefaultReorderLevel holds the default value on creation for the "reorder_level" field.
+	DefaultReorderLevel int
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
@@ -134,6 +139,11 @@ func ByReserved(opts ...sql.OrderTermOption) OrderOption {
 // ByUnitOfMeasure orders the results by the unit_of_measure field.
 func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUnitOfMeasure, opts...).ToFunc()
+}
+
+// ByReorderLevel orders the results by the reorder_level field.
+func ByReorderLevel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReorderLevel, opts...).ToFunc()
 }
 
 // ByUpdatedAt orders the results by the updated_at field.

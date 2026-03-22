@@ -91,6 +91,11 @@ func UnitOfMeasure(v string) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUnitOfMeasure, v))
 }
 
+// ReorderLevel applies equality check predicate on the "reorder_level" field. It's identical to ReorderLevelEQ.
+func ReorderLevel(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldReorderLevel, v))
+}
+
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUpdatedAt, v))
@@ -359,6 +364,46 @@ func UnitOfMeasureEqualFold(v string) predicate.InventoryBalance {
 // UnitOfMeasureContainsFold applies the ContainsFold predicate on the "unit_of_measure" field.
 func UnitOfMeasureContainsFold(v string) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldContainsFold(FieldUnitOfMeasure, v))
+}
+
+// ReorderLevelEQ applies the EQ predicate on the "reorder_level" field.
+func ReorderLevelEQ(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldReorderLevel, v))
+}
+
+// ReorderLevelNEQ applies the NEQ predicate on the "reorder_level" field.
+func ReorderLevelNEQ(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldReorderLevel, v))
+}
+
+// ReorderLevelIn applies the In predicate on the "reorder_level" field.
+func ReorderLevelIn(vs ...int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIn(FieldReorderLevel, vs...))
+}
+
+// ReorderLevelNotIn applies the NotIn predicate on the "reorder_level" field.
+func ReorderLevelNotIn(vs ...int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotIn(FieldReorderLevel, vs...))
+}
+
+// ReorderLevelGT applies the GT predicate on the "reorder_level" field.
+func ReorderLevelGT(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGT(FieldReorderLevel, v))
+}
+
+// ReorderLevelGTE applies the GTE predicate on the "reorder_level" field.
+func ReorderLevelGTE(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGTE(FieldReorderLevel, v))
+}
+
+// ReorderLevelLT applies the LT predicate on the "reorder_level" field.
+func ReorderLevelLT(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLT(FieldReorderLevel, v))
+}
+
+// ReorderLevelLTE applies the LTE predicate on the "reorder_level" field.
+func ReorderLevelLTE(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLTE(FieldReorderLevel, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.

@@ -890,6 +890,8 @@ type InventoryBalanceMutation struct {
 	reserved         *int
 	addreserved      *int
 	unit_of_measure  *string
+	reorder_level    *int
+	addreorder_level *int
 	updated_at       *time.Time
 	clearedFields    map[string]struct{}
 	item             *uuid.UUID
@@ -1317,6 +1319,62 @@ func (m *InventoryBalanceMutation) ResetUnitOfMeasure() {
 	m.unit_of_measure = nil
 }
 
+// SetReorderLevel sets the "reorder_level" field.
+func (m *InventoryBalanceMutation) SetReorderLevel(i int) {
+	m.reorder_level = &i
+	m.addreorder_level = nil
+}
+
+// ReorderLevel returns the value of the "reorder_level" field in the mutation.
+func (m *InventoryBalanceMutation) ReorderLevel() (r int, exists bool) {
+	v := m.reorder_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReorderLevel returns the old "reorder_level" field's value of the InventoryBalance entity.
+// If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryBalanceMutation) OldReorderLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReorderLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReorderLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReorderLevel: %w", err)
+	}
+	return oldValue.ReorderLevel, nil
+}
+
+// AddReorderLevel adds i to the "reorder_level" field.
+func (m *InventoryBalanceMutation) AddReorderLevel(i int) {
+	if m.addreorder_level != nil {
+		*m.addreorder_level += i
+	} else {
+		m.addreorder_level = &i
+	}
+}
+
+// AddedReorderLevel returns the value that was added to the "reorder_level" field in this mutation.
+func (m *InventoryBalanceMutation) AddedReorderLevel() (r int, exists bool) {
+	v := m.addreorder_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReorderLevel resets all changes to the "reorder_level" field.
+func (m *InventoryBalanceMutation) ResetReorderLevel() {
+	m.reorder_level = nil
+	m.addreorder_level = nil
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (m *InventoryBalanceMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
@@ -1441,7 +1499,7 @@ func (m *InventoryBalanceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryBalanceMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.tenant_id != nil {
 		fields = append(fields, inventorybalance.FieldTenantID)
 	}
@@ -1462,6 +1520,9 @@ func (m *InventoryBalanceMutation) Fields() []string {
 	}
 	if m.unit_of_measure != nil {
 		fields = append(fields, inventorybalance.FieldUnitOfMeasure)
+	}
+	if m.reorder_level != nil {
+		fields = append(fields, inventorybalance.FieldReorderLevel)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, inventorybalance.FieldUpdatedAt)
@@ -1488,6 +1549,8 @@ func (m *InventoryBalanceMutation) Field(name string) (ent.Value, bool) {
 		return m.Reserved()
 	case inventorybalance.FieldUnitOfMeasure:
 		return m.UnitOfMeasure()
+	case inventorybalance.FieldReorderLevel:
+		return m.ReorderLevel()
 	case inventorybalance.FieldUpdatedAt:
 		return m.UpdatedAt()
 	}
@@ -1513,6 +1576,8 @@ func (m *InventoryBalanceMutation) OldField(ctx context.Context, name string) (e
 		return m.OldReserved(ctx)
 	case inventorybalance.FieldUnitOfMeasure:
 		return m.OldUnitOfMeasure(ctx)
+	case inventorybalance.FieldReorderLevel:
+		return m.OldReorderLevel(ctx)
 	case inventorybalance.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	}
@@ -1573,6 +1638,13 @@ func (m *InventoryBalanceMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetUnitOfMeasure(v)
 		return nil
+	case inventorybalance.FieldReorderLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReorderLevel(v)
+		return nil
 	case inventorybalance.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -1597,6 +1669,9 @@ func (m *InventoryBalanceMutation) AddedFields() []string {
 	if m.addreserved != nil {
 		fields = append(fields, inventorybalance.FieldReserved)
 	}
+	if m.addreorder_level != nil {
+		fields = append(fields, inventorybalance.FieldReorderLevel)
+	}
 	return fields
 }
 
@@ -1611,6 +1686,8 @@ func (m *InventoryBalanceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAvailable()
 	case inventorybalance.FieldReserved:
 		return m.AddedReserved()
+	case inventorybalance.FieldReorderLevel:
+		return m.AddedReorderLevel()
 	}
 	return nil, false
 }
@@ -1640,6 +1717,13 @@ func (m *InventoryBalanceMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddReserved(v)
+		return nil
+	case inventorybalance.FieldReorderLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReorderLevel(v)
 		return nil
 	}
 	return fmt.Errorf("unknown InventoryBalance numeric field %s", name)
@@ -1688,6 +1772,9 @@ func (m *InventoryBalanceMutation) ResetField(name string) error {
 		return nil
 	case inventorybalance.FieldUnitOfMeasure:
 		m.ResetUnitOfMeasure()
+		return nil
+	case inventorybalance.FieldReorderLevel:
+		m.ResetReorderLevel()
 		return nil
 	case inventorybalance.FieldUpdatedAt:
 		m.ResetUpdatedAt()
@@ -4430,6 +4517,7 @@ type ItemCategoryMutation struct {
 	typ           string
 	id            *uuid.UUID
 	name          *string
+	code          *string
 	description   *string
 	is_active     *bool
 	created_at    *time.Time
@@ -4619,6 +4707,55 @@ func (m *ItemCategoryMutation) OldName(ctx context.Context) (v string, err error
 // ResetName resets all changes to the "name" field.
 func (m *ItemCategoryMutation) ResetName() {
 	m.name = nil
+}
+
+// SetCode sets the "code" field.
+func (m *ItemCategoryMutation) SetCode(s string) {
+	m.code = &s
+}
+
+// Code returns the value of the "code" field in the mutation.
+func (m *ItemCategoryMutation) Code() (r string, exists bool) {
+	v := m.code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCode returns the old "code" field's value of the ItemCategory entity.
+// If the ItemCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemCategoryMutation) OldCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+	}
+	return oldValue.Code, nil
+}
+
+// ClearCode clears the value of the "code" field.
+func (m *ItemCategoryMutation) ClearCode() {
+	m.code = nil
+	m.clearedFields[itemcategory.FieldCode] = struct{}{}
+}
+
+// CodeCleared returns if the "code" field was cleared in this mutation.
+func (m *ItemCategoryMutation) CodeCleared() bool {
+	_, ok := m.clearedFields[itemcategory.FieldCode]
+	return ok
+}
+
+// ResetCode resets all changes to the "code" field.
+func (m *ItemCategoryMutation) ResetCode() {
+	m.code = nil
+	delete(m.clearedFields, itemcategory.FieldCode)
 }
 
 // SetDescription sets the "description" field.
@@ -4893,12 +5030,15 @@ func (m *ItemCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.tenant != nil {
 		fields = append(fields, itemcategory.FieldTenantID)
 	}
 	if m.name != nil {
 		fields = append(fields, itemcategory.FieldName)
+	}
+	if m.code != nil {
+		fields = append(fields, itemcategory.FieldCode)
 	}
 	if m.description != nil {
 		fields = append(fields, itemcategory.FieldDescription)
@@ -4924,6 +5064,8 @@ func (m *ItemCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.TenantID()
 	case itemcategory.FieldName:
 		return m.Name()
+	case itemcategory.FieldCode:
+		return m.Code()
 	case itemcategory.FieldDescription:
 		return m.Description()
 	case itemcategory.FieldIsActive:
@@ -4945,6 +5087,8 @@ func (m *ItemCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldTenantID(ctx)
 	case itemcategory.FieldName:
 		return m.OldName(ctx)
+	case itemcategory.FieldCode:
+		return m.OldCode(ctx)
 	case itemcategory.FieldDescription:
 		return m.OldDescription(ctx)
 	case itemcategory.FieldIsActive:
@@ -4975,6 +5119,13 @@ func (m *ItemCategoryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case itemcategory.FieldCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCode(v)
 		return nil
 	case itemcategory.FieldDescription:
 		v, ok := value.(string)
@@ -5034,6 +5185,9 @@ func (m *ItemCategoryMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ItemCategoryMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(itemcategory.FieldCode) {
+		fields = append(fields, itemcategory.FieldCode)
+	}
 	if m.FieldCleared(itemcategory.FieldDescription) {
 		fields = append(fields, itemcategory.FieldDescription)
 	}
@@ -5051,6 +5205,9 @@ func (m *ItemCategoryMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ItemCategoryMutation) ClearField(name string) error {
 	switch name {
+	case itemcategory.FieldCode:
+		m.ClearCode()
+		return nil
 	case itemcategory.FieldDescription:
 		m.ClearDescription()
 		return nil
@@ -5067,6 +5224,9 @@ func (m *ItemCategoryMutation) ResetField(name string) error {
 		return nil
 	case itemcategory.FieldName:
 		m.ResetName()
+		return nil
+	case itemcategory.FieldCode:
+		m.ResetCode()
 		return nil
 	case itemcategory.FieldDescription:
 		m.ResetDescription()

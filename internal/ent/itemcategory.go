@@ -23,6 +23,8 @@ type ItemCategory struct {
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Short code for SKU generation (e.g. BEV, PST)
+	Code string `json:"code,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -75,7 +77,7 @@ func (*ItemCategory) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case itemcategory.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case itemcategory.FieldName, itemcategory.FieldDescription:
+		case itemcategory.FieldName, itemcategory.FieldCode, itemcategory.FieldDescription:
 			values[i] = new(sql.NullString)
 		case itemcategory.FieldCreatedAt, itemcategory.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -113,6 +115,12 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
+			}
+		case itemcategory.FieldCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field code", values[i])
+			} else if value.Valid {
+				_m.Code = value.String
 			}
 		case itemcategory.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -189,6 +197,9 @@ func (_m *ItemCategory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("code=")
+	builder.WriteString(_m.Code)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
