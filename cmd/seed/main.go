@@ -106,6 +106,10 @@ func main() {
 	if err := seedRolePermissions(ctx, client, tenantID); err != nil {
 		log.Fatalf("seed role-permissions: %v", err)
 	}
+	if err := seedRecipes(ctx, client, tenantID); err != nil {
+		log.Fatalf("seed recipes: %v", err)
+	}
+
 	if err := seedRateLimitConfigs(ctx, client); err != nil {
 		log.Fatalf("seed rate limit configs: %v", err)
 	}
@@ -422,6 +426,75 @@ var catalogItemDefs = []itemDef{
 	// ── Pizza ─────────────────────────────────────────────────────────────────
 	{"PIZ-MAR-001", "Margherita Pizza", "Fresh mozzarella, tomato sauce, and basil", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30},
 	{"PIZ-PEP-001", "Pepperoni Pizza", "Classic pepperoni with mozzarella and tomato sauce", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30},
+
+	// ── Raw Ingredients (GOODS) ───────────────────────────────────────────────
+	{"RAW-ESP-001", "Espresso Beans", "Premium roasted espresso beans", "hot-beverages", entitem.TypeGOODS, "KG", "", 50},
+	{"RAW-MLK-001", "Fresh Milk", "Full-cream fresh milk", "hot-beverages", entitem.TypeGOODS, "LITRE", "", 100},
+	{"RAW-CHO-001", "Chocolate Syrup", "Dark chocolate syrup", "hot-beverages", entitem.TypeGOODS, "LITRE", "", 20},
+	{"RAW-SGR-001", "Sugar", "White granulated sugar", "hot-beverages", entitem.TypeGOODS, "KG", "", 50},
+	{"RAW-VAN-001", "Vanilla Syrup", "Vanilla flavoured syrup", "cold-beverages", entitem.TypeGOODS, "LITRE", "", 15},
+	{"RAW-CAR-001", "Caramel Syrup", "Caramel flavoured syrup", "cold-beverages", entitem.TypeGOODS, "LITRE", "", 15},
+	{"RAW-ICE-001", "Ice Cubes", "Filtered water ice cubes", "cold-beverages", entitem.TypeGOODS, "KG", "", 200},
+	{"RAW-CRM-001", "Whipped Cream", "Ready whipped cream", "hot-beverages", entitem.TypeGOODS, "LITRE", "", 20},
+	{"RAW-COC-001", "Cocoa Powder", "Dutch-process cocoa powder", "hot-beverages", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-TEA-001", "Kenya AA Tea Leaves", "Premium Kenyan black tea leaves", "hot-beverages", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-GNG-001", "Ginger", "Fresh ginger root", "hot-beverages", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-CDM-001", "Cardamom", "Ground cardamom spice", "hot-beverages", entitem.TypeGOODS, "KG", "", 5},
+	{"RAW-MNG-001", "Fresh Mango", "Ripe mangoes", "cold-beverages", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-YGT-001", "Yoghurt", "Plain natural yoghurt", "cold-beverages", entitem.TypeGOODS, "LITRE", "", 20},
+	{"RAW-BRY-001", "Mixed Berries", "Frozen mixed berries (strawberry, blueberry)", "cold-beverages", entitem.TypeGOODS, "KG", "", 15},
+	{"RAW-BNA-001", "Bananas", "Fresh bananas", "cold-beverages", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-ORG-001", "Fresh Oranges", "Navel oranges for juicing", "cold-beverages", entitem.TypeGOODS, "KG", "", 40},
+	{"RAW-BRD-001", "Sourdough Bread", "Artisan sourdough loaf", "sandwiches", entitem.TypeGOODS, "PIECE", "", 30},
+	{"RAW-CKN-001", "Chicken Breast", "Fresh boneless chicken breast", "main-courses", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-BCN-001", "Bacon", "Smoked streaky bacon", "sandwiches", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-LET-001", "Lettuce", "Fresh iceberg and romaine lettuce", "salads", entitem.TypeGOODS, "KG", "", 25},
+	{"RAW-TMT-001", "Tomatoes", "Fresh vine tomatoes", "salads", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-CHZ-001", "Mozzarella Cheese", "Fresh mozzarella", "pizza", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-PRM-001", "Parmesan Cheese", "Aged parmesan block", "salads", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-PST-001", "Pesto Sauce", "Basil pesto", "sandwiches", entitem.TypeGOODS, "LITRE", "", 10},
+	{"RAW-TRT-001", "Tortilla Wraps", "Large flour tortilla wraps", "sandwiches", entitem.TypeGOODS, "PIECE", "", 50},
+	{"RAW-HUM-001", "Hummus", "Classic chickpea hummus", "sandwiches", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-AVO-001", "Avocado", "Fresh ripe avocados", "salads", entitem.TypeGOODS, "PIECE", "", 40},
+	{"RAW-TNA-001", "Canned Tuna", "Tuna chunks in brine", "sandwiches", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-CDD-001", "Cheddar Cheese", "Mature cheddar slices", "sandwiches", entitem.TypeGOODS, "KG", "", 15},
+	{"RAW-RYE-001", "Rye Bread", "Dark rye bread loaf", "sandwiches", entitem.TypeGOODS, "PIECE", "", 20},
+	{"RAW-OLV-001", "Olives", "Kalamata olives", "salads", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-FTA-001", "Feta Cheese", "Greek feta cheese", "salads", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-CUC-001", "Cucumber", "Fresh cucumbers", "salads", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-OVO-001", "Olive Oil", "Extra virgin olive oil", "salads", entitem.TypeGOODS, "LITRE", "", 15},
+	{"RAW-CRT-001", "Croutons", "Seasoned croutons", "salads", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-CSR-001", "Caesar Dressing", "Classic caesar dressing", "salads", entitem.TypeGOODS, "LITRE", "", 10},
+	{"RAW-SAM-001", "Samosa Wraps", "Pre-made samosa pastry wraps", "light-bites", entitem.TypeGOODS, "PIECE", "", 100},
+	{"RAW-SPW-001", "Spring Roll Wraps", "Rice paper spring roll wraps", "light-bites", entitem.TypeGOODS, "PIECE", "", 100},
+	{"RAW-BEF-001", "Beef Fillet", "Prime beef fillet steaks", "main-courses", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-RIC-001", "Basmati Rice", "Long-grain basmati rice", "main-courses", entitem.TypeGOODS, "KG", "", 50},
+	{"RAW-NAN-001", "Naan Bread", "Fresh tandoori naan", "main-courses", entitem.TypeGOODS, "PIECE", "", 40},
+	{"RAW-POT-001", "Potatoes", "Fresh white potatoes", "main-courses", entitem.TypeGOODS, "KG", "", 50},
+	{"RAW-FSH-001", "White Fish Fillet", "Beer-batter-ready cod/tilapia fillets", "main-courses", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-SPG-001", "Spaghetti", "Dried spaghetti pasta", "main-courses", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-MNC-001", "Minced Beef", "Lean minced beef", "main-courses", entitem.TypeGOODS, "KG", "", 25},
+	{"RAW-PIL-001", "Pilau Spice Mix", "Traditional pilau masala", "main-courses", entitem.TypeGOODS, "KG", "", 5},
+	{"RAW-EGG-001", "Eggs", "Free-range eggs", "breakfast", entitem.TypeGOODS, "PIECE", "", 200},
+	{"RAW-SSG-001", "Pork Sausages", "Breakfast pork sausages", "breakfast", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-BNS-001", "Baked Beans", "Tinned baked beans", "breakfast", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-PNC-001", "Pancake Mix", "Ready-mix pancake batter", "breakfast", entitem.TypeGOODS, "KG", "", 15},
+	{"RAW-MPS-001", "Maple Syrup", "Canadian maple syrup", "breakfast", entitem.TypeGOODS, "LITRE", "", 10},
+	{"RAW-OAT-001", "Rolled Oats", "Organic rolled oats", "breakfast", entitem.TypeGOODS, "KG", "", 20},
+	{"RAW-ALM-001", "Almond Milk", "Unsweetened almond milk", "breakfast", entitem.TypeGOODS, "LITRE", "", 15},
+	{"RAW-HNY-001", "Honey", "Raw natural honey", "breakfast", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-TMC-001", "Tomato Sauce", "Pizza and pasta tomato sauce", "pizza", entitem.TypeGOODS, "LITRE", "", 20},
+	{"RAW-BSL-001", "Fresh Basil", "Fresh basil leaves", "pizza", entitem.TypeGOODS, "KG", "", 5},
+	{"RAW-PEP-001", "Pepperoni", "Sliced pepperoni", "pizza", entitem.TypeGOODS, "KG", "", 10},
+	{"RAW-PZD-001", "Pizza Dough", "Fresh pizza dough balls", "pizza", entitem.TypeGOODS, "PIECE", "", 40},
+	{"RAW-FLR-001", "Wheat Flour", "All-purpose wheat flour", "pastries", entitem.TypeGOODS, "KG", "", 50},
+	{"RAW-BTR-001", "Butter", "Unsalted butter blocks", "pastries", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-CRY-001", "Curry Powder", "Blended curry powder", "main-courses", entitem.TypeGOODS, "KG", "", 5},
+	{"RAW-UGL-001", "Ugali Flour", "White maize flour for ugali", "main-courses", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-TAR-001", "Tartar Sauce", "Ready tartar sauce", "main-courses", entitem.TypeGOODS, "LITRE", "", 10},
+	{"RAW-VEG-001", "Mixed Vegetables", "Seasonal mixed vegetables", "main-courses", entitem.TypeGOODS, "KG", "", 30},
+	{"RAW-TMR-001", "Tamarind Chutney", "Tangy tamarind chutney", "light-bites", entitem.TypeGOODS, "LITRE", "", 5},
+	{"RAW-SCS-001", "Sweet Chilli Sauce", "Thai sweet chilli dipping sauce", "light-bites", entitem.TypeGOODS, "LITRE", "", 10},
 }
 
 func itemUUID(tenantID uuid.UUID, sku string) uuid.UUID {
@@ -959,5 +1032,172 @@ func seedServiceConfigs(ctx context.Context, client *ent.Client) error {
 		}
 		log.Printf("service config created: %s = %s", d.Key, d.Value)
 	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Recipes — BOM linking menu items (RECIPE type) to raw ingredient items
+// ---------------------------------------------------------------------------
+
+type ingredientDef struct {
+	RawSKU string
+	Qty    float64
+	UOM    string
+}
+
+type recipeDef struct {
+	SKU         string // matches a RECIPE-type catalogItemDef.SKU
+	OutputQty   float64
+	UOM         string
+	Ingredients []ingredientDef
+}
+
+func recipeUUID(tenantID uuid.UUID, sku string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:recipe:%s:%s", tenantID, sku)))
+}
+
+func recipeIngredientUUID(recipeID uuid.UUID, rawSKU string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:recipe-ing:%s:%s", recipeID, rawSKU)))
+}
+
+// recipeDefs maps every RECIPE-type menu item to its raw ingredient BOM.
+var recipeDefs = []recipeDef{
+	// ── Hot Beverages ─────────────────────────────────────────────────────
+	{"BEV-ESP-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}}},
+	{"BEV-ESP-002", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.036, "KG"}}},
+	{"BEV-LAT-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.25, "LITRE"}}},
+	{"BEV-CAP-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.2, "LITRE"}, {"RAW-COC-001", 0.005, "KG"}}},
+	{"BEV-AME-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}}},
+	{"BEV-MOC-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.2, "LITRE"}, {"RAW-CHO-001", 0.03, "LITRE"}, {"RAW-CRM-001", 0.03, "LITRE"}}},
+	{"BEV-MAC-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.05, "LITRE"}}},
+	{"BEV-TEA-001", 1, "CUP", []ingredientDef{{"RAW-TEA-001", 0.005, "KG"}, {"RAW-SGR-001", 0.01, "KG"}}},
+	{"BEV-TEA-002", 1, "CUP", []ingredientDef{{"RAW-TEA-001", 0.005, "KG"}, {"RAW-MLK-001", 0.15, "LITRE"}, {"RAW-GNG-001", 0.005, "KG"}, {"RAW-CDM-001", 0.002, "KG"}, {"RAW-SGR-001", 0.01, "KG"}}},
+	{"BEV-HOT-001", 1, "CUP", []ingredientDef{{"RAW-CHO-001", 0.04, "LITRE"}, {"RAW-MLK-001", 0.25, "LITRE"}, {"RAW-CRM-001", 0.03, "LITRE"}}},
+
+	// ── Cold Beverages ────────────────────────────────────────────────────
+	{"BEV-ICE-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.2, "LITRE"}, {"RAW-ICE-001", 0.15, "KG"}}},
+	{"BEV-ICE-002", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-ICE-001", 0.15, "KG"}}},
+	{"BEV-FRP-001", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.2, "LITRE"}, {"RAW-CAR-001", 0.03, "LITRE"}, {"RAW-ICE-001", 0.15, "KG"}}},
+	{"BEV-FRP-002", 1, "CUP", []ingredientDef{{"RAW-ESP-001", 0.018, "KG"}, {"RAW-MLK-001", 0.2, "LITRE"}, {"RAW-VAN-001", 0.03, "LITRE"}, {"RAW-ICE-001", 0.15, "KG"}}},
+	{"BEV-SMO-001", 1, "CUP", []ingredientDef{{"RAW-MNG-001", 0.2, "KG"}, {"RAW-YGT-001", 0.15, "LITRE"}, {"RAW-ICE-001", 0.1, "KG"}}},
+	{"BEV-SMO-002", 1, "CUP", []ingredientDef{{"RAW-BRY-001", 0.15, "KG"}, {"RAW-BNA-001", 0.1, "KG"}, {"RAW-YGT-001", 0.15, "LITRE"}, {"RAW-ICE-001", 0.1, "KG"}}},
+	{"BEV-JCE-001", 1, "CUP", []ingredientDef{{"RAW-ORG-001", 0.4, "KG"}}},
+
+	// ── Sandwiches & Wraps ────────────────────────────────────────────────
+	{"SND-CLB-001", 1, "PIECE", []ingredientDef{{"RAW-BRD-001", 3, "SLICE"}, {"RAW-CKN-001", 0.15, "KG"}, {"RAW-BCN-001", 0.05, "KG"}, {"RAW-LET-001", 0.03, "KG"}, {"RAW-TMT-001", 0.05, "KG"}}},
+	{"SND-GRL-001", 1, "PIECE", []ingredientDef{{"RAW-BRD-001", 1, "PIECE"}, {"RAW-CKN-001", 0.15, "KG"}, {"RAW-PST-001", 0.02, "LITRE"}, {"RAW-CHZ-001", 0.05, "KG"}}},
+	{"SND-VEG-001", 1, "PIECE", []ingredientDef{{"RAW-TRT-001", 1, "PIECE"}, {"RAW-HUM-001", 0.05, "KG"}, {"RAW-AVO-001", 0.5, "PIECE"}, {"RAW-VEG-001", 0.1, "KG"}}},
+	{"SND-BLT-001", 1, "PIECE", []ingredientDef{{"RAW-BRD-001", 2, "SLICE"}, {"RAW-BCN-001", 0.06, "KG"}, {"RAW-LET-001", 0.03, "KG"}, {"RAW-TMT-001", 0.05, "KG"}}},
+	{"SND-TUN-001", 1, "PIECE", []ingredientDef{{"RAW-RYE-001", 2, "SLICE"}, {"RAW-TNA-001", 0.1, "KG"}, {"RAW-CDD-001", 0.04, "KG"}}},
+
+	// ── Salads ────────────────────────────────────────────────────────────
+	{"SAL-CES-001", 1, "BOWL", []ingredientDef{{"RAW-LET-001", 0.15, "KG"}, {"RAW-CRT-001", 0.03, "KG"}, {"RAW-PRM-001", 0.03, "KG"}, {"RAW-CSR-001", 0.04, "LITRE"}}},
+	{"SAL-GRK-001", 1, "BOWL", []ingredientDef{{"RAW-CUC-001", 0.1, "KG"}, {"RAW-TMT-001", 0.1, "KG"}, {"RAW-OLV-001", 0.03, "KG"}, {"RAW-FTA-001", 0.05, "KG"}, {"RAW-OVO-001", 0.02, "LITRE"}}},
+
+	// ── Light Bites ───────────────────────────────────────────────────────
+	{"BTE-SAM-001", 1, "SERVING", []ingredientDef{{"RAW-SAM-001", 3, "PIECE"}, {"RAW-VEG-001", 0.1, "KG"}, {"RAW-TMR-001", 0.03, "LITRE"}}},
+	{"BTE-SPR-001", 1, "SERVING", []ingredientDef{{"RAW-SPW-001", 4, "PIECE"}, {"RAW-VEG-001", 0.1, "KG"}, {"RAW-SCS-001", 0.03, "LITRE"}}},
+
+	// ── Main Courses ──────────────────────────────────────────────────────
+	{"MIN-GRL-001", 1, "PLATE", []ingredientDef{{"RAW-BEF-001", 0.25, "KG"}, {"RAW-POT-001", 0.2, "KG"}, {"RAW-VEG-001", 0.15, "KG"}, {"RAW-BTR-001", 0.02, "KG"}}},
+	{"MIN-GRL-002", 1, "PLATE", []ingredientDef{{"RAW-CKN-001", 0.25, "KG"}, {"RAW-RIC-001", 0.15, "KG"}, {"RAW-VEG-001", 0.15, "KG"}}},
+	{"MIN-CUR-001", 1, "PLATE", []ingredientDef{{"RAW-CKN-001", 0.25, "KG"}, {"RAW-CRY-001", 0.02, "KG"}, {"RAW-RIC-001", 0.15, "KG"}, {"RAW-NAN-001", 1, "PIECE"}}},
+	{"MIN-CUR-002", 1, "PLATE", []ingredientDef{{"RAW-BEF-001", 0.25, "KG"}, {"RAW-POT-001", 0.15, "KG"}, {"RAW-VEG-001", 0.15, "KG"}, {"RAW-UGL-001", 0.15, "KG"}}},
+	{"MIN-SEA-001", 1, "PLATE", []ingredientDef{{"RAW-FSH-001", 0.2, "KG"}, {"RAW-FLR-001", 0.05, "KG"}, {"RAW-POT-001", 0.2, "KG"}, {"RAW-TAR-001", 0.03, "LITRE"}}},
+	{"MIN-PAS-001", 1, "PLATE", []ingredientDef{{"RAW-SPG-001", 0.15, "KG"}, {"RAW-MNC-001", 0.15, "KG"}, {"RAW-TMC-001", 0.1, "LITRE"}, {"RAW-PRM-001", 0.02, "KG"}, {"RAW-BRD-001", 1, "SLICE"}}},
+	{"MIN-RIC-001", 1, "BOWL", []ingredientDef{{"RAW-RIC-001", 0.2, "KG"}, {"RAW-PIL-001", 0.02, "KG"}, {"RAW-CKN-001", 0.15, "KG"}}},
+
+	// ── Breakfast ─────────────────────────────────────────────────────────
+	{"BRK-FUL-001", 1, "PLATE", []ingredientDef{{"RAW-EGG-001", 2, "PIECE"}, {"RAW-BCN-001", 0.06, "KG"}, {"RAW-SSG-001", 0.1, "KG"}, {"RAW-BNS-001", 0.1, "KG"}, {"RAW-BRD-001", 2, "SLICE"}, {"RAW-TMT-001", 0.05, "KG"}}},
+	{"BRK-PAN-001", 1, "PLATE", []ingredientDef{{"RAW-PNC-001", 0.15, "KG"}, {"RAW-MPS-001", 0.03, "LITRE"}, {"RAW-BRY-001", 0.05, "KG"}, {"RAW-EGG-001", 1, "PIECE"}}},
+	{"BRK-AVT-001", 1, "PLATE", []ingredientDef{{"RAW-BRD-001", 2, "SLICE"}, {"RAW-AVO-001", 1, "PIECE"}, {"RAW-EGG-001", 1, "PIECE"}}},
+	{"BRK-OAT-001", 1, "BOWL", []ingredientDef{{"RAW-OAT-001", 0.08, "KG"}, {"RAW-ALM-001", 0.2, "LITRE"}, {"RAW-HNY-001", 0.02, "KG"}, {"RAW-BRY-001", 0.03, "KG"}}},
+
+	// ── Pizza ─────────────────────────────────────────────────────────────
+	{"PIZ-MAR-001", 1, "PIECE", []ingredientDef{{"RAW-PZD-001", 1, "PIECE"}, {"RAW-TMC-001", 0.1, "LITRE"}, {"RAW-CHZ-001", 0.15, "KG"}, {"RAW-BSL-001", 0.01, "KG"}}},
+	{"PIZ-PEP-001", 1, "PIECE", []ingredientDef{{"RAW-PZD-001", 1, "PIECE"}, {"RAW-TMC-001", 0.1, "LITRE"}, {"RAW-CHZ-001", 0.12, "KG"}, {"RAW-PEP-001", 0.08, "KG"}}},
+}
+
+func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	for _, rd := range recipeDefs {
+		recipeID := recipeUUID(tenantID, rd.SKU)
+
+		// Find the matching item name from catalogItemDefs.
+		var recipeName string
+		for _, item := range catalogItemDefs {
+			if item.SKU == rd.SKU {
+				recipeName = item.Name
+				break
+			}
+		}
+		if recipeName == "" {
+			recipeName = rd.SKU
+		}
+
+		// Upsert recipe.
+		_, err := client.Recipe.Get(ctx, recipeID)
+		switch {
+		case ent.IsNotFound(err):
+			if _, createErr := client.Recipe.Create().
+				SetID(recipeID).
+				SetTenantID(tenantID).
+				SetSku(rd.SKU).
+				SetName(recipeName).
+				SetOutputQty(rd.OutputQty).
+				SetUnitOfMeasure(rd.UOM).
+				SetIsActive(true).
+				Save(ctx); createErr != nil {
+				return fmt.Errorf("create recipe %s: %w", rd.SKU, createErr)
+			}
+			log.Printf("recipe created: %s — %s", rd.SKU, recipeName)
+		case err != nil:
+			return fmt.Errorf("check recipe %s: %w", rd.SKU, err)
+		default:
+			if _, updateErr := client.Recipe.UpdateOneID(recipeID).
+				SetName(recipeName).
+				SetOutputQty(rd.OutputQty).
+				SetUnitOfMeasure(rd.UOM).
+				SetIsActive(true).
+				Save(ctx); updateErr != nil {
+				return fmt.Errorf("update recipe %s: %w", rd.SKU, updateErr)
+			}
+		}
+
+		// Seed ingredients for this recipe.
+		for i, ing := range rd.Ingredients {
+			rawItemID := itemUUID(tenantID, ing.RawSKU)
+			ingID := recipeIngredientUUID(recipeID, ing.RawSKU)
+
+			// Check if already exists by deterministic ID.
+			_, getErr := client.RecipeIngredient.Get(ctx, ingID)
+			switch {
+			case ent.IsNotFound(getErr):
+				if _, createErr := client.RecipeIngredient.Create().
+					SetID(ingID).
+					SetRecipeID(recipeID).
+					SetItemID(rawItemID).
+					SetItemSku(ing.RawSKU).
+					SetQuantity(ing.Qty).
+					SetUnitOfMeasure(ing.UOM).
+					SetDisplayOrder(i).
+					Save(ctx); createErr != nil {
+					return fmt.Errorf("create ingredient %s→%s: %w", rd.SKU, ing.RawSKU, createErr)
+				}
+			case getErr != nil:
+				return fmt.Errorf("check ingredient %s→%s: %w", rd.SKU, ing.RawSKU, getErr)
+			default:
+				if _, updateErr := client.RecipeIngredient.UpdateOneID(ingID).
+					SetQuantity(ing.Qty).
+					SetUnitOfMeasure(ing.UOM).
+					SetDisplayOrder(i).
+					Save(ctx); updateErr != nil {
+					return fmt.Errorf("update ingredient %s→%s: %w", rd.SKU, ing.RawSKU, updateErr)
+				}
+			}
+
+		}
+	}
+
+	log.Printf("seeded %d recipes with BOM ingredients", len(recipeDefs))
 	return nil
 }
