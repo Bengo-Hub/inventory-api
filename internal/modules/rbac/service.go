@@ -27,7 +27,8 @@ func NewService(repo Repository, logger *zap.Logger, tenantSyncer *tenant.Syncer
 }
 
 // EnsureUserFromToken handles JIT provisioning of a user derived from an SSO token.
-func (s *Service) EnsureUserFromToken(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, email string, tenantSlug string) (*InventoryUser, error) {
+// It also assigns service-level roles based on the user's global roles from JWT claims.
+func (s *Service) EnsureUserFromToken(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, email string, tenantSlug string, roles ...string) (*InventoryUser, error) {
 	// 1. If user already exists, we assume the tenant exists.
 	user, err := s.repo.GetUserByAuthServiceID(ctx, tenantID, userID)
 	if err == nil {
@@ -43,7 +44,76 @@ func (s *Service) EnsureUserFromToken(ctx context.Context, tenantID uuid.UUID, u
 	}
 
 	// 3. Create the user (reusing SyncUser logic)
-	return s.SyncUser(ctx, tenantID, userID, email)
+	user, err = s.SyncUser(ctx, tenantID, userID, email)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. Assign default service-level role based on global JWT roles
+	s.assignDefaultRoleFromJWT(ctx, tenantID, user.ID, userID, roles)
+
+	return user, nil
+}
+
+// assignDefaultRoleFromJWT maps global JWT roles to inventory-api service-level roles.
+// superuser/admin → inventory_admin, staff → warehouse_manager, others → viewer.
+func (s *Service) assignDefaultRoleFromJWT(ctx context.Context, tenantID uuid.UUID, localUserID uuid.UUID, authUserID uuid.UUID, roles []string) {
+	roleCode := mapGlobalRoleToInventoryRole(roles)
+	if roleCode == "" {
+		return
+	}
+
+	role, err := s.repo.GetRoleByCode(ctx, tenantID, roleCode)
+	if err != nil {
+		s.logger.Debug("inventory role not found for JIT assignment",
+			zap.String("role_code", roleCode),
+			zap.String("tenant_id", tenantID.String()),
+		)
+		return
+	}
+
+	// Idempotent: check if already assigned
+	assignments, err := s.repo.ListUserAssignments(ctx, tenantID, AssignmentFilters{
+		UserID: &localUserID,
+		RoleID: &role.ID,
+	})
+	if err == nil && len(assignments) > 0 {
+		return
+	}
+
+	assignment := &UserRoleAssignment{
+		ID:         uuid.New(),
+		TenantID:   tenantID,
+		UserID:     localUserID,
+		RoleID:     role.ID,
+		AssignedBy: authUserID,
+	}
+	if err := s.repo.AssignRoleToUser(ctx, tenantID, assignment); err != nil {
+		s.logger.Warn("JIT role assignment failed",
+			zap.String("role_code", roleCode),
+			zap.Error(err),
+		)
+		return
+	}
+
+	s.logger.Info("JIT assigned inventory role",
+		zap.String("role_code", roleCode),
+		zap.String("user_id", localUserID.String()),
+		zap.String("tenant_id", tenantID.String()),
+	)
+}
+
+// mapGlobalRoleToInventoryRole maps global SSO roles to inventory service roles.
+func mapGlobalRoleToInventoryRole(roles []string) string {
+	for _, r := range roles {
+		switch r {
+		case "superuser", "admin":
+			return "inventory_admin"
+		case "staff":
+			return "warehouse_manager"
+		}
+	}
+	return "viewer"
 }
 
 // SyncUser syncs a user from auth-service.

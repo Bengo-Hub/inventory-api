@@ -170,7 +170,7 @@ func New(ctx context.Context) (*App, error) {
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, cfg.HTTP.AllowedOrigins)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
