@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -91,17 +90,7 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, errorResponse{Code: code, Message: message})
 }
 
-func parseTenantID(r *http.Request) (uuid.UUID, error) {
-	raw := chi.URLParam(r, "tenantID")
-	if raw == "" {
-		return uuid.Nil, nil
-	}
-	decoded, err := url.PathUnescape(raw)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return uuid.Parse(decoded)
-}
+// parseTenantID is now defined in tenant.go with platform-owner override support.
 
 // RegisterRoutes wires inventory routes onto the given chi.Router.
 func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
