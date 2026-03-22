@@ -191,8 +191,22 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 }
 
 // checkAndPublishLowStock checks if stock is at or below reorder level and publishes an event.
+// Also publishes a stock-out event when available reaches zero.
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
-	if bal.Available <= bal.ReorderLevel {
+	if bal.Available <= 0 {
+		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.out", map[string]any{
+			"tenant_id":    tenantID.String(),
+			"item_id":      itm.ID.String(),
+			"sku":          itm.Sku,
+			"name":         itm.Name,
+			"available":    bal.Available,
+			"warehouse_id": warehouseID.String(),
+		})
+		s.log.Warn("stock-out alert published",
+			zap.String("sku", itm.Sku),
+			zap.Int("available", bal.Available),
+		)
+	} else if bal.Available <= bal.ReorderLevel {
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
 			"item_id":       itm.ID.String(),
