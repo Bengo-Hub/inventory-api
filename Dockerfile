@@ -10,11 +10,13 @@ RUN GOTOOLCHAIN=auto go mod download
 COPY . .
 
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory ./cmd/api
+RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-seed ./cmd/seed
 
 FROM alpine:3.20
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=builder /out/inventory /app/service
+COPY --from=builder /out/inventory-seed /app/seed
 COPY internal/ent/migrate/migrations ./internal/ent/migrate/migrations
 # TLS certificates directory (optional, can be mounted as volume)
 RUN mkdir -p ./config/certs
