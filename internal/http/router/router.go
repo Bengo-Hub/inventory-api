@@ -13,7 +13,9 @@ import (
 	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
+	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
+	"github.com/google/uuid"
 )
 
 func New(
@@ -24,6 +26,7 @@ func New(
 	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	tenantSyncer *tenant.Syncer,
+	rbacService *rbac.Service,
 	allowedOrigins []string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -69,6 +72,32 @@ func New(
 							_, syncErr := tenantSyncer.SyncTenant(r.Context(), slug)
 							if syncErr != nil {
 								log.Warn("tenant sync failed during JIT user provisioning", zap.Error(syncErr))
+							}
+						}
+					}
+					next.ServeHTTP(w, r)
+				})
+			})
+		}
+
+		// JIT user provisioning: create local user and assign default role from JWT claims
+		if rbacService != nil {
+			api.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					claims, ok := authclient.ClaimsFromContext(r.Context())
+					if ok && claims.Subject != "" && claims.TenantID != "" {
+						tenantID, err := uuid.Parse(claims.TenantID)
+						if err == nil {
+							userID, err := uuid.Parse(claims.Subject)
+							if err == nil {
+								_, _ = rbacService.EnsureUserFromToken(
+									r.Context(),
+									tenantID,
+									userID,
+									claims.Email,
+									claims.GetTenantSlug(),
+									claims.Roles...,
+								)
 							}
 						}
 					}
