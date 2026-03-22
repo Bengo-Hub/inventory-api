@@ -2,44 +2,107 @@
 
 **Last updated**: March 2026
 
-## RBAC: No local Permission/Role schema
+## RBAC: DB-backed Permission/Role schema
 
-inventory-api **does not** maintain its own Role or Permission tables. Authorization is enforced via **auth-api JWT** using `shared-auth-client`: all protected routes require a valid Bearer token; tenant and user context come from JWT claims.
+inventory-api maintains its own RBAC tables following the same pattern as treasury-api. The system uses Ent ORM schemas under `internal/ent/schema/` and a DB-backed RBAC module at `internal/modules/rbac/`.
 
-For inventory resources, auth-api is the source of truth for roles and permissions. When defining permissions in auth-api for inventory-api consumers, use the standard **eight actions** per resource:
+### Schemas
 
-| Action     | Description                          |
-|-----------|--------------------------------------|
-| `add`     | Create new records                   |
-| `read`    | View any record                      |
-| `read_own`| View own/tenant-scoped records only  |
-| `change`  | Update any record                    |
-| `change_own` | Update own/tenant-scoped records only |
-| `delete` | Delete/cancel records                |
-| `manage`  | Full management (all of the above)   |
-| `manage_own` | Full management of own scope only |
+| Schema | Table | Description |
+|--------|-------|-------------|
+| `InventoryPermission` | `inventory_permissions` | Permission definitions (global, no tenant_id) |
+| `InventoryRole` | `inventory_roles` | Role definitions (tenant-scoped) |
+| `RolePermission` | `role_permissions` | Junction table: role <-> permission |
+| `UserRoleAssignment` | `user_role_assignments` | User <-> role assignments (tenant-scoped) |
+| `InventoryUser` | `inventory_users` | Local user reference (synced from auth-service) |
+| `RateLimitConfig` | `rate_limit_configs` | Rate limiting configuration |
+| `ServiceConfig` | `service_configs` | Service-level key-value configuration |
 
-**Suggested inventory resources** (for use in auth-api permission seeds):
+### Permission format
 
-- **items** — catalog/SKU management
-- **warehouses** — warehouse and location management
-- **adjustments** — stock adjustments, cycle counts
-- **transfers** — inter-warehouse transfers
-- **purchase_orders** — purchase orders and receipts
-- **reservations** — inventory reservations and allocation
+Permission codes follow the `inventory.{module}.{action}` pattern.
 
-Example permission codes: `items:read`, `items:add`, `warehouses:change`, `adjustments:manage`, etc.
+**Modules** (11):
+- `items` -- catalog/SKU management
+- `variants` -- item variant management
+- `categories` -- item category management
+- `warehouses` -- warehouse and location management
+- `stock` -- stock adjustments, cycle counts, transfers
+- `recipes` -- recipe/BOM management
+- `consumptions` -- stock consumption tracking
+- `reservations` -- inventory reservations and allocation
+- `units` -- unit of measure management (**platform-only for manage operations** since units have no tenant_id)
+- `config` -- service configuration management
+- `users` -- user management
 
-## Core data: no local seed
+**Actions** (9):
 
-- **No cmd/seed in inventory-api**: This service does not have a `cmd/seed` binary. Do not add a local seed for tenants or roles/permissions; align with auth-api (permissions) and ordering-backend (tenant sync) instead.
-- **Tenants**: Tenants are **synced from ordering-backend** (inventory-api is listed in `tenantSyncDestinations` in `ordering-service/ordering-backend/cmd/seed/main.go` and `internal/modules/identity/repository_ent.go`). Do not duplicate tenant seed in inventory-api.
-- **Warehouses / outlets**: When warehouse/outlet tables exist, they are populated by **tenant sync events** or by API usage; no standalone warehouse seed is required in inventory-api for MVP.
-- **Default config**: Document any service-level defaults in `config/example.env`. No migration files are added manually; use existing migration tooling when schema is introduced.
+| Action       | Description                          |
+|-------------|--------------------------------------|
+| `add`       | Create new records                   |
+| `view`      | View any record                      |
+| `view_own`  | View own/tenant-scoped records only  |
+| `change`    | Update any record                    |
+| `change_own`| Update own/tenant-scoped records only|
+| `delete`    | Delete/cancel records                |
+| `delete_own`| Delete own records only              |
+| `manage`    | Full management (all of the above)   |
+| `manage_own`| Full management of own scope only    |
+
+Example permission codes: `inventory.items.view`, `inventory.stock.add`, `inventory.warehouses.change`, `inventory.units.manage`.
+
+### Roles (seeded per tenant)
+
+| Role Code | Description |
+|-----------|-------------|
+| `inventory_admin` | Full access to all inventory operations including config and user management |
+| `warehouse_manager` | Manage warehouses, stock, reservations, recipes, and consumptions |
+| `stock_clerk` | View and change stock, view items/warehouses, manage own consumptions |
+| `viewer` | Read-only access to all inventory data |
+
+### API Endpoints
+
+All RBAC endpoints are under `/{tenant}/` and require authentication:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/{tenant}/rbac/roles` | List roles for tenant |
+| `GET`  | `/{tenant}/rbac/permissions` | List all permissions |
+| `GET`  | `/{tenant}/rbac/assignments` | List role assignments |
+| `POST` | `/{tenant}/rbac/assignments` | Assign role to user |
+| `DELETE`| `/{tenant}/rbac/assignments/{id}` | Revoke role assignment |
+| `GET`  | `/{tenant}/users/me/roles` | Get current user's roles |
+| `GET`  | `/{tenant}/users/me/permissions` | Get current user's permissions |
+
+## Seed
+
+Run `go run ./cmd/seed` to seed:
+
+1. **Units** (global, no tenant_id)
+2. **Warehouses, categories, items, balances** (tenant-scoped for urban-loft)
+3. **Permissions** (99 permissions: 11 modules x 9 actions)
+4. **Roles** (4 system roles per tenant)
+5. **Role-permission assignments** (admin gets all, others get subsets)
+6. **Rate limit configs** (global, per-tenant, per-IP, per-user, per-endpoint)
+7. **Service configs** (platform-level defaults)
+
+### Important: `units` module
+
+The `unit` entity has **no tenant_id** -- it is global/shared across all tenants. Only platform owners should have `inventory.units.manage` permission. The `warehouse_manager` and `stock_clerk` roles only get `inventory.units.view`.
+
+## Module structure
+
+```
+internal/modules/rbac/
+  models.go          -- InventoryUser, InventoryRole, InventoryPermission, UserRoleAssignment
+  repository.go      -- Repository interface + filter types
+  repository_ent.go  -- Ent-backed implementation
+  service.go         -- Business logic (HasPermission, AssignRole, SyncUser, etc.)
+```
 
 ## References
 
-- Auth-api seed: `auth-service/auth-api/cmd/seed` (permissions for resources including inventory; use the resource names above with the eight actions).
-- Ordering-backend tenant sync: `ordering-service/ordering-backend/cmd/seed` and `internal/modules/identity/repository_ent.go` (`tenantSyncDestinations` includes `inventory-api`).
-- inventory-ui: Sidebar and route visibility use the same permission codes (e.g. `items:read`, `warehouses:read`, `adjustments:read`); auth-api permission seeds should match so UI nav reflects correctly.
-- Workspace rule: see `.cursor/rules/uniformity-rule.mdc` for RBAC and seed alignment across services.
+- Treasury-api reference: `finance-service/treasury-api/internal/modules/rbac/` (same pattern)
+- Auth-api seed: `auth-service/auth-api/cmd/seed`
+- Ordering-backend tenant sync: `ordering-service/ordering-backend/cmd/seed`
+- inventory-ui: Sidebar and route visibility use permission codes like `inventory.items.view`

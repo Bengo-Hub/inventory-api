@@ -14,17 +14,24 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
+	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -86,20 +93,27 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			consumption.Table:      consumption.ValidColumn,
-			inventorybalance.Table: inventorybalance.ValidColumn,
-			item.Table:             item.ValidColumn,
-			itemasset.Table:        itemasset.ValidColumn,
-			itemcategory.Table:     itemcategory.ValidColumn,
-			itemtranslation.Table:  itemtranslation.ValidColumn,
-			itemvariant.Table:      itemvariant.ValidColumn,
-			outboxevent.Table:      outboxevent.ValidColumn,
-			recipe.Table:           recipe.ValidColumn,
-			recipeingredient.Table: recipeingredient.ValidColumn,
-			reservation.Table:      reservation.ValidColumn,
-			tenant.Table:           tenant.ValidColumn,
-			unit.Table:             unit.ValidColumn,
-			warehouse.Table:        warehouse.ValidColumn,
+			consumption.Table:         consumption.ValidColumn,
+			inventorybalance.Table:    inventorybalance.ValidColumn,
+			inventorypermission.Table: inventorypermission.ValidColumn,
+			inventoryrole.Table:       inventoryrole.ValidColumn,
+			inventoryuser.Table:       inventoryuser.ValidColumn,
+			item.Table:                item.ValidColumn,
+			itemasset.Table:           itemasset.ValidColumn,
+			itemcategory.Table:        itemcategory.ValidColumn,
+			itemtranslation.Table:     itemtranslation.ValidColumn,
+			itemvariant.Table:         itemvariant.ValidColumn,
+			outboxevent.Table:         outboxevent.ValidColumn,
+			ratelimitconfig.Table:     ratelimitconfig.ValidColumn,
+			recipe.Table:              recipe.ValidColumn,
+			recipeingredient.Table:    recipeingredient.ValidColumn,
+			reservation.Table:         reservation.ValidColumn,
+			rolepermission.Table:      rolepermission.ValidColumn,
+			serviceconfig.Table:       serviceconfig.ValidColumn,
+			tenant.Table:              tenant.ValidColumn,
+			unit.Table:                unit.ValidColumn,
+			userroleassignment.Table:  userroleassignment.ValidColumn,
+			warehouse.Table:           warehouse.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

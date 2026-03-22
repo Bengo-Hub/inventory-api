@@ -21,6 +21,7 @@ func New(
 	health *handlers.HealthHandler,
 	userHandler *handlers.UserHandler,
 	inventoryHandler *handlers.InventoryHandler,
+	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	tenantSyncer *tenant.Syncer,
 	allowedOrigins []string,
@@ -101,6 +102,9 @@ func New(
 					private.Use(authclient.RequireActiveSubscription())
 				}
 				userHandler.RegisterRoutes(private)
+				if rbacHandler != nil {
+					rbacHandler.RegisterRBACRoutes(private)
+				}
 			})
 
 			// Inventory Routes (Granular auth)

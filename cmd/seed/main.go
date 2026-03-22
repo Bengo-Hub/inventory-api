@@ -15,9 +15,14 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entinvperm "github.com/bengobox/inventory-service/internal/ent/inventorypermission"
+	entinvrole "github.com/bengobox/inventory-service/internal/ent/inventoryrole"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	entinvbal "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entrlc "github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
+	entrp "github.com/bengobox/inventory-service/internal/ent/rolepermission"
+	entsvc "github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
@@ -49,7 +54,11 @@ func main() {
 	log.Println("schema migrated")
 
 	// Resolve tenant UUID and upsert tenant row.
-	syncer := tenant.NewSyncer(client)
+	authURL := os.Getenv("AUTH_API_URL")
+	if authURL == "" {
+		authURL = "https://sso.codevertexitsolutions.com"
+	}
+	syncer := tenant.NewSyncer(client, authURL)
 	// Sync platform org so tenant row exists; platform admin has full access via JWT.
 	if _, err := syncer.SyncTenant(ctx, "codevertex"); err != nil {
 		log.Printf("[SKIP] sync codevertex (platform org): %v", err)
@@ -85,6 +94,23 @@ func main() {
 
 	if err := seedBalances(ctx, client, tenantID); err != nil {
 		log.Fatalf("seed balances: %v", err)
+	}
+
+	// RBAC seed — permissions, roles, role-permission assignments
+	if err := seedPermissions(ctx, client); err != nil {
+		log.Fatalf("seed permissions: %v", err)
+	}
+	if err := seedRoles(ctx, client, tenantID); err != nil {
+		log.Fatalf("seed roles: %v", err)
+	}
+	if err := seedRolePermissions(ctx, client, tenantID); err != nil {
+		log.Fatalf("seed role-permissions: %v", err)
+	}
+	if err := seedRateLimitConfigs(ctx, client); err != nil {
+		log.Fatalf("seed rate limit configs: %v", err)
+	}
+	if err := seedServiceConfigs(ctx, client); err != nil {
+		log.Fatalf("seed service configs: %v", err)
 	}
 
 	log.Println("seed completed successfully")
@@ -571,6 +597,367 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID) e
 			continue
 		}
 		log.Printf("balance created: %s on_hand=%d", def.SKU, def.OnHand)
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// RBAC — Permissions (global, no tenant_id)
+// ---------------------------------------------------------------------------
+
+type permDef struct {
+	Code        string
+	Name        string
+	Module      string
+	Action      string
+	Description string
+}
+
+func permUUID(code string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte("bengobox:inventory:permission:"+code))
+}
+
+// buildPermDefs generates the full set of inventory permissions.
+func buildPermDefs() []permDef {
+	modules := []struct {
+		module string
+		label  string
+		note   string // additional description context
+	}{
+		{"items", "Items", "catalog/SKU management"},
+		{"variants", "Variants", "item variant management"},
+		{"categories", "Categories", "item category management"},
+		{"warehouses", "Warehouses", "warehouse and location management"},
+		{"stock", "Stock", "stock adjustments, cycle counts, transfers"},
+		{"recipes", "Recipes", "recipe/BOM management"},
+		{"consumptions", "Consumptions", "stock consumption tracking"},
+		{"reservations", "Reservations", "inventory reservations and allocation"},
+		{"units", "Units", "unit of measure management (platform-only for manage operations)"},
+		{"config", "Config", "service configuration management"},
+		{"users", "Users", "user management"},
+	}
+
+	actions := []struct {
+		action string
+		verb   string
+	}{
+		{"add", "Add"},
+		{"view", "View"},
+		{"view_own", "View own"},
+		{"change", "Change"},
+		{"change_own", "Change own"},
+		{"delete", "Delete"},
+		{"delete_own", "Delete own"},
+		{"manage", "Manage"},
+		{"manage_own", "Manage own"},
+	}
+
+	var defs []permDef
+	for _, m := range modules {
+		for _, a := range actions {
+			code := fmt.Sprintf("inventory.%s.%s", m.module, a.action)
+			name := fmt.Sprintf("%s %s", a.verb, m.label)
+			desc := fmt.Sprintf("%s — %s", name, m.note)
+			defs = append(defs, permDef{
+				Code:        code,
+				Name:        name,
+				Module:      m.module,
+				Action:      a.action,
+				Description: desc,
+			})
+		}
+	}
+	return defs
+}
+
+func seedPermissions(ctx context.Context, client *ent.Client) error {
+	defs := buildPermDefs()
+	for _, d := range defs {
+		id := permUUID(d.Code)
+		exists, err := client.InventoryPermission.Query().
+			Where(entinvperm.PermissionCode(d.Code)).
+			Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("check permission %s: %w", d.Code, err)
+		}
+		if exists {
+			continue
+		}
+		if _, err := client.InventoryPermission.Create().
+			SetID(id).
+			SetPermissionCode(d.Code).
+			SetName(d.Name).
+			SetModule(d.Module).
+			SetAction(d.Action).
+			SetResource(d.Module).
+			SetDescription(d.Description).
+			Save(ctx); err != nil {
+			return fmt.Errorf("create permission %s: %w", d.Code, err)
+		}
+		log.Printf("permission created: %s", d.Code)
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// RBAC — Roles (tenant-scoped)
+// ---------------------------------------------------------------------------
+
+type roleDef struct {
+	Code        string
+	Name        string
+	Description string
+	IsSystem    bool
+}
+
+func roleUUID(tenantID uuid.UUID, code string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:role:%s:%s", tenantID, code)))
+}
+
+var roleDefs = []roleDef{
+	{"inventory_admin", "Inventory Admin", "Full access to all inventory operations including config and user management", true},
+	{"warehouse_manager", "Warehouse Manager", "Manage warehouses, stock, reservations, recipes, and consumptions", true},
+	{"stock_clerk", "Stock Clerk", "View and change stock, view items and warehouses, manage own consumptions", true},
+	{"viewer", "Viewer", "Read-only access to all inventory data", true},
+}
+
+func seedRoles(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	for _, d := range roleDefs {
+		id := roleUUID(tenantID, d.Code)
+		exists, err := client.InventoryRole.Query().
+			Where(entinvrole.TenantID(tenantID), entinvrole.RoleCode(d.Code)).
+			Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("check role %s: %w", d.Code, err)
+		}
+		if exists {
+			continue
+		}
+		if _, err := client.InventoryRole.Create().
+			SetID(id).
+			SetTenantID(tenantID).
+			SetRoleCode(d.Code).
+			SetName(d.Name).
+			SetDescription(d.Description).
+			SetIsSystemRole(d.IsSystem).
+			Save(ctx); err != nil {
+			return fmt.Errorf("create role %s: %w", d.Code, err)
+		}
+		log.Printf("role created: %s", d.Code)
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// RBAC — Role-Permission assignments
+// ---------------------------------------------------------------------------
+
+// rolePermMap defines which permission codes each role gets.
+var rolePermMap = map[string][]string{
+	"inventory_admin": nil, // populated below — gets ALL permissions
+	"warehouse_manager": {
+		// warehouses — full
+		"inventory.warehouses.add", "inventory.warehouses.view", "inventory.warehouses.change", "inventory.warehouses.delete", "inventory.warehouses.manage",
+		// stock — full
+		"inventory.stock.add", "inventory.stock.view", "inventory.stock.change", "inventory.stock.delete", "inventory.stock.manage",
+		// items — view + change
+		"inventory.items.view", "inventory.items.change", "inventory.items.add",
+		// variants — view + change
+		"inventory.variants.view", "inventory.variants.change", "inventory.variants.add",
+		// categories — view + change
+		"inventory.categories.view", "inventory.categories.change", "inventory.categories.add",
+		// recipes — full
+		"inventory.recipes.add", "inventory.recipes.view", "inventory.recipes.change", "inventory.recipes.delete", "inventory.recipes.manage",
+		// consumptions — full
+		"inventory.consumptions.add", "inventory.consumptions.view", "inventory.consumptions.change", "inventory.consumptions.delete", "inventory.consumptions.manage",
+		// reservations — full
+		"inventory.reservations.add", "inventory.reservations.view", "inventory.reservations.change", "inventory.reservations.delete", "inventory.reservations.manage",
+		// units — view only (units are global/platform-only for manage)
+		"inventory.units.view",
+	},
+	"stock_clerk": {
+		// stock — view + change + add
+		"inventory.stock.view", "inventory.stock.change", "inventory.stock.add",
+		// items — view
+		"inventory.items.view",
+		// variants — view
+		"inventory.variants.view",
+		// categories — view
+		"inventory.categories.view",
+		// warehouses — view
+		"inventory.warehouses.view",
+		// consumptions — own
+		"inventory.consumptions.view_own", "inventory.consumptions.add", "inventory.consumptions.change_own", "inventory.consumptions.manage_own",
+		// reservations — view
+		"inventory.reservations.view",
+		// units — view
+		"inventory.units.view",
+		// recipes — view
+		"inventory.recipes.view",
+	},
+	"viewer": {
+		"inventory.items.view",
+		"inventory.variants.view",
+		"inventory.categories.view",
+		"inventory.warehouses.view",
+		"inventory.stock.view",
+		"inventory.recipes.view",
+		"inventory.consumptions.view",
+		"inventory.reservations.view",
+		"inventory.units.view",
+	},
+}
+
+func seedRolePermissions(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	// Build all permission codes for admin
+	allPerms := buildPermDefs()
+	adminCodes := make([]string, 0, len(allPerms))
+	for _, p := range allPerms {
+		adminCodes = append(adminCodes, p.Code)
+	}
+	rolePermMap["inventory_admin"] = adminCodes
+
+	for _, rd := range roleDefs {
+		roleID := roleUUID(tenantID, rd.Code)
+		permCodes, ok := rolePermMap[rd.Code]
+		if !ok {
+			continue
+		}
+		for _, code := range permCodes {
+			permID := permUUID(code)
+			exists, err := client.RolePermission.Query().
+				Where(entrp.RoleID(roleID), entrp.PermissionID(permID)).
+				Exist(ctx)
+			if err != nil {
+				return fmt.Errorf("check role-perm %s/%s: %w", rd.Code, code, err)
+			}
+			if exists {
+				continue
+			}
+			if _, err := client.RolePermission.Create().
+				SetRoleID(roleID).
+				SetPermissionID(permID).
+				Save(ctx); err != nil {
+				return fmt.Errorf("assign perm %s to role %s: %w", code, rd.Code, err)
+			}
+		}
+		log.Printf("role-permissions assigned: %s (%d perms)", rd.Code, len(permCodes))
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Rate Limit Configs
+// ---------------------------------------------------------------------------
+
+type rateLimitDef struct {
+	ServiceName       string
+	KeyType           string
+	EndpointPattern   string
+	RequestsPerWindow int
+	WindowSeconds     int
+	BurstMultiplier   float64
+	Description       string
+}
+
+func rateLimitUUID(svc, keyType, pattern string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:ratelimit:%s:%s:%s", svc, keyType, pattern)))
+}
+
+var rateLimitDefs = []rateLimitDef{
+	{"inventory-api", "global", "*", 1000, 60, 2.0, "Global default: 1000 req/min"},
+	{"inventory-api", "tenant", "*", 300, 60, 1.5, "Per-tenant default: 300 req/min"},
+	{"inventory-api", "ip", "*", 120, 60, 1.5, "Per-IP default: 120 req/min"},
+	{"inventory-api", "user", "*", 60, 60, 1.5, "Per-user default: 60 req/min"},
+	{"inventory-api", "endpoint", "/api/v1/*/inventory/items", 200, 60, 2.0, "Items endpoint: 200 req/min"},
+	{"inventory-api", "endpoint", "/api/v1/*/inventory/stock/*", 150, 60, 1.5, "Stock endpoints: 150 req/min"},
+}
+
+func seedRateLimitConfigs(ctx context.Context, client *ent.Client) error {
+	for _, d := range rateLimitDefs {
+		id := rateLimitUUID(d.ServiceName, d.KeyType, d.EndpointPattern)
+		exists, err := client.RateLimitConfig.Query().
+			Where(
+				entrlc.ServiceName(d.ServiceName),
+				entrlc.KeyType(d.KeyType),
+				entrlc.EndpointPattern(d.EndpointPattern),
+			).Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("check rate limit %s/%s/%s: %w", d.ServiceName, d.KeyType, d.EndpointPattern, err)
+		}
+		if exists {
+			continue
+		}
+		if _, err := client.RateLimitConfig.Create().
+			SetID(id).
+			SetServiceName(d.ServiceName).
+			SetKeyType(d.KeyType).
+			SetEndpointPattern(d.EndpointPattern).
+			SetRequestsPerWindow(d.RequestsPerWindow).
+			SetWindowSeconds(d.WindowSeconds).
+			SetBurstMultiplier(d.BurstMultiplier).
+			SetIsActive(true).
+			SetDescription(d.Description).
+			Save(ctx); err != nil {
+			return fmt.Errorf("create rate limit %s/%s: %w", d.ServiceName, d.KeyType, err)
+		}
+		log.Printf("rate limit config created: %s %s %s", d.ServiceName, d.KeyType, d.EndpointPattern)
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Service Configs (platform-level defaults)
+// ---------------------------------------------------------------------------
+
+type serviceConfigDef struct {
+	Key         string
+	Value       string
+	ConfigType  string
+	Description string
+	IsSecret    bool
+}
+
+func serviceConfigUUID(key string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte("bengobox:inventory:serviceconfig:"+key))
+}
+
+var serviceConfigDefs = []serviceConfigDef{
+	{"inventory.max_items_per_category", "500", "int", "Maximum items per category", false},
+	{"inventory.max_warehouses_per_tenant", "50", "int", "Maximum warehouses per tenant", false},
+	{"inventory.low_stock_threshold_percent", "10", "int", "Low stock alert threshold percentage", false},
+	{"inventory.enable_auto_reorder", "false", "bool", "Enable automatic reorder when stock hits reorder level", false},
+	{"inventory.reservation_expiry_minutes", "30", "int", "Minutes before unredeemed reservations expire", false},
+	{"inventory.enable_batch_tracking", "false", "bool", "Enable batch/lot tracking for items", false},
+	{"inventory.default_currency", "KES", "string", "Default currency for cost tracking", false},
+	{"inventory.enable_multi_warehouse", "true", "bool", "Enable multi-warehouse support", false},
+}
+
+func seedServiceConfigs(ctx context.Context, client *ent.Client) error {
+	for _, d := range serviceConfigDefs {
+		id := serviceConfigUUID(d.Key)
+		exists, err := client.ServiceConfig.Query().
+			Where(
+				entsvc.ConfigKey(d.Key),
+				entsvc.TenantIDIsNil(), // platform-level
+			).Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("check service config %s: %w", d.Key, err)
+		}
+		if exists {
+			continue
+		}
+		if _, err := client.ServiceConfig.Create().
+			SetID(id).
+			SetConfigKey(d.Key).
+			SetConfigValue(d.Value).
+			SetConfigType(d.ConfigType).
+			SetDescription(d.Description).
+			SetIsSecret(d.IsSecret).
+			Save(ctx); err != nil {
+			return fmt.Errorf("create service config %s: %w", d.Key, err)
+		}
+		log.Printf("service config created: %s = %s", d.Key, d.Value)
 	}
 	return nil
 }
