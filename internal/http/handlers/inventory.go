@@ -36,6 +36,7 @@ type StockServicer interface {
 	ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
 	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
+	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 }
 
 // RecipesServicer defines the contract for recipe management.
@@ -111,6 +112,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/items/{sku}", h.GetStockAvailability)
 		inv.Put("/items/{sku}", h.UpdateItem)
 		inv.Post("/availability", h.BulkAvailability)
+		inv.Post("/adjust", h.AdjustStock)
+		inv.Delete("/items/{sku}", h.DeleteItem)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
@@ -603,10 +606,7 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.SKU == "" {
-		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
-		return
-	}
+	// SKU is optional — auto-generated if empty
 	if req.Name == "" {
 		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Name is required")
 		return
@@ -660,6 +660,74 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+// AdjustStock handles POST /v1/{tenant}/inventory/adjust — adjusts stock levels for an item.
+func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req stock.AdjustStockRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	if req.SKU == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	if req.Adjustment == 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT", "Adjustment must be non-zero")
+		return
+	}
+	if req.Reason == "" {
+		req.Reason = "adjustment"
+	}
+
+	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("adjust stock failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// DeleteItem handles DELETE /v1/{tenant}/inventory/items/{sku} — soft-deletes an item by SKU.
+func (h *InventoryHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+
+	avail, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, sku)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		return
+	}
+
+	// Soft-delete: set is_active = false
+	deactivated := items.ItemDTO{IsActive: false}
+	_, err = h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, deactivated)
+	if err != nil {
+		h.log.Error("delete item failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
 // ListCategories handles GET /v1/{tenant}/inventory/categories — returns all active categories.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	sharedcache "github.com/Bengo-Hub/cache"
@@ -17,26 +18,30 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
 type ItemDTO struct {
-	ID          uuid.UUID      `json:"id"`
-	SKU         string         `json:"sku"`
-	Name        string         `json:"name"`
-	Description string         `json:"description,omitempty"`
-	CategoryID  *uuid.UUID     `json:"category_id,omitempty"`
-	UnitID      *uuid.UUID     `json:"unit_id,omitempty"`
-	Type        string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
-	IsActive    bool           `json:"is_active"`
-	ImageURL    string         `json:"image_url,omitempty"`
-	Metadata    map[string]any `json:"metadata,omitempty"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID              uuid.UUID      `json:"id"`
+	SKU             string         `json:"sku"`
+	Name            string         `json:"name"`
+	Description     string         `json:"description,omitempty"`
+	CategoryID      *uuid.UUID     `json:"category_id,omitempty"`
+	UnitID          *uuid.UUID     `json:"unit_id,omitempty"`
+	Type            string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
+	IsActive        bool           `json:"is_active"`
+	ImageURL        string         `json:"image_url,omitempty"`
+	Metadata        map[string]any `json:"metadata,omitempty"`
+	InitialQuantity int            `json:"initial_quantity,omitempty"`
+	ReorderLevel    int            `json:"reorder_level,omitempty"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
 }
 
 type CategoryDTO struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
+	Code        string    `json:"code,omitempty"`
 	Description string    `json:"description,omitempty"`
 	IsActive    bool      `json:"is_active"`
 }
@@ -367,6 +372,7 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 			dtos[i] = CategoryDTO{
 				ID:          c.ID,
 				Name:        c.Name,
+				Code:        c.Code,
 				Description: c.Description,
 				IsActive:    c.IsActive,
 			}
@@ -376,8 +382,66 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLReference, fetch)
 }
 
+// itemTypeCode maps item types to short codes for SKU generation.
+var itemTypeCode = map[string]string{
+	"GOODS":      "GDS",
+	"SERVICE":    "SVC",
+	"RECIPE":     "RCP",
+	"INGREDIENT": "ING",
+	"VOUCHER":    "VCH",
+	"EQUIPMENT":  "EQP",
+}
+
+// GenerateSKU creates a unique SKU in the format {CAT_CODE}-{TYPE_CODE}-{SEQ:03d}.
+func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryID *uuid.UUID, itemType string) (string, error) {
+	catCode := "GEN"
+	if categoryID != nil {
+		cat, err := s.client.ItemCategory.Get(ctx, *categoryID)
+		if err == nil && cat.Code != "" {
+			catCode = strings.ToUpper(cat.Code)
+		} else if err == nil {
+			// Derive code from first 3 chars of name
+			name := strings.ToUpper(strings.ReplaceAll(cat.Name, " ", ""))
+			if len(name) >= 3 {
+				catCode = name[:3]
+			} else {
+				catCode = name
+			}
+		}
+	}
+
+	typeCode, ok := itemTypeCode[strings.ToUpper(itemType)]
+	if !ok {
+		typeCode = "GDS"
+	}
+
+	prefix := catCode + "-" + typeCode + "-"
+
+	// Count existing items with this prefix to determine next sequence
+	count, err := s.client.Item.Query().
+		Where(
+			item.TenantID(tenantID),
+			item.SkuHasPrefix(prefix),
+		).
+		Count(ctx)
+	if err != nil {
+		return "", fmt.Errorf("items: count items for SKU prefix %s: %w", prefix, err)
+	}
+
+	return fmt.Sprintf("%s%03d", prefix, count+1), nil
+}
+
 // CreateItem creates a new item and records an outbox event within a transaction.
 func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
+	// Auto-generate SKU if not provided
+	if dto.SKU == "" {
+		sku, err := s.GenerateSKU(ctx, tenantID, dto.CategoryID, dto.Type)
+		if err != nil {
+			return nil, fmt.Errorf("items: auto-generate SKU: %w", err)
+		}
+		dto.SKU = sku
+	}
+
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: begin transaction: %w", err)
@@ -404,7 +468,68 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		return nil, fmt.Errorf("items: create item: %w", err)
 	}
 
-	// Publish event to outbox
+	// Create initial balance if initial_quantity > 0
+	initialQty := dto.InitialQuantity
+	if initialQty <= 0 {
+		initialQty = 1
+	}
+	reorderLevel := dto.ReorderLevel
+	if reorderLevel <= 0 {
+		reorderLevel = 1
+	}
+
+	// Resolve default warehouse
+	wh, whErr := s.client.Warehouse.Query().
+		Where(
+			warehouse.TenantID(tenantID),
+			warehouse.IsDefault(true),
+			warehouse.IsActive(true),
+		).
+		First(ctx)
+	if whErr == nil {
+		// Resolve unit of measure name for the balance
+		uom := "PIECE"
+		if dto.UnitID != nil {
+			u, uErr := s.client.Unit.Get(ctx, *dto.UnitID)
+			if uErr == nil {
+				uom = u.Name
+			}
+		}
+
+		_, err = tx.InventoryBalance.Create().
+			SetTenantID(tenantID).
+			SetItemID(i.ID).
+			SetWarehouseID(wh.ID).
+			SetOnHand(initialQty).
+			SetAvailable(initialQty).
+			SetReserved(0).
+			SetReorderLevel(reorderLevel).
+			SetUnitOfMeasure(uom).
+			Save(ctx)
+		if err != nil {
+			s.log.Warn("items: create initial balance failed", zap.Error(err), zap.String("sku", dto.SKU))
+		}
+	}
+
+	// Resolve category name for enriched event payload
+	categoryName := ""
+	if dto.CategoryID != nil {
+		cat, catErr := s.client.ItemCategory.Get(ctx, *dto.CategoryID)
+		if catErr == nil {
+			categoryName = cat.Name
+		}
+	}
+
+	// Resolve unit name for enriched event payload
+	unitName := ""
+	if dto.UnitID != nil {
+		u, uErr := s.client.Unit.Get(ctx, *dto.UnitID)
+		if uErr == nil {
+			unitName = u.Name
+		}
+	}
+
+	// Publish enriched event to outbox
 	event := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
@@ -412,13 +537,17 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		AggregateID:   i.ID,
 		EventType:     "inventory.item.created",
 		Payload: map[string]any{
-			"id":           i.ID,
-			"sku":          i.Sku,
-			"name":         i.Name,
-			"type":         i.Type,
-			"category_id":  i.CategoryID,
-			"unit_id":      i.UnitID,
-			"is_active":    i.IsActive,
+			"id":            i.ID,
+			"sku":           i.Sku,
+			"name":          i.Name,
+			"description":   i.Description,
+			"type":          i.Type,
+			"category_id":   i.CategoryID,
+			"category_name": categoryName,
+			"unit_id":       i.UnitID,
+			"unit_name":     unitName,
+			"is_active":     i.IsActive,
+			"image_url":     i.ImageURL,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -477,7 +606,25 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: update item: %w", err)
 	}
 
-	// Publish event to outbox
+	// Resolve category name for enriched event payload
+	categoryName := ""
+	if i.CategoryID != nil {
+		cat, catErr := s.client.ItemCategory.Get(ctx, *i.CategoryID)
+		if catErr == nil {
+			categoryName = cat.Name
+		}
+	}
+
+	// Resolve unit name for enriched event payload
+	unitName := ""
+	if i.UnitID != nil {
+		u, uErr := s.client.Unit.Get(ctx, *i.UnitID)
+		if uErr == nil {
+			unitName = u.Name
+		}
+	}
+
+	// Publish enriched event to outbox
 	event := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
@@ -485,13 +632,17 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		AggregateID:   i.ID,
 		EventType:     "inventory.item.updated",
 		Payload: map[string]any{
-			"id":           i.ID,
-			"sku":          i.Sku,
-			"name":         i.Name,
-			"type":         i.Type,
-			"category_id":  i.CategoryID,
-			"unit_id":      i.UnitID,
-			"is_active":    i.IsActive,
+			"id":            i.ID,
+			"sku":           i.Sku,
+			"name":          i.Name,
+			"description":   i.Description,
+			"type":          i.Type,
+			"category_id":   i.CategoryID,
+			"category_name": categoryName,
+			"unit_id":       i.UnitID,
+			"unit_name":     unitName,
+			"is_active":     i.IsActive,
+			"image_url":     i.ImageURL,
 		},
 		Timestamp: time.Now().UTC(),
 	}

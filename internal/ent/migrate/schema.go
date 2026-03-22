@@ -47,6 +47,7 @@ var (
 		{Name: "available", Type: field.TypeInt, Default: 0},
 		{Name: "reserved", Type: field.TypeInt, Default: 0},
 		{Name: "unit_of_measure", Type: field.TypeString, Default: "PIECE"},
+		{Name: "reorder_level", Type: field.TypeInt, Default: 1},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "warehouse_id", Type: field.TypeUUID},
@@ -59,13 +60,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "inventory_balances_items_balances",
-				Columns:    []*schema.Column{InventoryBalancesColumns[7]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[8]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "inventory_balances_warehouses_balances",
-				Columns:    []*schema.Column{InventoryBalancesColumns[8]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[9]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -74,12 +75,12 @@ var (
 			{
 				Name:    "inventorybalance_tenant_id_item_id_warehouse_id",
 				Unique:  true,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[7], InventoryBalancesColumns[8]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[8], InventoryBalancesColumns[9]},
 			},
 			{
 				Name:    "inventorybalance_tenant_id_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[7]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[8]},
 			},
 		},
 	}
@@ -192,6 +193,7 @@ var (
 	ItemCategoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
+		{Name: "code", Type: field.TypeString, Nullable: true, Size: 10},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -206,7 +208,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_categories_tenants_item_categories",
-				Columns:    []*schema.Column{ItemCategoriesColumns[6]},
+				Columns:    []*schema.Column{ItemCategoriesColumns[7]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -215,7 +217,7 @@ var (
 			{
 				Name:    "itemcategory_tenant_id_name",
 				Unique:  false,
-				Columns: []*schema.Column{ItemCategoriesColumns[6], ItemCategoriesColumns[1]},
+				Columns: []*schema.Column{ItemCategoriesColumns[7], ItemCategoriesColumns[1]},
 			},
 		},
 	}

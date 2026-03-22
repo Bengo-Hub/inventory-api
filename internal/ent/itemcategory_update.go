@@ -59,6 +59,26 @@ func (_u *ItemCategoryUpdate) SetNillableName(v *string) *ItemCategoryUpdate {
 	return _u
 }
 
+// SetCode sets the "code" field.
+func (_u *ItemCategoryUpdate) SetCode(v string) *ItemCategoryUpdate {
+	_u.mutation.SetCode(v)
+	return _u
+}
+
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableCode(v *string) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetCode(*v)
+	}
+	return _u
+}
+
+// ClearCode clears the value of the "code" field.
+func (_u *ItemCategoryUpdate) ClearCode() *ItemCategoryUpdate {
+	_u.mutation.ClearCode()
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *ItemCategoryUpdate) SetDescription(v string) *ItemCategoryUpdate {
 	_u.mutation.SetDescription(v)
@@ -194,6 +214,11 @@ func (_u *ItemCategoryUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Code(); ok {
+		if err := itemcategory.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.code": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ItemCategory.tenant"`)
 	}
@@ -214,6 +239,12 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(itemcategory.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Code(); ok {
+		_spec.SetField(itemcategory.FieldCode, field.TypeString, value)
+	}
+	if _u.mutation.CodeCleared() {
+		_spec.ClearField(itemcategory.FieldCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)
@@ -346,6 +377,26 @@ func (_u *ItemCategoryUpdateOne) SetNillableName(v *string) *ItemCategoryUpdateO
 	if v != nil {
 		_u.SetName(*v)
 	}
+	return _u
+}
+
+// SetCode sets the "code" field.
+func (_u *ItemCategoryUpdateOne) SetCode(v string) *ItemCategoryUpdateOne {
+	_u.mutation.SetCode(v)
+	return _u
+}
+
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableCode(v *string) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetCode(*v)
+	}
+	return _u
+}
+
+// ClearCode clears the value of the "code" field.
+func (_u *ItemCategoryUpdateOne) ClearCode() *ItemCategoryUpdateOne {
+	_u.mutation.ClearCode()
 	return _u
 }
 
@@ -497,6 +548,11 @@ func (_u *ItemCategoryUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Code(); ok {
+		if err := itemcategory.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.code": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ItemCategory.tenant"`)
 	}
@@ -534,6 +590,12 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(itemcategory.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Code(); ok {
+		_spec.SetField(itemcategory.FieldCode, field.TypeString, value)
+	}
+	if _u.mutation.CodeCleared() {
+		_spec.ClearField(itemcategory.FieldCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)

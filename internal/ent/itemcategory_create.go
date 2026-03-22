@@ -38,6 +38,20 @@ func (_c *ItemCategoryCreate) SetName(v string) *ItemCategoryCreate {
 	return _c
 }
 
+// SetCode sets the "code" field.
+func (_c *ItemCategoryCreate) SetCode(v string) *ItemCategoryCreate {
+	_c.mutation.SetCode(v)
+	return _c
+}
+
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableCode(v *string) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetCode(*v)
+	}
+	return _c
+}
+
 // SetDescription sets the "description" field.
 func (_c *ItemCategoryCreate) SetDescription(v string) *ItemCategoryCreate {
 	_c.mutation.SetDescription(v)
@@ -194,6 +208,11 @@ func (_c *ItemCategoryCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.name": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Code(); ok {
+		if err := itemcategory.CodeValidator(v); err != nil {
+			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.code": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "ItemCategory.is_active"`)}
 	}
@@ -245,6 +264,10 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(itemcategory.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := _c.mutation.Code(); ok {
+		_spec.SetField(itemcategory.FieldCode, field.TypeString, value)
+		_node.Code = value
 	}
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)
@@ -371,6 +394,24 @@ func (u *ItemCategoryUpsert) UpdateName() *ItemCategoryUpsert {
 	return u
 }
 
+// SetCode sets the "code" field.
+func (u *ItemCategoryUpsert) SetCode(v string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldCode, v)
+	return u
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateCode() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldCode)
+	return u
+}
+
+// ClearCode clears the value of the "code" field.
+func (u *ItemCategoryUpsert) ClearCode() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldCode)
+	return u
+}
+
 // SetDescription sets the "description" field.
 func (u *ItemCategoryUpsert) SetDescription(v string) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldDescription, v)
@@ -489,6 +530,27 @@ func (u *ItemCategoryUpsertOne) SetName(v string) *ItemCategoryUpsertOne {
 func (u *ItemCategoryUpsertOne) UpdateName() *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *ItemCategoryUpsertOne) SetCode(v string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateCode() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// ClearCode clears the value of the "code" field.
+func (u *ItemCategoryUpsertOne) ClearCode() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearCode()
 	})
 }
 
@@ -784,6 +846,27 @@ func (u *ItemCategoryUpsertBulk) SetName(v string) *ItemCategoryUpsertBulk {
 func (u *ItemCategoryUpsertBulk) UpdateName() *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *ItemCategoryUpsertBulk) SetCode(v string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateCode() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// ClearCode clears the value of the "code" field.
+func (u *ItemCategoryUpsertBulk) ClearCode() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearCode()
 	})
 }
 

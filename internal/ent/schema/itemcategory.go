@@ -25,6 +25,10 @@ func (ItemCategory) Fields() []ent.Field {
 			Comment("Owning tenant"),
 		field.String("name").
 			NotEmpty(),
+		field.String("code").
+			MaxLen(10).
+			Optional().
+			Comment("Short code for SKU generation (e.g. BEV, PST)"),
 		field.Text("description").
 			Optional(),
 		field.Bool("is_active").

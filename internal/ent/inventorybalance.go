@@ -34,6 +34,8 @@ type InventoryBalance struct {
 	Reserved int `json:"reserved,omitempty"`
 	// UnitOfMeasure holds the value of the "unit_of_measure" field.
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
+	// Threshold below which a reorder notification is triggered
+	ReorderLevel int `json:"reorder_level,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -80,7 +82,7 @@ func (*InventoryBalance) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved:
+		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved, inventorybalance.FieldReorderLevel:
 			values[i] = new(sql.NullInt64)
 		case inventorybalance.FieldUnitOfMeasure:
 			values[i] = new(sql.NullString)
@@ -150,6 +152,12 @@ func (_m *InventoryBalance) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field unit_of_measure", values[i])
 			} else if value.Valid {
 				_m.UnitOfMeasure = value.String
+			}
+		case inventorybalance.FieldReorderLevel:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reorder_level", values[i])
+			} else if value.Valid {
+				_m.ReorderLevel = int(value.Int64)
 			}
 		case inventorybalance.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -223,6 +231,9 @@ func (_m *InventoryBalance) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("unit_of_measure=")
 	builder.WriteString(_m.UnitOfMeasure)
+	builder.WriteString(", ")
+	builder.WriteString("reorder_level=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReorderLevel))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))

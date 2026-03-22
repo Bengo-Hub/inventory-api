@@ -150,6 +150,27 @@ func (_u *InventoryBalanceUpdate) SetNillableUnitOfMeasure(v *string) *Inventory
 	return _u
 }
 
+// SetReorderLevel sets the "reorder_level" field.
+func (_u *InventoryBalanceUpdate) SetReorderLevel(v int) *InventoryBalanceUpdate {
+	_u.mutation.ResetReorderLevel()
+	_u.mutation.SetReorderLevel(v)
+	return _u
+}
+
+// SetNillableReorderLevel sets the "reorder_level" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillableReorderLevel(v *int) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetReorderLevel(*v)
+	}
+	return _u
+}
+
+// AddReorderLevel adds value to the "reorder_level" field.
+func (_u *InventoryBalanceUpdate) AddReorderLevel(v int) *InventoryBalanceUpdate {
+	_u.mutation.AddReorderLevel(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdate) SetUpdatedAt(v time.Time) *InventoryBalanceUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -265,6 +286,12 @@ func (_u *InventoryBalanceUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.UnitOfMeasure(); ok {
 		_spec.SetField(inventorybalance.FieldUnitOfMeasure, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ReorderLevel(); ok {
+		_spec.SetField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReorderLevel(); ok {
+		_spec.AddField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -466,6 +493,27 @@ func (_u *InventoryBalanceUpdateOne) SetNillableUnitOfMeasure(v *string) *Invent
 	return _u
 }
 
+// SetReorderLevel sets the "reorder_level" field.
+func (_u *InventoryBalanceUpdateOne) SetReorderLevel(v int) *InventoryBalanceUpdateOne {
+	_u.mutation.ResetReorderLevel()
+	_u.mutation.SetReorderLevel(v)
+	return _u
+}
+
+// SetNillableReorderLevel sets the "reorder_level" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillableReorderLevel(v *int) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetReorderLevel(*v)
+	}
+	return _u
+}
+
+// AddReorderLevel adds value to the "reorder_level" field.
+func (_u *InventoryBalanceUpdateOne) AddReorderLevel(v int) *InventoryBalanceUpdateOne {
+	_u.mutation.AddReorderLevel(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdateOne) SetUpdatedAt(v time.Time) *InventoryBalanceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -611,6 +659,12 @@ func (_u *InventoryBalanceUpdateOne) sqlSave(ctx context.Context) (_node *Invent
 	}
 	if value, ok := _u.mutation.UnitOfMeasure(); ok {
 		_spec.SetField(inventorybalance.FieldUnitOfMeasure, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ReorderLevel(); ok {
+		_spec.SetField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReorderLevel(); ok {
+		_spec.AddField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)

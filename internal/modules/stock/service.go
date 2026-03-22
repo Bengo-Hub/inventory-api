@@ -95,6 +95,121 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 	}
 }
 
+// AdjustStockRequest represents a stock adjustment request.
+type AdjustStockRequest struct {
+	SKU        string `json:"sku"`
+	Adjustment int    `json:"adjustment"`
+	Reason     string `json:"reason"`
+	Reference  string `json:"reference,omitempty"`
+}
+
+// AdjustStockResponse represents the result of a stock adjustment.
+type AdjustStockResponse struct {
+	SKU       string `json:"sku"`
+	OnHand    int    `json:"on_hand"`
+	Available int    `json:"available"`
+	Reserved  int    `json:"reserved"`
+	Reason    string `json:"reason"`
+}
+
+// AdjustStock adjusts stock levels for an item and publishes a low-stock event if needed.
+func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req AdjustStockRequest) (*AdjustStockResponse, error) {
+	whID, err := s.resolveWarehouseID(ctx, tenantID, uuid.Nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	itm, err := tx.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(req.SKU)).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: item not found: sku=%s: %w", req.SKU, err)
+	}
+
+	bal, err := tx.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.ItemID(itm.ID),
+			inventorybalance.WarehouseID(whID),
+		).
+		First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("stock: no balance found for sku=%s", req.SKU)
+		}
+		return nil, fmt.Errorf("stock: query balance: %w", err)
+	}
+
+	newOnHand := bal.OnHand + req.Adjustment
+	if newOnHand < 0 {
+		newOnHand = 0
+	}
+	newAvailable := bal.Available + req.Adjustment
+	if newAvailable < 0 {
+		newAvailable = 0
+	}
+
+	updatedBal, err := tx.InventoryBalance.UpdateOne(bal).
+		SetOnHand(newOnHand).
+		SetAvailable(newAvailable).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: update balance for sku=%s: %w", req.SKU, err)
+	}
+
+	// Check for low stock and publish event
+	s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("stock: commit adjustment: %w", err)
+	}
+
+	s.log.Info("stock adjusted",
+		zap.String("sku", req.SKU),
+		zap.Int("adjustment", req.Adjustment),
+		zap.String("reason", req.Reason),
+		zap.Int("new_on_hand", newOnHand),
+	)
+
+	return &AdjustStockResponse{
+		SKU:       req.SKU,
+		OnHand:    newOnHand,
+		Available: newAvailable,
+		Reserved:  bal.Reserved,
+		Reason:    req.Reason,
+	}, nil
+}
+
+// checkAndPublishLowStock checks if stock is at or below reorder level and publishes an event.
+func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
+	if bal.Available <= bal.ReorderLevel {
+		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.low", map[string]any{
+			"tenant_id":     tenantID.String(),
+			"item_id":       itm.ID.String(),
+			"sku":           itm.Sku,
+			"name":          itm.Name,
+			"available":     bal.Available,
+			"reorder_level": bal.ReorderLevel,
+			"warehouse_id":  warehouseID.String(),
+		})
+		s.log.Info("low stock alert published",
+			zap.String("sku", itm.Sku),
+			zap.Int("available", bal.Available),
+			zap.Int("reorder_level", bal.ReorderLevel),
+		)
+	}
+}
+
 // resolveWarehouseID returns the provided warehouse ID or the tenant's default warehouse.
 func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID uuid.UUID) (uuid.UUID, error) {
 	if warehouseID != uuid.Nil {
@@ -410,13 +525,17 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 			continue
 		}
 
-		_, err = tx.InventoryBalance.UpdateOne(bal).
+		updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
 			SetOnHand(max(0, bal.OnHand-ri.ReservedQty)).
 			SetReserved(max(0, bal.Reserved-ri.ReservedQty)).
 			Save(ctx)
-		if err != nil {
+		if updateErr != nil {
+			err = updateErr
 			return fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
 		}
+
+		// Check for low stock after consumption
+		s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 	}
 
 	now := time.Now()
@@ -494,13 +613,16 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			First(ctx)
 		if err == nil {
 			deduct := int(ci.Quantity)
-			_, err = tx.InventoryBalance.UpdateOne(bal).
+			updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(max(0, bal.OnHand-deduct)).
 				SetAvailable(max(0, bal.Available-deduct)).
 				Save(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ci.SKU, err)
+			if updateErr != nil {
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ci.SKU, updateErr)
 			}
+
+			// Check for low stock after consumption
+			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 		}
 
 		consumptionItems[i] = entschema.ConsumptionItemJSON{
