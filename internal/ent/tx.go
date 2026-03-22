@@ -16,6 +16,12 @@ type Tx struct {
 	Consumption *ConsumptionClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
+	// InventoryPermission is the client for interacting with the InventoryPermission builders.
+	InventoryPermission *InventoryPermissionClient
+	// InventoryRole is the client for interacting with the InventoryRole builders.
+	InventoryRole *InventoryRoleClient
+	// InventoryUser is the client for interacting with the InventoryUser builders.
+	InventoryUser *InventoryUserClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 	// ItemAsset is the client for interacting with the ItemAsset builders.
@@ -28,16 +34,24 @@ type Tx struct {
 	ItemVariant *ItemVariantClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
+	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
 	RecipeIngredient *RecipeIngredientClient
 	// Reservation is the client for interacting with the Reservation builders.
 	Reservation *ReservationClient
+	// RolePermission is the client for interacting with the RolePermission builders.
+	RolePermission *RolePermissionClient
+	// ServiceConfig is the client for interacting with the ServiceConfig builders.
+	ServiceConfig *ServiceConfigClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
+	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
+	UserRoleAssignment *UserRoleAssignmentClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
 
@@ -173,17 +187,24 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Consumption = NewConsumptionClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
+	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)
+	tx.InventoryRole = NewInventoryRoleClient(tx.config)
+	tx.InventoryUser = NewInventoryUserClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemAsset = NewItemAssetClient(tx.config)
 	tx.ItemCategory = NewItemCategoryClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)
 	tx.ItemVariant = NewItemVariantClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
+	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
 	tx.Reservation = NewReservationClient(tx.config)
+	tx.RolePermission = NewRolePermissionClient(tx.config)
+	tx.ServiceConfig = NewServiceConfigClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
+	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
 }
 

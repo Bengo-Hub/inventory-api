@@ -18,17 +18,24 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
+	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -41,6 +48,12 @@ type Client struct {
 	Consumption *ConsumptionClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
+	// InventoryPermission is the client for interacting with the InventoryPermission builders.
+	InventoryPermission *InventoryPermissionClient
+	// InventoryRole is the client for interacting with the InventoryRole builders.
+	InventoryRole *InventoryRoleClient
+	// InventoryUser is the client for interacting with the InventoryUser builders.
+	InventoryUser *InventoryUserClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 	// ItemAsset is the client for interacting with the ItemAsset builders.
@@ -53,16 +66,24 @@ type Client struct {
 	ItemVariant *ItemVariantClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
+	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
 	RecipeIngredient *RecipeIngredientClient
 	// Reservation is the client for interacting with the Reservation builders.
 	Reservation *ReservationClient
+	// RolePermission is the client for interacting with the RolePermission builders.
+	RolePermission *RolePermissionClient
+	// ServiceConfig is the client for interacting with the ServiceConfig builders.
+	ServiceConfig *ServiceConfigClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
+	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
+	UserRoleAssignment *UserRoleAssignmentClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
 }
@@ -78,17 +99,24 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Consumption = NewConsumptionClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
+	c.InventoryPermission = NewInventoryPermissionClient(c.config)
+	c.InventoryRole = NewInventoryRoleClient(c.config)
+	c.InventoryUser = NewInventoryUserClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.ItemAsset = NewItemAssetClient(c.config)
 	c.ItemCategory = NewItemCategoryClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
 	c.ItemVariant = NewItemVariantClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
+	c.RateLimitConfig = NewRateLimitConfigClient(c.config)
 	c.Recipe = NewRecipeClient(c.config)
 	c.RecipeIngredient = NewRecipeIngredientClient(c.config)
 	c.Reservation = NewReservationClient(c.config)
+	c.RolePermission = NewRolePermissionClient(c.config)
+	c.ServiceConfig = NewServiceConfigClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.Unit = NewUnitClient(c.config)
+	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
 	c.Warehouse = NewWarehouseClient(c.config)
 }
 
@@ -180,22 +208,29 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		Consumption:      NewConsumptionClient(cfg),
-		InventoryBalance: NewInventoryBalanceClient(cfg),
-		Item:             NewItemClient(cfg),
-		ItemAsset:        NewItemAssetClient(cfg),
-		ItemCategory:     NewItemCategoryClient(cfg),
-		ItemTranslation:  NewItemTranslationClient(cfg),
-		ItemVariant:      NewItemVariantClient(cfg),
-		OutboxEvent:      NewOutboxEventClient(cfg),
-		Recipe:           NewRecipeClient(cfg),
-		RecipeIngredient: NewRecipeIngredientClient(cfg),
-		Reservation:      NewReservationClient(cfg),
-		Tenant:           NewTenantClient(cfg),
-		Unit:             NewUnitClient(cfg),
-		Warehouse:        NewWarehouseClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		Consumption:         NewConsumptionClient(cfg),
+		InventoryBalance:    NewInventoryBalanceClient(cfg),
+		InventoryPermission: NewInventoryPermissionClient(cfg),
+		InventoryRole:       NewInventoryRoleClient(cfg),
+		InventoryUser:       NewInventoryUserClient(cfg),
+		Item:                NewItemClient(cfg),
+		ItemAsset:           NewItemAssetClient(cfg),
+		ItemCategory:        NewItemCategoryClient(cfg),
+		ItemTranslation:     NewItemTranslationClient(cfg),
+		ItemVariant:         NewItemVariantClient(cfg),
+		OutboxEvent:         NewOutboxEventClient(cfg),
+		RateLimitConfig:     NewRateLimitConfigClient(cfg),
+		Recipe:              NewRecipeClient(cfg),
+		RecipeIngredient:    NewRecipeIngredientClient(cfg),
+		Reservation:         NewReservationClient(cfg),
+		RolePermission:      NewRolePermissionClient(cfg),
+		ServiceConfig:       NewServiceConfigClient(cfg),
+		Tenant:              NewTenantClient(cfg),
+		Unit:                NewUnitClient(cfg),
+		UserRoleAssignment:  NewUserRoleAssignmentClient(cfg),
+		Warehouse:           NewWarehouseClient(cfg),
 	}, nil
 }
 
@@ -213,22 +248,29 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		Consumption:      NewConsumptionClient(cfg),
-		InventoryBalance: NewInventoryBalanceClient(cfg),
-		Item:             NewItemClient(cfg),
-		ItemAsset:        NewItemAssetClient(cfg),
-		ItemCategory:     NewItemCategoryClient(cfg),
-		ItemTranslation:  NewItemTranslationClient(cfg),
-		ItemVariant:      NewItemVariantClient(cfg),
-		OutboxEvent:      NewOutboxEventClient(cfg),
-		Recipe:           NewRecipeClient(cfg),
-		RecipeIngredient: NewRecipeIngredientClient(cfg),
-		Reservation:      NewReservationClient(cfg),
-		Tenant:           NewTenantClient(cfg),
-		Unit:             NewUnitClient(cfg),
-		Warehouse:        NewWarehouseClient(cfg),
+		ctx:                 ctx,
+		config:              cfg,
+		Consumption:         NewConsumptionClient(cfg),
+		InventoryBalance:    NewInventoryBalanceClient(cfg),
+		InventoryPermission: NewInventoryPermissionClient(cfg),
+		InventoryRole:       NewInventoryRoleClient(cfg),
+		InventoryUser:       NewInventoryUserClient(cfg),
+		Item:                NewItemClient(cfg),
+		ItemAsset:           NewItemAssetClient(cfg),
+		ItemCategory:        NewItemCategoryClient(cfg),
+		ItemTranslation:     NewItemTranslationClient(cfg),
+		ItemVariant:         NewItemVariantClient(cfg),
+		OutboxEvent:         NewOutboxEventClient(cfg),
+		RateLimitConfig:     NewRateLimitConfigClient(cfg),
+		Recipe:              NewRecipeClient(cfg),
+		RecipeIngredient:    NewRecipeIngredientClient(cfg),
+		Reservation:         NewReservationClient(cfg),
+		RolePermission:      NewRolePermissionClient(cfg),
+		ServiceConfig:       NewServiceConfigClient(cfg),
+		Tenant:              NewTenantClient(cfg),
+		Unit:                NewUnitClient(cfg),
+		UserRoleAssignment:  NewUserRoleAssignmentClient(cfg),
+		Warehouse:           NewWarehouseClient(cfg),
 	}, nil
 }
 
@@ -258,9 +300,11 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Consumption, c.InventoryBalance, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemTranslation, c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.Tenant, c.Unit, c.Warehouse,
+		c.Consumption, c.InventoryBalance, c.InventoryPermission, c.InventoryRole,
+		c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory, c.ItemTranslation,
+		c.ItemVariant, c.OutboxEvent, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.Tenant, c.Unit,
+		c.UserRoleAssignment, c.Warehouse,
 	} {
 		n.Use(hooks...)
 	}
@@ -270,9 +314,11 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Consumption, c.InventoryBalance, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemTranslation, c.ItemVariant, c.OutboxEvent, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.Tenant, c.Unit, c.Warehouse,
+		c.Consumption, c.InventoryBalance, c.InventoryPermission, c.InventoryRole,
+		c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory, c.ItemTranslation,
+		c.ItemVariant, c.OutboxEvent, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.Tenant, c.Unit,
+		c.UserRoleAssignment, c.Warehouse,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -285,6 +331,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Consumption.mutate(ctx, m)
 	case *InventoryBalanceMutation:
 		return c.InventoryBalance.mutate(ctx, m)
+	case *InventoryPermissionMutation:
+		return c.InventoryPermission.mutate(ctx, m)
+	case *InventoryRoleMutation:
+		return c.InventoryRole.mutate(ctx, m)
+	case *InventoryUserMutation:
+		return c.InventoryUser.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
 	case *ItemAssetMutation:
@@ -297,16 +349,24 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ItemVariant.mutate(ctx, m)
 	case *OutboxEventMutation:
 		return c.OutboxEvent.mutate(ctx, m)
+	case *RateLimitConfigMutation:
+		return c.RateLimitConfig.mutate(ctx, m)
 	case *RecipeMutation:
 		return c.Recipe.mutate(ctx, m)
 	case *RecipeIngredientMutation:
 		return c.RecipeIngredient.mutate(ctx, m)
 	case *ReservationMutation:
 		return c.Reservation.mutate(ctx, m)
+	case *RolePermissionMutation:
+		return c.RolePermission.mutate(ctx, m)
+	case *ServiceConfigMutation:
+		return c.ServiceConfig.mutate(ctx, m)
 	case *TenantMutation:
 		return c.Tenant.mutate(ctx, m)
 	case *UnitMutation:
 		return c.Unit.mutate(ctx, m)
+	case *UserRoleAssignmentMutation:
+		return c.UserRoleAssignment.mutate(ctx, m)
 	case *WarehouseMutation:
 		return c.Warehouse.mutate(ctx, m)
 	default:
@@ -609,6 +669,485 @@ func (c *InventoryBalanceClient) mutate(ctx context.Context, m *InventoryBalance
 		return (&InventoryBalanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown InventoryBalance mutation op: %q", m.Op())
+	}
+}
+
+// InventoryPermissionClient is a client for the InventoryPermission schema.
+type InventoryPermissionClient struct {
+	config
+}
+
+// NewInventoryPermissionClient returns a client for the InventoryPermission from the given config.
+func NewInventoryPermissionClient(c config) *InventoryPermissionClient {
+	return &InventoryPermissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `inventorypermission.Hooks(f(g(h())))`.
+func (c *InventoryPermissionClient) Use(hooks ...Hook) {
+	c.hooks.InventoryPermission = append(c.hooks.InventoryPermission, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `inventorypermission.Intercept(f(g(h())))`.
+func (c *InventoryPermissionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InventoryPermission = append(c.inters.InventoryPermission, interceptors...)
+}
+
+// Create returns a builder for creating a InventoryPermission entity.
+func (c *InventoryPermissionClient) Create() *InventoryPermissionCreate {
+	mutation := newInventoryPermissionMutation(c.config, OpCreate)
+	return &InventoryPermissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InventoryPermission entities.
+func (c *InventoryPermissionClient) CreateBulk(builders ...*InventoryPermissionCreate) *InventoryPermissionCreateBulk {
+	return &InventoryPermissionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InventoryPermissionClient) MapCreateBulk(slice any, setFunc func(*InventoryPermissionCreate, int)) *InventoryPermissionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InventoryPermissionCreateBulk{err: fmt.Errorf("calling to InventoryPermissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InventoryPermissionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InventoryPermissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InventoryPermission.
+func (c *InventoryPermissionClient) Update() *InventoryPermissionUpdate {
+	mutation := newInventoryPermissionMutation(c.config, OpUpdate)
+	return &InventoryPermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InventoryPermissionClient) UpdateOne(_m *InventoryPermission) *InventoryPermissionUpdateOne {
+	mutation := newInventoryPermissionMutation(c.config, OpUpdateOne, withInventoryPermission(_m))
+	return &InventoryPermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InventoryPermissionClient) UpdateOneID(id uuid.UUID) *InventoryPermissionUpdateOne {
+	mutation := newInventoryPermissionMutation(c.config, OpUpdateOne, withInventoryPermissionID(id))
+	return &InventoryPermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InventoryPermission.
+func (c *InventoryPermissionClient) Delete() *InventoryPermissionDelete {
+	mutation := newInventoryPermissionMutation(c.config, OpDelete)
+	return &InventoryPermissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InventoryPermissionClient) DeleteOne(_m *InventoryPermission) *InventoryPermissionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InventoryPermissionClient) DeleteOneID(id uuid.UUID) *InventoryPermissionDeleteOne {
+	builder := c.Delete().Where(inventorypermission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InventoryPermissionDeleteOne{builder}
+}
+
+// Query returns a query builder for InventoryPermission.
+func (c *InventoryPermissionClient) Query() *InventoryPermissionQuery {
+	return &InventoryPermissionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInventoryPermission},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InventoryPermission entity by its id.
+func (c *InventoryPermissionClient) Get(ctx context.Context, id uuid.UUID) (*InventoryPermission, error) {
+	return c.Query().Where(inventorypermission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InventoryPermissionClient) GetX(ctx context.Context, id uuid.UUID) *InventoryPermission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRoles queries the roles edge of a InventoryPermission.
+func (c *InventoryPermissionClient) QueryRoles(_m *InventoryPermission) *InventoryRoleQuery {
+	query := (&InventoryRoleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventorypermission.Table, inventorypermission.FieldID, id),
+			sqlgraph.To(inventoryrole.Table, inventoryrole.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, inventorypermission.RolesTable, inventorypermission.RolesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRolePermissions queries the role_permissions edge of a InventoryPermission.
+func (c *InventoryPermissionClient) QueryRolePermissions(_m *InventoryPermission) *RolePermissionQuery {
+	query := (&RolePermissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventorypermission.Table, inventorypermission.FieldID, id),
+			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, inventorypermission.RolePermissionsTable, inventorypermission.RolePermissionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *InventoryPermissionClient) Hooks() []Hook {
+	return c.hooks.InventoryPermission
+}
+
+// Interceptors returns the client interceptors.
+func (c *InventoryPermissionClient) Interceptors() []Interceptor {
+	return c.inters.InventoryPermission
+}
+
+func (c *InventoryPermissionClient) mutate(ctx context.Context, m *InventoryPermissionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InventoryPermissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InventoryPermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InventoryPermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InventoryPermissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InventoryPermission mutation op: %q", m.Op())
+	}
+}
+
+// InventoryRoleClient is a client for the InventoryRole schema.
+type InventoryRoleClient struct {
+	config
+}
+
+// NewInventoryRoleClient returns a client for the InventoryRole from the given config.
+func NewInventoryRoleClient(c config) *InventoryRoleClient {
+	return &InventoryRoleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `inventoryrole.Hooks(f(g(h())))`.
+func (c *InventoryRoleClient) Use(hooks ...Hook) {
+	c.hooks.InventoryRole = append(c.hooks.InventoryRole, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `inventoryrole.Intercept(f(g(h())))`.
+func (c *InventoryRoleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InventoryRole = append(c.inters.InventoryRole, interceptors...)
+}
+
+// Create returns a builder for creating a InventoryRole entity.
+func (c *InventoryRoleClient) Create() *InventoryRoleCreate {
+	mutation := newInventoryRoleMutation(c.config, OpCreate)
+	return &InventoryRoleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InventoryRole entities.
+func (c *InventoryRoleClient) CreateBulk(builders ...*InventoryRoleCreate) *InventoryRoleCreateBulk {
+	return &InventoryRoleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InventoryRoleClient) MapCreateBulk(slice any, setFunc func(*InventoryRoleCreate, int)) *InventoryRoleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InventoryRoleCreateBulk{err: fmt.Errorf("calling to InventoryRoleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InventoryRoleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InventoryRoleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InventoryRole.
+func (c *InventoryRoleClient) Update() *InventoryRoleUpdate {
+	mutation := newInventoryRoleMutation(c.config, OpUpdate)
+	return &InventoryRoleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InventoryRoleClient) UpdateOne(_m *InventoryRole) *InventoryRoleUpdateOne {
+	mutation := newInventoryRoleMutation(c.config, OpUpdateOne, withInventoryRole(_m))
+	return &InventoryRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InventoryRoleClient) UpdateOneID(id uuid.UUID) *InventoryRoleUpdateOne {
+	mutation := newInventoryRoleMutation(c.config, OpUpdateOne, withInventoryRoleID(id))
+	return &InventoryRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InventoryRole.
+func (c *InventoryRoleClient) Delete() *InventoryRoleDelete {
+	mutation := newInventoryRoleMutation(c.config, OpDelete)
+	return &InventoryRoleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InventoryRoleClient) DeleteOne(_m *InventoryRole) *InventoryRoleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InventoryRoleClient) DeleteOneID(id uuid.UUID) *InventoryRoleDeleteOne {
+	builder := c.Delete().Where(inventoryrole.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InventoryRoleDeleteOne{builder}
+}
+
+// Query returns a query builder for InventoryRole.
+func (c *InventoryRoleClient) Query() *InventoryRoleQuery {
+	return &InventoryRoleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInventoryRole},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InventoryRole entity by its id.
+func (c *InventoryRoleClient) Get(ctx context.Context, id uuid.UUID) (*InventoryRole, error) {
+	return c.Query().Where(inventoryrole.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InventoryRoleClient) GetX(ctx context.Context, id uuid.UUID) *InventoryRole {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPermissions queries the permissions edge of a InventoryRole.
+func (c *InventoryRoleClient) QueryPermissions(_m *InventoryRole) *InventoryPermissionQuery {
+	query := (&InventoryPermissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventoryrole.Table, inventoryrole.FieldID, id),
+			sqlgraph.To(inventorypermission.Table, inventorypermission.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, inventoryrole.PermissionsTable, inventoryrole.PermissionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserAssignments queries the user_assignments edge of a InventoryRole.
+func (c *InventoryRoleClient) QueryUserAssignments(_m *InventoryRole) *UserRoleAssignmentQuery {
+	query := (&UserRoleAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventoryrole.Table, inventoryrole.FieldID, id),
+			sqlgraph.To(userroleassignment.Table, userroleassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, inventoryrole.UserAssignmentsTable, inventoryrole.UserAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRolePermissions queries the role_permissions edge of a InventoryRole.
+func (c *InventoryRoleClient) QueryRolePermissions(_m *InventoryRole) *RolePermissionQuery {
+	query := (&RolePermissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventoryrole.Table, inventoryrole.FieldID, id),
+			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, inventoryrole.RolePermissionsTable, inventoryrole.RolePermissionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *InventoryRoleClient) Hooks() []Hook {
+	return c.hooks.InventoryRole
+}
+
+// Interceptors returns the client interceptors.
+func (c *InventoryRoleClient) Interceptors() []Interceptor {
+	return c.inters.InventoryRole
+}
+
+func (c *InventoryRoleClient) mutate(ctx context.Context, m *InventoryRoleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InventoryRoleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InventoryRoleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InventoryRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InventoryRoleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InventoryRole mutation op: %q", m.Op())
+	}
+}
+
+// InventoryUserClient is a client for the InventoryUser schema.
+type InventoryUserClient struct {
+	config
+}
+
+// NewInventoryUserClient returns a client for the InventoryUser from the given config.
+func NewInventoryUserClient(c config) *InventoryUserClient {
+	return &InventoryUserClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `inventoryuser.Hooks(f(g(h())))`.
+func (c *InventoryUserClient) Use(hooks ...Hook) {
+	c.hooks.InventoryUser = append(c.hooks.InventoryUser, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `inventoryuser.Intercept(f(g(h())))`.
+func (c *InventoryUserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InventoryUser = append(c.inters.InventoryUser, interceptors...)
+}
+
+// Create returns a builder for creating a InventoryUser entity.
+func (c *InventoryUserClient) Create() *InventoryUserCreate {
+	mutation := newInventoryUserMutation(c.config, OpCreate)
+	return &InventoryUserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InventoryUser entities.
+func (c *InventoryUserClient) CreateBulk(builders ...*InventoryUserCreate) *InventoryUserCreateBulk {
+	return &InventoryUserCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InventoryUserClient) MapCreateBulk(slice any, setFunc func(*InventoryUserCreate, int)) *InventoryUserCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InventoryUserCreateBulk{err: fmt.Errorf("calling to InventoryUserClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InventoryUserCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InventoryUserCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InventoryUser.
+func (c *InventoryUserClient) Update() *InventoryUserUpdate {
+	mutation := newInventoryUserMutation(c.config, OpUpdate)
+	return &InventoryUserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InventoryUserClient) UpdateOne(_m *InventoryUser) *InventoryUserUpdateOne {
+	mutation := newInventoryUserMutation(c.config, OpUpdateOne, withInventoryUser(_m))
+	return &InventoryUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InventoryUserClient) UpdateOneID(id uuid.UUID) *InventoryUserUpdateOne {
+	mutation := newInventoryUserMutation(c.config, OpUpdateOne, withInventoryUserID(id))
+	return &InventoryUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InventoryUser.
+func (c *InventoryUserClient) Delete() *InventoryUserDelete {
+	mutation := newInventoryUserMutation(c.config, OpDelete)
+	return &InventoryUserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InventoryUserClient) DeleteOne(_m *InventoryUser) *InventoryUserDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InventoryUserClient) DeleteOneID(id uuid.UUID) *InventoryUserDeleteOne {
+	builder := c.Delete().Where(inventoryuser.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InventoryUserDeleteOne{builder}
+}
+
+// Query returns a query builder for InventoryUser.
+func (c *InventoryUserClient) Query() *InventoryUserQuery {
+	return &InventoryUserQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInventoryUser},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InventoryUser entity by its id.
+func (c *InventoryUserClient) Get(ctx context.Context, id uuid.UUID) (*InventoryUser, error) {
+	return c.Query().Where(inventoryuser.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InventoryUserClient) GetX(ctx context.Context, id uuid.UUID) *InventoryUser {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InventoryUserClient) Hooks() []Hook {
+	return c.hooks.InventoryUser
+}
+
+// Interceptors returns the client interceptors.
+func (c *InventoryUserClient) Interceptors() []Interceptor {
+	return c.inters.InventoryUser
+}
+
+func (c *InventoryUserClient) mutate(ctx context.Context, m *InventoryUserMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InventoryUserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InventoryUserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InventoryUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InventoryUserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InventoryUser mutation op: %q", m.Op())
 	}
 }
 
@@ -1618,6 +2157,139 @@ func (c *OutboxEventClient) mutate(ctx context.Context, m *OutboxEventMutation) 
 	}
 }
 
+// RateLimitConfigClient is a client for the RateLimitConfig schema.
+type RateLimitConfigClient struct {
+	config
+}
+
+// NewRateLimitConfigClient returns a client for the RateLimitConfig from the given config.
+func NewRateLimitConfigClient(c config) *RateLimitConfigClient {
+	return &RateLimitConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ratelimitconfig.Hooks(f(g(h())))`.
+func (c *RateLimitConfigClient) Use(hooks ...Hook) {
+	c.hooks.RateLimitConfig = append(c.hooks.RateLimitConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ratelimitconfig.Intercept(f(g(h())))`.
+func (c *RateLimitConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RateLimitConfig = append(c.inters.RateLimitConfig, interceptors...)
+}
+
+// Create returns a builder for creating a RateLimitConfig entity.
+func (c *RateLimitConfigClient) Create() *RateLimitConfigCreate {
+	mutation := newRateLimitConfigMutation(c.config, OpCreate)
+	return &RateLimitConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RateLimitConfig entities.
+func (c *RateLimitConfigClient) CreateBulk(builders ...*RateLimitConfigCreate) *RateLimitConfigCreateBulk {
+	return &RateLimitConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RateLimitConfigClient) MapCreateBulk(slice any, setFunc func(*RateLimitConfigCreate, int)) *RateLimitConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RateLimitConfigCreateBulk{err: fmt.Errorf("calling to RateLimitConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RateLimitConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RateLimitConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RateLimitConfig.
+func (c *RateLimitConfigClient) Update() *RateLimitConfigUpdate {
+	mutation := newRateLimitConfigMutation(c.config, OpUpdate)
+	return &RateLimitConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RateLimitConfigClient) UpdateOne(_m *RateLimitConfig) *RateLimitConfigUpdateOne {
+	mutation := newRateLimitConfigMutation(c.config, OpUpdateOne, withRateLimitConfig(_m))
+	return &RateLimitConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RateLimitConfigClient) UpdateOneID(id uuid.UUID) *RateLimitConfigUpdateOne {
+	mutation := newRateLimitConfigMutation(c.config, OpUpdateOne, withRateLimitConfigID(id))
+	return &RateLimitConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RateLimitConfig.
+func (c *RateLimitConfigClient) Delete() *RateLimitConfigDelete {
+	mutation := newRateLimitConfigMutation(c.config, OpDelete)
+	return &RateLimitConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RateLimitConfigClient) DeleteOne(_m *RateLimitConfig) *RateLimitConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RateLimitConfigClient) DeleteOneID(id uuid.UUID) *RateLimitConfigDeleteOne {
+	builder := c.Delete().Where(ratelimitconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RateLimitConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for RateLimitConfig.
+func (c *RateLimitConfigClient) Query() *RateLimitConfigQuery {
+	return &RateLimitConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRateLimitConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RateLimitConfig entity by its id.
+func (c *RateLimitConfigClient) Get(ctx context.Context, id uuid.UUID) (*RateLimitConfig, error) {
+	return c.Query().Where(ratelimitconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RateLimitConfigClient) GetX(ctx context.Context, id uuid.UUID) *RateLimitConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RateLimitConfigClient) Hooks() []Hook {
+	return c.hooks.RateLimitConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *RateLimitConfigClient) Interceptors() []Interceptor {
+	return c.inters.RateLimitConfig
+}
+
+func (c *RateLimitConfigClient) mutate(ctx context.Context, m *RateLimitConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RateLimitConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RateLimitConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RateLimitConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RateLimitConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RateLimitConfig mutation op: %q", m.Op())
+	}
+}
+
 // RecipeClient is a client for the Recipe schema.
 type RecipeClient struct {
 	config
@@ -2081,6 +2753,304 @@ func (c *ReservationClient) mutate(ctx context.Context, m *ReservationMutation) 
 	}
 }
 
+// RolePermissionClient is a client for the RolePermission schema.
+type RolePermissionClient struct {
+	config
+}
+
+// NewRolePermissionClient returns a client for the RolePermission from the given config.
+func NewRolePermissionClient(c config) *RolePermissionClient {
+	return &RolePermissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rolepermission.Hooks(f(g(h())))`.
+func (c *RolePermissionClient) Use(hooks ...Hook) {
+	c.hooks.RolePermission = append(c.hooks.RolePermission, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rolepermission.Intercept(f(g(h())))`.
+func (c *RolePermissionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RolePermission = append(c.inters.RolePermission, interceptors...)
+}
+
+// Create returns a builder for creating a RolePermission entity.
+func (c *RolePermissionClient) Create() *RolePermissionCreate {
+	mutation := newRolePermissionMutation(c.config, OpCreate)
+	return &RolePermissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RolePermission entities.
+func (c *RolePermissionClient) CreateBulk(builders ...*RolePermissionCreate) *RolePermissionCreateBulk {
+	return &RolePermissionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RolePermissionClient) MapCreateBulk(slice any, setFunc func(*RolePermissionCreate, int)) *RolePermissionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RolePermissionCreateBulk{err: fmt.Errorf("calling to RolePermissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RolePermissionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RolePermissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RolePermission.
+func (c *RolePermissionClient) Update() *RolePermissionUpdate {
+	mutation := newRolePermissionMutation(c.config, OpUpdate)
+	return &RolePermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RolePermissionClient) UpdateOne(_m *RolePermission) *RolePermissionUpdateOne {
+	mutation := newRolePermissionMutation(c.config, OpUpdateOne, withRolePermission(_m))
+	return &RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RolePermissionClient) UpdateOneID(id int) *RolePermissionUpdateOne {
+	mutation := newRolePermissionMutation(c.config, OpUpdateOne, withRolePermissionID(id))
+	return &RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RolePermission.
+func (c *RolePermissionClient) Delete() *RolePermissionDelete {
+	mutation := newRolePermissionMutation(c.config, OpDelete)
+	return &RolePermissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RolePermissionClient) DeleteOne(_m *RolePermission) *RolePermissionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RolePermissionClient) DeleteOneID(id int) *RolePermissionDeleteOne {
+	builder := c.Delete().Where(rolepermission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RolePermissionDeleteOne{builder}
+}
+
+// Query returns a query builder for RolePermission.
+func (c *RolePermissionClient) Query() *RolePermissionQuery {
+	return &RolePermissionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRolePermission},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RolePermission entity by its id.
+func (c *RolePermissionClient) Get(ctx context.Context, id int) (*RolePermission, error) {
+	return c.Query().Where(rolepermission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RolePermissionClient) GetX(ctx context.Context, id int) *RolePermission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRole queries the role edge of a RolePermission.
+func (c *RolePermissionClient) QueryRole(_m *RolePermission) *InventoryRoleQuery {
+	query := (&InventoryRoleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, id),
+			sqlgraph.To(inventoryrole.Table, inventoryrole.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rolepermission.RoleTable, rolepermission.RoleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPermission queries the permission edge of a RolePermission.
+func (c *RolePermissionClient) QueryPermission(_m *RolePermission) *InventoryPermissionQuery {
+	query := (&InventoryPermissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, id),
+			sqlgraph.To(inventorypermission.Table, inventorypermission.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rolepermission.PermissionTable, rolepermission.PermissionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RolePermissionClient) Hooks() []Hook {
+	return c.hooks.RolePermission
+}
+
+// Interceptors returns the client interceptors.
+func (c *RolePermissionClient) Interceptors() []Interceptor {
+	return c.inters.RolePermission
+}
+
+func (c *RolePermissionClient) mutate(ctx context.Context, m *RolePermissionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RolePermissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RolePermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RolePermissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RolePermission mutation op: %q", m.Op())
+	}
+}
+
+// ServiceConfigClient is a client for the ServiceConfig schema.
+type ServiceConfigClient struct {
+	config
+}
+
+// NewServiceConfigClient returns a client for the ServiceConfig from the given config.
+func NewServiceConfigClient(c config) *ServiceConfigClient {
+	return &ServiceConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `serviceconfig.Hooks(f(g(h())))`.
+func (c *ServiceConfigClient) Use(hooks ...Hook) {
+	c.hooks.ServiceConfig = append(c.hooks.ServiceConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `serviceconfig.Intercept(f(g(h())))`.
+func (c *ServiceConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ServiceConfig = append(c.inters.ServiceConfig, interceptors...)
+}
+
+// Create returns a builder for creating a ServiceConfig entity.
+func (c *ServiceConfigClient) Create() *ServiceConfigCreate {
+	mutation := newServiceConfigMutation(c.config, OpCreate)
+	return &ServiceConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ServiceConfig entities.
+func (c *ServiceConfigClient) CreateBulk(builders ...*ServiceConfigCreate) *ServiceConfigCreateBulk {
+	return &ServiceConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ServiceConfigClient) MapCreateBulk(slice any, setFunc func(*ServiceConfigCreate, int)) *ServiceConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ServiceConfigCreateBulk{err: fmt.Errorf("calling to ServiceConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ServiceConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ServiceConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ServiceConfig.
+func (c *ServiceConfigClient) Update() *ServiceConfigUpdate {
+	mutation := newServiceConfigMutation(c.config, OpUpdate)
+	return &ServiceConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ServiceConfigClient) UpdateOne(_m *ServiceConfig) *ServiceConfigUpdateOne {
+	mutation := newServiceConfigMutation(c.config, OpUpdateOne, withServiceConfig(_m))
+	return &ServiceConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ServiceConfigClient) UpdateOneID(id uuid.UUID) *ServiceConfigUpdateOne {
+	mutation := newServiceConfigMutation(c.config, OpUpdateOne, withServiceConfigID(id))
+	return &ServiceConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ServiceConfig.
+func (c *ServiceConfigClient) Delete() *ServiceConfigDelete {
+	mutation := newServiceConfigMutation(c.config, OpDelete)
+	return &ServiceConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ServiceConfigClient) DeleteOne(_m *ServiceConfig) *ServiceConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ServiceConfigClient) DeleteOneID(id uuid.UUID) *ServiceConfigDeleteOne {
+	builder := c.Delete().Where(serviceconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ServiceConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ServiceConfig.
+func (c *ServiceConfigClient) Query() *ServiceConfigQuery {
+	return &ServiceConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeServiceConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ServiceConfig entity by its id.
+func (c *ServiceConfigClient) Get(ctx context.Context, id uuid.UUID) (*ServiceConfig, error) {
+	return c.Query().Where(serviceconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ServiceConfigClient) GetX(ctx context.Context, id uuid.UUID) *ServiceConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ServiceConfigClient) Hooks() []Hook {
+	return c.hooks.ServiceConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *ServiceConfigClient) Interceptors() []Interceptor {
+	return c.inters.ServiceConfig
+}
+
+func (c *ServiceConfigClient) mutate(ctx context.Context, m *ServiceConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ServiceConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ServiceConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ServiceConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ServiceConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ServiceConfig mutation op: %q", m.Op())
+	}
+}
+
 // TenantClient is a client for the Tenant schema.
 type TenantClient struct {
 	config
@@ -2411,6 +3381,171 @@ func (c *UnitClient) mutate(ctx context.Context, m *UnitMutation) (Value, error)
 	}
 }
 
+// UserRoleAssignmentClient is a client for the UserRoleAssignment schema.
+type UserRoleAssignmentClient struct {
+	config
+}
+
+// NewUserRoleAssignmentClient returns a client for the UserRoleAssignment from the given config.
+func NewUserRoleAssignmentClient(c config) *UserRoleAssignmentClient {
+	return &UserRoleAssignmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userroleassignment.Hooks(f(g(h())))`.
+func (c *UserRoleAssignmentClient) Use(hooks ...Hook) {
+	c.hooks.UserRoleAssignment = append(c.hooks.UserRoleAssignment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userroleassignment.Intercept(f(g(h())))`.
+func (c *UserRoleAssignmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserRoleAssignment = append(c.inters.UserRoleAssignment, interceptors...)
+}
+
+// Create returns a builder for creating a UserRoleAssignment entity.
+func (c *UserRoleAssignmentClient) Create() *UserRoleAssignmentCreate {
+	mutation := newUserRoleAssignmentMutation(c.config, OpCreate)
+	return &UserRoleAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserRoleAssignment entities.
+func (c *UserRoleAssignmentClient) CreateBulk(builders ...*UserRoleAssignmentCreate) *UserRoleAssignmentCreateBulk {
+	return &UserRoleAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserRoleAssignmentClient) MapCreateBulk(slice any, setFunc func(*UserRoleAssignmentCreate, int)) *UserRoleAssignmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserRoleAssignmentCreateBulk{err: fmt.Errorf("calling to UserRoleAssignmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserRoleAssignmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserRoleAssignmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Update() *UserRoleAssignmentUpdate {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdate)
+	return &UserRoleAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserRoleAssignmentClient) UpdateOne(_m *UserRoleAssignment) *UserRoleAssignmentUpdateOne {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdateOne, withUserRoleAssignment(_m))
+	return &UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserRoleAssignmentClient) UpdateOneID(id uuid.UUID) *UserRoleAssignmentUpdateOne {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdateOne, withUserRoleAssignmentID(id))
+	return &UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Delete() *UserRoleAssignmentDelete {
+	mutation := newUserRoleAssignmentMutation(c.config, OpDelete)
+	return &UserRoleAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserRoleAssignmentClient) DeleteOne(_m *UserRoleAssignment) *UserRoleAssignmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserRoleAssignmentClient) DeleteOneID(id uuid.UUID) *UserRoleAssignmentDeleteOne {
+	builder := c.Delete().Where(userroleassignment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserRoleAssignmentDeleteOne{builder}
+}
+
+// Query returns a query builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Query() *UserRoleAssignmentQuery {
+	return &UserRoleAssignmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserRoleAssignment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserRoleAssignment entity by its id.
+func (c *UserRoleAssignmentClient) Get(ctx context.Context, id uuid.UUID) (*UserRoleAssignment, error) {
+	return c.Query().Where(userroleassignment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserRoleAssignmentClient) GetX(ctx context.Context, id uuid.UUID) *UserRoleAssignment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a UserRoleAssignment.
+func (c *UserRoleAssignmentClient) QueryUser(_m *UserRoleAssignment) *InventoryUserQuery {
+	query := (&InventoryUserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userroleassignment.Table, userroleassignment.FieldID, id),
+			sqlgraph.To(inventoryuser.Table, inventoryuser.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, userroleassignment.UserTable, userroleassignment.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRole queries the role edge of a UserRoleAssignment.
+func (c *UserRoleAssignmentClient) QueryRole(_m *UserRoleAssignment) *InventoryRoleQuery {
+	query := (&InventoryRoleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userroleassignment.Table, userroleassignment.FieldID, id),
+			sqlgraph.To(inventoryrole.Table, inventoryrole.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, userroleassignment.RoleTable, userroleassignment.RoleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserRoleAssignmentClient) Hooks() []Hook {
+	return c.hooks.UserRoleAssignment
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserRoleAssignmentClient) Interceptors() []Interceptor {
+	return c.inters.UserRoleAssignment
+}
+
+func (c *UserRoleAssignmentClient) mutate(ctx context.Context, m *UserRoleAssignmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserRoleAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserRoleAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserRoleAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserRoleAssignment mutation op: %q", m.Op())
+	}
+}
+
 // WarehouseClient is a client for the Warehouse schema.
 type WarehouseClient struct {
 	config
@@ -2595,13 +3730,17 @@ func (c *WarehouseClient) mutate(ctx context.Context, m *WarehouseMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Consumption, InventoryBalance, Item, ItemAsset, ItemCategory, ItemTranslation,
-		ItemVariant, OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
+		Consumption, InventoryBalance, InventoryPermission, InventoryRole,
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
+		OutboxEvent, RateLimitConfig, Recipe, RecipeIngredient, Reservation,
+		RolePermission, ServiceConfig, Tenant, Unit, UserRoleAssignment,
 		Warehouse []ent.Hook
 	}
 	inters struct {
-		Consumption, InventoryBalance, Item, ItemAsset, ItemCategory, ItemTranslation,
-		ItemVariant, OutboxEvent, Recipe, RecipeIngredient, Reservation, Tenant, Unit,
+		Consumption, InventoryBalance, InventoryPermission, InventoryRole,
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
+		OutboxEvent, RateLimitConfig, Recipe, RecipeIngredient, Reservation,
+		RolePermission, ServiceConfig, Tenant, Unit, UserRoleAssignment,
 		Warehouse []ent.Interceptor
 	}
 )

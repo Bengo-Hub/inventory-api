@@ -84,6 +84,124 @@ var (
 			},
 		},
 	}
+	// InventoryPermissionsColumns holds the columns for the "inventory_permissions" table.
+	InventoryPermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "permission_code", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "module", Type: field.TypeString},
+		{Name: "action", Type: field.TypeString},
+		{Name: "resource", Type: field.TypeString, Nullable: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// InventoryPermissionsTable holds the schema information for the "inventory_permissions" table.
+	InventoryPermissionsTable = &schema.Table{
+		Name:       "inventory_permissions",
+		Columns:    InventoryPermissionsColumns,
+		PrimaryKey: []*schema.Column{InventoryPermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventorypermission_permission_code",
+				Unique:  true,
+				Columns: []*schema.Column{InventoryPermissionsColumns[1]},
+			},
+			{
+				Name:    "inventorypermission_module",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryPermissionsColumns[3]},
+			},
+			{
+				Name:    "inventorypermission_action",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryPermissionsColumns[4]},
+			},
+			{
+				Name:    "inventorypermission_module_action",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryPermissionsColumns[3], InventoryPermissionsColumns[4]},
+			},
+		},
+	}
+	// InventoryRolesColumns holds the columns for the "inventory_roles" table.
+	InventoryRolesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "role_code", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "is_system_role", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// InventoryRolesTable holds the schema information for the "inventory_roles" table.
+	InventoryRolesTable = &schema.Table{
+		Name:       "inventory_roles",
+		Columns:    InventoryRolesColumns,
+		PrimaryKey: []*schema.Column{InventoryRolesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventoryrole_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryRolesColumns[1]},
+			},
+			{
+				Name:    "inventoryrole_tenant_id_role_code",
+				Unique:  true,
+				Columns: []*schema.Column{InventoryRolesColumns[1], InventoryRolesColumns[2]},
+			},
+			{
+				Name:    "inventoryrole_is_system_role",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryRolesColumns[5]},
+			},
+		},
+	}
+	// InventoryUsersColumns holds the columns for the "inventory_users" table.
+	InventoryUsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "auth_service_user_id", Type: field.TypeUUID, Unique: true},
+		{Name: "email", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "active"},
+		{Name: "sync_status", Type: field.TypeString, Default: "synced"},
+		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// InventoryUsersTable holds the schema information for the "inventory_users" table.
+	InventoryUsersTable = &schema.Table{
+		Name:       "inventory_users",
+		Columns:    InventoryUsersColumns,
+		PrimaryKey: []*schema.Column{InventoryUsersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventoryuser_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryUsersColumns[1]},
+			},
+			{
+				Name:    "inventoryuser_auth_service_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{InventoryUsersColumns[2]},
+			},
+			{
+				Name:    "inventoryuser_tenant_id_auth_service_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{InventoryUsersColumns[1], InventoryUsersColumns[2]},
+			},
+			{
+				Name:    "inventoryuser_status",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryUsersColumns[4]},
+			},
+			{
+				Name:    "inventoryuser_sync_status",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryUsersColumns[5]},
+			},
+		},
+	}
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -322,6 +440,43 @@ var (
 			},
 		},
 	}
+	// RateLimitConfigsColumns holds the columns for the "rate_limit_configs" table.
+	RateLimitConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "service_name", Type: field.TypeString},
+		{Name: "key_type", Type: field.TypeString},
+		{Name: "endpoint_pattern", Type: field.TypeString, Default: "*"},
+		{Name: "requests_per_window", Type: field.TypeInt, Default: 60},
+		{Name: "window_seconds", Type: field.TypeInt, Default: 60},
+		{Name: "burst_multiplier", Type: field.TypeFloat64, Default: 1.5},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// RateLimitConfigsTable holds the schema information for the "rate_limit_configs" table.
+	RateLimitConfigsTable = &schema.Table{
+		Name:       "rate_limit_configs",
+		Columns:    RateLimitConfigsColumns,
+		PrimaryKey: []*schema.Column{RateLimitConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ratelimitconfig_service_name_key_type_endpoint_pattern",
+				Unique:  true,
+				Columns: []*schema.Column{RateLimitConfigsColumns[1], RateLimitConfigsColumns[2], RateLimitConfigsColumns[3]},
+			},
+			{
+				Name:    "ratelimitconfig_service_name",
+				Unique:  false,
+				Columns: []*schema.Column{RateLimitConfigsColumns[1]},
+			},
+			{
+				Name:    "ratelimitconfig_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{RateLimitConfigsColumns[7]},
+			},
+		},
+	}
 	// RecipesColumns holds the columns for the "recipes" table.
 	RecipesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -447,6 +602,79 @@ var (
 			},
 		},
 	}
+	// RolePermissionsColumns holds the columns for the "role_permissions" table.
+	RolePermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "role_id", Type: field.TypeUUID},
+		{Name: "permission_id", Type: field.TypeUUID},
+	}
+	// RolePermissionsTable holds the schema information for the "role_permissions" table.
+	RolePermissionsTable = &schema.Table{
+		Name:       "role_permissions",
+		Columns:    RolePermissionsColumns,
+		PrimaryKey: []*schema.Column{RolePermissionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "role_permissions_inventory_roles_role",
+				Columns:    []*schema.Column{RolePermissionsColumns[1]},
+				RefColumns: []*schema.Column{InventoryRolesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "role_permissions_inventory_permissions_permission",
+				Columns:    []*schema.Column{RolePermissionsColumns[2]},
+				RefColumns: []*schema.Column{InventoryPermissionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rolepermission_role_id_permission_id",
+				Unique:  true,
+				Columns: []*schema.Column{RolePermissionsColumns[1], RolePermissionsColumns[2]},
+			},
+			{
+				Name:    "rolepermission_role_id",
+				Unique:  false,
+				Columns: []*schema.Column{RolePermissionsColumns[1]},
+			},
+			{
+				Name:    "rolepermission_permission_id",
+				Unique:  false,
+				Columns: []*schema.Column{RolePermissionsColumns[2]},
+			},
+		},
+	}
+	// ServiceConfigsColumns holds the columns for the "service_configs" table.
+	ServiceConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "config_key", Type: field.TypeString},
+		{Name: "config_value", Type: field.TypeString, Size: 2147483647},
+		{Name: "config_type", Type: field.TypeString, Default: "string"},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "is_secret", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ServiceConfigsTable holds the schema information for the "service_configs" table.
+	ServiceConfigsTable = &schema.Table{
+		Name:       "service_configs",
+		Columns:    ServiceConfigsColumns,
+		PrimaryKey: []*schema.Column{ServiceConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "serviceconfig_tenant_id_config_key",
+				Unique:  true,
+				Columns: []*schema.Column{ServiceConfigsColumns[1], ServiceConfigsColumns[2]},
+			},
+			{
+				Name:    "serviceconfig_config_key",
+				Unique:  false,
+				Columns: []*schema.Column{ServiceConfigsColumns[2]},
+			},
+		},
+	}
 	// TenantsColumns holds the columns for the "tenants" table.
 	TenantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -511,6 +739,70 @@ var (
 			},
 		},
 	}
+	// UserRoleAssignmentsColumns holds the columns for the "user_role_assignments" table.
+	UserRoleAssignmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "assigned_by", Type: field.TypeUUID},
+		{Name: "assigned_at", Type: field.TypeTime},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "inventory_role_user_assignments", Type: field.TypeUUID, Nullable: true},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "role_id", Type: field.TypeUUID},
+	}
+	// UserRoleAssignmentsTable holds the schema information for the "user_role_assignments" table.
+	UserRoleAssignmentsTable = &schema.Table{
+		Name:       "user_role_assignments",
+		Columns:    UserRoleAssignmentsColumns,
+		PrimaryKey: []*schema.Column{UserRoleAssignmentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_role_assignments_inventory_roles_user_assignments",
+				Columns:    []*schema.Column{UserRoleAssignmentsColumns[5]},
+				RefColumns: []*schema.Column{InventoryRolesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "user_role_assignments_inventory_users_user",
+				Columns:    []*schema.Column{UserRoleAssignmentsColumns[6]},
+				RefColumns: []*schema.Column{InventoryUsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "user_role_assignments_inventory_roles_role",
+				Columns:    []*schema.Column{UserRoleAssignmentsColumns[7]},
+				RefColumns: []*schema.Column{InventoryRolesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userroleassignment_tenant_id_user_id_role_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserRoleAssignmentsColumns[1], UserRoleAssignmentsColumns[6], UserRoleAssignmentsColumns[7]},
+			},
+			{
+				Name:    "userroleassignment_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserRoleAssignmentsColumns[1]},
+			},
+			{
+				Name:    "userroleassignment_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserRoleAssignmentsColumns[6]},
+			},
+			{
+				Name:    "userroleassignment_role_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserRoleAssignmentsColumns[7]},
+			},
+			{
+				Name:    "userroleassignment_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserRoleAssignmentsColumns[4]},
+			},
+		},
+	}
 	// WarehousesColumns holds the columns for the "warehouses" table.
 	WarehousesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -558,17 +850,24 @@ var (
 	Tables = []*schema.Table{
 		ConsumptionsTable,
 		InventoryBalancesTable,
+		InventoryPermissionsTable,
+		InventoryRolesTable,
+		InventoryUsersTable,
 		ItemsTable,
 		ItemAssetsTable,
 		ItemCategoriesTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
 		OutboxEventsTable,
+		RateLimitConfigsTable,
 		RecipesTable,
 		RecipeIngredientsTable,
 		ReservationsTable,
+		RolePermissionsTable,
+		ServiceConfigsTable,
 		TenantsTable,
 		UnitsTable,
+		UserRoleAssignmentsTable,
 		WarehousesTable,
 	}
 )
@@ -586,5 +885,10 @@ func init() {
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
+	RolePermissionsTable.ForeignKeys[0].RefTable = InventoryRolesTable
+	RolePermissionsTable.ForeignKeys[1].RefTable = InventoryPermissionsTable
+	UserRoleAssignmentsTable.ForeignKeys[0].RefTable = InventoryRolesTable
+	UserRoleAssignmentsTable.ForeignKeys[1].RefTable = InventoryUsersTable
+	UserRoleAssignmentsTable.ForeignKeys[2].RefTable = InventoryRolesTable
 	WarehousesTable.ForeignKeys[0].RefTable = TenantsTable
 }

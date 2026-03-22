@@ -28,6 +28,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/outbox"
+	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
@@ -35,7 +36,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
-	"github.com/bengobox/inventory-service/internal/services/rbac"
 	"github.com/bengobox/inventory-service/internal/services/usersync"
 	"github.com/bengobox/inventory-service/internal/shared/logger"
 )
@@ -93,10 +93,8 @@ func New(ctx context.Context) (*App, error) {
 
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 
-	// Initialize user management services
-	rbacService := rbac.NewService(log)
+	// Initialize user management services (placeholder — real wiring after Ent client)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
-	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
 
 	// Initialize Ent ORM client
 	sqlDB, err := sql.Open("pgx", cfg.Postgres.URL)
@@ -121,6 +119,13 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize cache helper for read-heavy queries
 	cacheAside := sharedcache.New(redisClient, log)
+
+	// Initialize RBAC module (DB-backed, replaces in-memory stub)
+	rbacRepo := rbac.NewEntRepository(ormClient)
+	tenantSyncer := tenant.NewSyncer(ormClient, cfg.Auth.ServiceURL)
+	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
+	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
 
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log)
@@ -155,8 +160,6 @@ func New(ctx context.Context) (*App, error) {
 		authMiddleware = authclient.NewAuthMiddleware(validator)
 	}
 
-	tenantSyncer := tenant.NewSyncer(ormClient)
-
 	// Initialize NATS event subscribers for proactive provisioning
 	if natsConn != nil {
 		eventSub := events.NewSubscriber(natsConn, log)
@@ -166,7 +169,7 @@ func New(ctx context.Context) (*App, error) {
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, authMiddleware, tenantSyncer, cfg.HTTP.AllowedOrigins)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

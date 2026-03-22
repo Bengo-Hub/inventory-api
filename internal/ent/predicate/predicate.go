@@ -12,6 +12,15 @@ type Consumption func(*sql.Selector)
 // InventoryBalance is the predicate function for inventorybalance builders.
 type InventoryBalance func(*sql.Selector)
 
+// InventoryPermission is the predicate function for inventorypermission builders.
+type InventoryPermission func(*sql.Selector)
+
+// InventoryRole is the predicate function for inventoryrole builders.
+type InventoryRole func(*sql.Selector)
+
+// InventoryUser is the predicate function for inventoryuser builders.
+type InventoryUser func(*sql.Selector)
+
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 
@@ -30,6 +39,9 @@ type ItemVariant func(*sql.Selector)
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
 
+// RateLimitConfig is the predicate function for ratelimitconfig builders.
+type RateLimitConfig func(*sql.Selector)
+
 // Recipe is the predicate function for recipe builders.
 type Recipe func(*sql.Selector)
 
@@ -39,11 +51,20 @@ type RecipeIngredient func(*sql.Selector)
 // Reservation is the predicate function for reservation builders.
 type Reservation func(*sql.Selector)
 
+// RolePermission is the predicate function for rolepermission builders.
+type RolePermission func(*sql.Selector)
+
+// ServiceConfig is the predicate function for serviceconfig builders.
+type ServiceConfig func(*sql.Selector)
+
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)
 
 // Unit is the predicate function for unit builders.
 type Unit func(*sql.Selector)
+
+// UserRoleAssignment is the predicate function for userroleassignment builders.
+type UserRoleAssignment func(*sql.Selector)
 
 // Warehouse is the predicate function for warehouse builders.
 type Warehouse func(*sql.Selector)
