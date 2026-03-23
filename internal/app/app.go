@@ -19,6 +19,7 @@ import (
 
 	sharedcache "github.com/Bengo-Hub/cache"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+	eventslib "github.com/Bengo-Hub/shared-events"
 
 	"github.com/bengobox/inventory-service/internal/config"
 	"github.com/bengobox/inventory-service/internal/ent"
@@ -75,22 +76,6 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("event bus connection failed", zap.Error(err))
 	}
 
-	// Initialize outbox background publisher (Transactional Outbox Pattern)
-	var outboxPublisher *outbox.Publisher
-	if natsConn != nil && cfg.Events.OutboxEnabled {
-		outboxRepo := outbox.NewPgxRepository(dbPool)
-		outboxNatsPublisher := events.NewOutboxPublisher(natsConn, log)
-		outboxCfg := outbox.PublisherConfig{
-			BatchSize:  cfg.Events.OutboxBatchSize,
-			PollPeriod: cfg.Events.OutboxPollPeriod,
-		}
-		outboxPublisher = outbox.NewPublisher(outboxRepo, outboxNatsPublisher, log, outboxCfg)
-		outboxPublisher.Start(ctx)
-		log.Info("outbox background publisher started",
-			zap.Int("batch_size", cfg.Events.OutboxBatchSize),
-			zap.Duration("poll_period", cfg.Events.OutboxPollPeriod))
-	}
-
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 
 	// Initialize user management services (placeholder — real wiring after Ent client)
@@ -116,6 +101,22 @@ func New(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("ent schema create: %w", err)
 	}
 	log.Info("versioned migrations completed")
+
+	// Initialize outbox background publisher (Transactional Outbox Pattern)
+	var outboxPublisher *outbox.Publisher
+	if natsConn != nil && cfg.Events.OutboxEnabled {
+		outboxRepo := eventslib.NewSQLOutboxRepository(sqlDB)
+		outboxNatsPublisher := events.NewOutboxPublisher(natsConn, log)
+		outboxCfg := outbox.PublisherConfig{
+			BatchSize:  cfg.Events.OutboxBatchSize,
+			PollPeriod: cfg.Events.OutboxPollPeriod,
+		}
+		outboxPublisher = outbox.NewPublisher(outboxRepo, outboxNatsPublisher, log, outboxCfg)
+		outboxPublisher.Start(ctx)
+		log.Info("outbox background publisher started",
+			zap.Int("batch_size", cfg.Events.OutboxBatchSize),
+			zap.Duration("poll_period", cfg.Events.OutboxPollPeriod))
+	}
 
 	// Initialize cache helper for read-heavy queries
 	cacheAside := sharedcache.New(redisClient, log)
