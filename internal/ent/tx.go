@@ -32,6 +32,10 @@ type Tx struct {
 	ItemTranslation *ItemTranslationClient
 	// ItemVariant is the client for interacting with the ItemVariant builders.
 	ItemVariant *ItemVariantClient
+	// ModifierGroup is the client for interacting with the ModifierGroup builders.
+	ModifierGroup *ModifierGroupClient
+	// ModifierOption is the client for interacting with the ModifierOption builders.
+	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
@@ -197,6 +201,8 @@ func (tx *Tx) init() {
 	tx.ItemCategory = NewItemCategoryClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)
 	tx.ItemVariant = NewItemVariantClient(tx.config)
+	tx.ModifierGroup = NewModifierGroupClient(tx.config)
+	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)

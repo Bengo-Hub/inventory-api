@@ -15,6 +15,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
+	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -318,6 +320,78 @@ func init() {
 	itemvariantDescID := itemvariantFields[0].Descriptor()
 	// itemvariant.DefaultID holds the default value on creation for the id field.
 	itemvariant.DefaultID = itemvariantDescID.Default.(func() uuid.UUID)
+	modifiergroupFields := schema.ModifierGroup{}.Fields()
+	_ = modifiergroupFields
+	// modifiergroupDescName is the schema descriptor for name field.
+	modifiergroupDescName := modifiergroupFields[3].Descriptor()
+	// modifiergroup.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	modifiergroup.NameValidator = modifiergroupDescName.Validators[0].(func(string) error)
+	// modifiergroupDescIsRequired is the schema descriptor for is_required field.
+	modifiergroupDescIsRequired := modifiergroupFields[4].Descriptor()
+	// modifiergroup.DefaultIsRequired holds the default value on creation for the is_required field.
+	modifiergroup.DefaultIsRequired = modifiergroupDescIsRequired.Default.(bool)
+	// modifiergroupDescMinSelections is the schema descriptor for min_selections field.
+	modifiergroupDescMinSelections := modifiergroupFields[5].Descriptor()
+	// modifiergroup.DefaultMinSelections holds the default value on creation for the min_selections field.
+	modifiergroup.DefaultMinSelections = modifiergroupDescMinSelections.Default.(int)
+	// modifiergroupDescMaxSelections is the schema descriptor for max_selections field.
+	modifiergroupDescMaxSelections := modifiergroupFields[6].Descriptor()
+	// modifiergroup.DefaultMaxSelections holds the default value on creation for the max_selections field.
+	modifiergroup.DefaultMaxSelections = modifiergroupDescMaxSelections.Default.(int)
+	// modifiergroupDescDisplayOrder is the schema descriptor for display_order field.
+	modifiergroupDescDisplayOrder := modifiergroupFields[7].Descriptor()
+	// modifiergroup.DefaultDisplayOrder holds the default value on creation for the display_order field.
+	modifiergroup.DefaultDisplayOrder = modifiergroupDescDisplayOrder.Default.(int)
+	// modifiergroupDescCreatedAt is the schema descriptor for created_at field.
+	modifiergroupDescCreatedAt := modifiergroupFields[8].Descriptor()
+	// modifiergroup.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modifiergroup.DefaultCreatedAt = modifiergroupDescCreatedAt.Default.(func() time.Time)
+	// modifiergroupDescUpdatedAt is the schema descriptor for updated_at field.
+	modifiergroupDescUpdatedAt := modifiergroupFields[9].Descriptor()
+	// modifiergroup.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modifiergroup.DefaultUpdatedAt = modifiergroupDescUpdatedAt.Default.(func() time.Time)
+	// modifiergroup.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modifiergroup.UpdateDefaultUpdatedAt = modifiergroupDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modifiergroupDescID is the schema descriptor for id field.
+	modifiergroupDescID := modifiergroupFields[0].Descriptor()
+	// modifiergroup.DefaultID holds the default value on creation for the id field.
+	modifiergroup.DefaultID = modifiergroupDescID.Default.(func() uuid.UUID)
+	modifieroptionFields := schema.ModifierOption{}.Fields()
+	_ = modifieroptionFields
+	// modifieroptionDescName is the schema descriptor for name field.
+	modifieroptionDescName := modifieroptionFields[2].Descriptor()
+	// modifieroption.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	modifieroption.NameValidator = modifieroptionDescName.Validators[0].(func(string) error)
+	// modifieroptionDescPriceAdjustment is the schema descriptor for price_adjustment field.
+	modifieroptionDescPriceAdjustment := modifieroptionFields[4].Descriptor()
+	// modifieroption.DefaultPriceAdjustment holds the default value on creation for the price_adjustment field.
+	modifieroption.DefaultPriceAdjustment = modifieroptionDescPriceAdjustment.Default.(float64)
+	// modifieroptionDescIsDefault is the schema descriptor for is_default field.
+	modifieroptionDescIsDefault := modifieroptionFields[5].Descriptor()
+	// modifieroption.DefaultIsDefault holds the default value on creation for the is_default field.
+	modifieroption.DefaultIsDefault = modifieroptionDescIsDefault.Default.(bool)
+	// modifieroptionDescIsActive is the schema descriptor for is_active field.
+	modifieroptionDescIsActive := modifieroptionFields[6].Descriptor()
+	// modifieroption.DefaultIsActive holds the default value on creation for the is_active field.
+	modifieroption.DefaultIsActive = modifieroptionDescIsActive.Default.(bool)
+	// modifieroptionDescDisplayOrder is the schema descriptor for display_order field.
+	modifieroptionDescDisplayOrder := modifieroptionFields[7].Descriptor()
+	// modifieroption.DefaultDisplayOrder holds the default value on creation for the display_order field.
+	modifieroption.DefaultDisplayOrder = modifieroptionDescDisplayOrder.Default.(int)
+	// modifieroptionDescCreatedAt is the schema descriptor for created_at field.
+	modifieroptionDescCreatedAt := modifieroptionFields[8].Descriptor()
+	// modifieroption.DefaultCreatedAt holds the default value on creation for the created_at field.
+	modifieroption.DefaultCreatedAt = modifieroptionDescCreatedAt.Default.(func() time.Time)
+	// modifieroptionDescUpdatedAt is the schema descriptor for updated_at field.
+	modifieroptionDescUpdatedAt := modifieroptionFields[9].Descriptor()
+	// modifieroption.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	modifieroption.DefaultUpdatedAt = modifieroptionDescUpdatedAt.Default.(func() time.Time)
+	// modifieroption.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	modifieroption.UpdateDefaultUpdatedAt = modifieroptionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modifieroptionDescID is the schema descriptor for id field.
+	modifieroptionDescID := modifieroptionFields[0].Descriptor()
+	// modifieroption.DefaultID holds the default value on creation for the id field.
+	modifieroption.DefaultID = modifieroptionDescID.Default.(func() uuid.UUID)
 	outboxeventFields := schema.OutboxEvent{}.Fields()
 	_ = outboxeventFields
 	// outboxeventDescAggregateType is the schema descriptor for aggregate_type field.

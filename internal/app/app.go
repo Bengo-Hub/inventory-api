@@ -28,6 +28,7 @@ import (
 	router "github.com/bengobox/inventory-service/internal/http/router"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/items"
+	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/outbox"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
@@ -135,7 +136,9 @@ func New(ctx context.Context) (*App, error) {
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)
+	modifiersSvc := modifiers.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
+	inventoryHandler.SetModifiersService(modifiersSvc)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
 

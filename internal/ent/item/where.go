@@ -737,6 +737,29 @@ func HasTranslationsWith(preds ...predicate.ItemTranslation) predicate.Item {
 	})
 }
 
+// HasModifierGroups applies the HasEdge predicate on the "modifier_groups" edge.
+func HasModifierGroups() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ModifierGroupsTable, ModifierGroupsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasModifierGroupsWith applies the HasEdge predicate on the "modifier_groups" edge with a given conditions (other predicates).
+func HasModifierGroupsWith(preds ...predicate.ModifierGroup) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newModifierGroupsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasItemCategory applies the HasEdge predicate on the "item_category" edge.
 func HasItemCategory() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {

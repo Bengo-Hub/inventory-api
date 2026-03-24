@@ -22,6 +22,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
+	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -104,6 +106,8 @@ func checkColumn(t, c string) error {
 			itemcategory.Table:        itemcategory.ValidColumn,
 			itemtranslation.Table:     itemtranslation.ValidColumn,
 			itemvariant.Table:         itemvariant.ValidColumn,
+			modifiergroup.Table:       modifiergroup.ValidColumn,
+			modifieroption.Table:      modifieroption.ValidColumn,
 			outboxevent.Table:         outboxevent.ValidColumn,
 			ratelimitconfig.Table:     ratelimitconfig.ValidColumn,
 			recipe.Table:              recipe.ValidColumn,

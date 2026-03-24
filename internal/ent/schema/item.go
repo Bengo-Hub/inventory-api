@@ -74,6 +74,7 @@ func (Item) Edges() []ent.Edge {
 		edge.To("variants", ItemVariant.Type),
 		edge.To("assets", ItemAsset.Type),
 		edge.To("translations", ItemTranslation.Type),
+		edge.To("modifier_groups", ModifierGroup.Type),
 		edge.From("item_category", ItemCategory.Type).
 			Ref("items").
 			Unique().
