@@ -490,6 +490,52 @@ func HasReservationsWith(preds ...predicate.Reservation) predicate.Warehouse {
 	})
 }
 
+// HasLots applies the HasEdge predicate on the "lots" edge.
+func HasLots() predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LotsTable, LotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLotsWith applies the HasEdge predicate on the "lots" edge with a given conditions (other predicates).
+func HasLotsWith(preds ...predicate.InventoryLot) predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := newLotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPurchaseOrders applies the HasEdge predicate on the "purchase_orders" edge.
+func HasPurchaseOrders() predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PurchaseOrdersTable, PurchaseOrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPurchaseOrdersWith applies the HasEdge predicate on the "purchase_orders" edge with a given conditions (other predicates).
+func HasPurchaseOrdersWith(preds ...predicate.PurchaseOrder) predicate.Warehouse {
+	return predicate.Warehouse(func(s *sql.Selector) {
+		step := newPurchaseOrdersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Warehouse) predicate.Warehouse {
 	return predicate.Warehouse(sql.AndPredicates(predicates...))

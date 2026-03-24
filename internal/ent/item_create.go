@@ -12,7 +12,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/bundle"
+	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
+	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
@@ -22,6 +26,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/warranty"
 	"github.com/google/uuid"
 )
 
@@ -131,6 +136,138 @@ func (_c *ItemCreate) SetImageURL(v string) *ItemCreate {
 func (_c *ItemCreate) SetNillableImageURL(v *string) *ItemCreate {
 	if v != nil {
 		_c.SetImageURL(*v)
+	}
+	return _c
+}
+
+// SetBarcode sets the "barcode" field.
+func (_c *ItemCreate) SetBarcode(v string) *ItemCreate {
+	_c.mutation.SetBarcode(v)
+	return _c
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableBarcode(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetBarcode(*v)
+	}
+	return _c
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (_c *ItemCreate) SetBarcodeType(v string) *ItemCreate {
+	_c.mutation.SetBarcodeType(v)
+	return _c
+}
+
+// SetNillableBarcodeType sets the "barcode_type" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableBarcodeType(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetBarcodeType(*v)
+	}
+	return _c
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (_c *ItemCreate) SetRequiresAgeVerification(v bool) *ItemCreate {
+	_c.mutation.SetRequiresAgeVerification(v)
+	return _c
+}
+
+// SetNillableRequiresAgeVerification sets the "requires_age_verification" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableRequiresAgeVerification(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetRequiresAgeVerification(*v)
+	}
+	return _c
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (_c *ItemCreate) SetIsControlledSubstance(v bool) *ItemCreate {
+	_c.mutation.SetIsControlledSubstance(v)
+	return _c
+}
+
+// SetNillableIsControlledSubstance sets the "is_controlled_substance" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsControlledSubstance(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsControlledSubstance(*v)
+	}
+	return _c
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (_c *ItemCreate) SetIsPerishable(v bool) *ItemCreate {
+	_c.mutation.SetIsPerishable(v)
+	return _c
+}
+
+// SetNillableIsPerishable sets the "is_perishable" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsPerishable(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsPerishable(*v)
+	}
+	return _c
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (_c *ItemCreate) SetTrackSerialNumbers(v bool) *ItemCreate {
+	_c.mutation.SetTrackSerialNumbers(v)
+	return _c
+}
+
+// SetNillableTrackSerialNumbers sets the "track_serial_numbers" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTrackSerialNumbers(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetTrackSerialNumbers(*v)
+	}
+	return _c
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (_c *ItemCreate) SetTrackLots(v bool) *ItemCreate {
+	_c.mutation.SetTrackLots(v)
+	return _c
+}
+
+// SetNillableTrackLots sets the "track_lots" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTrackLots(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetTrackLots(*v)
+	}
+	return _c
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_c *ItemCreate) SetWeightKg(v float64) *ItemCreate {
+	_c.mutation.SetWeightKg(v)
+	return _c
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableWeightKg(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetWeightKg(*v)
+	}
+	return _c
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (_c *ItemCreate) SetDimensionsCm(v map[string]float64) *ItemCreate {
+	_c.mutation.SetDimensionsCm(v)
+	return _c
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (_c *ItemCreate) SetDurationMinutes(v int) *ItemCreate {
+	_c.mutation.SetDurationMinutes(v)
+	return _c
+}
+
+// SetNillableDurationMinutes sets the "duration_minutes" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableDurationMinutes(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetDurationMinutes(*v)
 	}
 	return _c
 }
@@ -303,6 +440,85 @@ func (_c *ItemCreate) AddModifierGroups(v ...*ModifierGroup) *ItemCreate {
 	return _c.AddModifierGroupIDs(ids...)
 }
 
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_c *ItemCreate) AddLotIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddLotIDs(ids...)
+	return _c
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_c *ItemCreate) AddLots(v ...*InventoryLot) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddLotIDs(ids...)
+}
+
+// AddCustomFieldValueIDs adds the "custom_field_values" edge to the CustomFieldValue entity by IDs.
+func (_c *ItemCreate) AddCustomFieldValueIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddCustomFieldValueIDs(ids...)
+	return _c
+}
+
+// AddCustomFieldValues adds the "custom_field_values" edges to the CustomFieldValue entity.
+func (_c *ItemCreate) AddCustomFieldValues(v ...*CustomFieldValue) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCustomFieldValueIDs(ids...)
+}
+
+// SetBundleID sets the "bundle" edge to the Bundle entity by ID.
+func (_c *ItemCreate) SetBundleID(id uuid.UUID) *ItemCreate {
+	_c.mutation.SetBundleID(id)
+	return _c
+}
+
+// SetNillableBundleID sets the "bundle" edge to the Bundle entity by ID if the given value is not nil.
+func (_c *ItemCreate) SetNillableBundleID(id *uuid.UUID) *ItemCreate {
+	if id != nil {
+		_c = _c.SetBundleID(*id)
+	}
+	return _c
+}
+
+// SetBundle sets the "bundle" edge to the Bundle entity.
+func (_c *ItemCreate) SetBundle(v *Bundle) *ItemCreate {
+	return _c.SetBundleID(v.ID)
+}
+
+// AddBundleComponentIDs adds the "bundle_components" edge to the BundleComponent entity by IDs.
+func (_c *ItemCreate) AddBundleComponentIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddBundleComponentIDs(ids...)
+	return _c
+}
+
+// AddBundleComponents adds the "bundle_components" edges to the BundleComponent entity.
+func (_c *ItemCreate) AddBundleComponents(v ...*BundleComponent) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddBundleComponentIDs(ids...)
+}
+
+// AddWarrantyIDs adds the "warranties" edge to the Warranty entity by IDs.
+func (_c *ItemCreate) AddWarrantyIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddWarrantyIDs(ids...)
+	return _c
+}
+
+// AddWarranties adds the "warranties" edges to the Warranty entity.
+func (_c *ItemCreate) AddWarranties(v ...*Warranty) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddWarrantyIDs(ids...)
+}
+
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
 func (_c *ItemCreate) SetItemCategoryID(id uuid.UUID) *ItemCreate {
 	_c.mutation.SetItemCategoryID(id)
@@ -365,6 +581,26 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.RequiresAgeVerification(); !ok {
+		v := item.DefaultRequiresAgeVerification
+		_c.mutation.SetRequiresAgeVerification(v)
+	}
+	if _, ok := _c.mutation.IsControlledSubstance(); !ok {
+		v := item.DefaultIsControlledSubstance
+		_c.mutation.SetIsControlledSubstance(v)
+	}
+	if _, ok := _c.mutation.IsPerishable(); !ok {
+		v := item.DefaultIsPerishable
+		_c.mutation.SetIsPerishable(v)
+	}
+	if _, ok := _c.mutation.TrackSerialNumbers(); !ok {
+		v := item.DefaultTrackSerialNumbers
+		_c.mutation.SetTrackSerialNumbers(v)
+	}
+	if _, ok := _c.mutation.TrackLots(); !ok {
+		v := item.DefaultTrackLots
+		_c.mutation.SetTrackLots(v)
+	}
 	if _, ok := _c.mutation.Tags(); !ok {
 		v := item.DefaultTags
 		_c.mutation.SetTags(v)
@@ -418,6 +654,21 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Item.is_active"`)}
+	}
+	if _, ok := _c.mutation.RequiresAgeVerification(); !ok {
+		return &ValidationError{Name: "requires_age_verification", err: errors.New(`ent: missing required field "Item.requires_age_verification"`)}
+	}
+	if _, ok := _c.mutation.IsControlledSubstance(); !ok {
+		return &ValidationError{Name: "is_controlled_substance", err: errors.New(`ent: missing required field "Item.is_controlled_substance"`)}
+	}
+	if _, ok := _c.mutation.IsPerishable(); !ok {
+		return &ValidationError{Name: "is_perishable", err: errors.New(`ent: missing required field "Item.is_perishable"`)}
+	}
+	if _, ok := _c.mutation.TrackSerialNumbers(); !ok {
+		return &ValidationError{Name: "track_serial_numbers", err: errors.New(`ent: missing required field "Item.track_serial_numbers"`)}
+	}
+	if _, ok := _c.mutation.TrackLots(); !ok {
+		return &ValidationError{Name: "track_lots", err: errors.New(`ent: missing required field "Item.track_lots"`)}
 	}
 	if _, ok := _c.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Item.tags"`)}
@@ -493,6 +744,46 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ImageURL(); ok {
 		_spec.SetField(item.FieldImageURL, field.TypeString, value)
 		_node.ImageURL = value
+	}
+	if value, ok := _c.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+		_node.Barcode = value
+	}
+	if value, ok := _c.mutation.BarcodeType(); ok {
+		_spec.SetField(item.FieldBarcodeType, field.TypeString, value)
+		_node.BarcodeType = value
+	}
+	if value, ok := _c.mutation.RequiresAgeVerification(); ok {
+		_spec.SetField(item.FieldRequiresAgeVerification, field.TypeBool, value)
+		_node.RequiresAgeVerification = value
+	}
+	if value, ok := _c.mutation.IsControlledSubstance(); ok {
+		_spec.SetField(item.FieldIsControlledSubstance, field.TypeBool, value)
+		_node.IsControlledSubstance = value
+	}
+	if value, ok := _c.mutation.IsPerishable(); ok {
+		_spec.SetField(item.FieldIsPerishable, field.TypeBool, value)
+		_node.IsPerishable = value
+	}
+	if value, ok := _c.mutation.TrackSerialNumbers(); ok {
+		_spec.SetField(item.FieldTrackSerialNumbers, field.TypeBool, value)
+		_node.TrackSerialNumbers = value
+	}
+	if value, ok := _c.mutation.TrackLots(); ok {
+		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
+		_node.TrackLots = value
+	}
+	if value, ok := _c.mutation.WeightKg(); ok {
+		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
+		_node.WeightKg = &value
+	}
+	if value, ok := _c.mutation.DimensionsCm(); ok {
+		_spec.SetField(item.FieldDimensionsCm, field.TypeJSON, value)
+		_node.DimensionsCm = value
+	}
+	if value, ok := _c.mutation.DurationMinutes(); ok {
+		_spec.SetField(item.FieldDurationMinutes, field.TypeInt, value)
+		_node.DurationMinutes = &value
 	}
 	if value, ok := _c.mutation.Tags(); ok {
 		_spec.SetField(item.FieldTags, field.TypeJSON, value)
@@ -633,6 +924,86 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CustomFieldValuesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.BundleTable,
+			Columns: []string{item.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BundleComponentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.WarrantiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -838,6 +1209,168 @@ func (u *ItemUpsert) UpdateImageURL() *ItemUpsert {
 // ClearImageURL clears the value of the "image_url" field.
 func (u *ItemUpsert) ClearImageURL() *ItemUpsert {
 	u.SetNull(item.FieldImageURL)
+	return u
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsert) SetBarcode(v string) *ItemUpsert {
+	u.Set(item.FieldBarcode, v)
+	return u
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBarcode() *ItemUpsert {
+	u.SetExcluded(item.FieldBarcode)
+	return u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsert) ClearBarcode() *ItemUpsert {
+	u.SetNull(item.FieldBarcode)
+	return u
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsert) SetBarcodeType(v string) *ItemUpsert {
+	u.Set(item.FieldBarcodeType, v)
+	return u
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBarcodeType() *ItemUpsert {
+	u.SetExcluded(item.FieldBarcodeType)
+	return u
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsert) ClearBarcodeType() *ItemUpsert {
+	u.SetNull(item.FieldBarcodeType)
+	return u
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsert) SetRequiresAgeVerification(v bool) *ItemUpsert {
+	u.Set(item.FieldRequiresAgeVerification, v)
+	return u
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateRequiresAgeVerification() *ItemUpsert {
+	u.SetExcluded(item.FieldRequiresAgeVerification)
+	return u
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsert) SetIsControlledSubstance(v bool) *ItemUpsert {
+	u.Set(item.FieldIsControlledSubstance, v)
+	return u
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsControlledSubstance() *ItemUpsert {
+	u.SetExcluded(item.FieldIsControlledSubstance)
+	return u
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsert) SetIsPerishable(v bool) *ItemUpsert {
+	u.Set(item.FieldIsPerishable, v)
+	return u
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsPerishable() *ItemUpsert {
+	u.SetExcluded(item.FieldIsPerishable)
+	return u
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsert) SetTrackSerialNumbers(v bool) *ItemUpsert {
+	u.Set(item.FieldTrackSerialNumbers, v)
+	return u
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTrackSerialNumbers() *ItemUpsert {
+	u.SetExcluded(item.FieldTrackSerialNumbers)
+	return u
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsert) SetTrackLots(v bool) *ItemUpsert {
+	u.Set(item.FieldTrackLots, v)
+	return u
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTrackLots() *ItemUpsert {
+	u.SetExcluded(item.FieldTrackLots)
+	return u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsert) SetWeightKg(v float64) *ItemUpsert {
+	u.Set(item.FieldWeightKg, v)
+	return u
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWeightKg() *ItemUpsert {
+	u.SetExcluded(item.FieldWeightKg)
+	return u
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsert) AddWeightKg(v float64) *ItemUpsert {
+	u.Add(item.FieldWeightKg, v)
+	return u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsert) ClearWeightKg() *ItemUpsert {
+	u.SetNull(item.FieldWeightKg)
+	return u
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsert) SetDimensionsCm(v map[string]float64) *ItemUpsert {
+	u.Set(item.FieldDimensionsCm, v)
+	return u
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDimensionsCm() *ItemUpsert {
+	u.SetExcluded(item.FieldDimensionsCm)
+	return u
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsert) ClearDimensionsCm() *ItemUpsert {
+	u.SetNull(item.FieldDimensionsCm)
+	return u
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsert) SetDurationMinutes(v int) *ItemUpsert {
+	u.Set(item.FieldDurationMinutes, v)
+	return u
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDurationMinutes() *ItemUpsert {
+	u.SetExcluded(item.FieldDurationMinutes)
+	return u
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsert) AddDurationMinutes(v int) *ItemUpsert {
+	u.Add(item.FieldDurationMinutes, v)
+	return u
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsert) ClearDurationMinutes() *ItemUpsert {
+	u.SetNull(item.FieldDurationMinutes)
 	return u
 }
 
@@ -1079,6 +1612,195 @@ func (u *ItemUpsertOne) UpdateImageURL() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearImageURL() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearImageURL()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsertOne) SetBarcode(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBarcode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsertOne) ClearBarcode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsertOne) SetBarcodeType(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcodeType(v)
+	})
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBarcodeType() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcodeType()
+	})
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsertOne) ClearBarcodeType() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcodeType()
+	})
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsertOne) SetRequiresAgeVerification(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetRequiresAgeVerification(v)
+	})
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateRequiresAgeVerification() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateRequiresAgeVerification()
+	})
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsertOne) SetIsControlledSubstance(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsControlledSubstance(v)
+	})
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsControlledSubstance() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsControlledSubstance()
+	})
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsertOne) SetIsPerishable(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsPerishable(v)
+	})
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsPerishable() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsPerishable()
+	})
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsertOne) SetTrackSerialNumbers(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackSerialNumbers(v)
+	})
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTrackSerialNumbers() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackSerialNumbers()
+	})
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsertOne) SetTrackLots(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackLots(v)
+	})
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTrackLots() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackLots()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsertOne) SetWeightKg(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsertOne) AddWeightKg(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWeightKg() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsertOne) ClearWeightKg() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightKg()
+	})
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsertOne) SetDimensionsCm(v map[string]float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDimensionsCm(v)
+	})
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDimensionsCm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDimensionsCm()
+	})
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsertOne) ClearDimensionsCm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDimensionsCm()
+	})
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsertOne) SetDurationMinutes(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDurationMinutes(v)
+	})
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsertOne) AddDurationMinutes(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddDurationMinutes(v)
+	})
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDurationMinutes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDurationMinutes()
+	})
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsertOne) ClearDurationMinutes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDurationMinutes()
 	})
 }
 
@@ -1493,6 +2215,195 @@ func (u *ItemUpsertBulk) UpdateImageURL() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearImageURL() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearImageURL()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsertBulk) SetBarcode(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBarcode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsertBulk) ClearBarcode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsertBulk) SetBarcodeType(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcodeType(v)
+	})
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBarcodeType() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcodeType()
+	})
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsertBulk) ClearBarcodeType() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcodeType()
+	})
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsertBulk) SetRequiresAgeVerification(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetRequiresAgeVerification(v)
+	})
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateRequiresAgeVerification() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateRequiresAgeVerification()
+	})
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsertBulk) SetIsControlledSubstance(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsControlledSubstance(v)
+	})
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsControlledSubstance() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsControlledSubstance()
+	})
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsertBulk) SetIsPerishable(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsPerishable(v)
+	})
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsPerishable() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsPerishable()
+	})
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsertBulk) SetTrackSerialNumbers(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackSerialNumbers(v)
+	})
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTrackSerialNumbers() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackSerialNumbers()
+	})
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsertBulk) SetTrackLots(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackLots(v)
+	})
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTrackLots() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackLots()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsertBulk) SetWeightKg(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsertBulk) AddWeightKg(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWeightKg() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsertBulk) ClearWeightKg() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightKg()
+	})
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsertBulk) SetDimensionsCm(v map[string]float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDimensionsCm(v)
+	})
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDimensionsCm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDimensionsCm()
+	})
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsertBulk) ClearDimensionsCm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDimensionsCm()
+	})
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsertBulk) SetDurationMinutes(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDurationMinutes(v)
+	})
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsertBulk) AddDurationMinutes(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddDurationMinutes(v)
+	})
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDurationMinutes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDurationMinutes()
+	})
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsertBulk) ClearDurationMinutes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDurationMinutes()
 	})
 }
 

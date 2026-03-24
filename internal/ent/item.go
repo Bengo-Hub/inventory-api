@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -40,6 +41,26 @@ type Item struct {
 	IsActive bool `json:"is_active,omitempty"`
 	// ImageURL holds the value of the "image_url" field.
 	ImageURL string `json:"image_url,omitempty"`
+	// EAN-13/UPC barcode for scanning
+	Barcode string `json:"barcode,omitempty"`
+	// EAN13, UPC, CODE128, QR
+	BarcodeType string `json:"barcode_type,omitempty"`
+	// Liquor, tobacco, 18+ items
+	RequiresAgeVerification bool `json:"requires_age_verification,omitempty"`
+	// Pharmacy: scheduled drugs requiring special handling
+	IsControlledSubstance bool `json:"is_controlled_substance,omitempty"`
+	// Requires expiry/lot tracking — bakeries, pharmacies, food
+	IsPerishable bool `json:"is_perishable,omitempty"`
+	// Electronics, equipment — require serial at sale
+	TrackSerialNumbers bool `json:"track_serial_numbers,omitempty"`
+	// Pharma batches, food lots — require lot/expiry tracking
+	TrackLots bool `json:"track_lots,omitempty"`
+	// Weight in kg for shipping/logistics pricing
+	WeightKg *float64 `json:"weight_kg,omitempty"`
+	// Physical dimensions {length, width, height} in cm
+	DimensionsCm map[string]float64 `json:"dimensions_cm,omitempty"`
+	// Service duration for appointment booking (salon, barber)
+	DurationMinutes *int `json:"duration_minutes,omitempty"`
 	// Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)
 	Tags []string `json:"tags,omitempty"`
 	// Metadata holds the value of the "metadata" field.
@@ -72,11 +93,21 @@ type ItemEdges struct {
 	Translations []*ItemTranslation `json:"translations,omitempty"`
 	// ModifierGroups holds the value of the modifier_groups edge.
 	ModifierGroups []*ModifierGroup `json:"modifier_groups,omitempty"`
+	// Lots holds the value of the lots edge.
+	Lots []*InventoryLot `json:"lots,omitempty"`
+	// CustomFieldValues holds the value of the custom_field_values edge.
+	CustomFieldValues []*CustomFieldValue `json:"custom_field_values,omitempty"`
+	// Bundle holds the value of the bundle edge.
+	Bundle *Bundle `json:"bundle,omitempty"`
+	// Items where this item is a component in a bundle
+	BundleComponents []*BundleComponent `json:"bundle_components,omitempty"`
+	// Warranties holds the value of the warranties edge.
+	Warranties []*Warranty `json:"warranties,omitempty"`
 	// ItemCategory holds the value of the item_category edge.
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [14]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -155,12 +186,59 @@ func (e ItemEdges) ModifierGroupsOrErr() ([]*ModifierGroup, error) {
 	return nil, &NotLoadedError{edge: "modifier_groups"}
 }
 
+// LotsOrErr returns the Lots value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) LotsOrErr() ([]*InventoryLot, error) {
+	if e.loadedTypes[8] {
+		return e.Lots, nil
+	}
+	return nil, &NotLoadedError{edge: "lots"}
+}
+
+// CustomFieldValuesOrErr returns the CustomFieldValues value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) CustomFieldValuesOrErr() ([]*CustomFieldValue, error) {
+	if e.loadedTypes[9] {
+		return e.CustomFieldValues, nil
+	}
+	return nil, &NotLoadedError{edge: "custom_field_values"}
+}
+
+// BundleOrErr returns the Bundle value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) BundleOrErr() (*Bundle, error) {
+	if e.Bundle != nil {
+		return e.Bundle, nil
+	} else if e.loadedTypes[10] {
+		return nil, &NotFoundError{label: bundle.Label}
+	}
+	return nil, &NotLoadedError{edge: "bundle"}
+}
+
+// BundleComponentsOrErr returns the BundleComponents value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) BundleComponentsOrErr() ([]*BundleComponent, error) {
+	if e.loadedTypes[11] {
+		return e.BundleComponents, nil
+	}
+	return nil, &NotLoadedError{edge: "bundle_components"}
+}
+
+// WarrantiesOrErr returns the Warranties value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) WarrantiesOrErr() ([]*Warranty, error) {
+	if e.loadedTypes[12] {
+		return e.Warranties, nil
+	}
+	return nil, &NotLoadedError{edge: "warranties"}
+}
+
 // ItemCategoryOrErr returns the ItemCategory value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
 	if e.ItemCategory != nil {
 		return e.ItemCategory, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[13] {
 		return nil, &NotFoundError{label: itemcategory.Label}
 	}
 	return nil, &NotLoadedError{edge: "item_category"}
@@ -173,11 +251,15 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case item.FieldCategoryID, item.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case item.FieldTags, item.FieldMetadata:
+		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsActive:
+		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots:
 			values[i] = new(sql.NullBool)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL:
+		case item.FieldWeightKg:
+			values[i] = new(sql.NullFloat64)
+		case item.FieldDurationMinutes:
+			values[i] = new(sql.NullInt64)
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -260,6 +342,70 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ImageURL = value.String
 			}
+		case item.FieldBarcode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field barcode", values[i])
+			} else if value.Valid {
+				_m.Barcode = value.String
+			}
+		case item.FieldBarcodeType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field barcode_type", values[i])
+			} else if value.Valid {
+				_m.BarcodeType = value.String
+			}
+		case item.FieldRequiresAgeVerification:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field requires_age_verification", values[i])
+			} else if value.Valid {
+				_m.RequiresAgeVerification = value.Bool
+			}
+		case item.FieldIsControlledSubstance:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_controlled_substance", values[i])
+			} else if value.Valid {
+				_m.IsControlledSubstance = value.Bool
+			}
+		case item.FieldIsPerishable:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_perishable", values[i])
+			} else if value.Valid {
+				_m.IsPerishable = value.Bool
+			}
+		case item.FieldTrackSerialNumbers:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field track_serial_numbers", values[i])
+			} else if value.Valid {
+				_m.TrackSerialNumbers = value.Bool
+			}
+		case item.FieldTrackLots:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field track_lots", values[i])
+			} else if value.Valid {
+				_m.TrackLots = value.Bool
+			}
+		case item.FieldWeightKg:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight_kg", values[i])
+			} else if value.Valid {
+				_m.WeightKg = new(float64)
+				*_m.WeightKg = value.Float64
+			}
+		case item.FieldDimensionsCm:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field dimensions_cm", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.DimensionsCm); err != nil {
+					return fmt.Errorf("unmarshal field dimensions_cm: %w", err)
+				}
+			}
+		case item.FieldDurationMinutes:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field duration_minutes", values[i])
+			} else if value.Valid {
+				_m.DurationMinutes = new(int)
+				*_m.DurationMinutes = int(value.Int64)
+			}
 		case item.FieldTags:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field tags", values[i])
@@ -341,6 +487,31 @@ func (_m *Item) QueryModifierGroups() *ModifierGroupQuery {
 	return NewItemClient(_m.config).QueryModifierGroups(_m)
 }
 
+// QueryLots queries the "lots" edge of the Item entity.
+func (_m *Item) QueryLots() *InventoryLotQuery {
+	return NewItemClient(_m.config).QueryLots(_m)
+}
+
+// QueryCustomFieldValues queries the "custom_field_values" edge of the Item entity.
+func (_m *Item) QueryCustomFieldValues() *CustomFieldValueQuery {
+	return NewItemClient(_m.config).QueryCustomFieldValues(_m)
+}
+
+// QueryBundle queries the "bundle" edge of the Item entity.
+func (_m *Item) QueryBundle() *BundleQuery {
+	return NewItemClient(_m.config).QueryBundle(_m)
+}
+
+// QueryBundleComponents queries the "bundle_components" edge of the Item entity.
+func (_m *Item) QueryBundleComponents() *BundleComponentQuery {
+	return NewItemClient(_m.config).QueryBundleComponents(_m)
+}
+
+// QueryWarranties queries the "warranties" edge of the Item entity.
+func (_m *Item) QueryWarranties() *WarrantyQuery {
+	return NewItemClient(_m.config).QueryWarranties(_m)
+}
+
 // QueryItemCategory queries the "item_category" edge of the Item entity.
 func (_m *Item) QueryItemCategory() *ItemCategoryQuery {
 	return NewItemClient(_m.config).QueryItemCategory(_m)
@@ -399,6 +570,40 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("image_url=")
 	builder.WriteString(_m.ImageURL)
+	builder.WriteString(", ")
+	builder.WriteString("barcode=")
+	builder.WriteString(_m.Barcode)
+	builder.WriteString(", ")
+	builder.WriteString("barcode_type=")
+	builder.WriteString(_m.BarcodeType)
+	builder.WriteString(", ")
+	builder.WriteString("requires_age_verification=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RequiresAgeVerification))
+	builder.WriteString(", ")
+	builder.WriteString("is_controlled_substance=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsControlledSubstance))
+	builder.WriteString(", ")
+	builder.WriteString("is_perishable=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsPerishable))
+	builder.WriteString(", ")
+	builder.WriteString("track_serial_numbers=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TrackSerialNumbers))
+	builder.WriteString(", ")
+	builder.WriteString("track_lots=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TrackLots))
+	builder.WriteString(", ")
+	if v := _m.WeightKg; v != nil {
+		builder.WriteString("weight_kg=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("dimensions_cm=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DimensionsCm))
+	builder.WriteString(", ")
+	if v := _m.DurationMinutes; v != nil {
+		builder.WriteString("duration_minutes=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("tags=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Tags))

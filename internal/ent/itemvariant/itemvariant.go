@@ -23,6 +23,16 @@ const (
 	FieldName = "name"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
+	// FieldAttributes holds the string denoting the attributes field in the database.
+	FieldAttributes = "attributes"
+	// FieldBarcode holds the string denoting the barcode field in the database.
+	FieldBarcode = "barcode"
+	// FieldImageURL holds the string denoting the image_url field in the database.
+	FieldImageURL = "image_url"
+	// FieldCostPrice holds the string denoting the cost_price field in the database.
+	FieldCostPrice = "cost_price"
+	// FieldWeightKg holds the string denoting the weight_kg field in the database.
+	FieldWeightKg = "weight_kg"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -49,6 +59,11 @@ var Columns = []string{
 	FieldSku,
 	FieldName,
 	FieldPrice,
+	FieldAttributes,
+	FieldBarcode,
+	FieldImageURL,
+	FieldCostPrice,
+	FieldWeightKg,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -109,6 +124,26 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByPrice orders the results by the price field.
 func ByPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrice, opts...).ToFunc()
+}
+
+// ByBarcode orders the results by the barcode field.
+func ByBarcode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBarcode, opts...).ToFunc()
+}
+
+// ByImageURL orders the results by the image_url field.
+func ByImageURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImageURL, opts...).ToFunc()
+}
+
+// ByCostPrice orders the results by the cost_price field.
+func ByCostPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostPrice, opts...).ToFunc()
+}
+
+// ByWeightKg orders the results by the weight_kg field.
+func ByWeightKg(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeightKg, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

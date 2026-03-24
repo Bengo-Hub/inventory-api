@@ -114,6 +114,48 @@ func (_c *InventoryBalanceCreate) SetNillableReorderLevel(v *int) *InventoryBala
 	return _c
 }
 
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (_c *InventoryBalanceCreate) SetReorderQuantity(v int) *InventoryBalanceCreate {
+	_c.mutation.SetReorderQuantity(v)
+	return _c
+}
+
+// SetNillableReorderQuantity sets the "reorder_quantity" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillableReorderQuantity(v *int) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetReorderQuantity(*v)
+	}
+	return _c
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_c *InventoryBalanceCreate) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceCreate {
+	_c.mutation.SetPreferredSupplierID(v)
+	return _c
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillablePreferredSupplierID(v *uuid.UUID) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetPreferredSupplierID(*v)
+	}
+	return _c
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (_c *InventoryBalanceCreate) SetAutoReorderEnabled(v bool) *InventoryBalanceCreate {
+	_c.mutation.SetAutoReorderEnabled(v)
+	return _c
+}
+
+// SetNillableAutoReorderEnabled sets the "auto_reorder_enabled" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillableAutoReorderEnabled(v *bool) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetAutoReorderEnabled(*v)
+	}
+	return _c
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_c *InventoryBalanceCreate) SetUpdatedAt(v time.Time) *InventoryBalanceCreate {
 	_c.mutation.SetUpdatedAt(v)
@@ -207,6 +249,14 @@ func (_c *InventoryBalanceCreate) defaults() {
 		v := inventorybalance.DefaultReorderLevel
 		_c.mutation.SetReorderLevel(v)
 	}
+	if _, ok := _c.mutation.ReorderQuantity(); !ok {
+		v := inventorybalance.DefaultReorderQuantity
+		_c.mutation.SetReorderQuantity(v)
+	}
+	if _, ok := _c.mutation.AutoReorderEnabled(); !ok {
+		v := inventorybalance.DefaultAutoReorderEnabled
+		_c.mutation.SetAutoReorderEnabled(v)
+	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := inventorybalance.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
@@ -242,6 +292,12 @@ func (_c *InventoryBalanceCreate) check() error {
 	}
 	if _, ok := _c.mutation.ReorderLevel(); !ok {
 		return &ValidationError{Name: "reorder_level", err: errors.New(`ent: missing required field "InventoryBalance.reorder_level"`)}
+	}
+	if _, ok := _c.mutation.ReorderQuantity(); !ok {
+		return &ValidationError{Name: "reorder_quantity", err: errors.New(`ent: missing required field "InventoryBalance.reorder_quantity"`)}
+	}
+	if _, ok := _c.mutation.AutoReorderEnabled(); !ok {
+		return &ValidationError{Name: "auto_reorder_enabled", err: errors.New(`ent: missing required field "InventoryBalance.auto_reorder_enabled"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "InventoryBalance.updated_at"`)}
@@ -311,6 +367,18 @@ func (_c *InventoryBalanceCreate) createSpec() (*InventoryBalance, *sqlgraph.Cre
 	if value, ok := _c.mutation.ReorderLevel(); ok {
 		_spec.SetField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
 		_node.ReorderLevel = value
+	}
+	if value, ok := _c.mutation.ReorderQuantity(); ok {
+		_spec.SetField(inventorybalance.FieldReorderQuantity, field.TypeInt, value)
+		_node.ReorderQuantity = value
+	}
+	if value, ok := _c.mutation.PreferredSupplierID(); ok {
+		_spec.SetField(inventorybalance.FieldPreferredSupplierID, field.TypeUUID, value)
+		_node.PreferredSupplierID = &value
+	}
+	if value, ok := _c.mutation.AutoReorderEnabled(); ok {
+		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
+		_node.AutoReorderEnabled = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -522,6 +590,54 @@ func (u *InventoryBalanceUpsert) AddReorderLevel(v int) *InventoryBalanceUpsert 
 	return u
 }
 
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (u *InventoryBalanceUpsert) SetReorderQuantity(v int) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldReorderQuantity, v)
+	return u
+}
+
+// UpdateReorderQuantity sets the "reorder_quantity" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdateReorderQuantity() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldReorderQuantity)
+	return u
+}
+
+// AddReorderQuantity adds v to the "reorder_quantity" field.
+func (u *InventoryBalanceUpsert) AddReorderQuantity(v int) *InventoryBalanceUpsert {
+	u.Add(inventorybalance.FieldReorderQuantity, v)
+	return u
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsert) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldPreferredSupplierID, v)
+	return u
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdatePreferredSupplierID() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldPreferredSupplierID)
+	return u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsert) ClearPreferredSupplierID() *InventoryBalanceUpsert {
+	u.SetNull(inventorybalance.FieldPreferredSupplierID)
+	return u
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (u *InventoryBalanceUpsert) SetAutoReorderEnabled(v bool) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldAutoReorderEnabled, v)
+	return u
+}
+
+// UpdateAutoReorderEnabled sets the "auto_reorder_enabled" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdateAutoReorderEnabled() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldAutoReorderEnabled)
+	return u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (u *InventoryBalanceUpsert) SetUpdatedAt(v time.Time) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldUpdatedAt, v)
@@ -719,6 +835,62 @@ func (u *InventoryBalanceUpsertOne) AddReorderLevel(v int) *InventoryBalanceUpse
 func (u *InventoryBalanceUpsertOne) UpdateReorderLevel() *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateReorderLevel()
+	})
+}
+
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (u *InventoryBalanceUpsertOne) SetReorderQuantity(v int) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetReorderQuantity(v)
+	})
+}
+
+// AddReorderQuantity adds v to the "reorder_quantity" field.
+func (u *InventoryBalanceUpsertOne) AddReorderQuantity(v int) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.AddReorderQuantity(v)
+	})
+}
+
+// UpdateReorderQuantity sets the "reorder_quantity" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdateReorderQuantity() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateReorderQuantity()
+	})
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsertOne) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetPreferredSupplierID(v)
+	})
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdatePreferredSupplierID() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdatePreferredSupplierID()
+	})
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsertOne) ClearPreferredSupplierID() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.ClearPreferredSupplierID()
+	})
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (u *InventoryBalanceUpsertOne) SetAutoReorderEnabled(v bool) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetAutoReorderEnabled(v)
+	})
+}
+
+// UpdateAutoReorderEnabled sets the "auto_reorder_enabled" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdateAutoReorderEnabled() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateAutoReorderEnabled()
 	})
 }
 
@@ -1088,6 +1260,62 @@ func (u *InventoryBalanceUpsertBulk) AddReorderLevel(v int) *InventoryBalanceUps
 func (u *InventoryBalanceUpsertBulk) UpdateReorderLevel() *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateReorderLevel()
+	})
+}
+
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (u *InventoryBalanceUpsertBulk) SetReorderQuantity(v int) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetReorderQuantity(v)
+	})
+}
+
+// AddReorderQuantity adds v to the "reorder_quantity" field.
+func (u *InventoryBalanceUpsertBulk) AddReorderQuantity(v int) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.AddReorderQuantity(v)
+	})
+}
+
+// UpdateReorderQuantity sets the "reorder_quantity" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdateReorderQuantity() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateReorderQuantity()
+	})
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsertBulk) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetPreferredSupplierID(v)
+	})
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdatePreferredSupplierID() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdatePreferredSupplierID()
+	})
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *InventoryBalanceUpsertBulk) ClearPreferredSupplierID() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.ClearPreferredSupplierID()
+	})
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (u *InventoryBalanceUpsertBulk) SetAutoReorderEnabled(v bool) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetAutoReorderEnabled(v)
+	})
+}
+
+// UpdateAutoReorderEnabled sets the "auto_reorder_enabled" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdateAutoReorderEnabled() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateAutoReorderEnabled()
 	})
 }
 

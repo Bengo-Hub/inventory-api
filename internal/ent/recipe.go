@@ -31,6 +31,14 @@ type Recipe struct {
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// Sum of ingredient costs, auto-calculated from ingredient cost_prices
+	TotalCost *float64 `json:"total_cost,omitempty"`
+	// total_cost / output_qty
+	CostPerPortion *float64 `json:"cost_per_portion,omitempty"`
+	// Desired profit margin percentage
+	TargetMarginPercent *float64 `json:"target_margin_percent,omitempty"`
+	// cost_per_portion / (1 - margin) — auto-calculated
+	SuggestedPrice *float64 `json:"suggested_price,omitempty"`
 	// Preparation time in minutes
 	PrepTimeMinutes *int `json:"prep_time_minutes,omitempty"`
 	// Metadata holds the value of the "metadata" field.
@@ -72,7 +80,7 @@ func (*Recipe) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case recipe.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case recipe.FieldOutputQty:
+		case recipe.FieldOutputQty, recipe.FieldTotalCost, recipe.FieldCostPerPortion, recipe.FieldTargetMarginPercent, recipe.FieldSuggestedPrice:
 			values[i] = new(sql.NullFloat64)
 		case recipe.FieldPrepTimeMinutes:
 			values[i] = new(sql.NullInt64)
@@ -138,6 +146,34 @@ func (_m *Recipe) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case recipe.FieldTotalCost:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_cost", values[i])
+			} else if value.Valid {
+				_m.TotalCost = new(float64)
+				*_m.TotalCost = value.Float64
+			}
+		case recipe.FieldCostPerPortion:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_per_portion", values[i])
+			} else if value.Valid {
+				_m.CostPerPortion = new(float64)
+				*_m.CostPerPortion = value.Float64
+			}
+		case recipe.FieldTargetMarginPercent:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field target_margin_percent", values[i])
+			} else if value.Valid {
+				_m.TargetMarginPercent = new(float64)
+				*_m.TargetMarginPercent = value.Float64
+			}
+		case recipe.FieldSuggestedPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field suggested_price", values[i])
+			} else if value.Valid {
+				_m.SuggestedPrice = new(float64)
+				*_m.SuggestedPrice = value.Float64
 			}
 		case recipe.FieldPrepTimeMinutes:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -224,6 +260,26 @@ func (_m *Recipe) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	if v := _m.TotalCost; v != nil {
+		builder.WriteString("total_cost=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CostPerPortion; v != nil {
+		builder.WriteString("cost_per_portion=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.TargetMarginPercent; v != nil {
+		builder.WriteString("target_margin_percent=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SuggestedPrice; v != nil {
+		builder.WriteString("suggested_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.PrepTimeMinutes; v != nil {
 		builder.WriteString("prep_time_minutes=")

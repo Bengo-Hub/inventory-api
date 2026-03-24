@@ -121,6 +121,114 @@ func (_u *RecipeUpdate) SetNillableIsActive(v *bool) *RecipeUpdate {
 	return _u
 }
 
+// SetTotalCost sets the "total_cost" field.
+func (_u *RecipeUpdate) SetTotalCost(v float64) *RecipeUpdate {
+	_u.mutation.ResetTotalCost()
+	_u.mutation.SetTotalCost(v)
+	return _u
+}
+
+// SetNillableTotalCost sets the "total_cost" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableTotalCost(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetTotalCost(*v)
+	}
+	return _u
+}
+
+// AddTotalCost adds value to the "total_cost" field.
+func (_u *RecipeUpdate) AddTotalCost(v float64) *RecipeUpdate {
+	_u.mutation.AddTotalCost(v)
+	return _u
+}
+
+// ClearTotalCost clears the value of the "total_cost" field.
+func (_u *RecipeUpdate) ClearTotalCost() *RecipeUpdate {
+	_u.mutation.ClearTotalCost()
+	return _u
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (_u *RecipeUpdate) SetCostPerPortion(v float64) *RecipeUpdate {
+	_u.mutation.ResetCostPerPortion()
+	_u.mutation.SetCostPerPortion(v)
+	return _u
+}
+
+// SetNillableCostPerPortion sets the "cost_per_portion" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableCostPerPortion(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetCostPerPortion(*v)
+	}
+	return _u
+}
+
+// AddCostPerPortion adds value to the "cost_per_portion" field.
+func (_u *RecipeUpdate) AddCostPerPortion(v float64) *RecipeUpdate {
+	_u.mutation.AddCostPerPortion(v)
+	return _u
+}
+
+// ClearCostPerPortion clears the value of the "cost_per_portion" field.
+func (_u *RecipeUpdate) ClearCostPerPortion() *RecipeUpdate {
+	_u.mutation.ClearCostPerPortion()
+	return _u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_u *RecipeUpdate) SetTargetMarginPercent(v float64) *RecipeUpdate {
+	_u.mutation.ResetTargetMarginPercent()
+	_u.mutation.SetTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableTargetMarginPercent(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddTargetMarginPercent adds value to the "target_margin_percent" field.
+func (_u *RecipeUpdate) AddTargetMarginPercent(v float64) *RecipeUpdate {
+	_u.mutation.AddTargetMarginPercent(v)
+	return _u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (_u *RecipeUpdate) ClearTargetMarginPercent() *RecipeUpdate {
+	_u.mutation.ClearTargetMarginPercent()
+	return _u
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (_u *RecipeUpdate) SetSuggestedPrice(v float64) *RecipeUpdate {
+	_u.mutation.ResetSuggestedPrice()
+	_u.mutation.SetSuggestedPrice(v)
+	return _u
+}
+
+// SetNillableSuggestedPrice sets the "suggested_price" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableSuggestedPrice(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetSuggestedPrice(*v)
+	}
+	return _u
+}
+
+// AddSuggestedPrice adds value to the "suggested_price" field.
+func (_u *RecipeUpdate) AddSuggestedPrice(v float64) *RecipeUpdate {
+	_u.mutation.AddSuggestedPrice(v)
+	return _u
+}
+
+// ClearSuggestedPrice clears the value of the "suggested_price" field.
+func (_u *RecipeUpdate) ClearSuggestedPrice() *RecipeUpdate {
+	_u.mutation.ClearSuggestedPrice()
+	return _u
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (_u *RecipeUpdate) SetPrepTimeMinutes(v int) *RecipeUpdate {
 	_u.mutation.ResetPrepTimeMinutes()
@@ -301,6 +409,42 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.TotalCost(); ok {
+		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCost(); ok {
+		_spec.AddField(recipe.FieldTotalCost, field.TypeFloat64, value)
+	}
+	if _u.mutation.TotalCostCleared() {
+		_spec.ClearField(recipe.FieldTotalCost, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CostPerPortion(); ok {
+		_spec.SetField(recipe.FieldCostPerPortion, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPerPortion(); ok {
+		_spec.AddField(recipe.FieldCostPerPortion, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPerPortionCleared() {
+		_spec.ClearField(recipe.FieldCostPerPortion, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(recipe.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetMarginPercent(); ok {
+		_spec.AddField(recipe.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetMarginPercentCleared() {
+		_spec.ClearField(recipe.FieldTargetMarginPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SuggestedPrice(); ok {
+		_spec.SetField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSuggestedPrice(); ok {
+		_spec.AddField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SuggestedPriceCleared() {
+		_spec.ClearField(recipe.FieldSuggestedPrice, field.TypeFloat64)
+	}
 	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
 	}
@@ -472,6 +616,114 @@ func (_u *RecipeUpdateOne) SetNillableIsActive(v *bool) *RecipeUpdateOne {
 	if v != nil {
 		_u.SetIsActive(*v)
 	}
+	return _u
+}
+
+// SetTotalCost sets the "total_cost" field.
+func (_u *RecipeUpdateOne) SetTotalCost(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetTotalCost()
+	_u.mutation.SetTotalCost(v)
+	return _u
+}
+
+// SetNillableTotalCost sets the "total_cost" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableTotalCost(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetTotalCost(*v)
+	}
+	return _u
+}
+
+// AddTotalCost adds value to the "total_cost" field.
+func (_u *RecipeUpdateOne) AddTotalCost(v float64) *RecipeUpdateOne {
+	_u.mutation.AddTotalCost(v)
+	return _u
+}
+
+// ClearTotalCost clears the value of the "total_cost" field.
+func (_u *RecipeUpdateOne) ClearTotalCost() *RecipeUpdateOne {
+	_u.mutation.ClearTotalCost()
+	return _u
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (_u *RecipeUpdateOne) SetCostPerPortion(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetCostPerPortion()
+	_u.mutation.SetCostPerPortion(v)
+	return _u
+}
+
+// SetNillableCostPerPortion sets the "cost_per_portion" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableCostPerPortion(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetCostPerPortion(*v)
+	}
+	return _u
+}
+
+// AddCostPerPortion adds value to the "cost_per_portion" field.
+func (_u *RecipeUpdateOne) AddCostPerPortion(v float64) *RecipeUpdateOne {
+	_u.mutation.AddCostPerPortion(v)
+	return _u
+}
+
+// ClearCostPerPortion clears the value of the "cost_per_portion" field.
+func (_u *RecipeUpdateOne) ClearCostPerPortion() *RecipeUpdateOne {
+	_u.mutation.ClearCostPerPortion()
+	return _u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_u *RecipeUpdateOne) SetTargetMarginPercent(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetTargetMarginPercent()
+	_u.mutation.SetTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableTargetMarginPercent(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddTargetMarginPercent adds value to the "target_margin_percent" field.
+func (_u *RecipeUpdateOne) AddTargetMarginPercent(v float64) *RecipeUpdateOne {
+	_u.mutation.AddTargetMarginPercent(v)
+	return _u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (_u *RecipeUpdateOne) ClearTargetMarginPercent() *RecipeUpdateOne {
+	_u.mutation.ClearTargetMarginPercent()
+	return _u
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (_u *RecipeUpdateOne) SetSuggestedPrice(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetSuggestedPrice()
+	_u.mutation.SetSuggestedPrice(v)
+	return _u
+}
+
+// SetNillableSuggestedPrice sets the "suggested_price" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableSuggestedPrice(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetSuggestedPrice(*v)
+	}
+	return _u
+}
+
+// AddSuggestedPrice adds value to the "suggested_price" field.
+func (_u *RecipeUpdateOne) AddSuggestedPrice(v float64) *RecipeUpdateOne {
+	_u.mutation.AddSuggestedPrice(v)
+	return _u
+}
+
+// ClearSuggestedPrice clears the value of the "suggested_price" field.
+func (_u *RecipeUpdateOne) ClearSuggestedPrice() *RecipeUpdateOne {
+	_u.mutation.ClearSuggestedPrice()
 	return _u
 }
 
@@ -684,6 +936,42 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TotalCost(); ok {
+		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCost(); ok {
+		_spec.AddField(recipe.FieldTotalCost, field.TypeFloat64, value)
+	}
+	if _u.mutation.TotalCostCleared() {
+		_spec.ClearField(recipe.FieldTotalCost, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CostPerPortion(); ok {
+		_spec.SetField(recipe.FieldCostPerPortion, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPerPortion(); ok {
+		_spec.AddField(recipe.FieldCostPerPortion, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPerPortionCleared() {
+		_spec.ClearField(recipe.FieldCostPerPortion, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(recipe.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetMarginPercent(); ok {
+		_spec.AddField(recipe.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetMarginPercentCleared() {
+		_spec.ClearField(recipe.FieldTargetMarginPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SuggestedPrice(); ok {
+		_spec.SetField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSuggestedPrice(); ok {
+		_spec.AddField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SuggestedPriceCleared() {
+		_spec.ClearField(recipe.FieldSuggestedPrice, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)

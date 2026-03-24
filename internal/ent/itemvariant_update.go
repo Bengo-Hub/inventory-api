@@ -93,6 +93,112 @@ func (_u *ItemVariantUpdate) AddPrice(v float64) *ItemVariantUpdate {
 	return _u
 }
 
+// SetAttributes sets the "attributes" field.
+func (_u *ItemVariantUpdate) SetAttributes(v map[string]string) *ItemVariantUpdate {
+	_u.mutation.SetAttributes(v)
+	return _u
+}
+
+// ClearAttributes clears the value of the "attributes" field.
+func (_u *ItemVariantUpdate) ClearAttributes() *ItemVariantUpdate {
+	_u.mutation.ClearAttributes()
+	return _u
+}
+
+// SetBarcode sets the "barcode" field.
+func (_u *ItemVariantUpdate) SetBarcode(v string) *ItemVariantUpdate {
+	_u.mutation.SetBarcode(v)
+	return _u
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_u *ItemVariantUpdate) SetNillableBarcode(v *string) *ItemVariantUpdate {
+	if v != nil {
+		_u.SetBarcode(*v)
+	}
+	return _u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (_u *ItemVariantUpdate) ClearBarcode() *ItemVariantUpdate {
+	_u.mutation.ClearBarcode()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *ItemVariantUpdate) SetImageURL(v string) *ItemVariantUpdate {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *ItemVariantUpdate) SetNillableImageURL(v *string) *ItemVariantUpdate {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *ItemVariantUpdate) ClearImageURL() *ItemVariantUpdate {
+	_u.mutation.ClearImageURL()
+	return _u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (_u *ItemVariantUpdate) SetCostPrice(v float64) *ItemVariantUpdate {
+	_u.mutation.ResetCostPrice()
+	_u.mutation.SetCostPrice(v)
+	return _u
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_u *ItemVariantUpdate) SetNillableCostPrice(v *float64) *ItemVariantUpdate {
+	if v != nil {
+		_u.SetCostPrice(*v)
+	}
+	return _u
+}
+
+// AddCostPrice adds value to the "cost_price" field.
+func (_u *ItemVariantUpdate) AddCostPrice(v float64) *ItemVariantUpdate {
+	_u.mutation.AddCostPrice(v)
+	return _u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (_u *ItemVariantUpdate) ClearCostPrice() *ItemVariantUpdate {
+	_u.mutation.ClearCostPrice()
+	return _u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_u *ItemVariantUpdate) SetWeightKg(v float64) *ItemVariantUpdate {
+	_u.mutation.ResetWeightKg()
+	_u.mutation.SetWeightKg(v)
+	return _u
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_u *ItemVariantUpdate) SetNillableWeightKg(v *float64) *ItemVariantUpdate {
+	if v != nil {
+		_u.SetWeightKg(*v)
+	}
+	return _u
+}
+
+// AddWeightKg adds value to the "weight_kg" field.
+func (_u *ItemVariantUpdate) AddWeightKg(v float64) *ItemVariantUpdate {
+	_u.mutation.AddWeightKg(v)
+	return _u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (_u *ItemVariantUpdate) ClearWeightKg() *ItemVariantUpdate {
+	_u.mutation.ClearWeightKg()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemVariantUpdate) SetIsActive(v bool) *ItemVariantUpdate {
 	_u.mutation.SetIsActive(v)
@@ -206,6 +312,42 @@ func (_u *ItemVariantUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.AddedPrice(); ok {
 		_spec.AddField(itemvariant.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Attributes(); ok {
+		_spec.SetField(itemvariant.FieldAttributes, field.TypeJSON, value)
+	}
+	if _u.mutation.AttributesCleared() {
+		_spec.ClearField(itemvariant.FieldAttributes, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Barcode(); ok {
+		_spec.SetField(itemvariant.FieldBarcode, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeCleared() {
+		_spec.ClearField(itemvariant.FieldBarcode, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(itemvariant.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(itemvariant.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.CostPrice(); ok {
+		_spec.SetField(itemvariant.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPrice(); ok {
+		_spec.AddField(itemvariant.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPriceCleared() {
+		_spec.ClearField(itemvariant.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.WeightKg(); ok {
+		_spec.SetField(itemvariant.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightKg(); ok {
+		_spec.AddField(itemvariant.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightKgCleared() {
+		_spec.ClearField(itemvariant.FieldWeightKg, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemvariant.FieldIsActive, field.TypeBool, value)
@@ -322,6 +464,112 @@ func (_u *ItemVariantUpdateOne) SetNillablePrice(v *float64) *ItemVariantUpdateO
 // AddPrice adds value to the "price" field.
 func (_u *ItemVariantUpdateOne) AddPrice(v float64) *ItemVariantUpdateOne {
 	_u.mutation.AddPrice(v)
+	return _u
+}
+
+// SetAttributes sets the "attributes" field.
+func (_u *ItemVariantUpdateOne) SetAttributes(v map[string]string) *ItemVariantUpdateOne {
+	_u.mutation.SetAttributes(v)
+	return _u
+}
+
+// ClearAttributes clears the value of the "attributes" field.
+func (_u *ItemVariantUpdateOne) ClearAttributes() *ItemVariantUpdateOne {
+	_u.mutation.ClearAttributes()
+	return _u
+}
+
+// SetBarcode sets the "barcode" field.
+func (_u *ItemVariantUpdateOne) SetBarcode(v string) *ItemVariantUpdateOne {
+	_u.mutation.SetBarcode(v)
+	return _u
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_u *ItemVariantUpdateOne) SetNillableBarcode(v *string) *ItemVariantUpdateOne {
+	if v != nil {
+		_u.SetBarcode(*v)
+	}
+	return _u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (_u *ItemVariantUpdateOne) ClearBarcode() *ItemVariantUpdateOne {
+	_u.mutation.ClearBarcode()
+	return _u
+}
+
+// SetImageURL sets the "image_url" field.
+func (_u *ItemVariantUpdateOne) SetImageURL(v string) *ItemVariantUpdateOne {
+	_u.mutation.SetImageURL(v)
+	return _u
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_u *ItemVariantUpdateOne) SetNillableImageURL(v *string) *ItemVariantUpdateOne {
+	if v != nil {
+		_u.SetImageURL(*v)
+	}
+	return _u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (_u *ItemVariantUpdateOne) ClearImageURL() *ItemVariantUpdateOne {
+	_u.mutation.ClearImageURL()
+	return _u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (_u *ItemVariantUpdateOne) SetCostPrice(v float64) *ItemVariantUpdateOne {
+	_u.mutation.ResetCostPrice()
+	_u.mutation.SetCostPrice(v)
+	return _u
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_u *ItemVariantUpdateOne) SetNillableCostPrice(v *float64) *ItemVariantUpdateOne {
+	if v != nil {
+		_u.SetCostPrice(*v)
+	}
+	return _u
+}
+
+// AddCostPrice adds value to the "cost_price" field.
+func (_u *ItemVariantUpdateOne) AddCostPrice(v float64) *ItemVariantUpdateOne {
+	_u.mutation.AddCostPrice(v)
+	return _u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (_u *ItemVariantUpdateOne) ClearCostPrice() *ItemVariantUpdateOne {
+	_u.mutation.ClearCostPrice()
+	return _u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_u *ItemVariantUpdateOne) SetWeightKg(v float64) *ItemVariantUpdateOne {
+	_u.mutation.ResetWeightKg()
+	_u.mutation.SetWeightKg(v)
+	return _u
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_u *ItemVariantUpdateOne) SetNillableWeightKg(v *float64) *ItemVariantUpdateOne {
+	if v != nil {
+		_u.SetWeightKg(*v)
+	}
+	return _u
+}
+
+// AddWeightKg adds value to the "weight_kg" field.
+func (_u *ItemVariantUpdateOne) AddWeightKg(v float64) *ItemVariantUpdateOne {
+	_u.mutation.AddWeightKg(v)
+	return _u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (_u *ItemVariantUpdateOne) ClearWeightKg() *ItemVariantUpdateOne {
+	_u.mutation.ClearWeightKg()
 	return _u
 }
 
@@ -468,6 +716,42 @@ func (_u *ItemVariantUpdateOne) sqlSave(ctx context.Context) (_node *ItemVariant
 	}
 	if value, ok := _u.mutation.AddedPrice(); ok {
 		_spec.AddField(itemvariant.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Attributes(); ok {
+		_spec.SetField(itemvariant.FieldAttributes, field.TypeJSON, value)
+	}
+	if _u.mutation.AttributesCleared() {
+		_spec.ClearField(itemvariant.FieldAttributes, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Barcode(); ok {
+		_spec.SetField(itemvariant.FieldBarcode, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeCleared() {
+		_spec.ClearField(itemvariant.FieldBarcode, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImageURL(); ok {
+		_spec.SetField(itemvariant.FieldImageURL, field.TypeString, value)
+	}
+	if _u.mutation.ImageURLCleared() {
+		_spec.ClearField(itemvariant.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.CostPrice(); ok {
+		_spec.SetField(itemvariant.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPrice(); ok {
+		_spec.AddField(itemvariant.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPriceCleared() {
+		_spec.ClearField(itemvariant.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.WeightKg(); ok {
+		_spec.SetField(itemvariant.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightKg(); ok {
+		_spec.AddField(itemvariant.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightKgCleared() {
+		_spec.ClearField(itemvariant.FieldWeightKg, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemvariant.FieldIsActive, field.TypeBool, value)

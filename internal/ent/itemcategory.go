@@ -21,12 +21,24 @@ type ItemCategory struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// Owning tenant
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
+	// Parent category for hierarchy; nil = root category
+	ParentID *uuid.UUID `json:"parent_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Short code for SKU generation (e.g. BEV, PST)
 	Code string `json:"code,omitempty"`
+	// URL-safe slug for frontend routing
+	Slug string `json:"slug,omitempty"`
+	// Emoji or icon class name for display
+	Icon string `json:"icon,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// Nesting depth, 0 = root
+	Depth int `json:"depth,omitempty"`
+	// Materialized path: root-id/parent-id/self-id for efficient tree queries
+	Path string `json:"path,omitempty"`
+	// Display ordering within the same parent
+	SortOrder int `json:"sort_order,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -43,11 +55,17 @@ type ItemCategory struct {
 type ItemCategoryEdges struct {
 	// Items holds the value of the items edge.
 	Items []*Item `json:"items,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *ItemCategory `json:"parent,omitempty"`
+	// Children holds the value of the children edge.
+	Children []*ItemCategory `json:"children,omitempty"`
+	// CustomFieldDefinitions holds the value of the custom_field_definitions edge.
+	CustomFieldDefinitions []*CustomFieldDefinition `json:"custom_field_definitions,omitempty"`
 	// Tenant holds the value of the tenant edge.
 	Tenant *Tenant `json:"tenant,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [5]bool
 }
 
 // ItemsOrErr returns the Items value or an error if the edge
@@ -59,12 +77,41 @@ func (e ItemCategoryEdges) ItemsOrErr() ([]*Item, error) {
 	return nil, &NotLoadedError{edge: "items"}
 }
 
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemCategoryEdges) ParentOrErr() (*ItemCategory, error) {
+	if e.Parent != nil {
+		return e.Parent, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: itemcategory.Label}
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// ChildrenOrErr returns the Children value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemCategoryEdges) ChildrenOrErr() ([]*ItemCategory, error) {
+	if e.loadedTypes[2] {
+		return e.Children, nil
+	}
+	return nil, &NotLoadedError{edge: "children"}
+}
+
+// CustomFieldDefinitionsOrErr returns the CustomFieldDefinitions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemCategoryEdges) CustomFieldDefinitionsOrErr() ([]*CustomFieldDefinition, error) {
+	if e.loadedTypes[3] {
+		return e.CustomFieldDefinitions, nil
+	}
+	return nil, &NotLoadedError{edge: "custom_field_definitions"}
+}
+
 // TenantOrErr returns the Tenant value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemCategoryEdges) TenantOrErr() (*Tenant, error) {
 	if e.Tenant != nil {
 		return e.Tenant, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: tenant.Label}
 	}
 	return nil, &NotLoadedError{edge: "tenant"}
@@ -75,9 +122,13 @@ func (*ItemCategory) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case itemcategory.FieldParentID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case itemcategory.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case itemcategory.FieldName, itemcategory.FieldCode, itemcategory.FieldDescription:
+		case itemcategory.FieldDepth, itemcategory.FieldSortOrder:
+			values[i] = new(sql.NullInt64)
+		case itemcategory.FieldName, itemcategory.FieldCode, itemcategory.FieldSlug, itemcategory.FieldIcon, itemcategory.FieldDescription, itemcategory.FieldPath:
 			values[i] = new(sql.NullString)
 		case itemcategory.FieldCreatedAt, itemcategory.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -110,6 +161,13 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.TenantID = *value
 			}
+		case itemcategory.FieldParentID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
+			} else if value.Valid {
+				_m.ParentID = new(uuid.UUID)
+				*_m.ParentID = *value.S.(*uuid.UUID)
+			}
 		case itemcategory.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -122,11 +180,41 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Code = value.String
 			}
+		case itemcategory.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				_m.Slug = value.String
+			}
+		case itemcategory.FieldIcon:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field icon", values[i])
+			} else if value.Valid {
+				_m.Icon = value.String
+			}
 		case itemcategory.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				_m.Description = value.String
+			}
+		case itemcategory.FieldDepth:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field depth", values[i])
+			} else if value.Valid {
+				_m.Depth = int(value.Int64)
+			}
+		case itemcategory.FieldPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field path", values[i])
+			} else if value.Valid {
+				_m.Path = value.String
+			}
+		case itemcategory.FieldSortOrder:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
+			} else if value.Valid {
+				_m.SortOrder = int(value.Int64)
 			}
 		case itemcategory.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -164,6 +252,21 @@ func (_m *ItemCategory) QueryItems() *ItemQuery {
 	return NewItemCategoryClient(_m.config).QueryItems(_m)
 }
 
+// QueryParent queries the "parent" edge of the ItemCategory entity.
+func (_m *ItemCategory) QueryParent() *ItemCategoryQuery {
+	return NewItemCategoryClient(_m.config).QueryParent(_m)
+}
+
+// QueryChildren queries the "children" edge of the ItemCategory entity.
+func (_m *ItemCategory) QueryChildren() *ItemCategoryQuery {
+	return NewItemCategoryClient(_m.config).QueryChildren(_m)
+}
+
+// QueryCustomFieldDefinitions queries the "custom_field_definitions" edge of the ItemCategory entity.
+func (_m *ItemCategory) QueryCustomFieldDefinitions() *CustomFieldDefinitionQuery {
+	return NewItemCategoryClient(_m.config).QueryCustomFieldDefinitions(_m)
+}
+
 // QueryTenant queries the "tenant" edge of the ItemCategory entity.
 func (_m *ItemCategory) QueryTenant() *TenantQuery {
 	return NewItemCategoryClient(_m.config).QueryTenant(_m)
@@ -195,14 +298,34 @@ func (_m *ItemCategory) String() string {
 	builder.WriteString("tenant_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
 	builder.WriteString(", ")
+	if v := _m.ParentID; v != nil {
+		builder.WriteString("parent_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("code=")
 	builder.WriteString(_m.Code)
 	builder.WriteString(", ")
+	builder.WriteString("slug=")
+	builder.WriteString(_m.Slug)
+	builder.WriteString(", ")
+	builder.WriteString("icon=")
+	builder.WriteString(_m.Icon)
+	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(_m.Description)
+	builder.WriteString(", ")
+	builder.WriteString("depth=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Depth))
+	builder.WriteString(", ")
+	builder.WriteString("path=")
+	builder.WriteString(_m.Path)
+	builder.WriteString(", ")
+	builder.WriteString("sort_order=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

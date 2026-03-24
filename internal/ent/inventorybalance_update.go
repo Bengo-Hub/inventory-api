@@ -171,6 +171,61 @@ func (_u *InventoryBalanceUpdate) AddReorderLevel(v int) *InventoryBalanceUpdate
 	return _u
 }
 
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (_u *InventoryBalanceUpdate) SetReorderQuantity(v int) *InventoryBalanceUpdate {
+	_u.mutation.ResetReorderQuantity()
+	_u.mutation.SetReorderQuantity(v)
+	return _u
+}
+
+// SetNillableReorderQuantity sets the "reorder_quantity" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillableReorderQuantity(v *int) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetReorderQuantity(*v)
+	}
+	return _u
+}
+
+// AddReorderQuantity adds value to the "reorder_quantity" field.
+func (_u *InventoryBalanceUpdate) AddReorderQuantity(v int) *InventoryBalanceUpdate {
+	_u.mutation.AddReorderQuantity(v)
+	return _u
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_u *InventoryBalanceUpdate) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceUpdate {
+	_u.mutation.SetPreferredSupplierID(v)
+	return _u
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillablePreferredSupplierID(v *uuid.UUID) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetPreferredSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (_u *InventoryBalanceUpdate) ClearPreferredSupplierID() *InventoryBalanceUpdate {
+	_u.mutation.ClearPreferredSupplierID()
+	return _u
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (_u *InventoryBalanceUpdate) SetAutoReorderEnabled(v bool) *InventoryBalanceUpdate {
+	_u.mutation.SetAutoReorderEnabled(v)
+	return _u
+}
+
+// SetNillableAutoReorderEnabled sets the "auto_reorder_enabled" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillableAutoReorderEnabled(v *bool) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetAutoReorderEnabled(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdate) SetUpdatedAt(v time.Time) *InventoryBalanceUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -292,6 +347,21 @@ func (_u *InventoryBalanceUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedReorderLevel(); ok {
 		_spec.AddField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ReorderQuantity(); ok {
+		_spec.SetField(inventorybalance.FieldReorderQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReorderQuantity(); ok {
+		_spec.AddField(inventorybalance.FieldReorderQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PreferredSupplierID(); ok {
+		_spec.SetField(inventorybalance.FieldPreferredSupplierID, field.TypeUUID, value)
+	}
+	if _u.mutation.PreferredSupplierIDCleared() {
+		_spec.ClearField(inventorybalance.FieldPreferredSupplierID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.AutoReorderEnabled(); ok {
+		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -514,6 +584,61 @@ func (_u *InventoryBalanceUpdateOne) AddReorderLevel(v int) *InventoryBalanceUpd
 	return _u
 }
 
+// SetReorderQuantity sets the "reorder_quantity" field.
+func (_u *InventoryBalanceUpdateOne) SetReorderQuantity(v int) *InventoryBalanceUpdateOne {
+	_u.mutation.ResetReorderQuantity()
+	_u.mutation.SetReorderQuantity(v)
+	return _u
+}
+
+// SetNillableReorderQuantity sets the "reorder_quantity" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillableReorderQuantity(v *int) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetReorderQuantity(*v)
+	}
+	return _u
+}
+
+// AddReorderQuantity adds value to the "reorder_quantity" field.
+func (_u *InventoryBalanceUpdateOne) AddReorderQuantity(v int) *InventoryBalanceUpdateOne {
+	_u.mutation.AddReorderQuantity(v)
+	return _u
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_u *InventoryBalanceUpdateOne) SetPreferredSupplierID(v uuid.UUID) *InventoryBalanceUpdateOne {
+	_u.mutation.SetPreferredSupplierID(v)
+	return _u
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillablePreferredSupplierID(v *uuid.UUID) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetPreferredSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (_u *InventoryBalanceUpdateOne) ClearPreferredSupplierID() *InventoryBalanceUpdateOne {
+	_u.mutation.ClearPreferredSupplierID()
+	return _u
+}
+
+// SetAutoReorderEnabled sets the "auto_reorder_enabled" field.
+func (_u *InventoryBalanceUpdateOne) SetAutoReorderEnabled(v bool) *InventoryBalanceUpdateOne {
+	_u.mutation.SetAutoReorderEnabled(v)
+	return _u
+}
+
+// SetNillableAutoReorderEnabled sets the "auto_reorder_enabled" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillableAutoReorderEnabled(v *bool) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetAutoReorderEnabled(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdateOne) SetUpdatedAt(v time.Time) *InventoryBalanceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -665,6 +790,21 @@ func (_u *InventoryBalanceUpdateOne) sqlSave(ctx context.Context) (_node *Invent
 	}
 	if value, ok := _u.mutation.AddedReorderLevel(); ok {
 		_spec.AddField(inventorybalance.FieldReorderLevel, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ReorderQuantity(); ok {
+		_spec.SetField(inventorybalance.FieldReorderQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReorderQuantity(); ok {
+		_spec.AddField(inventorybalance.FieldReorderQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PreferredSupplierID(); ok {
+		_spec.SetField(inventorybalance.FieldPreferredSupplierID, field.TypeUUID, value)
+	}
+	if _u.mutation.PreferredSupplierIDCleared() {
+		_spec.ClearField(inventorybalance.FieldPreferredSupplierID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.AutoReorderEnabled(); ok {
+		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)

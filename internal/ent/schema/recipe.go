@@ -41,6 +41,23 @@ func (Recipe) Fields() []ent.Field {
 			Comment("Unit for output: PORTION, KG, LITRE"),
 		field.Bool("is_active").
 			Default(true),
+		// Recipe costing (Phase 7.1)
+		field.Float("total_cost").
+			Optional().
+			Nillable().
+			Comment("Sum of ingredient costs, auto-calculated from ingredient cost_prices"),
+		field.Float("cost_per_portion").
+			Optional().
+			Nillable().
+			Comment("total_cost / output_qty"),
+		field.Float("target_margin_percent").
+			Optional().
+			Nillable().
+			Comment("Desired profit margin percentage"),
+		field.Float("suggested_price").
+			Optional().
+			Nillable().
+			Comment("cost_per_portion / (1 - margin) — auto-calculated"),
 		field.Int("prep_time_minutes").
 			Optional().
 			Nillable().

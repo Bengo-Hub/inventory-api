@@ -37,6 +37,10 @@ const (
 	EdgeBalances = "balances"
 	// EdgeReservations holds the string denoting the reservations edge name in mutations.
 	EdgeReservations = "reservations"
+	// EdgeLots holds the string denoting the lots edge name in mutations.
+	EdgeLots = "lots"
+	// EdgePurchaseOrders holds the string denoting the purchase_orders edge name in mutations.
+	EdgePurchaseOrders = "purchase_orders"
 	// Table holds the table name of the warehouse in the database.
 	Table = "warehouses"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -60,6 +64,20 @@ const (
 	ReservationsInverseTable = "reservations"
 	// ReservationsColumn is the table column denoting the reservations relation/edge.
 	ReservationsColumn = "warehouse_id"
+	// LotsTable is the table that holds the lots relation/edge.
+	LotsTable = "inventory_lots"
+	// LotsInverseTable is the table name for the InventoryLot entity.
+	// It exists in this package in order to avoid circular dependency with the "inventorylot" package.
+	LotsInverseTable = "inventory_lots"
+	// LotsColumn is the table column denoting the lots relation/edge.
+	LotsColumn = "warehouse_id"
+	// PurchaseOrdersTable is the table that holds the purchase_orders relation/edge.
+	PurchaseOrdersTable = "purchase_orders"
+	// PurchaseOrdersInverseTable is the table name for the PurchaseOrder entity.
+	// It exists in this package in order to avoid circular dependency with the "purchaseorder" package.
+	PurchaseOrdersInverseTable = "purchase_orders"
+	// PurchaseOrdersColumn is the table column denoting the purchase_orders relation/edge.
+	PurchaseOrdersColumn = "warehouse_id"
 )
 
 // Columns holds all SQL columns for warehouse fields.
@@ -186,6 +204,34 @@ func ByReservations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newReservationsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByLotsCount orders the results by lots count.
+func ByLotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLotsStep(), opts...)
+	}
+}
+
+// ByLots orders the results by lots terms.
+func ByLots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByPurchaseOrdersCount orders the results by purchase_orders count.
+func ByPurchaseOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPurchaseOrdersStep(), opts...)
+	}
+}
+
+// ByPurchaseOrders orders the results by purchase_orders terms.
+func ByPurchaseOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPurchaseOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -205,5 +251,19 @@ func newReservationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReservationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReservationsTable, ReservationsColumn),
+	)
+}
+func newLotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LotsTable, LotsColumn),
+	)
+}
+func newPurchaseOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PurchaseOrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PurchaseOrdersTable, PurchaseOrdersColumn),
 	)
 }

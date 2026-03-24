@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -162,6 +164,36 @@ func (_c *WarehouseCreate) AddReservations(v ...*Reservation) *WarehouseCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddReservationIDs(ids...)
+}
+
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_c *WarehouseCreate) AddLotIDs(ids ...uuid.UUID) *WarehouseCreate {
+	_c.mutation.AddLotIDs(ids...)
+	return _c
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_c *WarehouseCreate) AddLots(v ...*InventoryLot) *WarehouseCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddLotIDs(ids...)
+}
+
+// AddPurchaseOrderIDs adds the "purchase_orders" edge to the PurchaseOrder entity by IDs.
+func (_c *WarehouseCreate) AddPurchaseOrderIDs(ids ...uuid.UUID) *WarehouseCreate {
+	_c.mutation.AddPurchaseOrderIDs(ids...)
+	return _c
+}
+
+// AddPurchaseOrders adds the "purchase_orders" edges to the PurchaseOrder entity.
+func (_c *WarehouseCreate) AddPurchaseOrders(v ...*PurchaseOrder) *WarehouseCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPurchaseOrderIDs(ids...)
 }
 
 // Mutation returns the WarehouseMutation object of the builder.
@@ -363,6 +395,38 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(reservation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PurchaseOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

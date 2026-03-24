@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
@@ -42,6 +43,26 @@ func (_u *ItemCategoryUpdate) SetNillableTenantID(v *uuid.UUID) *ItemCategoryUpd
 	if v != nil {
 		_u.SetTenantID(*v)
 	}
+	return _u
+}
+
+// SetParentID sets the "parent_id" field.
+func (_u *ItemCategoryUpdate) SetParentID(v uuid.UUID) *ItemCategoryUpdate {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableParentID(v *uuid.UUID) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *ItemCategoryUpdate) ClearParentID() *ItemCategoryUpdate {
+	_u.mutation.ClearParentID()
 	return _u
 }
 
@@ -79,6 +100,46 @@ func (_u *ItemCategoryUpdate) ClearCode() *ItemCategoryUpdate {
 	return _u
 }
 
+// SetSlug sets the "slug" field.
+func (_u *ItemCategoryUpdate) SetSlug(v string) *ItemCategoryUpdate {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableSlug(v *string) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (_u *ItemCategoryUpdate) ClearSlug() *ItemCategoryUpdate {
+	_u.mutation.ClearSlug()
+	return _u
+}
+
+// SetIcon sets the "icon" field.
+func (_u *ItemCategoryUpdate) SetIcon(v string) *ItemCategoryUpdate {
+	_u.mutation.SetIcon(v)
+	return _u
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableIcon(v *string) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetIcon(*v)
+	}
+	return _u
+}
+
+// ClearIcon clears the value of the "icon" field.
+func (_u *ItemCategoryUpdate) ClearIcon() *ItemCategoryUpdate {
+	_u.mutation.ClearIcon()
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *ItemCategoryUpdate) SetDescription(v string) *ItemCategoryUpdate {
 	_u.mutation.SetDescription(v)
@@ -96,6 +157,68 @@ func (_u *ItemCategoryUpdate) SetNillableDescription(v *string) *ItemCategoryUpd
 // ClearDescription clears the value of the "description" field.
 func (_u *ItemCategoryUpdate) ClearDescription() *ItemCategoryUpdate {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetDepth sets the "depth" field.
+func (_u *ItemCategoryUpdate) SetDepth(v int) *ItemCategoryUpdate {
+	_u.mutation.ResetDepth()
+	_u.mutation.SetDepth(v)
+	return _u
+}
+
+// SetNillableDepth sets the "depth" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableDepth(v *int) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetDepth(*v)
+	}
+	return _u
+}
+
+// AddDepth adds value to the "depth" field.
+func (_u *ItemCategoryUpdate) AddDepth(v int) *ItemCategoryUpdate {
+	_u.mutation.AddDepth(v)
+	return _u
+}
+
+// SetPath sets the "path" field.
+func (_u *ItemCategoryUpdate) SetPath(v string) *ItemCategoryUpdate {
+	_u.mutation.SetPath(v)
+	return _u
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillablePath(v *string) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// ClearPath clears the value of the "path" field.
+func (_u *ItemCategoryUpdate) ClearPath() *ItemCategoryUpdate {
+	_u.mutation.ClearPath()
+	return _u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_u *ItemCategoryUpdate) SetSortOrder(v int) *ItemCategoryUpdate {
+	_u.mutation.ResetSortOrder()
+	_u.mutation.SetSortOrder(v)
+	return _u
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableSortOrder(v *int) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetSortOrder(*v)
+	}
+	return _u
+}
+
+// AddSortOrder adds value to the "sort_order" field.
+func (_u *ItemCategoryUpdate) AddSortOrder(v int) *ItemCategoryUpdate {
+	_u.mutation.AddSortOrder(v)
 	return _u
 }
 
@@ -134,6 +257,41 @@ func (_u *ItemCategoryUpdate) AddItems(v ...*Item) *ItemCategoryUpdate {
 	return _u.AddItemIDs(ids...)
 }
 
+// SetParent sets the "parent" edge to the ItemCategory entity.
+func (_u *ItemCategoryUpdate) SetParent(v *ItemCategory) *ItemCategoryUpdate {
+	return _u.SetParentID(v.ID)
+}
+
+// AddChildIDs adds the "children" edge to the ItemCategory entity by IDs.
+func (_u *ItemCategoryUpdate) AddChildIDs(ids ...uuid.UUID) *ItemCategoryUpdate {
+	_u.mutation.AddChildIDs(ids...)
+	return _u
+}
+
+// AddChildren adds the "children" edges to the ItemCategory entity.
+func (_u *ItemCategoryUpdate) AddChildren(v ...*ItemCategory) *ItemCategoryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddChildIDs(ids...)
+}
+
+// AddCustomFieldDefinitionIDs adds the "custom_field_definitions" edge to the CustomFieldDefinition entity by IDs.
+func (_u *ItemCategoryUpdate) AddCustomFieldDefinitionIDs(ids ...uuid.UUID) *ItemCategoryUpdate {
+	_u.mutation.AddCustomFieldDefinitionIDs(ids...)
+	return _u
+}
+
+// AddCustomFieldDefinitions adds the "custom_field_definitions" edges to the CustomFieldDefinition entity.
+func (_u *ItemCategoryUpdate) AddCustomFieldDefinitions(v ...*CustomFieldDefinition) *ItemCategoryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCustomFieldDefinitionIDs(ids...)
+}
+
 // SetTenant sets the "tenant" edge to the Tenant entity.
 func (_u *ItemCategoryUpdate) SetTenant(v *Tenant) *ItemCategoryUpdate {
 	return _u.SetTenantID(v.ID)
@@ -163,6 +321,54 @@ func (_u *ItemCategoryUpdate) RemoveItems(v ...*Item) *ItemCategoryUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the ItemCategory entity.
+func (_u *ItemCategoryUpdate) ClearParent() *ItemCategoryUpdate {
+	_u.mutation.ClearParent()
+	return _u
+}
+
+// ClearChildren clears all "children" edges to the ItemCategory entity.
+func (_u *ItemCategoryUpdate) ClearChildren() *ItemCategoryUpdate {
+	_u.mutation.ClearChildren()
+	return _u
+}
+
+// RemoveChildIDs removes the "children" edge to ItemCategory entities by IDs.
+func (_u *ItemCategoryUpdate) RemoveChildIDs(ids ...uuid.UUID) *ItemCategoryUpdate {
+	_u.mutation.RemoveChildIDs(ids...)
+	return _u
+}
+
+// RemoveChildren removes "children" edges to ItemCategory entities.
+func (_u *ItemCategoryUpdate) RemoveChildren(v ...*ItemCategory) *ItemCategoryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveChildIDs(ids...)
+}
+
+// ClearCustomFieldDefinitions clears all "custom_field_definitions" edges to the CustomFieldDefinition entity.
+func (_u *ItemCategoryUpdate) ClearCustomFieldDefinitions() *ItemCategoryUpdate {
+	_u.mutation.ClearCustomFieldDefinitions()
+	return _u
+}
+
+// RemoveCustomFieldDefinitionIDs removes the "custom_field_definitions" edge to CustomFieldDefinition entities by IDs.
+func (_u *ItemCategoryUpdate) RemoveCustomFieldDefinitionIDs(ids ...uuid.UUID) *ItemCategoryUpdate {
+	_u.mutation.RemoveCustomFieldDefinitionIDs(ids...)
+	return _u
+}
+
+// RemoveCustomFieldDefinitions removes "custom_field_definitions" edges to CustomFieldDefinition entities.
+func (_u *ItemCategoryUpdate) RemoveCustomFieldDefinitions(v ...*CustomFieldDefinition) *ItemCategoryUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCustomFieldDefinitionIDs(ids...)
 }
 
 // ClearTenant clears the "tenant" edge to the Tenant entity.
@@ -246,11 +452,41 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if _u.mutation.CodeCleared() {
 		_spec.ClearField(itemcategory.FieldCode, field.TypeString)
 	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(itemcategory.FieldSlug, field.TypeString, value)
+	}
+	if _u.mutation.SlugCleared() {
+		_spec.ClearField(itemcategory.FieldSlug, field.TypeString)
+	}
+	if value, ok := _u.mutation.Icon(); ok {
+		_spec.SetField(itemcategory.FieldIcon, field.TypeString, value)
+	}
+	if _u.mutation.IconCleared() {
+		_spec.ClearField(itemcategory.FieldIcon, field.TypeString)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(itemcategory.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.Depth(); ok {
+		_spec.SetField(itemcategory.FieldDepth, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDepth(); ok {
+		_spec.AddField(itemcategory.FieldDepth, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Path(); ok {
+		_spec.SetField(itemcategory.FieldPath, field.TypeString, value)
+	}
+	if _u.mutation.PathCleared() {
+		_spec.ClearField(itemcategory.FieldPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.SortOrder(); ok {
+		_spec.SetField(itemcategory.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSortOrder(); ok {
+		_spec.AddField(itemcategory.FieldSortOrder, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -296,6 +532,125 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   itemcategory.ParentTable,
+			Columns: []string{itemcategory.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   itemcategory.ParentTable,
+			Columns: []string{itemcategory.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !_u.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CustomFieldDefinitionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCustomFieldDefinitionsIDs(); len(nodes) > 0 && !_u.mutation.CustomFieldDefinitionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CustomFieldDefinitionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -366,6 +721,26 @@ func (_u *ItemCategoryUpdateOne) SetNillableTenantID(v *uuid.UUID) *ItemCategory
 	return _u
 }
 
+// SetParentID sets the "parent_id" field.
+func (_u *ItemCategoryUpdateOne) SetParentID(v uuid.UUID) *ItemCategoryUpdateOne {
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableParentID(v *uuid.UUID) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (_u *ItemCategoryUpdateOne) ClearParentID() *ItemCategoryUpdateOne {
+	_u.mutation.ClearParentID()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ItemCategoryUpdateOne) SetName(v string) *ItemCategoryUpdateOne {
 	_u.mutation.SetName(v)
@@ -400,6 +775,46 @@ func (_u *ItemCategoryUpdateOne) ClearCode() *ItemCategoryUpdateOne {
 	return _u
 }
 
+// SetSlug sets the "slug" field.
+func (_u *ItemCategoryUpdateOne) SetSlug(v string) *ItemCategoryUpdateOne {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableSlug(v *string) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (_u *ItemCategoryUpdateOne) ClearSlug() *ItemCategoryUpdateOne {
+	_u.mutation.ClearSlug()
+	return _u
+}
+
+// SetIcon sets the "icon" field.
+func (_u *ItemCategoryUpdateOne) SetIcon(v string) *ItemCategoryUpdateOne {
+	_u.mutation.SetIcon(v)
+	return _u
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableIcon(v *string) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetIcon(*v)
+	}
+	return _u
+}
+
+// ClearIcon clears the value of the "icon" field.
+func (_u *ItemCategoryUpdateOne) ClearIcon() *ItemCategoryUpdateOne {
+	_u.mutation.ClearIcon()
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *ItemCategoryUpdateOne) SetDescription(v string) *ItemCategoryUpdateOne {
 	_u.mutation.SetDescription(v)
@@ -417,6 +832,68 @@ func (_u *ItemCategoryUpdateOne) SetNillableDescription(v *string) *ItemCategory
 // ClearDescription clears the value of the "description" field.
 func (_u *ItemCategoryUpdateOne) ClearDescription() *ItemCategoryUpdateOne {
 	_u.mutation.ClearDescription()
+	return _u
+}
+
+// SetDepth sets the "depth" field.
+func (_u *ItemCategoryUpdateOne) SetDepth(v int) *ItemCategoryUpdateOne {
+	_u.mutation.ResetDepth()
+	_u.mutation.SetDepth(v)
+	return _u
+}
+
+// SetNillableDepth sets the "depth" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableDepth(v *int) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetDepth(*v)
+	}
+	return _u
+}
+
+// AddDepth adds value to the "depth" field.
+func (_u *ItemCategoryUpdateOne) AddDepth(v int) *ItemCategoryUpdateOne {
+	_u.mutation.AddDepth(v)
+	return _u
+}
+
+// SetPath sets the "path" field.
+func (_u *ItemCategoryUpdateOne) SetPath(v string) *ItemCategoryUpdateOne {
+	_u.mutation.SetPath(v)
+	return _u
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillablePath(v *string) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetPath(*v)
+	}
+	return _u
+}
+
+// ClearPath clears the value of the "path" field.
+func (_u *ItemCategoryUpdateOne) ClearPath() *ItemCategoryUpdateOne {
+	_u.mutation.ClearPath()
+	return _u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_u *ItemCategoryUpdateOne) SetSortOrder(v int) *ItemCategoryUpdateOne {
+	_u.mutation.ResetSortOrder()
+	_u.mutation.SetSortOrder(v)
+	return _u
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableSortOrder(v *int) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetSortOrder(*v)
+	}
+	return _u
+}
+
+// AddSortOrder adds value to the "sort_order" field.
+func (_u *ItemCategoryUpdateOne) AddSortOrder(v int) *ItemCategoryUpdateOne {
+	_u.mutation.AddSortOrder(v)
 	return _u
 }
 
@@ -455,6 +932,41 @@ func (_u *ItemCategoryUpdateOne) AddItems(v ...*Item) *ItemCategoryUpdateOne {
 	return _u.AddItemIDs(ids...)
 }
 
+// SetParent sets the "parent" edge to the ItemCategory entity.
+func (_u *ItemCategoryUpdateOne) SetParent(v *ItemCategory) *ItemCategoryUpdateOne {
+	return _u.SetParentID(v.ID)
+}
+
+// AddChildIDs adds the "children" edge to the ItemCategory entity by IDs.
+func (_u *ItemCategoryUpdateOne) AddChildIDs(ids ...uuid.UUID) *ItemCategoryUpdateOne {
+	_u.mutation.AddChildIDs(ids...)
+	return _u
+}
+
+// AddChildren adds the "children" edges to the ItemCategory entity.
+func (_u *ItemCategoryUpdateOne) AddChildren(v ...*ItemCategory) *ItemCategoryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddChildIDs(ids...)
+}
+
+// AddCustomFieldDefinitionIDs adds the "custom_field_definitions" edge to the CustomFieldDefinition entity by IDs.
+func (_u *ItemCategoryUpdateOne) AddCustomFieldDefinitionIDs(ids ...uuid.UUID) *ItemCategoryUpdateOne {
+	_u.mutation.AddCustomFieldDefinitionIDs(ids...)
+	return _u
+}
+
+// AddCustomFieldDefinitions adds the "custom_field_definitions" edges to the CustomFieldDefinition entity.
+func (_u *ItemCategoryUpdateOne) AddCustomFieldDefinitions(v ...*CustomFieldDefinition) *ItemCategoryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCustomFieldDefinitionIDs(ids...)
+}
+
 // SetTenant sets the "tenant" edge to the Tenant entity.
 func (_u *ItemCategoryUpdateOne) SetTenant(v *Tenant) *ItemCategoryUpdateOne {
 	return _u.SetTenantID(v.ID)
@@ -484,6 +996,54 @@ func (_u *ItemCategoryUpdateOne) RemoveItems(v ...*Item) *ItemCategoryUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearParent clears the "parent" edge to the ItemCategory entity.
+func (_u *ItemCategoryUpdateOne) ClearParent() *ItemCategoryUpdateOne {
+	_u.mutation.ClearParent()
+	return _u
+}
+
+// ClearChildren clears all "children" edges to the ItemCategory entity.
+func (_u *ItemCategoryUpdateOne) ClearChildren() *ItemCategoryUpdateOne {
+	_u.mutation.ClearChildren()
+	return _u
+}
+
+// RemoveChildIDs removes the "children" edge to ItemCategory entities by IDs.
+func (_u *ItemCategoryUpdateOne) RemoveChildIDs(ids ...uuid.UUID) *ItemCategoryUpdateOne {
+	_u.mutation.RemoveChildIDs(ids...)
+	return _u
+}
+
+// RemoveChildren removes "children" edges to ItemCategory entities.
+func (_u *ItemCategoryUpdateOne) RemoveChildren(v ...*ItemCategory) *ItemCategoryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveChildIDs(ids...)
+}
+
+// ClearCustomFieldDefinitions clears all "custom_field_definitions" edges to the CustomFieldDefinition entity.
+func (_u *ItemCategoryUpdateOne) ClearCustomFieldDefinitions() *ItemCategoryUpdateOne {
+	_u.mutation.ClearCustomFieldDefinitions()
+	return _u
+}
+
+// RemoveCustomFieldDefinitionIDs removes the "custom_field_definitions" edge to CustomFieldDefinition entities by IDs.
+func (_u *ItemCategoryUpdateOne) RemoveCustomFieldDefinitionIDs(ids ...uuid.UUID) *ItemCategoryUpdateOne {
+	_u.mutation.RemoveCustomFieldDefinitionIDs(ids...)
+	return _u
+}
+
+// RemoveCustomFieldDefinitions removes "custom_field_definitions" edges to CustomFieldDefinition entities.
+func (_u *ItemCategoryUpdateOne) RemoveCustomFieldDefinitions(v ...*CustomFieldDefinition) *ItemCategoryUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCustomFieldDefinitionIDs(ids...)
 }
 
 // ClearTenant clears the "tenant" edge to the Tenant entity.
@@ -597,11 +1157,41 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 	if _u.mutation.CodeCleared() {
 		_spec.ClearField(itemcategory.FieldCode, field.TypeString)
 	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(itemcategory.FieldSlug, field.TypeString, value)
+	}
+	if _u.mutation.SlugCleared() {
+		_spec.ClearField(itemcategory.FieldSlug, field.TypeString)
+	}
+	if value, ok := _u.mutation.Icon(); ok {
+		_spec.SetField(itemcategory.FieldIcon, field.TypeString, value)
+	}
+	if _u.mutation.IconCleared() {
+		_spec.ClearField(itemcategory.FieldIcon, field.TypeString)
+	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(itemcategory.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.Depth(); ok {
+		_spec.SetField(itemcategory.FieldDepth, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDepth(); ok {
+		_spec.AddField(itemcategory.FieldDepth, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Path(); ok {
+		_spec.SetField(itemcategory.FieldPath, field.TypeString, value)
+	}
+	if _u.mutation.PathCleared() {
+		_spec.ClearField(itemcategory.FieldPath, field.TypeString)
+	}
+	if value, ok := _u.mutation.SortOrder(); ok {
+		_spec.SetField(itemcategory.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSortOrder(); ok {
+		_spec.AddField(itemcategory.FieldSortOrder, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -647,6 +1237,125 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ParentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   itemcategory.ParentTable,
+			Columns: []string{itemcategory.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   itemcategory.ParentTable,
+			Columns: []string{itemcategory.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedChildrenIDs(); len(nodes) > 0 && !_u.mutation.ChildrenCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CustomFieldDefinitionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCustomFieldDefinitionsIDs(); len(nodes) > 0 && !_u.mutation.CustomFieldDefinitionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CustomFieldDefinitionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

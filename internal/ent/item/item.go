@@ -34,6 +34,26 @@ const (
 	FieldIsActive = "is_active"
 	// FieldImageURL holds the string denoting the image_url field in the database.
 	FieldImageURL = "image_url"
+	// FieldBarcode holds the string denoting the barcode field in the database.
+	FieldBarcode = "barcode"
+	// FieldBarcodeType holds the string denoting the barcode_type field in the database.
+	FieldBarcodeType = "barcode_type"
+	// FieldRequiresAgeVerification holds the string denoting the requires_age_verification field in the database.
+	FieldRequiresAgeVerification = "requires_age_verification"
+	// FieldIsControlledSubstance holds the string denoting the is_controlled_substance field in the database.
+	FieldIsControlledSubstance = "is_controlled_substance"
+	// FieldIsPerishable holds the string denoting the is_perishable field in the database.
+	FieldIsPerishable = "is_perishable"
+	// FieldTrackSerialNumbers holds the string denoting the track_serial_numbers field in the database.
+	FieldTrackSerialNumbers = "track_serial_numbers"
+	// FieldTrackLots holds the string denoting the track_lots field in the database.
+	FieldTrackLots = "track_lots"
+	// FieldWeightKg holds the string denoting the weight_kg field in the database.
+	FieldWeightKg = "weight_kg"
+	// FieldDimensionsCm holds the string denoting the dimensions_cm field in the database.
+	FieldDimensionsCm = "dimensions_cm"
+	// FieldDurationMinutes holds the string denoting the duration_minutes field in the database.
+	FieldDurationMinutes = "duration_minutes"
 	// FieldTags holds the string denoting the tags field in the database.
 	FieldTags = "tags"
 	// FieldMetadata holds the string denoting the metadata field in the database.
@@ -58,6 +78,16 @@ const (
 	EdgeTranslations = "translations"
 	// EdgeModifierGroups holds the string denoting the modifier_groups edge name in mutations.
 	EdgeModifierGroups = "modifier_groups"
+	// EdgeLots holds the string denoting the lots edge name in mutations.
+	EdgeLots = "lots"
+	// EdgeCustomFieldValues holds the string denoting the custom_field_values edge name in mutations.
+	EdgeCustomFieldValues = "custom_field_values"
+	// EdgeBundle holds the string denoting the bundle edge name in mutations.
+	EdgeBundle = "bundle"
+	// EdgeBundleComponents holds the string denoting the bundle_components edge name in mutations.
+	EdgeBundleComponents = "bundle_components"
+	// EdgeWarranties holds the string denoting the warranties edge name in mutations.
+	EdgeWarranties = "warranties"
 	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
 	EdgeItemCategory = "item_category"
 	// Table holds the table name of the item in the database.
@@ -118,6 +148,41 @@ const (
 	ModifierGroupsInverseTable = "modifier_groups"
 	// ModifierGroupsColumn is the table column denoting the modifier_groups relation/edge.
 	ModifierGroupsColumn = "item_id"
+	// LotsTable is the table that holds the lots relation/edge.
+	LotsTable = "inventory_lots"
+	// LotsInverseTable is the table name for the InventoryLot entity.
+	// It exists in this package in order to avoid circular dependency with the "inventorylot" package.
+	LotsInverseTable = "inventory_lots"
+	// LotsColumn is the table column denoting the lots relation/edge.
+	LotsColumn = "item_id"
+	// CustomFieldValuesTable is the table that holds the custom_field_values relation/edge.
+	CustomFieldValuesTable = "custom_field_values"
+	// CustomFieldValuesInverseTable is the table name for the CustomFieldValue entity.
+	// It exists in this package in order to avoid circular dependency with the "customfieldvalue" package.
+	CustomFieldValuesInverseTable = "custom_field_values"
+	// CustomFieldValuesColumn is the table column denoting the custom_field_values relation/edge.
+	CustomFieldValuesColumn = "item_id"
+	// BundleTable is the table that holds the bundle relation/edge.
+	BundleTable = "bundles"
+	// BundleInverseTable is the table name for the Bundle entity.
+	// It exists in this package in order to avoid circular dependency with the "bundle" package.
+	BundleInverseTable = "bundles"
+	// BundleColumn is the table column denoting the bundle relation/edge.
+	BundleColumn = "item_id"
+	// BundleComponentsTable is the table that holds the bundle_components relation/edge.
+	BundleComponentsTable = "bundle_components"
+	// BundleComponentsInverseTable is the table name for the BundleComponent entity.
+	// It exists in this package in order to avoid circular dependency with the "bundlecomponent" package.
+	BundleComponentsInverseTable = "bundle_components"
+	// BundleComponentsColumn is the table column denoting the bundle_components relation/edge.
+	BundleComponentsColumn = "component_item_id"
+	// WarrantiesTable is the table that holds the warranties relation/edge.
+	WarrantiesTable = "warranties"
+	// WarrantiesInverseTable is the table name for the Warranty entity.
+	// It exists in this package in order to avoid circular dependency with the "warranty" package.
+	WarrantiesInverseTable = "warranties"
+	// WarrantiesColumn is the table column denoting the warranties relation/edge.
+	WarrantiesColumn = "item_id"
 	// ItemCategoryTable is the table that holds the item_category relation/edge.
 	ItemCategoryTable = "items"
 	// ItemCategoryInverseTable is the table name for the ItemCategory entity.
@@ -139,6 +204,16 @@ var Columns = []string{
 	FieldType,
 	FieldIsActive,
 	FieldImageURL,
+	FieldBarcode,
+	FieldBarcodeType,
+	FieldRequiresAgeVerification,
+	FieldIsControlledSubstance,
+	FieldIsPerishable,
+	FieldTrackSerialNumbers,
+	FieldTrackLots,
+	FieldWeightKg,
+	FieldDimensionsCm,
+	FieldDurationMinutes,
 	FieldTags,
 	FieldMetadata,
 	FieldCreatedAt,
@@ -162,6 +237,16 @@ var (
 	NameValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultRequiresAgeVerification holds the default value on creation for the "requires_age_verification" field.
+	DefaultRequiresAgeVerification bool
+	// DefaultIsControlledSubstance holds the default value on creation for the "is_controlled_substance" field.
+	DefaultIsControlledSubstance bool
+	// DefaultIsPerishable holds the default value on creation for the "is_perishable" field.
+	DefaultIsPerishable bool
+	// DefaultTrackSerialNumbers holds the default value on creation for the "track_serial_numbers" field.
+	DefaultTrackSerialNumbers bool
+	// DefaultTrackLots holds the default value on creation for the "track_lots" field.
+	DefaultTrackLots bool
 	// DefaultTags holds the default value on creation for the "tags" field.
 	DefaultTags []string
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
@@ -257,6 +342,51 @@ func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 // ByImageURL orders the results by the image_url field.
 func ByImageURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImageURL, opts...).ToFunc()
+}
+
+// ByBarcode orders the results by the barcode field.
+func ByBarcode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBarcode, opts...).ToFunc()
+}
+
+// ByBarcodeType orders the results by the barcode_type field.
+func ByBarcodeType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBarcodeType, opts...).ToFunc()
+}
+
+// ByRequiresAgeVerification orders the results by the requires_age_verification field.
+func ByRequiresAgeVerification(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequiresAgeVerification, opts...).ToFunc()
+}
+
+// ByIsControlledSubstance orders the results by the is_controlled_substance field.
+func ByIsControlledSubstance(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsControlledSubstance, opts...).ToFunc()
+}
+
+// ByIsPerishable orders the results by the is_perishable field.
+func ByIsPerishable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsPerishable, opts...).ToFunc()
+}
+
+// ByTrackSerialNumbers orders the results by the track_serial_numbers field.
+func ByTrackSerialNumbers(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackSerialNumbers, opts...).ToFunc()
+}
+
+// ByTrackLots orders the results by the track_lots field.
+func ByTrackLots(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackLots, opts...).ToFunc()
+}
+
+// ByWeightKg orders the results by the weight_kg field.
+func ByWeightKg(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeightKg, opts...).ToFunc()
+}
+
+// ByDurationMinutes orders the results by the duration_minutes field.
+func ByDurationMinutes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDurationMinutes, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
@@ -367,6 +497,69 @@ func ByModifierGroups(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByLotsCount orders the results by lots count.
+func ByLotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLotsStep(), opts...)
+	}
+}
+
+// ByLots orders the results by lots terms.
+func ByLots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByCustomFieldValuesCount orders the results by custom_field_values count.
+func ByCustomFieldValuesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCustomFieldValuesStep(), opts...)
+	}
+}
+
+// ByCustomFieldValues orders the results by custom_field_values terms.
+func ByCustomFieldValues(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCustomFieldValuesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByBundleField orders the results by bundle field.
+func ByBundleField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBundleStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByBundleComponentsCount orders the results by bundle_components count.
+func ByBundleComponentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBundleComponentsStep(), opts...)
+	}
+}
+
+// ByBundleComponents orders the results by bundle_components terms.
+func ByBundleComponents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBundleComponentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByWarrantiesCount orders the results by warranties count.
+func ByWarrantiesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newWarrantiesStep(), opts...)
+	}
+}
+
+// ByWarranties orders the results by warranties terms.
+func ByWarranties(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newWarrantiesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByItemCategoryField orders the results by item_category field.
 func ByItemCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -427,6 +620,41 @@ func newModifierGroupsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ModifierGroupsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ModifierGroupsTable, ModifierGroupsColumn),
+	)
+}
+func newLotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, LotsTable, LotsColumn),
+	)
+}
+func newCustomFieldValuesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CustomFieldValuesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CustomFieldValuesTable, CustomFieldValuesColumn),
+	)
+}
+func newBundleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BundleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, BundleTable, BundleColumn),
+	)
+}
+func newBundleComponentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BundleComponentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BundleComponentsTable, BundleComponentsColumn),
+	)
+}
+func newWarrantiesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(WarrantiesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, WarrantiesTable, WarrantiesColumn),
 	)
 }
 func newItemCategoryStep() *sqlgraph.Step {

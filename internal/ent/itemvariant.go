@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -27,6 +28,16 @@ type ItemVariant struct {
 	Name string `json:"name,omitempty"`
 	// Variant specific price
 	Price float64 `json:"price,omitempty"`
+	// Structured variant attributes: {size: M, color: Blue, material: Cotton}
+	Attributes map[string]string `json:"attributes,omitempty"`
+	// Variant-specific barcode (EAN-13/UPC)
+	Barcode string `json:"barcode,omitempty"`
+	// Variant-specific image
+	ImageURL string `json:"image_url,omitempty"`
+	// Variant cost for margin analysis
+	CostPrice *float64 `json:"cost_price,omitempty"`
+	// Variant weight in kg for shipping
+	WeightKg *float64 `json:"weight_kg,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -64,11 +75,13 @@ func (*ItemVariant) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case itemvariant.FieldAttributes:
+			values[i] = new([]byte)
 		case itemvariant.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case itemvariant.FieldPrice:
+		case itemvariant.FieldPrice, itemvariant.FieldCostPrice, itemvariant.FieldWeightKg:
 			values[i] = new(sql.NullFloat64)
-		case itemvariant.FieldSku, itemvariant.FieldName:
+		case itemvariant.FieldSku, itemvariant.FieldName, itemvariant.FieldBarcode, itemvariant.FieldImageURL:
 			values[i] = new(sql.NullString)
 		case itemvariant.FieldCreatedAt, itemvariant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -118,6 +131,40 @@ func (_m *ItemVariant) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field price", values[i])
 			} else if value.Valid {
 				_m.Price = value.Float64
+			}
+		case itemvariant.FieldAttributes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field attributes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Attributes); err != nil {
+					return fmt.Errorf("unmarshal field attributes: %w", err)
+				}
+			}
+		case itemvariant.FieldBarcode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field barcode", values[i])
+			} else if value.Valid {
+				_m.Barcode = value.String
+			}
+		case itemvariant.FieldImageURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image_url", values[i])
+			} else if value.Valid {
+				_m.ImageURL = value.String
+			}
+		case itemvariant.FieldCostPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_price", values[i])
+			} else if value.Valid {
+				_m.CostPrice = new(float64)
+				*_m.CostPrice = value.Float64
+			}
+		case itemvariant.FieldWeightKg:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight_kg", values[i])
+			} else if value.Valid {
+				_m.WeightKg = new(float64)
+				*_m.WeightKg = value.Float64
 			}
 		case itemvariant.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -189,6 +236,25 @@ func (_m *ItemVariant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Price))
+	builder.WriteString(", ")
+	builder.WriteString("attributes=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Attributes))
+	builder.WriteString(", ")
+	builder.WriteString("barcode=")
+	builder.WriteString(_m.Barcode)
+	builder.WriteString(", ")
+	builder.WriteString("image_url=")
+	builder.WriteString(_m.ImageURL)
+	builder.WriteString(", ")
+	if v := _m.CostPrice; v != nil {
+		builder.WriteString("cost_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.WeightKg; v != nil {
+		builder.WriteString("weight_kg=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

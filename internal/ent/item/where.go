@@ -96,6 +96,51 @@ func ImageURL(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldImageURL, v))
 }
 
+// Barcode applies equality check predicate on the "barcode" field. It's identical to BarcodeEQ.
+func Barcode(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcode, v))
+}
+
+// BarcodeType applies equality check predicate on the "barcode_type" field. It's identical to BarcodeTypeEQ.
+func BarcodeType(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcodeType, v))
+}
+
+// RequiresAgeVerification applies equality check predicate on the "requires_age_verification" field. It's identical to RequiresAgeVerificationEQ.
+func RequiresAgeVerification(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldRequiresAgeVerification, v))
+}
+
+// IsControlledSubstance applies equality check predicate on the "is_controlled_substance" field. It's identical to IsControlledSubstanceEQ.
+func IsControlledSubstance(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldIsControlledSubstance, v))
+}
+
+// IsPerishable applies equality check predicate on the "is_perishable" field. It's identical to IsPerishableEQ.
+func IsPerishable(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldIsPerishable, v))
+}
+
+// TrackSerialNumbers applies equality check predicate on the "track_serial_numbers" field. It's identical to TrackSerialNumbersEQ.
+func TrackSerialNumbers(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTrackSerialNumbers, v))
+}
+
+// TrackLots applies equality check predicate on the "track_lots" field. It's identical to TrackLotsEQ.
+func TrackLots(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTrackLots, v))
+}
+
+// WeightKg applies equality check predicate on the "weight_kg" field. It's identical to WeightKgEQ.
+func WeightKg(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldWeightKg, v))
+}
+
+// DurationMinutes applies equality check predicate on the "duration_minutes" field. It's identical to DurationMinutesEQ.
+func DurationMinutes(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDurationMinutes, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -496,6 +541,316 @@ func ImageURLContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldImageURL, v))
 }
 
+// BarcodeEQ applies the EQ predicate on the "barcode" field.
+func BarcodeEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcode, v))
+}
+
+// BarcodeNEQ applies the NEQ predicate on the "barcode" field.
+func BarcodeNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldBarcode, v))
+}
+
+// BarcodeIn applies the In predicate on the "barcode" field.
+func BarcodeIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldBarcode, vs...))
+}
+
+// BarcodeNotIn applies the NotIn predicate on the "barcode" field.
+func BarcodeNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldBarcode, vs...))
+}
+
+// BarcodeGT applies the GT predicate on the "barcode" field.
+func BarcodeGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldBarcode, v))
+}
+
+// BarcodeGTE applies the GTE predicate on the "barcode" field.
+func BarcodeGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldBarcode, v))
+}
+
+// BarcodeLT applies the LT predicate on the "barcode" field.
+func BarcodeLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldBarcode, v))
+}
+
+// BarcodeLTE applies the LTE predicate on the "barcode" field.
+func BarcodeLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldBarcode, v))
+}
+
+// BarcodeContains applies the Contains predicate on the "barcode" field.
+func BarcodeContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldBarcode, v))
+}
+
+// BarcodeHasPrefix applies the HasPrefix predicate on the "barcode" field.
+func BarcodeHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldBarcode, v))
+}
+
+// BarcodeHasSuffix applies the HasSuffix predicate on the "barcode" field.
+func BarcodeHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldBarcode, v))
+}
+
+// BarcodeIsNil applies the IsNil predicate on the "barcode" field.
+func BarcodeIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldBarcode))
+}
+
+// BarcodeNotNil applies the NotNil predicate on the "barcode" field.
+func BarcodeNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldBarcode))
+}
+
+// BarcodeEqualFold applies the EqualFold predicate on the "barcode" field.
+func BarcodeEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldBarcode, v))
+}
+
+// BarcodeContainsFold applies the ContainsFold predicate on the "barcode" field.
+func BarcodeContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldBarcode, v))
+}
+
+// BarcodeTypeEQ applies the EQ predicate on the "barcode_type" field.
+func BarcodeTypeEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBarcodeType, v))
+}
+
+// BarcodeTypeNEQ applies the NEQ predicate on the "barcode_type" field.
+func BarcodeTypeNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldBarcodeType, v))
+}
+
+// BarcodeTypeIn applies the In predicate on the "barcode_type" field.
+func BarcodeTypeIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldBarcodeType, vs...))
+}
+
+// BarcodeTypeNotIn applies the NotIn predicate on the "barcode_type" field.
+func BarcodeTypeNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldBarcodeType, vs...))
+}
+
+// BarcodeTypeGT applies the GT predicate on the "barcode_type" field.
+func BarcodeTypeGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldBarcodeType, v))
+}
+
+// BarcodeTypeGTE applies the GTE predicate on the "barcode_type" field.
+func BarcodeTypeGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldBarcodeType, v))
+}
+
+// BarcodeTypeLT applies the LT predicate on the "barcode_type" field.
+func BarcodeTypeLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldBarcodeType, v))
+}
+
+// BarcodeTypeLTE applies the LTE predicate on the "barcode_type" field.
+func BarcodeTypeLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldBarcodeType, v))
+}
+
+// BarcodeTypeContains applies the Contains predicate on the "barcode_type" field.
+func BarcodeTypeContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldBarcodeType, v))
+}
+
+// BarcodeTypeHasPrefix applies the HasPrefix predicate on the "barcode_type" field.
+func BarcodeTypeHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldBarcodeType, v))
+}
+
+// BarcodeTypeHasSuffix applies the HasSuffix predicate on the "barcode_type" field.
+func BarcodeTypeHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldBarcodeType, v))
+}
+
+// BarcodeTypeIsNil applies the IsNil predicate on the "barcode_type" field.
+func BarcodeTypeIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldBarcodeType))
+}
+
+// BarcodeTypeNotNil applies the NotNil predicate on the "barcode_type" field.
+func BarcodeTypeNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldBarcodeType))
+}
+
+// BarcodeTypeEqualFold applies the EqualFold predicate on the "barcode_type" field.
+func BarcodeTypeEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldBarcodeType, v))
+}
+
+// BarcodeTypeContainsFold applies the ContainsFold predicate on the "barcode_type" field.
+func BarcodeTypeContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldBarcodeType, v))
+}
+
+// RequiresAgeVerificationEQ applies the EQ predicate on the "requires_age_verification" field.
+func RequiresAgeVerificationEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldRequiresAgeVerification, v))
+}
+
+// RequiresAgeVerificationNEQ applies the NEQ predicate on the "requires_age_verification" field.
+func RequiresAgeVerificationNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldRequiresAgeVerification, v))
+}
+
+// IsControlledSubstanceEQ applies the EQ predicate on the "is_controlled_substance" field.
+func IsControlledSubstanceEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldIsControlledSubstance, v))
+}
+
+// IsControlledSubstanceNEQ applies the NEQ predicate on the "is_controlled_substance" field.
+func IsControlledSubstanceNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldIsControlledSubstance, v))
+}
+
+// IsPerishableEQ applies the EQ predicate on the "is_perishable" field.
+func IsPerishableEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldIsPerishable, v))
+}
+
+// IsPerishableNEQ applies the NEQ predicate on the "is_perishable" field.
+func IsPerishableNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldIsPerishable, v))
+}
+
+// TrackSerialNumbersEQ applies the EQ predicate on the "track_serial_numbers" field.
+func TrackSerialNumbersEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTrackSerialNumbers, v))
+}
+
+// TrackSerialNumbersNEQ applies the NEQ predicate on the "track_serial_numbers" field.
+func TrackSerialNumbersNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTrackSerialNumbers, v))
+}
+
+// TrackLotsEQ applies the EQ predicate on the "track_lots" field.
+func TrackLotsEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTrackLots, v))
+}
+
+// TrackLotsNEQ applies the NEQ predicate on the "track_lots" field.
+func TrackLotsNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTrackLots, v))
+}
+
+// WeightKgEQ applies the EQ predicate on the "weight_kg" field.
+func WeightKgEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldWeightKg, v))
+}
+
+// WeightKgNEQ applies the NEQ predicate on the "weight_kg" field.
+func WeightKgNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldWeightKg, v))
+}
+
+// WeightKgIn applies the In predicate on the "weight_kg" field.
+func WeightKgIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldWeightKg, vs...))
+}
+
+// WeightKgNotIn applies the NotIn predicate on the "weight_kg" field.
+func WeightKgNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldWeightKg, vs...))
+}
+
+// WeightKgGT applies the GT predicate on the "weight_kg" field.
+func WeightKgGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldWeightKg, v))
+}
+
+// WeightKgGTE applies the GTE predicate on the "weight_kg" field.
+func WeightKgGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldWeightKg, v))
+}
+
+// WeightKgLT applies the LT predicate on the "weight_kg" field.
+func WeightKgLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldWeightKg, v))
+}
+
+// WeightKgLTE applies the LTE predicate on the "weight_kg" field.
+func WeightKgLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldWeightKg, v))
+}
+
+// WeightKgIsNil applies the IsNil predicate on the "weight_kg" field.
+func WeightKgIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldWeightKg))
+}
+
+// WeightKgNotNil applies the NotNil predicate on the "weight_kg" field.
+func WeightKgNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldWeightKg))
+}
+
+// DimensionsCmIsNil applies the IsNil predicate on the "dimensions_cm" field.
+func DimensionsCmIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldDimensionsCm))
+}
+
+// DimensionsCmNotNil applies the NotNil predicate on the "dimensions_cm" field.
+func DimensionsCmNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldDimensionsCm))
+}
+
+// DurationMinutesEQ applies the EQ predicate on the "duration_minutes" field.
+func DurationMinutesEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDurationMinutes, v))
+}
+
+// DurationMinutesNEQ applies the NEQ predicate on the "duration_minutes" field.
+func DurationMinutesNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldDurationMinutes, v))
+}
+
+// DurationMinutesIn applies the In predicate on the "duration_minutes" field.
+func DurationMinutesIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldDurationMinutes, vs...))
+}
+
+// DurationMinutesNotIn applies the NotIn predicate on the "duration_minutes" field.
+func DurationMinutesNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldDurationMinutes, vs...))
+}
+
+// DurationMinutesGT applies the GT predicate on the "duration_minutes" field.
+func DurationMinutesGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldDurationMinutes, v))
+}
+
+// DurationMinutesGTE applies the GTE predicate on the "duration_minutes" field.
+func DurationMinutesGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldDurationMinutes, v))
+}
+
+// DurationMinutesLT applies the LT predicate on the "duration_minutes" field.
+func DurationMinutesLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldDurationMinutes, v))
+}
+
+// DurationMinutesLTE applies the LTE predicate on the "duration_minutes" field.
+func DurationMinutesLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldDurationMinutes, v))
+}
+
+// DurationMinutesIsNil applies the IsNil predicate on the "duration_minutes" field.
+func DurationMinutesIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldDurationMinutes))
+}
+
+// DurationMinutesNotNil applies the NotNil predicate on the "duration_minutes" field.
+func DurationMinutesNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldDurationMinutes))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -752,6 +1107,121 @@ func HasModifierGroups() predicate.Item {
 func HasModifierGroupsWith(preds ...predicate.ModifierGroup) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newModifierGroupsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLots applies the HasEdge predicate on the "lots" edge.
+func HasLots() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LotsTable, LotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLotsWith applies the HasEdge predicate on the "lots" edge with a given conditions (other predicates).
+func HasLotsWith(preds ...predicate.InventoryLot) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newLotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCustomFieldValues applies the HasEdge predicate on the "custom_field_values" edge.
+func HasCustomFieldValues() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CustomFieldValuesTable, CustomFieldValuesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCustomFieldValuesWith applies the HasEdge predicate on the "custom_field_values" edge with a given conditions (other predicates).
+func HasCustomFieldValuesWith(preds ...predicate.CustomFieldValue) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newCustomFieldValuesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBundle applies the HasEdge predicate on the "bundle" edge.
+func HasBundle() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, BundleTable, BundleColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBundleWith applies the HasEdge predicate on the "bundle" edge with a given conditions (other predicates).
+func HasBundleWith(preds ...predicate.Bundle) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newBundleStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBundleComponents applies the HasEdge predicate on the "bundle_components" edge.
+func HasBundleComponents() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BundleComponentsTable, BundleComponentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBundleComponentsWith applies the HasEdge predicate on the "bundle_components" edge with a given conditions (other predicates).
+func HasBundleComponentsWith(preds ...predicate.BundleComponent) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newBundleComponentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasWarranties applies the HasEdge predicate on the "warranties" edge.
+func HasWarranties() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, WarrantiesTable, WarrantiesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasWarrantiesWith applies the HasEdge predicate on the "warranties" edge with a given conditions (other predicates).
+func HasWarrantiesWith(preds ...predicate.Warranty) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newWarrantiesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

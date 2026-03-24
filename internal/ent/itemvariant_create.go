@@ -57,6 +57,68 @@ func (_c *ItemVariantCreate) SetNillablePrice(v *float64) *ItemVariantCreate {
 	return _c
 }
 
+// SetAttributes sets the "attributes" field.
+func (_c *ItemVariantCreate) SetAttributes(v map[string]string) *ItemVariantCreate {
+	_c.mutation.SetAttributes(v)
+	return _c
+}
+
+// SetBarcode sets the "barcode" field.
+func (_c *ItemVariantCreate) SetBarcode(v string) *ItemVariantCreate {
+	_c.mutation.SetBarcode(v)
+	return _c
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_c *ItemVariantCreate) SetNillableBarcode(v *string) *ItemVariantCreate {
+	if v != nil {
+		_c.SetBarcode(*v)
+	}
+	return _c
+}
+
+// SetImageURL sets the "image_url" field.
+func (_c *ItemVariantCreate) SetImageURL(v string) *ItemVariantCreate {
+	_c.mutation.SetImageURL(v)
+	return _c
+}
+
+// SetNillableImageURL sets the "image_url" field if the given value is not nil.
+func (_c *ItemVariantCreate) SetNillableImageURL(v *string) *ItemVariantCreate {
+	if v != nil {
+		_c.SetImageURL(*v)
+	}
+	return _c
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (_c *ItemVariantCreate) SetCostPrice(v float64) *ItemVariantCreate {
+	_c.mutation.SetCostPrice(v)
+	return _c
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_c *ItemVariantCreate) SetNillableCostPrice(v *float64) *ItemVariantCreate {
+	if v != nil {
+		_c.SetCostPrice(*v)
+	}
+	return _c
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_c *ItemVariantCreate) SetWeightKg(v float64) *ItemVariantCreate {
+	_c.mutation.SetWeightKg(v)
+	return _c
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_c *ItemVariantCreate) SetNillableWeightKg(v *float64) *ItemVariantCreate {
+	if v != nil {
+		_c.SetWeightKg(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *ItemVariantCreate) SetIsActive(v bool) *ItemVariantCreate {
 	_c.mutation.SetIsActive(v)
@@ -259,6 +321,26 @@ func (_c *ItemVariantCreate) createSpec() (*ItemVariant, *sqlgraph.CreateSpec) {
 		_spec.SetField(itemvariant.FieldPrice, field.TypeFloat64, value)
 		_node.Price = value
 	}
+	if value, ok := _c.mutation.Attributes(); ok {
+		_spec.SetField(itemvariant.FieldAttributes, field.TypeJSON, value)
+		_node.Attributes = value
+	}
+	if value, ok := _c.mutation.Barcode(); ok {
+		_spec.SetField(itemvariant.FieldBarcode, field.TypeString, value)
+		_node.Barcode = value
+	}
+	if value, ok := _c.mutation.ImageURL(); ok {
+		_spec.SetField(itemvariant.FieldImageURL, field.TypeString, value)
+		_node.ImageURL = value
+	}
+	if value, ok := _c.mutation.CostPrice(); ok {
+		_spec.SetField(itemvariant.FieldCostPrice, field.TypeFloat64, value)
+		_node.CostPrice = &value
+	}
+	if value, ok := _c.mutation.WeightKg(); ok {
+		_spec.SetField(itemvariant.FieldWeightKg, field.TypeFloat64, value)
+		_node.WeightKg = &value
+	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(itemvariant.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
@@ -391,6 +473,108 @@ func (u *ItemVariantUpsert) UpdatePrice() *ItemVariantUpsert {
 // AddPrice adds v to the "price" field.
 func (u *ItemVariantUpsert) AddPrice(v float64) *ItemVariantUpsert {
 	u.Add(itemvariant.FieldPrice, v)
+	return u
+}
+
+// SetAttributes sets the "attributes" field.
+func (u *ItemVariantUpsert) SetAttributes(v map[string]string) *ItemVariantUpsert {
+	u.Set(itemvariant.FieldAttributes, v)
+	return u
+}
+
+// UpdateAttributes sets the "attributes" field to the value that was provided on create.
+func (u *ItemVariantUpsert) UpdateAttributes() *ItemVariantUpsert {
+	u.SetExcluded(itemvariant.FieldAttributes)
+	return u
+}
+
+// ClearAttributes clears the value of the "attributes" field.
+func (u *ItemVariantUpsert) ClearAttributes() *ItemVariantUpsert {
+	u.SetNull(itemvariant.FieldAttributes)
+	return u
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemVariantUpsert) SetBarcode(v string) *ItemVariantUpsert {
+	u.Set(itemvariant.FieldBarcode, v)
+	return u
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemVariantUpsert) UpdateBarcode() *ItemVariantUpsert {
+	u.SetExcluded(itemvariant.FieldBarcode)
+	return u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemVariantUpsert) ClearBarcode() *ItemVariantUpsert {
+	u.SetNull(itemvariant.FieldBarcode)
+	return u
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemVariantUpsert) SetImageURL(v string) *ItemVariantUpsert {
+	u.Set(itemvariant.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemVariantUpsert) UpdateImageURL() *ItemVariantUpsert {
+	u.SetExcluded(itemvariant.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemVariantUpsert) ClearImageURL() *ItemVariantUpsert {
+	u.SetNull(itemvariant.FieldImageURL)
+	return u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemVariantUpsert) SetCostPrice(v float64) *ItemVariantUpsert {
+	u.Set(itemvariant.FieldCostPrice, v)
+	return u
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemVariantUpsert) UpdateCostPrice() *ItemVariantUpsert {
+	u.SetExcluded(itemvariant.FieldCostPrice)
+	return u
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemVariantUpsert) AddCostPrice(v float64) *ItemVariantUpsert {
+	u.Add(itemvariant.FieldCostPrice, v)
+	return u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemVariantUpsert) ClearCostPrice() *ItemVariantUpsert {
+	u.SetNull(itemvariant.FieldCostPrice)
+	return u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemVariantUpsert) SetWeightKg(v float64) *ItemVariantUpsert {
+	u.Set(itemvariant.FieldWeightKg, v)
+	return u
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemVariantUpsert) UpdateWeightKg() *ItemVariantUpsert {
+	u.SetExcluded(itemvariant.FieldWeightKg)
+	return u
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemVariantUpsert) AddWeightKg(v float64) *ItemVariantUpsert {
+	u.Add(itemvariant.FieldWeightKg, v)
+	return u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemVariantUpsert) ClearWeightKg() *ItemVariantUpsert {
+	u.SetNull(itemvariant.FieldWeightKg)
 	return u
 }
 
@@ -529,6 +713,125 @@ func (u *ItemVariantUpsertOne) AddPrice(v float64) *ItemVariantUpsertOne {
 func (u *ItemVariantUpsertOne) UpdatePrice() *ItemVariantUpsertOne {
 	return u.Update(func(s *ItemVariantUpsert) {
 		s.UpdatePrice()
+	})
+}
+
+// SetAttributes sets the "attributes" field.
+func (u *ItemVariantUpsertOne) SetAttributes(v map[string]string) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetAttributes(v)
+	})
+}
+
+// UpdateAttributes sets the "attributes" field to the value that was provided on create.
+func (u *ItemVariantUpsertOne) UpdateAttributes() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateAttributes()
+	})
+}
+
+// ClearAttributes clears the value of the "attributes" field.
+func (u *ItemVariantUpsertOne) ClearAttributes() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearAttributes()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemVariantUpsertOne) SetBarcode(v string) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemVariantUpsertOne) UpdateBarcode() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemVariantUpsertOne) ClearBarcode() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemVariantUpsertOne) SetImageURL(v string) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemVariantUpsertOne) UpdateImageURL() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemVariantUpsertOne) ClearImageURL() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemVariantUpsertOne) SetCostPrice(v float64) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemVariantUpsertOne) AddCostPrice(v float64) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemVariantUpsertOne) UpdateCostPrice() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemVariantUpsertOne) ClearCostPrice() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemVariantUpsertOne) SetWeightKg(v float64) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemVariantUpsertOne) AddWeightKg(v float64) *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemVariantUpsertOne) UpdateWeightKg() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemVariantUpsertOne) ClearWeightKg() *ItemVariantUpsertOne {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearWeightKg()
 	})
 }
 
@@ -838,6 +1141,125 @@ func (u *ItemVariantUpsertBulk) AddPrice(v float64) *ItemVariantUpsertBulk {
 func (u *ItemVariantUpsertBulk) UpdatePrice() *ItemVariantUpsertBulk {
 	return u.Update(func(s *ItemVariantUpsert) {
 		s.UpdatePrice()
+	})
+}
+
+// SetAttributes sets the "attributes" field.
+func (u *ItemVariantUpsertBulk) SetAttributes(v map[string]string) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetAttributes(v)
+	})
+}
+
+// UpdateAttributes sets the "attributes" field to the value that was provided on create.
+func (u *ItemVariantUpsertBulk) UpdateAttributes() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateAttributes()
+	})
+}
+
+// ClearAttributes clears the value of the "attributes" field.
+func (u *ItemVariantUpsertBulk) ClearAttributes() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearAttributes()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemVariantUpsertBulk) SetBarcode(v string) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemVariantUpsertBulk) UpdateBarcode() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemVariantUpsertBulk) ClearBarcode() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemVariantUpsertBulk) SetImageURL(v string) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemVariantUpsertBulk) UpdateImageURL() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemVariantUpsertBulk) ClearImageURL() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemVariantUpsertBulk) SetCostPrice(v float64) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemVariantUpsertBulk) AddCostPrice(v float64) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemVariantUpsertBulk) UpdateCostPrice() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemVariantUpsertBulk) ClearCostPrice() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemVariantUpsertBulk) SetWeightKg(v float64) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemVariantUpsertBulk) AddWeightKg(v float64) *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemVariantUpsertBulk) UpdateWeightKg() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemVariantUpsertBulk) ClearWeightKg() *ItemVariantUpsertBulk {
+	return u.Update(func(s *ItemVariantUpsert) {
+		s.ClearWeightKg()
 	})
 }
 

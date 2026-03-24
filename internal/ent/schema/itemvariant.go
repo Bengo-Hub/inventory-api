@@ -32,6 +32,24 @@ func (ItemVariant) Fields() []ent.Field {
 		field.Float("price").
 			Default(0).
 			Comment("Variant specific price"),
+		// Variant matrix attributes (Phase 1.2) — fashion: {size: M, color: Blue}
+		field.JSON("attributes", map[string]string{}).
+			Optional().
+			Comment("Structured variant attributes: {size: M, color: Blue, material: Cotton}"),
+		field.String("barcode").
+			Optional().
+			Comment("Variant-specific barcode (EAN-13/UPC)"),
+		field.String("image_url").
+			Optional().
+			Comment("Variant-specific image"),
+		field.Float("cost_price").
+			Optional().
+			Nillable().
+			Comment("Variant cost for margin analysis"),
+		field.Float("weight_kg").
+			Optional().
+			Nillable().
+			Comment("Variant weight in kg for shipping"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").
@@ -58,5 +76,6 @@ func (ItemVariant) Edges() []ent.Edge {
 func (ItemVariant) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("item_id", "sku").Unique(),
+		index.Fields("barcode"),
 	}
 }

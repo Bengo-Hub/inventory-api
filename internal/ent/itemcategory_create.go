@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -29,6 +30,20 @@ type ItemCategoryCreate struct {
 // SetTenantID sets the "tenant_id" field.
 func (_c *ItemCategoryCreate) SetTenantID(v uuid.UUID) *ItemCategoryCreate {
 	_c.mutation.SetTenantID(v)
+	return _c
+}
+
+// SetParentID sets the "parent_id" field.
+func (_c *ItemCategoryCreate) SetParentID(v uuid.UUID) *ItemCategoryCreate {
+	_c.mutation.SetParentID(v)
+	return _c
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableParentID(v *uuid.UUID) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetParentID(*v)
+	}
 	return _c
 }
 
@@ -52,6 +67,34 @@ func (_c *ItemCategoryCreate) SetNillableCode(v *string) *ItemCategoryCreate {
 	return _c
 }
 
+// SetSlug sets the "slug" field.
+func (_c *ItemCategoryCreate) SetSlug(v string) *ItemCategoryCreate {
+	_c.mutation.SetSlug(v)
+	return _c
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableSlug(v *string) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetSlug(*v)
+	}
+	return _c
+}
+
+// SetIcon sets the "icon" field.
+func (_c *ItemCategoryCreate) SetIcon(v string) *ItemCategoryCreate {
+	_c.mutation.SetIcon(v)
+	return _c
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableIcon(v *string) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetIcon(*v)
+	}
+	return _c
+}
+
 // SetDescription sets the "description" field.
 func (_c *ItemCategoryCreate) SetDescription(v string) *ItemCategoryCreate {
 	_c.mutation.SetDescription(v)
@@ -62,6 +105,48 @@ func (_c *ItemCategoryCreate) SetDescription(v string) *ItemCategoryCreate {
 func (_c *ItemCategoryCreate) SetNillableDescription(v *string) *ItemCategoryCreate {
 	if v != nil {
 		_c.SetDescription(*v)
+	}
+	return _c
+}
+
+// SetDepth sets the "depth" field.
+func (_c *ItemCategoryCreate) SetDepth(v int) *ItemCategoryCreate {
+	_c.mutation.SetDepth(v)
+	return _c
+}
+
+// SetNillableDepth sets the "depth" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableDepth(v *int) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetDepth(*v)
+	}
+	return _c
+}
+
+// SetPath sets the "path" field.
+func (_c *ItemCategoryCreate) SetPath(v string) *ItemCategoryCreate {
+	_c.mutation.SetPath(v)
+	return _c
+}
+
+// SetNillablePath sets the "path" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillablePath(v *string) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetPath(*v)
+	}
+	return _c
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (_c *ItemCategoryCreate) SetSortOrder(v int) *ItemCategoryCreate {
+	_c.mutation.SetSortOrder(v)
+	return _c
+}
+
+// SetNillableSortOrder sets the "sort_order" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableSortOrder(v *int) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetSortOrder(*v)
 	}
 	return _c
 }
@@ -137,6 +222,41 @@ func (_c *ItemCategoryCreate) AddItems(v ...*Item) *ItemCategoryCreate {
 	return _c.AddItemIDs(ids...)
 }
 
+// SetParent sets the "parent" edge to the ItemCategory entity.
+func (_c *ItemCategoryCreate) SetParent(v *ItemCategory) *ItemCategoryCreate {
+	return _c.SetParentID(v.ID)
+}
+
+// AddChildIDs adds the "children" edge to the ItemCategory entity by IDs.
+func (_c *ItemCategoryCreate) AddChildIDs(ids ...uuid.UUID) *ItemCategoryCreate {
+	_c.mutation.AddChildIDs(ids...)
+	return _c
+}
+
+// AddChildren adds the "children" edges to the ItemCategory entity.
+func (_c *ItemCategoryCreate) AddChildren(v ...*ItemCategory) *ItemCategoryCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddChildIDs(ids...)
+}
+
+// AddCustomFieldDefinitionIDs adds the "custom_field_definitions" edge to the CustomFieldDefinition entity by IDs.
+func (_c *ItemCategoryCreate) AddCustomFieldDefinitionIDs(ids ...uuid.UUID) *ItemCategoryCreate {
+	_c.mutation.AddCustomFieldDefinitionIDs(ids...)
+	return _c
+}
+
+// AddCustomFieldDefinitions adds the "custom_field_definitions" edges to the CustomFieldDefinition entity.
+func (_c *ItemCategoryCreate) AddCustomFieldDefinitions(v ...*CustomFieldDefinition) *ItemCategoryCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCustomFieldDefinitionIDs(ids...)
+}
+
 // SetTenant sets the "tenant" edge to the Tenant entity.
 func (_c *ItemCategoryCreate) SetTenant(v *Tenant) *ItemCategoryCreate {
 	return _c.SetTenantID(v.ID)
@@ -177,6 +297,14 @@ func (_c *ItemCategoryCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ItemCategoryCreate) defaults() {
+	if _, ok := _c.mutation.Depth(); !ok {
+		v := itemcategory.DefaultDepth
+		_c.mutation.SetDepth(v)
+	}
+	if _, ok := _c.mutation.SortOrder(); !ok {
+		v := itemcategory.DefaultSortOrder
+		_c.mutation.SetSortOrder(v)
+	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := itemcategory.DefaultIsActive
 		_c.mutation.SetIsActive(v)
@@ -212,6 +340,12 @@ func (_c *ItemCategoryCreate) check() error {
 		if err := itemcategory.CodeValidator(v); err != nil {
 			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "ItemCategory.code": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Depth(); !ok {
+		return &ValidationError{Name: "depth", err: errors.New(`ent: missing required field "ItemCategory.depth"`)}
+	}
+	if _, ok := _c.mutation.SortOrder(); !ok {
+		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "ItemCategory.sort_order"`)}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "ItemCategory.is_active"`)}
@@ -269,9 +403,29 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 		_spec.SetField(itemcategory.FieldCode, field.TypeString, value)
 		_node.Code = value
 	}
+	if value, ok := _c.mutation.Slug(); ok {
+		_spec.SetField(itemcategory.FieldSlug, field.TypeString, value)
+		_node.Slug = value
+	}
+	if value, ok := _c.mutation.Icon(); ok {
+		_spec.SetField(itemcategory.FieldIcon, field.TypeString, value)
+		_node.Icon = value
+	}
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(itemcategory.FieldDescription, field.TypeString, value)
 		_node.Description = value
+	}
+	if value, ok := _c.mutation.Depth(); ok {
+		_spec.SetField(itemcategory.FieldDepth, field.TypeInt, value)
+		_node.Depth = value
+	}
+	if value, ok := _c.mutation.Path(); ok {
+		_spec.SetField(itemcategory.FieldPath, field.TypeString, value)
+		_node.Path = value
+	}
+	if value, ok := _c.mutation.SortOrder(); ok {
+		_spec.SetField(itemcategory.FieldSortOrder, field.TypeInt, value)
+		_node.SortOrder = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -294,6 +448,55 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   itemcategory.ParentTable,
+			Columns: []string{itemcategory.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ParentID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChildrenIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.ChildrenTable,
+			Columns: []string{itemcategory.ChildrenColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CustomFieldDefinitionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   itemcategory.CustomFieldDefinitionsTable,
+			Columns: []string{itemcategory.CustomFieldDefinitionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfielddefinition.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -382,6 +585,24 @@ func (u *ItemCategoryUpsert) UpdateTenantID() *ItemCategoryUpsert {
 	return u
 }
 
+// SetParentID sets the "parent_id" field.
+func (u *ItemCategoryUpsert) SetParentID(v uuid.UUID) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldParentID, v)
+	return u
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateParentID() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldParentID)
+	return u
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemCategoryUpsert) ClearParentID() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldParentID)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *ItemCategoryUpsert) SetName(v string) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldName, v)
@@ -412,6 +633,42 @@ func (u *ItemCategoryUpsert) ClearCode() *ItemCategoryUpsert {
 	return u
 }
 
+// SetSlug sets the "slug" field.
+func (u *ItemCategoryUpsert) SetSlug(v string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldSlug, v)
+	return u
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateSlug() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldSlug)
+	return u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemCategoryUpsert) ClearSlug() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldSlug)
+	return u
+}
+
+// SetIcon sets the "icon" field.
+func (u *ItemCategoryUpsert) SetIcon(v string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldIcon, v)
+	return u
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateIcon() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldIcon)
+	return u
+}
+
+// ClearIcon clears the value of the "icon" field.
+func (u *ItemCategoryUpsert) ClearIcon() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldIcon)
+	return u
+}
+
 // SetDescription sets the "description" field.
 func (u *ItemCategoryUpsert) SetDescription(v string) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldDescription, v)
@@ -427,6 +684,60 @@ func (u *ItemCategoryUpsert) UpdateDescription() *ItemCategoryUpsert {
 // ClearDescription clears the value of the "description" field.
 func (u *ItemCategoryUpsert) ClearDescription() *ItemCategoryUpsert {
 	u.SetNull(itemcategory.FieldDescription)
+	return u
+}
+
+// SetDepth sets the "depth" field.
+func (u *ItemCategoryUpsert) SetDepth(v int) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldDepth, v)
+	return u
+}
+
+// UpdateDepth sets the "depth" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateDepth() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldDepth)
+	return u
+}
+
+// AddDepth adds v to the "depth" field.
+func (u *ItemCategoryUpsert) AddDepth(v int) *ItemCategoryUpsert {
+	u.Add(itemcategory.FieldDepth, v)
+	return u
+}
+
+// SetPath sets the "path" field.
+func (u *ItemCategoryUpsert) SetPath(v string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldPath, v)
+	return u
+}
+
+// UpdatePath sets the "path" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdatePath() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldPath)
+	return u
+}
+
+// ClearPath clears the value of the "path" field.
+func (u *ItemCategoryUpsert) ClearPath() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldPath)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *ItemCategoryUpsert) SetSortOrder(v int) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateSortOrder() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *ItemCategoryUpsert) AddSortOrder(v int) *ItemCategoryUpsert {
+	u.Add(itemcategory.FieldSortOrder, v)
 	return u
 }
 
@@ -519,6 +830,27 @@ func (u *ItemCategoryUpsertOne) UpdateTenantID() *ItemCategoryUpsertOne {
 	})
 }
 
+// SetParentID sets the "parent_id" field.
+func (u *ItemCategoryUpsertOne) SetParentID(v uuid.UUID) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateParentID() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemCategoryUpsertOne) ClearParentID() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearParentID()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *ItemCategoryUpsertOne) SetName(v string) *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
@@ -554,6 +886,48 @@ func (u *ItemCategoryUpsertOne) ClearCode() *ItemCategoryUpsertOne {
 	})
 }
 
+// SetSlug sets the "slug" field.
+func (u *ItemCategoryUpsertOne) SetSlug(v string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateSlug() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemCategoryUpsertOne) ClearSlug() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearSlug()
+	})
+}
+
+// SetIcon sets the "icon" field.
+func (u *ItemCategoryUpsertOne) SetIcon(v string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetIcon(v)
+	})
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateIcon() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateIcon()
+	})
+}
+
+// ClearIcon clears the value of the "icon" field.
+func (u *ItemCategoryUpsertOne) ClearIcon() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearIcon()
+	})
+}
+
 // SetDescription sets the "description" field.
 func (u *ItemCategoryUpsertOne) SetDescription(v string) *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
@@ -572,6 +946,69 @@ func (u *ItemCategoryUpsertOne) UpdateDescription() *ItemCategoryUpsertOne {
 func (u *ItemCategoryUpsertOne) ClearDescription() *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.ClearDescription()
+	})
+}
+
+// SetDepth sets the "depth" field.
+func (u *ItemCategoryUpsertOne) SetDepth(v int) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetDepth(v)
+	})
+}
+
+// AddDepth adds v to the "depth" field.
+func (u *ItemCategoryUpsertOne) AddDepth(v int) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.AddDepth(v)
+	})
+}
+
+// UpdateDepth sets the "depth" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateDepth() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateDepth()
+	})
+}
+
+// SetPath sets the "path" field.
+func (u *ItemCategoryUpsertOne) SetPath(v string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetPath(v)
+	})
+}
+
+// UpdatePath sets the "path" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdatePath() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdatePath()
+	})
+}
+
+// ClearPath clears the value of the "path" field.
+func (u *ItemCategoryUpsertOne) ClearPath() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearPath()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *ItemCategoryUpsertOne) SetSortOrder(v int) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *ItemCategoryUpsertOne) AddSortOrder(v int) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateSortOrder() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateSortOrder()
 	})
 }
 
@@ -835,6 +1272,27 @@ func (u *ItemCategoryUpsertBulk) UpdateTenantID() *ItemCategoryUpsertBulk {
 	})
 }
 
+// SetParentID sets the "parent_id" field.
+func (u *ItemCategoryUpsertBulk) SetParentID(v uuid.UUID) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetParentID(v)
+	})
+}
+
+// UpdateParentID sets the "parent_id" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateParentID() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateParentID()
+	})
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (u *ItemCategoryUpsertBulk) ClearParentID() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearParentID()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *ItemCategoryUpsertBulk) SetName(v string) *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
@@ -870,6 +1328,48 @@ func (u *ItemCategoryUpsertBulk) ClearCode() *ItemCategoryUpsertBulk {
 	})
 }
 
+// SetSlug sets the "slug" field.
+func (u *ItemCategoryUpsertBulk) SetSlug(v string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateSlug() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemCategoryUpsertBulk) ClearSlug() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearSlug()
+	})
+}
+
+// SetIcon sets the "icon" field.
+func (u *ItemCategoryUpsertBulk) SetIcon(v string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetIcon(v)
+	})
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateIcon() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateIcon()
+	})
+}
+
+// ClearIcon clears the value of the "icon" field.
+func (u *ItemCategoryUpsertBulk) ClearIcon() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearIcon()
+	})
+}
+
 // SetDescription sets the "description" field.
 func (u *ItemCategoryUpsertBulk) SetDescription(v string) *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
@@ -888,6 +1388,69 @@ func (u *ItemCategoryUpsertBulk) UpdateDescription() *ItemCategoryUpsertBulk {
 func (u *ItemCategoryUpsertBulk) ClearDescription() *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.ClearDescription()
+	})
+}
+
+// SetDepth sets the "depth" field.
+func (u *ItemCategoryUpsertBulk) SetDepth(v int) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetDepth(v)
+	})
+}
+
+// AddDepth adds v to the "depth" field.
+func (u *ItemCategoryUpsertBulk) AddDepth(v int) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.AddDepth(v)
+	})
+}
+
+// UpdateDepth sets the "depth" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateDepth() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateDepth()
+	})
+}
+
+// SetPath sets the "path" field.
+func (u *ItemCategoryUpsertBulk) SetPath(v string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetPath(v)
+	})
+}
+
+// UpdatePath sets the "path" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdatePath() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdatePath()
+	})
+}
+
+// ClearPath clears the value of the "path" field.
+func (u *ItemCategoryUpsertBulk) ClearPath() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearPath()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *ItemCategoryUpsertBulk) SetSortOrder(v int) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *ItemCategoryUpsertBulk) AddSortOrder(v int) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateSortOrder() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateSortOrder()
 	})
 }
 

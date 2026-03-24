@@ -36,6 +36,12 @@ type InventoryBalance struct {
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// Threshold below which a reorder notification is triggered
 	ReorderLevel int `json:"reorder_level,omitempty"`
+	// Auto-reorder quantity when stock falls below reorder_level
+	ReorderQuantity int `json:"reorder_quantity,omitempty"`
+	// Preferred supplier for auto-reorder PO generation
+	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
+	// Enable auto-creation of draft POs when below reorder_level
+	AutoReorderEnabled bool `json:"auto_reorder_enabled,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -82,7 +88,11 @@ func (*InventoryBalance) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved, inventorybalance.FieldReorderLevel:
+		case inventorybalance.FieldPreferredSupplierID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case inventorybalance.FieldAutoReorderEnabled:
+			values[i] = new(sql.NullBool)
+		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved, inventorybalance.FieldReorderLevel, inventorybalance.FieldReorderQuantity:
 			values[i] = new(sql.NullInt64)
 		case inventorybalance.FieldUnitOfMeasure:
 			values[i] = new(sql.NullString)
@@ -159,6 +169,25 @@ func (_m *InventoryBalance) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReorderLevel = int(value.Int64)
 			}
+		case inventorybalance.FieldReorderQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reorder_quantity", values[i])
+			} else if value.Valid {
+				_m.ReorderQuantity = int(value.Int64)
+			}
+		case inventorybalance.FieldPreferredSupplierID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field preferred_supplier_id", values[i])
+			} else if value.Valid {
+				_m.PreferredSupplierID = new(uuid.UUID)
+				*_m.PreferredSupplierID = *value.S.(*uuid.UUID)
+			}
+		case inventorybalance.FieldAutoReorderEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field auto_reorder_enabled", values[i])
+			} else if value.Valid {
+				_m.AutoReorderEnabled = value.Bool
+			}
 		case inventorybalance.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
@@ -234,6 +263,17 @@ func (_m *InventoryBalance) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("reorder_level=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ReorderLevel))
+	builder.WriteString(", ")
+	builder.WriteString("reorder_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReorderQuantity))
+	builder.WriteString(", ")
+	if v := _m.PreferredSupplierID; v != nil {
+		builder.WriteString("preferred_supplier_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("auto_reorder_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AutoReorderEnabled))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
