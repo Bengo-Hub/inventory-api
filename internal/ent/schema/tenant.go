@@ -16,54 +16,36 @@ type Tenant struct {
 }
 
 // Fields of the Tenant.
+// Auth-api is the single source of truth for tenant identity, branding, and subscription data.
+// Downstream services store only the minimal reference needed for FK relationships and routing.
+// All other tenant data (branding, contact info, subscription) is fetched from auth-api on demand
+// or read from JWT claims (subscription plan/status/limits).
 func (Tenant) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			Immutable(),
 		field.String("name").
-			NotEmpty(),
+			NotEmpty().
+			Comment("Display name — synced from auth-api"),
 		field.String("slug").
 			NotEmpty().
-			Unique(),
+			Unique().
+			Comment("URL-safe identifier — synced from auth-api"),
 		field.String("status").
-			Default("active"),
-		field.String("contact_email").
-			Optional(),
-		field.String("contact_phone").
-			Optional(),
-		field.String("logo_url").
-			Optional(),
-		field.String("website").
-			Optional(),
-		field.String("country").
-			Optional().
-			Default("KE"),
-		field.String("timezone").
-			Optional().
-			Default("Africa/Nairobi"),
-		field.JSON("brand_colors", map[string]any{}).
-			Optional(),
-		field.String("org_size").
-			Optional(),
+			Default("active").
+			Comment("Tenant status: active | inactive | suspended"),
 		field.String("use_case").
 			Optional().
 			Nillable().
 			Comment("Primary business use case: hospitality | retail | quick_service | manufacturing | warehousing | services | e_commerce | other"),
-		field.String("subscription_plan").
-			Optional(),
-		field.String("subscription_status").
-			Optional(),
-		field.Time("subscription_expires_at").
+		field.String("sync_status").
+			Default("synced").
+			Comment("Sync status from auth-api: synced | pending | failed"),
+		field.Time("last_sync_at").
 			Optional().
-			Nillable(),
-		field.String("subscription_id").
-			Optional(),
-		field.JSON("tier_limits", map[string]any{}).
-			Optional(),
-		field.JSON("metadata", map[string]any{}).
-			Optional().
-			Default(map[string]any{}),
+			Nillable().
+			Comment("Last successful sync from auth-api"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
