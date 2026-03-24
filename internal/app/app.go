@@ -49,8 +49,9 @@ type App struct {
 	cache           *redis.Client
 	events          *nats.Conn
 	orm             *ent.Client
-	outboxPublisher *outbox.Publisher
-	orderConsumer   *consumers.OrderEventsConsumer
+	outboxPublisher  *outbox.Publisher
+	orderConsumer    *consumers.OrderEventsConsumer
+	posSaleConsumer  *consumers.POSSaleEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -141,6 +142,9 @@ func New(ctx context.Context) (*App, error) {
 	// Order events consumer — auto-consume/release reservations on order lifecycle
 	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
 
+	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
+	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -197,8 +201,9 @@ func New(ctx context.Context) (*App, error) {
 		cache:           redisClient,
 		events:          natsConn,
 		orm:             ormClient,
-		outboxPublisher: outboxPublisher,
-		orderConsumer:   orderConsumer,
+		outboxPublisher:  outboxPublisher,
+		orderConsumer:    orderConsumer,
+		posSaleConsumer:  posSaleConsumer,
 	}, nil
 }
 
@@ -215,6 +220,16 @@ func (a *App) Run(ctx context.Context) error {
 				}
 			}()
 			a.log.Info("order events consumer started")
+
+			// Start POS sale events consumer
+			if a.posSaleConsumer != nil {
+				go func() {
+					if err := a.posSaleConsumer.Start(ctx, js); err != nil {
+						a.log.Error("pos sale events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("pos sale events consumer started")
+			}
 		}
 	}
 
