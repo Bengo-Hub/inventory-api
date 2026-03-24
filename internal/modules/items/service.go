@@ -34,6 +34,7 @@ type ItemDTO struct {
 	Metadata        map[string]any `json:"metadata,omitempty"`
 	InitialQuantity int            `json:"initial_quantity,omitempty"`
 	ReorderLevel    int            `json:"reorder_level,omitempty"`
+	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 }
@@ -338,13 +339,16 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 }
 
 // ListItems returns all active items for a tenant (cached 1 min).
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID) ([]ItemDTO, error) {
-	key := sharedcache.Key("inv", "items", tenantID.String())
+// When typeFilter is non-empty (e.g. "INGREDIENT"), only items of that type are returned.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]ItemDTO, error) {
+	key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter)
 	fetch := func(ctx context.Context) ([]ItemDTO, error) {
-		itms, err := s.client.Item.Query().
-			Where(item.TenantID(tenantID), item.IsActive(true)).
-			Order(ent.Asc(item.FieldSku)).
-			All(ctx)
+		q := s.client.Item.Query().
+			Where(item.TenantID(tenantID), item.IsActive(true))
+		if typeFilter != "" {
+			q = q.Where(item.TypeEQ(item.Type(typeFilter)))
+		}
+		itms, err := q.Order(ent.Asc(item.FieldSku)).All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("items: list: %w", err)
 		}
@@ -508,6 +512,35 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			Save(ctx)
 		if err != nil {
 			s.log.Warn("items: create initial balance failed", zap.Error(err), zap.String("sku", dto.SKU))
+		}
+
+		// If "add to all outlets" is requested, create balances for all other active warehouses
+		if dto.AddToAllOutlets {
+			allWarehouses, whsErr := tx.Warehouse.Query().
+				Where(
+					warehouse.TenantID(tenantID),
+					warehouse.IsActive(true),
+					warehouse.IDNEQ(wh.ID), // skip the default warehouse (already created above)
+				).
+				All(ctx)
+			if whsErr == nil {
+				for _, w := range allWarehouses {
+					_, balErr := tx.InventoryBalance.Create().
+						SetTenantID(tenantID).
+						SetItemID(i.ID).
+						SetWarehouseID(w.ID).
+						SetOnHand(initialQty).
+						SetAvailable(initialQty).
+						SetReserved(0).
+						SetReorderLevel(reorderLevel).
+						SetUnitOfMeasure(uom).
+						Save(ctx)
+					if balErr != nil {
+						s.log.Warn("items: create balance for additional warehouse failed",
+							zap.Error(balErr), zap.String("sku", dto.SKU), zap.String("warehouse", w.Code))
+					}
+				}
+			}
 		}
 	}
 

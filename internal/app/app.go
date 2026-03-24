@@ -172,7 +172,13 @@ func New(ctx context.Context) (*App, error) {
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins)
+	// Initialize media handler for file uploads
+	var mediaHandler *handlers.MediaHandler
+	if cfg.Media.Root != "" {
+		mediaHandler = handlers.NewMediaHandler(log, cfg.Media)
+	}
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

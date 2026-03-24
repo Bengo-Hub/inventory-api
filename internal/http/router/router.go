@@ -28,6 +28,8 @@ func New(
 	tenantSyncer *tenant.Syncer,
 	rbacService *rbac.Service,
 	allowedOrigins []string,
+	mediaHandler *handlers.MediaHandler,
+	mediaRoot string,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -50,6 +52,16 @@ func New(
 	r.Get("/readyz", health.Readiness)
 	r.Get("/metrics", health.Metrics)
 	r.Get("/v1/docs/*", handlers.SwaggerUI)
+
+	// Media upload endpoint (accepts multipart/form-data, no tenant scope required)
+	if mediaHandler != nil {
+		r.Post("/api/v1/media/upload", mediaHandler.Upload)
+	}
+
+	// Serve uploaded media files from the media root directory
+	if mediaRoot != "" {
+		r.Handle("/media/*", http.StripPrefix("/media", http.FileServer(http.Dir(mediaRoot))))
+	}
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
