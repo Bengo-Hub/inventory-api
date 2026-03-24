@@ -19,6 +19,12 @@ type Config struct {
 	Events    EventsConfig
 	Telemetry TelemetryConfig
 	Auth      AuthConfig
+	Media     MediaConfig
+}
+
+type MediaConfig struct {
+	Root    string `envconfig:"MEDIA_ROOT" default:"./media"`
+	URLBase string `envconfig:"MEDIA_URL_BASE" default:""`
 }
 
 type AppConfig struct {

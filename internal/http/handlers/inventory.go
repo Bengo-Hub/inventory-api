@@ -23,7 +23,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID) ([]items.ItemDTO, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 }
 
@@ -568,7 +568,8 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := h.itemsSvc.ListItems(r.Context(), tenantID)
+	typeFilter := r.URL.Query().Get("type")
+	results, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
