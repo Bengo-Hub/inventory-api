@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -298,6 +299,21 @@ func (_u *ItemUpdate) AddTranslations(v ...*ItemTranslation) *ItemUpdate {
 	return _u.AddTranslationIDs(ids...)
 }
 
+// AddModifierGroupIDs adds the "modifier_groups" edge to the ModifierGroup entity by IDs.
+func (_u *ItemUpdate) AddModifierGroupIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddModifierGroupIDs(ids...)
+	return _u
+}
+
+// AddModifierGroups adds the "modifier_groups" edges to the ModifierGroup entity.
+func (_u *ItemUpdate) AddModifierGroups(v ...*ModifierGroup) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModifierGroupIDs(ids...)
+}
+
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
 func (_u *ItemUpdate) SetItemCategoryID(id uuid.UUID) *ItemUpdate {
 	_u.mutation.SetItemCategoryID(id)
@@ -437,6 +453,27 @@ func (_u *ItemUpdate) RemoveTranslations(v ...*ItemTranslation) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTranslationIDs(ids...)
+}
+
+// ClearModifierGroups clears all "modifier_groups" edges to the ModifierGroup entity.
+func (_u *ItemUpdate) ClearModifierGroups() *ItemUpdate {
+	_u.mutation.ClearModifierGroups()
+	return _u
+}
+
+// RemoveModifierGroupIDs removes the "modifier_groups" edge to ModifierGroup entities by IDs.
+func (_u *ItemUpdate) RemoveModifierGroupIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveModifierGroupIDs(ids...)
+	return _u
+}
+
+// RemoveModifierGroups removes "modifier_groups" edges to ModifierGroup entities.
+func (_u *ItemUpdate) RemoveModifierGroups(v ...*ModifierGroup) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModifierGroupIDs(ids...)
 }
 
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
@@ -829,6 +866,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ModifierGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModifierGroupsIDs(); len(nodes) > 0 && !_u.mutation.ModifierGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModifierGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.ItemCategoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1139,6 +1221,21 @@ func (_u *ItemUpdateOne) AddTranslations(v ...*ItemTranslation) *ItemUpdateOne {
 	return _u.AddTranslationIDs(ids...)
 }
 
+// AddModifierGroupIDs adds the "modifier_groups" edge to the ModifierGroup entity by IDs.
+func (_u *ItemUpdateOne) AddModifierGroupIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddModifierGroupIDs(ids...)
+	return _u
+}
+
+// AddModifierGroups adds the "modifier_groups" edges to the ModifierGroup entity.
+func (_u *ItemUpdateOne) AddModifierGroups(v ...*ModifierGroup) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddModifierGroupIDs(ids...)
+}
+
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
 func (_u *ItemUpdateOne) SetItemCategoryID(id uuid.UUID) *ItemUpdateOne {
 	_u.mutation.SetItemCategoryID(id)
@@ -1278,6 +1375,27 @@ func (_u *ItemUpdateOne) RemoveTranslations(v ...*ItemTranslation) *ItemUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveTranslationIDs(ids...)
+}
+
+// ClearModifierGroups clears all "modifier_groups" edges to the ModifierGroup entity.
+func (_u *ItemUpdateOne) ClearModifierGroups() *ItemUpdateOne {
+	_u.mutation.ClearModifierGroups()
+	return _u
+}
+
+// RemoveModifierGroupIDs removes the "modifier_groups" edge to ModifierGroup entities by IDs.
+func (_u *ItemUpdateOne) RemoveModifierGroupIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveModifierGroupIDs(ids...)
+	return _u
+}
+
+// RemoveModifierGroups removes "modifier_groups" edges to ModifierGroup entities.
+func (_u *ItemUpdateOne) RemoveModifierGroups(v ...*ModifierGroup) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveModifierGroupIDs(ids...)
 }
 
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
@@ -1693,6 +1811,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ModifierGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedModifierGroupsIDs(); len(nodes) > 0 && !_u.mutation.ModifierGroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ModifierGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

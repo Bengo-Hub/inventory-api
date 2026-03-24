@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -279,6 +280,21 @@ func (_c *ItemCreate) AddTranslations(v ...*ItemTranslation) *ItemCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddTranslationIDs(ids...)
+}
+
+// AddModifierGroupIDs adds the "modifier_groups" edge to the ModifierGroup entity by IDs.
+func (_c *ItemCreate) AddModifierGroupIDs(ids ...uuid.UUID) *ItemCreate {
+	_c.mutation.AddModifierGroupIDs(ids...)
+	return _c
+}
+
+// AddModifierGroups adds the "modifier_groups" edges to the ModifierGroup entity.
+func (_c *ItemCreate) AddModifierGroups(v ...*ModifierGroup) *ItemCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddModifierGroupIDs(ids...)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -584,6 +600,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ModifierGroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.ModifierGroupsTable,
+			Columns: []string{item.ModifierGroupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

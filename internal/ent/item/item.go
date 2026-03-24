@@ -54,6 +54,8 @@ const (
 	EdgeAssets = "assets"
 	// EdgeTranslations holds the string denoting the translations edge name in mutations.
 	EdgeTranslations = "translations"
+	// EdgeModifierGroups holds the string denoting the modifier_groups edge name in mutations.
+	EdgeModifierGroups = "modifier_groups"
 	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
 	EdgeItemCategory = "item_category"
 	// Table holds the table name of the item in the database.
@@ -107,6 +109,13 @@ const (
 	TranslationsInverseTable = "item_translations"
 	// TranslationsColumn is the table column denoting the translations relation/edge.
 	TranslationsColumn = "item_id"
+	// ModifierGroupsTable is the table that holds the modifier_groups relation/edge.
+	ModifierGroupsTable = "modifier_groups"
+	// ModifierGroupsInverseTable is the table name for the ModifierGroup entity.
+	// It exists in this package in order to avoid circular dependency with the "modifiergroup" package.
+	ModifierGroupsInverseTable = "modifier_groups"
+	// ModifierGroupsColumn is the table column denoting the modifier_groups relation/edge.
+	ModifierGroupsColumn = "item_id"
 	// ItemCategoryTable is the table that holds the item_category relation/edge.
 	ItemCategoryTable = "items"
 	// ItemCategoryInverseTable is the table name for the ItemCategory entity.
@@ -339,6 +348,20 @@ func ByTranslations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByModifierGroupsCount orders the results by modifier_groups count.
+func ByModifierGroupsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newModifierGroupsStep(), opts...)
+	}
+}
+
+// ByModifierGroups orders the results by modifier_groups terms.
+func ByModifierGroups(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newModifierGroupsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByItemCategoryField orders the results by item_category field.
 func ByItemCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -392,6 +415,13 @@ func newTranslationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TranslationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, TranslationsTable, TranslationsColumn),
+	)
+}
+func newModifierGroupsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ModifierGroupsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ModifierGroupsTable, ModifierGroupsColumn),
 	)
 }
 func newItemCategoryStep() *sqlgraph.Step {

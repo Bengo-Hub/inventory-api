@@ -21,6 +21,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
+	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
@@ -57,6 +59,8 @@ const (
 	TypeItemCategory        = "ItemCategory"
 	TypeItemTranslation     = "ItemTranslation"
 	TypeItemVariant         = "ItemVariant"
+	TypeModifierGroup       = "ModifierGroup"
+	TypeModifierOption      = "ModifierOption"
 	TypeOutboxEvent         = "OutboxEvent"
 	TypeRateLimitConfig     = "RateLimitConfig"
 	TypeRecipe              = "Recipe"
@@ -4468,6 +4472,9 @@ type ItemMutation struct {
 	translations              map[uuid.UUID]struct{}
 	removedtranslations       map[uuid.UUID]struct{}
 	clearedtranslations       bool
+	modifier_groups           map[uuid.UUID]struct{}
+	removedmodifier_groups    map[uuid.UUID]struct{}
+	clearedmodifier_groups    bool
 	item_category             *uuid.UUID
 	cleareditem_category      bool
 	done                      bool
@@ -5400,6 +5407,60 @@ func (m *ItemMutation) ResetTranslations() {
 	m.removedtranslations = nil
 }
 
+// AddModifierGroupIDs adds the "modifier_groups" edge to the ModifierGroup entity by ids.
+func (m *ItemMutation) AddModifierGroupIDs(ids ...uuid.UUID) {
+	if m.modifier_groups == nil {
+		m.modifier_groups = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.modifier_groups[ids[i]] = struct{}{}
+	}
+}
+
+// ClearModifierGroups clears the "modifier_groups" edge to the ModifierGroup entity.
+func (m *ItemMutation) ClearModifierGroups() {
+	m.clearedmodifier_groups = true
+}
+
+// ModifierGroupsCleared reports if the "modifier_groups" edge to the ModifierGroup entity was cleared.
+func (m *ItemMutation) ModifierGroupsCleared() bool {
+	return m.clearedmodifier_groups
+}
+
+// RemoveModifierGroupIDs removes the "modifier_groups" edge to the ModifierGroup entity by IDs.
+func (m *ItemMutation) RemoveModifierGroupIDs(ids ...uuid.UUID) {
+	if m.removedmodifier_groups == nil {
+		m.removedmodifier_groups = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.modifier_groups, ids[i])
+		m.removedmodifier_groups[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedModifierGroups returns the removed IDs of the "modifier_groups" edge to the ModifierGroup entity.
+func (m *ItemMutation) RemovedModifierGroupsIDs() (ids []uuid.UUID) {
+	for id := range m.removedmodifier_groups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ModifierGroupsIDs returns the "modifier_groups" edge IDs in the mutation.
+func (m *ItemMutation) ModifierGroupsIDs() (ids []uuid.UUID) {
+	for id := range m.modifier_groups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetModifierGroups resets all changes to the "modifier_groups" edge.
+func (m *ItemMutation) ResetModifierGroups() {
+	m.modifier_groups = nil
+	m.clearedmodifier_groups = false
+	m.removedmodifier_groups = nil
+}
+
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by id.
 func (m *ItemMutation) SetItemCategoryID(id uuid.UUID) {
 	m.item_category = &id
@@ -5787,7 +5848,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.tenant != nil {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -5808,6 +5869,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.translations != nil {
 		edges = append(edges, item.EdgeTranslations)
+	}
+	if m.modifier_groups != nil {
+		edges = append(edges, item.EdgeModifierGroups)
 	}
 	if m.item_category != nil {
 		edges = append(edges, item.EdgeItemCategory)
@@ -5857,6 +5921,12 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeModifierGroups:
+		ids := make([]ent.Value, 0, len(m.modifier_groups))
+		for id := range m.modifier_groups {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeItemCategory:
 		if id := m.item_category; id != nil {
 			return []ent.Value{*id}
@@ -5867,7 +5937,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedbalances != nil {
 		edges = append(edges, item.EdgeBalances)
 	}
@@ -5882,6 +5952,9 @@ func (m *ItemMutation) RemovedEdges() []string {
 	}
 	if m.removedtranslations != nil {
 		edges = append(edges, item.EdgeTranslations)
+	}
+	if m.removedmodifier_groups != nil {
+		edges = append(edges, item.EdgeModifierGroups)
 	}
 	return edges
 }
@@ -5920,13 +5993,19 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeModifierGroups:
+		ids := make([]ent.Value, 0, len(m.removedmodifier_groups))
+		for id := range m.removedmodifier_groups {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedtenant {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -5947,6 +6026,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	}
 	if m.clearedtranslations {
 		edges = append(edges, item.EdgeTranslations)
+	}
+	if m.clearedmodifier_groups {
+		edges = append(edges, item.EdgeModifierGroups)
 	}
 	if m.cleareditem_category {
 		edges = append(edges, item.EdgeItemCategory)
@@ -5972,6 +6054,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedassets
 	case item.EdgeTranslations:
 		return m.clearedtranslations
+	case item.EdgeModifierGroups:
+		return m.clearedmodifier_groups
 	case item.EdgeItemCategory:
 		return m.cleareditem_category
 	}
@@ -6019,6 +6103,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgeTranslations:
 		m.ResetTranslations()
+		return nil
+	case item.EdgeModifierGroups:
+		m.ResetModifierGroups()
 		return nil
 	case item.EdgeItemCategory:
 		m.ResetItemCategory()
@@ -9326,6 +9413,1920 @@ func (m *ItemVariantMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ItemVariant edge %s", name)
+}
+
+// ModifierGroupMutation represents an operation that mutates the ModifierGroup nodes in the graph.
+type ModifierGroupMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	tenant_id         *uuid.UUID
+	name              *string
+	is_required       *bool
+	min_selections    *int
+	addmin_selections *int
+	max_selections    *int
+	addmax_selections *int
+	display_order     *int
+	adddisplay_order  *int
+	created_at        *time.Time
+	updated_at        *time.Time
+	clearedFields     map[string]struct{}
+	options           map[uuid.UUID]struct{}
+	removedoptions    map[uuid.UUID]struct{}
+	clearedoptions    bool
+	item              *uuid.UUID
+	cleareditem       bool
+	done              bool
+	oldValue          func(context.Context) (*ModifierGroup, error)
+	predicates        []predicate.ModifierGroup
+}
+
+var _ ent.Mutation = (*ModifierGroupMutation)(nil)
+
+// modifiergroupOption allows management of the mutation configuration using functional options.
+type modifiergroupOption func(*ModifierGroupMutation)
+
+// newModifierGroupMutation creates new mutation for the ModifierGroup entity.
+func newModifierGroupMutation(c config, op Op, opts ...modifiergroupOption) *ModifierGroupMutation {
+	m := &ModifierGroupMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModifierGroup,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModifierGroupID sets the ID field of the mutation.
+func withModifierGroupID(id uuid.UUID) modifiergroupOption {
+	return func(m *ModifierGroupMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModifierGroup
+		)
+		m.oldValue = func(ctx context.Context) (*ModifierGroup, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModifierGroup.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModifierGroup sets the old ModifierGroup of the mutation.
+func withModifierGroup(node *ModifierGroup) modifiergroupOption {
+	return func(m *ModifierGroupMutation) {
+		m.oldValue = func(context.Context) (*ModifierGroup, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModifierGroupMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModifierGroupMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ModifierGroup entities.
+func (m *ModifierGroupMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModifierGroupMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModifierGroupMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModifierGroup.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *ModifierGroupMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *ModifierGroupMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *ModifierGroupMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *ModifierGroupMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *ModifierGroupMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *ModifierGroupMutation) ResetItemID() {
+	m.item = nil
+}
+
+// SetName sets the "name" field.
+func (m *ModifierGroupMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ModifierGroupMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ModifierGroupMutation) ResetName() {
+	m.name = nil
+}
+
+// SetIsRequired sets the "is_required" field.
+func (m *ModifierGroupMutation) SetIsRequired(b bool) {
+	m.is_required = &b
+}
+
+// IsRequired returns the value of the "is_required" field in the mutation.
+func (m *ModifierGroupMutation) IsRequired() (r bool, exists bool) {
+	v := m.is_required
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsRequired returns the old "is_required" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldIsRequired(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsRequired is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsRequired requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsRequired: %w", err)
+	}
+	return oldValue.IsRequired, nil
+}
+
+// ResetIsRequired resets all changes to the "is_required" field.
+func (m *ModifierGroupMutation) ResetIsRequired() {
+	m.is_required = nil
+}
+
+// SetMinSelections sets the "min_selections" field.
+func (m *ModifierGroupMutation) SetMinSelections(i int) {
+	m.min_selections = &i
+	m.addmin_selections = nil
+}
+
+// MinSelections returns the value of the "min_selections" field in the mutation.
+func (m *ModifierGroupMutation) MinSelections() (r int, exists bool) {
+	v := m.min_selections
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinSelections returns the old "min_selections" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldMinSelections(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinSelections is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinSelections requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinSelections: %w", err)
+	}
+	return oldValue.MinSelections, nil
+}
+
+// AddMinSelections adds i to the "min_selections" field.
+func (m *ModifierGroupMutation) AddMinSelections(i int) {
+	if m.addmin_selections != nil {
+		*m.addmin_selections += i
+	} else {
+		m.addmin_selections = &i
+	}
+}
+
+// AddedMinSelections returns the value that was added to the "min_selections" field in this mutation.
+func (m *ModifierGroupMutation) AddedMinSelections() (r int, exists bool) {
+	v := m.addmin_selections
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMinSelections resets all changes to the "min_selections" field.
+func (m *ModifierGroupMutation) ResetMinSelections() {
+	m.min_selections = nil
+	m.addmin_selections = nil
+}
+
+// SetMaxSelections sets the "max_selections" field.
+func (m *ModifierGroupMutation) SetMaxSelections(i int) {
+	m.max_selections = &i
+	m.addmax_selections = nil
+}
+
+// MaxSelections returns the value of the "max_selections" field in the mutation.
+func (m *ModifierGroupMutation) MaxSelections() (r int, exists bool) {
+	v := m.max_selections
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxSelections returns the old "max_selections" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldMaxSelections(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxSelections is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxSelections requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxSelections: %w", err)
+	}
+	return oldValue.MaxSelections, nil
+}
+
+// AddMaxSelections adds i to the "max_selections" field.
+func (m *ModifierGroupMutation) AddMaxSelections(i int) {
+	if m.addmax_selections != nil {
+		*m.addmax_selections += i
+	} else {
+		m.addmax_selections = &i
+	}
+}
+
+// AddedMaxSelections returns the value that was added to the "max_selections" field in this mutation.
+func (m *ModifierGroupMutation) AddedMaxSelections() (r int, exists bool) {
+	v := m.addmax_selections
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxSelections resets all changes to the "max_selections" field.
+func (m *ModifierGroupMutation) ResetMaxSelections() {
+	m.max_selections = nil
+	m.addmax_selections = nil
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (m *ModifierGroupMutation) SetDisplayOrder(i int) {
+	m.display_order = &i
+	m.adddisplay_order = nil
+}
+
+// DisplayOrder returns the value of the "display_order" field in the mutation.
+func (m *ModifierGroupMutation) DisplayOrder() (r int, exists bool) {
+	v := m.display_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayOrder returns the old "display_order" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldDisplayOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayOrder: %w", err)
+	}
+	return oldValue.DisplayOrder, nil
+}
+
+// AddDisplayOrder adds i to the "display_order" field.
+func (m *ModifierGroupMutation) AddDisplayOrder(i int) {
+	if m.adddisplay_order != nil {
+		*m.adddisplay_order += i
+	} else {
+		m.adddisplay_order = &i
+	}
+}
+
+// AddedDisplayOrder returns the value that was added to the "display_order" field in this mutation.
+func (m *ModifierGroupMutation) AddedDisplayOrder() (r int, exists bool) {
+	v := m.adddisplay_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDisplayOrder resets all changes to the "display_order" field.
+func (m *ModifierGroupMutation) ResetDisplayOrder() {
+	m.display_order = nil
+	m.adddisplay_order = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModifierGroupMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModifierGroupMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModifierGroupMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModifierGroupMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModifierGroupMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModifierGroup entity.
+// If the ModifierGroup object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierGroupMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModifierGroupMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// AddOptionIDs adds the "options" edge to the ModifierOption entity by ids.
+func (m *ModifierGroupMutation) AddOptionIDs(ids ...uuid.UUID) {
+	if m.options == nil {
+		m.options = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.options[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOptions clears the "options" edge to the ModifierOption entity.
+func (m *ModifierGroupMutation) ClearOptions() {
+	m.clearedoptions = true
+}
+
+// OptionsCleared reports if the "options" edge to the ModifierOption entity was cleared.
+func (m *ModifierGroupMutation) OptionsCleared() bool {
+	return m.clearedoptions
+}
+
+// RemoveOptionIDs removes the "options" edge to the ModifierOption entity by IDs.
+func (m *ModifierGroupMutation) RemoveOptionIDs(ids ...uuid.UUID) {
+	if m.removedoptions == nil {
+		m.removedoptions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.options, ids[i])
+		m.removedoptions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOptions returns the removed IDs of the "options" edge to the ModifierOption entity.
+func (m *ModifierGroupMutation) RemovedOptionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedoptions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OptionsIDs returns the "options" edge IDs in the mutation.
+func (m *ModifierGroupMutation) OptionsIDs() (ids []uuid.UUID) {
+	for id := range m.options {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOptions resets all changes to the "options" edge.
+func (m *ModifierGroupMutation) ResetOptions() {
+	m.options = nil
+	m.clearedoptions = false
+	m.removedoptions = nil
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *ModifierGroupMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[modifiergroup.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *ModifierGroupMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *ModifierGroupMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *ModifierGroupMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// Where appends a list predicates to the ModifierGroupMutation builder.
+func (m *ModifierGroupMutation) Where(ps ...predicate.ModifierGroup) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModifierGroupMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModifierGroupMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModifierGroup, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModifierGroupMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModifierGroupMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModifierGroup).
+func (m *ModifierGroupMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModifierGroupMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.tenant_id != nil {
+		fields = append(fields, modifiergroup.FieldTenantID)
+	}
+	if m.item != nil {
+		fields = append(fields, modifiergroup.FieldItemID)
+	}
+	if m.name != nil {
+		fields = append(fields, modifiergroup.FieldName)
+	}
+	if m.is_required != nil {
+		fields = append(fields, modifiergroup.FieldIsRequired)
+	}
+	if m.min_selections != nil {
+		fields = append(fields, modifiergroup.FieldMinSelections)
+	}
+	if m.max_selections != nil {
+		fields = append(fields, modifiergroup.FieldMaxSelections)
+	}
+	if m.display_order != nil {
+		fields = append(fields, modifiergroup.FieldDisplayOrder)
+	}
+	if m.created_at != nil {
+		fields = append(fields, modifiergroup.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modifiergroup.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModifierGroupMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modifiergroup.FieldTenantID:
+		return m.TenantID()
+	case modifiergroup.FieldItemID:
+		return m.ItemID()
+	case modifiergroup.FieldName:
+		return m.Name()
+	case modifiergroup.FieldIsRequired:
+		return m.IsRequired()
+	case modifiergroup.FieldMinSelections:
+		return m.MinSelections()
+	case modifiergroup.FieldMaxSelections:
+		return m.MaxSelections()
+	case modifiergroup.FieldDisplayOrder:
+		return m.DisplayOrder()
+	case modifiergroup.FieldCreatedAt:
+		return m.CreatedAt()
+	case modifiergroup.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModifierGroupMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modifiergroup.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case modifiergroup.FieldItemID:
+		return m.OldItemID(ctx)
+	case modifiergroup.FieldName:
+		return m.OldName(ctx)
+	case modifiergroup.FieldIsRequired:
+		return m.OldIsRequired(ctx)
+	case modifiergroup.FieldMinSelections:
+		return m.OldMinSelections(ctx)
+	case modifiergroup.FieldMaxSelections:
+		return m.OldMaxSelections(ctx)
+	case modifiergroup.FieldDisplayOrder:
+		return m.OldDisplayOrder(ctx)
+	case modifiergroup.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modifiergroup.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModifierGroup field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModifierGroupMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modifiergroup.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case modifiergroup.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case modifiergroup.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case modifiergroup.FieldIsRequired:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsRequired(v)
+		return nil
+	case modifiergroup.FieldMinSelections:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinSelections(v)
+		return nil
+	case modifiergroup.FieldMaxSelections:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxSelections(v)
+		return nil
+	case modifiergroup.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayOrder(v)
+		return nil
+	case modifiergroup.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modifiergroup.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierGroup field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModifierGroupMutation) AddedFields() []string {
+	var fields []string
+	if m.addmin_selections != nil {
+		fields = append(fields, modifiergroup.FieldMinSelections)
+	}
+	if m.addmax_selections != nil {
+		fields = append(fields, modifiergroup.FieldMaxSelections)
+	}
+	if m.adddisplay_order != nil {
+		fields = append(fields, modifiergroup.FieldDisplayOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModifierGroupMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modifiergroup.FieldMinSelections:
+		return m.AddedMinSelections()
+	case modifiergroup.FieldMaxSelections:
+		return m.AddedMaxSelections()
+	case modifiergroup.FieldDisplayOrder:
+		return m.AddedDisplayOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModifierGroupMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modifiergroup.FieldMinSelections:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinSelections(v)
+		return nil
+	case modifiergroup.FieldMaxSelections:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxSelections(v)
+		return nil
+	case modifiergroup.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDisplayOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierGroup numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModifierGroupMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModifierGroupMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModifierGroupMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ModifierGroup nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModifierGroupMutation) ResetField(name string) error {
+	switch name {
+	case modifiergroup.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case modifiergroup.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case modifiergroup.FieldName:
+		m.ResetName()
+		return nil
+	case modifiergroup.FieldIsRequired:
+		m.ResetIsRequired()
+		return nil
+	case modifiergroup.FieldMinSelections:
+		m.ResetMinSelections()
+		return nil
+	case modifiergroup.FieldMaxSelections:
+		m.ResetMaxSelections()
+		return nil
+	case modifiergroup.FieldDisplayOrder:
+		m.ResetDisplayOrder()
+		return nil
+	case modifiergroup.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modifiergroup.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierGroup field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModifierGroupMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.options != nil {
+		edges = append(edges, modifiergroup.EdgeOptions)
+	}
+	if m.item != nil {
+		edges = append(edges, modifiergroup.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModifierGroupMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case modifiergroup.EdgeOptions:
+		ids := make([]ent.Value, 0, len(m.options))
+		for id := range m.options {
+			ids = append(ids, id)
+		}
+		return ids
+	case modifiergroup.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModifierGroupMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedoptions != nil {
+		edges = append(edges, modifiergroup.EdgeOptions)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModifierGroupMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case modifiergroup.EdgeOptions:
+		ids := make([]ent.Value, 0, len(m.removedoptions))
+		for id := range m.removedoptions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModifierGroupMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedoptions {
+		edges = append(edges, modifiergroup.EdgeOptions)
+	}
+	if m.cleareditem {
+		edges = append(edges, modifiergroup.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModifierGroupMutation) EdgeCleared(name string) bool {
+	switch name {
+	case modifiergroup.EdgeOptions:
+		return m.clearedoptions
+	case modifiergroup.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModifierGroupMutation) ClearEdge(name string) error {
+	switch name {
+	case modifiergroup.EdgeItem:
+		m.ClearItem()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierGroup unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModifierGroupMutation) ResetEdge(name string) error {
+	switch name {
+	case modifiergroup.EdgeOptions:
+		m.ResetOptions()
+		return nil
+	case modifiergroup.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierGroup edge %s", name)
+}
+
+// ModifierOptionMutation represents an operation that mutates the ModifierOption nodes in the graph.
+type ModifierOptionMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	name                *string
+	sku                 *string
+	price_adjustment    *float64
+	addprice_adjustment *float64
+	is_default          *bool
+	is_active           *bool
+	display_order       *int
+	adddisplay_order    *int
+	created_at          *time.Time
+	updated_at          *time.Time
+	clearedFields       map[string]struct{}
+	group               *uuid.UUID
+	clearedgroup        bool
+	done                bool
+	oldValue            func(context.Context) (*ModifierOption, error)
+	predicates          []predicate.ModifierOption
+}
+
+var _ ent.Mutation = (*ModifierOptionMutation)(nil)
+
+// modifieroptionOption allows management of the mutation configuration using functional options.
+type modifieroptionOption func(*ModifierOptionMutation)
+
+// newModifierOptionMutation creates new mutation for the ModifierOption entity.
+func newModifierOptionMutation(c config, op Op, opts ...modifieroptionOption) *ModifierOptionMutation {
+	m := &ModifierOptionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeModifierOption,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withModifierOptionID sets the ID field of the mutation.
+func withModifierOptionID(id uuid.UUID) modifieroptionOption {
+	return func(m *ModifierOptionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ModifierOption
+		)
+		m.oldValue = func(ctx context.Context) (*ModifierOption, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ModifierOption.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withModifierOption sets the old ModifierOption of the mutation.
+func withModifierOption(node *ModifierOption) modifieroptionOption {
+	return func(m *ModifierOptionMutation) {
+		m.oldValue = func(context.Context) (*ModifierOption, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ModifierOptionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ModifierOptionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ModifierOption entities.
+func (m *ModifierOptionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ModifierOptionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ModifierOptionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ModifierOption.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *ModifierOptionMutation) SetGroupID(u uuid.UUID) {
+	m.group = &u
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *ModifierOptionMutation) GroupID() (r uuid.UUID, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldGroupID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *ModifierOptionMutation) ResetGroupID() {
+	m.group = nil
+}
+
+// SetName sets the "name" field.
+func (m *ModifierOptionMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ModifierOptionMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ModifierOptionMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSku sets the "sku" field.
+func (m *ModifierOptionMutation) SetSku(s string) {
+	m.sku = &s
+}
+
+// Sku returns the value of the "sku" field in the mutation.
+func (m *ModifierOptionMutation) Sku() (r string, exists bool) {
+	v := m.sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSku returns the old "sku" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSku: %w", err)
+	}
+	return oldValue.Sku, nil
+}
+
+// ClearSku clears the value of the "sku" field.
+func (m *ModifierOptionMutation) ClearSku() {
+	m.sku = nil
+	m.clearedFields[modifieroption.FieldSku] = struct{}{}
+}
+
+// SkuCleared returns if the "sku" field was cleared in this mutation.
+func (m *ModifierOptionMutation) SkuCleared() bool {
+	_, ok := m.clearedFields[modifieroption.FieldSku]
+	return ok
+}
+
+// ResetSku resets all changes to the "sku" field.
+func (m *ModifierOptionMutation) ResetSku() {
+	m.sku = nil
+	delete(m.clearedFields, modifieroption.FieldSku)
+}
+
+// SetPriceAdjustment sets the "price_adjustment" field.
+func (m *ModifierOptionMutation) SetPriceAdjustment(f float64) {
+	m.price_adjustment = &f
+	m.addprice_adjustment = nil
+}
+
+// PriceAdjustment returns the value of the "price_adjustment" field in the mutation.
+func (m *ModifierOptionMutation) PriceAdjustment() (r float64, exists bool) {
+	v := m.price_adjustment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriceAdjustment returns the old "price_adjustment" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldPriceAdjustment(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriceAdjustment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriceAdjustment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriceAdjustment: %w", err)
+	}
+	return oldValue.PriceAdjustment, nil
+}
+
+// AddPriceAdjustment adds f to the "price_adjustment" field.
+func (m *ModifierOptionMutation) AddPriceAdjustment(f float64) {
+	if m.addprice_adjustment != nil {
+		*m.addprice_adjustment += f
+	} else {
+		m.addprice_adjustment = &f
+	}
+}
+
+// AddedPriceAdjustment returns the value that was added to the "price_adjustment" field in this mutation.
+func (m *ModifierOptionMutation) AddedPriceAdjustment() (r float64, exists bool) {
+	v := m.addprice_adjustment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriceAdjustment resets all changes to the "price_adjustment" field.
+func (m *ModifierOptionMutation) ResetPriceAdjustment() {
+	m.price_adjustment = nil
+	m.addprice_adjustment = nil
+}
+
+// SetIsDefault sets the "is_default" field.
+func (m *ModifierOptionMutation) SetIsDefault(b bool) {
+	m.is_default = &b
+}
+
+// IsDefault returns the value of the "is_default" field in the mutation.
+func (m *ModifierOptionMutation) IsDefault() (r bool, exists bool) {
+	v := m.is_default
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsDefault returns the old "is_default" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldIsDefault(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsDefault is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsDefault requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsDefault: %w", err)
+	}
+	return oldValue.IsDefault, nil
+}
+
+// ResetIsDefault resets all changes to the "is_default" field.
+func (m *ModifierOptionMutation) ResetIsDefault() {
+	m.is_default = nil
+}
+
+// SetIsActive sets the "is_active" field.
+func (m *ModifierOptionMutation) SetIsActive(b bool) {
+	m.is_active = &b
+}
+
+// IsActive returns the value of the "is_active" field in the mutation.
+func (m *ModifierOptionMutation) IsActive() (r bool, exists bool) {
+	v := m.is_active
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsActive returns the old "is_active" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldIsActive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsActive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsActive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
+	}
+	return oldValue.IsActive, nil
+}
+
+// ResetIsActive resets all changes to the "is_active" field.
+func (m *ModifierOptionMutation) ResetIsActive() {
+	m.is_active = nil
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (m *ModifierOptionMutation) SetDisplayOrder(i int) {
+	m.display_order = &i
+	m.adddisplay_order = nil
+}
+
+// DisplayOrder returns the value of the "display_order" field in the mutation.
+func (m *ModifierOptionMutation) DisplayOrder() (r int, exists bool) {
+	v := m.display_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayOrder returns the old "display_order" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldDisplayOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayOrder: %w", err)
+	}
+	return oldValue.DisplayOrder, nil
+}
+
+// AddDisplayOrder adds i to the "display_order" field.
+func (m *ModifierOptionMutation) AddDisplayOrder(i int) {
+	if m.adddisplay_order != nil {
+		*m.adddisplay_order += i
+	} else {
+		m.adddisplay_order = &i
+	}
+}
+
+// AddedDisplayOrder returns the value that was added to the "display_order" field in this mutation.
+func (m *ModifierOptionMutation) AddedDisplayOrder() (r int, exists bool) {
+	v := m.adddisplay_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDisplayOrder resets all changes to the "display_order" field.
+func (m *ModifierOptionMutation) ResetDisplayOrder() {
+	m.display_order = nil
+	m.adddisplay_order = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ModifierOptionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ModifierOptionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ModifierOptionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ModifierOptionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ModifierOptionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ModifierOptionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearGroup clears the "group" edge to the ModifierGroup entity.
+func (m *ModifierOptionMutation) ClearGroup() {
+	m.clearedgroup = true
+	m.clearedFields[modifieroption.FieldGroupID] = struct{}{}
+}
+
+// GroupCleared reports if the "group" edge to the ModifierGroup entity was cleared.
+func (m *ModifierOptionMutation) GroupCleared() bool {
+	return m.clearedgroup
+}
+
+// GroupIDs returns the "group" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GroupID instead. It exists only for internal usage by the builders.
+func (m *ModifierOptionMutation) GroupIDs() (ids []uuid.UUID) {
+	if id := m.group; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGroup resets all changes to the "group" edge.
+func (m *ModifierOptionMutation) ResetGroup() {
+	m.group = nil
+	m.clearedgroup = false
+}
+
+// Where appends a list predicates to the ModifierOptionMutation builder.
+func (m *ModifierOptionMutation) Where(ps ...predicate.ModifierOption) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ModifierOptionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ModifierOptionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ModifierOption, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ModifierOptionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ModifierOptionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ModifierOption).
+func (m *ModifierOptionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ModifierOptionMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.group != nil {
+		fields = append(fields, modifieroption.FieldGroupID)
+	}
+	if m.name != nil {
+		fields = append(fields, modifieroption.FieldName)
+	}
+	if m.sku != nil {
+		fields = append(fields, modifieroption.FieldSku)
+	}
+	if m.price_adjustment != nil {
+		fields = append(fields, modifieroption.FieldPriceAdjustment)
+	}
+	if m.is_default != nil {
+		fields = append(fields, modifieroption.FieldIsDefault)
+	}
+	if m.is_active != nil {
+		fields = append(fields, modifieroption.FieldIsActive)
+	}
+	if m.display_order != nil {
+		fields = append(fields, modifieroption.FieldDisplayOrder)
+	}
+	if m.created_at != nil {
+		fields = append(fields, modifieroption.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, modifieroption.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ModifierOptionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case modifieroption.FieldGroupID:
+		return m.GroupID()
+	case modifieroption.FieldName:
+		return m.Name()
+	case modifieroption.FieldSku:
+		return m.Sku()
+	case modifieroption.FieldPriceAdjustment:
+		return m.PriceAdjustment()
+	case modifieroption.FieldIsDefault:
+		return m.IsDefault()
+	case modifieroption.FieldIsActive:
+		return m.IsActive()
+	case modifieroption.FieldDisplayOrder:
+		return m.DisplayOrder()
+	case modifieroption.FieldCreatedAt:
+		return m.CreatedAt()
+	case modifieroption.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ModifierOptionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case modifieroption.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case modifieroption.FieldName:
+		return m.OldName(ctx)
+	case modifieroption.FieldSku:
+		return m.OldSku(ctx)
+	case modifieroption.FieldPriceAdjustment:
+		return m.OldPriceAdjustment(ctx)
+	case modifieroption.FieldIsDefault:
+		return m.OldIsDefault(ctx)
+	case modifieroption.FieldIsActive:
+		return m.OldIsActive(ctx)
+	case modifieroption.FieldDisplayOrder:
+		return m.OldDisplayOrder(ctx)
+	case modifieroption.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case modifieroption.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ModifierOption field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModifierOptionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case modifieroption.FieldGroupID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case modifieroption.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case modifieroption.FieldSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSku(v)
+		return nil
+	case modifieroption.FieldPriceAdjustment:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriceAdjustment(v)
+		return nil
+	case modifieroption.FieldIsDefault:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsDefault(v)
+		return nil
+	case modifieroption.FieldIsActive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsActive(v)
+		return nil
+	case modifieroption.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayOrder(v)
+		return nil
+	case modifieroption.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case modifieroption.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ModifierOptionMutation) AddedFields() []string {
+	var fields []string
+	if m.addprice_adjustment != nil {
+		fields = append(fields, modifieroption.FieldPriceAdjustment)
+	}
+	if m.adddisplay_order != nil {
+		fields = append(fields, modifieroption.FieldDisplayOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ModifierOptionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case modifieroption.FieldPriceAdjustment:
+		return m.AddedPriceAdjustment()
+	case modifieroption.FieldDisplayOrder:
+		return m.AddedDisplayOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ModifierOptionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case modifieroption.FieldPriceAdjustment:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriceAdjustment(v)
+		return nil
+	case modifieroption.FieldDisplayOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDisplayOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ModifierOptionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(modifieroption.FieldSku) {
+		fields = append(fields, modifieroption.FieldSku)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ModifierOptionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ModifierOptionMutation) ClearField(name string) error {
+	switch name {
+	case modifieroption.FieldSku:
+		m.ClearSku()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ModifierOptionMutation) ResetField(name string) error {
+	switch name {
+	case modifieroption.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case modifieroption.FieldName:
+		m.ResetName()
+		return nil
+	case modifieroption.FieldSku:
+		m.ResetSku()
+		return nil
+	case modifieroption.FieldPriceAdjustment:
+		m.ResetPriceAdjustment()
+		return nil
+	case modifieroption.FieldIsDefault:
+		m.ResetIsDefault()
+		return nil
+	case modifieroption.FieldIsActive:
+		m.ResetIsActive()
+		return nil
+	case modifieroption.FieldDisplayOrder:
+		m.ResetDisplayOrder()
+		return nil
+	case modifieroption.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case modifieroption.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ModifierOptionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.group != nil {
+		edges = append(edges, modifieroption.EdgeGroup)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ModifierOptionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case modifieroption.EdgeGroup:
+		if id := m.group; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ModifierOptionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ModifierOptionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ModifierOptionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedgroup {
+		edges = append(edges, modifieroption.EdgeGroup)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ModifierOptionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case modifieroption.EdgeGroup:
+		return m.clearedgroup
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ModifierOptionMutation) ClearEdge(name string) error {
+	switch name {
+	case modifieroption.EdgeGroup:
+		m.ClearGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ModifierOptionMutation) ResetEdge(name string) error {
+	switch name {
+	case modifieroption.EdgeGroup:
+		m.ResetGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown ModifierOption edge %s", name)
 }
 
 // OutboxEventMutation represents an operation that mutates the OutboxEvent nodes in the graph.

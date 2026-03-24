@@ -13,6 +13,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/modules/items"
+	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/units"
@@ -58,13 +59,25 @@ type UnitsServicer interface {
 	CreateUnit(ctx context.Context, tenantID uuid.UUID, dto units.UnitDTO) (*units.UnitDTO, error)
 }
 
+// ModifiersServicer defines the contract for modifier group/option management.
+type ModifiersServicer interface {
+	ListModifierGroups(ctx context.Context, tenantID, itemID uuid.UUID) ([]modifiers.ModifierGroupDTO, error)
+	CreateModifierGroup(ctx context.Context, tenantID uuid.UUID, req modifiers.CreateModifierGroupRequest) (*modifiers.ModifierGroupDTO, error)
+	UpdateModifierGroup(ctx context.Context, tenantID, groupID uuid.UUID, req modifiers.UpdateModifierGroupRequest) (*modifiers.ModifierGroupDTO, error)
+	DeleteModifierGroup(ctx context.Context, tenantID, groupID uuid.UUID) error
+	CreateModifierOption(ctx context.Context, tenantID, groupID uuid.UUID, req modifiers.CreateModifierOptionRequest) (*modifiers.ModifierOptionDTO, error)
+	UpdateModifierOption(ctx context.Context, tenantID, optionID uuid.UUID, req modifiers.UpdateModifierOptionRequest) (*modifiers.ModifierOptionDTO, error)
+	DeleteModifierOption(ctx context.Context, tenantID, optionID uuid.UUID) error
+}
+
 // InventoryHandler handles all inventory-related HTTP endpoints.
 type InventoryHandler struct {
-	log       *zap.Logger
-	itemsSvc  ItemsServicer
-	stockSvc  StockServicer
-	recipeSvc RecipesServicer
-	unitSvc   UnitsServicer
+	log          *zap.Logger
+	itemsSvc     ItemsServicer
+	stockSvc     StockServicer
+	recipeSvc    RecipesServicer
+	unitSvc      UnitsServicer
+	modifiersSvc ModifiersServicer
 }
 
 // NewInventoryHandler creates a new inventory handler.
@@ -76,6 +89,11 @@ func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc Stock
 		recipeSvc: recipeSvc,
 		unitSvc:   unitSvc,
 	}
+}
+
+// SetModifiersService injects the modifiers service (optional; modifier endpoints are skipped if nil).
+func (h *InventoryHandler) SetModifiersService(svc ModifiersServicer) {
+	h.modifiersSvc = svc
 }
 
 type errorResponse struct {
@@ -137,6 +155,15 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Units
 		inv.Get("/units", h.ListUnits)
 		inv.Post("/units", h.CreateUnit)
+
+		// Modifier Groups & Options
+		inv.Get("/items/{itemId}/modifier-groups", h.ListModifierGroups)
+		inv.Post("/modifier-groups", h.CreateModifierGroup)
+		inv.Put("/modifier-groups/{id}", h.UpdateModifierGroup)
+		inv.Delete("/modifier-groups/{id}", h.DeleteModifierGroup)
+		inv.Post("/modifier-groups/{id}/options", h.CreateModifierOption)
+		inv.Put("/modifier-options/{id}", h.UpdateModifierOption)
+		inv.Delete("/modifier-options/{id}", h.DeleteModifierOption)
 	})
 }
 

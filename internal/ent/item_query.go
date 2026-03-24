@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -39,6 +40,7 @@ type ItemQuery struct {
 	withVariants          *ItemVariantQuery
 	withAssets            *ItemAssetQuery
 	withTranslations      *ItemTranslationQuery
+	withModifierGroups    *ModifierGroupQuery
 	withItemCategory      *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -223,6 +225,28 @@ func (_q *ItemQuery) QueryTranslations() *ItemTranslationQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(itemtranslation.Table, itemtranslation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.TranslationsTable, item.TranslationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryModifierGroups chains the current query on the "modifier_groups" edge.
+func (_q *ItemQuery) QueryModifierGroups() *ModifierGroupQuery {
+	query := (&ModifierGroupClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(modifiergroup.Table, modifiergroup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.ModifierGroupsTable, item.ModifierGroupsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -451,6 +475,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withVariants:          _q.withVariants.Clone(),
 		withAssets:            _q.withAssets.Clone(),
 		withTranslations:      _q.withTranslations.Clone(),
+		withModifierGroups:    _q.withModifierGroups.Clone(),
 		withItemCategory:      _q.withItemCategory.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -532,6 +557,17 @@ func (_q *ItemQuery) WithTranslations(opts ...func(*ItemTranslationQuery)) *Item
 		opt(query)
 	}
 	_q.withTranslations = query
+	return _q
+}
+
+// WithModifierGroups tells the query-builder to eager-load the nodes that are connected to
+// the "modifier_groups" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithModifierGroups(opts ...func(*ModifierGroupQuery)) *ItemQuery {
+	query := (&ModifierGroupClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withModifierGroups = query
 	return _q
 }
 
@@ -624,7 +660,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
@@ -632,6 +668,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withVariants != nil,
 			_q.withAssets != nil,
 			_q.withTranslations != nil,
+			_q.withModifierGroups != nil,
 			_q.withItemCategory != nil,
 		}
 	)
@@ -697,6 +734,13 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadTranslations(ctx, query, nodes,
 			func(n *Item) { n.Edges.Translations = []*ItemTranslation{} },
 			func(n *Item, e *ItemTranslation) { n.Edges.Translations = append(n.Edges.Translations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withModifierGroups; query != nil {
+		if err := _q.loadModifierGroups(ctx, query, nodes,
+			func(n *Item) { n.Edges.ModifierGroups = []*ModifierGroup{} },
+			func(n *Item, e *ModifierGroup) { n.Edges.ModifierGroups = append(n.Edges.ModifierGroups, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -905,6 +949,36 @@ func (_q *ItemQuery) loadTranslations(ctx context.Context, query *ItemTranslatio
 	}
 	query.Where(predicate.ItemTranslation(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.TranslationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadModifierGroups(ctx context.Context, query *ModifierGroupQuery, nodes []*Item, init func(*Item), assign func(*Item, *ModifierGroup)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(modifiergroup.FieldItemID)
+	}
+	query.Where(predicate.ModifierGroup(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ModifierGroupsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

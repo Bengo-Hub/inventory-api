@@ -36,6 +36,12 @@ type ItemTranslation func(*sql.Selector)
 // ItemVariant is the predicate function for itemvariant builders.
 type ItemVariant func(*sql.Selector)
 
+// ModifierGroup is the predicate function for modifiergroup builders.
+type ModifierGroup func(*sql.Selector)
+
+// ModifierOption is the predicate function for modifieroption builders.
+type ModifierOption func(*sql.Selector)
+
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
 

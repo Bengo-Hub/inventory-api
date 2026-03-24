@@ -402,6 +402,79 @@ var (
 			},
 		},
 	}
+	// ModifierGroupsColumns holds the columns for the "modifier_groups" table.
+	ModifierGroupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "is_required", Type: field.TypeBool, Default: false},
+		{Name: "min_selections", Type: field.TypeInt, Default: 0},
+		{Name: "max_selections", Type: field.TypeInt, Default: 1},
+		{Name: "display_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID},
+	}
+	// ModifierGroupsTable holds the schema information for the "modifier_groups" table.
+	ModifierGroupsTable = &schema.Table{
+		Name:       "modifier_groups",
+		Columns:    ModifierGroupsColumns,
+		PrimaryKey: []*schema.Column{ModifierGroupsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "modifier_groups_items_modifier_groups",
+				Columns:    []*schema.Column{ModifierGroupsColumns[9]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modifiergroup_tenant_id_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{ModifierGroupsColumns[1], ModifierGroupsColumns[9]},
+			},
+			{
+				Name:    "modifiergroup_item_id_display_order",
+				Unique:  false,
+				Columns: []*schema.Column{ModifierGroupsColumns[9], ModifierGroupsColumns[6]},
+			},
+		},
+	}
+	// ModifierOptionsColumns holds the columns for the "modifier_options" table.
+	ModifierOptionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "sku", Type: field.TypeString, Nullable: true},
+		{Name: "price_adjustment", Type: field.TypeFloat64, Default: 0},
+		{Name: "is_default", Type: field.TypeBool, Default: false},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "display_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// ModifierOptionsTable holds the schema information for the "modifier_options" table.
+	ModifierOptionsTable = &schema.Table{
+		Name:       "modifier_options",
+		Columns:    ModifierOptionsColumns,
+		PrimaryKey: []*schema.Column{ModifierOptionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "modifier_options_modifier_groups_options",
+				Columns:    []*schema.Column{ModifierOptionsColumns[9]},
+				RefColumns: []*schema.Column{ModifierGroupsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "modifieroption_group_id_display_order",
+				Unique:  false,
+				Columns: []*schema.Column{ModifierOptionsColumns[9], ModifierOptionsColumns[6]},
+			},
+		},
+	}
 	// OutboxEventsColumns holds the columns for the "outbox_events" table.
 	OutboxEventsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -890,6 +963,8 @@ var (
 		ItemCategoriesTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
+		ModifierGroupsTable,
+		ModifierOptionsTable,
 		OutboxEventsTable,
 		RateLimitConfigsTable,
 		RecipesTable,
@@ -915,6 +990,8 @@ func init() {
 	ItemCategoriesTable.ForeignKeys[0].RefTable = TenantsTable
 	ItemTranslationsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemVariantsTable.ForeignKeys[0].RefTable = ItemsTable
+	ModifierGroupsTable.ForeignKeys[0].RefTable = ItemsTable
+	ModifierOptionsTable.ForeignKeys[0].RefTable = ModifierGroupsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable

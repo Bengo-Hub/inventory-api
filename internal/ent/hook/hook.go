@@ -129,6 +129,30 @@ func (f ItemVariantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemVariantMutation", m)
 }
 
+// The ModifierGroupFunc type is an adapter to allow the use of ordinary
+// function as ModifierGroup mutator.
+type ModifierGroupFunc func(context.Context, *ent.ModifierGroupMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ModifierGroupFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ModifierGroupMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModifierGroupMutation", m)
+}
+
+// The ModifierOptionFunc type is an adapter to allow the use of ordinary
+// function as ModifierOption mutator.
+type ModifierOptionFunc func(context.Context, *ent.ModifierOptionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ModifierOptionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ModifierOptionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModifierOptionMutation", m)
+}
+
 // The OutboxEventFunc type is an adapter to allow the use of ordinary
 // function as OutboxEvent mutator.
 type OutboxEventFunc func(context.Context, *ent.OutboxEventMutation) (ent.Value, error)

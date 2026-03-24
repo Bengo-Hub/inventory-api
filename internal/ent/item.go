@@ -68,11 +68,13 @@ type ItemEdges struct {
 	Assets []*ItemAsset `json:"assets,omitempty"`
 	// Translations holds the value of the translations edge.
 	Translations []*ItemTranslation `json:"translations,omitempty"`
+	// ModifierGroups holds the value of the modifier_groups edge.
+	ModifierGroups []*ModifierGroup `json:"modifier_groups,omitempty"`
 	// ItemCategory holds the value of the item_category edge.
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -142,12 +144,21 @@ func (e ItemEdges) TranslationsOrErr() ([]*ItemTranslation, error) {
 	return nil, &NotLoadedError{edge: "translations"}
 }
 
+// ModifierGroupsOrErr returns the ModifierGroups value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) ModifierGroupsOrErr() ([]*ModifierGroup, error) {
+	if e.loadedTypes[7] {
+		return e.ModifierGroups, nil
+	}
+	return nil, &NotLoadedError{edge: "modifier_groups"}
+}
+
 // ItemCategoryOrErr returns the ItemCategory value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
 	if e.ItemCategory != nil {
 		return e.ItemCategory, nil
-	} else if e.loadedTypes[7] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: itemcategory.Label}
 	}
 	return nil, &NotLoadedError{edge: "item_category"}
@@ -313,6 +324,11 @@ func (_m *Item) QueryAssets() *ItemAssetQuery {
 // QueryTranslations queries the "translations" edge of the Item entity.
 func (_m *Item) QueryTranslations() *ItemTranslationQuery {
 	return NewItemClient(_m.config).QueryTranslations(_m)
+}
+
+// QueryModifierGroups queries the "modifier_groups" edge of the Item entity.
+func (_m *Item) QueryModifierGroups() *ModifierGroupQuery {
+	return NewItemClient(_m.config).QueryModifierGroups(_m)
 }
 
 // QueryItemCategory queries the "item_category" edge of the Item entity.
