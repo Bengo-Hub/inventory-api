@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -20,6 +22,7 @@ import (
 type ItemsServicer interface {
 	GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
@@ -36,6 +39,7 @@ type StockServicer interface {
 	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
+	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
 }
 
 // RecipesServicer defines the contract for recipe management.
@@ -102,6 +106,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Put("/items/{sku}", h.UpdateItem)
 		inv.Post("/availability", h.BulkAvailability)
 		inv.Post("/adjust", h.AdjustStock)
+		inv.Post("/adjustments", h.CreateAdjustment)
+		inv.Get("/adjustments", h.ListAdjustments)
+		inv.Get("/availability/bom", h.GetBOMAvailability)
 		inv.Delete("/items/{sku}", h.DeleteItem)
 
 		// Categories
@@ -718,6 +725,140 @@ func (h *InventoryHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// CreateAdjustment handles POST /v1/{tenant}/inventory/adjustments — creates a stock adjustment with audit trail.
+func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req stock.AdjustStockRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	if req.SKU == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	if req.Adjustment == 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT", "Adjustment must be non-zero")
+		return
+	}
+	if req.Reason == "" {
+		req.Reason = "other"
+	}
+
+	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("create adjustment failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, result)
+}
+
+// ListAdjustments handles GET /v1/{tenant}/inventory/adjustments — lists stock adjustments with filters.
+func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req stock.ListAdjustmentsRequest
+
+	if itemIDStr := r.URL.Query().Get("item_id"); itemIDStr != "" {
+		itemID, err := uuid.Parse(itemIDStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_ITEM_ID", "Invalid item_id")
+			return
+		}
+		req.ItemID = itemID
+	}
+
+	if whIDStr := r.URL.Query().Get("warehouse_id"); whIDStr != "" {
+		whID, err := uuid.Parse(whIDStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE_ID", "Invalid warehouse_id")
+			return
+		}
+		req.WarehouseID = whID
+	}
+
+	if reason := r.URL.Query().Get("reason"); reason != "" {
+		req.Reason = reason
+	}
+
+	if dateFrom := r.URL.Query().Get("date_from"); dateFrom != "" {
+		t, err := time.Parse(time.RFC3339, dateFrom)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_DATE_FROM", "date_from must be RFC3339 format")
+			return
+		}
+		req.DateFrom = t
+	}
+
+	if dateTo := r.URL.Query().Get("date_to"); dateTo != "" {
+		t, err := time.Parse(time.RFC3339, dateTo)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_DATE_TO", "date_to must be RFC3339 format")
+			return
+		}
+		req.DateTo = t
+	}
+
+	results, err := h.stockSvc.ListAdjustments(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("list adjustments failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list adjustments")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data":  results,
+		"total": len(results),
+	})
+}
+
+// GetBOMAvailability handles GET /v1/{tenant}/inventory/availability/bom?skus=SKU1,SKU2
+func (h *InventoryHandler) GetBOMAvailability(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	skusParam := r.URL.Query().Get("skus")
+	if skusParam == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKUS", "skus query parameter is required")
+		return
+	}
+
+	skus := strings.Split(skusParam, ",")
+	if len(skus) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_SKUS", "At least one SKU is required")
+		return
+	}
+
+	// Trim whitespace from SKUs
+	for i := range skus {
+		skus[i] = strings.TrimSpace(skus[i])
+	}
+
+	results, err := h.itemsSvc.GetBOMAvailability(r.Context(), tenantID, skus)
+	if err != nil {
+		h.log.Error("bom availability failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to check BOM availability")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, results)
 }
 
 // ListCategories handles GET /v1/{tenant}/inventory/categories — returns all active categories.

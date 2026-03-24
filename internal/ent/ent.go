@@ -29,6 +29,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
@@ -110,6 +111,7 @@ func checkColumn(t, c string) error {
 			reservation.Table:         reservation.ValidColumn,
 			rolepermission.Table:      rolepermission.ValidColumn,
 			serviceconfig.Table:       serviceconfig.ValidColumn,
+			stockadjustment.Table:     stockadjustment.ValidColumn,
 			tenant.Table:              tenant.ValidColumn,
 			unit.Table:                unit.ValidColumn,
 			userroleassignment.Table:  userroleassignment.ValidColumn,

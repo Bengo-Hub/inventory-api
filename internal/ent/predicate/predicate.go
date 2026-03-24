@@ -57,6 +57,9 @@ type RolePermission func(*sql.Selector)
 // ServiceConfig is the predicate function for serviceconfig builders.
 type ServiceConfig func(*sql.Selector)
 
+// StockAdjustment is the predicate function for stockadjustment builders.
+type StockAdjustment func(*sql.Selector)
+
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)
 

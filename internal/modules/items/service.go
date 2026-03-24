@@ -222,6 +222,80 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 	}, nil
 }
 
+// BOMAvailabilityResult represents the BOM-aware availability for a single SKU.
+type BOMAvailabilityResult struct {
+	SKU           string    `json:"sku"`
+	ItemID        uuid.UUID `json:"item_id"`
+	Available     int       `json:"available"`
+	Type          string    `json:"type"` // "recipe" or "simple"
+	UnitOfMeasure string    `json:"unit_of_measure,omitempty"`
+	UpdatedAt     string    `json:"updated_at"`
+}
+
+// GetBOMAvailability returns BOM-aware availability for multiple SKUs.
+// For RECIPE items, it computes the maximum portions producible from ingredient stock.
+// For non-recipe items, it returns direct stock availability.
+func (s *Service) GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]BOMAvailabilityResult, error) {
+	results := make([]BOMAvailabilityResult, 0, len(skus))
+	for _, sku := range skus {
+		itm, err := s.client.Item.Query().
+			Where(
+				item.TenantID(tenantID),
+				item.Sku(sku),
+				item.IsActive(true),
+			).
+			Only(ctx)
+		if err != nil {
+			s.log.Warn("bom availability: item not found", zap.String("sku", sku), zap.Error(err))
+			continue
+		}
+
+		if itm.Type == item.TypeRECIPE {
+			avail, err := s.getRecipeAvailability(ctx, tenantID, itm)
+			if err != nil {
+				s.log.Warn("bom availability: recipe check failed", zap.String("sku", sku), zap.Error(err))
+				// Fall back to simple
+				avail, err = s.getDirectAvailability(ctx, tenantID, itm)
+				if err != nil {
+					continue
+				}
+				results = append(results, BOMAvailabilityResult{
+					SKU:           sku,
+					ItemID:        itm.ID,
+					Available:     avail.Available,
+					Type:          "simple",
+					UnitOfMeasure: avail.UnitOfMeasure,
+					UpdatedAt:     avail.UpdatedAt,
+				})
+				continue
+			}
+			results = append(results, BOMAvailabilityResult{
+				SKU:           sku,
+				ItemID:        itm.ID,
+				Available:     avail.Available,
+				Type:          "recipe",
+				UnitOfMeasure: avail.UnitOfMeasure,
+				UpdatedAt:     avail.UpdatedAt,
+			})
+		} else {
+			avail, err := s.getDirectAvailability(ctx, tenantID, itm)
+			if err != nil {
+				s.log.Warn("bom availability: direct check failed", zap.String("sku", sku), zap.Error(err))
+				continue
+			}
+			results = append(results, BOMAvailabilityResult{
+				SKU:           sku,
+				ItemID:        itm.ID,
+				Available:     avail.Available,
+				Type:          "simple",
+				UnitOfMeasure: avail.UnitOfMeasure,
+				UpdatedAt:     avail.UpdatedAt,
+			})
+		}
+	}
+	return results, nil
+}
+
 // BulkAvailability returns stock availability for multiple items by SKU.
 func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]StockAvailability, error) {
 	items, err := s.client.Item.Query().

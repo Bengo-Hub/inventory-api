@@ -46,6 +46,8 @@ type Tx struct {
 	RolePermission *RolePermissionClient
 	// ServiceConfig is the client for interacting with the ServiceConfig builders.
 	ServiceConfig *ServiceConfigClient
+	// StockAdjustment is the client for interacting with the StockAdjustment builders.
+	StockAdjustment *StockAdjustmentClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Unit is the client for interacting with the Unit builders.
@@ -202,6 +204,7 @@ func (tx *Tx) init() {
 	tx.Reservation = NewReservationClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.ServiceConfig = NewServiceConfigClient(tx.config)
+	tx.StockAdjustment = NewStockAdjustmentClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)

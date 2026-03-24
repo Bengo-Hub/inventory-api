@@ -213,6 +213,18 @@ func (f ServiceConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ServiceConfigMutation", m)
 }
 
+// The StockAdjustmentFunc type is an adapter to allow the use of ordinary
+// function as StockAdjustment mutator.
+type StockAdjustmentFunc func(context.Context, *ent.StockAdjustmentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockAdjustmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockAdjustmentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockAdjustmentMutation", m)
+}
+
 // The TenantFunc type is an adapter to allow the use of ordinary
 // function as Tenant mutator.
 type TenantFunc func(context.Context, *ent.TenantMutation) (ent.Value, error)

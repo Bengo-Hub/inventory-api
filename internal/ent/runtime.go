@@ -22,6 +22,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
@@ -551,6 +552,20 @@ func init() {
 	serviceconfigDescID := serviceconfigFields[0].Descriptor()
 	// serviceconfig.DefaultID holds the default value on creation for the id field.
 	serviceconfig.DefaultID = serviceconfigDescID.Default.(func() uuid.UUID)
+	stockadjustmentFields := schema.StockAdjustment{}.Fields()
+	_ = stockadjustmentFields
+	// stockadjustmentDescAdjustedAt is the schema descriptor for adjusted_at field.
+	stockadjustmentDescAdjustedAt := stockadjustmentFields[11].Descriptor()
+	// stockadjustment.DefaultAdjustedAt holds the default value on creation for the adjusted_at field.
+	stockadjustment.DefaultAdjustedAt = stockadjustmentDescAdjustedAt.Default.(func() time.Time)
+	// stockadjustmentDescCreatedAt is the schema descriptor for created_at field.
+	stockadjustmentDescCreatedAt := stockadjustmentFields[12].Descriptor()
+	// stockadjustment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockadjustment.DefaultCreatedAt = stockadjustmentDescCreatedAt.Default.(func() time.Time)
+	// stockadjustmentDescID is the schema descriptor for id field.
+	stockadjustmentDescID := stockadjustmentFields[0].Descriptor()
+	// stockadjustment.DefaultID holds the default value on creation for the id field.
+	stockadjustment.DefaultID = stockadjustmentDescID.Default.(func() uuid.UUID)
 	tenantFields := schema.Tenant{}.Fields()
 	_ = tenantFields
 	// tenantDescName is the schema descriptor for name field.
