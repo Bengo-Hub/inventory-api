@@ -27,7 +27,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 }
 
@@ -603,7 +603,19 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	typeFilter := r.URL.Query().Get("type")
-	results, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter)
+
+	// Parse optional tags filter: ?tags=vegan,gluten_free
+	var tagsFilter []string
+	if tagsParam := r.URL.Query().Get("tags"); tagsParam != "" {
+		for _, t := range strings.Split(tagsParam, ",") {
+			t = strings.TrimSpace(t)
+			if t != "" {
+				tagsFilter = append(tagsFilter, t)
+			}
+		}
+	}
+
+	results, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")

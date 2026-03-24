@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -185,6 +186,18 @@ func (_u *ItemUpdate) SetNillableImageURL(v *string) *ItemUpdate {
 // ClearImageURL clears the value of the "image_url" field.
 func (_u *ItemUpdate) ClearImageURL() *ItemUpdate {
 	_u.mutation.ClearImageURL()
+	return _u
+}
+
+// SetTags sets the "tags" field.
+func (_u *ItemUpdate) SetTags(v []string) *ItemUpdate {
+	_u.mutation.SetTags(v)
+	return _u
+}
+
+// AppendTags appends value to the "tags" field.
+func (_u *ItemUpdate) AppendTags(v []string) *ItemUpdate {
+	_u.mutation.AppendTags(v)
 	return _u
 }
 
@@ -576,6 +589,14 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ImageURLCleared() {
 		_spec.ClearField(item.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Tags(); ok {
+		_spec.SetField(item.FieldTags, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedTags(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, item.FieldTags, value)
+		})
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -1110,6 +1131,18 @@ func (_u *ItemUpdateOne) ClearImageURL() *ItemUpdateOne {
 	return _u
 }
 
+// SetTags sets the "tags" field.
+func (_u *ItemUpdateOne) SetTags(v []string) *ItemUpdateOne {
+	_u.mutation.SetTags(v)
+	return _u
+}
+
+// AppendTags appends value to the "tags" field.
+func (_u *ItemUpdateOne) AppendTags(v []string) *ItemUpdateOne {
+	_u.mutation.AppendTags(v)
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdateOne) SetMetadata(v map[string]interface{}) *ItemUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -1528,6 +1561,14 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.ImageURLCleared() {
 		_spec.ClearField(item.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Tags(); ok {
+		_spec.SetField(item.FieldTags, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedTags(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, item.FieldTags, value)
+		})
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)

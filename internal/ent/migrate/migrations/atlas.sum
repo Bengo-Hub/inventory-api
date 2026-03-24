@@ -1,4 +1,4 @@
-h1:ymvb0ylE953hrC2MRTTVqryajgqUtYC8YVawHcTIRU8=
+h1:/bonVSVQCSylS5mwfkfeE16F1rGoMvZt3QBC+EIFDaU=
 20260310134147_initial_schema.sql h1:8hni4g/SVuqQEyUT0CJutvuAkfNaEQ/UwhYjwB2CI3o=
 20260315135559_shared_units.sql h1:YRuB8Ccmi0J8s4WOum/xYua2jRnE4okKwcKlTNrTbPM=
 20260315160532_enrich_master_data.sql h1:bpfp6wsxGpu0tpE4go/vUdAFdrSEoDAohrXm0SWkNHY=
@@ -8,3 +8,4 @@ h1:ymvb0ylE953hrC2MRTTVqryajgqUtYC8YVawHcTIRU8=
 20260324055444_reduce_tenant_schema.sql h1:Bm+gHx6NBEMPpByrpDmyII2dEeUmlUlmweTsBwaVH5w=
 20260324074100_phase1_stock_adjustment_bom.sql h1:ZvIogGq2PXs9Q13rtrc6ojJDLWe85wWT/8SegbxkFM8=
 20260324084946_phase4_modifier_groups.sql h1:Io2gIA25Cugfde5xBEzC0Na5tXeD5j8rgEIAk8G0Yw0=
+20260324090727_phase5_item_tags.sql h1:KCm9v7xFskFEAltavdrYUJDDF+hBnSqV9S4/ZfZ9eUk=

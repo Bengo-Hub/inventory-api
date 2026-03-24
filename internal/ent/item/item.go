@@ -34,6 +34,8 @@ const (
 	FieldIsActive = "is_active"
 	// FieldImageURL holds the string denoting the image_url field in the database.
 	FieldImageURL = "image_url"
+	// FieldTags holds the string denoting the tags field in the database.
+	FieldTags = "tags"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -137,6 +139,7 @@ var Columns = []string{
 	FieldType,
 	FieldIsActive,
 	FieldImageURL,
+	FieldTags,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -159,6 +162,8 @@ var (
 	NameValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultTags holds the default value on creation for the "tags" field.
+	DefaultTags []string
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

@@ -21,6 +21,13 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
+// StandardTags defines well-known dietary and allergen tag values.
+var StandardTags = []string{
+	"vegan", "vegetarian", "gluten_free", "dairy_free", "nut_free",
+	"halal", "kosher", "organic", "spicy", "contains_nuts",
+	"contains_dairy", "contains_gluten", "sugar_free", "low_cal",
+}
+
 type ItemDTO struct {
 	ID              uuid.UUID      `json:"id"`
 	SKU             string         `json:"sku"`
@@ -31,6 +38,7 @@ type ItemDTO struct {
 	Type            string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
 	IsActive        bool           `json:"is_active"`
 	ImageURL        string         `json:"image_url,omitempty"`
+	Tags            []string       `json:"tags,omitempty"`
 	Metadata        map[string]any `json:"metadata,omitempty"`
 	InitialQuantity int            `json:"initial_quantity,omitempty"`
 	ReorderLevel    int            `json:"reorder_level,omitempty"`
@@ -406,6 +414,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		Type:        string(i.Type),
 		IsActive:    i.IsActive,
 		ImageURL:    i.ImageURL,
+		Tags:        i.Tags,
 		Metadata:    i.Metadata,
 		CreatedAt:   i.CreatedAt,
 		UpdatedAt:   i.UpdatedAt,
@@ -414,8 +423,10 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 
 // ListItems returns all active items for a tenant (cached 1 min).
 // When typeFilter is non-empty (e.g. "INGREDIENT"), only items of that type are returned.
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]ItemDTO, error) {
-	key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter)
+// When tagsFilter is non-empty, only items containing ALL specified tags are returned.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]ItemDTO, error) {
+	tagKey := strings.Join(tagsFilter, ",")
+	key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter, tagKey)
 	fetch := func(ctx context.Context) ([]ItemDTO, error) {
 		q := s.client.Item.Query().
 			Where(item.TenantID(tenantID), item.IsActive(true))
@@ -426,13 +437,38 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		if err != nil {
 			return nil, fmt.Errorf("items: list: %w", err)
 		}
-		dtos := make([]ItemDTO, len(itms))
-		for i, it := range itms {
+		// Filter by tags in-memory (JSON array column; ent doesn't support contains for JSON arrays)
+		var filtered []*ent.Item
+		if len(tagsFilter) > 0 {
+			for _, it := range itms {
+				if containsAllTags(it.Tags, tagsFilter) {
+					filtered = append(filtered, it)
+				}
+			}
+		} else {
+			filtered = itms
+		}
+		dtos := make([]ItemDTO, len(filtered))
+		for i, it := range filtered {
 			dtos[i] = *s.mapToDTO(it)
 		}
 		return dtos, nil
 	}
 	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLModerate, fetch)
+}
+
+// containsAllTags checks whether itemTags contains every tag in required.
+func containsAllTags(itemTags, required []string) bool {
+	set := make(map[string]struct{}, len(itemTags))
+	for _, t := range itemTags {
+		set[t] = struct{}{}
+	}
+	for _, r := range required {
+		if _, ok := set[r]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // ListCategories returns all item categories for a tenant (cached 5 min).
@@ -530,6 +566,11 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		}
 	}()
 
+	tags := dto.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+
 	i, err := tx.Item.Create().
 		SetTenantID(tenantID).
 		SetSku(dto.SKU).
@@ -540,6 +581,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetType(item.Type(dto.Type)).
 		SetIsActive(dto.IsActive).
 		SetNillableImageURL(&dto.ImageURL).
+		SetTags(tags).
 		SetMetadata(dto.Metadata).
 		Save(ctx)
 	if err != nil {
@@ -655,6 +697,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			"unit_name":     unitName,
 			"is_active":     i.IsActive,
 			"image_url":     i.ImageURL,
+			"tags":          i.Tags,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -697,6 +740,11 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		}
 	}()
 
+	updateTags := dto.Tags
+	if updateTags == nil {
+		updateTags = []string{}
+	}
+
 	builder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).
 		SetName(dto.Name).
@@ -706,6 +754,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetType(item.Type(dto.Type)).
 		SetIsActive(dto.IsActive).
 		SetNillableImageURL(&dto.ImageURL).
+		SetTags(updateTags).
 		SetMetadata(dto.Metadata)
 
 	i, err := builder.Save(ctx)
@@ -750,6 +799,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 			"unit_name":     unitName,
 			"is_active":     i.IsActive,
 			"image_url":     i.ImageURL,
+			"tags":          i.Tags,
 		},
 		Timestamp: time.Now().UTC(),
 	}
