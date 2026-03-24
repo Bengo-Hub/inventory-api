@@ -40,6 +40,8 @@ type Item struct {
 	IsActive bool `json:"is_active,omitempty"`
 	// ImageURL holds the value of the "image_url" field.
 	ImageURL string `json:"image_url,omitempty"`
+	// Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)
+	Tags []string `json:"tags,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -171,7 +173,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case item.FieldCategoryID, item.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case item.FieldMetadata:
+		case item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
 		case item.FieldIsActive:
 			values[i] = new(sql.NullBool)
@@ -257,6 +259,14 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field image_url", values[i])
 			} else if value.Valid {
 				_m.ImageURL = value.String
+			}
+		case item.FieldTags:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tags", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Tags); err != nil {
+					return fmt.Errorf("unmarshal field tags: %w", err)
+				}
 			}
 		case item.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -389,6 +399,9 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("image_url=")
 	builder.WriteString(_m.ImageURL)
+	builder.WriteString(", ")
+	builder.WriteString("tags=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Tags))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))

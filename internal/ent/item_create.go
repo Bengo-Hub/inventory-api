@@ -135,6 +135,12 @@ func (_c *ItemCreate) SetNillableImageURL(v *string) *ItemCreate {
 	return _c
 }
 
+// SetTags sets the "tags" field.
+func (_c *ItemCreate) SetTags(v []string) *ItemCreate {
+	_c.mutation.SetTags(v)
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *ItemCreate) SetMetadata(v map[string]interface{}) *ItemCreate {
 	_c.mutation.SetMetadata(v)
@@ -359,6 +365,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.Tags(); !ok {
+		v := item.DefaultTags
+		_c.mutation.SetTags(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := item.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -408,6 +418,9 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Item.is_active"`)}
+	}
+	if _, ok := _c.mutation.Tags(); !ok {
+		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Item.tags"`)}
 	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		return &ValidationError{Name: "metadata", err: errors.New(`ent: missing required field "Item.metadata"`)}
@@ -480,6 +493,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ImageURL(); ok {
 		_spec.SetField(item.FieldImageURL, field.TypeString, value)
 		_node.ImageURL = value
+	}
+	if value, ok := _c.mutation.Tags(); ok {
+		_spec.SetField(item.FieldTags, field.TypeJSON, value)
+		_node.Tags = value
 	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -824,6 +841,18 @@ func (u *ItemUpsert) ClearImageURL() *ItemUpsert {
 	return u
 }
 
+// SetTags sets the "tags" field.
+func (u *ItemUpsert) SetTags(v []string) *ItemUpsert {
+	u.Set(item.FieldTags, v)
+	return u
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTags() *ItemUpsert {
+	u.SetExcluded(item.FieldTags)
+	return u
+}
+
 // SetMetadata sets the "metadata" field.
 func (u *ItemUpsert) SetMetadata(v map[string]interface{}) *ItemUpsert {
 	u.Set(item.FieldMetadata, v)
@@ -1050,6 +1079,20 @@ func (u *ItemUpsertOne) UpdateImageURL() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearImageURL() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearImageURL()
+	})
+}
+
+// SetTags sets the "tags" field.
+func (u *ItemUpsertOne) SetTags(v []string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTags(v)
+	})
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTags() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTags()
 	})
 }
 
@@ -1450,6 +1493,20 @@ func (u *ItemUpsertBulk) UpdateImageURL() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearImageURL() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearImageURL()
+	})
+}
+
+// SetTags sets the "tags" field.
+func (u *ItemUpsertBulk) SetTags(v []string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTags(v)
+	})
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTags() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTags()
 	})
 }
 

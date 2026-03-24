@@ -46,6 +46,9 @@ func (Item) Fields() []ent.Field {
 			Default(true),
 		field.String("image_url").
 			Optional(),
+		field.JSON("tags", []string{}).
+			Default([]string{}).
+			Comment("Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").

@@ -211,6 +211,7 @@ var (
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT"}, Default: "GOODS"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "image_url", Type: field.TypeString, Nullable: true},
+		{Name: "tags", Type: field.TypeJSON},
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -226,19 +227,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[10]},
+				Columns:    []*schema.Column{ItemsColumns[11]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[11]},
+				Columns:    []*schema.Column{ItemsColumns[12]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[12]},
+				Columns:    []*schema.Column{ItemsColumns[13]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -247,17 +248,17 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[13], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[11]},
+				Columns: []*schema.Column{ItemsColumns[13], ItemsColumns[12]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[12], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[13], ItemsColumns[5]},
 			},
 		},
 	}

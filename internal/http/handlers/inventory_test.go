@@ -30,7 +30,7 @@ type mockItemsSvc struct {
 	summaryFn       func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	createItemFn    func(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	updateItemFn    func(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	listItemsFn     func(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error)
+	listItemsFn     func(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error)
 	listCategoriesFn func(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 }
 
@@ -76,9 +76,9 @@ func (m *mockItemsSvc) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uu
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error) {
+func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error) {
 	if m.listItemsFn != nil {
-		return m.listItemsFn(ctx, tenantID, typeFilter)
+		return m.listItemsFn(ctx, tenantID, typeFilter, tagsFilter...)
 	}
 	return nil, fmt.Errorf("not implemented")
 }
