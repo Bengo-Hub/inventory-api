@@ -350,6 +350,9 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			"name":         itm.Name,
 			"available":    bal.Available,
 			"warehouse_id": warehouseID.String(),
+			"notification": map[string]any{
+				"target": "staff",
+			},
 		})
 		s.log.Warn("stock-out alert published",
 			zap.String("sku", itm.Sku),
@@ -364,6 +367,9 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			"available":     bal.Available,
 			"reorder_level": bal.ReorderLevel,
 			"warehouse_id":  warehouseID.String(),
+			"notification": map[string]any{
+				"target": "staff",
+			},
 		})
 		s.log.Info("low stock alert published",
 			zap.String("sku", itm.Sku),
