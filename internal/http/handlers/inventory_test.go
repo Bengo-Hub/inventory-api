@@ -24,30 +24,70 @@ import (
 // ─── Mock Services ──────────────────────────────────────────────────────
 
 type mockItemsSvc struct {
-	GetStockAvailabilityFn func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
-	BulkAvailabilityFn     func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
-	GetInventorySummaryFn  func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	getStockFn      func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
+	bulkAvailFn     func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	bomAvailFn      func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
+	summaryFn       func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	createItemFn    func(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	updateItemFn    func(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	listItemsFn     func(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error)
+	listCategoriesFn func(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 }
 
 func (m *mockItemsSvc) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error) {
-	if m.GetStockAvailabilityFn != nil {
-		return m.GetStockAvailabilityFn(ctx, tenantID, sku)
+	if m.getStockFn != nil {
+		return m.getStockFn(ctx, tenantID, sku)
 	}
 	return nil, fmt.Errorf("not implemented")
 }
 
 func (m *mockItemsSvc) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error) {
-	if m.BulkAvailabilityFn != nil {
-		return m.BulkAvailabilityFn(ctx, tenantID, skus)
+	if m.bulkAvailFn != nil {
+		return m.bulkAvailFn(ctx, tenantID, skus)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error) {
+	if m.bomAvailFn != nil {
+		return m.bomAvailFn(ctx, tenantID, skus)
 	}
 	return nil, fmt.Errorf("not implemented")
 }
 
 func (m *mockItemsSvc) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error) {
-	if m.GetInventorySummaryFn != nil {
-		return m.GetInventorySummaryFn(ctx, tenantID)
+	if m.summaryFn != nil {
+		return m.summaryFn(ctx, tenantID)
 	}
 	return nil, nil
+}
+
+func (m *mockItemsSvc) CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error) {
+	if m.createItemFn != nil {
+		return m.createItemFn(ctx, tenantID, dto)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error) {
+	if m.updateItemFn != nil {
+		return m.updateItemFn(ctx, tenantID, id, dto)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string) ([]items.ItemDTO, error) {
+	if m.listItemsFn != nil {
+		return m.listItemsFn(ctx, tenantID, typeFilter)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error) {
+	if m.listCategoriesFn != nil {
+		return m.listCategoriesFn(ctx, tenantID)
+	}
+	return nil, fmt.Errorf("not implemented")
 }
 
 type mockStockSvc struct {
@@ -57,6 +97,8 @@ type mockStockSvc struct {
 	releaseReservationFn    func(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
 	consumeReservationFn    func(ctx context.Context, tenantID, reservationID uuid.UUID) error
 	recordConsumptionFn     func(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
+	adjustStockFn           func(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
+	listAdjustmentsFn       func(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
 }
 
 func (m *mockStockSvc) CreateReservation(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error) {
@@ -101,6 +143,20 @@ func (m *mockStockSvc) RecordConsumption(ctx context.Context, tenantID uuid.UUID
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockStockSvc) AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error) {
+	if m.adjustStockFn != nil {
+		return m.adjustStockFn(ctx, tenantID, req)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockStockSvc) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error) {
+	if m.listAdjustmentsFn != nil {
+		return m.listAdjustmentsFn(ctx, tenantID, req)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
 // ─── Test Helpers ───────────────────────────────────────────────────────
 
 var (
@@ -113,7 +169,7 @@ var (
 
 func newTestHandler(t *testing.T, itemsSvc handlers.ItemsServicer, stockSvc handlers.StockServicer) *handlers.InventoryHandler {
 	log := zaptest.NewLogger(t)
-	return handlers.NewInventoryHandler(log, itemsSvc, stockSvc)
+	return handlers.NewInventoryHandler(log, itemsSvc, stockSvc, nil, nil)
 }
 
 func newChiRouter(h *handlers.InventoryHandler) *chi.Mux {

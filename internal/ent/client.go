@@ -33,6 +33,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
@@ -78,6 +79,8 @@ type Client struct {
 	RolePermission *RolePermissionClient
 	// ServiceConfig is the client for interacting with the ServiceConfig builders.
 	ServiceConfig *ServiceConfigClient
+	// StockAdjustment is the client for interacting with the StockAdjustment builders.
+	StockAdjustment *StockAdjustmentClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Unit is the client for interacting with the Unit builders.
@@ -114,6 +117,7 @@ func (c *Client) init() {
 	c.Reservation = NewReservationClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.ServiceConfig = NewServiceConfigClient(c.config)
+	c.StockAdjustment = NewStockAdjustmentClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.Unit = NewUnitClient(c.config)
 	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
@@ -227,6 +231,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Reservation:         NewReservationClient(cfg),
 		RolePermission:      NewRolePermissionClient(cfg),
 		ServiceConfig:       NewServiceConfigClient(cfg),
+		StockAdjustment:     NewStockAdjustmentClient(cfg),
 		Tenant:              NewTenantClient(cfg),
 		Unit:                NewUnitClient(cfg),
 		UserRoleAssignment:  NewUserRoleAssignmentClient(cfg),
@@ -267,6 +272,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Reservation:         NewReservationClient(cfg),
 		RolePermission:      NewRolePermissionClient(cfg),
 		ServiceConfig:       NewServiceConfigClient(cfg),
+		StockAdjustment:     NewStockAdjustmentClient(cfg),
 		Tenant:              NewTenantClient(cfg),
 		Unit:                NewUnitClient(cfg),
 		UserRoleAssignment:  NewUserRoleAssignmentClient(cfg),
@@ -303,8 +309,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Consumption, c.InventoryBalance, c.InventoryPermission, c.InventoryRole,
 		c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory, c.ItemTranslation,
 		c.ItemVariant, c.OutboxEvent, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.RolePermission, c.ServiceConfig, c.Tenant, c.Unit,
-		c.UserRoleAssignment, c.Warehouse,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment, c.Tenant,
+		c.Unit, c.UserRoleAssignment, c.Warehouse,
 	} {
 		n.Use(hooks...)
 	}
@@ -317,8 +323,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Consumption, c.InventoryBalance, c.InventoryPermission, c.InventoryRole,
 		c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory, c.ItemTranslation,
 		c.ItemVariant, c.OutboxEvent, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.RolePermission, c.ServiceConfig, c.Tenant, c.Unit,
-		c.UserRoleAssignment, c.Warehouse,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment, c.Tenant,
+		c.Unit, c.UserRoleAssignment, c.Warehouse,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -361,6 +367,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RolePermission.mutate(ctx, m)
 	case *ServiceConfigMutation:
 		return c.ServiceConfig.mutate(ctx, m)
+	case *StockAdjustmentMutation:
+		return c.StockAdjustment.mutate(ctx, m)
 	case *TenantMutation:
 		return c.Tenant.mutate(ctx, m)
 	case *UnitMutation:
@@ -3051,6 +3059,139 @@ func (c *ServiceConfigClient) mutate(ctx context.Context, m *ServiceConfigMutati
 	}
 }
 
+// StockAdjustmentClient is a client for the StockAdjustment schema.
+type StockAdjustmentClient struct {
+	config
+}
+
+// NewStockAdjustmentClient returns a client for the StockAdjustment from the given config.
+func NewStockAdjustmentClient(c config) *StockAdjustmentClient {
+	return &StockAdjustmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stockadjustment.Hooks(f(g(h())))`.
+func (c *StockAdjustmentClient) Use(hooks ...Hook) {
+	c.hooks.StockAdjustment = append(c.hooks.StockAdjustment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stockadjustment.Intercept(f(g(h())))`.
+func (c *StockAdjustmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockAdjustment = append(c.inters.StockAdjustment, interceptors...)
+}
+
+// Create returns a builder for creating a StockAdjustment entity.
+func (c *StockAdjustmentClient) Create() *StockAdjustmentCreate {
+	mutation := newStockAdjustmentMutation(c.config, OpCreate)
+	return &StockAdjustmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockAdjustment entities.
+func (c *StockAdjustmentClient) CreateBulk(builders ...*StockAdjustmentCreate) *StockAdjustmentCreateBulk {
+	return &StockAdjustmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockAdjustmentClient) MapCreateBulk(slice any, setFunc func(*StockAdjustmentCreate, int)) *StockAdjustmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockAdjustmentCreateBulk{err: fmt.Errorf("calling to StockAdjustmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockAdjustmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockAdjustmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockAdjustment.
+func (c *StockAdjustmentClient) Update() *StockAdjustmentUpdate {
+	mutation := newStockAdjustmentMutation(c.config, OpUpdate)
+	return &StockAdjustmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockAdjustmentClient) UpdateOne(_m *StockAdjustment) *StockAdjustmentUpdateOne {
+	mutation := newStockAdjustmentMutation(c.config, OpUpdateOne, withStockAdjustment(_m))
+	return &StockAdjustmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockAdjustmentClient) UpdateOneID(id uuid.UUID) *StockAdjustmentUpdateOne {
+	mutation := newStockAdjustmentMutation(c.config, OpUpdateOne, withStockAdjustmentID(id))
+	return &StockAdjustmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockAdjustment.
+func (c *StockAdjustmentClient) Delete() *StockAdjustmentDelete {
+	mutation := newStockAdjustmentMutation(c.config, OpDelete)
+	return &StockAdjustmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockAdjustmentClient) DeleteOne(_m *StockAdjustment) *StockAdjustmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockAdjustmentClient) DeleteOneID(id uuid.UUID) *StockAdjustmentDeleteOne {
+	builder := c.Delete().Where(stockadjustment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockAdjustmentDeleteOne{builder}
+}
+
+// Query returns a query builder for StockAdjustment.
+func (c *StockAdjustmentClient) Query() *StockAdjustmentQuery {
+	return &StockAdjustmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockAdjustment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockAdjustment entity by its id.
+func (c *StockAdjustmentClient) Get(ctx context.Context, id uuid.UUID) (*StockAdjustment, error) {
+	return c.Query().Where(stockadjustment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockAdjustmentClient) GetX(ctx context.Context, id uuid.UUID) *StockAdjustment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockAdjustmentClient) Hooks() []Hook {
+	return c.hooks.StockAdjustment
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockAdjustmentClient) Interceptors() []Interceptor {
+	return c.inters.StockAdjustment
+}
+
+func (c *StockAdjustmentClient) mutate(ctx context.Context, m *StockAdjustmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockAdjustmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockAdjustmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockAdjustmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockAdjustmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockAdjustment mutation op: %q", m.Op())
+	}
+}
+
 // TenantClient is a client for the Tenant schema.
 type TenantClient struct {
 	config
@@ -3733,14 +3874,14 @@ type (
 		Consumption, InventoryBalance, InventoryPermission, InventoryRole,
 		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
 		OutboxEvent, RateLimitConfig, Recipe, RecipeIngredient, Reservation,
-		RolePermission, ServiceConfig, Tenant, Unit, UserRoleAssignment,
-		Warehouse []ent.Hook
+		RolePermission, ServiceConfig, StockAdjustment, Tenant, Unit,
+		UserRoleAssignment, Warehouse []ent.Hook
 	}
 	inters struct {
 		Consumption, InventoryBalance, InventoryPermission, InventoryRole,
 		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
 		OutboxEvent, RateLimitConfig, Recipe, RecipeIngredient, Reservation,
-		RolePermission, ServiceConfig, Tenant, Unit, UserRoleAssignment,
-		Warehouse []ent.Interceptor
+		RolePermission, ServiceConfig, StockAdjustment, Tenant, Unit,
+		UserRoleAssignment, Warehouse []ent.Interceptor
 	}
 )

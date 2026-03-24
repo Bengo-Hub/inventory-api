@@ -675,6 +675,50 @@ var (
 			},
 		},
 	}
+	// StockAdjustmentsColumns holds the columns for the "stock_adjustments" table.
+	StockAdjustmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "quantity_before", Type: field.TypeFloat64},
+		{Name: "quantity_change", Type: field.TypeFloat64},
+		{Name: "quantity_after", Type: field.TypeFloat64},
+		{Name: "reason", Type: field.TypeEnum, Enums: []string{"damaged", "expired", "shrinkage", "found", "correction", "transfer_in", "transfer_out", "return", "initial_count", "other"}},
+		{Name: "reference", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "adjusted_by", Type: field.TypeUUID},
+		{Name: "adjusted_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// StockAdjustmentsTable holds the schema information for the "stock_adjustments" table.
+	StockAdjustmentsTable = &schema.Table{
+		Name:       "stock_adjustments",
+		Columns:    StockAdjustmentsColumns,
+		PrimaryKey: []*schema.Column{StockAdjustmentsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockadjustment_tenant_id_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockAdjustmentsColumns[1], StockAdjustmentsColumns[2]},
+			},
+			{
+				Name:    "stockadjustment_tenant_id_warehouse_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockAdjustmentsColumns[1], StockAdjustmentsColumns[3]},
+			},
+			{
+				Name:    "stockadjustment_tenant_id_reason",
+				Unique:  false,
+				Columns: []*schema.Column{StockAdjustmentsColumns[1], StockAdjustmentsColumns[7]},
+			},
+			{
+				Name:    "stockadjustment_adjusted_at",
+				Unique:  false,
+				Columns: []*schema.Column{StockAdjustmentsColumns[11]},
+			},
+		},
+	}
 	// TenantsColumns holds the columns for the "tenants" table.
 	TenantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -853,6 +897,7 @@ var (
 		ReservationsTable,
 		RolePermissionsTable,
 		ServiceConfigsTable,
+		StockAdjustmentsTable,
 		TenantsTable,
 		UnitsTable,
 		UserRoleAssignmentsTable,

@@ -16,6 +16,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -97,24 +98,58 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 
 // AdjustStockRequest represents a stock adjustment request.
 type AdjustStockRequest struct {
-	SKU        string `json:"sku"`
-	Adjustment int    `json:"adjustment"`
-	Reason     string `json:"reason"`
-	Reference  string `json:"reference,omitempty"`
+	SKU         string    `json:"sku"`
+	Adjustment  int       `json:"adjustment"`
+	Reason      string    `json:"reason"`
+	Reference   string    `json:"reference,omitempty"`
+	Notes       string    `json:"notes,omitempty"`
+	AdjustedBy  uuid.UUID `json:"adjusted_by"`
+	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
 }
 
 // AdjustStockResponse represents the result of a stock adjustment.
 type AdjustStockResponse struct {
-	SKU       string `json:"sku"`
-	OnHand    int    `json:"on_hand"`
-	Available int    `json:"available"`
-	Reserved  int    `json:"reserved"`
-	Reason    string `json:"reason"`
+	ID           uuid.UUID `json:"id"`
+	SKU          string    `json:"sku"`
+	OnHand       int       `json:"on_hand"`
+	Available    int       `json:"available"`
+	Reserved     int       `json:"reserved"`
+	Reason       string    `json:"reason"`
+	QtyBefore    float64   `json:"quantity_before"`
+	QtyChange    float64   `json:"quantity_change"`
+	QtyAfter     float64   `json:"quantity_after"`
+	AdjustedAt   time.Time `json:"adjusted_at"`
 }
 
-// AdjustStock adjusts stock levels for an item and publishes a low-stock event if needed.
+// StockAdjustmentDTO represents a stock adjustment for listing.
+type StockAdjustmentDTO struct {
+	ID             uuid.UUID `json:"id"`
+	TenantID       uuid.UUID `json:"tenant_id"`
+	ItemID         uuid.UUID `json:"item_id"`
+	WarehouseID    uuid.UUID `json:"warehouse_id"`
+	QuantityBefore float64   `json:"quantity_before"`
+	QuantityChange float64   `json:"quantity_change"`
+	QuantityAfter  float64   `json:"quantity_after"`
+	Reason         string    `json:"reason"`
+	Reference      string    `json:"reference,omitempty"`
+	Notes          string    `json:"notes,omitempty"`
+	AdjustedBy     uuid.UUID `json:"adjusted_by"`
+	AdjustedAt     time.Time `json:"adjusted_at"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+// ListAdjustmentsRequest contains filters for listing stock adjustments.
+type ListAdjustmentsRequest struct {
+	ItemID      uuid.UUID `json:"item_id,omitempty"`
+	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
+	Reason      string    `json:"reason,omitempty"`
+	DateFrom    time.Time `json:"date_from,omitempty"`
+	DateTo      time.Time `json:"date_to,omitempty"`
+}
+
+// AdjustStock adjusts stock levels for an item, creates an audit trail, and publishes events.
 func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req AdjustStockRequest) (*AdjustStockResponse, error) {
-	whID, err := s.resolveWarehouseID(ctx, tenantID, uuid.Nil)
+	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +185,9 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		return nil, fmt.Errorf("stock: query balance: %w", err)
 	}
 
+	qtyBefore := float64(bal.OnHand)
+	qtyChange := float64(req.Adjustment)
+
 	newOnHand := bal.OnHand + req.Adjustment
 	if newOnHand < 0 {
 		newOnHand = 0
@@ -159,6 +197,8 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		newAvailable = 0
 	}
 
+	qtyAfter := float64(newOnHand)
+
 	updatedBal, err := tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(newOnHand).
 		SetAvailable(newAvailable).
@@ -166,6 +206,56 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	if err != nil {
 		return nil, fmt.Errorf("stock: update balance for sku=%s: %w", req.SKU, err)
 	}
+
+	// Validate reason for the enum
+	adjReason := stockadjustment.Reason(req.Reason)
+	if err := stockadjustment.ReasonValidator(adjReason); err != nil {
+		adjReason = stockadjustment.ReasonOther
+	}
+
+	// Create StockAdjustment audit record
+	now := time.Now()
+	adjBuilder := tx.StockAdjustment.Create().
+		SetTenantID(tenantID).
+		SetItemID(itm.ID).
+		SetWarehouseID(whID).
+		SetQuantityBefore(qtyBefore).
+		SetQuantityChange(qtyChange).
+		SetQuantityAfter(qtyAfter).
+		SetReason(adjReason).
+		SetAdjustedAt(now)
+
+	if req.AdjustedBy != uuid.Nil {
+		adjBuilder.SetAdjustedBy(req.AdjustedBy)
+	} else {
+		adjBuilder.SetAdjustedBy(uuid.Nil)
+	}
+	if req.Reference != "" {
+		adjBuilder.SetReference(req.Reference)
+	}
+	if req.Notes != "" {
+		adjBuilder.SetNotes(req.Notes)
+	}
+
+	adj, err := adjBuilder.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: create adjustment record: %w", err)
+	}
+
+	// Publish stock updated event
+	s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.updated", map[string]any{
+		"tenant_id":       tenantID.String(),
+		"item_id":         itm.ID.String(),
+		"sku":             itm.Sku,
+		"warehouse_id":    whID.String(),
+		"adjustment_id":   adj.ID.String(),
+		"quantity_before": qtyBefore,
+		"quantity_change": qtyChange,
+		"quantity_after":  qtyAfter,
+		"reason":          req.Reason,
+		"on_hand":         newOnHand,
+		"available":       newAvailable,
+	})
 
 	// Check for low stock and publish event
 	s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
@@ -179,15 +269,74 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		zap.Int("adjustment", req.Adjustment),
 		zap.String("reason", req.Reason),
 		zap.Int("new_on_hand", newOnHand),
+		zap.String("adjustment_id", adj.ID.String()),
 	)
 
 	return &AdjustStockResponse{
-		SKU:       req.SKU,
-		OnHand:    newOnHand,
-		Available: newAvailable,
-		Reserved:  bal.Reserved,
-		Reason:    req.Reason,
+		ID:         adj.ID,
+		SKU:        req.SKU,
+		OnHand:     newOnHand,
+		Available:  newAvailable,
+		Reserved:   bal.Reserved,
+		Reason:     req.Reason,
+		QtyBefore:  qtyBefore,
+		QtyChange:  qtyChange,
+		QtyAfter:   qtyAfter,
+		AdjustedAt: now,
 	}, nil
+}
+
+// ListAdjustments returns stock adjustments filtered by the given criteria.
+func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req ListAdjustmentsRequest) ([]StockAdjustmentDTO, error) {
+	q := s.client.StockAdjustment.Query().
+		Where(stockadjustment.TenantID(tenantID))
+
+	if req.ItemID != uuid.Nil {
+		q = q.Where(stockadjustment.ItemID(req.ItemID))
+	}
+	if req.WarehouseID != uuid.Nil {
+		q = q.Where(stockadjustment.WarehouseID(req.WarehouseID))
+	}
+	if req.Reason != "" {
+		reason := stockadjustment.Reason(req.Reason)
+		if stockadjustment.ReasonValidator(reason) == nil {
+			q = q.Where(stockadjustment.ReasonEQ(reason))
+		}
+	}
+	if !req.DateFrom.IsZero() {
+		q = q.Where(stockadjustment.AdjustedAtGTE(req.DateFrom))
+	}
+	if !req.DateTo.IsZero() {
+		q = q.Where(stockadjustment.AdjustedAtLTE(req.DateTo))
+	}
+
+	adjustments, err := q.
+		Order(ent.Desc(stockadjustment.FieldAdjustedAt)).
+		Limit(200).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: list adjustments: %w", err)
+	}
+
+	result := make([]StockAdjustmentDTO, len(adjustments))
+	for i, a := range adjustments {
+		result[i] = StockAdjustmentDTO{
+			ID:             a.ID,
+			TenantID:       a.TenantID,
+			ItemID:         a.ItemID,
+			WarehouseID:    a.WarehouseID,
+			QuantityBefore: a.QuantityBefore,
+			QuantityChange: a.QuantityChange,
+			QuantityAfter:  a.QuantityAfter,
+			Reason:         string(a.Reason),
+			Reference:      a.Reference,
+			Notes:          a.Notes,
+			AdjustedBy:     a.AdjustedBy,
+			AdjustedAt:     a.AdjustedAt,
+			CreatedAt:      a.CreatedAt,
+		}
+	}
+	return result, nil
 }
 
 // checkAndPublishLowStock checks if stock is at or below reorder level and publishes an event.
