@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -27,29 +28,20 @@ func NewSyncer(client *ent.Client, authURL string) *Syncer {
 	return &Syncer{client: client, authURL: authURL}
 }
 
-// authAPITenantResponse is the full tenant JSON response from GET /api/v1/tenants/by-slug/{slug}.
+// authAPITenantResponse represents the tenant JSON from GET /api/v1/tenants/by-slug/{slug}.
+// We only store minimal fields locally; branding, contact info, and subscription data
+// are owned by auth-api and fetched on demand or read from JWT claims.
 type authAPITenantResponse struct {
-	ID                 string         `json:"id"`
-	Name               string         `json:"name"`
-	Slug               string         `json:"slug"`
-	Status             string         `json:"status"`
-	ContactEmail       string         `json:"contact_email,omitempty"`
-	ContactPhone       string         `json:"contact_phone,omitempty"`
-	LogoURL            string         `json:"logo_url,omitempty"`
-	Website            string         `json:"website,omitempty"`
-	Country            string         `json:"country,omitempty"`
-	Timezone           string         `json:"timezone,omitempty"`
-	BrandColors        map[string]any `json:"brand_colors,omitempty"`
-	OrgSize            string         `json:"org_size,omitempty"`
-	UseCase            string         `json:"use_case,omitempty"`
-	SubscriptionPlan   string         `json:"subscription_plan,omitempty"`
-	SubscriptionStatus string         `json:"subscription_status,omitempty"`
-	TierLimits         map[string]any `json:"tier_limits,omitempty"`
-	Metadata           map[string]any `json:"metadata,omitempty"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Slug    string `json:"slug"`
+	Status  string `json:"status"`
+	UseCase string `json:"use_case,omitempty"`
 }
 
-// SyncTenant fetches the FULL tenant record from auth-api and persists it
-// in the local DB with the same UUID as auth-api. Used for JIT provisioning.
+// SyncTenant fetches the tenant record from auth-api and persists only the
+// minimal reference fields locally (id, name, slug, status, use_case).
+// Branding, contact info, and subscription data remain in auth-api only.
 func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error) {
 	// Fast path: check if tenant already exists locally
 	existingFast, err := s.client.Tenant.Query().Where(enttenant.SlugEQ(slug)).Only(ctx)
@@ -86,31 +78,19 @@ func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 		return uuid.Nil, fmt.Errorf("tenant.Syncer: invalid UUID %q: %w", remote.ID, err)
 	}
 
-	extMeta := map[string]any{}
-	for k, v := range remote.Metadata {
-		extMeta[k] = v
-	}
+	now := time.Now()
 
 	existing, queryErr := s.client.Tenant.Query().Where(enttenant.IDEQ(realID)).Only(ctx)
 	if queryErr == nil && existing != nil {
-		_, updErr := existing.Update().
+		update := existing.Update().
 			SetName(remote.Name).
 			SetStatus(remote.Status).
-			SetContactEmail(remote.ContactEmail).
-			SetContactPhone(remote.ContactPhone).
-			SetLogoURL(remote.LogoURL).
-			SetWebsite(remote.Website).
-			SetCountry(remote.Country).
-			SetTimezone(remote.Timezone).
-			SetBrandColors(remote.BrandColors).
-			SetOrgSize(remote.OrgSize).
-			SetUseCase(remote.UseCase).
-			SetSubscriptionPlan(remote.SubscriptionPlan).
-			SetSubscriptionStatus(remote.SubscriptionStatus).
-			SetTierLimits(remote.TierLimits).
-			SetMetadata(extMeta).
-			Save(ctx)
-		if updErr != nil {
+			SetSyncStatus("synced").
+			SetLastSyncAt(now)
+		if remote.UseCase != "" {
+			update = update.SetUseCase(remote.UseCase)
+		}
+		if _, updErr := update.Save(ctx); updErr != nil {
 			return uuid.Nil, fmt.Errorf("tenant.Syncer: update tenant: %w", updErr)
 		}
 		log.Printf("  [tenant-sync] updated %s (UUID %s) from auth-api", slug, realID)
@@ -127,26 +107,17 @@ func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 		return bySlug.ID, nil
 	}
 
-	created, createErr := s.client.Tenant.Create().
+	create := s.client.Tenant.Create().
 		SetID(realID).
 		SetSlug(remote.Slug).
 		SetName(remote.Name).
 		SetStatus(remote.Status).
-		SetContactEmail(remote.ContactEmail).
-		SetContactPhone(remote.ContactPhone).
-		SetLogoURL(remote.LogoURL).
-		SetWebsite(remote.Website).
-		SetCountry(remote.Country).
-		SetTimezone(remote.Timezone).
-		SetBrandColors(remote.BrandColors).
-		SetOrgSize(remote.OrgSize).
-		SetUseCase(remote.UseCase).
-		SetSubscriptionPlan(remote.SubscriptionPlan).
-		SetSubscriptionStatus(remote.SubscriptionStatus).
-		SetTierLimits(remote.TierLimits).
-		SetMetadata(extMeta).
-		Save(ctx)
-
+		SetSyncStatus("synced").
+		SetLastSyncAt(now)
+	if remote.UseCase != "" {
+		create = create.SetUseCase(remote.UseCase)
+	}
+	created, createErr := create.Save(ctx)
 	if createErr != nil {
 		return uuid.Nil, fmt.Errorf("tenant.Syncer: create tenant: %w", createErr)
 	}
