@@ -85,6 +85,62 @@ func (_c *RecipeCreate) SetNillableIsActive(v *bool) *RecipeCreate {
 	return _c
 }
 
+// SetTotalCost sets the "total_cost" field.
+func (_c *RecipeCreate) SetTotalCost(v float64) *RecipeCreate {
+	_c.mutation.SetTotalCost(v)
+	return _c
+}
+
+// SetNillableTotalCost sets the "total_cost" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableTotalCost(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetTotalCost(*v)
+	}
+	return _c
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (_c *RecipeCreate) SetCostPerPortion(v float64) *RecipeCreate {
+	_c.mutation.SetCostPerPortion(v)
+	return _c
+}
+
+// SetNillableCostPerPortion sets the "cost_per_portion" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableCostPerPortion(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetCostPerPortion(*v)
+	}
+	return _c
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_c *RecipeCreate) SetTargetMarginPercent(v float64) *RecipeCreate {
+	_c.mutation.SetTargetMarginPercent(v)
+	return _c
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableTargetMarginPercent(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetTargetMarginPercent(*v)
+	}
+	return _c
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (_c *RecipeCreate) SetSuggestedPrice(v float64) *RecipeCreate {
+	_c.mutation.SetSuggestedPrice(v)
+	return _c
+}
+
+// SetNillableSuggestedPrice sets the "suggested_price" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableSuggestedPrice(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetSuggestedPrice(*v)
+	}
+	return _c
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (_c *RecipeCreate) SetPrepTimeMinutes(v int) *RecipeCreate {
 	_c.mutation.SetPrepTimeMinutes(v)
@@ -333,6 +389,22 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
 	}
+	if value, ok := _c.mutation.TotalCost(); ok {
+		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
+		_node.TotalCost = &value
+	}
+	if value, ok := _c.mutation.CostPerPortion(); ok {
+		_spec.SetField(recipe.FieldCostPerPortion, field.TypeFloat64, value)
+		_node.CostPerPortion = &value
+	}
+	if value, ok := _c.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(recipe.FieldTargetMarginPercent, field.TypeFloat64, value)
+		_node.TargetMarginPercent = &value
+	}
+	if value, ok := _c.mutation.SuggestedPrice(); ok {
+		_spec.SetField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
+		_node.SuggestedPrice = &value
+	}
 	if value, ok := _c.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
 		_node.PrepTimeMinutes = &value
@@ -492,6 +564,102 @@ func (u *RecipeUpsert) SetIsActive(v bool) *RecipeUpsert {
 // UpdateIsActive sets the "is_active" field to the value that was provided on create.
 func (u *RecipeUpsert) UpdateIsActive() *RecipeUpsert {
 	u.SetExcluded(recipe.FieldIsActive)
+	return u
+}
+
+// SetTotalCost sets the "total_cost" field.
+func (u *RecipeUpsert) SetTotalCost(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldTotalCost, v)
+	return u
+}
+
+// UpdateTotalCost sets the "total_cost" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateTotalCost() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldTotalCost)
+	return u
+}
+
+// AddTotalCost adds v to the "total_cost" field.
+func (u *RecipeUpsert) AddTotalCost(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldTotalCost, v)
+	return u
+}
+
+// ClearTotalCost clears the value of the "total_cost" field.
+func (u *RecipeUpsert) ClearTotalCost() *RecipeUpsert {
+	u.SetNull(recipe.FieldTotalCost)
+	return u
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (u *RecipeUpsert) SetCostPerPortion(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldCostPerPortion, v)
+	return u
+}
+
+// UpdateCostPerPortion sets the "cost_per_portion" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateCostPerPortion() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldCostPerPortion)
+	return u
+}
+
+// AddCostPerPortion adds v to the "cost_per_portion" field.
+func (u *RecipeUpsert) AddCostPerPortion(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldCostPerPortion, v)
+	return u
+}
+
+// ClearCostPerPortion clears the value of the "cost_per_portion" field.
+func (u *RecipeUpsert) ClearCostPerPortion() *RecipeUpsert {
+	u.SetNull(recipe.FieldCostPerPortion)
+	return u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *RecipeUpsert) SetTargetMarginPercent(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldTargetMarginPercent, v)
+	return u
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateTargetMarginPercent() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldTargetMarginPercent)
+	return u
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *RecipeUpsert) AddTargetMarginPercent(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldTargetMarginPercent, v)
+	return u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *RecipeUpsert) ClearTargetMarginPercent() *RecipeUpsert {
+	u.SetNull(recipe.FieldTargetMarginPercent)
+	return u
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (u *RecipeUpsert) SetSuggestedPrice(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldSuggestedPrice, v)
+	return u
+}
+
+// UpdateSuggestedPrice sets the "suggested_price" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateSuggestedPrice() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldSuggestedPrice)
+	return u
+}
+
+// AddSuggestedPrice adds v to the "suggested_price" field.
+func (u *RecipeUpsert) AddSuggestedPrice(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldSuggestedPrice, v)
+	return u
+}
+
+// ClearSuggestedPrice clears the value of the "suggested_price" field.
+func (u *RecipeUpsert) ClearSuggestedPrice() *RecipeUpsert {
+	u.SetNull(recipe.FieldSuggestedPrice)
 	return u
 }
 
@@ -688,6 +856,118 @@ func (u *RecipeUpsertOne) SetIsActive(v bool) *RecipeUpsertOne {
 func (u *RecipeUpsertOne) UpdateIsActive() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetTotalCost sets the "total_cost" field.
+func (u *RecipeUpsertOne) SetTotalCost(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetTotalCost(v)
+	})
+}
+
+// AddTotalCost adds v to the "total_cost" field.
+func (u *RecipeUpsertOne) AddTotalCost(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddTotalCost(v)
+	})
+}
+
+// UpdateTotalCost sets the "total_cost" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateTotalCost() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateTotalCost()
+	})
+}
+
+// ClearTotalCost clears the value of the "total_cost" field.
+func (u *RecipeUpsertOne) ClearTotalCost() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearTotalCost()
+	})
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (u *RecipeUpsertOne) SetCostPerPortion(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetCostPerPortion(v)
+	})
+}
+
+// AddCostPerPortion adds v to the "cost_per_portion" field.
+func (u *RecipeUpsertOne) AddCostPerPortion(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddCostPerPortion(v)
+	})
+}
+
+// UpdateCostPerPortion sets the "cost_per_portion" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateCostPerPortion() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateCostPerPortion()
+	})
+}
+
+// ClearCostPerPortion clears the value of the "cost_per_portion" field.
+func (u *RecipeUpsertOne) ClearCostPerPortion() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearCostPerPortion()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *RecipeUpsertOne) SetTargetMarginPercent(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *RecipeUpsertOne) AddTargetMarginPercent(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateTargetMarginPercent() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *RecipeUpsertOne) ClearTargetMarginPercent() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearTargetMarginPercent()
+	})
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (u *RecipeUpsertOne) SetSuggestedPrice(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetSuggestedPrice(v)
+	})
+}
+
+// AddSuggestedPrice adds v to the "suggested_price" field.
+func (u *RecipeUpsertOne) AddSuggestedPrice(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddSuggestedPrice(v)
+	})
+}
+
+// UpdateSuggestedPrice sets the "suggested_price" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateSuggestedPrice() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateSuggestedPrice()
+	})
+}
+
+// ClearSuggestedPrice clears the value of the "suggested_price" field.
+func (u *RecipeUpsertOne) ClearSuggestedPrice() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearSuggestedPrice()
 	})
 }
 
@@ -1060,6 +1340,118 @@ func (u *RecipeUpsertBulk) SetIsActive(v bool) *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) UpdateIsActive() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetTotalCost sets the "total_cost" field.
+func (u *RecipeUpsertBulk) SetTotalCost(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetTotalCost(v)
+	})
+}
+
+// AddTotalCost adds v to the "total_cost" field.
+func (u *RecipeUpsertBulk) AddTotalCost(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddTotalCost(v)
+	})
+}
+
+// UpdateTotalCost sets the "total_cost" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateTotalCost() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateTotalCost()
+	})
+}
+
+// ClearTotalCost clears the value of the "total_cost" field.
+func (u *RecipeUpsertBulk) ClearTotalCost() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearTotalCost()
+	})
+}
+
+// SetCostPerPortion sets the "cost_per_portion" field.
+func (u *RecipeUpsertBulk) SetCostPerPortion(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetCostPerPortion(v)
+	})
+}
+
+// AddCostPerPortion adds v to the "cost_per_portion" field.
+func (u *RecipeUpsertBulk) AddCostPerPortion(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddCostPerPortion(v)
+	})
+}
+
+// UpdateCostPerPortion sets the "cost_per_portion" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateCostPerPortion() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateCostPerPortion()
+	})
+}
+
+// ClearCostPerPortion clears the value of the "cost_per_portion" field.
+func (u *RecipeUpsertBulk) ClearCostPerPortion() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearCostPerPortion()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *RecipeUpsertBulk) SetTargetMarginPercent(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *RecipeUpsertBulk) AddTargetMarginPercent(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateTargetMarginPercent() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *RecipeUpsertBulk) ClearTargetMarginPercent() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearTargetMarginPercent()
+	})
+}
+
+// SetSuggestedPrice sets the "suggested_price" field.
+func (u *RecipeUpsertBulk) SetSuggestedPrice(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetSuggestedPrice(v)
+	})
+}
+
+// AddSuggestedPrice adds v to the "suggested_price" field.
+func (u *RecipeUpsertBulk) AddSuggestedPrice(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddSuggestedPrice(v)
+	})
+}
+
+// UpdateSuggestedPrice sets the "suggested_price" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateSuggestedPrice() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateSuggestedPrice()
+	})
+}
+
+// ClearSuggestedPrice clears the value of the "suggested_price" field.
+func (u *RecipeUpsertBulk) ClearSuggestedPrice() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearSuggestedPrice()
 	})
 }
 

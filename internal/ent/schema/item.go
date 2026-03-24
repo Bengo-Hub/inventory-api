@@ -46,6 +46,42 @@ func (Item) Fields() []ent.Field {
 			Default(true),
 		field.String("image_url").
 			Optional(),
+		// Barcode management (Phase 1.1)
+		field.String("barcode").
+			Optional().
+			Comment("EAN-13/UPC barcode for scanning"),
+		field.String("barcode_type").
+			Optional().
+			Comment("EAN13, UPC, CODE128, QR"),
+		// Compliance flags (Phase 1.4) — supports liquor stores, pharmacies, electronics
+		field.Bool("requires_age_verification").
+			Default(false).
+			Comment("Liquor, tobacco, 18+ items"),
+		field.Bool("is_controlled_substance").
+			Default(false).
+			Comment("Pharmacy: scheduled drugs requiring special handling"),
+		field.Bool("is_perishable").
+			Default(false).
+			Comment("Requires expiry/lot tracking — bakeries, pharmacies, food"),
+		field.Bool("track_serial_numbers").
+			Default(false).
+			Comment("Electronics, equipment — require serial at sale"),
+		field.Bool("track_lots").
+			Default(false).
+			Comment("Pharma batches, food lots — require lot/expiry tracking"),
+		// Physical attributes (Phase 1.4) — shipping/logistics
+		field.Float("weight_kg").
+			Optional().
+			Nillable().
+			Comment("Weight in kg for shipping/logistics pricing"),
+		field.JSON("dimensions_cm", map[string]float64{}).
+			Optional().
+			Comment("Physical dimensions {length, width, height} in cm"),
+		// Service attributes (Phase 1.4) — salons, barber shops
+		field.Int("duration_minutes").
+			Optional().
+			Nillable().
+			Comment("Service duration for appointment booking (salon, barber)"),
 		field.JSON("tags", []string{}).
 			Default([]string{}).
 			Comment("Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)"),
@@ -78,6 +114,12 @@ func (Item) Edges() []ent.Edge {
 		edge.To("assets", ItemAsset.Type),
 		edge.To("translations", ItemTranslation.Type),
 		edge.To("modifier_groups", ModifierGroup.Type),
+		edge.To("lots", InventoryLot.Type),
+		edge.To("custom_field_values", CustomFieldValue.Type),
+		edge.To("bundle", Bundle.Type).Unique(),
+		edge.To("bundle_components", BundleComponent.Type).
+			Comment("Items where this item is a component in a bundle"),
+		edge.To("warranties", Warranty.Type),
 		edge.From("item_category", ItemCategory.Type).
 			Ref("items").
 			Unique().
@@ -91,5 +133,6 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("tenant_id", "sku").Unique(),
 		index.Fields("tenant_id", "category_id"),
 		index.Fields("tenant_id", "is_active"),
+		index.Fields("tenant_id", "barcode"),
 	}
 }

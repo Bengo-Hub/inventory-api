@@ -12,8 +12,13 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/bundle"
+	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
+	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
@@ -25,6 +30,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
+	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
@@ -32,10 +39,15 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
+	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
+	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
+	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warranty"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -96,30 +108,42 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			consumption.Table:         consumption.ValidColumn,
-			inventorybalance.Table:    inventorybalance.ValidColumn,
-			inventorypermission.Table: inventorypermission.ValidColumn,
-			inventoryrole.Table:       inventoryrole.ValidColumn,
-			inventoryuser.Table:       inventoryuser.ValidColumn,
-			item.Table:                item.ValidColumn,
-			itemasset.Table:           itemasset.ValidColumn,
-			itemcategory.Table:        itemcategory.ValidColumn,
-			itemtranslation.Table:     itemtranslation.ValidColumn,
-			itemvariant.Table:         itemvariant.ValidColumn,
-			modifiergroup.Table:       modifiergroup.ValidColumn,
-			modifieroption.Table:      modifieroption.ValidColumn,
-			outboxevent.Table:         outboxevent.ValidColumn,
-			ratelimitconfig.Table:     ratelimitconfig.ValidColumn,
-			recipe.Table:              recipe.ValidColumn,
-			recipeingredient.Table:    recipeingredient.ValidColumn,
-			reservation.Table:         reservation.ValidColumn,
-			rolepermission.Table:      rolepermission.ValidColumn,
-			serviceconfig.Table:       serviceconfig.ValidColumn,
-			stockadjustment.Table:     stockadjustment.ValidColumn,
-			tenant.Table:              tenant.ValidColumn,
-			unit.Table:                unit.ValidColumn,
-			userroleassignment.Table:  userroleassignment.ValidColumn,
-			warehouse.Table:           warehouse.ValidColumn,
+			bundle.Table:                bundle.ValidColumn,
+			bundlecomponent.Table:       bundlecomponent.ValidColumn,
+			consumption.Table:           consumption.ValidColumn,
+			customfielddefinition.Table: customfielddefinition.ValidColumn,
+			customfieldvalue.Table:      customfieldvalue.ValidColumn,
+			inventorybalance.Table:      inventorybalance.ValidColumn,
+			inventorylot.Table:          inventorylot.ValidColumn,
+			inventorypermission.Table:   inventorypermission.ValidColumn,
+			inventoryrole.Table:         inventoryrole.ValidColumn,
+			inventoryuser.Table:         inventoryuser.ValidColumn,
+			item.Table:                  item.ValidColumn,
+			itemasset.Table:             itemasset.ValidColumn,
+			itemcategory.Table:          itemcategory.ValidColumn,
+			itemtranslation.Table:       itemtranslation.ValidColumn,
+			itemvariant.Table:           itemvariant.ValidColumn,
+			modifiergroup.Table:         modifiergroup.ValidColumn,
+			modifieroption.Table:        modifieroption.ValidColumn,
+			outboxevent.Table:           outboxevent.ValidColumn,
+			purchaseorder.Table:         purchaseorder.ValidColumn,
+			purchaseorderline.Table:     purchaseorderline.ValidColumn,
+			ratelimitconfig.Table:       ratelimitconfig.ValidColumn,
+			recipe.Table:                recipe.ValidColumn,
+			recipeingredient.Table:      recipeingredient.ValidColumn,
+			reservation.Table:           reservation.ValidColumn,
+			rolepermission.Table:        rolepermission.ValidColumn,
+			serviceconfig.Table:         serviceconfig.ValidColumn,
+			stockadjustment.Table:       stockadjustment.ValidColumn,
+			stocktransfer.Table:         stocktransfer.ValidColumn,
+			stocktransferline.Table:     stocktransferline.ValidColumn,
+			supplier.Table:              supplier.ValidColumn,
+			tenant.Table:                tenant.ValidColumn,
+			unit.Table:                  unit.ValidColumn,
+			userroleassignment.Table:    userroleassignment.ValidColumn,
+			variantattribute.Table:      variantattribute.ValidColumn,
+			warehouse.Table:             warehouse.ValidColumn,
+			warranty.Table:              warranty.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

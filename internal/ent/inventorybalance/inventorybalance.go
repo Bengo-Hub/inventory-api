@@ -31,6 +31,12 @@ const (
 	FieldUnitOfMeasure = "unit_of_measure"
 	// FieldReorderLevel holds the string denoting the reorder_level field in the database.
 	FieldReorderLevel = "reorder_level"
+	// FieldReorderQuantity holds the string denoting the reorder_quantity field in the database.
+	FieldReorderQuantity = "reorder_quantity"
+	// FieldPreferredSupplierID holds the string denoting the preferred_supplier_id field in the database.
+	FieldPreferredSupplierID = "preferred_supplier_id"
+	// FieldAutoReorderEnabled holds the string denoting the auto_reorder_enabled field in the database.
+	FieldAutoReorderEnabled = "auto_reorder_enabled"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// EdgeItem holds the string denoting the item edge name in mutations.
@@ -66,6 +72,9 @@ var Columns = []string{
 	FieldReserved,
 	FieldUnitOfMeasure,
 	FieldReorderLevel,
+	FieldReorderQuantity,
+	FieldPreferredSupplierID,
+	FieldAutoReorderEnabled,
 	FieldUpdatedAt,
 }
 
@@ -90,6 +99,10 @@ var (
 	DefaultUnitOfMeasure string
 	// DefaultReorderLevel holds the default value on creation for the "reorder_level" field.
 	DefaultReorderLevel int
+	// DefaultReorderQuantity holds the default value on creation for the "reorder_quantity" field.
+	DefaultReorderQuantity int
+	// DefaultAutoReorderEnabled holds the default value on creation for the "auto_reorder_enabled" field.
+	DefaultAutoReorderEnabled bool
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
@@ -144,6 +157,21 @@ func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 // ByReorderLevel orders the results by the reorder_level field.
 func ByReorderLevel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReorderLevel, opts...).ToFunc()
+}
+
+// ByReorderQuantity orders the results by the reorder_quantity field.
+func ByReorderQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReorderQuantity, opts...).ToFunc()
+}
+
+// ByPreferredSupplierID orders the results by the preferred_supplier_id field.
+func ByPreferredSupplierID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreferredSupplierID, opts...).ToFunc()
+}
+
+// ByAutoReorderEnabled orders the results by the auto_reorder_enabled field.
+func ByAutoReorderEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutoReorderEnabled, opts...).ToFunc()
 }
 
 // ByUpdatedAt orders the results by the updated_at field.

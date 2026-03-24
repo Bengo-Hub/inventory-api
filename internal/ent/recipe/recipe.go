@@ -27,6 +27,14 @@ const (
 	FieldUnitOfMeasure = "unit_of_measure"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldTotalCost holds the string denoting the total_cost field in the database.
+	FieldTotalCost = "total_cost"
+	// FieldCostPerPortion holds the string denoting the cost_per_portion field in the database.
+	FieldCostPerPortion = "cost_per_portion"
+	// FieldTargetMarginPercent holds the string denoting the target_margin_percent field in the database.
+	FieldTargetMarginPercent = "target_margin_percent"
+	// FieldSuggestedPrice holds the string denoting the suggested_price field in the database.
+	FieldSuggestedPrice = "suggested_price"
 	// FieldPrepTimeMinutes holds the string denoting the prep_time_minutes field in the database.
 	FieldPrepTimeMinutes = "prep_time_minutes"
 	// FieldMetadata holds the string denoting the metadata field in the database.
@@ -57,6 +65,10 @@ var Columns = []string{
 	FieldOutputQty,
 	FieldUnitOfMeasure,
 	FieldIsActive,
+	FieldTotalCost,
+	FieldCostPerPortion,
+	FieldTargetMarginPercent,
+	FieldSuggestedPrice,
 	FieldPrepTimeMinutes,
 	FieldMetadata,
 	FieldCreatedAt,
@@ -136,6 +148,26 @@ func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByTotalCost orders the results by the total_cost field.
+func ByTotalCost(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalCost, opts...).ToFunc()
+}
+
+// ByCostPerPortion orders the results by the cost_per_portion field.
+func ByCostPerPortion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostPerPortion, opts...).ToFunc()
+}
+
+// ByTargetMarginPercent orders the results by the target_margin_percent field.
+func ByTargetMarginPercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTargetMarginPercent, opts...).ToFunc()
+}
+
+// BySuggestedPrice orders the results by the suggested_price field.
+func BySuggestedPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSuggestedPrice, opts...).ToFunc()
 }
 
 // ByPrepTimeMinutes orders the results by the prep_time_minutes field.

@@ -6,11 +6,26 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Bundle is the predicate function for bundle builders.
+type Bundle func(*sql.Selector)
+
+// BundleComponent is the predicate function for bundlecomponent builders.
+type BundleComponent func(*sql.Selector)
+
 // Consumption is the predicate function for consumption builders.
 type Consumption func(*sql.Selector)
 
+// CustomFieldDefinition is the predicate function for customfielddefinition builders.
+type CustomFieldDefinition func(*sql.Selector)
+
+// CustomFieldValue is the predicate function for customfieldvalue builders.
+type CustomFieldValue func(*sql.Selector)
+
 // InventoryBalance is the predicate function for inventorybalance builders.
 type InventoryBalance func(*sql.Selector)
+
+// InventoryLot is the predicate function for inventorylot builders.
+type InventoryLot func(*sql.Selector)
 
 // InventoryPermission is the predicate function for inventorypermission builders.
 type InventoryPermission func(*sql.Selector)
@@ -45,6 +60,12 @@ type ModifierOption func(*sql.Selector)
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
 
+// PurchaseOrder is the predicate function for purchaseorder builders.
+type PurchaseOrder func(*sql.Selector)
+
+// PurchaseOrderLine is the predicate function for purchaseorderline builders.
+type PurchaseOrderLine func(*sql.Selector)
+
 // RateLimitConfig is the predicate function for ratelimitconfig builders.
 type RateLimitConfig func(*sql.Selector)
 
@@ -66,6 +87,15 @@ type ServiceConfig func(*sql.Selector)
 // StockAdjustment is the predicate function for stockadjustment builders.
 type StockAdjustment func(*sql.Selector)
 
+// StockTransfer is the predicate function for stocktransfer builders.
+type StockTransfer func(*sql.Selector)
+
+// StockTransferLine is the predicate function for stocktransferline builders.
+type StockTransferLine func(*sql.Selector)
+
+// Supplier is the predicate function for supplier builders.
+type Supplier func(*sql.Selector)
+
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)
 
@@ -75,5 +105,11 @@ type Unit func(*sql.Selector)
 // UserRoleAssignment is the predicate function for userroleassignment builders.
 type UserRoleAssignment func(*sql.Selector)
 
+// VariantAttribute is the predicate function for variantattribute builders.
+type VariantAttribute func(*sql.Selector)
+
 // Warehouse is the predicate function for warehouse builders.
 type Warehouse func(*sql.Selector)
+
+// Warranty is the predicate function for warranty builders.
+type Warranty func(*sql.Selector)

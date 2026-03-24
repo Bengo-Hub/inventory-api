@@ -12,10 +12,20 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Bundle is the client for interacting with the Bundle builders.
+	Bundle *BundleClient
+	// BundleComponent is the client for interacting with the BundleComponent builders.
+	BundleComponent *BundleComponentClient
 	// Consumption is the client for interacting with the Consumption builders.
 	Consumption *ConsumptionClient
+	// CustomFieldDefinition is the client for interacting with the CustomFieldDefinition builders.
+	CustomFieldDefinition *CustomFieldDefinitionClient
+	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
+	CustomFieldValue *CustomFieldValueClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
+	// InventoryLot is the client for interacting with the InventoryLot builders.
+	InventoryLot *InventoryLotClient
 	// InventoryPermission is the client for interacting with the InventoryPermission builders.
 	InventoryPermission *InventoryPermissionClient
 	// InventoryRole is the client for interacting with the InventoryRole builders.
@@ -38,6 +48,10 @@ type Tx struct {
 	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PurchaseOrder is the client for interacting with the PurchaseOrder builders.
+	PurchaseOrder *PurchaseOrderClient
+	// PurchaseOrderLine is the client for interacting with the PurchaseOrderLine builders.
+	PurchaseOrderLine *PurchaseOrderLineClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
@@ -52,14 +66,24 @@ type Tx struct {
 	ServiceConfig *ServiceConfigClient
 	// StockAdjustment is the client for interacting with the StockAdjustment builders.
 	StockAdjustment *StockAdjustmentClient
+	// StockTransfer is the client for interacting with the StockTransfer builders.
+	StockTransfer *StockTransferClient
+	// StockTransferLine is the client for interacting with the StockTransferLine builders.
+	StockTransferLine *StockTransferLineClient
+	// Supplier is the client for interacting with the Supplier builders.
+	Supplier *SupplierClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
 	UserRoleAssignment *UserRoleAssignmentClient
+	// VariantAttribute is the client for interacting with the VariantAttribute builders.
+	VariantAttribute *VariantAttributeClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
+	// Warranty is the client for interacting with the Warranty builders.
+	Warranty *WarrantyClient
 
 	// lazily loaded.
 	client     *Client
@@ -191,8 +215,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Bundle = NewBundleClient(tx.config)
+	tx.BundleComponent = NewBundleComponentClient(tx.config)
 	tx.Consumption = NewConsumptionClient(tx.config)
+	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
+	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
+	tx.InventoryLot = NewInventoryLotClient(tx.config)
 	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)
 	tx.InventoryRole = NewInventoryRoleClient(tx.config)
 	tx.InventoryUser = NewInventoryUserClient(tx.config)
@@ -204,6 +233,8 @@ func (tx *Tx) init() {
 	tx.ModifierGroup = NewModifierGroupClient(tx.config)
 	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
+	tx.PurchaseOrder = NewPurchaseOrderClient(tx.config)
+	tx.PurchaseOrderLine = NewPurchaseOrderLineClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
@@ -211,10 +242,15 @@ func (tx *Tx) init() {
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.ServiceConfig = NewServiceConfigClient(tx.config)
 	tx.StockAdjustment = NewStockAdjustmentClient(tx.config)
+	tx.StockTransfer = NewStockTransferClient(tx.config)
+	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
+	tx.Supplier = NewSupplierClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
+	tx.VariantAttribute = NewVariantAttributeClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
+	tx.Warranty = NewWarrantyClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -224,7 +260,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Consumption.QueryXXX(), the query will be executed
+// applies a query, for example: Bundle.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

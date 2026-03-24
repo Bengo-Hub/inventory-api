@@ -96,6 +96,21 @@ func ReorderLevel(v int) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldReorderLevel, v))
 }
 
+// ReorderQuantity applies equality check predicate on the "reorder_quantity" field. It's identical to ReorderQuantityEQ.
+func ReorderQuantity(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldReorderQuantity, v))
+}
+
+// PreferredSupplierID applies equality check predicate on the "preferred_supplier_id" field. It's identical to PreferredSupplierIDEQ.
+func PreferredSupplierID(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldPreferredSupplierID, v))
+}
+
+// AutoReorderEnabled applies equality check predicate on the "auto_reorder_enabled" field. It's identical to AutoReorderEnabledEQ.
+func AutoReorderEnabled(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldAutoReorderEnabled, v))
+}
+
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUpdatedAt, v))
@@ -404,6 +419,106 @@ func ReorderLevelLT(v int) predicate.InventoryBalance {
 // ReorderLevelLTE applies the LTE predicate on the "reorder_level" field.
 func ReorderLevelLTE(v int) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLTE(FieldReorderLevel, v))
+}
+
+// ReorderQuantityEQ applies the EQ predicate on the "reorder_quantity" field.
+func ReorderQuantityEQ(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldReorderQuantity, v))
+}
+
+// ReorderQuantityNEQ applies the NEQ predicate on the "reorder_quantity" field.
+func ReorderQuantityNEQ(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldReorderQuantity, v))
+}
+
+// ReorderQuantityIn applies the In predicate on the "reorder_quantity" field.
+func ReorderQuantityIn(vs ...int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIn(FieldReorderQuantity, vs...))
+}
+
+// ReorderQuantityNotIn applies the NotIn predicate on the "reorder_quantity" field.
+func ReorderQuantityNotIn(vs ...int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotIn(FieldReorderQuantity, vs...))
+}
+
+// ReorderQuantityGT applies the GT predicate on the "reorder_quantity" field.
+func ReorderQuantityGT(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGT(FieldReorderQuantity, v))
+}
+
+// ReorderQuantityGTE applies the GTE predicate on the "reorder_quantity" field.
+func ReorderQuantityGTE(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGTE(FieldReorderQuantity, v))
+}
+
+// ReorderQuantityLT applies the LT predicate on the "reorder_quantity" field.
+func ReorderQuantityLT(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLT(FieldReorderQuantity, v))
+}
+
+// ReorderQuantityLTE applies the LTE predicate on the "reorder_quantity" field.
+func ReorderQuantityLTE(v int) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLTE(FieldReorderQuantity, v))
+}
+
+// PreferredSupplierIDEQ applies the EQ predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDEQ(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDNEQ applies the NEQ predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNEQ(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDIn applies the In predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDIn(vs ...uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIn(FieldPreferredSupplierID, vs...))
+}
+
+// PreferredSupplierIDNotIn applies the NotIn predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNotIn(vs ...uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotIn(FieldPreferredSupplierID, vs...))
+}
+
+// PreferredSupplierIDGT applies the GT predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDGT(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGT(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDGTE applies the GTE predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDGTE(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldGTE(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDLT applies the LT predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDLT(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLT(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDLTE applies the LTE predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDLTE(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldLTE(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDIsNil applies the IsNil predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDIsNil() predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIsNull(FieldPreferredSupplierID))
+}
+
+// PreferredSupplierIDNotNil applies the NotNil predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNotNil() predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotNull(FieldPreferredSupplierID))
+}
+
+// AutoReorderEnabledEQ applies the EQ predicate on the "auto_reorder_enabled" field.
+func AutoReorderEnabledEQ(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldAutoReorderEnabled, v))
+}
+
+// AutoReorderEnabledNEQ applies the NEQ predicate on the "auto_reorder_enabled" field.
+func AutoReorderEnabledNEQ(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldAutoReorderEnabled, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.

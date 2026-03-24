@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
@@ -22,12 +23,15 @@ import (
 // ItemCategoryQuery is the builder for querying ItemCategory entities.
 type ItemCategoryQuery struct {
 	config
-	ctx        *QueryContext
-	order      []itemcategory.OrderOption
-	inters     []Interceptor
-	predicates []predicate.ItemCategory
-	withItems  *ItemQuery
-	withTenant *TenantQuery
+	ctx                        *QueryContext
+	order                      []itemcategory.OrderOption
+	inters                     []Interceptor
+	predicates                 []predicate.ItemCategory
+	withItems                  *ItemQuery
+	withParent                 *ItemCategoryQuery
+	withChildren               *ItemCategoryQuery
+	withCustomFieldDefinitions *CustomFieldDefinitionQuery
+	withTenant                 *TenantQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +83,72 @@ func (_q *ItemCategoryQuery) QueryItems() *ItemQuery {
 			sqlgraph.From(itemcategory.Table, itemcategory.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, itemcategory.ItemsTable, itemcategory.ItemsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (_q *ItemCategoryQuery) QueryParent() *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemcategory.Table, itemcategory.FieldID, selector),
+			sqlgraph.To(itemcategory.Table, itemcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, itemcategory.ParentTable, itemcategory.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChildren chains the current query on the "children" edge.
+func (_q *ItemCategoryQuery) QueryChildren() *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemcategory.Table, itemcategory.FieldID, selector),
+			sqlgraph.To(itemcategory.Table, itemcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemcategory.ChildrenTable, itemcategory.ChildrenColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCustomFieldDefinitions chains the current query on the "custom_field_definitions" edge.
+func (_q *ItemCategoryQuery) QueryCustomFieldDefinitions() *CustomFieldDefinitionQuery {
+	query := (&CustomFieldDefinitionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itemcategory.Table, itemcategory.FieldID, selector),
+			sqlgraph.To(customfielddefinition.Table, customfielddefinition.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itemcategory.CustomFieldDefinitionsTable, itemcategory.CustomFieldDefinitionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +365,16 @@ func (_q *ItemCategoryQuery) Clone() *ItemCategoryQuery {
 		return nil
 	}
 	return &ItemCategoryQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]itemcategory.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.ItemCategory{}, _q.predicates...),
-		withItems:  _q.withItems.Clone(),
-		withTenant: _q.withTenant.Clone(),
+		config:                     _q.config,
+		ctx:                        _q.ctx.Clone(),
+		order:                      append([]itemcategory.OrderOption{}, _q.order...),
+		inters:                     append([]Interceptor{}, _q.inters...),
+		predicates:                 append([]predicate.ItemCategory{}, _q.predicates...),
+		withItems:                  _q.withItems.Clone(),
+		withParent:                 _q.withParent.Clone(),
+		withChildren:               _q.withChildren.Clone(),
+		withCustomFieldDefinitions: _q.withCustomFieldDefinitions.Clone(),
+		withTenant:                 _q.withTenant.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -316,6 +389,39 @@ func (_q *ItemCategoryQuery) WithItems(opts ...func(*ItemQuery)) *ItemCategoryQu
 		opt(query)
 	}
 	_q.withItems = query
+	return _q
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemCategoryQuery) WithParent(opts ...func(*ItemCategoryQuery)) *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withParent = query
+	return _q
+}
+
+// WithChildren tells the query-builder to eager-load the nodes that are connected to
+// the "children" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemCategoryQuery) WithChildren(opts ...func(*ItemCategoryQuery)) *ItemCategoryQuery {
+	query := (&ItemCategoryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChildren = query
+	return _q
+}
+
+// WithCustomFieldDefinitions tells the query-builder to eager-load the nodes that are connected to
+// the "custom_field_definitions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemCategoryQuery) WithCustomFieldDefinitions(opts ...func(*CustomFieldDefinitionQuery)) *ItemCategoryQuery {
+	query := (&CustomFieldDefinitionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCustomFieldDefinitions = query
 	return _q
 }
 
@@ -408,8 +514,11 @@ func (_q *ItemCategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*ItemCategory{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [5]bool{
 			_q.withItems != nil,
+			_q.withParent != nil,
+			_q.withChildren != nil,
+			_q.withCustomFieldDefinitions != nil,
 			_q.withTenant != nil,
 		}
 	)
@@ -438,6 +547,28 @@ func (_q *ItemCategoryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			return nil, err
 		}
 	}
+	if query := _q.withParent; query != nil {
+		if err := _q.loadParent(ctx, query, nodes, nil,
+			func(n *ItemCategory, e *ItemCategory) { n.Edges.Parent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChildren; query != nil {
+		if err := _q.loadChildren(ctx, query, nodes,
+			func(n *ItemCategory) { n.Edges.Children = []*ItemCategory{} },
+			func(n *ItemCategory, e *ItemCategory) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCustomFieldDefinitions; query != nil {
+		if err := _q.loadCustomFieldDefinitions(ctx, query, nodes,
+			func(n *ItemCategory) { n.Edges.CustomFieldDefinitions = []*CustomFieldDefinition{} },
+			func(n *ItemCategory, e *CustomFieldDefinition) {
+				n.Edges.CustomFieldDefinitions = append(n.Edges.CustomFieldDefinitions, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withTenant; query != nil {
 		if err := _q.loadTenant(ctx, query, nodes, nil,
 			func(n *ItemCategory, e *Tenant) { n.Edges.Tenant = e }); err != nil {
@@ -462,6 +593,104 @@ func (_q *ItemCategoryQuery) loadItems(ctx context.Context, query *ItemQuery, no
 	}
 	query.Where(predicate.Item(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(itemcategory.ItemsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CategoryID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "category_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "category_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemCategoryQuery) loadParent(ctx context.Context, query *ItemCategoryQuery, nodes []*ItemCategory, init func(*ItemCategory), assign func(*ItemCategory, *ItemCategory)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*ItemCategory)
+	for i := range nodes {
+		if nodes[i].ParentID == nil {
+			continue
+		}
+		fk := *nodes[i].ParentID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(itemcategory.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "parent_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *ItemCategoryQuery) loadChildren(ctx context.Context, query *ItemCategoryQuery, nodes []*ItemCategory, init func(*ItemCategory), assign func(*ItemCategory, *ItemCategory)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*ItemCategory)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(itemcategory.FieldParentID)
+	}
+	query.Where(predicate.ItemCategory(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(itemcategory.ChildrenColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ParentID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "parent_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "parent_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemCategoryQuery) loadCustomFieldDefinitions(ctx context.Context, query *CustomFieldDefinitionQuery, nodes []*ItemCategory, init func(*ItemCategory), assign func(*ItemCategory, *CustomFieldDefinition)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*ItemCategory)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(customfielddefinition.FieldCategoryID)
+	}
+	query.Where(predicate.CustomFieldDefinition(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(itemcategory.CustomFieldDefinitionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -534,6 +763,9 @@ func (_q *ItemCategoryQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != itemcategory.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withParent != nil {
+			_spec.Node.AddColumnOnce(itemcategory.FieldParentID)
 		}
 		if _q.withTenant != nil {
 			_spec.Node.AddColumnOnce(itemcategory.FieldTenantID)

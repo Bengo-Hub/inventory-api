@@ -49,9 +49,13 @@ type WarehouseEdges struct {
 	Balances []*InventoryBalance `json:"balances,omitempty"`
 	// Reservations holds the value of the reservations edge.
 	Reservations []*Reservation `json:"reservations,omitempty"`
+	// Lots holds the value of the lots edge.
+	Lots []*InventoryLot `json:"lots,omitempty"`
+	// PurchaseOrders holds the value of the purchase_orders edge.
+	PurchaseOrders []*PurchaseOrder `json:"purchase_orders,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -81,6 +85,24 @@ func (e WarehouseEdges) ReservationsOrErr() ([]*Reservation, error) {
 		return e.Reservations, nil
 	}
 	return nil, &NotLoadedError{edge: "reservations"}
+}
+
+// LotsOrErr returns the Lots value or an error if the edge
+// was not loaded in eager-loading.
+func (e WarehouseEdges) LotsOrErr() ([]*InventoryLot, error) {
+	if e.loadedTypes[3] {
+		return e.Lots, nil
+	}
+	return nil, &NotLoadedError{edge: "lots"}
+}
+
+// PurchaseOrdersOrErr returns the PurchaseOrders value or an error if the edge
+// was not loaded in eager-loading.
+func (e WarehouseEdges) PurchaseOrdersOrErr() ([]*PurchaseOrder, error) {
+	if e.loadedTypes[4] {
+		return e.PurchaseOrders, nil
+	}
+	return nil, &NotLoadedError{edge: "purchase_orders"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -191,6 +213,16 @@ func (_m *Warehouse) QueryBalances() *InventoryBalanceQuery {
 // QueryReservations queries the "reservations" edge of the Warehouse entity.
 func (_m *Warehouse) QueryReservations() *ReservationQuery {
 	return NewWarehouseClient(_m.config).QueryReservations(_m)
+}
+
+// QueryLots queries the "lots" edge of the Warehouse entity.
+func (_m *Warehouse) QueryLots() *InventoryLotQuery {
+	return NewWarehouseClient(_m.config).QueryLots(_m)
+}
+
+// QueryPurchaseOrders queries the "purchase_orders" edge of the Warehouse entity.
+func (_m *Warehouse) QueryPurchaseOrders() *PurchaseOrderQuery {
+	return NewWarehouseClient(_m.config).QueryPurchaseOrders(_m)
 }
 
 // Update returns a builder for updating this Warehouse.

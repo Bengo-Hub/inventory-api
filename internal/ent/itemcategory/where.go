@@ -61,6 +61,11 @@ func TenantID(v uuid.UUID) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldTenantID, v))
 }
 
+// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
+func ParentID(v uuid.UUID) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldParentID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldName, v))
@@ -71,9 +76,34 @@ func Code(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldCode, v))
 }
 
+// Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
+func Slug(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldSlug, v))
+}
+
+// Icon applies equality check predicate on the "icon" field. It's identical to IconEQ.
+func Icon(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldIcon, v))
+}
+
 // Description applies equality check predicate on the "description" field. It's identical to DescriptionEQ.
 func Description(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldDescription, v))
+}
+
+// Depth applies equality check predicate on the "depth" field. It's identical to DepthEQ.
+func Depth(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldDepth, v))
+}
+
+// Path applies equality check predicate on the "path" field. It's identical to PathEQ.
+func Path(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldPath, v))
+}
+
+// SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
+func SortOrder(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldSortOrder, v))
 }
 
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
@@ -109,6 +139,36 @@ func TenantIDIn(vs ...uuid.UUID) predicate.ItemCategory {
 // TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
 func TenantIDNotIn(vs ...uuid.UUID) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldNotIn(FieldTenantID, vs...))
+}
+
+// ParentIDEQ applies the EQ predicate on the "parent_id" field.
+func ParentIDEQ(v uuid.UUID) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldParentID, v))
+}
+
+// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
+func ParentIDNEQ(v uuid.UUID) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldParentID, v))
+}
+
+// ParentIDIn applies the In predicate on the "parent_id" field.
+func ParentIDIn(vs ...uuid.UUID) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldParentID, vs...))
+}
+
+// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
+func ParentIDNotIn(vs ...uuid.UUID) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldParentID, vs...))
+}
+
+// ParentIDIsNil applies the IsNil predicate on the "parent_id" field.
+func ParentIDIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldParentID))
+}
+
+// ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
+func ParentIDNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldParentID))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -251,6 +311,156 @@ func CodeContainsFold(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldContainsFold(FieldCode, v))
 }
 
+// SlugEQ applies the EQ predicate on the "slug" field.
+func SlugEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldSlug, v))
+}
+
+// SlugNEQ applies the NEQ predicate on the "slug" field.
+func SlugNEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldSlug, v))
+}
+
+// SlugIn applies the In predicate on the "slug" field.
+func SlugIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldSlug, vs...))
+}
+
+// SlugNotIn applies the NotIn predicate on the "slug" field.
+func SlugNotIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldSlug, vs...))
+}
+
+// SlugGT applies the GT predicate on the "slug" field.
+func SlugGT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldSlug, v))
+}
+
+// SlugGTE applies the GTE predicate on the "slug" field.
+func SlugGTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldSlug, v))
+}
+
+// SlugLT applies the LT predicate on the "slug" field.
+func SlugLT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldSlug, v))
+}
+
+// SlugLTE applies the LTE predicate on the "slug" field.
+func SlugLTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldSlug, v))
+}
+
+// SlugContains applies the Contains predicate on the "slug" field.
+func SlugContains(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContains(FieldSlug, v))
+}
+
+// SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
+func SlugHasPrefix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasPrefix(FieldSlug, v))
+}
+
+// SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
+func SlugHasSuffix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasSuffix(FieldSlug, v))
+}
+
+// SlugIsNil applies the IsNil predicate on the "slug" field.
+func SlugIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldSlug))
+}
+
+// SlugNotNil applies the NotNil predicate on the "slug" field.
+func SlugNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldSlug))
+}
+
+// SlugEqualFold applies the EqualFold predicate on the "slug" field.
+func SlugEqualFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEqualFold(FieldSlug, v))
+}
+
+// SlugContainsFold applies the ContainsFold predicate on the "slug" field.
+func SlugContainsFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContainsFold(FieldSlug, v))
+}
+
+// IconEQ applies the EQ predicate on the "icon" field.
+func IconEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldIcon, v))
+}
+
+// IconNEQ applies the NEQ predicate on the "icon" field.
+func IconNEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldIcon, v))
+}
+
+// IconIn applies the In predicate on the "icon" field.
+func IconIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldIcon, vs...))
+}
+
+// IconNotIn applies the NotIn predicate on the "icon" field.
+func IconNotIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldIcon, vs...))
+}
+
+// IconGT applies the GT predicate on the "icon" field.
+func IconGT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldIcon, v))
+}
+
+// IconGTE applies the GTE predicate on the "icon" field.
+func IconGTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldIcon, v))
+}
+
+// IconLT applies the LT predicate on the "icon" field.
+func IconLT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldIcon, v))
+}
+
+// IconLTE applies the LTE predicate on the "icon" field.
+func IconLTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldIcon, v))
+}
+
+// IconContains applies the Contains predicate on the "icon" field.
+func IconContains(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContains(FieldIcon, v))
+}
+
+// IconHasPrefix applies the HasPrefix predicate on the "icon" field.
+func IconHasPrefix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasPrefix(FieldIcon, v))
+}
+
+// IconHasSuffix applies the HasSuffix predicate on the "icon" field.
+func IconHasSuffix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasSuffix(FieldIcon, v))
+}
+
+// IconIsNil applies the IsNil predicate on the "icon" field.
+func IconIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldIcon))
+}
+
+// IconNotNil applies the NotNil predicate on the "icon" field.
+func IconNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldIcon))
+}
+
+// IconEqualFold applies the EqualFold predicate on the "icon" field.
+func IconEqualFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEqualFold(FieldIcon, v))
+}
+
+// IconContainsFold applies the ContainsFold predicate on the "icon" field.
+func IconContainsFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContainsFold(FieldIcon, v))
+}
+
 // DescriptionEQ applies the EQ predicate on the "description" field.
 func DescriptionEQ(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldDescription, v))
@@ -324,6 +534,161 @@ func DescriptionEqualFold(v string) predicate.ItemCategory {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldContainsFold(FieldDescription, v))
+}
+
+// DepthEQ applies the EQ predicate on the "depth" field.
+func DepthEQ(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldDepth, v))
+}
+
+// DepthNEQ applies the NEQ predicate on the "depth" field.
+func DepthNEQ(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldDepth, v))
+}
+
+// DepthIn applies the In predicate on the "depth" field.
+func DepthIn(vs ...int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldDepth, vs...))
+}
+
+// DepthNotIn applies the NotIn predicate on the "depth" field.
+func DepthNotIn(vs ...int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldDepth, vs...))
+}
+
+// DepthGT applies the GT predicate on the "depth" field.
+func DepthGT(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldDepth, v))
+}
+
+// DepthGTE applies the GTE predicate on the "depth" field.
+func DepthGTE(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldDepth, v))
+}
+
+// DepthLT applies the LT predicate on the "depth" field.
+func DepthLT(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldDepth, v))
+}
+
+// DepthLTE applies the LTE predicate on the "depth" field.
+func DepthLTE(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldDepth, v))
+}
+
+// PathEQ applies the EQ predicate on the "path" field.
+func PathEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldPath, v))
+}
+
+// PathNEQ applies the NEQ predicate on the "path" field.
+func PathNEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldPath, v))
+}
+
+// PathIn applies the In predicate on the "path" field.
+func PathIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldPath, vs...))
+}
+
+// PathNotIn applies the NotIn predicate on the "path" field.
+func PathNotIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldPath, vs...))
+}
+
+// PathGT applies the GT predicate on the "path" field.
+func PathGT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldPath, v))
+}
+
+// PathGTE applies the GTE predicate on the "path" field.
+func PathGTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldPath, v))
+}
+
+// PathLT applies the LT predicate on the "path" field.
+func PathLT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldPath, v))
+}
+
+// PathLTE applies the LTE predicate on the "path" field.
+func PathLTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldPath, v))
+}
+
+// PathContains applies the Contains predicate on the "path" field.
+func PathContains(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContains(FieldPath, v))
+}
+
+// PathHasPrefix applies the HasPrefix predicate on the "path" field.
+func PathHasPrefix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasPrefix(FieldPath, v))
+}
+
+// PathHasSuffix applies the HasSuffix predicate on the "path" field.
+func PathHasSuffix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasSuffix(FieldPath, v))
+}
+
+// PathIsNil applies the IsNil predicate on the "path" field.
+func PathIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldPath))
+}
+
+// PathNotNil applies the NotNil predicate on the "path" field.
+func PathNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldPath))
+}
+
+// PathEqualFold applies the EqualFold predicate on the "path" field.
+func PathEqualFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEqualFold(FieldPath, v))
+}
+
+// PathContainsFold applies the ContainsFold predicate on the "path" field.
+func PathContainsFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContainsFold(FieldPath, v))
+}
+
+// SortOrderEQ applies the EQ predicate on the "sort_order" field.
+func SortOrderEQ(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldSortOrder, v))
+}
+
+// SortOrderNEQ applies the NEQ predicate on the "sort_order" field.
+func SortOrderNEQ(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldSortOrder, v))
+}
+
+// SortOrderIn applies the In predicate on the "sort_order" field.
+func SortOrderIn(vs ...int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldSortOrder, vs...))
+}
+
+// SortOrderNotIn applies the NotIn predicate on the "sort_order" field.
+func SortOrderNotIn(vs ...int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldSortOrder, vs...))
+}
+
+// SortOrderGT applies the GT predicate on the "sort_order" field.
+func SortOrderGT(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldSortOrder, v))
+}
+
+// SortOrderGTE applies the GTE predicate on the "sort_order" field.
+func SortOrderGTE(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldSortOrder, v))
+}
+
+// SortOrderLT applies the LT predicate on the "sort_order" field.
+func SortOrderLT(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldSortOrder, v))
+}
+
+// SortOrderLTE applies the LTE predicate on the "sort_order" field.
+func SortOrderLTE(v int) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldSortOrder, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.
@@ -431,6 +796,75 @@ func HasItems() predicate.ItemCategory {
 func HasItemsWith(preds ...predicate.Item) predicate.ItemCategory {
 	return predicate.ItemCategory(func(s *sql.Selector) {
 		step := newItemsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParent applies the HasEdge predicate on the "parent" edge.
+func HasParent() predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParentWith applies the HasEdge predicate on the "parent" edge with a given conditions (other predicates).
+func HasParentWith(preds ...predicate.ItemCategory) predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := newParentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChildren applies the HasEdge predicate on the "children" edge.
+func HasChildren() predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChildrenWith applies the HasEdge predicate on the "children" edge with a given conditions (other predicates).
+func HasChildrenWith(preds ...predicate.ItemCategory) predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := newChildrenStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCustomFieldDefinitions applies the HasEdge predicate on the "custom_field_definitions" edge.
+func HasCustomFieldDefinitions() predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CustomFieldDefinitionsTable, CustomFieldDefinitionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCustomFieldDefinitionsWith applies the HasEdge predicate on the "custom_field_definitions" edge with a given conditions (other predicates).
+func HasCustomFieldDefinitionsWith(preds ...predicate.CustomFieldDefinition) predicate.ItemCategory {
+	return predicate.ItemCategory(func(s *sql.Selector) {
+		step := newCustomFieldDefinitionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

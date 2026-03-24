@@ -12,7 +12,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/bundle"
+	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
+	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
@@ -23,6 +27,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/warranty"
 	"github.com/google/uuid"
 )
 
@@ -41,6 +46,11 @@ type ItemQuery struct {
 	withAssets            *ItemAssetQuery
 	withTranslations      *ItemTranslationQuery
 	withModifierGroups    *ModifierGroupQuery
+	withLots              *InventoryLotQuery
+	withCustomFieldValues *CustomFieldValueQuery
+	withBundle            *BundleQuery
+	withBundleComponents  *BundleComponentQuery
+	withWarranties        *WarrantyQuery
 	withItemCategory      *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -247,6 +257,116 @@ func (_q *ItemQuery) QueryModifierGroups() *ModifierGroupQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(modifiergroup.Table, modifiergroup.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ModifierGroupsTable, item.ModifierGroupsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLots chains the current query on the "lots" edge.
+func (_q *ItemQuery) QueryLots() *InventoryLotQuery {
+	query := (&InventoryLotClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(inventorylot.Table, inventorylot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.LotsTable, item.LotsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCustomFieldValues chains the current query on the "custom_field_values" edge.
+func (_q *ItemQuery) QueryCustomFieldValues() *CustomFieldValueQuery {
+	query := (&CustomFieldValueClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(customfieldvalue.Table, customfieldvalue.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.CustomFieldValuesTable, item.CustomFieldValuesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBundle chains the current query on the "bundle" edge.
+func (_q *ItemQuery) QueryBundle() *BundleQuery {
+	query := (&BundleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(bundle.Table, bundle.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, item.BundleTable, item.BundleColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBundleComponents chains the current query on the "bundle_components" edge.
+func (_q *ItemQuery) QueryBundleComponents() *BundleComponentQuery {
+	query := (&BundleComponentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(bundlecomponent.Table, bundlecomponent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.BundleComponentsTable, item.BundleComponentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryWarranties chains the current query on the "warranties" edge.
+func (_q *ItemQuery) QueryWarranties() *WarrantyQuery {
+	query := (&WarrantyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(warranty.Table, warranty.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, item.WarrantiesTable, item.WarrantiesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -476,6 +596,11 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withAssets:            _q.withAssets.Clone(),
 		withTranslations:      _q.withTranslations.Clone(),
 		withModifierGroups:    _q.withModifierGroups.Clone(),
+		withLots:              _q.withLots.Clone(),
+		withCustomFieldValues: _q.withCustomFieldValues.Clone(),
+		withBundle:            _q.withBundle.Clone(),
+		withBundleComponents:  _q.withBundleComponents.Clone(),
+		withWarranties:        _q.withWarranties.Clone(),
 		withItemCategory:      _q.withItemCategory.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -571,6 +696,61 @@ func (_q *ItemQuery) WithModifierGroups(opts ...func(*ModifierGroupQuery)) *Item
 	return _q
 }
 
+// WithLots tells the query-builder to eager-load the nodes that are connected to
+// the "lots" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithLots(opts ...func(*InventoryLotQuery)) *ItemQuery {
+	query := (&InventoryLotClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLots = query
+	return _q
+}
+
+// WithCustomFieldValues tells the query-builder to eager-load the nodes that are connected to
+// the "custom_field_values" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithCustomFieldValues(opts ...func(*CustomFieldValueQuery)) *ItemQuery {
+	query := (&CustomFieldValueClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCustomFieldValues = query
+	return _q
+}
+
+// WithBundle tells the query-builder to eager-load the nodes that are connected to
+// the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithBundle(opts ...func(*BundleQuery)) *ItemQuery {
+	query := (&BundleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBundle = query
+	return _q
+}
+
+// WithBundleComponents tells the query-builder to eager-load the nodes that are connected to
+// the "bundle_components" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithBundleComponents(opts ...func(*BundleComponentQuery)) *ItemQuery {
+	query := (&BundleComponentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBundleComponents = query
+	return _q
+}
+
+// WithWarranties tells the query-builder to eager-load the nodes that are connected to
+// the "warranties" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithWarranties(opts ...func(*WarrantyQuery)) *ItemQuery {
+	query := (&WarrantyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withWarranties = query
+	return _q
+}
+
 // WithItemCategory tells the query-builder to eager-load the nodes that are connected to
 // the "item_category" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *ItemQuery) WithItemCategory(opts ...func(*ItemCategoryQuery)) *ItemQuery {
@@ -660,7 +840,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [14]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
@@ -669,6 +849,11 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withAssets != nil,
 			_q.withTranslations != nil,
 			_q.withModifierGroups != nil,
+			_q.withLots != nil,
+			_q.withCustomFieldValues != nil,
+			_q.withBundle != nil,
+			_q.withBundleComponents != nil,
+			_q.withWarranties != nil,
 			_q.withItemCategory != nil,
 		}
 	)
@@ -741,6 +926,40 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadModifierGroups(ctx, query, nodes,
 			func(n *Item) { n.Edges.ModifierGroups = []*ModifierGroup{} },
 			func(n *Item, e *ModifierGroup) { n.Edges.ModifierGroups = append(n.Edges.ModifierGroups, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLots; query != nil {
+		if err := _q.loadLots(ctx, query, nodes,
+			func(n *Item) { n.Edges.Lots = []*InventoryLot{} },
+			func(n *Item, e *InventoryLot) { n.Edges.Lots = append(n.Edges.Lots, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCustomFieldValues; query != nil {
+		if err := _q.loadCustomFieldValues(ctx, query, nodes,
+			func(n *Item) { n.Edges.CustomFieldValues = []*CustomFieldValue{} },
+			func(n *Item, e *CustomFieldValue) { n.Edges.CustomFieldValues = append(n.Edges.CustomFieldValues, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBundle; query != nil {
+		if err := _q.loadBundle(ctx, query, nodes, nil,
+			func(n *Item, e *Bundle) { n.Edges.Bundle = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBundleComponents; query != nil {
+		if err := _q.loadBundleComponents(ctx, query, nodes,
+			func(n *Item) { n.Edges.BundleComponents = []*BundleComponent{} },
+			func(n *Item, e *BundleComponent) { n.Edges.BundleComponents = append(n.Edges.BundleComponents, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withWarranties; query != nil {
+		if err := _q.loadWarranties(ctx, query, nodes,
+			func(n *Item) { n.Edges.Warranties = []*Warranty{} },
+			func(n *Item, e *Warranty) { n.Edges.Warranties = append(n.Edges.Warranties, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -979,6 +1198,153 @@ func (_q *ItemQuery) loadModifierGroups(ctx context.Context, query *ModifierGrou
 	}
 	query.Where(predicate.ModifierGroup(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(item.ModifierGroupsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadLots(ctx context.Context, query *InventoryLotQuery, nodes []*Item, init func(*Item), assign func(*Item, *InventoryLot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(inventorylot.FieldItemID)
+	}
+	query.Where(predicate.InventoryLot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.LotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadCustomFieldValues(ctx context.Context, query *CustomFieldValueQuery, nodes []*Item, init func(*Item), assign func(*Item, *CustomFieldValue)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(customfieldvalue.FieldItemID)
+	}
+	query.Where(predicate.CustomFieldValue(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.CustomFieldValuesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadBundle(ctx context.Context, query *BundleQuery, nodes []*Item, init func(*Item), assign func(*Item, *Bundle)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(bundle.FieldItemID)
+	}
+	query.Where(predicate.Bundle(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.BundleColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadBundleComponents(ctx context.Context, query *BundleComponentQuery, nodes []*Item, init func(*Item), assign func(*Item, *BundleComponent)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(bundlecomponent.FieldComponentItemID)
+	}
+	query.Where(predicate.BundleComponent(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.BundleComponentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ComponentItemID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "component_item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadWarranties(ctx context.Context, query *WarrantyQuery, nodes []*Item, init func(*Item), assign func(*Item, *Warranty)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(warranty.FieldItemID)
+	}
+	query.Where(predicate.Warranty(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.WarrantiesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

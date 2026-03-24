@@ -13,7 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -23,13 +25,15 @@ import (
 // WarehouseQuery is the builder for querying Warehouse entities.
 type WarehouseQuery struct {
 	config
-	ctx              *QueryContext
-	order            []warehouse.OrderOption
-	inters           []Interceptor
-	predicates       []predicate.Warehouse
-	withTenant       *TenantQuery
-	withBalances     *InventoryBalanceQuery
-	withReservations *ReservationQuery
+	ctx                *QueryContext
+	order              []warehouse.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Warehouse
+	withTenant         *TenantQuery
+	withBalances       *InventoryBalanceQuery
+	withReservations   *ReservationQuery
+	withLots           *InventoryLotQuery
+	withPurchaseOrders *PurchaseOrderQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +129,50 @@ func (_q *WarehouseQuery) QueryReservations() *ReservationQuery {
 			sqlgraph.From(warehouse.Table, warehouse.FieldID, selector),
 			sqlgraph.To(reservation.Table, reservation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, warehouse.ReservationsTable, warehouse.ReservationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLots chains the current query on the "lots" edge.
+func (_q *WarehouseQuery) QueryLots() *InventoryLotQuery {
+	query := (&InventoryLotClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(warehouse.Table, warehouse.FieldID, selector),
+			sqlgraph.To(inventorylot.Table, inventorylot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, warehouse.LotsTable, warehouse.LotsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPurchaseOrders chains the current query on the "purchase_orders" edge.
+func (_q *WarehouseQuery) QueryPurchaseOrders() *PurchaseOrderQuery {
+	query := (&PurchaseOrderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(warehouse.Table, warehouse.FieldID, selector),
+			sqlgraph.To(purchaseorder.Table, purchaseorder.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, warehouse.PurchaseOrdersTable, warehouse.PurchaseOrdersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,14 +367,16 @@ func (_q *WarehouseQuery) Clone() *WarehouseQuery {
 		return nil
 	}
 	return &WarehouseQuery{
-		config:           _q.config,
-		ctx:              _q.ctx.Clone(),
-		order:            append([]warehouse.OrderOption{}, _q.order...),
-		inters:           append([]Interceptor{}, _q.inters...),
-		predicates:       append([]predicate.Warehouse{}, _q.predicates...),
-		withTenant:       _q.withTenant.Clone(),
-		withBalances:     _q.withBalances.Clone(),
-		withReservations: _q.withReservations.Clone(),
+		config:             _q.config,
+		ctx:                _q.ctx.Clone(),
+		order:              append([]warehouse.OrderOption{}, _q.order...),
+		inters:             append([]Interceptor{}, _q.inters...),
+		predicates:         append([]predicate.Warehouse{}, _q.predicates...),
+		withTenant:         _q.withTenant.Clone(),
+		withBalances:       _q.withBalances.Clone(),
+		withReservations:   _q.withReservations.Clone(),
+		withLots:           _q.withLots.Clone(),
+		withPurchaseOrders: _q.withPurchaseOrders.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +413,28 @@ func (_q *WarehouseQuery) WithReservations(opts ...func(*ReservationQuery)) *War
 		opt(query)
 	}
 	_q.withReservations = query
+	return _q
+}
+
+// WithLots tells the query-builder to eager-load the nodes that are connected to
+// the "lots" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WarehouseQuery) WithLots(opts ...func(*InventoryLotQuery)) *WarehouseQuery {
+	query := (&InventoryLotClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLots = query
+	return _q
+}
+
+// WithPurchaseOrders tells the query-builder to eager-load the nodes that are connected to
+// the "purchase_orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WarehouseQuery) WithPurchaseOrders(opts ...func(*PurchaseOrderQuery)) *WarehouseQuery {
+	query := (&PurchaseOrderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPurchaseOrders = query
 	return _q
 }
 
@@ -444,10 +516,12 @@ func (_q *WarehouseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wa
 	var (
 		nodes       = []*Warehouse{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withReservations != nil,
+			_q.withLots != nil,
+			_q.withPurchaseOrders != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -485,6 +559,20 @@ func (_q *WarehouseQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wa
 		if err := _q.loadReservations(ctx, query, nodes,
 			func(n *Warehouse) { n.Edges.Reservations = []*Reservation{} },
 			func(n *Warehouse, e *Reservation) { n.Edges.Reservations = append(n.Edges.Reservations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLots; query != nil {
+		if err := _q.loadLots(ctx, query, nodes,
+			func(n *Warehouse) { n.Edges.Lots = []*InventoryLot{} },
+			func(n *Warehouse, e *InventoryLot) { n.Edges.Lots = append(n.Edges.Lots, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPurchaseOrders; query != nil {
+		if err := _q.loadPurchaseOrders(ctx, query, nodes,
+			func(n *Warehouse) { n.Edges.PurchaseOrders = []*PurchaseOrder{} },
+			func(n *Warehouse, e *PurchaseOrder) { n.Edges.PurchaseOrders = append(n.Edges.PurchaseOrders, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -578,6 +666,66 @@ func (_q *WarehouseQuery) loadReservations(ctx context.Context, query *Reservati
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "warehouse_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WarehouseQuery) loadLots(ctx context.Context, query *InventoryLotQuery, nodes []*Warehouse, init func(*Warehouse), assign func(*Warehouse, *InventoryLot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Warehouse)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(inventorylot.FieldWarehouseID)
+	}
+	query.Where(predicate.InventoryLot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(warehouse.LotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WarehouseID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "warehouse_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WarehouseQuery) loadPurchaseOrders(ctx context.Context, query *PurchaseOrderQuery, nodes []*Warehouse, init func(*Warehouse), assign func(*Warehouse, *PurchaseOrder)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Warehouse)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(purchaseorder.FieldWarehouseID)
+	}
+	query.Where(predicate.PurchaseOrder(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(warehouse.PurchaseOrdersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WarehouseID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "warehouse_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -12,7 +12,11 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/bundle"
+	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
+	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
@@ -23,6 +27,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/warranty"
 	"github.com/google/uuid"
 )
 
@@ -189,6 +194,182 @@ func (_u *ItemUpdate) ClearImageURL() *ItemUpdate {
 	return _u
 }
 
+// SetBarcode sets the "barcode" field.
+func (_u *ItemUpdate) SetBarcode(v string) *ItemUpdate {
+	_u.mutation.SetBarcode(v)
+	return _u
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableBarcode(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetBarcode(*v)
+	}
+	return _u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (_u *ItemUpdate) ClearBarcode() *ItemUpdate {
+	_u.mutation.ClearBarcode()
+	return _u
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (_u *ItemUpdate) SetBarcodeType(v string) *ItemUpdate {
+	_u.mutation.SetBarcodeType(v)
+	return _u
+}
+
+// SetNillableBarcodeType sets the "barcode_type" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableBarcodeType(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetBarcodeType(*v)
+	}
+	return _u
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (_u *ItemUpdate) ClearBarcodeType() *ItemUpdate {
+	_u.mutation.ClearBarcodeType()
+	return _u
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (_u *ItemUpdate) SetRequiresAgeVerification(v bool) *ItemUpdate {
+	_u.mutation.SetRequiresAgeVerification(v)
+	return _u
+}
+
+// SetNillableRequiresAgeVerification sets the "requires_age_verification" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableRequiresAgeVerification(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetRequiresAgeVerification(*v)
+	}
+	return _u
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (_u *ItemUpdate) SetIsControlledSubstance(v bool) *ItemUpdate {
+	_u.mutation.SetIsControlledSubstance(v)
+	return _u
+}
+
+// SetNillableIsControlledSubstance sets the "is_controlled_substance" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableIsControlledSubstance(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetIsControlledSubstance(*v)
+	}
+	return _u
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (_u *ItemUpdate) SetIsPerishable(v bool) *ItemUpdate {
+	_u.mutation.SetIsPerishable(v)
+	return _u
+}
+
+// SetNillableIsPerishable sets the "is_perishable" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableIsPerishable(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetIsPerishable(*v)
+	}
+	return _u
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (_u *ItemUpdate) SetTrackSerialNumbers(v bool) *ItemUpdate {
+	_u.mutation.SetTrackSerialNumbers(v)
+	return _u
+}
+
+// SetNillableTrackSerialNumbers sets the "track_serial_numbers" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTrackSerialNumbers(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetTrackSerialNumbers(*v)
+	}
+	return _u
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (_u *ItemUpdate) SetTrackLots(v bool) *ItemUpdate {
+	_u.mutation.SetTrackLots(v)
+	return _u
+}
+
+// SetNillableTrackLots sets the "track_lots" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTrackLots(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetTrackLots(*v)
+	}
+	return _u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_u *ItemUpdate) SetWeightKg(v float64) *ItemUpdate {
+	_u.mutation.ResetWeightKg()
+	_u.mutation.SetWeightKg(v)
+	return _u
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableWeightKg(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetWeightKg(*v)
+	}
+	return _u
+}
+
+// AddWeightKg adds value to the "weight_kg" field.
+func (_u *ItemUpdate) AddWeightKg(v float64) *ItemUpdate {
+	_u.mutation.AddWeightKg(v)
+	return _u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (_u *ItemUpdate) ClearWeightKg() *ItemUpdate {
+	_u.mutation.ClearWeightKg()
+	return _u
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (_u *ItemUpdate) SetDimensionsCm(v map[string]float64) *ItemUpdate {
+	_u.mutation.SetDimensionsCm(v)
+	return _u
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (_u *ItemUpdate) ClearDimensionsCm() *ItemUpdate {
+	_u.mutation.ClearDimensionsCm()
+	return _u
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (_u *ItemUpdate) SetDurationMinutes(v int) *ItemUpdate {
+	_u.mutation.ResetDurationMinutes()
+	_u.mutation.SetDurationMinutes(v)
+	return _u
+}
+
+// SetNillableDurationMinutes sets the "duration_minutes" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableDurationMinutes(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetDurationMinutes(*v)
+	}
+	return _u
+}
+
+// AddDurationMinutes adds value to the "duration_minutes" field.
+func (_u *ItemUpdate) AddDurationMinutes(v int) *ItemUpdate {
+	_u.mutation.AddDurationMinutes(v)
+	return _u
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (_u *ItemUpdate) ClearDurationMinutes() *ItemUpdate {
+	_u.mutation.ClearDurationMinutes()
+	return _u
+}
+
 // SetTags sets the "tags" field.
 func (_u *ItemUpdate) SetTags(v []string) *ItemUpdate {
 	_u.mutation.SetTags(v)
@@ -325,6 +506,85 @@ func (_u *ItemUpdate) AddModifierGroups(v ...*ModifierGroup) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddModifierGroupIDs(ids...)
+}
+
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_u *ItemUpdate) AddLotIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddLotIDs(ids...)
+	return _u
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_u *ItemUpdate) AddLots(v ...*InventoryLot) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLotIDs(ids...)
+}
+
+// AddCustomFieldValueIDs adds the "custom_field_values" edge to the CustomFieldValue entity by IDs.
+func (_u *ItemUpdate) AddCustomFieldValueIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddCustomFieldValueIDs(ids...)
+	return _u
+}
+
+// AddCustomFieldValues adds the "custom_field_values" edges to the CustomFieldValue entity.
+func (_u *ItemUpdate) AddCustomFieldValues(v ...*CustomFieldValue) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCustomFieldValueIDs(ids...)
+}
+
+// SetBundleID sets the "bundle" edge to the Bundle entity by ID.
+func (_u *ItemUpdate) SetBundleID(id uuid.UUID) *ItemUpdate {
+	_u.mutation.SetBundleID(id)
+	return _u
+}
+
+// SetNillableBundleID sets the "bundle" edge to the Bundle entity by ID if the given value is not nil.
+func (_u *ItemUpdate) SetNillableBundleID(id *uuid.UUID) *ItemUpdate {
+	if id != nil {
+		_u = _u.SetBundleID(*id)
+	}
+	return _u
+}
+
+// SetBundle sets the "bundle" edge to the Bundle entity.
+func (_u *ItemUpdate) SetBundle(v *Bundle) *ItemUpdate {
+	return _u.SetBundleID(v.ID)
+}
+
+// AddBundleComponentIDs adds the "bundle_components" edge to the BundleComponent entity by IDs.
+func (_u *ItemUpdate) AddBundleComponentIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddBundleComponentIDs(ids...)
+	return _u
+}
+
+// AddBundleComponents adds the "bundle_components" edges to the BundleComponent entity.
+func (_u *ItemUpdate) AddBundleComponents(v ...*BundleComponent) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBundleComponentIDs(ids...)
+}
+
+// AddWarrantyIDs adds the "warranties" edge to the Warranty entity by IDs.
+func (_u *ItemUpdate) AddWarrantyIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.AddWarrantyIDs(ids...)
+	return _u
+}
+
+// AddWarranties adds the "warranties" edges to the Warranty entity.
+func (_u *ItemUpdate) AddWarranties(v ...*Warranty) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddWarrantyIDs(ids...)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -489,6 +749,96 @@ func (_u *ItemUpdate) RemoveModifierGroups(v ...*ModifierGroup) *ItemUpdate {
 	return _u.RemoveModifierGroupIDs(ids...)
 }
 
+// ClearLots clears all "lots" edges to the InventoryLot entity.
+func (_u *ItemUpdate) ClearLots() *ItemUpdate {
+	_u.mutation.ClearLots()
+	return _u
+}
+
+// RemoveLotIDs removes the "lots" edge to InventoryLot entities by IDs.
+func (_u *ItemUpdate) RemoveLotIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveLotIDs(ids...)
+	return _u
+}
+
+// RemoveLots removes "lots" edges to InventoryLot entities.
+func (_u *ItemUpdate) RemoveLots(v ...*InventoryLot) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLotIDs(ids...)
+}
+
+// ClearCustomFieldValues clears all "custom_field_values" edges to the CustomFieldValue entity.
+func (_u *ItemUpdate) ClearCustomFieldValues() *ItemUpdate {
+	_u.mutation.ClearCustomFieldValues()
+	return _u
+}
+
+// RemoveCustomFieldValueIDs removes the "custom_field_values" edge to CustomFieldValue entities by IDs.
+func (_u *ItemUpdate) RemoveCustomFieldValueIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveCustomFieldValueIDs(ids...)
+	return _u
+}
+
+// RemoveCustomFieldValues removes "custom_field_values" edges to CustomFieldValue entities.
+func (_u *ItemUpdate) RemoveCustomFieldValues(v ...*CustomFieldValue) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCustomFieldValueIDs(ids...)
+}
+
+// ClearBundle clears the "bundle" edge to the Bundle entity.
+func (_u *ItemUpdate) ClearBundle() *ItemUpdate {
+	_u.mutation.ClearBundle()
+	return _u
+}
+
+// ClearBundleComponents clears all "bundle_components" edges to the BundleComponent entity.
+func (_u *ItemUpdate) ClearBundleComponents() *ItemUpdate {
+	_u.mutation.ClearBundleComponents()
+	return _u
+}
+
+// RemoveBundleComponentIDs removes the "bundle_components" edge to BundleComponent entities by IDs.
+func (_u *ItemUpdate) RemoveBundleComponentIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveBundleComponentIDs(ids...)
+	return _u
+}
+
+// RemoveBundleComponents removes "bundle_components" edges to BundleComponent entities.
+func (_u *ItemUpdate) RemoveBundleComponents(v ...*BundleComponent) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBundleComponentIDs(ids...)
+}
+
+// ClearWarranties clears all "warranties" edges to the Warranty entity.
+func (_u *ItemUpdate) ClearWarranties() *ItemUpdate {
+	_u.mutation.ClearWarranties()
+	return _u
+}
+
+// RemoveWarrantyIDs removes the "warranties" edge to Warranty entities by IDs.
+func (_u *ItemUpdate) RemoveWarrantyIDs(ids ...uuid.UUID) *ItemUpdate {
+	_u.mutation.RemoveWarrantyIDs(ids...)
+	return _u
+}
+
+// RemoveWarranties removes "warranties" edges to Warranty entities.
+func (_u *ItemUpdate) RemoveWarranties(v ...*Warranty) *ItemUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveWarrantyIDs(ids...)
+}
+
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdate) ClearItemCategory() *ItemUpdate {
 	_u.mutation.ClearItemCategory()
@@ -589,6 +939,57 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ImageURLCleared() {
 		_spec.ClearField(item.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeCleared() {
+		_spec.ClearField(item.FieldBarcode, field.TypeString)
+	}
+	if value, ok := _u.mutation.BarcodeType(); ok {
+		_spec.SetField(item.FieldBarcodeType, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeTypeCleared() {
+		_spec.ClearField(item.FieldBarcodeType, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequiresAgeVerification(); ok {
+		_spec.SetField(item.FieldRequiresAgeVerification, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsControlledSubstance(); ok {
+		_spec.SetField(item.FieldIsControlledSubstance, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsPerishable(); ok {
+		_spec.SetField(item.FieldIsPerishable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackSerialNumbers(); ok {
+		_spec.SetField(item.FieldTrackSerialNumbers, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackLots(); ok {
+		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.WeightKg(); ok {
+		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightKg(); ok {
+		_spec.AddField(item.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightKgCleared() {
+		_spec.ClearField(item.FieldWeightKg, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.DimensionsCm(); ok {
+		_spec.SetField(item.FieldDimensionsCm, field.TypeJSON, value)
+	}
+	if _u.mutation.DimensionsCmCleared() {
+		_spec.ClearField(item.FieldDimensionsCm, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.DurationMinutes(); ok {
+		_spec.SetField(item.FieldDurationMinutes, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDurationMinutes(); ok {
+		_spec.AddField(item.FieldDurationMinutes, field.TypeInt, value)
+	}
+	if _u.mutation.DurationMinutesCleared() {
+		_spec.ClearField(item.FieldDurationMinutes, field.TypeInt)
 	}
 	if value, ok := _u.mutation.Tags(); ok {
 		_spec.SetField(item.FieldTags, field.TypeJSON, value)
@@ -925,6 +1326,215 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLotsIDs(); len(nodes) > 0 && !_u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CustomFieldValuesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCustomFieldValuesIDs(); len(nodes) > 0 && !_u.mutation.CustomFieldValuesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CustomFieldValuesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.BundleTable,
+			Columns: []string{item.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.BundleTable,
+			Columns: []string{item.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BundleComponentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBundleComponentsIDs(); len(nodes) > 0 && !_u.mutation.BundleComponentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleComponentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WarrantiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedWarrantiesIDs(); len(nodes) > 0 && !_u.mutation.WarrantiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WarrantiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1131,6 +1741,182 @@ func (_u *ItemUpdateOne) ClearImageURL() *ItemUpdateOne {
 	return _u
 }
 
+// SetBarcode sets the "barcode" field.
+func (_u *ItemUpdateOne) SetBarcode(v string) *ItemUpdateOne {
+	_u.mutation.SetBarcode(v)
+	return _u
+}
+
+// SetNillableBarcode sets the "barcode" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableBarcode(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetBarcode(*v)
+	}
+	return _u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (_u *ItemUpdateOne) ClearBarcode() *ItemUpdateOne {
+	_u.mutation.ClearBarcode()
+	return _u
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (_u *ItemUpdateOne) SetBarcodeType(v string) *ItemUpdateOne {
+	_u.mutation.SetBarcodeType(v)
+	return _u
+}
+
+// SetNillableBarcodeType sets the "barcode_type" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableBarcodeType(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetBarcodeType(*v)
+	}
+	return _u
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (_u *ItemUpdateOne) ClearBarcodeType() *ItemUpdateOne {
+	_u.mutation.ClearBarcodeType()
+	return _u
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (_u *ItemUpdateOne) SetRequiresAgeVerification(v bool) *ItemUpdateOne {
+	_u.mutation.SetRequiresAgeVerification(v)
+	return _u
+}
+
+// SetNillableRequiresAgeVerification sets the "requires_age_verification" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableRequiresAgeVerification(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetRequiresAgeVerification(*v)
+	}
+	return _u
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (_u *ItemUpdateOne) SetIsControlledSubstance(v bool) *ItemUpdateOne {
+	_u.mutation.SetIsControlledSubstance(v)
+	return _u
+}
+
+// SetNillableIsControlledSubstance sets the "is_controlled_substance" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableIsControlledSubstance(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetIsControlledSubstance(*v)
+	}
+	return _u
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (_u *ItemUpdateOne) SetIsPerishable(v bool) *ItemUpdateOne {
+	_u.mutation.SetIsPerishable(v)
+	return _u
+}
+
+// SetNillableIsPerishable sets the "is_perishable" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableIsPerishable(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetIsPerishable(*v)
+	}
+	return _u
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (_u *ItemUpdateOne) SetTrackSerialNumbers(v bool) *ItemUpdateOne {
+	_u.mutation.SetTrackSerialNumbers(v)
+	return _u
+}
+
+// SetNillableTrackSerialNumbers sets the "track_serial_numbers" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTrackSerialNumbers(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTrackSerialNumbers(*v)
+	}
+	return _u
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (_u *ItemUpdateOne) SetTrackLots(v bool) *ItemUpdateOne {
+	_u.mutation.SetTrackLots(v)
+	return _u
+}
+
+// SetNillableTrackLots sets the "track_lots" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTrackLots(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTrackLots(*v)
+	}
+	return _u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (_u *ItemUpdateOne) SetWeightKg(v float64) *ItemUpdateOne {
+	_u.mutation.ResetWeightKg()
+	_u.mutation.SetWeightKg(v)
+	return _u
+}
+
+// SetNillableWeightKg sets the "weight_kg" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableWeightKg(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetWeightKg(*v)
+	}
+	return _u
+}
+
+// AddWeightKg adds value to the "weight_kg" field.
+func (_u *ItemUpdateOne) AddWeightKg(v float64) *ItemUpdateOne {
+	_u.mutation.AddWeightKg(v)
+	return _u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (_u *ItemUpdateOne) ClearWeightKg() *ItemUpdateOne {
+	_u.mutation.ClearWeightKg()
+	return _u
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (_u *ItemUpdateOne) SetDimensionsCm(v map[string]float64) *ItemUpdateOne {
+	_u.mutation.SetDimensionsCm(v)
+	return _u
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (_u *ItemUpdateOne) ClearDimensionsCm() *ItemUpdateOne {
+	_u.mutation.ClearDimensionsCm()
+	return _u
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (_u *ItemUpdateOne) SetDurationMinutes(v int) *ItemUpdateOne {
+	_u.mutation.ResetDurationMinutes()
+	_u.mutation.SetDurationMinutes(v)
+	return _u
+}
+
+// SetNillableDurationMinutes sets the "duration_minutes" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableDurationMinutes(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetDurationMinutes(*v)
+	}
+	return _u
+}
+
+// AddDurationMinutes adds value to the "duration_minutes" field.
+func (_u *ItemUpdateOne) AddDurationMinutes(v int) *ItemUpdateOne {
+	_u.mutation.AddDurationMinutes(v)
+	return _u
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (_u *ItemUpdateOne) ClearDurationMinutes() *ItemUpdateOne {
+	_u.mutation.ClearDurationMinutes()
+	return _u
+}
+
 // SetTags sets the "tags" field.
 func (_u *ItemUpdateOne) SetTags(v []string) *ItemUpdateOne {
 	_u.mutation.SetTags(v)
@@ -1267,6 +2053,85 @@ func (_u *ItemUpdateOne) AddModifierGroups(v ...*ModifierGroup) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddModifierGroupIDs(ids...)
+}
+
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_u *ItemUpdateOne) AddLotIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddLotIDs(ids...)
+	return _u
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_u *ItemUpdateOne) AddLots(v ...*InventoryLot) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLotIDs(ids...)
+}
+
+// AddCustomFieldValueIDs adds the "custom_field_values" edge to the CustomFieldValue entity by IDs.
+func (_u *ItemUpdateOne) AddCustomFieldValueIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddCustomFieldValueIDs(ids...)
+	return _u
+}
+
+// AddCustomFieldValues adds the "custom_field_values" edges to the CustomFieldValue entity.
+func (_u *ItemUpdateOne) AddCustomFieldValues(v ...*CustomFieldValue) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCustomFieldValueIDs(ids...)
+}
+
+// SetBundleID sets the "bundle" edge to the Bundle entity by ID.
+func (_u *ItemUpdateOne) SetBundleID(id uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetBundleID(id)
+	return _u
+}
+
+// SetNillableBundleID sets the "bundle" edge to the Bundle entity by ID if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableBundleID(id *uuid.UUID) *ItemUpdateOne {
+	if id != nil {
+		_u = _u.SetBundleID(*id)
+	}
+	return _u
+}
+
+// SetBundle sets the "bundle" edge to the Bundle entity.
+func (_u *ItemUpdateOne) SetBundle(v *Bundle) *ItemUpdateOne {
+	return _u.SetBundleID(v.ID)
+}
+
+// AddBundleComponentIDs adds the "bundle_components" edge to the BundleComponent entity by IDs.
+func (_u *ItemUpdateOne) AddBundleComponentIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddBundleComponentIDs(ids...)
+	return _u
+}
+
+// AddBundleComponents adds the "bundle_components" edges to the BundleComponent entity.
+func (_u *ItemUpdateOne) AddBundleComponents(v ...*BundleComponent) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBundleComponentIDs(ids...)
+}
+
+// AddWarrantyIDs adds the "warranties" edge to the Warranty entity by IDs.
+func (_u *ItemUpdateOne) AddWarrantyIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.AddWarrantyIDs(ids...)
+	return _u
+}
+
+// AddWarranties adds the "warranties" edges to the Warranty entity.
+func (_u *ItemUpdateOne) AddWarranties(v ...*Warranty) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddWarrantyIDs(ids...)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -1431,6 +2296,96 @@ func (_u *ItemUpdateOne) RemoveModifierGroups(v ...*ModifierGroup) *ItemUpdateOn
 	return _u.RemoveModifierGroupIDs(ids...)
 }
 
+// ClearLots clears all "lots" edges to the InventoryLot entity.
+func (_u *ItemUpdateOne) ClearLots() *ItemUpdateOne {
+	_u.mutation.ClearLots()
+	return _u
+}
+
+// RemoveLotIDs removes the "lots" edge to InventoryLot entities by IDs.
+func (_u *ItemUpdateOne) RemoveLotIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveLotIDs(ids...)
+	return _u
+}
+
+// RemoveLots removes "lots" edges to InventoryLot entities.
+func (_u *ItemUpdateOne) RemoveLots(v ...*InventoryLot) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLotIDs(ids...)
+}
+
+// ClearCustomFieldValues clears all "custom_field_values" edges to the CustomFieldValue entity.
+func (_u *ItemUpdateOne) ClearCustomFieldValues() *ItemUpdateOne {
+	_u.mutation.ClearCustomFieldValues()
+	return _u
+}
+
+// RemoveCustomFieldValueIDs removes the "custom_field_values" edge to CustomFieldValue entities by IDs.
+func (_u *ItemUpdateOne) RemoveCustomFieldValueIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveCustomFieldValueIDs(ids...)
+	return _u
+}
+
+// RemoveCustomFieldValues removes "custom_field_values" edges to CustomFieldValue entities.
+func (_u *ItemUpdateOne) RemoveCustomFieldValues(v ...*CustomFieldValue) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCustomFieldValueIDs(ids...)
+}
+
+// ClearBundle clears the "bundle" edge to the Bundle entity.
+func (_u *ItemUpdateOne) ClearBundle() *ItemUpdateOne {
+	_u.mutation.ClearBundle()
+	return _u
+}
+
+// ClearBundleComponents clears all "bundle_components" edges to the BundleComponent entity.
+func (_u *ItemUpdateOne) ClearBundleComponents() *ItemUpdateOne {
+	_u.mutation.ClearBundleComponents()
+	return _u
+}
+
+// RemoveBundleComponentIDs removes the "bundle_components" edge to BundleComponent entities by IDs.
+func (_u *ItemUpdateOne) RemoveBundleComponentIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveBundleComponentIDs(ids...)
+	return _u
+}
+
+// RemoveBundleComponents removes "bundle_components" edges to BundleComponent entities.
+func (_u *ItemUpdateOne) RemoveBundleComponents(v ...*BundleComponent) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBundleComponentIDs(ids...)
+}
+
+// ClearWarranties clears all "warranties" edges to the Warranty entity.
+func (_u *ItemUpdateOne) ClearWarranties() *ItemUpdateOne {
+	_u.mutation.ClearWarranties()
+	return _u
+}
+
+// RemoveWarrantyIDs removes the "warranties" edge to Warranty entities by IDs.
+func (_u *ItemUpdateOne) RemoveWarrantyIDs(ids ...uuid.UUID) *ItemUpdateOne {
+	_u.mutation.RemoveWarrantyIDs(ids...)
+	return _u
+}
+
+// RemoveWarranties removes "warranties" edges to Warranty entities.
+func (_u *ItemUpdateOne) RemoveWarranties(v ...*Warranty) *ItemUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveWarrantyIDs(ids...)
+}
+
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdateOne) ClearItemCategory() *ItemUpdateOne {
 	_u.mutation.ClearItemCategory()
@@ -1561,6 +2516,57 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.ImageURLCleared() {
 		_spec.ClearField(item.FieldImageURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Barcode(); ok {
+		_spec.SetField(item.FieldBarcode, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeCleared() {
+		_spec.ClearField(item.FieldBarcode, field.TypeString)
+	}
+	if value, ok := _u.mutation.BarcodeType(); ok {
+		_spec.SetField(item.FieldBarcodeType, field.TypeString, value)
+	}
+	if _u.mutation.BarcodeTypeCleared() {
+		_spec.ClearField(item.FieldBarcodeType, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequiresAgeVerification(); ok {
+		_spec.SetField(item.FieldRequiresAgeVerification, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsControlledSubstance(); ok {
+		_spec.SetField(item.FieldIsControlledSubstance, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsPerishable(); ok {
+		_spec.SetField(item.FieldIsPerishable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackSerialNumbers(); ok {
+		_spec.SetField(item.FieldTrackSerialNumbers, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackLots(); ok {
+		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.WeightKg(); ok {
+		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightKg(); ok {
+		_spec.AddField(item.FieldWeightKg, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightKgCleared() {
+		_spec.ClearField(item.FieldWeightKg, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.DimensionsCm(); ok {
+		_spec.SetField(item.FieldDimensionsCm, field.TypeJSON, value)
+	}
+	if _u.mutation.DimensionsCmCleared() {
+		_spec.ClearField(item.FieldDimensionsCm, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.DurationMinutes(); ok {
+		_spec.SetField(item.FieldDurationMinutes, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDurationMinutes(); ok {
+		_spec.AddField(item.FieldDurationMinutes, field.TypeInt, value)
+	}
+	if _u.mutation.DurationMinutesCleared() {
+		_spec.ClearField(item.FieldDurationMinutes, field.TypeInt)
 	}
 	if value, ok := _u.mutation.Tags(); ok {
 		_spec.SetField(item.FieldTags, field.TypeJSON, value)
@@ -1897,6 +2903,215 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(modifiergroup.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLotsIDs(); len(nodes) > 0 && !_u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.LotsTable,
+			Columns: []string{item.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CustomFieldValuesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCustomFieldValuesIDs(); len(nodes) > 0 && !_u.mutation.CustomFieldValuesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CustomFieldValuesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.CustomFieldValuesTable,
+			Columns: []string{item.CustomFieldValuesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BundleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.BundleTable,
+			Columns: []string{item.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.BundleTable,
+			Columns: []string{item.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BundleComponentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBundleComponentsIDs(); len(nodes) > 0 && !_u.mutation.BundleComponentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BundleComponentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.BundleComponentsTable,
+			Columns: []string{item.BundleComponentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WarrantiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedWarrantiesIDs(); len(nodes) > 0 && !_u.mutation.WarrantiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WarrantiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   item.WarrantiesTable,
+			Columns: []string{item.WarrantiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

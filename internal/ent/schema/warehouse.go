@@ -53,6 +53,8 @@ func (Warehouse) Edges() []ent.Edge {
 			Field("tenant_id"),
 		edge.To("balances", InventoryBalance.Type),
 		edge.To("reservations", Reservation.Type),
+		edge.To("lots", InventoryLot.Type),
+		edge.To("purchase_orders", PurchaseOrder.Type),
 	}
 }
 

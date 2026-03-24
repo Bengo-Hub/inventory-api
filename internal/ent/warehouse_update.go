@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -163,6 +165,36 @@ func (_u *WarehouseUpdate) AddReservations(v ...*Reservation) *WarehouseUpdate {
 	return _u.AddReservationIDs(ids...)
 }
 
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_u *WarehouseUpdate) AddLotIDs(ids ...uuid.UUID) *WarehouseUpdate {
+	_u.mutation.AddLotIDs(ids...)
+	return _u
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_u *WarehouseUpdate) AddLots(v ...*InventoryLot) *WarehouseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLotIDs(ids...)
+}
+
+// AddPurchaseOrderIDs adds the "purchase_orders" edge to the PurchaseOrder entity by IDs.
+func (_u *WarehouseUpdate) AddPurchaseOrderIDs(ids ...uuid.UUID) *WarehouseUpdate {
+	_u.mutation.AddPurchaseOrderIDs(ids...)
+	return _u
+}
+
+// AddPurchaseOrders adds the "purchase_orders" edges to the PurchaseOrder entity.
+func (_u *WarehouseUpdate) AddPurchaseOrders(v ...*PurchaseOrder) *WarehouseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPurchaseOrderIDs(ids...)
+}
+
 // Mutation returns the WarehouseMutation object of the builder.
 func (_u *WarehouseUpdate) Mutation() *WarehouseMutation {
 	return _u.mutation
@@ -214,6 +246,48 @@ func (_u *WarehouseUpdate) RemoveReservations(v ...*Reservation) *WarehouseUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReservationIDs(ids...)
+}
+
+// ClearLots clears all "lots" edges to the InventoryLot entity.
+func (_u *WarehouseUpdate) ClearLots() *WarehouseUpdate {
+	_u.mutation.ClearLots()
+	return _u
+}
+
+// RemoveLotIDs removes the "lots" edge to InventoryLot entities by IDs.
+func (_u *WarehouseUpdate) RemoveLotIDs(ids ...uuid.UUID) *WarehouseUpdate {
+	_u.mutation.RemoveLotIDs(ids...)
+	return _u
+}
+
+// RemoveLots removes "lots" edges to InventoryLot entities.
+func (_u *WarehouseUpdate) RemoveLots(v ...*InventoryLot) *WarehouseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLotIDs(ids...)
+}
+
+// ClearPurchaseOrders clears all "purchase_orders" edges to the PurchaseOrder entity.
+func (_u *WarehouseUpdate) ClearPurchaseOrders() *WarehouseUpdate {
+	_u.mutation.ClearPurchaseOrders()
+	return _u
+}
+
+// RemovePurchaseOrderIDs removes the "purchase_orders" edge to PurchaseOrder entities by IDs.
+func (_u *WarehouseUpdate) RemovePurchaseOrderIDs(ids ...uuid.UUID) *WarehouseUpdate {
+	_u.mutation.RemovePurchaseOrderIDs(ids...)
+	return _u
+}
+
+// RemovePurchaseOrders removes "purchase_orders" edges to PurchaseOrder entities.
+func (_u *WarehouseUpdate) RemovePurchaseOrders(v ...*PurchaseOrder) *WarehouseUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePurchaseOrderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -422,6 +496,96 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLotsIDs(); len(nodes) > 0 && !_u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PurchaseOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPurchaseOrdersIDs(); len(nodes) > 0 && !_u.mutation.PurchaseOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PurchaseOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{warehouse.Label}
@@ -573,6 +737,36 @@ func (_u *WarehouseUpdateOne) AddReservations(v ...*Reservation) *WarehouseUpdat
 	return _u.AddReservationIDs(ids...)
 }
 
+// AddLotIDs adds the "lots" edge to the InventoryLot entity by IDs.
+func (_u *WarehouseUpdateOne) AddLotIDs(ids ...uuid.UUID) *WarehouseUpdateOne {
+	_u.mutation.AddLotIDs(ids...)
+	return _u
+}
+
+// AddLots adds the "lots" edges to the InventoryLot entity.
+func (_u *WarehouseUpdateOne) AddLots(v ...*InventoryLot) *WarehouseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLotIDs(ids...)
+}
+
+// AddPurchaseOrderIDs adds the "purchase_orders" edge to the PurchaseOrder entity by IDs.
+func (_u *WarehouseUpdateOne) AddPurchaseOrderIDs(ids ...uuid.UUID) *WarehouseUpdateOne {
+	_u.mutation.AddPurchaseOrderIDs(ids...)
+	return _u
+}
+
+// AddPurchaseOrders adds the "purchase_orders" edges to the PurchaseOrder entity.
+func (_u *WarehouseUpdateOne) AddPurchaseOrders(v ...*PurchaseOrder) *WarehouseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPurchaseOrderIDs(ids...)
+}
+
 // Mutation returns the WarehouseMutation object of the builder.
 func (_u *WarehouseUpdateOne) Mutation() *WarehouseMutation {
 	return _u.mutation
@@ -624,6 +818,48 @@ func (_u *WarehouseUpdateOne) RemoveReservations(v ...*Reservation) *WarehouseUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReservationIDs(ids...)
+}
+
+// ClearLots clears all "lots" edges to the InventoryLot entity.
+func (_u *WarehouseUpdateOne) ClearLots() *WarehouseUpdateOne {
+	_u.mutation.ClearLots()
+	return _u
+}
+
+// RemoveLotIDs removes the "lots" edge to InventoryLot entities by IDs.
+func (_u *WarehouseUpdateOne) RemoveLotIDs(ids ...uuid.UUID) *WarehouseUpdateOne {
+	_u.mutation.RemoveLotIDs(ids...)
+	return _u
+}
+
+// RemoveLots removes "lots" edges to InventoryLot entities.
+func (_u *WarehouseUpdateOne) RemoveLots(v ...*InventoryLot) *WarehouseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLotIDs(ids...)
+}
+
+// ClearPurchaseOrders clears all "purchase_orders" edges to the PurchaseOrder entity.
+func (_u *WarehouseUpdateOne) ClearPurchaseOrders() *WarehouseUpdateOne {
+	_u.mutation.ClearPurchaseOrders()
+	return _u
+}
+
+// RemovePurchaseOrderIDs removes the "purchase_orders" edge to PurchaseOrder entities by IDs.
+func (_u *WarehouseUpdateOne) RemovePurchaseOrderIDs(ids ...uuid.UUID) *WarehouseUpdateOne {
+	_u.mutation.RemovePurchaseOrderIDs(ids...)
+	return _u
+}
+
+// RemovePurchaseOrders removes "purchase_orders" edges to PurchaseOrder entities.
+func (_u *WarehouseUpdateOne) RemovePurchaseOrders(v ...*PurchaseOrder) *WarehouseUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePurchaseOrderIDs(ids...)
 }
 
 // Where appends a list predicates to the WarehouseUpdate builder.
@@ -855,6 +1091,96 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(reservation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLotsIDs(); len(nodes) > 0 && !_u.mutation.LotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.LotsTable,
+			Columns: []string{warehouse.LotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PurchaseOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPurchaseOrdersIDs(); len(nodes) > 0 && !_u.mutation.PurchaseOrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PurchaseOrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   warehouse.PurchaseOrdersTable,
+			Columns: []string{warehouse.PurchaseOrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

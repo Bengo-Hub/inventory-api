@@ -86,6 +86,26 @@ func IsActive(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldIsActive, v))
 }
 
+// TotalCost applies equality check predicate on the "total_cost" field. It's identical to TotalCostEQ.
+func TotalCost(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldTotalCost, v))
+}
+
+// CostPerPortion applies equality check predicate on the "cost_per_portion" field. It's identical to CostPerPortionEQ.
+func CostPerPortion(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldCostPerPortion, v))
+}
+
+// TargetMarginPercent applies equality check predicate on the "target_margin_percent" field. It's identical to TargetMarginPercentEQ.
+func TargetMarginPercent(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldTargetMarginPercent, v))
+}
+
+// SuggestedPrice applies equality check predicate on the "suggested_price" field. It's identical to SuggestedPriceEQ.
+func SuggestedPrice(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldSuggestedPrice, v))
+}
+
 // PrepTimeMinutes applies equality check predicate on the "prep_time_minutes" field. It's identical to PrepTimeMinutesEQ.
 func PrepTimeMinutes(v int) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldPrepTimeMinutes, v))
@@ -384,6 +404,206 @@ func IsActiveEQ(v bool) predicate.Recipe {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// TotalCostEQ applies the EQ predicate on the "total_cost" field.
+func TotalCostEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldTotalCost, v))
+}
+
+// TotalCostNEQ applies the NEQ predicate on the "total_cost" field.
+func TotalCostNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldTotalCost, v))
+}
+
+// TotalCostIn applies the In predicate on the "total_cost" field.
+func TotalCostIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldTotalCost, vs...))
+}
+
+// TotalCostNotIn applies the NotIn predicate on the "total_cost" field.
+func TotalCostNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldTotalCost, vs...))
+}
+
+// TotalCostGT applies the GT predicate on the "total_cost" field.
+func TotalCostGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldTotalCost, v))
+}
+
+// TotalCostGTE applies the GTE predicate on the "total_cost" field.
+func TotalCostGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldTotalCost, v))
+}
+
+// TotalCostLT applies the LT predicate on the "total_cost" field.
+func TotalCostLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldTotalCost, v))
+}
+
+// TotalCostLTE applies the LTE predicate on the "total_cost" field.
+func TotalCostLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldTotalCost, v))
+}
+
+// TotalCostIsNil applies the IsNil predicate on the "total_cost" field.
+func TotalCostIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldTotalCost))
+}
+
+// TotalCostNotNil applies the NotNil predicate on the "total_cost" field.
+func TotalCostNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldTotalCost))
+}
+
+// CostPerPortionEQ applies the EQ predicate on the "cost_per_portion" field.
+func CostPerPortionEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldCostPerPortion, v))
+}
+
+// CostPerPortionNEQ applies the NEQ predicate on the "cost_per_portion" field.
+func CostPerPortionNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldCostPerPortion, v))
+}
+
+// CostPerPortionIn applies the In predicate on the "cost_per_portion" field.
+func CostPerPortionIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldCostPerPortion, vs...))
+}
+
+// CostPerPortionNotIn applies the NotIn predicate on the "cost_per_portion" field.
+func CostPerPortionNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldCostPerPortion, vs...))
+}
+
+// CostPerPortionGT applies the GT predicate on the "cost_per_portion" field.
+func CostPerPortionGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldCostPerPortion, v))
+}
+
+// CostPerPortionGTE applies the GTE predicate on the "cost_per_portion" field.
+func CostPerPortionGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldCostPerPortion, v))
+}
+
+// CostPerPortionLT applies the LT predicate on the "cost_per_portion" field.
+func CostPerPortionLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldCostPerPortion, v))
+}
+
+// CostPerPortionLTE applies the LTE predicate on the "cost_per_portion" field.
+func CostPerPortionLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldCostPerPortion, v))
+}
+
+// CostPerPortionIsNil applies the IsNil predicate on the "cost_per_portion" field.
+func CostPerPortionIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldCostPerPortion))
+}
+
+// CostPerPortionNotNil applies the NotNil predicate on the "cost_per_portion" field.
+func CostPerPortionNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldCostPerPortion))
+}
+
+// TargetMarginPercentEQ applies the EQ predicate on the "target_margin_percent" field.
+func TargetMarginPercentEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentNEQ applies the NEQ predicate on the "target_margin_percent" field.
+func TargetMarginPercentNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentIn applies the In predicate on the "target_margin_percent" field.
+func TargetMarginPercentIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldTargetMarginPercent, vs...))
+}
+
+// TargetMarginPercentNotIn applies the NotIn predicate on the "target_margin_percent" field.
+func TargetMarginPercentNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldTargetMarginPercent, vs...))
+}
+
+// TargetMarginPercentGT applies the GT predicate on the "target_margin_percent" field.
+func TargetMarginPercentGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentGTE applies the GTE predicate on the "target_margin_percent" field.
+func TargetMarginPercentGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentLT applies the LT predicate on the "target_margin_percent" field.
+func TargetMarginPercentLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentLTE applies the LTE predicate on the "target_margin_percent" field.
+func TargetMarginPercentLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentIsNil applies the IsNil predicate on the "target_margin_percent" field.
+func TargetMarginPercentIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldTargetMarginPercent))
+}
+
+// TargetMarginPercentNotNil applies the NotNil predicate on the "target_margin_percent" field.
+func TargetMarginPercentNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldTargetMarginPercent))
+}
+
+// SuggestedPriceEQ applies the EQ predicate on the "suggested_price" field.
+func SuggestedPriceEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceNEQ applies the NEQ predicate on the "suggested_price" field.
+func SuggestedPriceNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceIn applies the In predicate on the "suggested_price" field.
+func SuggestedPriceIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldSuggestedPrice, vs...))
+}
+
+// SuggestedPriceNotIn applies the NotIn predicate on the "suggested_price" field.
+func SuggestedPriceNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldSuggestedPrice, vs...))
+}
+
+// SuggestedPriceGT applies the GT predicate on the "suggested_price" field.
+func SuggestedPriceGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceGTE applies the GTE predicate on the "suggested_price" field.
+func SuggestedPriceGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceLT applies the LT predicate on the "suggested_price" field.
+func SuggestedPriceLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceLTE applies the LTE predicate on the "suggested_price" field.
+func SuggestedPriceLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldSuggestedPrice, v))
+}
+
+// SuggestedPriceIsNil applies the IsNil predicate on the "suggested_price" field.
+func SuggestedPriceIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldSuggestedPrice))
+}
+
+// SuggestedPriceNotNil applies the NotNil predicate on the "suggested_price" field.
+func SuggestedPriceNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldSuggestedPrice))
 }
 
 // PrepTimeMinutesEQ applies the EQ predicate on the "prep_time_minutes" field.

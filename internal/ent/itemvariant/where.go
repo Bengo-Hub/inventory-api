@@ -76,6 +76,26 @@ func Price(v float64) predicate.ItemVariant {
 	return predicate.ItemVariant(sql.FieldEQ(FieldPrice, v))
 }
 
+// Barcode applies equality check predicate on the "barcode" field. It's identical to BarcodeEQ.
+func Barcode(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldBarcode, v))
+}
+
+// ImageURL applies equality check predicate on the "image_url" field. It's identical to ImageURLEQ.
+func ImageURL(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldImageURL, v))
+}
+
+// CostPrice applies equality check predicate on the "cost_price" field. It's identical to CostPriceEQ.
+func CostPrice(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldCostPrice, v))
+}
+
+// WeightKg applies equality check predicate on the "weight_kg" field. It's identical to WeightKgEQ.
+func WeightKg(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldWeightKg, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.ItemVariant {
 	return predicate.ItemVariant(sql.FieldEQ(FieldIsActive, v))
@@ -279,6 +299,266 @@ func PriceLT(v float64) predicate.ItemVariant {
 // PriceLTE applies the LTE predicate on the "price" field.
 func PriceLTE(v float64) predicate.ItemVariant {
 	return predicate.ItemVariant(sql.FieldLTE(FieldPrice, v))
+}
+
+// AttributesIsNil applies the IsNil predicate on the "attributes" field.
+func AttributesIsNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIsNull(FieldAttributes))
+}
+
+// AttributesNotNil applies the NotNil predicate on the "attributes" field.
+func AttributesNotNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotNull(FieldAttributes))
+}
+
+// BarcodeEQ applies the EQ predicate on the "barcode" field.
+func BarcodeEQ(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldBarcode, v))
+}
+
+// BarcodeNEQ applies the NEQ predicate on the "barcode" field.
+func BarcodeNEQ(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNEQ(FieldBarcode, v))
+}
+
+// BarcodeIn applies the In predicate on the "barcode" field.
+func BarcodeIn(vs ...string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIn(FieldBarcode, vs...))
+}
+
+// BarcodeNotIn applies the NotIn predicate on the "barcode" field.
+func BarcodeNotIn(vs ...string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotIn(FieldBarcode, vs...))
+}
+
+// BarcodeGT applies the GT predicate on the "barcode" field.
+func BarcodeGT(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGT(FieldBarcode, v))
+}
+
+// BarcodeGTE applies the GTE predicate on the "barcode" field.
+func BarcodeGTE(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGTE(FieldBarcode, v))
+}
+
+// BarcodeLT applies the LT predicate on the "barcode" field.
+func BarcodeLT(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLT(FieldBarcode, v))
+}
+
+// BarcodeLTE applies the LTE predicate on the "barcode" field.
+func BarcodeLTE(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLTE(FieldBarcode, v))
+}
+
+// BarcodeContains applies the Contains predicate on the "barcode" field.
+func BarcodeContains(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldContains(FieldBarcode, v))
+}
+
+// BarcodeHasPrefix applies the HasPrefix predicate on the "barcode" field.
+func BarcodeHasPrefix(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldHasPrefix(FieldBarcode, v))
+}
+
+// BarcodeHasSuffix applies the HasSuffix predicate on the "barcode" field.
+func BarcodeHasSuffix(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldHasSuffix(FieldBarcode, v))
+}
+
+// BarcodeIsNil applies the IsNil predicate on the "barcode" field.
+func BarcodeIsNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIsNull(FieldBarcode))
+}
+
+// BarcodeNotNil applies the NotNil predicate on the "barcode" field.
+func BarcodeNotNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotNull(FieldBarcode))
+}
+
+// BarcodeEqualFold applies the EqualFold predicate on the "barcode" field.
+func BarcodeEqualFold(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEqualFold(FieldBarcode, v))
+}
+
+// BarcodeContainsFold applies the ContainsFold predicate on the "barcode" field.
+func BarcodeContainsFold(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldContainsFold(FieldBarcode, v))
+}
+
+// ImageURLEQ applies the EQ predicate on the "image_url" field.
+func ImageURLEQ(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldImageURL, v))
+}
+
+// ImageURLNEQ applies the NEQ predicate on the "image_url" field.
+func ImageURLNEQ(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNEQ(FieldImageURL, v))
+}
+
+// ImageURLIn applies the In predicate on the "image_url" field.
+func ImageURLIn(vs ...string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIn(FieldImageURL, vs...))
+}
+
+// ImageURLNotIn applies the NotIn predicate on the "image_url" field.
+func ImageURLNotIn(vs ...string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotIn(FieldImageURL, vs...))
+}
+
+// ImageURLGT applies the GT predicate on the "image_url" field.
+func ImageURLGT(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGT(FieldImageURL, v))
+}
+
+// ImageURLGTE applies the GTE predicate on the "image_url" field.
+func ImageURLGTE(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGTE(FieldImageURL, v))
+}
+
+// ImageURLLT applies the LT predicate on the "image_url" field.
+func ImageURLLT(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLT(FieldImageURL, v))
+}
+
+// ImageURLLTE applies the LTE predicate on the "image_url" field.
+func ImageURLLTE(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLTE(FieldImageURL, v))
+}
+
+// ImageURLContains applies the Contains predicate on the "image_url" field.
+func ImageURLContains(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldContains(FieldImageURL, v))
+}
+
+// ImageURLHasPrefix applies the HasPrefix predicate on the "image_url" field.
+func ImageURLHasPrefix(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldHasPrefix(FieldImageURL, v))
+}
+
+// ImageURLHasSuffix applies the HasSuffix predicate on the "image_url" field.
+func ImageURLHasSuffix(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldHasSuffix(FieldImageURL, v))
+}
+
+// ImageURLIsNil applies the IsNil predicate on the "image_url" field.
+func ImageURLIsNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIsNull(FieldImageURL))
+}
+
+// ImageURLNotNil applies the NotNil predicate on the "image_url" field.
+func ImageURLNotNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotNull(FieldImageURL))
+}
+
+// ImageURLEqualFold applies the EqualFold predicate on the "image_url" field.
+func ImageURLEqualFold(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEqualFold(FieldImageURL, v))
+}
+
+// ImageURLContainsFold applies the ContainsFold predicate on the "image_url" field.
+func ImageURLContainsFold(v string) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldContainsFold(FieldImageURL, v))
+}
+
+// CostPriceEQ applies the EQ predicate on the "cost_price" field.
+func CostPriceEQ(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldCostPrice, v))
+}
+
+// CostPriceNEQ applies the NEQ predicate on the "cost_price" field.
+func CostPriceNEQ(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNEQ(FieldCostPrice, v))
+}
+
+// CostPriceIn applies the In predicate on the "cost_price" field.
+func CostPriceIn(vs ...float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIn(FieldCostPrice, vs...))
+}
+
+// CostPriceNotIn applies the NotIn predicate on the "cost_price" field.
+func CostPriceNotIn(vs ...float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotIn(FieldCostPrice, vs...))
+}
+
+// CostPriceGT applies the GT predicate on the "cost_price" field.
+func CostPriceGT(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGT(FieldCostPrice, v))
+}
+
+// CostPriceGTE applies the GTE predicate on the "cost_price" field.
+func CostPriceGTE(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGTE(FieldCostPrice, v))
+}
+
+// CostPriceLT applies the LT predicate on the "cost_price" field.
+func CostPriceLT(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLT(FieldCostPrice, v))
+}
+
+// CostPriceLTE applies the LTE predicate on the "cost_price" field.
+func CostPriceLTE(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLTE(FieldCostPrice, v))
+}
+
+// CostPriceIsNil applies the IsNil predicate on the "cost_price" field.
+func CostPriceIsNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIsNull(FieldCostPrice))
+}
+
+// CostPriceNotNil applies the NotNil predicate on the "cost_price" field.
+func CostPriceNotNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotNull(FieldCostPrice))
+}
+
+// WeightKgEQ applies the EQ predicate on the "weight_kg" field.
+func WeightKgEQ(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldEQ(FieldWeightKg, v))
+}
+
+// WeightKgNEQ applies the NEQ predicate on the "weight_kg" field.
+func WeightKgNEQ(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNEQ(FieldWeightKg, v))
+}
+
+// WeightKgIn applies the In predicate on the "weight_kg" field.
+func WeightKgIn(vs ...float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIn(FieldWeightKg, vs...))
+}
+
+// WeightKgNotIn applies the NotIn predicate on the "weight_kg" field.
+func WeightKgNotIn(vs ...float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotIn(FieldWeightKg, vs...))
+}
+
+// WeightKgGT applies the GT predicate on the "weight_kg" field.
+func WeightKgGT(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGT(FieldWeightKg, v))
+}
+
+// WeightKgGTE applies the GTE predicate on the "weight_kg" field.
+func WeightKgGTE(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldGTE(FieldWeightKg, v))
+}
+
+// WeightKgLT applies the LT predicate on the "weight_kg" field.
+func WeightKgLT(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLT(FieldWeightKg, v))
+}
+
+// WeightKgLTE applies the LTE predicate on the "weight_kg" field.
+func WeightKgLTE(v float64) predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldLTE(FieldWeightKg, v))
+}
+
+// WeightKgIsNil applies the IsNil predicate on the "weight_kg" field.
+func WeightKgIsNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldIsNull(FieldWeightKg))
+}
+
+// WeightKgNotNil applies the NotNil predicate on the "weight_kg" field.
+func WeightKgNotNil() predicate.ItemVariant {
+	return predicate.ItemVariant(sql.FieldNotNull(FieldWeightKg))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

@@ -40,6 +40,16 @@ func (InventoryBalance) Fields() []ent.Field {
 		field.Int("reorder_level").
 			Default(1).
 			Comment("Threshold below which a reorder notification is triggered"),
+		field.Int("reorder_quantity").
+			Default(0).
+			Comment("Auto-reorder quantity when stock falls below reorder_level"),
+		field.UUID("preferred_supplier_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Preferred supplier for auto-reorder PO generation"),
+		field.Bool("auto_reorder_enabled").
+			Default(false).
+			Comment("Enable auto-creation of draft POs when below reorder_level"),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now),
