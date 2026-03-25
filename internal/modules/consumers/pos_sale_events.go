@@ -49,6 +49,22 @@ func NewPOSSaleEventsConsumer(log *zap.Logger, stockSvc *stock.Service, orm *ent
 
 // Start begins listening for POS sale events via JetStream durable consumer.
 func (c *POSSaleEventsConsumer) Start(ctx context.Context, js nats.JetStreamContext) error {
+	// Ensure the "pos" stream exists (it's created by pos-api, but may not exist yet)
+	_, err := js.StreamInfo("pos")
+	if err != nil {
+		c.log.Info("pos stream not found, creating it for consumer readiness")
+		_, err = js.AddStream(&nats.StreamConfig{
+			Name:      "pos",
+			Subjects:  []string{"pos.>"},
+			Retention: nats.LimitsPolicy,
+			MaxAge:    72 * time.Hour,
+			Storage:   nats.FileStorage,
+		})
+		if err != nil && err != nats.ErrStreamNameAlreadyInUse {
+			return fmt.Errorf("pos sale events: ensure stream: %w", err)
+		}
+	}
+
 	sub, err := js.Subscribe(
 		"pos.sale.finalized",
 		c.handleMessage,

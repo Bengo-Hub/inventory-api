@@ -46,6 +46,22 @@ func NewOrderEventsConsumer(log *zap.Logger, stockSvc *stock.Service, orm *ent.C
 
 // Start begins listening for ordering events via JetStream durable consumer.
 func (c *OrderEventsConsumer) Start(ctx context.Context, js nats.JetStreamContext) error {
+	// Ensure the "ordering" stream exists (it's created by ordering-backend, but may not exist yet)
+	_, err := js.StreamInfo("ordering")
+	if err != nil {
+		c.log.Info("ordering stream not found, creating it for consumer readiness")
+		_, err = js.AddStream(&nats.StreamConfig{
+			Name:      "ordering",
+			Subjects:  []string{"ordering.>"},
+			Retention: nats.LimitsPolicy,
+			MaxAge:    72 * time.Hour,
+			Storage:   nats.FileStorage,
+		})
+		if err != nil && err != nats.ErrStreamNameAlreadyInUse {
+			return fmt.Errorf("order events: ensure stream: %w", err)
+		}
+	}
+
 	sub, err := js.Subscribe(
 		"ordering.order.*",
 		c.handleMessage,

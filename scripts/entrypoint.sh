@@ -32,6 +32,10 @@ echo "Running seed (idempotent)"
 echo "=========================================="
 /usr/local/bin/inventory-seed || echo "Seed completed with warnings (non-fatal)"
 
+echo "Syncing media assets to persistent volume..."
+mkdir -p "${MEDIA_ROOT:-/data/media}/icons"
+cp -r ./media/icons/* "${MEDIA_ROOT:-/data/media}/icons/" 2>/dev/null || true
+
 echo ""
 echo "=========================================="
 echo "Starting Inventory-API server"

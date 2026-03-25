@@ -42,7 +42,7 @@ type HTTPConfig struct {
 	IdleTimeout    time.Duration `envconfig:"HTTP_IDLE_TIMEOUT" default:"90s"`
 	TLSCertFile    string        `envconfig:"TLS_CERT_FILE"`
 	TLSKeyFile     string        `envconfig:"TLS_KEY_FILE"`
-	AllowedOrigins []string      `envconfig:"HTTP_ALLOWED_ORIGINS" default:"https://pos.codevertexitsolutions.com,https://ordersapp.codevertexitsolutions.com,https://accounts.codevertexitsolutions.com,https://theurbanloftcafe.com"`
+	AllowedOrigins []string      `envconfig:"HTTP_ALLOWED_ORIGINS" default:"https://pos.codevertexitsolutions.com,https://ordersapp.codevertexitsolutions.com,https://accounts.codevertexitsolutions.com,https://theurbanloftcafe.com,https://inventory.codevertexitsolutions.com,http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"`
 }
 
 type PostgresConfig struct {
