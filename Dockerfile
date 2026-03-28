@@ -19,6 +19,7 @@ COPY --from=builder /out/inventory /usr/local/bin/inventory
 COPY --from=builder /out/inventory-migrate /usr/local/bin/inventory-migrate
 COPY --from=builder /out/inventory-seed /usr/local/bin/inventory-seed
 COPY internal/ent/migrate/migrations ./internal/ent/migrate/migrations
+COPY media/ ./media/
 # Entrypoint script: wait for DB, run migrations, seed, then start server
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
