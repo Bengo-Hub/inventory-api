@@ -43,6 +43,7 @@ type ItemDTO struct {
 	InitialQuantity int            `json:"initial_quantity,omitempty"`
 	ReorderLevel    int            `json:"reorder_level,omitempty"`
 	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
+	CategoryName    string         `json:"category_name,omitempty"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 }
@@ -52,6 +53,7 @@ type CategoryDTO struct {
 	Name        string    `json:"name"`
 	Code        string    `json:"code,omitempty"`
 	Description string    `json:"description,omitempty"`
+	Icon        string    `json:"icon,omitempty"`
 	IsActive    bool      `json:"is_active"`
 }
 
@@ -448,9 +450,29 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		} else {
 			filtered = itms
 		}
+		// Build category name lookup
+		catIDs := make([]uuid.UUID, 0)
+		for _, it := range filtered {
+			if it.CategoryID != nil {
+				catIDs = append(catIDs, *it.CategoryID)
+			}
+		}
+		catNames := make(map[uuid.UUID]string)
+		if len(catIDs) > 0 {
+			cats, catErr := s.client.ItemCategory.Query().Where(itemcategory.IDIn(catIDs...)).All(ctx)
+			if catErr == nil {
+				for _, c := range cats {
+					catNames[c.ID] = c.Name
+				}
+			}
+		}
 		dtos := make([]ItemDTO, len(filtered))
 		for i, it := range filtered {
-			dtos[i] = *s.mapToDTO(it)
+			dto := s.mapToDTO(it)
+			if it.CategoryID != nil {
+				dto.CategoryName = catNames[*it.CategoryID]
+			}
+			dtos[i] = *dto
 		}
 		return dtos, nil
 	}
@@ -488,6 +510,7 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 				Name:        c.Name,
 				Code:        c.Code,
 				Description: c.Description,
+				Icon:        c.Icon,
 				IsActive:    c.IsActive,
 			}
 		}
@@ -686,18 +709,28 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		AggregateID:   i.ID,
 		EventType:     "inventory.item.created",
 		Payload: map[string]any{
-			"id":            i.ID,
-			"sku":           i.Sku,
-			"name":          i.Name,
-			"description":   i.Description,
-			"type":          i.Type,
-			"category_id":   i.CategoryID,
-			"category_name": categoryName,
-			"unit_id":       i.UnitID,
-			"unit_name":     unitName,
-			"is_active":     i.IsActive,
-			"image_url":     i.ImageURL,
-			"tags":          i.Tags,
+			"id":                        i.ID,
+			"sku":                       i.Sku,
+			"name":                      i.Name,
+			"description":               i.Description,
+			"type":                      i.Type,
+			"category_id":               i.CategoryID,
+			"category_name":             categoryName,
+			"unit_id":                   i.UnitID,
+			"unit_name":                 unitName,
+			"is_active":                 i.IsActive,
+			"image_url":                 i.ImageURL,
+			"tags":                      i.Tags,
+			"barcode":                   i.Barcode,
+			"barcode_type":              i.BarcodeType,
+			"requires_age_verification": i.RequiresAgeVerification,
+			"is_controlled_substance":   i.IsControlledSubstance,
+			"is_perishable":             i.IsPerishable,
+			"track_serial_numbers":      i.TrackSerialNumbers,
+			"track_lots":                i.TrackLots,
+			"weight_kg":                 i.WeightKg,
+			"dimensions_cm":             i.DimensionsCm,
+			"duration_minutes":          i.DurationMinutes,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -788,18 +821,28 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		AggregateID:   i.ID,
 		EventType:     "inventory.item.updated",
 		Payload: map[string]any{
-			"id":            i.ID,
-			"sku":           i.Sku,
-			"name":          i.Name,
-			"description":   i.Description,
-			"type":          i.Type,
-			"category_id":   i.CategoryID,
-			"category_name": categoryName,
-			"unit_id":       i.UnitID,
-			"unit_name":     unitName,
-			"is_active":     i.IsActive,
-			"image_url":     i.ImageURL,
-			"tags":          i.Tags,
+			"id":                        i.ID,
+			"sku":                       i.Sku,
+			"name":                      i.Name,
+			"description":               i.Description,
+			"type":                      i.Type,
+			"category_id":               i.CategoryID,
+			"category_name":             categoryName,
+			"unit_id":                   i.UnitID,
+			"unit_name":                 unitName,
+			"is_active":                 i.IsActive,
+			"image_url":                 i.ImageURL,
+			"tags":                      i.Tags,
+			"barcode":                   i.Barcode,
+			"barcode_type":              i.BarcodeType,
+			"requires_age_verification": i.RequiresAgeVerification,
+			"is_controlled_substance":   i.IsControlledSubstance,
+			"is_perishable":             i.IsPerishable,
+			"track_serial_numbers":      i.TrackSerialNumbers,
+			"track_lots":                i.TrackLots,
+			"weight_kg":                 i.WeightKg,
+			"dimensions_cm":             i.DimensionsCm,
+			"duration_minutes":          i.DurationMinutes,
 		},
 		Timestamp: time.Now().UTC(),
 	}

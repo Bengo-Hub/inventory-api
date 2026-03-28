@@ -249,31 +249,34 @@ type categoryDef struct {
 	Name        string
 	Code        string
 	Description string
+	Icon        string
 }
 
 var categoryDefs = []categoryDef{
-	{"hot-beverages", "Hot Beverages", "BEV", "Espresso drinks, teas, and other hot beverages"},
-	{"cold-beverages", "Cold Beverages", "CBV", "Iced coffees, frappes, smoothies, and fresh juices"},
-	{"pastries", "Pastries & Bakery", "PST", "Croissants, muffins, cakes, and baked goods"},
-	{"sandwiches", "Sandwiches & Wraps", "SND", "Paninis, wraps, and classic sandwiches"},
-	{"salads", "Salads", "SAL", "Fresh salads and greens"},
-	{"main-courses", "Main Courses", "MIN", "Grills, curries, rice dishes, and hearty mains"},
-	{"light-bites", "Light Bites", "BTE", "Samosas, spring rolls, and quick snacks"},
-	{"breakfast", "Breakfast", "BRK", "Full breakfasts, pancakes, oats, and morning meals"},
-	{"pizza", "Pizza", "PIZ", "Artisanal and classic pizzas"},
-	{"chicken", "Chicken", "CHK", "Fried and grilled chicken specialties"},
-	{"sushi", "Sushi", "SHI", "Fresh sushi and Japanese delicacies"},
-	{"grocery", "Grocery", "GRC", "Fresh produce and household essentials"},
-	{"pharmacy", "Pharmacy", "PHR", "Medication and health services"},
-	{"gifts", "Gifts", "GFT", "Special gifts and hampers"},
-	{"flowers", "Flowers", "FLW", "Fresh flower bouquets and arrangements"},
-	{"alcohol", "Alcohol", "ALC", "Wines, spirits, and beers"},
-	{"chinese", "Chinese", "CHN", "Authentic Chinese cuisine"},
-	{"indian", "Indian", "IND", "Flavorful Indian curries and specialities"},
-	{"desserts", "Desserts", "DST", "Sweet treats and delights"},
-	{"retail", "Retail", "RTL", "Shopping and fashion goods"},
-	{"electronics", "Electronics", "ELC", "Devices and accessories"},
-	{"fashion", "Fashion", "FSH", "Clothing and apparel"},
+	{"hot-beverages", "Hot Beverages", "BEV", "Espresso drinks, teas, and other hot beverages", "/media/icons/coffee-colored.svg"},
+	{"cold-beverages", "Cold Beverages", "CBV", "Iced coffees, frappes, smoothies, and fresh juices", "/media/icons/juice-colored.svg"},
+	{"pastries", "Pastries & Bakery", "PST", "Croissants, muffins, cakes, and baked goods", "/media/icons/cake-colored.svg"},
+	{"sandwiches", "Sandwiches & Wraps", "SND", "Paninis, wraps, and classic sandwiches", "/media/icons/sandwich-colored.svg"},
+	{"salads", "Salads", "SAL", "Fresh salads and greens", "/media/icons/fresh-colored.svg"},
+	{"main-courses", "Main Courses", "MIN", "Grills, curries, rice dishes, and hearty mains", "/media/icons/burger-colored.svg"},
+	{"light-bites", "Light Bites", "BTE", "Samosas, spring rolls, and quick snacks", "/media/icons/snack-colored.svg"},
+	{"breakfast", "Breakfast", "BRK", "Full breakfasts, pancakes, oats, and morning meals", "/media/icons/breakfast-colored.svg"},
+	{"pizza", "Pizza", "PIZ", "Artisanal and classic pizzas", "/media/icons/pizza-colored.svg"},
+	{"chicken", "Chicken", "CHK", "Fried and grilled chicken specialties", "/media/icons/drumstick-colored.svg"},
+	{"sushi", "Sushi", "SHI", "Fresh sushi and Japanese delicacies", "/media/icons/sushi-colored.svg"},
+	{"grocery", "Grocery", "GRC", "Fresh produce and household essentials", "/media/icons/grocery-colored.svg"},
+	{"pharmacy", "Pharmacy", "PHR", "Medication and health services", "/media/icons/medicine-colored.svg"},
+	{"gifts", "Gifts", "GFT", "Special gifts and hampers", "/media/icons/gift-colored.svg"},
+	{"flowers", "Flowers", "FLW", "Fresh flower bouquets and arrangements", "/media/icons/flower-colored.svg"},
+	{"alcohol", "Alcohol", "ALC", "Wines, spirits, and beers", "/media/icons/liquor-colored.svg"},
+	{"chinese", "Chinese", "CHN", "Authentic Chinese cuisine", "/media/icons/chinese-colored.svg"},
+	{"indian", "Indian", "IND", "Flavorful Indian curries and specialities", "/media/icons/curry-colored.svg"},
+	{"desserts", "Desserts", "DST", "Sweet treats and delights", "/media/icons/dessert-colored.svg"},
+	{"retail", "Retail", "RTL", "Shopping and fashion goods", "/media/icons/retail-colored.svg"},
+	{"electronics", "Electronics", "ELC", "Devices and accessories", "/media/icons/electronics-colored.svg"},
+	{"fashion", "Fashion", "FSH", "Clothing and apparel", "/media/icons/fashion-colored.svg"},
+	{"fresh", "Fresh", "FRS", "Fresh fruits, vegetables, and produce", "/media/icons/fresh-colored.svg"},
+	{"juice", "Juice", "JCE", "Fresh juices and smoothies", "/media/icons/juice-colored.svg"},
 }
 
 func categoryUUID(tenantID uuid.UUID, slug string) uuid.UUID {
@@ -294,7 +297,9 @@ func seedItemCategories(ctx context.Context, client *ent.Client, tenantID uuid.U
 				SetID(id).
 				SetTenantID(tenantID).
 				SetName(cat.Name).
+				SetSlug(cat.Slug).
 				SetCode(cat.Code).
+				SetIcon(cat.Icon).
 				SetDescription(cat.Description).
 				SetIsActive(true).
 				Save(ctx); createErr != nil {
@@ -304,10 +309,12 @@ func seedItemCategories(ctx context.Context, client *ent.Client, tenantID uuid.U
 		case err != nil:
 			return nil, fmt.Errorf("check category %s: %w", cat.Slug, err)
 		default:
-			// Update name/description/code in case they changed.
+			// Update name/description/code/icon/slug in case they changed.
 			if _, updateErr := client.ItemCategory.UpdateOneID(id).
 				SetName(cat.Name).
+				SetSlug(cat.Slug).
 				SetCode(cat.Code).
+				SetIcon(cat.Icon).
 				SetDescription(cat.Description).
 				Save(ctx); updateErr != nil {
 				return nil, fmt.Errorf("update category %s: %w", cat.Slug, updateErr)
