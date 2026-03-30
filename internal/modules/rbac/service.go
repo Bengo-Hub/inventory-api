@@ -131,9 +131,9 @@ func (s *Service) SyncUser(ctx context.Context, tenantID uuid.UUID, authServiceU
 		return user, nil
 	}
 
-	// Create new user
+	// Create new user — use auth-service UUID as PK for cross-service consistency
 	user = &InventoryUser{
-		ID:                uuid.New(),
+		ID:                authServiceUserID,
 		TenantID:          tenantID,
 		AuthServiceUserID: authServiceUserID,
 		Email:             email,
