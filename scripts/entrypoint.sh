@@ -34,7 +34,9 @@ echo "=========================================="
 
 echo "Syncing media assets to persistent volume..."
 mkdir -p "${MEDIA_ROOT:-/data/media}/icons"
+mkdir -p "${MEDIA_ROOT:-/data/media}/images"
 cp -r ./media/icons/* "${MEDIA_ROOT:-/data/media}/icons/" 2>/dev/null || true
+cp -rn ./media/images/* "${MEDIA_ROOT:-/data/media}/images/" 2>/dev/null || true
 
 echo ""
 echo "=========================================="
