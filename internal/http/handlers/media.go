@@ -69,7 +69,27 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		"image/svg+xml": true,
 	}
 
+	// Go's http.DetectContentType cannot detect SVG (returns text/xml or text/plain)
+	// or WebP (may return application/octet-stream). Fall back to file extension
+	// and the multipart Content-Type header for these formats.
 	if !allowedTypes[contentType] {
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		headerCT := header.Header.Get("Content-Type")
+
+		switch {
+		case ext == ".svg" || headerCT == "image/svg+xml":
+			contentType = "image/svg+xml"
+		case ext == ".webp" || headerCT == "image/webp":
+			contentType = "image/webp"
+		case ext == ".jpg" || ext == ".jpeg" || headerCT == "image/jpeg":
+			contentType = "image/jpeg"
+		case ext == ".png" || headerCT == "image/png":
+			contentType = "image/png"
+		}
+	}
+
+	if !allowedTypes[contentType] {
+		h.log.Warn("rejected file upload", zap.String("detected_type", contentType), zap.String("filename", header.Filename))
 		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Invalid file type. Supported: JPEG, PNG, WEBP, SVG")
 		return
 	}
