@@ -433,7 +433,17 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		q := s.client.Item.Query().
 			Where(item.TenantID(tenantID), item.IsActive(true))
 		if typeFilter != "" {
-			q = q.Where(item.TypeEQ(item.Type(typeFilter)))
+			// Support comma-separated type filters (e.g. "GOODS,RECIPE")
+			types := strings.Split(typeFilter, ",")
+			if len(types) == 1 {
+				q = q.Where(item.TypeEQ(item.Type(strings.TrimSpace(types[0]))))
+			} else {
+				typeVals := make([]item.Type, 0, len(types))
+				for _, t := range types {
+					typeVals = append(typeVals, item.Type(strings.TrimSpace(t)))
+				}
+				q = q.Where(item.TypeIn(typeVals...))
+			}
 		}
 		itms, err := q.Order(ent.Asc(item.FieldSku)).All(ctx)
 		if err != nil {
