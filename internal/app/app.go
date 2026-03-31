@@ -78,6 +78,13 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("event bus connection failed", zap.Error(err))
 	}
 
+	// Ensure inventory JetStream stream exists (for stock events consumed by notifications-api etc.)
+	if natsConn != nil {
+		if streamErr := events.EnsureStream(ctx, natsConn, cfg.Events); streamErr != nil {
+			log.Warn("failed to ensure inventory stream", zap.Error(streamErr))
+		}
+	}
+
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 
 	// Initialize user management services (placeholder — real wiring after Ent client)
