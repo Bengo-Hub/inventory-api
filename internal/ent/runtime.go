@@ -1019,19 +1019,19 @@ func init() {
 	// warehouse.CodeValidator is a validator for the "code" field. It is called by the builders before save.
 	warehouse.CodeValidator = warehouseDescCode.Validators[0].(func(string) error)
 	// warehouseDescIsDefault is the schema descriptor for is_default field.
-	warehouseDescIsDefault := warehouseFields[5].Descriptor()
+	warehouseDescIsDefault := warehouseFields[7].Descriptor()
 	// warehouse.DefaultIsDefault holds the default value on creation for the is_default field.
 	warehouse.DefaultIsDefault = warehouseDescIsDefault.Default.(bool)
 	// warehouseDescIsActive is the schema descriptor for is_active field.
-	warehouseDescIsActive := warehouseFields[6].Descriptor()
+	warehouseDescIsActive := warehouseFields[8].Descriptor()
 	// warehouse.DefaultIsActive holds the default value on creation for the is_active field.
 	warehouse.DefaultIsActive = warehouseDescIsActive.Default.(bool)
 	// warehouseDescCreatedAt is the schema descriptor for created_at field.
-	warehouseDescCreatedAt := warehouseFields[7].Descriptor()
+	warehouseDescCreatedAt := warehouseFields[9].Descriptor()
 	// warehouse.DefaultCreatedAt holds the default value on creation for the created_at field.
 	warehouse.DefaultCreatedAt = warehouseDescCreatedAt.Default.(func() time.Time)
 	// warehouseDescUpdatedAt is the schema descriptor for updated_at field.
-	warehouseDescUpdatedAt := warehouseFields[8].Descriptor()
+	warehouseDescUpdatedAt := warehouseFields[10].Descriptor()
 	// warehouse.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	warehouse.DefaultUpdatedAt = warehouseDescUpdatedAt.Default.(func() time.Time)
 	// warehouse.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
