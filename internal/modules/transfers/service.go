@@ -100,7 +100,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 	}
 
 	// Publish transfer.created event via outbox
-	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "inventory.transfer.created", map[string]any{
+	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "transfer.created", map[string]any{
 		"transfer_id":     transfer.ID.String(),
 		"transfer_number": transferNumber,
 		"tenant_id":       tenantID.String(),
@@ -330,7 +330,7 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 	}
 
 	// Publish transfer.completed event
-	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "inventory.transfer.completed", map[string]any{
+	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "transfer.completed", map[string]any{
 		"transfer_id":              transfer.ID.String(),
 		"transfer_number":          transfer.TransferNumber,
 		"tenant_id":                tenantID.String(),
