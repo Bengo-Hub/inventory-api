@@ -76,6 +76,16 @@ func Address(v string) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldAddress, v))
 }
 
+// Latitude applies equality check predicate on the "latitude" field. It's identical to LatitudeEQ.
+func Latitude(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldLatitude, v))
+}
+
+// Longitude applies equality check predicate on the "longitude" field. It's identical to LongitudeEQ.
+func Longitude(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldLongitude, v))
+}
+
 // IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
 func IsDefault(v bool) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldIsDefault, v))
@@ -319,6 +329,106 @@ func AddressEqualFold(v string) predicate.Warehouse {
 // AddressContainsFold applies the ContainsFold predicate on the "address" field.
 func AddressContainsFold(v string) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldContainsFold(FieldAddress, v))
+}
+
+// LatitudeEQ applies the EQ predicate on the "latitude" field.
+func LatitudeEQ(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldLatitude, v))
+}
+
+// LatitudeNEQ applies the NEQ predicate on the "latitude" field.
+func LatitudeNEQ(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNEQ(FieldLatitude, v))
+}
+
+// LatitudeIn applies the In predicate on the "latitude" field.
+func LatitudeIn(vs ...float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIn(FieldLatitude, vs...))
+}
+
+// LatitudeNotIn applies the NotIn predicate on the "latitude" field.
+func LatitudeNotIn(vs ...float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotIn(FieldLatitude, vs...))
+}
+
+// LatitudeGT applies the GT predicate on the "latitude" field.
+func LatitudeGT(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGT(FieldLatitude, v))
+}
+
+// LatitudeGTE applies the GTE predicate on the "latitude" field.
+func LatitudeGTE(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGTE(FieldLatitude, v))
+}
+
+// LatitudeLT applies the LT predicate on the "latitude" field.
+func LatitudeLT(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLT(FieldLatitude, v))
+}
+
+// LatitudeLTE applies the LTE predicate on the "latitude" field.
+func LatitudeLTE(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLTE(FieldLatitude, v))
+}
+
+// LatitudeIsNil applies the IsNil predicate on the "latitude" field.
+func LatitudeIsNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIsNull(FieldLatitude))
+}
+
+// LatitudeNotNil applies the NotNil predicate on the "latitude" field.
+func LatitudeNotNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotNull(FieldLatitude))
+}
+
+// LongitudeEQ applies the EQ predicate on the "longitude" field.
+func LongitudeEQ(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldLongitude, v))
+}
+
+// LongitudeNEQ applies the NEQ predicate on the "longitude" field.
+func LongitudeNEQ(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNEQ(FieldLongitude, v))
+}
+
+// LongitudeIn applies the In predicate on the "longitude" field.
+func LongitudeIn(vs ...float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIn(FieldLongitude, vs...))
+}
+
+// LongitudeNotIn applies the NotIn predicate on the "longitude" field.
+func LongitudeNotIn(vs ...float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotIn(FieldLongitude, vs...))
+}
+
+// LongitudeGT applies the GT predicate on the "longitude" field.
+func LongitudeGT(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGT(FieldLongitude, v))
+}
+
+// LongitudeGTE applies the GTE predicate on the "longitude" field.
+func LongitudeGTE(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGTE(FieldLongitude, v))
+}
+
+// LongitudeLT applies the LT predicate on the "longitude" field.
+func LongitudeLT(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLT(FieldLongitude, v))
+}
+
+// LongitudeLTE applies the LTE predicate on the "longitude" field.
+func LongitudeLTE(v float64) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLTE(FieldLongitude, v))
+}
+
+// LongitudeIsNil applies the IsNil predicate on the "longitude" field.
+func LongitudeIsNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIsNull(FieldLongitude))
+}
+
+// LongitudeNotNil applies the NotNil predicate on the "longitude" field.
+func LongitudeNotNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotNull(FieldLongitude))
 }
 
 // IsDefaultEQ applies the EQ predicate on the "is_default" field.

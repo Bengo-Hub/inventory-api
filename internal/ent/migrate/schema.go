@@ -1395,6 +1395,8 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "code", Type: field.TypeString},
 		{Name: "address", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "latitude", Type: field.TypeFloat64, Nullable: true},
+		{Name: "longitude", Type: field.TypeFloat64, Nullable: true},
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -1409,7 +1411,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "warehouses_tenants_warehouses",
-				Columns:    []*schema.Column{WarehousesColumns[8]},
+				Columns:    []*schema.Column{WarehousesColumns[10]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1418,17 +1420,17 @@ var (
 			{
 				Name:    "warehouse_tenant_id_code",
 				Unique:  true,
-				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[2]},
+				Columns: []*schema.Column{WarehousesColumns[10], WarehousesColumns[2]},
 			},
 			{
 				Name:    "warehouse_tenant_id_is_default",
 				Unique:  false,
-				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[4]},
+				Columns: []*schema.Column{WarehousesColumns[10], WarehousesColumns[6]},
 			},
 			{
 				Name:    "warehouse_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{WarehousesColumns[8], WarehousesColumns[5]},
+				Columns: []*schema.Column{WarehousesColumns[10], WarehousesColumns[7]},
 			},
 		},
 	}

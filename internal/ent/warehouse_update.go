@@ -96,6 +96,60 @@ func (_u *WarehouseUpdate) ClearAddress() *WarehouseUpdate {
 	return _u
 }
 
+// SetLatitude sets the "latitude" field.
+func (_u *WarehouseUpdate) SetLatitude(v float64) *WarehouseUpdate {
+	_u.mutation.ResetLatitude()
+	_u.mutation.SetLatitude(v)
+	return _u
+}
+
+// SetNillableLatitude sets the "latitude" field if the given value is not nil.
+func (_u *WarehouseUpdate) SetNillableLatitude(v *float64) *WarehouseUpdate {
+	if v != nil {
+		_u.SetLatitude(*v)
+	}
+	return _u
+}
+
+// AddLatitude adds value to the "latitude" field.
+func (_u *WarehouseUpdate) AddLatitude(v float64) *WarehouseUpdate {
+	_u.mutation.AddLatitude(v)
+	return _u
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (_u *WarehouseUpdate) ClearLatitude() *WarehouseUpdate {
+	_u.mutation.ClearLatitude()
+	return _u
+}
+
+// SetLongitude sets the "longitude" field.
+func (_u *WarehouseUpdate) SetLongitude(v float64) *WarehouseUpdate {
+	_u.mutation.ResetLongitude()
+	_u.mutation.SetLongitude(v)
+	return _u
+}
+
+// SetNillableLongitude sets the "longitude" field if the given value is not nil.
+func (_u *WarehouseUpdate) SetNillableLongitude(v *float64) *WarehouseUpdate {
+	if v != nil {
+		_u.SetLongitude(*v)
+	}
+	return _u
+}
+
+// AddLongitude adds value to the "longitude" field.
+func (_u *WarehouseUpdate) AddLongitude(v float64) *WarehouseUpdate {
+	_u.mutation.AddLongitude(v)
+	return _u
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (_u *WarehouseUpdate) ClearLongitude() *WarehouseUpdate {
+	_u.mutation.ClearLongitude()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *WarehouseUpdate) SetIsDefault(v bool) *WarehouseUpdate {
 	_u.mutation.SetIsDefault(v)
@@ -367,6 +421,24 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.AddressCleared() {
 		_spec.ClearField(warehouse.FieldAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.Latitude(); ok {
+		_spec.SetField(warehouse.FieldLatitude, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLatitude(); ok {
+		_spec.AddField(warehouse.FieldLatitude, field.TypeFloat64, value)
+	}
+	if _u.mutation.LatitudeCleared() {
+		_spec.ClearField(warehouse.FieldLatitude, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Longitude(); ok {
+		_spec.SetField(warehouse.FieldLongitude, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLongitude(); ok {
+		_spec.AddField(warehouse.FieldLongitude, field.TypeFloat64, value)
+	}
+	if _u.mutation.LongitudeCleared() {
+		_spec.ClearField(warehouse.FieldLongitude, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
@@ -665,6 +737,60 @@ func (_u *WarehouseUpdateOne) SetNillableAddress(v *string) *WarehouseUpdateOne 
 // ClearAddress clears the value of the "address" field.
 func (_u *WarehouseUpdateOne) ClearAddress() *WarehouseUpdateOne {
 	_u.mutation.ClearAddress()
+	return _u
+}
+
+// SetLatitude sets the "latitude" field.
+func (_u *WarehouseUpdateOne) SetLatitude(v float64) *WarehouseUpdateOne {
+	_u.mutation.ResetLatitude()
+	_u.mutation.SetLatitude(v)
+	return _u
+}
+
+// SetNillableLatitude sets the "latitude" field if the given value is not nil.
+func (_u *WarehouseUpdateOne) SetNillableLatitude(v *float64) *WarehouseUpdateOne {
+	if v != nil {
+		_u.SetLatitude(*v)
+	}
+	return _u
+}
+
+// AddLatitude adds value to the "latitude" field.
+func (_u *WarehouseUpdateOne) AddLatitude(v float64) *WarehouseUpdateOne {
+	_u.mutation.AddLatitude(v)
+	return _u
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (_u *WarehouseUpdateOne) ClearLatitude() *WarehouseUpdateOne {
+	_u.mutation.ClearLatitude()
+	return _u
+}
+
+// SetLongitude sets the "longitude" field.
+func (_u *WarehouseUpdateOne) SetLongitude(v float64) *WarehouseUpdateOne {
+	_u.mutation.ResetLongitude()
+	_u.mutation.SetLongitude(v)
+	return _u
+}
+
+// SetNillableLongitude sets the "longitude" field if the given value is not nil.
+func (_u *WarehouseUpdateOne) SetNillableLongitude(v *float64) *WarehouseUpdateOne {
+	if v != nil {
+		_u.SetLongitude(*v)
+	}
+	return _u
+}
+
+// AddLongitude adds value to the "longitude" field.
+func (_u *WarehouseUpdateOne) AddLongitude(v float64) *WarehouseUpdateOne {
+	_u.mutation.AddLongitude(v)
+	return _u
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (_u *WarehouseUpdateOne) ClearLongitude() *WarehouseUpdateOne {
+	_u.mutation.ClearLongitude()
 	return _u
 }
 
@@ -969,6 +1095,24 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 	}
 	if _u.mutation.AddressCleared() {
 		_spec.ClearField(warehouse.FieldAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.Latitude(); ok {
+		_spec.SetField(warehouse.FieldLatitude, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLatitude(); ok {
+		_spec.AddField(warehouse.FieldLatitude, field.TypeFloat64, value)
+	}
+	if _u.mutation.LatitudeCleared() {
+		_spec.ClearField(warehouse.FieldLatitude, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Longitude(); ok {
+		_spec.SetField(warehouse.FieldLongitude, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLongitude(); ok {
+		_spec.AddField(warehouse.FieldLongitude, field.TypeFloat64, value)
+	}
+	if _u.mutation.LongitudeCleared() {
+		_spec.ClearField(warehouse.FieldLongitude, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)

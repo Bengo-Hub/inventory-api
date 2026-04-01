@@ -29,6 +29,14 @@ func (Warehouse) Fields() []ent.Field {
 			Comment("Short code for the warehouse, unique per tenant"),
 		field.Text("address").
 			Optional(),
+		field.Float("latitude").
+			Optional().
+			Nillable().
+			Comment("GPS latitude for logistics routing"),
+		field.Float("longitude").
+			Optional().
+			Nillable().
+			Comment("GPS longitude for logistics routing"),
 		field.Bool("is_default").
 			Default(false).
 			Comment("Default warehouse for the tenant"),

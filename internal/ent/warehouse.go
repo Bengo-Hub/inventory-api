@@ -27,6 +27,10 @@ type Warehouse struct {
 	Code string `json:"code,omitempty"`
 	// Address holds the value of the "address" field.
 	Address string `json:"address,omitempty"`
+	// GPS latitude for logistics routing
+	Latitude *float64 `json:"latitude,omitempty"`
+	// GPS longitude for logistics routing
+	Longitude *float64 `json:"longitude,omitempty"`
 	// Default warehouse for the tenant
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -112,6 +116,8 @@ func (*Warehouse) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case warehouse.FieldIsDefault, warehouse.FieldIsActive:
 			values[i] = new(sql.NullBool)
+		case warehouse.FieldLatitude, warehouse.FieldLongitude:
+			values[i] = new(sql.NullFloat64)
 		case warehouse.FieldName, warehouse.FieldCode, warehouse.FieldAddress:
 			values[i] = new(sql.NullString)
 		case warehouse.FieldCreatedAt, warehouse.FieldUpdatedAt:
@@ -162,6 +168,20 @@ func (_m *Warehouse) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field address", values[i])
 			} else if value.Valid {
 				_m.Address = value.String
+			}
+		case warehouse.FieldLatitude:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field latitude", values[i])
+			} else if value.Valid {
+				_m.Latitude = new(float64)
+				*_m.Latitude = value.Float64
+			}
+		case warehouse.FieldLongitude:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field longitude", values[i])
+			} else if value.Valid {
+				_m.Longitude = new(float64)
+				*_m.Longitude = value.Float64
 			}
 		case warehouse.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -259,6 +279,16 @@ func (_m *Warehouse) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("address=")
 	builder.WriteString(_m.Address)
+	builder.WriteString(", ")
+	if v := _m.Latitude; v != nil {
+		builder.WriteString("latitude=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Longitude; v != nil {
+		builder.WriteString("longitude=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))

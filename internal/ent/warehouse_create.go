@@ -61,6 +61,34 @@ func (_c *WarehouseCreate) SetNillableAddress(v *string) *WarehouseCreate {
 	return _c
 }
 
+// SetLatitude sets the "latitude" field.
+func (_c *WarehouseCreate) SetLatitude(v float64) *WarehouseCreate {
+	_c.mutation.SetLatitude(v)
+	return _c
+}
+
+// SetNillableLatitude sets the "latitude" field if the given value is not nil.
+func (_c *WarehouseCreate) SetNillableLatitude(v *float64) *WarehouseCreate {
+	if v != nil {
+		_c.SetLatitude(*v)
+	}
+	return _c
+}
+
+// SetLongitude sets the "longitude" field.
+func (_c *WarehouseCreate) SetLongitude(v float64) *WarehouseCreate {
+	_c.mutation.SetLongitude(v)
+	return _c
+}
+
+// SetNillableLongitude sets the "longitude" field if the given value is not nil.
+func (_c *WarehouseCreate) SetNillableLongitude(v *float64) *WarehouseCreate {
+	if v != nil {
+		_c.SetLongitude(*v)
+	}
+	return _c
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_c *WarehouseCreate) SetIsDefault(v bool) *WarehouseCreate {
 	_c.mutation.SetIsDefault(v)
@@ -337,6 +365,14 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 		_spec.SetField(warehouse.FieldAddress, field.TypeString, value)
 		_node.Address = value
 	}
+	if value, ok := _c.mutation.Latitude(); ok {
+		_spec.SetField(warehouse.FieldLatitude, field.TypeFloat64, value)
+		_node.Latitude = &value
+	}
+	if value, ok := _c.mutation.Longitude(); ok {
+		_spec.SetField(warehouse.FieldLongitude, field.TypeFloat64, value)
+		_node.Longitude = &value
+	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
 		_node.IsDefault = value
@@ -540,6 +576,54 @@ func (u *WarehouseUpsert) ClearAddress() *WarehouseUpsert {
 	return u
 }
 
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsert) SetLatitude(v float64) *WarehouseUpsert {
+	u.Set(warehouse.FieldLatitude, v)
+	return u
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateLatitude() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldLatitude)
+	return u
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsert) AddLatitude(v float64) *WarehouseUpsert {
+	u.Add(warehouse.FieldLatitude, v)
+	return u
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsert) ClearLatitude() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldLatitude)
+	return u
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsert) SetLongitude(v float64) *WarehouseUpsert {
+	u.Set(warehouse.FieldLongitude, v)
+	return u
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateLongitude() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldLongitude)
+	return u
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsert) AddLongitude(v float64) *WarehouseUpsert {
+	u.Add(warehouse.FieldLongitude, v)
+	return u
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsert) ClearLongitude() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldLongitude)
+	return u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (u *WarehouseUpsert) SetIsDefault(v bool) *WarehouseUpsert {
 	u.Set(warehouse.FieldIsDefault, v)
@@ -687,6 +771,62 @@ func (u *WarehouseUpsertOne) UpdateAddress() *WarehouseUpsertOne {
 func (u *WarehouseUpsertOne) ClearAddress() *WarehouseUpsertOne {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearAddress()
+	})
+}
+
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsertOne) SetLatitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLatitude(v)
+	})
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsertOne) AddLatitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLatitude(v)
+	})
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateLatitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLatitude()
+	})
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsertOne) ClearLatitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLatitude()
+	})
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsertOne) SetLongitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLongitude(v)
+	})
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsertOne) AddLongitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLongitude(v)
+	})
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateLongitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLongitude()
+	})
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsertOne) ClearLongitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLongitude()
 	})
 }
 
@@ -1010,6 +1150,62 @@ func (u *WarehouseUpsertBulk) UpdateAddress() *WarehouseUpsertBulk {
 func (u *WarehouseUpsertBulk) ClearAddress() *WarehouseUpsertBulk {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearAddress()
+	})
+}
+
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsertBulk) SetLatitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLatitude(v)
+	})
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsertBulk) AddLatitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLatitude(v)
+	})
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateLatitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLatitude()
+	})
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsertBulk) ClearLatitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLatitude()
+	})
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsertBulk) SetLongitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLongitude(v)
+	})
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsertBulk) AddLongitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLongitude(v)
+	})
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateLongitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLongitude()
+	})
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsertBulk) ClearLongitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLongitude()
 	})
 }
 

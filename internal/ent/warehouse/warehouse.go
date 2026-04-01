@@ -23,6 +23,10 @@ const (
 	FieldCode = "code"
 	// FieldAddress holds the string denoting the address field in the database.
 	FieldAddress = "address"
+	// FieldLatitude holds the string denoting the latitude field in the database.
+	FieldLatitude = "latitude"
+	// FieldLongitude holds the string denoting the longitude field in the database.
+	FieldLongitude = "longitude"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -87,6 +91,8 @@ var Columns = []string{
 	FieldName,
 	FieldCode,
 	FieldAddress,
+	FieldLatitude,
+	FieldLongitude,
 	FieldIsDefault,
 	FieldIsActive,
 	FieldCreatedAt,
@@ -148,6 +154,16 @@ func ByCode(opts ...sql.OrderTermOption) OrderOption {
 // ByAddress orders the results by the address field.
 func ByAddress(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAddress, opts...).ToFunc()
+}
+
+// ByLatitude orders the results by the latitude field.
+func ByLatitude(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLatitude, opts...).ToFunc()
+}
+
+// ByLongitude orders the results by the longitude field.
+func ByLongitude(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLongitude, opts...).ToFunc()
 }
 
 // ByIsDefault orders the results by the is_default field.
