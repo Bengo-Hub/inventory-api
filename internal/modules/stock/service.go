@@ -243,7 +243,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	}
 
 	// Publish stock updated event
-	s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.updated", map[string]any{
+	s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.updated", map[string]any{
 		"tenant_id":       tenantID.String(),
 		"item_id":         itm.ID.String(),
 		"sku":             itm.Sku,
@@ -343,7 +343,7 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 // Also publishes a stock-out event when available reaches zero.
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
 	if bal.Available <= 0 {
-		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.out", map[string]any{
+		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
 			"tenant_id":    tenantID.String(),
 			"item_id":      itm.ID.String(),
 			"sku":          itm.Sku,
@@ -359,7 +359,7 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			zap.Int("available", bal.Available),
 		)
 	} else if bal.Available <= bal.ReorderLevel {
-		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "inventory.stock.low", map[string]any{
+		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
 			"item_id":       itm.ID.String(),
 			"sku":           itm.Sku,

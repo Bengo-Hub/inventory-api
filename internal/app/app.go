@@ -54,6 +54,7 @@ type App struct {
 	outboxPublisher  *outbox.Publisher
 	orderConsumer    *consumers.OrderEventsConsumer
 	posSaleConsumer  *consumers.POSSaleEventsConsumer
+	authConsumer     *consumers.AuthEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -158,6 +159,9 @@ func New(ctx context.Context) (*App, error) {
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
 
+	// Auth events consumer — proactive user sync from auth-service
+	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -217,10 +221,20 @@ func New(ctx context.Context) (*App, error) {
 		outboxPublisher:  outboxPublisher,
 		orderConsumer:    orderConsumer,
 		posSaleConsumer:  posSaleConsumer,
+		authConsumer:     authConsumer,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
+	// Start auth events consumer for proactive user sync from auth-service
+	if a.authConsumer != nil && a.events != nil {
+		if err := a.authConsumer.Start(ctx, a.events); err != nil {
+			a.log.Warn("auth events consumer not started", zap.Error(err))
+		} else {
+			a.log.Info("auth events consumer started")
+		}
+	}
+
 	// Start order events consumer for auto-consumption/release of stock reservations
 	if a.orderConsumer != nil && a.events != nil {
 		js, err := a.events.JetStream()
