@@ -34,6 +34,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
+	"github.com/bengobox/inventory-service/internal/modules/transfers"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
@@ -144,8 +145,10 @@ func New(ctx context.Context) (*App, error) {
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)
 	modifiersSvc := modifiers.NewService(ormClient, log)
+	transferSvc := transfers.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 	inventoryHandler.SetModifiersService(modifiersSvc)
+	transferHandler := handlers.NewTransferHandler(log, transferSvc)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
 
@@ -192,7 +195,7 @@ func New(ctx context.Context) (*App, error) {
 		mediaHandler = handlers.NewMediaHandler(log, cfg.Media)
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, transferHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

@@ -23,6 +23,7 @@ func New(
 	health *handlers.HealthHandler,
 	userHandler *handlers.UserHandler,
 	inventoryHandler *handlers.InventoryHandler,
+	transferHandler *handlers.TransferHandler,
 	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	tenantSyncer *tenant.Syncer,
@@ -166,6 +167,9 @@ func New(
 						})
 					})
 					inventoryHandler.RegisterRoutes(g)
+					if transferHandler != nil {
+						transferHandler.RegisterRoutes(g)
+					}
 				})
 			}
 		})
@@ -207,6 +211,9 @@ func New(
 						})
 					})
 					inventoryHandler.RegisterRoutes(g)
+					if transferHandler != nil {
+						transferHandler.RegisterRoutes(g)
+					}
 				})
 			}
 		})
