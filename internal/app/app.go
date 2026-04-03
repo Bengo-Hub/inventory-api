@@ -140,7 +140,7 @@ func New(ctx context.Context) (*App, error) {
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
 
 	// Initialize business modules
-	itemsSvc := items.NewService(ormClient, log)
+	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
 	itemsSvc.SetCache(cacheAside)
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)

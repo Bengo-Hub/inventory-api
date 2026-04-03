@@ -36,11 +36,11 @@ func NewMediaHandler(log *zap.Logger, cfg config.MediaConfig) *MediaHandler {
 // It validates file size and content type, strips EXIF metadata via re-encoding,
 // and saves the file to the configured media root directory.
 func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	// Limit upload size to 10MB
-	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
-	if err := r.ParseMultipartForm(10 * 1024 * 1024); err != nil {
+	// Limit upload size to 2MB
+	r.Body = http.MaxBytesReader(w, r.Body, 2*1024*1024)
+	if err := r.ParseMultipartForm(2 * 1024 * 1024); err != nil {
 		h.log.Error("failed to parse multipart form", zap.Error(err))
-		writeError(w, http.StatusBadRequest, "UPLOAD_TOO_LARGE", "File too large (max 10MB)")
+		writeError(w, http.StatusBadRequest, "UPLOAD_TOO_LARGE", "File too large (max 2MB)")
 		return
 	}
 
@@ -61,26 +61,20 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Only allow JPEG and PNG — re-encoding below strips EXIF and neutralizes
+	// image-based exploits, acting as a sanitization/virus mitigation step.
 	allowedTypes := map[string]bool{
-		"image/jpeg":    true,
-		"image/jpg":     true,
-		"image/png":     true,
-		"image/webp":    true,
-		"image/svg+xml": true,
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
 	}
 
-	// Go's http.DetectContentType cannot detect SVG (returns text/xml or text/plain)
-	// or WebP (may return application/octet-stream). Fall back to file extension
-	// and the multipart Content-Type header for these formats.
+	// Fall back to extension if content detection is ambiguous
 	if !allowedTypes[contentType] {
 		ext := strings.ToLower(filepath.Ext(header.Filename))
 		headerCT := header.Header.Get("Content-Type")
 
 		switch {
-		case ext == ".svg" || headerCT == "image/svg+xml":
-			contentType = "image/svg+xml"
-		case ext == ".webp" || headerCT == "image/webp":
-			contentType = "image/webp"
 		case ext == ".jpg" || ext == ".jpeg" || headerCT == "image/jpeg":
 			contentType = "image/jpeg"
 		case ext == ".png" || headerCT == "image/png":
@@ -90,22 +84,18 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	if !allowedTypes[contentType] {
 		h.log.Warn("rejected file upload", zap.String("detected_type", contentType), zap.String("filename", header.Filename))
-		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Invalid file type. Supported: JPEG, PNG, WEBP, SVG")
+		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Only JPG and PNG images are allowed")
 		return
 	}
 
 	// Generate unique filename
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext == "" {
+	if ext == "" || (ext != ".jpg" && ext != ".jpeg" && ext != ".png") {
 		switch contentType {
 		case "image/jpeg":
 			ext = ".jpg"
 		case "image/png":
 			ext = ".png"
-		case "image/webp":
-			ext = ".webp"
-		case "image/svg+xml":
-			ext = ".svg"
 		}
 	}
 	filename := fmt.Sprintf("%s_%d%s", uuid.New().String(), time.Now().Unix(), ext)
