@@ -84,7 +84,7 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	if !allowedTypes[contentType] {
 		h.log.Warn("rejected file upload", zap.String("detected_type", contentType), zap.String("filename", header.Filename))
-		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Only JPG and PNG images are allowed")
+		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Only JPEG, JPG and PNG images are allowed")
 		return
 	}
 
