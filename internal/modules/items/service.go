@@ -71,17 +71,33 @@ type StockAvailability struct {
 
 // Service handles item-related business logic.
 type Service struct {
-	client *ent.Client
-	cache  *sharedcache.Aside
-	log    *zap.Logger
+	client       *ent.Client
+	cache        *sharedcache.Aside
+	log          *zap.Logger
+	mediaURLBase string // public base URL for resolving relative /media/ paths
 }
 
 // NewService creates a new items service.
-func NewService(client *ent.Client, log *zap.Logger) *Service {
+func NewService(client *ent.Client, log *zap.Logger, mediaURLBase string) *Service {
 	return &Service{
-		client: client,
-		log:    log.Named("items.service"),
+		client:       client,
+		mediaURLBase: strings.TrimRight(mediaURLBase, "/"),
+		log:          log.Named("items.service"),
 	}
+}
+
+// resolveMediaURL converts a relative /media/ path to a full URL using MEDIA_URL_BASE.
+// Also encodes spaces in filenames to ensure valid URLs.
+func (s *Service) resolveMediaURL(path string) string {
+	if path == "" || strings.HasPrefix(path, "http") {
+		// Even full URLs may have unencoded spaces from legacy data
+		return strings.ReplaceAll(path, " ", "%20")
+	}
+	path = strings.ReplaceAll(path, " ", "%20")
+	if s.mediaURLBase != "" {
+		return s.mediaURLBase + path
+	}
+	return path
 }
 
 // SetCache injects the cache helper (optional; caching is skipped if nil).
@@ -415,7 +431,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		UnitID:      i.UnitID,
 		Type:        string(i.Type),
 		IsActive:    i.IsActive,
-		ImageURL:    i.ImageURL,
+		ImageURL:    s.resolveMediaURL(i.ImageURL),
 		Tags:        i.Tags,
 		Metadata:    i.Metadata,
 		CreatedAt:   i.CreatedAt,
@@ -520,7 +536,7 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 				Name:        c.Name,
 				Code:        c.Code,
 				Description: c.Description,
-				Icon:        c.Icon,
+				Icon:        s.resolveMediaURL(c.Icon),
 				IsActive:    c.IsActive,
 			}
 		}
