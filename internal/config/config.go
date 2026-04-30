@@ -66,7 +66,7 @@ type RedisConfig struct {
 
 type EventsConfig struct {
 	Bus              string        `envconfig:"EVENT_BUS" default:"nats"`
-	NATSURL          string        `envconfig:"NATS_URL" default:"nats://localhost:4222"`
+	NATSURL          string        `envconfig:"EVENTS_NATS_URL" default:"nats://localhost:4222"`
 	StreamName       string        `envconfig:"NATS_STREAM" default:"inventory"`
 	DeliverGroup     string        `envconfig:"NATS_DELIVER_GROUP" default:"inventory-workers"`
 	DeadLetterJet    string        `envconfig:"NATS_DLQ_STREAM" default:"inventory-dlq"`
