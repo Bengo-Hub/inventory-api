@@ -25,11 +25,13 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
@@ -47,6 +49,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
 )
 
@@ -121,11 +124,13 @@ func checkColumn(t, c string) error {
 			item.Table:                  item.ValidColumn,
 			itemasset.Table:             itemasset.ValidColumn,
 			itemcategory.Table:          itemcategory.ValidColumn,
+			itempricing.Table:           itempricing.ValidColumn,
 			itemtranslation.Table:       itemtranslation.ValidColumn,
 			itemvariant.Table:           itemvariant.ValidColumn,
 			modifiergroup.Table:         modifiergroup.ValidColumn,
 			modifieroption.Table:        modifieroption.ValidColumn,
 			outboxevent.Table:           outboxevent.ValidColumn,
+			pricingtier.Table:           pricingtier.ValidColumn,
 			purchaseorder.Table:         purchaseorder.ValidColumn,
 			purchaseorderline.Table:     purchaseorderline.ValidColumn,
 			ratelimitconfig.Table:       ratelimitconfig.ValidColumn,
@@ -143,6 +148,7 @@ func checkColumn(t, c string) error {
 			userroleassignment.Table:    userroleassignment.ValidColumn,
 			variantattribute.Table:      variantattribute.ValidColumn,
 			warehouse.Table:             warehouse.ValidColumn,
+			warehouselocation.Table:     warehouselocation.ValidColumn,
 			warranty.Table:              warranty.ValidColumn,
 		})
 	})

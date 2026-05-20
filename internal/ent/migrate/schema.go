@@ -601,6 +601,48 @@ var (
 			},
 		},
 	}
+	// ItemPricingsColumns holds the columns for the "item_pricings" table.
+	ItemPricingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "pricing_tier_id", Type: field.TypeUUID},
+		{Name: "price", Type: field.TypeFloat64, Default: 0},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "effective_from", Type: field.TypeTime},
+		{Name: "effective_to", Type: field.TypeTime, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ItemPricingsTable holds the schema information for the "item_pricings" table.
+	ItemPricingsTable = &schema.Table{
+		Name:       "item_pricings",
+		Columns:    ItemPricingsColumns,
+		PrimaryKey: []*schema.Column{ItemPricingsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itempricing_tenant_id_item_id_pricing_tier_id",
+				Unique:  true,
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3]},
+			},
+			{
+				Name:    "itempricing_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemPricingsColumns[2]},
+			},
+			{
+				Name:    "itempricing_pricing_tier_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemPricingsColumns[3]},
+			},
+			{
+				Name:    "itempricing_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{ItemPricingsColumns[8]},
+			},
+		},
+	}
 	// ItemTranslationsColumns holds the columns for the "item_translations" table.
 	ItemTranslationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -782,6 +824,35 @@ var (
 				Name:    "outboxevent_tenant_id_status",
 				Unique:  false,
 				Columns: []*schema.Column{OutboxEventsColumns[1], OutboxEventsColumns[6]},
+			},
+		},
+	}
+	// PricingTiersColumns holds the columns for the "pricing_tiers" table.
+	PricingTiersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "code", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "is_default", Type: field.TypeBool, Default: false},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+	}
+	// PricingTiersTable holds the schema information for the "pricing_tiers" table.
+	PricingTiersTable = &schema.Table{
+		Name:       "pricing_tiers",
+		Columns:    PricingTiersColumns,
+		PrimaryKey: []*schema.Column{PricingTiersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pricingtier_tenant_id_code",
+				Unique:  true,
+				Columns: []*schema.Column{PricingTiersColumns[1], PricingTiersColumns[3]},
+			},
+			{
+				Name:    "pricingtier_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{PricingTiersColumns[1]},
 			},
 		},
 	}
@@ -1440,6 +1511,49 @@ var (
 			},
 		},
 	}
+	// WarehouseLocationsColumns holds the columns for the "warehouse_locations" table.
+	WarehouseLocationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "code", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "type", Type: field.TypeString, Default: "bin"},
+		{Name: "depth", Type: field.TypeInt, Default: 0},
+		{Name: "path", Type: field.TypeString, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "capacity_units", Type: field.TypeInt, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true},
+	}
+	// WarehouseLocationsTable holds the schema information for the "warehouse_locations" table.
+	WarehouseLocationsTable = &schema.Table{
+		Name:       "warehouse_locations",
+		Columns:    WarehouseLocationsColumns,
+		PrimaryKey: []*schema.Column{WarehouseLocationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "warehouselocation_tenant_id_warehouse_id_code",
+				Unique:  true,
+				Columns: []*schema.Column{WarehouseLocationsColumns[1], WarehouseLocationsColumns[2], WarehouseLocationsColumns[4]},
+			},
+			{
+				Name:    "warehouselocation_warehouse_id",
+				Unique:  false,
+				Columns: []*schema.Column{WarehouseLocationsColumns[2]},
+			},
+			{
+				Name:    "warehouselocation_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{WarehouseLocationsColumns[3]},
+			},
+			{
+				Name:    "warehouselocation_type",
+				Unique:  false,
+				Columns: []*schema.Column{WarehouseLocationsColumns[6]},
+			},
+		},
+	}
 	// WarrantiesColumns holds the columns for the "warranties" table.
 	WarrantiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1506,11 +1620,13 @@ var (
 		ItemsTable,
 		ItemAssetsTable,
 		ItemCategoriesTable,
+		ItemPricingsTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
 		ModifierGroupsTable,
 		ModifierOptionsTable,
 		OutboxEventsTable,
+		PricingTiersTable,
 		PurchaseOrdersTable,
 		PurchaseOrderLinesTable,
 		RateLimitConfigsTable,
@@ -1528,6 +1644,7 @@ var (
 		UserRoleAssignmentsTable,
 		VariantAttributesTable,
 		WarehousesTable,
+		WarehouseLocationsTable,
 		WarrantiesTable,
 	}
 )

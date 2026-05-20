@@ -29,11 +29,13 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
@@ -51,6 +53,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
 )
 
@@ -85,6 +88,8 @@ type Client struct {
 	ItemAsset *ItemAssetClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
+	// ItemPricing is the client for interacting with the ItemPricing builders.
+	ItemPricing *ItemPricingClient
 	// ItemTranslation is the client for interacting with the ItemTranslation builders.
 	ItemTranslation *ItemTranslationClient
 	// ItemVariant is the client for interacting with the ItemVariant builders.
@@ -95,6 +100,8 @@ type Client struct {
 	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PricingTier is the client for interacting with the PricingTier builders.
+	PricingTier *PricingTierClient
 	// PurchaseOrder is the client for interacting with the PurchaseOrder builders.
 	PurchaseOrder *PurchaseOrderClient
 	// PurchaseOrderLine is the client for interacting with the PurchaseOrderLine builders.
@@ -129,6 +136,8 @@ type Client struct {
 	VariantAttribute *VariantAttributeClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
+	// WarehouseLocation is the client for interacting with the WarehouseLocation builders.
+	WarehouseLocation *WarehouseLocationClient
 	// Warranty is the client for interacting with the Warranty builders.
 	Warranty *WarrantyClient
 }
@@ -155,11 +164,13 @@ func (c *Client) init() {
 	c.Item = NewItemClient(c.config)
 	c.ItemAsset = NewItemAssetClient(c.config)
 	c.ItemCategory = NewItemCategoryClient(c.config)
+	c.ItemPricing = NewItemPricingClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
 	c.ItemVariant = NewItemVariantClient(c.config)
 	c.ModifierGroup = NewModifierGroupClient(c.config)
 	c.ModifierOption = NewModifierOptionClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
+	c.PricingTier = NewPricingTierClient(c.config)
 	c.PurchaseOrder = NewPurchaseOrderClient(c.config)
 	c.PurchaseOrderLine = NewPurchaseOrderLineClient(c.config)
 	c.RateLimitConfig = NewRateLimitConfigClient(c.config)
@@ -177,6 +188,7 @@ func (c *Client) init() {
 	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
 	c.VariantAttribute = NewVariantAttributeClient(c.config)
 	c.Warehouse = NewWarehouseClient(c.config)
+	c.WarehouseLocation = NewWarehouseLocationClient(c.config)
 	c.Warranty = NewWarrantyClient(c.config)
 }
 
@@ -283,11 +295,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Item:                  NewItemClient(cfg),
 		ItemAsset:             NewItemAssetClient(cfg),
 		ItemCategory:          NewItemCategoryClient(cfg),
+		ItemPricing:           NewItemPricingClient(cfg),
 		ItemTranslation:       NewItemTranslationClient(cfg),
 		ItemVariant:           NewItemVariantClient(cfg),
 		ModifierGroup:         NewModifierGroupClient(cfg),
 		ModifierOption:        NewModifierOptionClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
+		PricingTier:           NewPricingTierClient(cfg),
 		PurchaseOrder:         NewPurchaseOrderClient(cfg),
 		PurchaseOrderLine:     NewPurchaseOrderLineClient(cfg),
 		RateLimitConfig:       NewRateLimitConfigClient(cfg),
@@ -305,6 +319,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
 		Warehouse:             NewWarehouseClient(cfg),
+		WarehouseLocation:     NewWarehouseLocationClient(cfg),
 		Warranty:              NewWarrantyClient(cfg),
 	}, nil
 }
@@ -338,11 +353,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Item:                  NewItemClient(cfg),
 		ItemAsset:             NewItemAssetClient(cfg),
 		ItemCategory:          NewItemCategoryClient(cfg),
+		ItemPricing:           NewItemPricingClient(cfg),
 		ItemTranslation:       NewItemTranslationClient(cfg),
 		ItemVariant:           NewItemVariantClient(cfg),
 		ModifierGroup:         NewModifierGroupClient(cfg),
 		ModifierOption:        NewModifierOptionClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
+		PricingTier:           NewPricingTierClient(cfg),
 		PurchaseOrder:         NewPurchaseOrderClient(cfg),
 		PurchaseOrderLine:     NewPurchaseOrderLineClient(cfg),
 		RateLimitConfig:       NewRateLimitConfigClient(cfg),
@@ -360,6 +377,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
 		Warehouse:             NewWarehouseClient(cfg),
+		WarehouseLocation:     NewWarehouseLocationClient(cfg),
 		Warranty:              NewWarrantyClient(cfg),
 	}, nil
 }
@@ -393,11 +411,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Bundle, c.BundleComponent, c.Consumption, c.CustomFieldDefinition,
 		c.CustomFieldValue, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
 		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemTranslation, c.ItemVariant, c.ModifierGroup, c.ModifierOption,
-		c.OutboxEvent, c.PurchaseOrder, c.PurchaseOrderLine, c.RateLimitConfig,
-		c.Recipe, c.RecipeIngredient, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.StockAdjustment, c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
-		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.Warranty,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
+		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant, c.Unit,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -410,11 +430,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Bundle, c.BundleComponent, c.Consumption, c.CustomFieldDefinition,
 		c.CustomFieldValue, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
 		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemTranslation, c.ItemVariant, c.ModifierGroup, c.ModifierOption,
-		c.OutboxEvent, c.PurchaseOrder, c.PurchaseOrderLine, c.RateLimitConfig,
-		c.Recipe, c.RecipeIngredient, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.StockAdjustment, c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
-		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.Warranty,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
+		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
+		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant, c.Unit,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -449,6 +471,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ItemAsset.mutate(ctx, m)
 	case *ItemCategoryMutation:
 		return c.ItemCategory.mutate(ctx, m)
+	case *ItemPricingMutation:
+		return c.ItemPricing.mutate(ctx, m)
 	case *ItemTranslationMutation:
 		return c.ItemTranslation.mutate(ctx, m)
 	case *ItemVariantMutation:
@@ -459,6 +483,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ModifierOption.mutate(ctx, m)
 	case *OutboxEventMutation:
 		return c.OutboxEvent.mutate(ctx, m)
+	case *PricingTierMutation:
+		return c.PricingTier.mutate(ctx, m)
 	case *PurchaseOrderMutation:
 		return c.PurchaseOrder.mutate(ctx, m)
 	case *PurchaseOrderLineMutation:
@@ -493,6 +519,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.VariantAttribute.mutate(ctx, m)
 	case *WarehouseMutation:
 		return c.Warehouse.mutate(ctx, m)
+	case *WarehouseLocationMutation:
+		return c.WarehouseLocation.mutate(ctx, m)
 	case *WarrantyMutation:
 		return c.Warranty.mutate(ctx, m)
 	default:
@@ -2821,6 +2849,139 @@ func (c *ItemCategoryClient) mutate(ctx context.Context, m *ItemCategoryMutation
 	}
 }
 
+// ItemPricingClient is a client for the ItemPricing schema.
+type ItemPricingClient struct {
+	config
+}
+
+// NewItemPricingClient returns a client for the ItemPricing from the given config.
+func NewItemPricingClient(c config) *ItemPricingClient {
+	return &ItemPricingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itempricing.Hooks(f(g(h())))`.
+func (c *ItemPricingClient) Use(hooks ...Hook) {
+	c.hooks.ItemPricing = append(c.hooks.ItemPricing, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itempricing.Intercept(f(g(h())))`.
+func (c *ItemPricingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemPricing = append(c.inters.ItemPricing, interceptors...)
+}
+
+// Create returns a builder for creating a ItemPricing entity.
+func (c *ItemPricingClient) Create() *ItemPricingCreate {
+	mutation := newItemPricingMutation(c.config, OpCreate)
+	return &ItemPricingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemPricing entities.
+func (c *ItemPricingClient) CreateBulk(builders ...*ItemPricingCreate) *ItemPricingCreateBulk {
+	return &ItemPricingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemPricingClient) MapCreateBulk(slice any, setFunc func(*ItemPricingCreate, int)) *ItemPricingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemPricingCreateBulk{err: fmt.Errorf("calling to ItemPricingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemPricingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemPricingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemPricing.
+func (c *ItemPricingClient) Update() *ItemPricingUpdate {
+	mutation := newItemPricingMutation(c.config, OpUpdate)
+	return &ItemPricingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemPricingClient) UpdateOne(_m *ItemPricing) *ItemPricingUpdateOne {
+	mutation := newItemPricingMutation(c.config, OpUpdateOne, withItemPricing(_m))
+	return &ItemPricingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemPricingClient) UpdateOneID(id uuid.UUID) *ItemPricingUpdateOne {
+	mutation := newItemPricingMutation(c.config, OpUpdateOne, withItemPricingID(id))
+	return &ItemPricingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemPricing.
+func (c *ItemPricingClient) Delete() *ItemPricingDelete {
+	mutation := newItemPricingMutation(c.config, OpDelete)
+	return &ItemPricingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemPricingClient) DeleteOne(_m *ItemPricing) *ItemPricingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemPricingClient) DeleteOneID(id uuid.UUID) *ItemPricingDeleteOne {
+	builder := c.Delete().Where(itempricing.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemPricingDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemPricing.
+func (c *ItemPricingClient) Query() *ItemPricingQuery {
+	return &ItemPricingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemPricing},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemPricing entity by its id.
+func (c *ItemPricingClient) Get(ctx context.Context, id uuid.UUID) (*ItemPricing, error) {
+	return c.Query().Where(itempricing.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemPricingClient) GetX(ctx context.Context, id uuid.UUID) *ItemPricing {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ItemPricingClient) Hooks() []Hook {
+	return c.hooks.ItemPricing
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemPricingClient) Interceptors() []Interceptor {
+	return c.inters.ItemPricing
+}
+
+func (c *ItemPricingClient) mutate(ctx context.Context, m *ItemPricingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemPricingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemPricingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemPricingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemPricingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ItemPricing mutation op: %q", m.Op())
+	}
+}
+
 // ItemTranslationClient is a client for the ItemTranslation schema.
 type ItemTranslationClient struct {
 	config
@@ -3563,6 +3724,139 @@ func (c *OutboxEventClient) mutate(ctx context.Context, m *OutboxEventMutation) 
 		return (&OutboxEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OutboxEvent mutation op: %q", m.Op())
+	}
+}
+
+// PricingTierClient is a client for the PricingTier schema.
+type PricingTierClient struct {
+	config
+}
+
+// NewPricingTierClient returns a client for the PricingTier from the given config.
+func NewPricingTierClient(c config) *PricingTierClient {
+	return &PricingTierClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pricingtier.Hooks(f(g(h())))`.
+func (c *PricingTierClient) Use(hooks ...Hook) {
+	c.hooks.PricingTier = append(c.hooks.PricingTier, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pricingtier.Intercept(f(g(h())))`.
+func (c *PricingTierClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PricingTier = append(c.inters.PricingTier, interceptors...)
+}
+
+// Create returns a builder for creating a PricingTier entity.
+func (c *PricingTierClient) Create() *PricingTierCreate {
+	mutation := newPricingTierMutation(c.config, OpCreate)
+	return &PricingTierCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PricingTier entities.
+func (c *PricingTierClient) CreateBulk(builders ...*PricingTierCreate) *PricingTierCreateBulk {
+	return &PricingTierCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PricingTierClient) MapCreateBulk(slice any, setFunc func(*PricingTierCreate, int)) *PricingTierCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PricingTierCreateBulk{err: fmt.Errorf("calling to PricingTierClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PricingTierCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PricingTierCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PricingTier.
+func (c *PricingTierClient) Update() *PricingTierUpdate {
+	mutation := newPricingTierMutation(c.config, OpUpdate)
+	return &PricingTierUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PricingTierClient) UpdateOne(_m *PricingTier) *PricingTierUpdateOne {
+	mutation := newPricingTierMutation(c.config, OpUpdateOne, withPricingTier(_m))
+	return &PricingTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PricingTierClient) UpdateOneID(id uuid.UUID) *PricingTierUpdateOne {
+	mutation := newPricingTierMutation(c.config, OpUpdateOne, withPricingTierID(id))
+	return &PricingTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PricingTier.
+func (c *PricingTierClient) Delete() *PricingTierDelete {
+	mutation := newPricingTierMutation(c.config, OpDelete)
+	return &PricingTierDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PricingTierClient) DeleteOne(_m *PricingTier) *PricingTierDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PricingTierClient) DeleteOneID(id uuid.UUID) *PricingTierDeleteOne {
+	builder := c.Delete().Where(pricingtier.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PricingTierDeleteOne{builder}
+}
+
+// Query returns a query builder for PricingTier.
+func (c *PricingTierClient) Query() *PricingTierQuery {
+	return &PricingTierQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePricingTier},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PricingTier entity by its id.
+func (c *PricingTierClient) Get(ctx context.Context, id uuid.UUID) (*PricingTier, error) {
+	return c.Query().Where(pricingtier.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PricingTierClient) GetX(ctx context.Context, id uuid.UUID) *PricingTier {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PricingTierClient) Hooks() []Hook {
+	return c.hooks.PricingTier
+}
+
+// Interceptors returns the client interceptors.
+func (c *PricingTierClient) Interceptors() []Interceptor {
+	return c.inters.PricingTier
+}
+
+func (c *PricingTierClient) mutate(ctx context.Context, m *PricingTierMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PricingTierCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PricingTierUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PricingTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PricingTierDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PricingTier mutation op: %q", m.Op())
 	}
 }
 
@@ -6211,6 +6505,139 @@ func (c *WarehouseClient) mutate(ctx context.Context, m *WarehouseMutation) (Val
 	}
 }
 
+// WarehouseLocationClient is a client for the WarehouseLocation schema.
+type WarehouseLocationClient struct {
+	config
+}
+
+// NewWarehouseLocationClient returns a client for the WarehouseLocation from the given config.
+func NewWarehouseLocationClient(c config) *WarehouseLocationClient {
+	return &WarehouseLocationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `warehouselocation.Hooks(f(g(h())))`.
+func (c *WarehouseLocationClient) Use(hooks ...Hook) {
+	c.hooks.WarehouseLocation = append(c.hooks.WarehouseLocation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `warehouselocation.Intercept(f(g(h())))`.
+func (c *WarehouseLocationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WarehouseLocation = append(c.inters.WarehouseLocation, interceptors...)
+}
+
+// Create returns a builder for creating a WarehouseLocation entity.
+func (c *WarehouseLocationClient) Create() *WarehouseLocationCreate {
+	mutation := newWarehouseLocationMutation(c.config, OpCreate)
+	return &WarehouseLocationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WarehouseLocation entities.
+func (c *WarehouseLocationClient) CreateBulk(builders ...*WarehouseLocationCreate) *WarehouseLocationCreateBulk {
+	return &WarehouseLocationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WarehouseLocationClient) MapCreateBulk(slice any, setFunc func(*WarehouseLocationCreate, int)) *WarehouseLocationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WarehouseLocationCreateBulk{err: fmt.Errorf("calling to WarehouseLocationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WarehouseLocationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WarehouseLocationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WarehouseLocation.
+func (c *WarehouseLocationClient) Update() *WarehouseLocationUpdate {
+	mutation := newWarehouseLocationMutation(c.config, OpUpdate)
+	return &WarehouseLocationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WarehouseLocationClient) UpdateOne(_m *WarehouseLocation) *WarehouseLocationUpdateOne {
+	mutation := newWarehouseLocationMutation(c.config, OpUpdateOne, withWarehouseLocation(_m))
+	return &WarehouseLocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WarehouseLocationClient) UpdateOneID(id uuid.UUID) *WarehouseLocationUpdateOne {
+	mutation := newWarehouseLocationMutation(c.config, OpUpdateOne, withWarehouseLocationID(id))
+	return &WarehouseLocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WarehouseLocation.
+func (c *WarehouseLocationClient) Delete() *WarehouseLocationDelete {
+	mutation := newWarehouseLocationMutation(c.config, OpDelete)
+	return &WarehouseLocationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WarehouseLocationClient) DeleteOne(_m *WarehouseLocation) *WarehouseLocationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WarehouseLocationClient) DeleteOneID(id uuid.UUID) *WarehouseLocationDeleteOne {
+	builder := c.Delete().Where(warehouselocation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WarehouseLocationDeleteOne{builder}
+}
+
+// Query returns a query builder for WarehouseLocation.
+func (c *WarehouseLocationClient) Query() *WarehouseLocationQuery {
+	return &WarehouseLocationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWarehouseLocation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WarehouseLocation entity by its id.
+func (c *WarehouseLocationClient) Get(ctx context.Context, id uuid.UUID) (*WarehouseLocation, error) {
+	return c.Query().Where(warehouselocation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WarehouseLocationClient) GetX(ctx context.Context, id uuid.UUID) *WarehouseLocation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *WarehouseLocationClient) Hooks() []Hook {
+	return c.hooks.WarehouseLocation
+}
+
+// Interceptors returns the client interceptors.
+func (c *WarehouseLocationClient) Interceptors() []Interceptor {
+	return c.inters.WarehouseLocation
+}
+
+func (c *WarehouseLocationClient) mutate(ctx context.Context, m *WarehouseLocationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WarehouseLocationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WarehouseLocationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WarehouseLocationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WarehouseLocationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WarehouseLocation mutation op: %q", m.Op())
+	}
+}
+
 // WarrantyClient is a client for the Warranty schema.
 type WarrantyClient struct {
 	config
@@ -6365,21 +6792,21 @@ type (
 	hooks struct {
 		Bundle, BundleComponent, Consumption, CustomFieldDefinition, CustomFieldValue,
 		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
-		ModifierGroup, ModifierOption, OutboxEvent, PurchaseOrder, PurchaseOrderLine,
-		RateLimitConfig, Recipe, RecipeIngredient, Reservation, RolePermission,
-		ServiceConfig, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		Tenant, Unit, UserRoleAssignment, VariantAttribute, Warehouse,
-		Warranty []ent.Hook
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
+		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
+		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
+		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
+		StockTransferLine, Supplier, Tenant, Unit, UserRoleAssignment,
+		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		Bundle, BundleComponent, Consumption, CustomFieldDefinition, CustomFieldValue,
 		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemTranslation, ItemVariant,
-		ModifierGroup, ModifierOption, OutboxEvent, PurchaseOrder, PurchaseOrderLine,
-		RateLimitConfig, Recipe, RecipeIngredient, Reservation, RolePermission,
-		ServiceConfig, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		Tenant, Unit, UserRoleAssignment, VariantAttribute, Warehouse,
-		Warranty []ent.Interceptor
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
+		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
+		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
+		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
+		StockTransferLine, Supplier, Tenant, Unit, UserRoleAssignment,
+		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )
