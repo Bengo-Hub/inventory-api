@@ -89,6 +89,20 @@ func (_c *WarehouseCreate) SetNillableLongitude(v *float64) *WarehouseCreate {
 	return _c
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (_c *WarehouseCreate) SetOutletID(v uuid.UUID) *WarehouseCreate {
+	_c.mutation.SetOutletID(v)
+	return _c
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_c *WarehouseCreate) SetNillableOutletID(v *uuid.UUID) *WarehouseCreate {
+	if v != nil {
+		_c.SetOutletID(*v)
+	}
+	return _c
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_c *WarehouseCreate) SetIsDefault(v bool) *WarehouseCreate {
 	_c.mutation.SetIsDefault(v)
@@ -373,6 +387,10 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 		_spec.SetField(warehouse.FieldLongitude, field.TypeFloat64, value)
 		_node.Longitude = &value
 	}
+	if value, ok := _c.mutation.OutletID(); ok {
+		_spec.SetField(warehouse.FieldOutletID, field.TypeUUID, value)
+		_node.OutletID = &value
+	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
 		_node.IsDefault = value
@@ -624,6 +642,24 @@ func (u *WarehouseUpsert) ClearLongitude() *WarehouseUpsert {
 	return u
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsert) SetOutletID(v uuid.UUID) *WarehouseUpsert {
+	u.Set(warehouse.FieldOutletID, v)
+	return u
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateOutletID() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldOutletID)
+	return u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsert) ClearOutletID() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldOutletID)
+	return u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (u *WarehouseUpsert) SetIsDefault(v bool) *WarehouseUpsert {
 	u.Set(warehouse.FieldIsDefault, v)
@@ -827,6 +863,27 @@ func (u *WarehouseUpsertOne) UpdateLongitude() *WarehouseUpsertOne {
 func (u *WarehouseUpsertOne) ClearLongitude() *WarehouseUpsertOne {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearLongitude()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsertOne) SetOutletID(v uuid.UUID) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateOutletID() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsertOne) ClearOutletID() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearOutletID()
 	})
 }
 
@@ -1206,6 +1263,27 @@ func (u *WarehouseUpsertBulk) UpdateLongitude() *WarehouseUpsertBulk {
 func (u *WarehouseUpsertBulk) ClearLongitude() *WarehouseUpsertBulk {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearLongitude()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsertBulk) SetOutletID(v uuid.UUID) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateOutletID() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsertBulk) ClearOutletID() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearOutletID()
 	})
 }
 

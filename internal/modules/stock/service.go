@@ -3,6 +3,7 @@ package stock
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	eventslib "github.com/Bengo-Hub/shared-events"
@@ -13,6 +14,8 @@ import (
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
@@ -399,7 +402,46 @@ func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID 
 	return wh.ID, nil
 }
 
+// explodedIngredient holds a single resolved ingredient SKU + quantity.
+type explodedIngredient struct {
+	SKU      string
+	Quantity int
+}
+
+// explodeBOM resolves a menu-item SKU to its raw ingredients using the recipe/BOM table.
+// If the SKU has no recipe or the recipe has no ingredients, returns the original SKU × qty.
+// portionsRequested is the number of portions of the menu item to produce.
+func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string, portionsRequested int) ([]explodedIngredient, bool) {
+	r, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.Sku(sku), recipe.IsActive(true)).
+		WithIngredients(func(q *ent.RecipeIngredientQuery) {
+			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+		}).
+		Only(ctx)
+	if err != nil || len(r.Edges.Ingredients) == 0 {
+		return nil, false
+	}
+
+	outputQty := r.OutputQty
+	if outputQty <= 0 {
+		outputQty = 1
+	}
+
+	ingredients := make([]explodedIngredient, 0, len(r.Edges.Ingredients))
+	for _, ing := range r.Edges.Ingredients {
+		// Scale ingredient by (portions / outputQty)
+		rawQty := (ing.Quantity / outputQty) * float64(portionsRequested)
+		qty := int(math.Ceil(rawQty)) // round up to avoid partial units
+		if qty <= 0 {
+			qty = 1
+		}
+		ingredients = append(ingredients, explodedIngredient{SKU: ing.ItemSku, Quantity: qty})
+	}
+	return ingredients, true
+}
+
 // CreateReservation reserves stock for an order within a transaction.
+// If a requested SKU has a recipe, the BOM is exploded and raw ingredients are reserved.
 func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req ReservationRequest) (*ReservationResponse, error) {
 	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
 	if err != nil {
@@ -429,54 +471,100 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 	reservedItems := make([]entschema.ReservedItemJSON, 0, len(req.Items))
 
 	for _, ri := range req.Items {
-		itm, err := tx.Item.Query().
-			Where(item.TenantID(tenantID), item.Sku(ri.SKU), item.IsActive(true)).
-			Only(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", ri.SKU, err)
+		// Expand recipe/BOM into raw ingredients before reserving.
+		// If the SKU has no recipe, falls back to direct reservation.
+		ingredientsToReserve, isBOM := s.explodeBOM(ctx, tenantID, ri.SKU, ri.Quantity)
+		if !isBOM {
+			ingredientsToReserve = []explodedIngredient{{SKU: ri.SKU, Quantity: ri.Quantity}}
 		}
 
-		bal, err := tx.InventoryBalance.Query().
-			Where(
-				inventorybalance.TenantID(tenantID),
-				inventorybalance.ItemID(itm.ID),
-				inventorybalance.WarehouseID(whID),
-			).
-			First(ctx)
+		totalReservedQty := 0
+		fullyReserved := true
 
-		var availableQty int
-		if err != nil {
-			if ent.IsNotFound(err) {
-				availableQty = 0
-			} else {
-				return nil, fmt.Errorf("stock: query balance: %w", err)
-			}
-		} else {
-			availableQty = bal.Available
-		}
-
-		reserveQty := ri.Quantity
-		if reserveQty > availableQty {
-			reserveQty = availableQty
-		}
-
-		if bal != nil && reserveQty > 0 {
-			_, err = tx.InventoryBalance.UpdateOne(bal).
-				SetAvailable(bal.Available - reserveQty).
-				SetReserved(bal.Reserved + reserveQty).
-				Save(ctx)
+		for _, ing := range ingredientsToReserve {
+			itm, err := tx.Item.Query().
+				Where(item.TenantID(tenantID), item.Sku(ing.SKU), item.IsActive(true)).
+				Only(ctx)
 			if err != nil {
-				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+				s.log.Warn("ingredient item not found during BOM explosion",
+					zap.String("sku", ing.SKU), zap.Error(err))
+				fullyReserved = false
+				continue
+			}
+
+			bal, err := tx.InventoryBalance.Query().
+				Where(
+					inventorybalance.TenantID(tenantID),
+					inventorybalance.ItemID(itm.ID),
+					inventorybalance.WarehouseID(whID),
+				).
+				First(ctx)
+
+			var availableQty int
+			if err != nil {
+				if ent.IsNotFound(err) {
+					availableQty = 0
+				} else {
+					return nil, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, err)
+				}
+			} else {
+				availableQty = bal.Available
+			}
+
+			reserveQty := ing.Quantity
+			if reserveQty > availableQty {
+				reserveQty = availableQty
+				fullyReserved = false
+			}
+
+			if bal != nil && reserveQty > 0 {
+				_, err = tx.InventoryBalance.UpdateOne(bal).
+					SetAvailable(bal.Available - reserveQty).
+					SetReserved(bal.Reserved + reserveQty).
+					Save(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, err)
+				}
+			}
+
+			// For BOM items, only count ingredient reservations proportionally.
+			if isBOM {
+				totalReservedQty = ri.Quantity // treat as reserved at menu-item level
+			} else {
+				totalReservedQty = reserveQty
+			}
+
+			// Record each ingredient reservation for BOM items (for audit/release).
+			if isBOM {
+				reservedItems = append(reservedItems, entschema.ReservedItemJSON{
+					SKU:             ing.SKU,
+					RequestedQty:    ing.Quantity,
+					ReservedQty:     reserveQty,
+					AvailableQty:    availableQty,
+					IsFullyReserved: reserveQty >= ing.Quantity,
+				})
 			}
 		}
 
-		reservedItems = append(reservedItems, entschema.ReservedItemJSON{
-			SKU:             ri.SKU,
-			RequestedQty:    ri.Quantity,
-			ReservedQty:     reserveQty,
-			AvailableQty:    availableQty,
-			IsFullyReserved: reserveQty >= ri.Quantity,
-		})
+		if !isBOM {
+			// Direct item reservation — record with original SKU.
+			reservedItems = append(reservedItems, entschema.ReservedItemJSON{
+				SKU:             ri.SKU,
+				RequestedQty:    ri.Quantity,
+				ReservedQty:     totalReservedQty,
+				AvailableQty:    totalReservedQty,
+				IsFullyReserved: fullyReserved,
+			})
+		} else if fullyReserved {
+			// Add a summary entry for the composite (menu-item) SKU.
+			reservedItems = append(reservedItems, entschema.ReservedItemJSON{
+				SKU:             ri.SKU,
+				RequestedQty:    ri.Quantity,
+				ReservedQty:     ri.Quantity,
+				AvailableQty:    ri.Quantity,
+				IsFullyReserved: true,
+			})
+		}
 	}
 
 	builder := tx.Reservation.Create().

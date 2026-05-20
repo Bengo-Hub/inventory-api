@@ -31,6 +31,8 @@ type Warehouse struct {
 	Latitude *float64 `json:"latitude,omitempty"`
 	// GPS longitude for logistics routing
 	Longitude *float64 `json:"longitude,omitempty"`
+	// Outlet this warehouse serves as default stock source; nil = shared/HQ
+	OutletID *uuid.UUID `json:"outlet_id,omitempty"`
 	// Default warehouse for the tenant
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -114,6 +116,8 @@ func (*Warehouse) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case warehouse.FieldOutletID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case warehouse.FieldIsDefault, warehouse.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case warehouse.FieldLatitude, warehouse.FieldLongitude:
@@ -182,6 +186,13 @@ func (_m *Warehouse) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Longitude = new(float64)
 				*_m.Longitude = value.Float64
+			}
+		case warehouse.FieldOutletID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field outlet_id", values[i])
+			} else if value.Valid {
+				_m.OutletID = new(uuid.UUID)
+				*_m.OutletID = *value.S.(*uuid.UUID)
 			}
 		case warehouse.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -287,6 +298,11 @@ func (_m *Warehouse) String() string {
 	builder.WriteString(", ")
 	if v := _m.Longitude; v != nil {
 		builder.WriteString("longitude=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.OutletID; v != nil {
+		builder.WriteString("outlet_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

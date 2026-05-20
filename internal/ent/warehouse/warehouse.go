@@ -27,6 +27,8 @@ const (
 	FieldLatitude = "latitude"
 	// FieldLongitude holds the string denoting the longitude field in the database.
 	FieldLongitude = "longitude"
+	// FieldOutletID holds the string denoting the outlet_id field in the database.
+	FieldOutletID = "outlet_id"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldAddress,
 	FieldLatitude,
 	FieldLongitude,
+	FieldOutletID,
 	FieldIsDefault,
 	FieldIsActive,
 	FieldCreatedAt,
@@ -164,6 +167,11 @@ func ByLatitude(opts ...sql.OrderTermOption) OrderOption {
 // ByLongitude orders the results by the longitude field.
 func ByLongitude(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLongitude, opts...).ToFunc()
+}
+
+// ByOutletID orders the results by the outlet_id field.
+func ByOutletID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOutletID, opts...).ToFunc()
 }
 
 // ByIsDefault orders the results by the is_default field.

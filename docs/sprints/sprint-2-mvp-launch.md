@@ -42,13 +42,13 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### Atlas Migration Transition (P0)
 
-- [ ] **S2-06:** Install Atlas CLI and generate baseline migration from current Ent schemas
+- [x] **S2-06:** Install Atlas CLI and generate baseline migration from current Ent schemas
   - `atlas migrate diff --env ent` to generate initial migration files
   - Store in `migrations/` directory at repo root
-- [ ] **S2-07:** Update `app.go` to run Atlas migrations instead of `ent.Schema.Create`
+- [x] **S2-07:** Update `app.go` to run Atlas migrations instead of `ent.Schema.Create`
   - Remove auto-migrate call from `app.New()`
   - Add Atlas migration runner or use CLI in deployment pipeline
-- [ ] **S2-08:** Test migration on a fresh database and on existing production schema
+- [x] **S2-08:** Test migration on a fresh database and on existing production schema
   - Ensure idempotency (re-running migration does not fail)
 
 ### Event Publishing (P0)
@@ -82,14 +82,14 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### Stock Adjustments (P1)
 
-- [ ] **S2-15:** Add `POST /v1/{tenantID}/inventory/adjustments` endpoint
+- [x] **S2-15:** Add `POST /v1/{tenantID}/inventory/adjustments` endpoint
   - Allows manual stock corrections (waste, damage, recount)
   - Requires `inventory.stock.adjust` permission
   - Records reason code for audit trail
 
 ### Low-Stock Alerts (P1)
 
-- [ ] **S2-16:** Add configurable low-stock threshold per item
+- [x] **S2-16:** Add configurable low-stock threshold per item
   - When available drops below threshold after a mutation, emit `inventory.stock.low`
   - Notification service consumes event and sends alerts
 

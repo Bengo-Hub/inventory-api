@@ -150,6 +150,26 @@ func (_u *WarehouseUpdate) ClearLongitude() *WarehouseUpdate {
 	return _u
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (_u *WarehouseUpdate) SetOutletID(v uuid.UUID) *WarehouseUpdate {
+	_u.mutation.SetOutletID(v)
+	return _u
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_u *WarehouseUpdate) SetNillableOutletID(v *uuid.UUID) *WarehouseUpdate {
+	if v != nil {
+		_u.SetOutletID(*v)
+	}
+	return _u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (_u *WarehouseUpdate) ClearOutletID() *WarehouseUpdate {
+	_u.mutation.ClearOutletID()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *WarehouseUpdate) SetIsDefault(v bool) *WarehouseUpdate {
 	_u.mutation.SetIsDefault(v)
@@ -439,6 +459,12 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LongitudeCleared() {
 		_spec.ClearField(warehouse.FieldLongitude, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.OutletID(); ok {
+		_spec.SetField(warehouse.FieldOutletID, field.TypeUUID, value)
+	}
+	if _u.mutation.OutletIDCleared() {
+		_spec.ClearField(warehouse.FieldOutletID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
@@ -794,6 +820,26 @@ func (_u *WarehouseUpdateOne) ClearLongitude() *WarehouseUpdateOne {
 	return _u
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (_u *WarehouseUpdateOne) SetOutletID(v uuid.UUID) *WarehouseUpdateOne {
+	_u.mutation.SetOutletID(v)
+	return _u
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_u *WarehouseUpdateOne) SetNillableOutletID(v *uuid.UUID) *WarehouseUpdateOne {
+	if v != nil {
+		_u.SetOutletID(*v)
+	}
+	return _u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (_u *WarehouseUpdateOne) ClearOutletID() *WarehouseUpdateOne {
+	_u.mutation.ClearOutletID()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *WarehouseUpdateOne) SetIsDefault(v bool) *WarehouseUpdateOne {
 	_u.mutation.SetIsDefault(v)
@@ -1113,6 +1159,12 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 	}
 	if _u.mutation.LongitudeCleared() {
 		_spec.ClearField(warehouse.FieldLongitude, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.OutletID(); ok {
+		_spec.SetField(warehouse.FieldOutletID, field.TypeUUID, value)
+	}
+	if _u.mutation.OutletIDCleared() {
+		_spec.ClearField(warehouse.FieldOutletID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)

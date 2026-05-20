@@ -1,6 +1,6 @@
 # Sprint 1 – Authentication, RBAC & User Management
 
-**Status**: ⏳ Not Started  
+**Status**: 🟡 Partially Complete — JWT/RBAC middleware, schemas, and event listeners done; user sync and role seed data pending  
 **Priority**: **CRITICAL - MUST BE FIRST SPRINT**  
 **Start Date**: TBD  
 **Duration**: 2-3 weeks
@@ -80,7 +80,7 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 **So that** only authenticated users can access inventory endpoints
 
 **Acceptance Criteria**:
-- [ ] JWT validation middleware configured via `shared-auth-client` (✅ Already done)
+- [x] JWT validation middleware configured via `shared-auth-client` (✅ Already done)
 - [ ] All `/api/v1/{tenantID}` routes protected
 - [ ] Tenant ID extracted from JWT claims
 - [ ] User ID extracted from JWT claims
@@ -103,10 +103,10 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 **So that** users have appropriate access to inventory operations
 
 **Acceptance Criteria**:
-- [ ] Ent schema for `inventory_roles` table
-- [ ] Ent schema for `inventory_permissions` table
-- [ ] Ent schema for `role_permissions` junction table
-- [ ] Ent schema for `user_role_assignments` table
+- [x] Ent schema for `inventory_roles` table
+- [x] Ent schema for `inventory_permissions` table
+- [x] Ent schema for `role_permissions` junction table
+- [x] Ent schema for `user_role_assignments` table
 - [ ] Seed data for 3 default roles (Warehouse Manager, Stock Keeper, Viewer)
 - [ ] Seed data for all inventory permissions
 - [ ] Role-permission mappings defined
@@ -117,8 +117,8 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 **So that** endpoints enforce RBAC
 
 **Acceptance Criteria**:
-- [ ] `RequirePermission(permission string)` middleware
-- [ ] `RequireRole(role string)` middleware
+- [x] `RequirePermission(permission string)` middleware
+- [x] `RequireRole(role string)` middleware
 - [ ] Permission check against user's assigned roles
 - [ ] Forbidden (403) response for unauthorized access
 - [ ] Superuser bypass (from JWT claims)
@@ -129,9 +129,9 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 **So that** users have appropriate permissions
 
 **Acceptance Criteria**:
-- [ ] `POST /api/v1/{tenantID}/rbac/assignments` - Assign role
-- [ ] `GET /api/v1/{tenantID}/rbac/assignments` - List assignments
-- [ ] `DELETE /api/v1/{tenantID}/rbac/assignments/{id}` - Revoke role
+- [x] `POST /api/v1/{tenantID}/rbac/assignments` - Assign role
+- [x] `GET /api/v1/{tenantID}/rbac/assignments` - List assignments
+- [x] `DELETE /api/v1/{tenantID}/rbac/assignments/{id}` - Revoke role
 - [ ] Only Warehouse Manager can assign roles
 
 ---
@@ -186,16 +186,16 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 
 ## Implementation Tasks
 
-- [ ] Create Ent schemas for RBAC (inventory_users, inventory_roles, inventory_permissions, role_permissions, user_role_assignments)
+- [x] Create Ent schemas for RBAC (inventory_users, inventory_roles, inventory_permissions, role_permissions, user_role_assignments)
 - [ ] Implement user sync service (similar to logistics-service)
-- [ ] Create RBAC service layer
-- [ ] Create RBAC repository layer
-- [ ] Implement permission middleware
+- [x] Create RBAC service layer
+- [x] Create RBAC repository layer
+- [x] Implement permission middleware
 - [ ] Create role assignment handlers
 - [ ] Create user management handlers
 - [ ] Seed default roles and permissions
-- [ ] Wire RBAC middleware to router
-- [ ] Add event listeners for auth.user.* events
+- [x] Wire RBAC middleware to router
+- [x] Add event listeners for auth.user.* events
 
 ---
 
