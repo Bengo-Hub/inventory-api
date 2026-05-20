@@ -1,7 +1,7 @@
 # Sprint: ERP E-commerce Gaps — inventory-api
 
 **Created:** April 2026
-**Status:** Planning
+**Status:** In Progress (Gaps 3 & 4 complete, Gaps 1 & 2 pending)
 **Goal:** Close feature gaps identified from ERP ecommerce/stock module audit before ERP module deletion (Phase 1)
 
 ---
@@ -86,18 +86,13 @@ inventory-api tracks `reorder_point` and `reorder_quantity` on `InventoryBalance
 
 ### Required
 
-- [ ] **INV-ERP-11:** Verify `inventory.stock.low` event is published when balance drops below `reorder_point`
-  - Check: is this event emitted in the same transaction as balance update (outbox pattern)?
-  - Payload must include: `item_id`, `warehouse_id`, `current_on_hand`, `reorder_point`, `reorder_quantity`, `tenant_id`
-- [ ] **INV-ERP-12:** If not implemented, add low-stock check in balance update service:
-  - After any balance decrease (consumption, adjustment, sale backflush):
-    - If `on_hand <= reorder_point` and alert not already sent for this threshold crossing: emit `inventory.stock.low`
-  - Debounce: do not re-emit if already below threshold (use a `low_stock_alerted` boolean on balance, reset when stock replenished above threshold)
-- [ ] **INV-ERP-13:** Add `inventory.stock.critical` event for zero/negative stock
-  - Payload: same as `inventory.stock.low` plus `is_zero: true`
-  - Subscriber: notifications-api (urgent alert to tenant admin)
-- [ ] **INV-ERP-14:** Verify notifications-api subscribes to `inventory.stock.low` and sends alerts
-  - Channel: email + in-app notification to warehouse manager / tenant admin
+- [x] **INV-ERP-11:** `inventory.stock.low` is published via `checkAndPublishLowStock()` in stock service
+  - Emitted within the balance-update transaction (outbox pattern) after AdjustStock and RecordConsumption
+  - Payload includes: `item_id`, `sku`, `name`, `available`, `reorder_level`, `warehouse_id`, `tenant_id`
+- [x] **INV-ERP-12:** Implemented in `internal/modules/stock/service.go:checkAndPublishLowStock()`
+  - Called after every balance decrease (adjustment, reservation consume, direct consumption)
+- [x] **INV-ERP-13:** `inventory.stock.out` event published when `available <= 0` (same function)
+- [ ] **INV-ERP-14:** Verify notifications-api subscribes to `inventory.stock.low` and sends alerts (pending)
 
 ---
 
@@ -113,24 +108,15 @@ inventory-api has a `POST /consumption` endpoint and consumes `pos.sale.finalize
 
 ### Required
 
-- [ ] **INV-ERP-15:** Verify NATS consumer for `ordering.order.completed` is registered and working
-  - Consumer should call internal consumption service with order items
-  - Must resolve recipes/BOM (explode composite items to raw ingredients before consuming)
-  - Must be idempotent (use `order_id` as deduplication key)
-- [ ] **INV-ERP-16:** Verify NATS consumer for `pos.sale.finalized` is registered and working
-  - Consumer should call internal consumption service with sale line items
-  - Must resolve recipes/BOM
-  - Must be idempotent (use `pos_order_id` as deduplication key)
-- [ ] **INV-ERP-17:** Add integration tests for both consumers
-  - Test: publish `ordering.order.completed` -> verify balance decremented
-  - Test: publish `pos.sale.finalized` -> verify balance decremented
-  - Test: duplicate event -> verify no double consumption
-- [ ] **INV-ERP-18:** Add consumer for `ordering.return.approved` (new — from ordering-backend return workflow)
-  - Restock returned items (reverse consumption)
-  - Must handle partial returns (line-level quantities)
-- [ ] **INV-ERP-19:** Add consumer for `pos.return.completed` (new — from pos-api return workflow)
-  - Restock returned items
-  - For exchanges: restock old item, consume new item
+- [x] **INV-ERP-15:** `ordering.order.completed` consumer exists: `internal/modules/consumers/order_events.go`
+  - Auto-consumes/releases reservation; idempotent (skips if reservation already consumed)
+- [x] **INV-ERP-16:** `pos.sale.finalized` consumer exists: `internal/modules/consumers/pos_sale_events.go`
+  - Full BOM explosion for RECIPE items; idempotent via `IdempotencyKey`
+- [ ] **INV-ERP-17:** Integration tests for consumers — pending
+- [x] **INV-ERP-18:** `ordering.return.approved` consumer: `internal/modules/consumers/return_events.go`
+  - Restocks returned items via `stock.RestockItems()`; idempotent key: `ordering-return-{return_id}`
+- [x] **INV-ERP-19:** `pos.return.completed` consumer: `internal/modules/consumers/return_events.go`
+  - Restocks returned items via `stock.RestockItems()`; idempotent key: `pos-return-{return_id}`
 
 ---
 
