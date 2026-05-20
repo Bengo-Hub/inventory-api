@@ -118,6 +118,15 @@ $ go build ./...
 
 ---
 
+## Completed After Sprint 1
+
+- [x] `RequireOutletUseCase` middleware — route-level gating by `outlet_use_case` JWT claim (2026-05-20)
+  - Recipes routes: `RequireOutletUseCase("hospitality", "quick_service")`
+  - Reads from JWT claims (no extra DB call); platform owners bypass
+- [x] `outlet_id` FK added to `Warehouse` schema — warehouse is now tied to its outlet (2026-05-20)
+- [x] Seed restructured for multi-tenant: urban-loft (MAIN warehouse only) + codevertex-demo (6 warehouses, one per use-case outlet) (2026-05-20)
+- [x] USE_CASE_MODULES gating in inventory-ui sidebar — items filtered by outlet use_case (2026-05-20)
+
 ## Next Steps
 
 - [ ] Write integration tests for reservation/consumption flows

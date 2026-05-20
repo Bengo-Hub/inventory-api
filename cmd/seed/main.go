@@ -53,7 +53,7 @@ func main() {
 	}
 	log.Println("schema migrated")
 
-	// Resolve tenant UUID and upsert tenant row.
+	// Resolve tenant UUIDs and upsert tenant rows.
 	authURL := os.Getenv("AUTH_API_URL")
 	if authURL == "" {
 		authURL = "https://sso.codevertexitsolutions.com"
@@ -63,53 +63,59 @@ func main() {
 	if _, err := syncer.SyncTenant(ctx, "codevertex"); err != nil {
 		log.Printf("[SKIP] sync codevertex (platform org): %v", err)
 	}
-	tenantID, resolveErr := syncer.SyncTenant(ctx, "urban-loft")
-	if resolveErr != nil {
-		log.Fatalf("[FATAL] Could not resolve urban-loft UUID from auth-api: %v\nRun auth-api seed before inventory-api seed.", resolveErr)
-	}
-
-	log.Printf("seeding with tenant_id = %s (urban-loft)", tenantID)
 
 	if err := seedUnits(ctx, client); err != nil {
 		log.Fatalf("seed units: %v", err)
 	}
 
-	if err := seedWarehouse(ctx, client, tenantID); err != nil {
-		log.Fatalf("seed warehouse: %v", err)
+	// Seed per-tenant data: urban-loft (real client) + codevertex-demo (cross-platform demo).
+	tenantsToSeed := []string{"urban-loft", "codevertex-demo"}
+	for _, slug := range tenantsToSeed {
+		tenantID, resolveErr := syncer.SyncTenant(ctx, slug)
+		if resolveErr != nil {
+			log.Printf("[SKIP] Could not resolve %s from auth-api: %v", slug, resolveErr)
+			continue
+		}
+		log.Printf("▶ Seeding inventory for tenant: %s (%s)", slug, tenantID)
+
+		if err := seedWarehouse(ctx, client, tenantID, slug); err != nil {
+			log.Fatalf("seed warehouse for %s: %v", slug, err)
+		}
+
+		catIDs, err := seedItemCategories(ctx, client, tenantID)
+		if err != nil {
+			log.Fatalf("seed item categories for %s: %v", slug, err)
+		}
+
+		unitIDs, err := resolveUnitIDs(ctx, client)
+		if err != nil {
+			log.Fatalf("resolve unit IDs: %v", err)
+		}
+
+		if err := seedItems(ctx, client, tenantID, catIDs, unitIDs); err != nil {
+			log.Fatalf("seed items for %s: %v", slug, err)
+		}
+
+		if err := seedBalances(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed balances for %s: %v", slug, err)
+		}
+
+		if err := seedRoles(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed roles for %s: %v", slug, err)
+		}
+		if err := seedRolePermissions(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed role-permissions for %s: %v", slug, err)
+		}
+		if err := seedRecipes(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed recipes for %s: %v", slug, err)
+		}
+		log.Printf("✅ Inventory tenant %s seeded", slug)
 	}
 
-	catIDs, err := seedItemCategories(ctx, client, tenantID)
-	if err != nil {
-		log.Fatalf("seed item categories: %v", err)
-	}
-
-	unitIDs, err := resolveUnitIDs(ctx, client)
-	if err != nil {
-		log.Fatalf("resolve unit IDs: %v", err)
-	}
-
-	if err := seedItems(ctx, client, tenantID, catIDs, unitIDs); err != nil {
-		log.Fatalf("seed items: %v", err)
-	}
-
-	if err := seedBalances(ctx, client, tenantID); err != nil {
-		log.Fatalf("seed balances: %v", err)
-	}
-
-	// RBAC seed — permissions, roles, role-permission assignments
+	// Platform-wide data seeded once.
 	if err := seedPermissions(ctx, client); err != nil {
 		log.Fatalf("seed permissions: %v", err)
 	}
-	if err := seedRoles(ctx, client, tenantID); err != nil {
-		log.Fatalf("seed roles: %v", err)
-	}
-	if err := seedRolePermissions(ctx, client, tenantID); err != nil {
-		log.Fatalf("seed role-permissions: %v", err)
-	}
-	if err := seedRecipes(ctx, client, tenantID); err != nil {
-		log.Fatalf("seed recipes: %v", err)
-	}
-
 	if err := seedRateLimitConfigs(ctx, client); err != nil {
 		log.Fatalf("seed rate limit configs: %v", err)
 	}
@@ -201,42 +207,121 @@ func warehouseUUID(tenantSlug, outletSlug string) uuid.UUID {
 	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:cafe:outlet:%s:%s", tenantSlug, outletSlug)))
 }
 
-func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
-	// Use deterministic UUID matching ordering-backend's outlet UUID for cross-service alignment.
-	whID := warehouseUUID("urban-loft", "busia")
+// outletID computes the deterministic outlet UUID, matching pos-api and auth-api seed formulas.
+func outletID(tenantSlug, outletSlug string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:cafe:outlet:%s:%s", tenantSlug, outletSlug)))
+}
 
-	existing, err := client.Warehouse.Query().
-		Where(entwarehouse.ID(whID)).
-		Only(ctx)
-	if err == nil {
-		// Update existing to ensure fields match
-		_, _ = client.Warehouse.UpdateOneID(existing.ID).
-			SetName("Urban Loft Busia Kitchen").
-			SetCode("MAIN").
-			SetAddress("Busia, Kenya").
-			SetIsDefault(true).
-			SetIsActive(true).
-			Save(ctx)
-		log.Println("warehouse MAIN updated (ID aligned with outlet)")
+type warehouseSeedDef struct {
+	whID     uuid.UUID
+	outletID uuid.UUID
+	name     string
+	code     string
+	address  string
+}
+
+// warehouseDefsByTenant defines the warehouses to seed per tenant slug.
+// Outlet slugs MUST match auth-api outletsByTenant so deterministic UUIDs align.
+var warehouseDefsByTenant = map[string][]warehouseSeedDef{
+	"urban-loft": {
+		// Single kitchen/stock warehouse for the hospitality HQ outlet.
+		{
+			whID:     warehouseUUID("urban-loft", "busia"),
+			outletID: outletID("urban-loft", "busia"),
+			name:     "Urban Loft Busia Kitchen",
+			code:     "MAIN",
+			address:  "Busia, Kenya",
+		},
+	},
+	"codevertex-demo": {
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-hospitality"),
+			outletID: outletID("codevertex-demo", "demo-hospitality"),
+			name:     "Demo Hotel Kitchen",
+			code:     "HOSP",
+			address:  "Demo Plaza, Nairobi, Kenya",
+		},
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-retail"),
+			outletID: outletID("codevertex-demo", "demo-retail"),
+			name:     "Demo Tech Store Stock",
+			code:     "RETAIL",
+			address:  "Demo Mall, Westlands, Nairobi",
+		},
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-quick"),
+			outletID: outletID("codevertex-demo", "demo-quick"),
+			name:     "Demo Kiosk Stock",
+			code:     "QSR",
+			address:  "Demo Food Court, CBD Nairobi",
+		},
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-pharmacy"),
+			outletID: outletID("codevertex-demo", "demo-pharmacy"),
+			name:     "Demo Pharmacy Stock",
+			code:     "PHARMA",
+			address:  "Demo Health Centre, Upper Hill, Nairobi",
+		},
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-services"),
+			outletID: outletID("codevertex-demo", "demo-services"),
+			name:     "Demo Services Supply",
+			code:     "SVC",
+			address:  "Demo Towers, Kilimani, Nairobi",
+		},
+		{
+			whID:     warehouseUUID("codevertex-demo", "demo-logistics"),
+			outletID: outletID("codevertex-demo", "demo-logistics"),
+			name:     "Demo Logistics Warehouse",
+			code:     "LOGIS",
+			address:  "Demo Industrial Area, Nairobi",
+		},
+	},
+}
+
+func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID, tenantSlug string) error {
+	defs, ok := warehouseDefsByTenant[tenantSlug]
+	if !ok {
+		log.Printf("  ℹ️  no warehouse definitions for tenant %s — skipping", tenantSlug)
 		return nil
 	}
-	if !ent.IsNotFound(err) {
-		return err
-	}
 
-	_, err = client.Warehouse.Create().
-		SetID(whID).
-		SetTenantID(tenantID).
-		SetName("Urban Loft Busia Kitchen").
-		SetCode("MAIN").
-		SetAddress("Busia, Kenya").
-		SetIsDefault(true).
-		SetIsActive(true).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("create warehouse: %w", err)
+	for i, d := range defs {
+		isDefault := i == 0
+		existing, err := client.Warehouse.Query().Where(entwarehouse.ID(d.whID)).Only(ctx)
+		if err == nil {
+			oid := d.outletID
+			_, _ = client.Warehouse.UpdateOneID(existing.ID).
+				SetName(d.name).
+				SetCode(d.code).
+				SetAddress(d.address).
+				SetIsDefault(isDefault).
+				SetIsActive(true).
+				SetOutletID(oid).
+				Save(ctx)
+			log.Printf("warehouse %s updated (outlet_id=%s)", d.code, d.outletID)
+			continue
+		}
+		if !ent.IsNotFound(err) {
+			return err
+		}
+
+		oid := d.outletID
+		_, err = client.Warehouse.Create().
+			SetID(d.whID).
+			SetTenantID(tenantID).
+			SetName(d.name).
+			SetCode(d.code).
+			SetAddress(d.address).
+			SetIsDefault(isDefault).
+			SetIsActive(true).
+			SetOutletID(oid).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("create warehouse %s: %w", d.code, err)
+		}
+		log.Printf("warehouse %s created (outlet_id=%s)", d.code, d.outletID)
 	}
-	log.Printf("warehouse MAIN created (ID=%s, aligned with ordering-backend outlet)", whID)
 	return nil
 }
 
