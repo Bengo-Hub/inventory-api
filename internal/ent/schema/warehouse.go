@@ -37,6 +37,10 @@ func (Warehouse) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("GPS longitude for logistics routing"),
+		field.UUID("outlet_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Outlet this warehouse serves as default stock source; nil = shared/HQ"),
 		field.Bool("is_default").
 			Default(false).
 			Comment("Default warehouse for the tenant"),
@@ -72,5 +76,6 @@ func (Warehouse) Indexes() []ent.Index {
 		index.Fields("tenant_id", "code").Unique(),
 		index.Fields("tenant_id", "is_default"),
 		index.Fields("tenant_id", "is_active"),
+		index.Fields("tenant_id", "outlet_id"),
 	}
 }
