@@ -1,6 +1,6 @@
 # Sprint 1 – Authentication, RBAC & User Management
 
-**Status**: 🟡 Partially Complete — JWT/RBAC middleware, schemas, and event listeners done; user sync and role seed data pending  
+**Status**: 🟡 Substantially Complete — JWT/RBAC middleware, schemas, permission checks, role assignment API, and event listeners done; role/permission seed data and user sync service pending  
 **Priority**: **CRITICAL - MUST BE FIRST SPRINT**  
 **Start Date**: TBD  
 **Duration**: 2-3 weeks
@@ -81,9 +81,9 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 
 **Acceptance Criteria**:
 - [x] JWT validation middleware configured via `shared-auth-client` (✅ Already done)
-- [ ] All `/api/v1/{tenantID}` routes protected
-- [ ] Tenant ID extracted from JWT claims
-- [ ] User ID extracted from JWT claims
+- [x] All `/api/v1/{tenantID}` routes protected via `authMiddleware.RequireAuth`
+- [x] Tenant ID extracted from JWT claims via `httpware.TenantV2`
+- [x] User ID extracted from JWT claims in `RequirePermission` middleware
 
 ### US-1.2: User Synchronization
 **As a** system  
@@ -117,11 +117,11 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 **So that** endpoints enforce RBAC
 
 **Acceptance Criteria**:
-- [x] `RequirePermission(permission string)` middleware
-- [x] `RequireRole(role string)` middleware
-- [ ] Permission check against user's assigned roles
-- [ ] Forbidden (403) response for unauthorized access
-- [ ] Superuser bypass (from JWT claims)
+- [x] `RequirePermission(permission string)` middleware (`internal/http/middleware/rbac.go`)
+- [x] `RequireAnyPermission(permissions ...string)` middleware
+- [x] Permission check against user's assigned roles via `rbac.Service.HasPermission()`
+- [x] Forbidden (403) response for unauthorized access
+- [x] Platform owner bypass + `inventory_admin` role bypass
 
 ### US-1.5: Role Assignment API
 **As a** warehouse administrator  
@@ -187,15 +187,15 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 ## Implementation Tasks
 
 - [x] Create Ent schemas for RBAC (inventory_users, inventory_roles, inventory_permissions, role_permissions, user_role_assignments)
-- [ ] Implement user sync service (similar to logistics-service)
-- [x] Create RBAC service layer
-- [x] Create RBAC repository layer
-- [x] Implement permission middleware
-- [ ] Create role assignment handlers
-- [ ] Create user management handlers
-- [ ] Seed default roles and permissions
-- [x] Wire RBAC middleware to router
-- [x] Add event listeners for auth.user.* events
+- [ ] Implement user sync service (JIT provisioning via auth events already wired; explicit sync service pending)
+- [x] Create RBAC service layer (`rbac/service.go`)
+- [x] Create RBAC repository layer (`rbac/repository_ent.go`)
+- [x] Implement permission middleware (`http/middleware/rbac.go`)
+- [x] Create role assignment handlers (`http/handlers/rbac.go`)
+- [ ] Create user management handlers (pending)
+- [ ] Seed default roles and permissions (pending)
+- [x] Wire RBAC middleware to router (per-route with `perm()` helper)
+- [x] Add event listeners for auth.user.* events (`consumers/auth_events.go`)
 
 ---
 
