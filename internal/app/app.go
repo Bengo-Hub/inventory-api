@@ -155,6 +155,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryHandler.SetModifiersService(modifiersSvc)
 	inventoryHandler.SetRBACService(rbacService)
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
+	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
+	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
@@ -208,7 +210,7 @@ func New(ctx context.Context) (*App, error) {
 		mediaHandler = handlers.NewMediaHandler(log, cfg.Media)
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, transferHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

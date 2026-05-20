@@ -24,6 +24,8 @@ func New(
 	userHandler *handlers.UserHandler,
 	inventoryHandler *handlers.InventoryHandler,
 	warehouseHandler *handlers.WarehouseHandler,
+	warehouseLocationHandler *handlers.WarehouseLocationHandler,
+	pricingTierHandler *handlers.PricingTierHandler,
 	transferHandler *handlers.TransferHandler,
 	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
@@ -171,6 +173,12 @@ func New(
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
 					}
+					if warehouseLocationHandler != nil {
+						warehouseLocationHandler.RegisterRoutes(g)
+					}
+					if pricingTierHandler != nil {
+						pricingTierHandler.RegisterRoutes(g)
+					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
 					}
@@ -217,6 +225,12 @@ func New(
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
+					}
+					if warehouseLocationHandler != nil {
+						warehouseLocationHandler.RegisterRoutes(g)
+					}
+					if pricingTierHandler != nil {
+						pricingTierHandler.RegisterRoutes(g)
 					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
