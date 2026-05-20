@@ -34,6 +34,7 @@ func New(
 	allowedOrigins []string,
 	mediaHandler *handlers.MediaHandler,
 	mediaRoot string,
+	serviceConfigHandler *handlers.ServiceConfigHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -124,6 +125,17 @@ func New(
 
 		api.Get("/openapi.json", handlers.OpenAPIJSON)
 
+		// Platform admin config routes (platform owner only)
+		if serviceConfigHandler != nil {
+			api.Route("/admin", func(admin chi.Router) {
+				if authMiddleware != nil {
+					admin.Use(authMiddleware.RequireAuth)
+				}
+				admin.Use(authclient.RequirePlatformOwner())
+				serviceConfigHandler.RegisterPlatformRoutes(admin)
+			})
+		}
+
 		api.Route("/{tenant}", func(tenant chi.Router) {
 			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
 				ClaimsExtractor: func(ctx context.Context) (tenantID, tenantSlug string, isPlatformOwner bool, ok bool) {
@@ -149,6 +161,9 @@ func New(
 				userHandler.RegisterRoutes(private)
 				if rbacHandler != nil {
 					rbacHandler.RegisterRBACRoutes(private)
+				}
+				if serviceConfigHandler != nil {
+					serviceConfigHandler.RegisterTenantRoutes(private)
 				}
 			})
 

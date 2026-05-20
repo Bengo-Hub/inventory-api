@@ -6,6 +6,8 @@
 **HTTP Router:** chi/v5
 **Port:** 4003
 **Production:** `inventoryapi.codevertexitsolutions.com`
+**Last updated:** 2026-05-21
+**Status:** Sprint 1 + Sprint 2 + ERP Gaps substantially complete. 38 Ent schemas, 12 handler files, 4 RBAC roles, 99 permissions, full outbox event publishing, NATS event consumers wired.
 
 ---
 
@@ -80,34 +82,110 @@ inventory-api/
 
 ---
 
-## Ent Schemas (7 entities)
+## Ent Schemas (38 entities — as of 2026-05-21)
 
-| Schema | Purpose | Key Indexes |
-|--------|---------|-------------|
-| `item` | Canonical SKU catalogue | `(tenant_id, sku)` unique |
-| `warehouse` | Physical storage locations | `(tenant_id, code)` unique |
-| `inventorybalance` | Stock levels per item per warehouse | `(tenant_id, item_id, warehouse_id)` unique |
-| `reservation` | Order-level stock reservations | `(tenant_id, order_id)`, `idempotency_key` unique |
-| `consumption` | Stock deduction records | `(tenant_id, order_id)`, `idempotency_key` unique |
-| `recipe` | BOM header: maps menu-item SKU to a recipe | `(tenant_id, sku)` unique |
-| `recipeingredient` | BOM line: links recipe to raw inventory items | `(recipe_id, item_id)` unique |
+| Schema | Purpose |
+|--------|---------|
+| `item` | Canonical SKU catalogue |
+| `warehouse` | Physical storage locations |
+| `inventorybalance` | Stock levels per item per warehouse |
+| `inventorylot` | Lot/batch tracking with expiry dates |
+| `reservation` | Order-level stock reservations |
+| `recipe` | BOM header: maps menu-item SKU to a recipe |
+| `recipeingredient` | BOM line: links recipe to raw inventory items |
+| `unit` | Units of measure (UoM) |
+| `supplier` | Supplier master records |
+| `purchaseorder` | Purchase order headers |
+| `purchaseorderline` | Purchase order line items |
+| `stockadjustment` | Inventory adjustment records |
+| `stocktransfer` | Inter-warehouse stock transfer headers |
+| `stocktransferline` | Stock transfer line items |
+| `itemcategory` | Item category hierarchy |
+| `itemvariant` | Item variant definitions (size, color, etc.) |
+| `itemasset` | Item media assets |
+| `itemtranslation` | Multi-language item names/descriptions |
+| `variantattribute` | Variant attribute key-value pairs |
+| `modifiergroup` | Item modifier groups |
+| `modifieroption` | Modifier group options |
+| `bundle` | Bundle/kit product headers |
+| `bundlecomponent` | Bundle component lines |
+| `customfielddefinition` | Custom field definitions per tenant |
+| `customfieldvalue` | Custom field values per item |
+| `warranty` | Item warranty records |
+| `outboxevent` | Transactional outbox for NATS publishing |
+| `rate_limit_config` | Per-tenant/IP rate limiting configuration |
+| `service_config` | Service-level configuration settings |
+| `tenant` | Tenant registry |
+| `inventory_role` | RBAC role definitions |
+| `inventory_permission` | RBAC permission definitions |
+| `inventory_user` | JIT-provisioned user records |
+| `user_role_assignment` | User to role mapping |
+| `role_permission` | Role to permission mapping |
+| `warehouselocation` | Warehouse bin/zone/aisle location tree |
+| `pricingtier` | Pricing tier definitions |
+| `itempricing` | Item price per pricing tier |
 
 ---
+
+## HTTP Handler Files (as of 2026-05-21)
+
+| File | Module |
+|------|--------|
+| `handlers/inventory.go` | Items, availability, reservations, consumption, adjustments |
+| `handlers/warehouse.go` | Warehouse CRUD |
+| `handlers/warehouse_location.go` | Warehouse location tree |
+| `handlers/pricing_tier.go` | Pricing tiers |
+| `handlers/transfers.go` | Stock transfers |
+| `handlers/user.go` | User management (JIT provisioning) |
+| `handlers/rbac.go` | RBAC role/permission assignment |
+| `handlers/media.go` | Item asset upload |
+| `handlers/modifiers.go` | Modifier groups and options |
+| `handlers/tenant.go` | Tenant provisioning |
+| `handlers/health.go` | Health probe |
+| `handlers/swagger.go` | OpenAPI docs |
 
 ## HTTP Endpoints
 
 All routes are mounted under `/v1/{tenantID}/inventory/`.
 
-| # | Method | Path | Handler | Description |
-|---|--------|------|---------|-------------|
-| 1 | GET | `/items/{sku}` | GetStockAvailability | Single item stock check |
-| 2 | POST | `/availability` | BulkAvailability | Multi-SKU stock check |
-| 3 | POST | `/reservations` | CreateReservation | Reserve stock for an order |
-| 4 | GET | `/reservations?order_id={id}` | GetReservationsByOrder | List reservations by order |
-| 5 | GET | `/reservations/{id}` | GetReservation | Get single reservation |
-| 6 | POST | `/reservations/{id}/release` | ReleaseReservation | Release reserved stock |
-| 7 | POST | `/reservations/{id}/consume` | ConsumeReservation | Convert reservation to consumption |
-| 8 | POST | `/consumption` | RecordConsumption | Direct stock consumption (no reservation) |
+**Core inventory (inventory.go):**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/items` | List items (catalog sync) |
+| GET | `/items/{sku}` | Single item stock check |
+| POST | `/items` | Create item |
+| PUT | `/items/{sku}` | Update item |
+| GET | `/categories` | List item categories |
+| POST | `/availability` | Multi-SKU stock check |
+| POST | `/reservations` | Reserve stock for an order |
+| GET | `/reservations` | List reservations (filter by order_id) |
+| GET | `/reservations/{id}` | Get single reservation |
+| POST | `/reservations/{id}/release` | Release reserved stock |
+| POST | `/reservations/{id}/consume` | Convert reservation to consumption |
+| POST | `/consumption` | Direct stock consumption (no reservation) |
+| POST | `/adjustments` | Record stock adjustment |
+
+**Warehouses:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/warehouses` | List warehouses |
+| POST | `/warehouses` | Create warehouse |
+| GET | `/warehouses/{id}` | Get warehouse |
+| PUT | `/warehouses/{id}` | Update warehouse |
+| GET | `/warehouses/{id}/locations` | List warehouse locations |
+| POST | `/warehouses/{id}/locations` | Create location |
+
+**Other modules:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET/POST/PUT/DELETE | `/pricing-tiers` | Pricing tier management |
+| GET/POST/PUT | `/transfers` | Stock transfer CRUD |
+| GET/POST/PUT/DELETE | `/rbac/assignments` | RBAC role assignment |
+| POST | `/media/upload` | Item asset upload |
+| GET/POST/PUT/DELETE | `/modifiers` | Modifier group management |
 
 ---
 
@@ -170,18 +248,23 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 
 **Outbox pattern:** Mutations write an outbox row in the same DB transaction. A background publisher (`outbox.Publisher`) polls the outbox table and publishes to NATS.
 
-**Planned events (MVP):**
+**Published events (via outbox):**
 
 | Event | Trigger |
 |-------|---------|
 | `inventory.stock.updated` | Any balance change (reservation, consumption, adjustment) |
 | `inventory.reservation.confirmed` | Reservation created successfully |
+| `inventory.reservation.released` | Reservation released |
+| `inventory.stock.consumed` | Stock consumption recorded |
 | `inventory.stock.low` | Available quantity drops below threshold |
+| `inventory.stock.out` | Item goes to zero available |
 
-**Consumed events (post-MVP):**
+**Consumed events:**
 
 | Event | Action |
 |-------|--------|
-| `auth.tenant.created` | Initialize tenant in inventory |
-| `cafe.order.completed` | Auto-consume reservation |
-| `cafe.order.cancelled` | Auto-release reservation |
+| `ordering.order.completed` | Auto-consume reservation |
+| `ordering.order.cancelled` | Auto-release reservation |
+| `pos.sale.finalized` | BOM backflush (recipe explosion + consumption) |
+| `ordering.return.approved` | Restock returned items |
+| `pos.return.completed` | Restock returned items |

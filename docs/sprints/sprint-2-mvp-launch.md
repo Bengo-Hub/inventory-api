@@ -1,6 +1,6 @@
 # Sprint 2 - MVP Launch (March 27, 2026)
 
-**Status:** ✅ P0 Events Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented. Seed alignment, Atlas migration, and integration tests pending.
+**Status:** 🟡 P0 Events Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented. Recipe seed, SKU cross-reference, integration tests, and RBAC seed still pending.
 **Start:** 2026-03-06
 **Deadline:** 2026-03-27
 **Goal:** Ship inventory-api changes required for BengoBox MVP launch at Urban Loft Cafe (Busia outlet)

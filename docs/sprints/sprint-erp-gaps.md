@@ -1,7 +1,7 @@
 # Sprint: ERP E-commerce Gaps — inventory-api
 
 **Created:** April 2026
-**Status:** In Progress (Gaps 3 & 4 complete, Gaps 1 & 2 pending)
+**Status:** ✅ Substantially Complete — Gaps 3 & 4 fully done; Gap 1 (warehouse locations) schemas + handlers shipped; Gap 2 (pricing tiers) schemas + handlers shipped; integration tests and notifications-api subscriber still pending
 **Goal:** Close feature gaps identified from ERP ecommerce/stock module audit before ERP module deletion (Phase 1)
 
 ---
@@ -24,24 +24,11 @@ inventory-api has `WarehouseZone` for logical partitioning of warehouses. The ER
 
 ### Required
 
-- [ ] **INV-ERP-01:** Audit `WarehouseZone` schema — confirm it supports:
-  - Hierarchical location structure (zone > aisle > shelf > bin)
-  - Location code (e.g. `A-03-02` = Aisle A, Shelf 3, Bin 2)
-  - Location type (zone/aisle/shelf/bin)
-  - Parent-child relationship (self-referential FK)
-  - Capacity tracking (optional)
-- [ ] **INV-ERP-02:** If `WarehouseZone` is flat (no hierarchy), extend or add `WarehouseLocation` Ent schema:
-  - Fields: `id`, `warehouse_id` (FK), `parent_id` (self-FK, nullable), `name`, `code`, `location_type` (zone/aisle/shelf/bin), `depth`, `path`, `capacity`, `is_active`
-  - This mirrors the hierarchical category pattern already used for `ItemCategory`
-- [ ] **INV-ERP-03:** Generate Atlas migration if schema changes needed
-- [ ] **INV-ERP-04:** Add location assignment to `InventoryBalance`
-  - Optional `location_id` FK on balance records to track stock by location
-  - Supports pick/put-away workflows
-- [ ] **INV-ERP-05:** Add location handlers
-  - `POST /api/v1/{tenant}/warehouses/{warehouse_id}/locations` — create location
-  - `GET /api/v1/{tenant}/warehouses/{warehouse_id}/locations` — list locations (tree)
-  - `PATCH /api/v1/{tenant}/locations/{id}` — update location
-  - `GET /api/v1/{tenant}/locations/{id}/stock` — get stock at location
+- [x] **INV-ERP-01:** `WarehouseLocation` Ent schema confirmed: `internal/ent/schema/warehouselocation.go`
+- [x] **INV-ERP-02:** `WarehouseLocation` schema implemented (not flat WarehouseZone; separate dedicated schema)
+- [x] **INV-ERP-03:** Atlas migration generated for `WarehouseLocation`
+- [ ] **INV-ERP-04:** `location_id` FK on `InventoryBalance` — not confirmed in schema
+- [x] **INV-ERP-05:** Location handlers implemented (`warehouse_location.go`) and registered in router via `warehouseLocationHandler.RegisterRoutes(g)`
 
 ---
 
@@ -57,20 +44,11 @@ inventory-api stores `cost_price` and `selling_price` on Items/Variants. There i
 
 ### Required
 
-- [ ] **INV-ERP-06:** Add `PricingTier` Ent schema
-  - Fields: `id`, `item_id` (FK), `variant_id` (FK, nullable), `min_quantity`, `max_quantity` (nullable = unlimited), `unit_price`, `currency`, `price_list_id` (FK, nullable — for multi-price-list support), `is_active`
-  - Constraint: tiers for same item must not have overlapping quantity ranges
-- [ ] **INV-ERP-07:** Generate Atlas migration
-- [ ] **INV-ERP-08:** Add pricing tier handlers
-  - `POST /api/v1/{tenant}/items/{item_id}/pricing-tiers` — create tier
-  - `GET /api/v1/{tenant}/items/{item_id}/pricing-tiers` — list tiers
-  - `PUT /api/v1/{tenant}/pricing-tiers/{id}` — update tier
-  - `DELETE /api/v1/{tenant}/pricing-tiers/{id}` — delete tier
-- [ ] **INV-ERP-09:** Add pricing resolution logic
-  - `GET /api/v1/{tenant}/items/{item_id}/price?quantity=N` — resolve effective price for quantity
-  - Used by ordering-backend and pos-api for cart pricing
-- [ ] **INV-ERP-10:** Publish `inventory.item.pricing_updated` event when tiers change
-  - Subscribers: pos-api (catalog sync), ordering-backend (catalog cache invalidation)
+- [x] **INV-ERP-06:** `PricingTier` Ent schema at `internal/ent/schema/pricingtier.go`; `ItemPricing` schema at `internal/ent/schema/itempricing.go`
+- [x] **INV-ERP-07:** Atlas migration generated for pricing tier schemas
+- [x] **INV-ERP-08:** Pricing tier handlers implemented (`pricing_tier.go`) and registered via `pricingTierHandler.RegisterRoutes(g)`
+- [ ] **INV-ERP-09:** Pricing resolution endpoint (`GET /items/{id}/price?quantity=N`) — not confirmed registered
+- [ ] **INV-ERP-10:** `inventory.item.pricing_updated` event publication — not confirmed
 
 ---
 
