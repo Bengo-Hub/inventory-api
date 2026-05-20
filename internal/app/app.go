@@ -55,6 +55,7 @@ type App struct {
 	orderConsumer    *consumers.OrderEventsConsumer
 	posSaleConsumer  *consumers.POSSaleEventsConsumer
 	authConsumer     *consumers.AuthEventsConsumer
+	returnConsumer   *consumers.ReturnEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -167,6 +168,9 @@ func New(ctx context.Context) (*App, error) {
 	// Auth events consumer — proactive user sync from auth-service
 	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService)
 
+	// Return events consumer — restock inventory on pos.return.completed + ordering.return.approved
+	returnConsumer := consumers.NewReturnEventsConsumer(log, stockSvc)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -227,6 +231,7 @@ func New(ctx context.Context) (*App, error) {
 		orderConsumer:    orderConsumer,
 		posSaleConsumer:  posSaleConsumer,
 		authConsumer:     authConsumer,
+		returnConsumer:   returnConsumer,
 	}, nil
 }
 
@@ -261,6 +266,21 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("pos sale events consumer started")
+			}
+
+			// Start return events consumers (pos.return.completed + ordering.return.approved)
+			if a.returnConsumer != nil {
+				go func() {
+					if err := a.returnConsumer.StartPOSReturns(ctx, js); err != nil {
+						a.log.Error("pos return events consumer stopped", zap.Error(err))
+					}
+				}()
+				go func() {
+					if err := a.returnConsumer.StartOrderingReturns(ctx, js); err != nil {
+						a.log.Error("ordering return events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("return events consumers started")
 			}
 		}
 	}

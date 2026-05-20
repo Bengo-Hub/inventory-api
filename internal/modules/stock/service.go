@@ -952,6 +952,81 @@ func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, ag
 	}
 }
 
+// RestockItem represents a single item to restock (reverse consumption).
+type RestockItem struct {
+	SKU      string  `json:"sku"`
+	Quantity float64 `json:"quantity"`
+}
+
+// RestockItems restores stock for returned items, incrementing on_hand and available.
+// Used by return/refund consumers to restock the warehouse after a customer return.
+func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.UUID, items []RestockItem, idempotencyKey string) error {
+	whID, err := s.resolveWarehouseID(ctx, tenantID, warehouseID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("stock: begin restock tx: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	for _, ri := range items {
+		itm, err := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(ri.SKU)).
+			Only(ctx)
+		if err != nil {
+			s.log.Warn("restock: item not found, skipping", zap.String("sku", ri.SKU))
+			continue
+		}
+
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			First(ctx)
+		if err != nil {
+			s.log.Warn("restock: no balance row, skipping", zap.String("sku", ri.SKU))
+			continue
+		}
+
+		qty := int(ri.Quantity)
+		_, err = tx.InventoryBalance.UpdateOne(bal).
+			SetOnHand(bal.OnHand + qty).
+			SetAvailable(bal.Available + qty).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("stock: restock balance sku=%s: %w", ri.SKU, err)
+		}
+
+		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.restocked", map[string]any{
+			"tenant_id":    tenantID.String(),
+			"item_id":      itm.ID.String(),
+			"sku":          ri.SKU,
+			"quantity":     qty,
+			"warehouse_id": whID.String(),
+			"reason":       "customer_return",
+		})
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("stock: commit restock: %w", err)
+	}
+
+	s.log.Info("items restocked",
+		zap.Int("count", len(items)),
+		zap.String("idempotency_key", idempotencyKey),
+	)
+	return nil
+}
+
 func (s *Service) mapReservation(r *ent.Reservation) *ReservationResponse {
 	resp := &ReservationResponse{
 		ID:        r.ID,
