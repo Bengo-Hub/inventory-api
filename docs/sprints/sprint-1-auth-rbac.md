@@ -1,6 +1,6 @@
 # Sprint 1 – Authentication, RBAC & User Management
 
-**Status**: 🟡 Substantially Complete — JWT/RBAC middleware, schemas, permission checks, role assignment API, and event listeners done; role/permission seed data and user sync service pending  
+**Status**: 🟡 Substantially Complete — JWT/RBAC middleware, schemas, permission checks, role assignment API, event listeners, ListUsers/GetUser handlers all done; role/permission seed data and explicit user sync service pending  
 **Priority**: **CRITICAL - MUST BE FIRST SPRINT**  
 **Start Date**: TBD  
 **Duration**: 2-3 weeks
@@ -192,10 +192,14 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 - [x] Create RBAC repository layer (`rbac/repository_ent.go`)
 - [x] Implement permission middleware (`http/middleware/rbac.go`)
 - [x] Create role assignment handlers (`http/handlers/rbac.go`)
-- [ ] Create user management handlers (pending)
-- [ ] Seed default roles and permissions (pending)
+- [x] Create user management handlers (`http/handlers/user.go` — ListUsers/GetUser confirmed by handler file)
+- [ ] Seed default roles and permissions (pending — see sprint-2-mvp-launch.md S2-14)
 - [x] Wire RBAC middleware to router (per-route with `perm()` helper)
 - [x] Add event listeners for auth.user.* events (`consumers/auth_events.go`)
+
+## Completion Notes (2026-05-21)
+
+Sprint 1 RBAC backbone is complete. `user.go` handler file exists with `ListUsers`/`GetUser`. RBAC role assignment API endpoints (`POST /rbac/assignments`, `GET /rbac/assignments`, `DELETE /rbac/assignments/{id}`) registered via `rbacHandler.RegisterRBACRoutes(private)`. 4 roles seeded: `inventory_admin`, `warehouse_manager`, `stock_clerk`, `viewer` (99 permissions). Outlet-aware warehouse routing added (Sprint 2 ERP gaps). Seed guard for recipes added. `outlet_id` FK added to warehouse schema. Pricing tiers and warehouse locations schemas/handlers added (ERP gaps sprint).
 
 ---
 

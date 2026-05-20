@@ -56,15 +56,18 @@ This document provides detailed integration information for all external service
 - `POST /v1/{tenant}/inventory/reservations` - Reserve stock for order
 - `GET /v1/{tenant}/inventory/recipes/{id}` - Get recipe details
 
-**Events Consumed**:
-- `cafe.order.placed` - Reserve stock
-- `cafe.order.cancelled` - Release stock reservation
-- `cafe.order.completed` - Consume stock
+**Events Consumed** (✅ wired via NATS JetStream):
+- `ordering.order.completed` → auto-consume reservation
+- `ordering.order.cancelled` → auto-release reservation
+- `ordering.return.approved` → restock returned items
 
-**Events Published**:
+**Events Published** (✅ via outbox pattern):
 - `inventory.stock.updated` - Stock level changed
-- `inventory.stock.low` - Low stock alert
-- `inventory.reservation.confirmed` - Reservation confirmed
+- `inventory.stock.low` - Low stock alert (via `checkAndPublishLowStock`)
+- `inventory.stock.out` - Item goes to zero
+- `inventory.reservation.confirmed` - Reservation created
+- `inventory.reservation.released` - Reservation released
+- `inventory.stock.consumed` - Consumption recorded
 
 ### POS Service
 
@@ -93,14 +96,14 @@ This document provides detailed integration information for all external service
 - `track_lots` → pos-api records lot/expiry at checkout (pharmacy Sprint 8)
 - `is_perishable` → FIFO lot selection enforced by inventory-api on consumption
 
-**Events Consumed**:
-- `pos.sale.finalized` — Trigger stock consumption; inventory-api calls BOM explosion for recipe items and decrements `InventoryBalance.on_hand`
-- `pos.catalog.sync.requested` — Trigger full catalog re-sync to `catalog_items` projection
+**Events Consumed** (✅ wired):
+- `pos.sale.finalized` — BOM backflush; inventory-api performs recipe explosion and decrements `InventoryBalance.on_hand`
+- `pos.return.completed` — Restock returned items
 
-**Events Published**:
-- `inventory.catalog.updated` — pos-api subscribes to refresh `catalog_items` projection (❌ pos-api subscriber not yet wired — Sprint 6)
-- `inventory.stock.low` — pos-api subscribes to create stock alert notification (❌ not yet wired — Sprint 6)
-- `inventory.stock.out` — pos-api subscribes to flag item as out-of-stock in checkout UI
+**Events Published** (inventory-api → pos-api subscribes):
+- `inventory.catalog.updated` — pos-api refreshes `catalog_items` projection (❌ pos-api NATS subscriber not yet wired — Sprint 6 gap)
+- `inventory.stock.low` — pos-api creates stock alert notification (❌ pos-api subscriber not yet wired — Sprint 6 gap)
+- `inventory.stock.out` — pos-api flags item as out-of-stock in checkout UI (❌ pos-api subscriber not yet wired)
 
 **Auth**: S2S via `X-API-Key: {INTERNAL_SERVICE_KEY}` header  
 **Env vars (pos-api)**: `INVENTORY_SERVICE_URL=https://inventoryapi.codevertexitsolutions.com`, `INTERNAL_SERVICE_KEY`
