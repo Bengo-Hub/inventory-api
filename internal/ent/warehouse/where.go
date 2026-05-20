@@ -86,6 +86,11 @@ func Longitude(v float64) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldLongitude, v))
 }
 
+// OutletID applies equality check predicate on the "outlet_id" field. It's identical to OutletIDEQ.
+func OutletID(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldOutletID, v))
+}
+
 // IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
 func IsDefault(v bool) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldIsDefault, v))
@@ -429,6 +434,56 @@ func LongitudeIsNil() predicate.Warehouse {
 // LongitudeNotNil applies the NotNil predicate on the "longitude" field.
 func LongitudeNotNil() predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldNotNull(FieldLongitude))
+}
+
+// OutletIDEQ applies the EQ predicate on the "outlet_id" field.
+func OutletIDEQ(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldOutletID, v))
+}
+
+// OutletIDNEQ applies the NEQ predicate on the "outlet_id" field.
+func OutletIDNEQ(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNEQ(FieldOutletID, v))
+}
+
+// OutletIDIn applies the In predicate on the "outlet_id" field.
+func OutletIDIn(vs ...uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIn(FieldOutletID, vs...))
+}
+
+// OutletIDNotIn applies the NotIn predicate on the "outlet_id" field.
+func OutletIDNotIn(vs ...uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotIn(FieldOutletID, vs...))
+}
+
+// OutletIDGT applies the GT predicate on the "outlet_id" field.
+func OutletIDGT(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGT(FieldOutletID, v))
+}
+
+// OutletIDGTE applies the GTE predicate on the "outlet_id" field.
+func OutletIDGTE(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGTE(FieldOutletID, v))
+}
+
+// OutletIDLT applies the LT predicate on the "outlet_id" field.
+func OutletIDLT(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLT(FieldOutletID, v))
+}
+
+// OutletIDLTE applies the LTE predicate on the "outlet_id" field.
+func OutletIDLTE(v uuid.UUID) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLTE(FieldOutletID, v))
+}
+
+// OutletIDIsNil applies the IsNil predicate on the "outlet_id" field.
+func OutletIDIsNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIsNull(FieldOutletID))
+}
+
+// OutletIDNotNil applies the NotNil predicate on the "outlet_id" field.
+func OutletIDNotNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotNull(FieldOutletID))
 }
 
 // IsDefaultEQ applies the EQ predicate on the "is_default" field.

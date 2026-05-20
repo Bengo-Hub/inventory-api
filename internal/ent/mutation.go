@@ -33680,6 +33680,7 @@ type WarehouseMutation struct {
 	addlatitude            *float64
 	longitude              *float64
 	addlongitude           *float64
+	outlet_id              *uuid.UUID
 	is_default             *bool
 	is_active              *bool
 	created_at             *time.Time
@@ -34105,6 +34106,55 @@ func (m *WarehouseMutation) ResetLongitude() {
 	delete(m.clearedFields, warehouse.FieldLongitude)
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (m *WarehouseMutation) SetOutletID(u uuid.UUID) {
+	m.outlet_id = &u
+}
+
+// OutletID returns the value of the "outlet_id" field in the mutation.
+func (m *WarehouseMutation) OutletID() (r uuid.UUID, exists bool) {
+	v := m.outlet_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutletID returns the old "outlet_id" field's value of the Warehouse entity.
+// If the Warehouse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WarehouseMutation) OldOutletID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutletID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutletID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutletID: %w", err)
+	}
+	return oldValue.OutletID, nil
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (m *WarehouseMutation) ClearOutletID() {
+	m.outlet_id = nil
+	m.clearedFields[warehouse.FieldOutletID] = struct{}{}
+}
+
+// OutletIDCleared returns if the "outlet_id" field was cleared in this mutation.
+func (m *WarehouseMutation) OutletIDCleared() bool {
+	_, ok := m.clearedFields[warehouse.FieldOutletID]
+	return ok
+}
+
+// ResetOutletID resets all changes to the "outlet_id" field.
+func (m *WarehouseMutation) ResetOutletID() {
+	m.outlet_id = nil
+	delete(m.clearedFields, warehouse.FieldOutletID)
+}
+
 // SetIsDefault sets the "is_default" field.
 func (m *WarehouseMutation) SetIsDefault(b bool) {
 	m.is_default = &b
@@ -34526,7 +34576,7 @@ func (m *WarehouseMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WarehouseMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.tenant != nil {
 		fields = append(fields, warehouse.FieldTenantID)
 	}
@@ -34544,6 +34594,9 @@ func (m *WarehouseMutation) Fields() []string {
 	}
 	if m.longitude != nil {
 		fields = append(fields, warehouse.FieldLongitude)
+	}
+	if m.outlet_id != nil {
+		fields = append(fields, warehouse.FieldOutletID)
 	}
 	if m.is_default != nil {
 		fields = append(fields, warehouse.FieldIsDefault)
@@ -34577,6 +34630,8 @@ func (m *WarehouseMutation) Field(name string) (ent.Value, bool) {
 		return m.Latitude()
 	case warehouse.FieldLongitude:
 		return m.Longitude()
+	case warehouse.FieldOutletID:
+		return m.OutletID()
 	case warehouse.FieldIsDefault:
 		return m.IsDefault()
 	case warehouse.FieldIsActive:
@@ -34606,6 +34661,8 @@ func (m *WarehouseMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLatitude(ctx)
 	case warehouse.FieldLongitude:
 		return m.OldLongitude(ctx)
+	case warehouse.FieldOutletID:
+		return m.OldOutletID(ctx)
 	case warehouse.FieldIsDefault:
 		return m.OldIsDefault(ctx)
 	case warehouse.FieldIsActive:
@@ -34664,6 +34721,13 @@ func (m *WarehouseMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLongitude(v)
+		return nil
+	case warehouse.FieldOutletID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutletID(v)
 		return nil
 	case warehouse.FieldIsDefault:
 		v, ok := value.(bool)
@@ -34759,6 +34823,9 @@ func (m *WarehouseMutation) ClearedFields() []string {
 	if m.FieldCleared(warehouse.FieldLongitude) {
 		fields = append(fields, warehouse.FieldLongitude)
 	}
+	if m.FieldCleared(warehouse.FieldOutletID) {
+		fields = append(fields, warehouse.FieldOutletID)
+	}
 	return fields
 }
 
@@ -34781,6 +34848,9 @@ func (m *WarehouseMutation) ClearField(name string) error {
 		return nil
 	case warehouse.FieldLongitude:
 		m.ClearLongitude()
+		return nil
+	case warehouse.FieldOutletID:
+		m.ClearOutletID()
 		return nil
 	}
 	return fmt.Errorf("unknown Warehouse nullable field %s", name)
@@ -34807,6 +34877,9 @@ func (m *WarehouseMutation) ResetField(name string) error {
 		return nil
 	case warehouse.FieldLongitude:
 		m.ResetLongitude()
+		return nil
+	case warehouse.FieldOutletID:
+		m.ResetOutletID()
 		return nil
 	case warehouse.FieldIsDefault:
 		m.ResetIsDefault()
