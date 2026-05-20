@@ -167,12 +167,15 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
 
-		// Recipes
-		inv.Get("/recipes", h.ListRecipes)
-		inv.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
-		inv.Get("/recipes/{recipeID}", h.GetRecipe)
-		inv.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
-		inv.With(perm(rbac.PermRecipesDelete)).Delete("/recipes/{recipeID}", h.DeleteRecipe)
+		// Recipes — hospitality and quick_service outlets only
+		inv.Group(func(rec chi.Router) {
+			rec.Use(invmiddleware.RequireOutletUseCase("hospitality", "quick_service"))
+			rec.Get("/recipes", h.ListRecipes)
+			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
+			rec.Get("/recipes/{recipeID}", h.GetRecipe)
+			rec.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
+			rec.With(perm(rbac.PermRecipesDelete)).Delete("/recipes/{recipeID}", h.DeleteRecipe)
+		})
 
 		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)
