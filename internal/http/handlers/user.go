@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -17,14 +18,16 @@ type UserHandler struct {
 	logger      *zap.Logger
 	rbacService *rbac.Service
 	syncService *usersync.Service
+	rbacRepo    rbac.Repository
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(logger *zap.Logger, rbacService *rbac.Service, syncService *usersync.Service) *UserHandler {
+func NewUserHandler(logger *zap.Logger, rbacService *rbac.Service, syncService *usersync.Service, rbacRepo rbac.Repository) *UserHandler {
 	return &UserHandler{
 		logger:      logger,
 		rbacService: rbacService,
 		syncService: syncService,
+		rbacRepo:    rbacRepo,
 	}
 }
 
@@ -80,7 +83,54 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ListUsers returns all inventory users for the tenant.
+func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	tenantIDStr := chi.URLParam(r, "tenant")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
+		return
+	}
+
+	users, err := h.rbacRepo.ListUsers(r.Context(), tenantID)
+	if err != nil {
+		h.logger.Error("failed to list users", zap.Error(err))
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to list users"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{"users": users})
+}
+
+// GetUser returns a single inventory user by ID.
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	tenantIDStr := chi.URLParam(r, "tenant")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
+		return
+	}
+
+	userIDStr := chi.URLParam(r, "userID")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid user ID"})
+		return
+	}
+
+	user, err := h.rbacRepo.GetUser(r.Context(), tenantID, userID)
+	if err != nil {
+		h.logger.Error("failed to get user", zap.Error(err))
+		respondJSON(w, http.StatusNotFound, map[string]string{"error": "user not found"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{"user": user})
+}
+
 // RegisterRoutes registers user management routes
 func (h *UserHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/users", h.CreateUser)
+	r.Get("/users", h.ListUsers)
+	r.Get("/users/{userID}", h.GetUser)
 }

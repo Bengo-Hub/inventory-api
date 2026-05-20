@@ -64,6 +64,19 @@ func (h *RBACHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Only users with inventory_admin or warehouse_manager role may assign roles.
+	canAssign := false
+	for _, allowedRole := range []string{"inventory_admin", "warehouse_manager"} {
+		if ok, _ := h.rbacService.HasRole(r.Context(), tenantID, assignedBy, allowedRole); ok {
+			canAssign = true
+			break
+		}
+	}
+	if !canAssign {
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": "insufficient permissions to assign roles"})
+		return
+	}
+
 	if err := h.rbacService.AssignRole(r.Context(), tenantID, req.UserID, req.RoleID, assignedBy); err != nil {
 		h.logger.Error("failed to assign role", zap.Error(err))
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to assign role"})

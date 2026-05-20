@@ -86,6 +86,22 @@ func (r *EntRepository) GetUserByAuthServiceID(ctx context.Context, tenantID uui
 	return mapEntUser(entUser), nil
 }
 
+// ListUsers retrieves all users for a tenant.
+func (r *EntRepository) ListUsers(ctx context.Context, tenantID uuid.UUID) ([]*InventoryUser, error) {
+	entUsers, err := r.client.InventoryUser.Query().
+		Where(inventoryuser.TenantID(tenantID)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list users: %w", err)
+	}
+
+	users := make([]*InventoryUser, len(entUsers))
+	for i, u := range entUsers {
+		users[i] = mapEntUser(u)
+	}
+	return users, nil
+}
+
 // UpdateUser updates a user.
 func (r *EntRepository) UpdateUser(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, updates *UserUpdates) error {
 	builder := r.client.InventoryUser.Update().

@@ -13,6 +13,7 @@ type Repository interface {
 	GetUser(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID) (*InventoryUser, error)
 	GetUserByAuthServiceID(ctx context.Context, tenantID uuid.UUID, authServiceUserID uuid.UUID) (*InventoryUser, error)
 	UpdateUser(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, updates *UserUpdates) error
+	ListUsers(ctx context.Context, tenantID uuid.UUID) ([]*InventoryUser, error)
 
 	// Role operations
 	CreateRole(ctx context.Context, tenantID uuid.UUID, role *InventoryRole) error
