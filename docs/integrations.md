@@ -71,23 +71,39 @@ This document provides detailed integration information for all external service
 **Integration Type**: REST API + Events (NATS)
 
 **Use Cases**:
-- Catalog sync (read-only cache)
-- Real-time sales consumption
-- Stock warnings
-- Offline queue reconciliation
+- Catalog sync: pos-api projects `catalog_items` from inventory-api item master
+- Stock consumption backflush: on sale completion, pos-api calls consumption endpoint
+- Recipe BOM explosion: for restaurant/bar items, inventory-api expands recipes on consumption
+- Stock level visibility: real-time stock shown at checkout (retail mode)
+- Low-stock alerts: inventory-api notifies pos-api when stock falls below reorder level
 
 **REST API Usage**:
-- `GET /v1/{tenant}/inventory/items` - Get catalog items
-- `POST /v1/{tenant}/inventory/consumption` - Record sales consumption
-- `GET /v1/{tenant}/inventory/availability` - Check stock availability
+- `GET /v1/{tenant}/inventory/items` — Catalog sync; pos-api projects into `catalog_items` table
+- `GET /v1/{tenant}/inventory/items/{sku}` — Single item lookup (stock check at checkout)
+- `POST /v1/{tenant}/inventory/consumption` — Record sales consumption on order completion
+  - Payload: `{ pos_order_id, outlet_id, items: [{ sku, quantity, uom_code }], idempotency_key }`
+  - Idempotency key is `pos_order_id` — safe to retry
+  - For recipe items, inventory-api performs BOM explosion internally (e.g., a "Grilled Chicken" dish consumes chicken, oil, spices from ingredient stock)
+- `GET /v1/{tenant}/inventory/availability` — Batch stock check (used at cart addition in retail mode)
+
+**Item Compliance Flags (read by pos-api at catalog sync)**:
+- `requires_age_verification` → pos-api shows age-check prompt at line addition (pharmacy, alcohol)
+- `is_controlled_substance` → pos-api enforces pharmacist witness flow
+- `track_serial_numbers` → pos-api captures serial numbers at checkout (Sprint 7 retail)
+- `track_lots` → pos-api records lot/expiry at checkout (pharmacy Sprint 8)
+- `is_perishable` → FIFO lot selection enforced by inventory-api on consumption
 
 **Events Consumed**:
-- `pos.order.completed` - Consume stock
-- `pos.catalog.sync.requested` - Trigger catalog sync
+- `pos.sale.finalized` — Trigger stock consumption; inventory-api calls BOM explosion for recipe items and decrements `InventoryBalance.on_hand`
+- `pos.catalog.sync.requested` — Trigger full catalog re-sync to `catalog_items` projection
 
 **Events Published**:
-- `inventory.catalog.updated` - Catalog changes
-- `inventory.stock.warning` - Stock warning
+- `inventory.catalog.updated` — pos-api subscribes to refresh `catalog_items` projection (❌ pos-api subscriber not yet wired — Sprint 6)
+- `inventory.stock.low` — pos-api subscribes to create stock alert notification (❌ not yet wired — Sprint 6)
+- `inventory.stock.out` — pos-api subscribes to flag item as out-of-stock in checkout UI
+
+**Auth**: S2S via `X-API-Key: {INTERNAL_SERVICE_KEY}` header  
+**Env vars (pos-api)**: `INVENTORY_SERVICE_URL=https://inventoryapi.codevertexitsolutions.com`, `INTERNAL_SERVICE_KEY`
 
 ### Logistics Service
 

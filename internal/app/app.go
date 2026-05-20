@@ -140,7 +140,7 @@ func New(ctx context.Context) (*App, error) {
 	rbacRepo := rbac.NewEntRepository(ormClient)
 	tenantSyncer := tenant.NewSyncer(ormClient, cfg.Auth.ServiceURL)
 	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
-	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+	userHandler := handlers.NewUserHandler(log, rbacService, syncService, rbacRepo)
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
 
 	// Initialize business modules

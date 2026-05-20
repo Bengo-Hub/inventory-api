@@ -106,8 +106,11 @@ func main() {
 		if err := seedRolePermissions(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed role-permissions for %s: %v", slug, err)
 		}
-		if err := seedRecipes(ctx, client, tenantID); err != nil {
-			log.Fatalf("seed recipes for %s: %v", slug, err)
+		// Recipes are only seeded for urban-loft (the café tenant).
+		if slug == "urban-loft" {
+			if err := seedRecipes(ctx, client, tenantID); err != nil {
+				log.Fatalf("seed recipes for %s: %v", slug, err)
+			}
 		}
 		log.Printf("✅ Inventory tenant %s seeded", slug)
 	}
@@ -230,7 +233,7 @@ var warehouseDefsByTenant = map[string][]warehouseSeedDef{
 			outletID: outletID("urban-loft", "busia"),
 			name:     "Urban Loft Busia Kitchen",
 			code:     "MAIN",
-			address:  "Busia, Kenya",
+			address:  "Main Street, Busia Town, Busia County, Kenya",
 		},
 	},
 	"codevertex-demo": {
