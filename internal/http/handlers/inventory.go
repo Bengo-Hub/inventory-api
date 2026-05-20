@@ -12,8 +12,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
+	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/units"
@@ -78,6 +80,7 @@ type InventoryHandler struct {
 	recipeSvc    RecipesServicer
 	unitSvc      UnitsServicer
 	modifiersSvc ModifiersServicer
+	rbacSvc      *rbac.Service
 }
 
 // NewInventoryHandler creates a new inventory handler.
@@ -89,6 +92,12 @@ func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc Stock
 		recipeSvc: recipeSvc,
 		unitSvc:   unitSvc,
 	}
+}
+
+// SetRBACService injects the RBAC service for per-route permission enforcement.
+// When set, mutation routes require the corresponding inventory.*.{action} permission.
+func (h *InventoryHandler) SetRBACService(svc *rbac.Service) {
+	h.rbacSvc = svc
 }
 
 // SetModifiersService injects the modifiers service (optional; modifier endpoints are skipped if nil).
@@ -115,55 +124,68 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 // parseTenantID is now defined in tenant.go with platform-owner override support.
 
 // RegisterRoutes wires inventory routes onto the given chi.Router.
+// When rbacSvc is set (via SetRBACService), mutation routes enforce per-action permissions.
 func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
+	// perm returns a per-route permission middleware when rbacSvc is set, or a pass-through.
+	perm := func(code string) func(http.Handler) http.Handler {
+		if h.rbacSvc == nil {
+			return func(next http.Handler) http.Handler { return next }
+		}
+		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
+	}
+
 	r.Route("/inventory", func(inv chi.Router) {
-		// Item CRUD
+		// Items
 		inv.Get("/items", h.ListItems)
-		inv.Post("/items", h.CreateItem)
+		inv.With(perm(rbac.PermItemsAdd)).Post("/items", h.CreateItem)
 		inv.Get("/items/{sku}", h.GetStockAvailability)
-		inv.Put("/items/{sku}", h.UpdateItem)
+		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
+		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
+
+		// Availability
 		inv.Post("/availability", h.BulkAvailability)
-		inv.Post("/adjust", h.AdjustStock)
-		inv.Post("/adjustments", h.CreateAdjustment)
-		inv.Get("/adjustments", h.ListAdjustments)
 		inv.Get("/availability/bom", h.GetBOMAvailability)
-		inv.Delete("/items/{sku}", h.DeleteItem)
+
+		// Stock adjustments
+		inv.With(perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
+		inv.With(perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
+		inv.Get("/adjustments", h.ListAdjustments)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
 
 		// Reservations
-		inv.Post("/reservations", h.CreateReservation)
+		inv.With(perm(rbac.PermReservationsAdd)).Post("/reservations", h.CreateReservation)
 		inv.Get("/reservations", h.GetReservationsByOrder)
 		inv.Get("/reservations/{reservationID}", h.GetReservation)
-		inv.Post("/reservations/{reservationID}/release", h.ReleaseReservation)
-		inv.Post("/reservations/{reservationID}/consume", h.ConsumeReservation)
+		inv.With(perm(rbac.PermReservationsChange)).Post("/reservations/{reservationID}/release", h.ReleaseReservation)
+		inv.With(perm(rbac.PermReservationsChange)).Post("/reservations/{reservationID}/consume", h.ConsumeReservation)
 
 		// Consumption
-		inv.Post("/consumption", h.RecordConsumption)
+		inv.With(perm(rbac.PermConsumptionsAdd)).Post("/consumption", h.RecordConsumption)
 
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
 
 		// Recipes
 		inv.Get("/recipes", h.ListRecipes)
-		inv.Post("/recipes", h.CreateRecipe)
+		inv.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
 		inv.Get("/recipes/{recipeID}", h.GetRecipe)
-		inv.Put("/recipes/{recipeID}", h.UpdateRecipe)
-		inv.Delete("/recipes/{recipeID}", h.DeleteRecipe)
+		inv.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
+		inv.With(perm(rbac.PermRecipesDelete)).Delete("/recipes/{recipeID}", h.DeleteRecipe)
 
-		// Units
+		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)
-		inv.Post("/units", h.CreateUnit)
+		inv.With(perm(rbac.PermUnitsAdd)).Post("/units", h.CreateUnit)
 
 		// Modifier Groups & Options
 		inv.Get("/items/{itemId}/modifier-groups", h.ListModifierGroups)
-		inv.Post("/modifier-groups", h.CreateModifierGroup)
-		inv.Put("/modifier-groups/{id}", h.UpdateModifierGroup)
-		inv.Delete("/modifier-groups/{id}", h.DeleteModifierGroup)
-		inv.Post("/modifier-groups/{id}/options", h.CreateModifierOption)
-		inv.Put("/modifier-options/{id}", h.UpdateModifierOption)
-		inv.Delete("/modifier-options/{id}", h.DeleteModifierOption)
+		inv.With(perm(rbac.PermVariantsAdd)).Post("/modifier-groups", h.CreateModifierGroup)
+		inv.With(perm(rbac.PermVariantsChange)).Put("/modifier-groups/{id}", h.UpdateModifierGroup)
+		inv.With(perm(rbac.PermVariantsDelete)).Delete("/modifier-groups/{id}", h.DeleteModifierGroup)
+		inv.With(perm(rbac.PermVariantsAdd)).Post("/modifier-groups/{id}/options", h.CreateModifierOption)
+		inv.With(perm(rbac.PermVariantsChange)).Put("/modifier-options/{id}", h.UpdateModifierOption)
+		inv.With(perm(rbac.PermVariantsDelete)).Delete("/modifier-options/{id}", h.DeleteModifierOption)
 	})
 }
 

@@ -152,6 +152,7 @@ func New(ctx context.Context) (*App, error) {
 	transferSvc := transfers.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 	inventoryHandler.SetModifiersService(modifiersSvc)
+	inventoryHandler.SetRBACService(rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
