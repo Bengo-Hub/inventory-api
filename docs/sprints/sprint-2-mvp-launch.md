@@ -25,10 +25,10 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
   - When ordering-backend calls `GET /items/{sku}`, resolve recipe ingredients
   - Return availability based on the limiting ingredient (BOM explosion in `items/service.go`)
   - Fallback to direct item lookup if no recipe exists
-- [ ] **S2-03:** Add recipe-aware reservation
-  - `POST /reservations` should explode BOM and reserve raw ingredients
-  - Response still shows the menu-item SKU but reserves underlying ingredients
-  - Consume and release also operate on ingredient-level balances
+- [x] **S2-03:** Recipe-aware reservation ✅ DONE
+  - `POST /reservations` explodes BOM via `explodeBOM()` and reserves raw ingredients
+  - Response shows menu-item SKU summary; ingredient-level reservations in `items` field
+  - Consume and release operate on ingredient-level balances
 
 ### Seed Data Alignment (P0)
 
