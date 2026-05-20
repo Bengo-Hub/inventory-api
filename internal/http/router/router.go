@@ -23,6 +23,7 @@ func New(
 	health *handlers.HealthHandler,
 	userHandler *handlers.UserHandler,
 	inventoryHandler *handlers.InventoryHandler,
+	warehouseHandler *handlers.WarehouseHandler,
 	transferHandler *handlers.TransferHandler,
 	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
@@ -43,7 +44,7 @@ func New(
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Origin", "X-Request-ID", "X-Tenant-ID", "X-Tenant-Slug", "X-API-Key", "Idempotency-Key"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Origin", "X-Request-ID", "X-Tenant-ID", "X-Tenant-Slug", "X-API-Key", "Idempotency-Key", "X-Outlet-ID"},
 		ExposedHeaders:   []string{"Link", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -167,6 +168,9 @@ func New(
 						})
 					})
 					inventoryHandler.RegisterRoutes(g)
+					if warehouseHandler != nil {
+						warehouseHandler.RegisterRoutes(g)
+					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
 					}
@@ -211,6 +215,9 @@ func New(
 						})
 					})
 					inventoryHandler.RegisterRoutes(g)
+					if warehouseHandler != nil {
+						warehouseHandler.RegisterRoutes(g)
+					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
 					}
