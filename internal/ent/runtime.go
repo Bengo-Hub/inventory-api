@@ -18,11 +18,13 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
@@ -40,6 +42,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
 	"github.com/google/uuid"
 )
@@ -430,6 +433,38 @@ func init() {
 	itemcategoryDescID := itemcategoryFields[0].Descriptor()
 	// itemcategory.DefaultID holds the default value on creation for the id field.
 	itemcategory.DefaultID = itemcategoryDescID.Default.(func() uuid.UUID)
+	itempricingFields := schema.ItemPricing{}.Fields()
+	_ = itempricingFields
+	// itempricingDescPrice is the schema descriptor for price field.
+	itempricingDescPrice := itempricingFields[4].Descriptor()
+	// itempricing.DefaultPrice holds the default value on creation for the price field.
+	itempricing.DefaultPrice = itempricingDescPrice.Default.(float64)
+	// itempricingDescCurrency is the schema descriptor for currency field.
+	itempricingDescCurrency := itempricingFields[5].Descriptor()
+	// itempricing.DefaultCurrency holds the default value on creation for the currency field.
+	itempricing.DefaultCurrency = itempricingDescCurrency.Default.(string)
+	// itempricingDescEffectiveFrom is the schema descriptor for effective_from field.
+	itempricingDescEffectiveFrom := itempricingFields[6].Descriptor()
+	// itempricing.DefaultEffectiveFrom holds the default value on creation for the effective_from field.
+	itempricing.DefaultEffectiveFrom = itempricingDescEffectiveFrom.Default.(func() time.Time)
+	// itempricingDescIsActive is the schema descriptor for is_active field.
+	itempricingDescIsActive := itempricingFields[8].Descriptor()
+	// itempricing.DefaultIsActive holds the default value on creation for the is_active field.
+	itempricing.DefaultIsActive = itempricingDescIsActive.Default.(bool)
+	// itempricingDescCreatedAt is the schema descriptor for created_at field.
+	itempricingDescCreatedAt := itempricingFields[9].Descriptor()
+	// itempricing.DefaultCreatedAt holds the default value on creation for the created_at field.
+	itempricing.DefaultCreatedAt = itempricingDescCreatedAt.Default.(func() time.Time)
+	// itempricingDescUpdatedAt is the schema descriptor for updated_at field.
+	itempricingDescUpdatedAt := itempricingFields[10].Descriptor()
+	// itempricing.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itempricing.DefaultUpdatedAt = itempricingDescUpdatedAt.Default.(func() time.Time)
+	// itempricing.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itempricing.UpdateDefaultUpdatedAt = itempricingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itempricingDescID is the schema descriptor for id field.
+	itempricingDescID := itempricingFields[0].Descriptor()
+	// itempricing.DefaultID holds the default value on creation for the id field.
+	itempricing.DefaultID = itempricingDescID.Default.(func() uuid.UUID)
 	itemtranslationFields := schema.ItemTranslation{}.Fields()
 	_ = itemtranslationFields
 	// itemtranslationDescLocale is the schema descriptor for locale field.
@@ -588,6 +623,32 @@ func init() {
 	outboxeventDescID := outboxeventFields[0].Descriptor()
 	// outboxevent.DefaultID holds the default value on creation for the id field.
 	outboxevent.DefaultID = outboxeventDescID.Default.(func() uuid.UUID)
+	pricingtierFields := schema.PricingTier{}.Fields()
+	_ = pricingtierFields
+	// pricingtierDescName is the schema descriptor for name field.
+	pricingtierDescName := pricingtierFields[2].Descriptor()
+	// pricingtier.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	pricingtier.NameValidator = pricingtierDescName.Validators[0].(func(string) error)
+	// pricingtierDescCode is the schema descriptor for code field.
+	pricingtierDescCode := pricingtierFields[3].Descriptor()
+	// pricingtier.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	pricingtier.CodeValidator = pricingtierDescCode.Validators[0].(func(string) error)
+	// pricingtierDescIsDefault is the schema descriptor for is_default field.
+	pricingtierDescIsDefault := pricingtierFields[5].Descriptor()
+	// pricingtier.DefaultIsDefault holds the default value on creation for the is_default field.
+	pricingtier.DefaultIsDefault = pricingtierDescIsDefault.Default.(bool)
+	// pricingtierDescIsActive is the schema descriptor for is_active field.
+	pricingtierDescIsActive := pricingtierFields[6].Descriptor()
+	// pricingtier.DefaultIsActive holds the default value on creation for the is_active field.
+	pricingtier.DefaultIsActive = pricingtierDescIsActive.Default.(bool)
+	// pricingtierDescSortOrder is the schema descriptor for sort_order field.
+	pricingtierDescSortOrder := pricingtierFields[7].Descriptor()
+	// pricingtier.DefaultSortOrder holds the default value on creation for the sort_order field.
+	pricingtier.DefaultSortOrder = pricingtierDescSortOrder.Default.(int)
+	// pricingtierDescID is the schema descriptor for id field.
+	pricingtierDescID := pricingtierFields[0].Descriptor()
+	// pricingtier.DefaultID holds the default value on creation for the id field.
+	pricingtier.DefaultID = pricingtierDescID.Default.(func() uuid.UUID)
 	purchaseorderFields := schema.PurchaseOrder{}.Fields()
 	_ = purchaseorderFields
 	// purchaseorderDescPoNumber is the schema descriptor for po_number field.
@@ -1040,6 +1101,32 @@ func init() {
 	warehouseDescID := warehouseFields[0].Descriptor()
 	// warehouse.DefaultID holds the default value on creation for the id field.
 	warehouse.DefaultID = warehouseDescID.Default.(func() uuid.UUID)
+	warehouselocationFields := schema.WarehouseLocation{}.Fields()
+	_ = warehouselocationFields
+	// warehouselocationDescCode is the schema descriptor for code field.
+	warehouselocationDescCode := warehouselocationFields[4].Descriptor()
+	// warehouselocation.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	warehouselocation.CodeValidator = warehouselocationDescCode.Validators[0].(func(string) error)
+	// warehouselocationDescName is the schema descriptor for name field.
+	warehouselocationDescName := warehouselocationFields[5].Descriptor()
+	// warehouselocation.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	warehouselocation.NameValidator = warehouselocationDescName.Validators[0].(func(string) error)
+	// warehouselocationDescType is the schema descriptor for type field.
+	warehouselocationDescType := warehouselocationFields[6].Descriptor()
+	// warehouselocation.DefaultType holds the default value on creation for the type field.
+	warehouselocation.DefaultType = warehouselocationDescType.Default.(string)
+	// warehouselocationDescDepth is the schema descriptor for depth field.
+	warehouselocationDescDepth := warehouselocationFields[7].Descriptor()
+	// warehouselocation.DefaultDepth holds the default value on creation for the depth field.
+	warehouselocation.DefaultDepth = warehouselocationDescDepth.Default.(int)
+	// warehouselocationDescIsActive is the schema descriptor for is_active field.
+	warehouselocationDescIsActive := warehouselocationFields[9].Descriptor()
+	// warehouselocation.DefaultIsActive holds the default value on creation for the is_active field.
+	warehouselocation.DefaultIsActive = warehouselocationDescIsActive.Default.(bool)
+	// warehouselocationDescID is the schema descriptor for id field.
+	warehouselocationDescID := warehouselocationFields[0].Descriptor()
+	// warehouselocation.DefaultID holds the default value on creation for the id field.
+	warehouselocation.DefaultID = warehouselocationDescID.Default.(func() uuid.UUID)
 	warrantyFields := schema.Warranty{}.Fields()
 	_ = warrantyFields
 	// warrantyDescSerialNumber is the schema descriptor for serial_number field.

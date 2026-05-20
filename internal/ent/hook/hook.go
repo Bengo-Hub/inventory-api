@@ -165,6 +165,18 @@ func (f ItemCategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemCategoryMutation", m)
 }
 
+// The ItemPricingFunc type is an adapter to allow the use of ordinary
+// function as ItemPricing mutator.
+type ItemPricingFunc func(context.Context, *ent.ItemPricingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemPricingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemPricingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemPricingMutation", m)
+}
+
 // The ItemTranslationFunc type is an adapter to allow the use of ordinary
 // function as ItemTranslation mutator.
 type ItemTranslationFunc func(context.Context, *ent.ItemTranslationMutation) (ent.Value, error)
@@ -223,6 +235,18 @@ func (f OutboxEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxEventMutation", m)
+}
+
+// The PricingTierFunc type is an adapter to allow the use of ordinary
+// function as PricingTier mutator.
+type PricingTierFunc func(context.Context, *ent.PricingTierMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PricingTierFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PricingTierMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PricingTierMutation", m)
 }
 
 // The PurchaseOrderFunc type is an adapter to allow the use of ordinary
@@ -427,6 +451,18 @@ func (f WarehouseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WarehouseMutation", m)
+}
+
+// The WarehouseLocationFunc type is an adapter to allow the use of ordinary
+// function as WarehouseLocation mutator.
+type WarehouseLocationFunc func(context.Context, *ent.WarehouseLocationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WarehouseLocationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WarehouseLocationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WarehouseLocationMutation", m)
 }
 
 // The WarrantyFunc type is an adapter to allow the use of ordinary

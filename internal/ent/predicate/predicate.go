@@ -45,6 +45,9 @@ type ItemAsset func(*sql.Selector)
 // ItemCategory is the predicate function for itemcategory builders.
 type ItemCategory func(*sql.Selector)
 
+// ItemPricing is the predicate function for itempricing builders.
+type ItemPricing func(*sql.Selector)
+
 // ItemTranslation is the predicate function for itemtranslation builders.
 type ItemTranslation func(*sql.Selector)
 
@@ -59,6 +62,9 @@ type ModifierOption func(*sql.Selector)
 
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
+
+// PricingTier is the predicate function for pricingtier builders.
+type PricingTier func(*sql.Selector)
 
 // PurchaseOrder is the predicate function for purchaseorder builders.
 type PurchaseOrder func(*sql.Selector)
@@ -110,6 +116,9 @@ type VariantAttribute func(*sql.Selector)
 
 // Warehouse is the predicate function for warehouse builders.
 type Warehouse func(*sql.Selector)
+
+// WarehouseLocation is the predicate function for warehouselocation builders.
+type WarehouseLocation func(*sql.Selector)
 
 // Warranty is the predicate function for warranty builders.
 type Warranty func(*sql.Selector)

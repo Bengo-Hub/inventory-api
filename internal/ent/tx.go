@@ -38,6 +38,8 @@ type Tx struct {
 	ItemAsset *ItemAssetClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
+	// ItemPricing is the client for interacting with the ItemPricing builders.
+	ItemPricing *ItemPricingClient
 	// ItemTranslation is the client for interacting with the ItemTranslation builders.
 	ItemTranslation *ItemTranslationClient
 	// ItemVariant is the client for interacting with the ItemVariant builders.
@@ -48,6 +50,8 @@ type Tx struct {
 	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PricingTier is the client for interacting with the PricingTier builders.
+	PricingTier *PricingTierClient
 	// PurchaseOrder is the client for interacting with the PurchaseOrder builders.
 	PurchaseOrder *PurchaseOrderClient
 	// PurchaseOrderLine is the client for interacting with the PurchaseOrderLine builders.
@@ -82,6 +86,8 @@ type Tx struct {
 	VariantAttribute *VariantAttributeClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
+	// WarehouseLocation is the client for interacting with the WarehouseLocation builders.
+	WarehouseLocation *WarehouseLocationClient
 	// Warranty is the client for interacting with the Warranty builders.
 	Warranty *WarrantyClient
 
@@ -228,11 +234,13 @@ func (tx *Tx) init() {
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemAsset = NewItemAssetClient(tx.config)
 	tx.ItemCategory = NewItemCategoryClient(tx.config)
+	tx.ItemPricing = NewItemPricingClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)
 	tx.ItemVariant = NewItemVariantClient(tx.config)
 	tx.ModifierGroup = NewModifierGroupClient(tx.config)
 	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
+	tx.PricingTier = NewPricingTierClient(tx.config)
 	tx.PurchaseOrder = NewPurchaseOrderClient(tx.config)
 	tx.PurchaseOrderLine = NewPurchaseOrderLineClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
@@ -250,6 +258,7 @@ func (tx *Tx) init() {
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.VariantAttribute = NewVariantAttributeClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
+	tx.WarehouseLocation = NewWarehouseLocationClient(tx.config)
 	tx.Warranty = NewWarrantyClient(tx.config)
 }
 
