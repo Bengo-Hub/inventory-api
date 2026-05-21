@@ -49,6 +49,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -128,6 +129,8 @@ type Client struct {
 	Supplier *SupplierClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
+	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
+	TenantInventoryConfig *TenantInventoryConfigClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
@@ -184,6 +187,7 @@ func (c *Client) init() {
 	c.StockTransferLine = NewStockTransferLineClient(c.config)
 	c.Supplier = NewSupplierClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
+	c.TenantInventoryConfig = NewTenantInventoryConfigClient(c.config)
 	c.Unit = NewUnitClient(c.config)
 	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
 	c.VariantAttribute = NewVariantAttributeClient(c.config)
@@ -315,6 +319,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StockTransferLine:     NewStockTransferLineClient(cfg),
 		Supplier:              NewSupplierClient(cfg),
 		Tenant:                NewTenantClient(cfg),
+		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
 		Unit:                  NewUnitClient(cfg),
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
@@ -373,6 +378,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StockTransferLine:     NewStockTransferLineClient(cfg),
 		Supplier:              NewSupplierClient(cfg),
 		Tenant:                NewTenantClient(cfg),
+		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
 		Unit:                  NewUnitClient(cfg),
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
@@ -415,9 +421,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
 		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
 		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
+		c.TenantInventoryConfig, c.Unit, c.UserRoleAssignment, c.VariantAttribute,
+		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -434,9 +440,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
 		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
 		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
+		c.TenantInventoryConfig, c.Unit, c.UserRoleAssignment, c.VariantAttribute,
+		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -511,6 +517,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Supplier.mutate(ctx, m)
 	case *TenantMutation:
 		return c.Tenant.mutate(ctx, m)
+	case *TenantInventoryConfigMutation:
+		return c.TenantInventoryConfig.mutate(ctx, m)
 	case *UnitMutation:
 		return c.Unit.mutate(ctx, m)
 	case *UserRoleAssignmentMutation:
@@ -5845,6 +5853,139 @@ func (c *TenantClient) mutate(ctx context.Context, m *TenantMutation) (Value, er
 	}
 }
 
+// TenantInventoryConfigClient is a client for the TenantInventoryConfig schema.
+type TenantInventoryConfigClient struct {
+	config
+}
+
+// NewTenantInventoryConfigClient returns a client for the TenantInventoryConfig from the given config.
+func NewTenantInventoryConfigClient(c config) *TenantInventoryConfigClient {
+	return &TenantInventoryConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tenantinventoryconfig.Hooks(f(g(h())))`.
+func (c *TenantInventoryConfigClient) Use(hooks ...Hook) {
+	c.hooks.TenantInventoryConfig = append(c.hooks.TenantInventoryConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tenantinventoryconfig.Intercept(f(g(h())))`.
+func (c *TenantInventoryConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TenantInventoryConfig = append(c.inters.TenantInventoryConfig, interceptors...)
+}
+
+// Create returns a builder for creating a TenantInventoryConfig entity.
+func (c *TenantInventoryConfigClient) Create() *TenantInventoryConfigCreate {
+	mutation := newTenantInventoryConfigMutation(c.config, OpCreate)
+	return &TenantInventoryConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TenantInventoryConfig entities.
+func (c *TenantInventoryConfigClient) CreateBulk(builders ...*TenantInventoryConfigCreate) *TenantInventoryConfigCreateBulk {
+	return &TenantInventoryConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TenantInventoryConfigClient) MapCreateBulk(slice any, setFunc func(*TenantInventoryConfigCreate, int)) *TenantInventoryConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TenantInventoryConfigCreateBulk{err: fmt.Errorf("calling to TenantInventoryConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TenantInventoryConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TenantInventoryConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TenantInventoryConfig.
+func (c *TenantInventoryConfigClient) Update() *TenantInventoryConfigUpdate {
+	mutation := newTenantInventoryConfigMutation(c.config, OpUpdate)
+	return &TenantInventoryConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TenantInventoryConfigClient) UpdateOne(_m *TenantInventoryConfig) *TenantInventoryConfigUpdateOne {
+	mutation := newTenantInventoryConfigMutation(c.config, OpUpdateOne, withTenantInventoryConfig(_m))
+	return &TenantInventoryConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TenantInventoryConfigClient) UpdateOneID(id uuid.UUID) *TenantInventoryConfigUpdateOne {
+	mutation := newTenantInventoryConfigMutation(c.config, OpUpdateOne, withTenantInventoryConfigID(id))
+	return &TenantInventoryConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TenantInventoryConfig.
+func (c *TenantInventoryConfigClient) Delete() *TenantInventoryConfigDelete {
+	mutation := newTenantInventoryConfigMutation(c.config, OpDelete)
+	return &TenantInventoryConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TenantInventoryConfigClient) DeleteOne(_m *TenantInventoryConfig) *TenantInventoryConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TenantInventoryConfigClient) DeleteOneID(id uuid.UUID) *TenantInventoryConfigDeleteOne {
+	builder := c.Delete().Where(tenantinventoryconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TenantInventoryConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for TenantInventoryConfig.
+func (c *TenantInventoryConfigClient) Query() *TenantInventoryConfigQuery {
+	return &TenantInventoryConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTenantInventoryConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TenantInventoryConfig entity by its id.
+func (c *TenantInventoryConfigClient) Get(ctx context.Context, id uuid.UUID) (*TenantInventoryConfig, error) {
+	return c.Query().Where(tenantinventoryconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TenantInventoryConfigClient) GetX(ctx context.Context, id uuid.UUID) *TenantInventoryConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TenantInventoryConfigClient) Hooks() []Hook {
+	return c.hooks.TenantInventoryConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *TenantInventoryConfigClient) Interceptors() []Interceptor {
+	return c.inters.TenantInventoryConfig
+}
+
+func (c *TenantInventoryConfigClient) mutate(ctx context.Context, m *TenantInventoryConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TenantInventoryConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TenantInventoryConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TenantInventoryConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TenantInventoryConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TenantInventoryConfig mutation op: %q", m.Op())
+	}
+}
+
 // UnitClient is a client for the Unit schema.
 type UnitClient struct {
 	config
@@ -6796,8 +6937,9 @@ type (
 		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
 		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
 		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, Tenant, Unit, UserRoleAssignment,
-		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Hook
+		StockTransferLine, Supplier, Tenant, TenantInventoryConfig, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		Bundle, BundleComponent, Consumption, CustomFieldDefinition, CustomFieldValue,
@@ -6806,7 +6948,8 @@ type (
 		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
 		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
 		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, Tenant, Unit, UserRoleAssignment,
-		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		StockTransferLine, Supplier, Tenant, TenantInventoryConfig, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )

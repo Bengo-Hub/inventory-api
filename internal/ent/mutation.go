@@ -46,6 +46,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -97,6 +98,7 @@ const (
 	TypeStockTransferLine     = "StockTransferLine"
 	TypeSupplier              = "Supplier"
 	TypeTenant                = "Tenant"
+	TypeTenantInventoryConfig = "TenantInventoryConfig"
 	TypeUnit                  = "Unit"
 	TypeUserRoleAssignment    = "UserRoleAssignment"
 	TypeVariantAttribute      = "VariantAttribute"
@@ -33220,6 +33222,1486 @@ func (m *TenantMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Tenant edge %s", name)
+}
+
+// TenantInventoryConfigMutation represents an operation that mutates the TenantInventoryConfig nodes in the graph.
+type TenantInventoryConfigMutation struct {
+	config
+	op                               Op
+	typ                              string
+	id                               *uuid.UUID
+	tenant_id                        *uuid.UUID
+	low_stock_threshold_pct          *float64
+	addlow_stock_threshold_pct       *float64
+	critical_stock_threshold_pct     *float64
+	addcritical_stock_threshold_pct  *float64
+	default_reorder_level            *int
+	adddefault_reorder_level         *int
+	expiry_warning_days              *int
+	addexpiry_warning_days           *int
+	enable_low_stock_notifications   *bool
+	enable_expiry_notifications      *bool
+	notification_email               *string
+	default_warehouse_id             *string
+	enable_lot_tracking              *bool
+	enable_expiry_tracking           *bool
+	purchase_order_approval_required *bool
+	auto_adjust_on_transfer          *bool
+	lots_module_enabled              *bool
+	recipes_module_enabled           *bool
+	purchase_orders_enabled          *bool
+	supplier_management_enabled      *bool
+	created_at                       *time.Time
+	updated_at                       *time.Time
+	clearedFields                    map[string]struct{}
+	done                             bool
+	oldValue                         func(context.Context) (*TenantInventoryConfig, error)
+	predicates                       []predicate.TenantInventoryConfig
+}
+
+var _ ent.Mutation = (*TenantInventoryConfigMutation)(nil)
+
+// tenantinventoryconfigOption allows management of the mutation configuration using functional options.
+type tenantinventoryconfigOption func(*TenantInventoryConfigMutation)
+
+// newTenantInventoryConfigMutation creates new mutation for the TenantInventoryConfig entity.
+func newTenantInventoryConfigMutation(c config, op Op, opts ...tenantinventoryconfigOption) *TenantInventoryConfigMutation {
+	m := &TenantInventoryConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTenantInventoryConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTenantInventoryConfigID sets the ID field of the mutation.
+func withTenantInventoryConfigID(id uuid.UUID) tenantinventoryconfigOption {
+	return func(m *TenantInventoryConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TenantInventoryConfig
+		)
+		m.oldValue = func(ctx context.Context) (*TenantInventoryConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TenantInventoryConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTenantInventoryConfig sets the old TenantInventoryConfig of the mutation.
+func withTenantInventoryConfig(node *TenantInventoryConfig) tenantinventoryconfigOption {
+	return func(m *TenantInventoryConfigMutation) {
+		m.oldValue = func(context.Context) (*TenantInventoryConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TenantInventoryConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TenantInventoryConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TenantInventoryConfig entities.
+func (m *TenantInventoryConfigMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TenantInventoryConfigMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TenantInventoryConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TenantInventoryConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *TenantInventoryConfigMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *TenantInventoryConfigMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *TenantInventoryConfigMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetLowStockThresholdPct sets the "low_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) SetLowStockThresholdPct(f float64) {
+	m.low_stock_threshold_pct = &f
+	m.addlow_stock_threshold_pct = nil
+}
+
+// LowStockThresholdPct returns the value of the "low_stock_threshold_pct" field in the mutation.
+func (m *TenantInventoryConfigMutation) LowStockThresholdPct() (r float64, exists bool) {
+	v := m.low_stock_threshold_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLowStockThresholdPct returns the old "low_stock_threshold_pct" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldLowStockThresholdPct(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLowStockThresholdPct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLowStockThresholdPct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLowStockThresholdPct: %w", err)
+	}
+	return oldValue.LowStockThresholdPct, nil
+}
+
+// AddLowStockThresholdPct adds f to the "low_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) AddLowStockThresholdPct(f float64) {
+	if m.addlow_stock_threshold_pct != nil {
+		*m.addlow_stock_threshold_pct += f
+	} else {
+		m.addlow_stock_threshold_pct = &f
+	}
+}
+
+// AddedLowStockThresholdPct returns the value that was added to the "low_stock_threshold_pct" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedLowStockThresholdPct() (r float64, exists bool) {
+	v := m.addlow_stock_threshold_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLowStockThresholdPct resets all changes to the "low_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) ResetLowStockThresholdPct() {
+	m.low_stock_threshold_pct = nil
+	m.addlow_stock_threshold_pct = nil
+}
+
+// SetCriticalStockThresholdPct sets the "critical_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) SetCriticalStockThresholdPct(f float64) {
+	m.critical_stock_threshold_pct = &f
+	m.addcritical_stock_threshold_pct = nil
+}
+
+// CriticalStockThresholdPct returns the value of the "critical_stock_threshold_pct" field in the mutation.
+func (m *TenantInventoryConfigMutation) CriticalStockThresholdPct() (r float64, exists bool) {
+	v := m.critical_stock_threshold_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCriticalStockThresholdPct returns the old "critical_stock_threshold_pct" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldCriticalStockThresholdPct(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCriticalStockThresholdPct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCriticalStockThresholdPct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCriticalStockThresholdPct: %w", err)
+	}
+	return oldValue.CriticalStockThresholdPct, nil
+}
+
+// AddCriticalStockThresholdPct adds f to the "critical_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) AddCriticalStockThresholdPct(f float64) {
+	if m.addcritical_stock_threshold_pct != nil {
+		*m.addcritical_stock_threshold_pct += f
+	} else {
+		m.addcritical_stock_threshold_pct = &f
+	}
+}
+
+// AddedCriticalStockThresholdPct returns the value that was added to the "critical_stock_threshold_pct" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedCriticalStockThresholdPct() (r float64, exists bool) {
+	v := m.addcritical_stock_threshold_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCriticalStockThresholdPct resets all changes to the "critical_stock_threshold_pct" field.
+func (m *TenantInventoryConfigMutation) ResetCriticalStockThresholdPct() {
+	m.critical_stock_threshold_pct = nil
+	m.addcritical_stock_threshold_pct = nil
+}
+
+// SetDefaultReorderLevel sets the "default_reorder_level" field.
+func (m *TenantInventoryConfigMutation) SetDefaultReorderLevel(i int) {
+	m.default_reorder_level = &i
+	m.adddefault_reorder_level = nil
+}
+
+// DefaultReorderLevel returns the value of the "default_reorder_level" field in the mutation.
+func (m *TenantInventoryConfigMutation) DefaultReorderLevel() (r int, exists bool) {
+	v := m.default_reorder_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultReorderLevel returns the old "default_reorder_level" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldDefaultReorderLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultReorderLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultReorderLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultReorderLevel: %w", err)
+	}
+	return oldValue.DefaultReorderLevel, nil
+}
+
+// AddDefaultReorderLevel adds i to the "default_reorder_level" field.
+func (m *TenantInventoryConfigMutation) AddDefaultReorderLevel(i int) {
+	if m.adddefault_reorder_level != nil {
+		*m.adddefault_reorder_level += i
+	} else {
+		m.adddefault_reorder_level = &i
+	}
+}
+
+// AddedDefaultReorderLevel returns the value that was added to the "default_reorder_level" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedDefaultReorderLevel() (r int, exists bool) {
+	v := m.adddefault_reorder_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDefaultReorderLevel resets all changes to the "default_reorder_level" field.
+func (m *TenantInventoryConfigMutation) ResetDefaultReorderLevel() {
+	m.default_reorder_level = nil
+	m.adddefault_reorder_level = nil
+}
+
+// SetExpiryWarningDays sets the "expiry_warning_days" field.
+func (m *TenantInventoryConfigMutation) SetExpiryWarningDays(i int) {
+	m.expiry_warning_days = &i
+	m.addexpiry_warning_days = nil
+}
+
+// ExpiryWarningDays returns the value of the "expiry_warning_days" field in the mutation.
+func (m *TenantInventoryConfigMutation) ExpiryWarningDays() (r int, exists bool) {
+	v := m.expiry_warning_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryWarningDays returns the old "expiry_warning_days" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldExpiryWarningDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryWarningDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryWarningDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryWarningDays: %w", err)
+	}
+	return oldValue.ExpiryWarningDays, nil
+}
+
+// AddExpiryWarningDays adds i to the "expiry_warning_days" field.
+func (m *TenantInventoryConfigMutation) AddExpiryWarningDays(i int) {
+	if m.addexpiry_warning_days != nil {
+		*m.addexpiry_warning_days += i
+	} else {
+		m.addexpiry_warning_days = &i
+	}
+}
+
+// AddedExpiryWarningDays returns the value that was added to the "expiry_warning_days" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedExpiryWarningDays() (r int, exists bool) {
+	v := m.addexpiry_warning_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExpiryWarningDays resets all changes to the "expiry_warning_days" field.
+func (m *TenantInventoryConfigMutation) ResetExpiryWarningDays() {
+	m.expiry_warning_days = nil
+	m.addexpiry_warning_days = nil
+}
+
+// SetEnableLowStockNotifications sets the "enable_low_stock_notifications" field.
+func (m *TenantInventoryConfigMutation) SetEnableLowStockNotifications(b bool) {
+	m.enable_low_stock_notifications = &b
+}
+
+// EnableLowStockNotifications returns the value of the "enable_low_stock_notifications" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableLowStockNotifications() (r bool, exists bool) {
+	v := m.enable_low_stock_notifications
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableLowStockNotifications returns the old "enable_low_stock_notifications" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableLowStockNotifications(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableLowStockNotifications is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableLowStockNotifications requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableLowStockNotifications: %w", err)
+	}
+	return oldValue.EnableLowStockNotifications, nil
+}
+
+// ResetEnableLowStockNotifications resets all changes to the "enable_low_stock_notifications" field.
+func (m *TenantInventoryConfigMutation) ResetEnableLowStockNotifications() {
+	m.enable_low_stock_notifications = nil
+}
+
+// SetEnableExpiryNotifications sets the "enable_expiry_notifications" field.
+func (m *TenantInventoryConfigMutation) SetEnableExpiryNotifications(b bool) {
+	m.enable_expiry_notifications = &b
+}
+
+// EnableExpiryNotifications returns the value of the "enable_expiry_notifications" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableExpiryNotifications() (r bool, exists bool) {
+	v := m.enable_expiry_notifications
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableExpiryNotifications returns the old "enable_expiry_notifications" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableExpiryNotifications(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableExpiryNotifications is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableExpiryNotifications requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableExpiryNotifications: %w", err)
+	}
+	return oldValue.EnableExpiryNotifications, nil
+}
+
+// ResetEnableExpiryNotifications resets all changes to the "enable_expiry_notifications" field.
+func (m *TenantInventoryConfigMutation) ResetEnableExpiryNotifications() {
+	m.enable_expiry_notifications = nil
+}
+
+// SetNotificationEmail sets the "notification_email" field.
+func (m *TenantInventoryConfigMutation) SetNotificationEmail(s string) {
+	m.notification_email = &s
+}
+
+// NotificationEmail returns the value of the "notification_email" field in the mutation.
+func (m *TenantInventoryConfigMutation) NotificationEmail() (r string, exists bool) {
+	v := m.notification_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotificationEmail returns the old "notification_email" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldNotificationEmail(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotificationEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotificationEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotificationEmail: %w", err)
+	}
+	return oldValue.NotificationEmail, nil
+}
+
+// ClearNotificationEmail clears the value of the "notification_email" field.
+func (m *TenantInventoryConfigMutation) ClearNotificationEmail() {
+	m.notification_email = nil
+	m.clearedFields[tenantinventoryconfig.FieldNotificationEmail] = struct{}{}
+}
+
+// NotificationEmailCleared returns if the "notification_email" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) NotificationEmailCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldNotificationEmail]
+	return ok
+}
+
+// ResetNotificationEmail resets all changes to the "notification_email" field.
+func (m *TenantInventoryConfigMutation) ResetNotificationEmail() {
+	m.notification_email = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldNotificationEmail)
+}
+
+// SetDefaultWarehouseID sets the "default_warehouse_id" field.
+func (m *TenantInventoryConfigMutation) SetDefaultWarehouseID(s string) {
+	m.default_warehouse_id = &s
+}
+
+// DefaultWarehouseID returns the value of the "default_warehouse_id" field in the mutation.
+func (m *TenantInventoryConfigMutation) DefaultWarehouseID() (r string, exists bool) {
+	v := m.default_warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultWarehouseID returns the old "default_warehouse_id" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldDefaultWarehouseID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultWarehouseID: %w", err)
+	}
+	return oldValue.DefaultWarehouseID, nil
+}
+
+// ClearDefaultWarehouseID clears the value of the "default_warehouse_id" field.
+func (m *TenantInventoryConfigMutation) ClearDefaultWarehouseID() {
+	m.default_warehouse_id = nil
+	m.clearedFields[tenantinventoryconfig.FieldDefaultWarehouseID] = struct{}{}
+}
+
+// DefaultWarehouseIDCleared returns if the "default_warehouse_id" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) DefaultWarehouseIDCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldDefaultWarehouseID]
+	return ok
+}
+
+// ResetDefaultWarehouseID resets all changes to the "default_warehouse_id" field.
+func (m *TenantInventoryConfigMutation) ResetDefaultWarehouseID() {
+	m.default_warehouse_id = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultWarehouseID)
+}
+
+// SetEnableLotTracking sets the "enable_lot_tracking" field.
+func (m *TenantInventoryConfigMutation) SetEnableLotTracking(b bool) {
+	m.enable_lot_tracking = &b
+}
+
+// EnableLotTracking returns the value of the "enable_lot_tracking" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableLotTracking() (r bool, exists bool) {
+	v := m.enable_lot_tracking
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableLotTracking returns the old "enable_lot_tracking" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableLotTracking(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableLotTracking is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableLotTracking requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableLotTracking: %w", err)
+	}
+	return oldValue.EnableLotTracking, nil
+}
+
+// ResetEnableLotTracking resets all changes to the "enable_lot_tracking" field.
+func (m *TenantInventoryConfigMutation) ResetEnableLotTracking() {
+	m.enable_lot_tracking = nil
+}
+
+// SetEnableExpiryTracking sets the "enable_expiry_tracking" field.
+func (m *TenantInventoryConfigMutation) SetEnableExpiryTracking(b bool) {
+	m.enable_expiry_tracking = &b
+}
+
+// EnableExpiryTracking returns the value of the "enable_expiry_tracking" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableExpiryTracking() (r bool, exists bool) {
+	v := m.enable_expiry_tracking
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableExpiryTracking returns the old "enable_expiry_tracking" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableExpiryTracking(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableExpiryTracking is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableExpiryTracking requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableExpiryTracking: %w", err)
+	}
+	return oldValue.EnableExpiryTracking, nil
+}
+
+// ResetEnableExpiryTracking resets all changes to the "enable_expiry_tracking" field.
+func (m *TenantInventoryConfigMutation) ResetEnableExpiryTracking() {
+	m.enable_expiry_tracking = nil
+}
+
+// SetPurchaseOrderApprovalRequired sets the "purchase_order_approval_required" field.
+func (m *TenantInventoryConfigMutation) SetPurchaseOrderApprovalRequired(b bool) {
+	m.purchase_order_approval_required = &b
+}
+
+// PurchaseOrderApprovalRequired returns the value of the "purchase_order_approval_required" field in the mutation.
+func (m *TenantInventoryConfigMutation) PurchaseOrderApprovalRequired() (r bool, exists bool) {
+	v := m.purchase_order_approval_required
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchaseOrderApprovalRequired returns the old "purchase_order_approval_required" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldPurchaseOrderApprovalRequired(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchaseOrderApprovalRequired is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchaseOrderApprovalRequired requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchaseOrderApprovalRequired: %w", err)
+	}
+	return oldValue.PurchaseOrderApprovalRequired, nil
+}
+
+// ResetPurchaseOrderApprovalRequired resets all changes to the "purchase_order_approval_required" field.
+func (m *TenantInventoryConfigMutation) ResetPurchaseOrderApprovalRequired() {
+	m.purchase_order_approval_required = nil
+}
+
+// SetAutoAdjustOnTransfer sets the "auto_adjust_on_transfer" field.
+func (m *TenantInventoryConfigMutation) SetAutoAdjustOnTransfer(b bool) {
+	m.auto_adjust_on_transfer = &b
+}
+
+// AutoAdjustOnTransfer returns the value of the "auto_adjust_on_transfer" field in the mutation.
+func (m *TenantInventoryConfigMutation) AutoAdjustOnTransfer() (r bool, exists bool) {
+	v := m.auto_adjust_on_transfer
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoAdjustOnTransfer returns the old "auto_adjust_on_transfer" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldAutoAdjustOnTransfer(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoAdjustOnTransfer is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoAdjustOnTransfer requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoAdjustOnTransfer: %w", err)
+	}
+	return oldValue.AutoAdjustOnTransfer, nil
+}
+
+// ResetAutoAdjustOnTransfer resets all changes to the "auto_adjust_on_transfer" field.
+func (m *TenantInventoryConfigMutation) ResetAutoAdjustOnTransfer() {
+	m.auto_adjust_on_transfer = nil
+}
+
+// SetLotsModuleEnabled sets the "lots_module_enabled" field.
+func (m *TenantInventoryConfigMutation) SetLotsModuleEnabled(b bool) {
+	m.lots_module_enabled = &b
+}
+
+// LotsModuleEnabled returns the value of the "lots_module_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) LotsModuleEnabled() (r bool, exists bool) {
+	v := m.lots_module_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLotsModuleEnabled returns the old "lots_module_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldLotsModuleEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLotsModuleEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLotsModuleEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLotsModuleEnabled: %w", err)
+	}
+	return oldValue.LotsModuleEnabled, nil
+}
+
+// ResetLotsModuleEnabled resets all changes to the "lots_module_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetLotsModuleEnabled() {
+	m.lots_module_enabled = nil
+}
+
+// SetRecipesModuleEnabled sets the "recipes_module_enabled" field.
+func (m *TenantInventoryConfigMutation) SetRecipesModuleEnabled(b bool) {
+	m.recipes_module_enabled = &b
+}
+
+// RecipesModuleEnabled returns the value of the "recipes_module_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) RecipesModuleEnabled() (r bool, exists bool) {
+	v := m.recipes_module_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipesModuleEnabled returns the old "recipes_module_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldRecipesModuleEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipesModuleEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipesModuleEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipesModuleEnabled: %w", err)
+	}
+	return oldValue.RecipesModuleEnabled, nil
+}
+
+// ResetRecipesModuleEnabled resets all changes to the "recipes_module_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetRecipesModuleEnabled() {
+	m.recipes_module_enabled = nil
+}
+
+// SetPurchaseOrdersEnabled sets the "purchase_orders_enabled" field.
+func (m *TenantInventoryConfigMutation) SetPurchaseOrdersEnabled(b bool) {
+	m.purchase_orders_enabled = &b
+}
+
+// PurchaseOrdersEnabled returns the value of the "purchase_orders_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) PurchaseOrdersEnabled() (r bool, exists bool) {
+	v := m.purchase_orders_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchaseOrdersEnabled returns the old "purchase_orders_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldPurchaseOrdersEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchaseOrdersEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchaseOrdersEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchaseOrdersEnabled: %w", err)
+	}
+	return oldValue.PurchaseOrdersEnabled, nil
+}
+
+// ResetPurchaseOrdersEnabled resets all changes to the "purchase_orders_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetPurchaseOrdersEnabled() {
+	m.purchase_orders_enabled = nil
+}
+
+// SetSupplierManagementEnabled sets the "supplier_management_enabled" field.
+func (m *TenantInventoryConfigMutation) SetSupplierManagementEnabled(b bool) {
+	m.supplier_management_enabled = &b
+}
+
+// SupplierManagementEnabled returns the value of the "supplier_management_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) SupplierManagementEnabled() (r bool, exists bool) {
+	v := m.supplier_management_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplierManagementEnabled returns the old "supplier_management_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldSupplierManagementEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplierManagementEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplierManagementEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplierManagementEnabled: %w", err)
+	}
+	return oldValue.SupplierManagementEnabled, nil
+}
+
+// ResetSupplierManagementEnabled resets all changes to the "supplier_management_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetSupplierManagementEnabled() {
+	m.supplier_management_enabled = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TenantInventoryConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TenantInventoryConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TenantInventoryConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TenantInventoryConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TenantInventoryConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TenantInventoryConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the TenantInventoryConfigMutation builder.
+func (m *TenantInventoryConfigMutation) Where(ps ...predicate.TenantInventoryConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TenantInventoryConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TenantInventoryConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TenantInventoryConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TenantInventoryConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TenantInventoryConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TenantInventoryConfig).
+func (m *TenantInventoryConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TenantInventoryConfigMutation) Fields() []string {
+	fields := make([]string, 0, 19)
+	if m.tenant_id != nil {
+		fields = append(fields, tenantinventoryconfig.FieldTenantID)
+	}
+	if m.low_stock_threshold_pct != nil {
+		fields = append(fields, tenantinventoryconfig.FieldLowStockThresholdPct)
+	}
+	if m.critical_stock_threshold_pct != nil {
+		fields = append(fields, tenantinventoryconfig.FieldCriticalStockThresholdPct)
+	}
+	if m.default_reorder_level != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultReorderLevel)
+	}
+	if m.expiry_warning_days != nil {
+		fields = append(fields, tenantinventoryconfig.FieldExpiryWarningDays)
+	}
+	if m.enable_low_stock_notifications != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableLowStockNotifications)
+	}
+	if m.enable_expiry_notifications != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableExpiryNotifications)
+	}
+	if m.notification_email != nil {
+		fields = append(fields, tenantinventoryconfig.FieldNotificationEmail)
+	}
+	if m.default_warehouse_id != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultWarehouseID)
+	}
+	if m.enable_lot_tracking != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableLotTracking)
+	}
+	if m.enable_expiry_tracking != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableExpiryTracking)
+	}
+	if m.purchase_order_approval_required != nil {
+		fields = append(fields, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired)
+	}
+	if m.auto_adjust_on_transfer != nil {
+		fields = append(fields, tenantinventoryconfig.FieldAutoAdjustOnTransfer)
+	}
+	if m.lots_module_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldLotsModuleEnabled)
+	}
+	if m.recipes_module_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldRecipesModuleEnabled)
+	}
+	if m.purchase_orders_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldPurchaseOrdersEnabled)
+	}
+	if m.supplier_management_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldSupplierManagementEnabled)
+	}
+	if m.created_at != nil {
+		fields = append(fields, tenantinventoryconfig.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, tenantinventoryconfig.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tenantinventoryconfig.FieldTenantID:
+		return m.TenantID()
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		return m.LowStockThresholdPct()
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		return m.CriticalStockThresholdPct()
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		return m.DefaultReorderLevel()
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		return m.ExpiryWarningDays()
+	case tenantinventoryconfig.FieldEnableLowStockNotifications:
+		return m.EnableLowStockNotifications()
+	case tenantinventoryconfig.FieldEnableExpiryNotifications:
+		return m.EnableExpiryNotifications()
+	case tenantinventoryconfig.FieldNotificationEmail:
+		return m.NotificationEmail()
+	case tenantinventoryconfig.FieldDefaultWarehouseID:
+		return m.DefaultWarehouseID()
+	case tenantinventoryconfig.FieldEnableLotTracking:
+		return m.EnableLotTracking()
+	case tenantinventoryconfig.FieldEnableExpiryTracking:
+		return m.EnableExpiryTracking()
+	case tenantinventoryconfig.FieldPurchaseOrderApprovalRequired:
+		return m.PurchaseOrderApprovalRequired()
+	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
+		return m.AutoAdjustOnTransfer()
+	case tenantinventoryconfig.FieldLotsModuleEnabled:
+		return m.LotsModuleEnabled()
+	case tenantinventoryconfig.FieldRecipesModuleEnabled:
+		return m.RecipesModuleEnabled()
+	case tenantinventoryconfig.FieldPurchaseOrdersEnabled:
+		return m.PurchaseOrdersEnabled()
+	case tenantinventoryconfig.FieldSupplierManagementEnabled:
+		return m.SupplierManagementEnabled()
+	case tenantinventoryconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	case tenantinventoryconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tenantinventoryconfig.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		return m.OldLowStockThresholdPct(ctx)
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		return m.OldCriticalStockThresholdPct(ctx)
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		return m.OldDefaultReorderLevel(ctx)
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		return m.OldExpiryWarningDays(ctx)
+	case tenantinventoryconfig.FieldEnableLowStockNotifications:
+		return m.OldEnableLowStockNotifications(ctx)
+	case tenantinventoryconfig.FieldEnableExpiryNotifications:
+		return m.OldEnableExpiryNotifications(ctx)
+	case tenantinventoryconfig.FieldNotificationEmail:
+		return m.OldNotificationEmail(ctx)
+	case tenantinventoryconfig.FieldDefaultWarehouseID:
+		return m.OldDefaultWarehouseID(ctx)
+	case tenantinventoryconfig.FieldEnableLotTracking:
+		return m.OldEnableLotTracking(ctx)
+	case tenantinventoryconfig.FieldEnableExpiryTracking:
+		return m.OldEnableExpiryTracking(ctx)
+	case tenantinventoryconfig.FieldPurchaseOrderApprovalRequired:
+		return m.OldPurchaseOrderApprovalRequired(ctx)
+	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
+		return m.OldAutoAdjustOnTransfer(ctx)
+	case tenantinventoryconfig.FieldLotsModuleEnabled:
+		return m.OldLotsModuleEnabled(ctx)
+	case tenantinventoryconfig.FieldRecipesModuleEnabled:
+		return m.OldRecipesModuleEnabled(ctx)
+	case tenantinventoryconfig.FieldPurchaseOrdersEnabled:
+		return m.OldPurchaseOrdersEnabled(ctx)
+	case tenantinventoryconfig.FieldSupplierManagementEnabled:
+		return m.OldSupplierManagementEnabled(ctx)
+	case tenantinventoryconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case tenantinventoryconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TenantInventoryConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tenantinventoryconfig.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLowStockThresholdPct(v)
+		return nil
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCriticalStockThresholdPct(v)
+		return nil
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultReorderLevel(v)
+		return nil
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryWarningDays(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableLowStockNotifications:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableLowStockNotifications(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableExpiryNotifications:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableExpiryNotifications(v)
+		return nil
+	case tenantinventoryconfig.FieldNotificationEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotificationEmail(v)
+		return nil
+	case tenantinventoryconfig.FieldDefaultWarehouseID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultWarehouseID(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableLotTracking:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableLotTracking(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableExpiryTracking:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableExpiryTracking(v)
+		return nil
+	case tenantinventoryconfig.FieldPurchaseOrderApprovalRequired:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchaseOrderApprovalRequired(v)
+		return nil
+	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoAdjustOnTransfer(v)
+		return nil
+	case tenantinventoryconfig.FieldLotsModuleEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLotsModuleEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldRecipesModuleEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipesModuleEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldPurchaseOrdersEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchaseOrdersEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldSupplierManagementEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplierManagementEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case tenantinventoryconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TenantInventoryConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TenantInventoryConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addlow_stock_threshold_pct != nil {
+		fields = append(fields, tenantinventoryconfig.FieldLowStockThresholdPct)
+	}
+	if m.addcritical_stock_threshold_pct != nil {
+		fields = append(fields, tenantinventoryconfig.FieldCriticalStockThresholdPct)
+	}
+	if m.adddefault_reorder_level != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultReorderLevel)
+	}
+	if m.addexpiry_warning_days != nil {
+		fields = append(fields, tenantinventoryconfig.FieldExpiryWarningDays)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TenantInventoryConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		return m.AddedLowStockThresholdPct()
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		return m.AddedCriticalStockThresholdPct()
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		return m.AddedDefaultReorderLevel()
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		return m.AddedExpiryWarningDays()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenantInventoryConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLowStockThresholdPct(v)
+		return nil
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCriticalStockThresholdPct(v)
+		return nil
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDefaultReorderLevel(v)
+		return nil
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExpiryWarningDays(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TenantInventoryConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TenantInventoryConfigMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(tenantinventoryconfig.FieldNotificationEmail) {
+		fields = append(fields, tenantinventoryconfig.FieldNotificationEmail)
+	}
+	if m.FieldCleared(tenantinventoryconfig.FieldDefaultWarehouseID) {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultWarehouseID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TenantInventoryConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TenantInventoryConfigMutation) ClearField(name string) error {
+	switch name {
+	case tenantinventoryconfig.FieldNotificationEmail:
+		m.ClearNotificationEmail()
+		return nil
+	case tenantinventoryconfig.FieldDefaultWarehouseID:
+		m.ClearDefaultWarehouseID()
+		return nil
+	}
+	return fmt.Errorf("unknown TenantInventoryConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TenantInventoryConfigMutation) ResetField(name string) error {
+	switch name {
+	case tenantinventoryconfig.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case tenantinventoryconfig.FieldLowStockThresholdPct:
+		m.ResetLowStockThresholdPct()
+		return nil
+	case tenantinventoryconfig.FieldCriticalStockThresholdPct:
+		m.ResetCriticalStockThresholdPct()
+		return nil
+	case tenantinventoryconfig.FieldDefaultReorderLevel:
+		m.ResetDefaultReorderLevel()
+		return nil
+	case tenantinventoryconfig.FieldExpiryWarningDays:
+		m.ResetExpiryWarningDays()
+		return nil
+	case tenantinventoryconfig.FieldEnableLowStockNotifications:
+		m.ResetEnableLowStockNotifications()
+		return nil
+	case tenantinventoryconfig.FieldEnableExpiryNotifications:
+		m.ResetEnableExpiryNotifications()
+		return nil
+	case tenantinventoryconfig.FieldNotificationEmail:
+		m.ResetNotificationEmail()
+		return nil
+	case tenantinventoryconfig.FieldDefaultWarehouseID:
+		m.ResetDefaultWarehouseID()
+		return nil
+	case tenantinventoryconfig.FieldEnableLotTracking:
+		m.ResetEnableLotTracking()
+		return nil
+	case tenantinventoryconfig.FieldEnableExpiryTracking:
+		m.ResetEnableExpiryTracking()
+		return nil
+	case tenantinventoryconfig.FieldPurchaseOrderApprovalRequired:
+		m.ResetPurchaseOrderApprovalRequired()
+		return nil
+	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
+		m.ResetAutoAdjustOnTransfer()
+		return nil
+	case tenantinventoryconfig.FieldLotsModuleEnabled:
+		m.ResetLotsModuleEnabled()
+		return nil
+	case tenantinventoryconfig.FieldRecipesModuleEnabled:
+		m.ResetRecipesModuleEnabled()
+		return nil
+	case tenantinventoryconfig.FieldPurchaseOrdersEnabled:
+		m.ResetPurchaseOrdersEnabled()
+		return nil
+	case tenantinventoryconfig.FieldSupplierManagementEnabled:
+		m.ResetSupplierManagementEnabled()
+		return nil
+	case tenantinventoryconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case tenantinventoryconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TenantInventoryConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TenantInventoryConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TenantInventoryConfigMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TenantInventoryConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TenantInventoryConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TenantInventoryConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TenantInventoryConfigMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown TenantInventoryConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TenantInventoryConfigMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown TenantInventoryConfig edge %s", name)
 }
 
 // UnitMutation represents an operation that mutates the Unit nodes in the graph.

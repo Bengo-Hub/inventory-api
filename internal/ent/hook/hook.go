@@ -405,6 +405,18 @@ func (f TenantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantMutation", m)
 }
 
+// The TenantInventoryConfigFunc type is an adapter to allow the use of ordinary
+// function as TenantInventoryConfig mutator.
+type TenantInventoryConfigFunc func(context.Context, *ent.TenantInventoryConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TenantInventoryConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TenantInventoryConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantInventoryConfigMutation", m)
+}
+
 // The UnitFunc type is an adapter to allow the use of ordinary
 // function as Unit mutator.
 type UnitFunc func(context.Context, *ent.UnitMutation) (ent.Value, error)
