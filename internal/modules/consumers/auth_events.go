@@ -90,26 +90,8 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 		return fmt.Errorf("subscribe to auth.user.updated: %w", err)
 	}
 
-	// Subscribe to auth.user.pin_set — sync staff PINs set by tenant admins in the SSO portal
-	_, err = nc.Subscribe("auth.user.pin_set", func(msg *nats.Msg) {
-		var evt authUserEvent
-		if err := json.Unmarshal(msg.Data, &evt); err != nil {
-			c.log.Error("failed to unmarshal auth.user.pin_set event", zap.Error(err))
-			return
-		}
-
-		if err := c.handleUserPINSet(ctx, &evt); err != nil {
-			c.log.Error("failed to handle auth.user.pin_set event", zap.Error(err))
-			return
-		}
-		_ = msg.Ack()
-	})
-	if err != nil {
-		return fmt.Errorf("subscribe to auth.user.pin_set: %w", err)
-	}
-
 	c.log.Info("auth event subscriptions active",
-		zap.Strings("subjects", []string{"auth.user.created", "auth.user.updated", "auth.user.pin_set"}))
+		zap.Strings("subjects", []string{"auth.user.created", "auth.user.updated"}))
 	return nil
 }
 
@@ -135,39 +117,6 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *authUse
 		zap.String("user_id", userID.String()),
 		zap.String("tenant_id", tenantID.String()),
 		zap.String("email", email))
-	return nil
-}
-
-func (c *AuthEventsConsumer) handleUserPINSet(ctx context.Context, evt *authUserEvent) error {
-	service, _ := evt.Payload["service"].(string)
-	if service != "inventory" {
-		// Event is for a different service (e.g. "pos") — skip silently
-		return nil
-	}
-
-	userIDStr, _ := evt.Payload["user_id"].(string)
-	pinHash, _ := evt.Payload["pin_hash"].(string)
-
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return fmt.Errorf("invalid user_id %q: %w", userIDStr, err)
-	}
-	if pinHash == "" {
-		return fmt.Errorf("pin_hash is required in auth.user.pin_set event")
-	}
-
-	tenantID := evt.TenantID
-	if tenantID == uuid.Nil {
-		return fmt.Errorf("missing tenant_id in auth.user.pin_set event")
-	}
-
-	if err := c.rbacSvc.SetUserPIN(ctx, tenantID, userID, pinHash); err != nil {
-		return fmt.Errorf("set user PIN from NATS event: %w", err)
-	}
-
-	c.log.Info("staff PIN synced from auth.user.pin_set",
-		zap.String("user_id", userIDStr),
-		zap.String("tenant_id", tenantID.String()))
 	return nil
 }
 

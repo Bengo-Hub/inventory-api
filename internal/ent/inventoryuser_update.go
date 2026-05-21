@@ -99,26 +99,6 @@ func (_u *InventoryUserUpdate) SetNillableSyncStatus(v *string) *InventoryUserUp
 	return _u
 }
 
-// SetPinHash sets the "pin_hash" field.
-func (_u *InventoryUserUpdate) SetPinHash(v string) *InventoryUserUpdate {
-	_u.mutation.SetPinHash(v)
-	return _u
-}
-
-// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
-func (_u *InventoryUserUpdate) SetNillablePinHash(v *string) *InventoryUserUpdate {
-	if v != nil {
-		_u.SetPinHash(*v)
-	}
-	return _u
-}
-
-// ClearPinHash clears the value of the "pin_hash" field.
-func (_u *InventoryUserUpdate) ClearPinHash() *InventoryUserUpdate {
-	_u.mutation.ClearPinHash()
-	return _u
-}
-
 // SetLastSyncAt sets the "last_sync_at" field.
 func (_u *InventoryUserUpdate) SetLastSyncAt(v time.Time) *InventoryUserUpdate {
 	_u.mutation.SetLastSyncAt(v)
@@ -223,12 +203,6 @@ func (_u *InventoryUserUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.SyncStatus(); ok {
 		_spec.SetField(inventoryuser.FieldSyncStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.PinHash(); ok {
-		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
-	}
-	if _u.mutation.PinHashCleared() {
-		_spec.ClearField(inventoryuser.FieldPinHash, field.TypeString)
-	}
 	if value, ok := _u.mutation.LastSyncAt(); ok {
 		_spec.SetField(inventoryuser.FieldLastSyncAt, field.TypeTime, value)
 	}
@@ -325,26 +299,6 @@ func (_u *InventoryUserUpdateOne) SetNillableSyncStatus(v *string) *InventoryUse
 	if v != nil {
 		_u.SetSyncStatus(*v)
 	}
-	return _u
-}
-
-// SetPinHash sets the "pin_hash" field.
-func (_u *InventoryUserUpdateOne) SetPinHash(v string) *InventoryUserUpdateOne {
-	_u.mutation.SetPinHash(v)
-	return _u
-}
-
-// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
-func (_u *InventoryUserUpdateOne) SetNillablePinHash(v *string) *InventoryUserUpdateOne {
-	if v != nil {
-		_u.SetPinHash(*v)
-	}
-	return _u
-}
-
-// ClearPinHash clears the value of the "pin_hash" field.
-func (_u *InventoryUserUpdateOne) ClearPinHash() *InventoryUserUpdateOne {
-	_u.mutation.ClearPinHash()
 	return _u
 }
 
@@ -481,12 +435,6 @@ func (_u *InventoryUserUpdateOne) sqlSave(ctx context.Context) (_node *Inventory
 	}
 	if value, ok := _u.mutation.SyncStatus(); ok {
 		_spec.SetField(inventoryuser.FieldSyncStatus, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.PinHash(); ok {
-		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
-	}
-	if _u.mutation.PinHashCleared() {
-		_spec.ClearField(inventoryuser.FieldPinHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.LastSyncAt(); ok {
 		_spec.SetField(inventoryuser.FieldLastSyncAt, field.TypeTime, value)
