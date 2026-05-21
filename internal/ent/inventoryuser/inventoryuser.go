@@ -24,6 +24,8 @@ const (
 	FieldStatus = "status"
 	// FieldSyncStatus holds the string denoting the sync_status field in the database.
 	FieldSyncStatus = "sync_status"
+	// FieldPinHash holds the string denoting the pin_hash field in the database.
+	FieldPinHash = "pin_hash"
 	// FieldLastSyncAt holds the string denoting the last_sync_at field in the database.
 	FieldLastSyncAt = "last_sync_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -42,6 +44,7 @@ var Columns = []string{
 	FieldEmail,
 	FieldStatus,
 	FieldSyncStatus,
+	FieldPinHash,
 	FieldLastSyncAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -105,6 +108,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // BySyncStatus orders the results by the sync_status field.
 func BySyncStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSyncStatus, opts...).ToFunc()
+}
+
+// ByPinHash orders the results by the pin_hash field.
+func ByPinHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinHash, opts...).ToFunc()
 }
 
 // ByLastSyncAt orders the results by the last_sync_at field.
