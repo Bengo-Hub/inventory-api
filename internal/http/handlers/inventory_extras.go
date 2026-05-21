@@ -45,15 +45,15 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
 
-	r.Route("/inventory", func(inv chi.Router) {
-		inv.Get("/stock", h.ListStock)
-		inv.Get("/lots", h.ListLots)
-		inv.Get("/suppliers", h.ListSuppliers)
-		inv.With(perm(rbac.PermItemsAdd)).Post("/suppliers", h.CreateSupplier)
-		inv.With(perm(rbac.PermItemsChange)).Put("/suppliers/{supplierID}", h.UpdateSupplier)
-		inv.Get("/purchase-orders", h.ListPurchaseOrders)
-		inv.Get("/activity", h.ListActivity)
-	})
+	// Register directly (no sub-Route) so we don't conflict with inventoryHandler's
+	// r.Route("/inventory", ...) which is registered first on the same router.
+	r.Get("/inventory/stock", h.ListStock)
+	r.Get("/inventory/lots", h.ListLots)
+	r.Get("/inventory/suppliers", h.ListSuppliers)
+	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/suppliers", h.CreateSupplier)
+	r.With(perm(rbac.PermItemsChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
+	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
+	r.Get("/inventory/activity", h.ListActivity)
 }
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
