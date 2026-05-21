@@ -38,14 +38,14 @@ func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
 
-	r.Route("/pricing-tiers", func(pt chi.Router) {
+	r.Route("/inventory/pricing-tiers", func(pt chi.Router) {
 		pt.Get("/", h.ListTiers)
 		pt.With(perm(rbac.PermItemsAdd)).Post("/", h.CreateTier)
 		pt.With(perm(rbac.PermItemsChange)).Put("/{tierID}", h.UpdateTier)
 		pt.With(perm(rbac.PermItemsDelete)).Delete("/{tierID}", h.DeactivateTier)
 	})
 
-	r.Route("/items/{itemID}/pricing", func(ip chi.Router) {
+	r.Route("/inventory/items/{itemID}/pricing", func(ip chi.Router) {
 		ip.Get("/", h.GetItemPricing)
 		ip.With(perm(rbac.PermItemsChange)).Put("/", h.UpsertItemPricing)
 	})

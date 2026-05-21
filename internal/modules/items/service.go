@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -378,9 +379,11 @@ func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus
 }
 // InventorySummary represents high-level stock metrics.
 type InventorySummary struct {
-	TotalItems       int `json:"total_items"`
-	LowStockItems    int `json:"low_stock_items"`
-	OutOfStockItems  int `json:"out_of_stock_items"`
+	TotalItems          int `json:"total_items"`
+	LowStockItems       int `json:"low_stock_items"`
+	OutOfStockItems     int `json:"out_of_stock_items"`
+	PendingReservations int `json:"pending_reservations"`
+	WarehouseCount      int `json:"warehouse_count"`
 }
 
 // GetInventorySummary returns aggregated stock metrics for a tenant.
@@ -414,10 +417,26 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 		return nil, fmt.Errorf("items: count out of stock: %w", err)
 	}
 
+	pendingReservations, err := s.client.Reservation.Query().
+		Where(reservation.TenantID(tenantID), reservation.StatusEQ("pending")).
+		Count(ctx)
+	if err != nil {
+		pendingReservations = 0 // non-fatal
+	}
+
+	warehouseCount, err := s.client.Warehouse.Query().
+		Where(warehouse.TenantID(tenantID), warehouse.IsActive(true)).
+		Count(ctx)
+	if err != nil {
+		warehouseCount = 0 // non-fatal
+	}
+
 	return &InventorySummary{
-		TotalItems:      total,
-		LowStockItems:   lowStock,
-		OutOfStockItems: outOfStock,
+		TotalItems:          total,
+		LowStockItems:       lowStock,
+		OutOfStockItems:     outOfStock,
+		PendingReservations: pendingReservations,
+		WarehouseCount:      warehouseCount,
 	}, nil
 }
 
