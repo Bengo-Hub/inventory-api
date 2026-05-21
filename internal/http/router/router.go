@@ -158,6 +158,9 @@ func New(
 				Required:     true,
 			}))
 
+			// Optional outlet context for warehouse/inventory filtering
+			tenant.Use(ratelimitmw.OutletContext)
+
 			// Private User Routes (Always require auth)
 			tenant.Group(func(private chi.Router) {
 				if authMiddleware != nil {
@@ -233,6 +236,9 @@ func New(
 				URLParamFunc: chi.URLParam,
 				Required:     true,
 			}))
+
+			// Optional outlet context for warehouse/inventory filtering
+			tenant.Use(ratelimitmw.OutletContext)
 
 			if inventoryHandler != nil {
 				tenant.Group(func(g chi.Router) {
