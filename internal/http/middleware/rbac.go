@@ -25,8 +25,8 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 				return
 			}
 
-			// Platform owners bypass all permission checks.
-			if claims.IsPlatformOwner {
+			// Platform owners and superusers (service accounts) bypass all permission checks.
+			if claims.IsPlatformOwner || claims.IsSuperuser() {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -87,7 +87,7 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
-			if claims.IsPlatformOwner {
+			if claims.IsPlatformOwner || claims.IsSuperuser() {
 				next.ServeHTTP(w, r)
 				return
 			}
