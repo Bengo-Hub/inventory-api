@@ -17,17 +17,19 @@ kubectl scale deployment inventory-api -n inventory --replicas=0
 
 ### 3. Terminate Active Sessions
 ```powershell
-kubectl exec postgresql-0 -n infra -- env PGPASSWORD='Vertex2020!' psql -h 127.0.0.1 -U admin_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='inventory' AND pid<>pg_backend_pid();"
+# Retrieve PGADMIN_PASSWORD from the K8s secret before running:
+#   kubectl get secret postgres-admin-credentials -n infra -o jsonpath='{.data.password}' | base64 -d
+kubectl exec postgresql-0 -n infra -- env PGPASSWORD='<PGADMIN_PASSWORD_FROM_K8S_SECRET>' psql -h 127.0.0.1 -U admin_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='inventory' AND pid<>pg_backend_pid();"
 ```
 
 ### 4. Drop and Recreate Database
 ```powershell
-kubectl exec postgresql-0 -n infra -- /bin/bash -c "export PGPASSWORD='Vertex2020!'; dropdb -h 127.0.0.1 -U admin_user inventory --if-exists; createdb -h 127.0.0.1 -U admin_user inventory"
+kubectl exec postgresql-0 -n infra -- /bin/bash -c "export PGPASSWORD='<PGADMIN_PASSWORD_FROM_K8S_SECRET>'; dropdb -h 127.0.0.1 -U admin_user inventory --if-exists; createdb -h 127.0.0.1 -U admin_user inventory"
 ```
 
 ### 5. Fix Database Ownership
 ```powershell
-kubectl exec postgresql-0 -n infra -- /bin/bash -c "export PGPASSWORD='Vertex2020!'; psql -h 127.0.0.1 -U admin_user -d postgres -c 'ALTER DATABASE inventory OWNER TO inventory_user;'"
+kubectl exec postgresql-0 -n infra -- /bin/bash -c "export PGPASSWORD='<PGADMIN_PASSWORD_FROM_K8S_SECRET>'; psql -h 127.0.0.1 -U admin_user -d postgres -c 'ALTER DATABASE inventory OWNER TO inventory_user;'"
 ```
 
 ### 6. Restore Inventory API Deployment
@@ -46,7 +48,7 @@ Or wait for the seed init container if enabled in Helm values.
 ### 8. Verification
 ```powershell
 kubectl get pods -n inventory
-kubectl exec postgresql-0 -n infra -- env PGPASSWORD='Vertex2020!' psql -h 127.0.0.1 -U admin_user -d inventory -c "SELECT COUNT(*) FROM units; SELECT COUNT(*) FROM items; SELECT COUNT(*) FROM item_categories;"
+kubectl exec postgresql-0 -n infra -- env PGPASSWORD='<PGADMIN_PASSWORD_FROM_K8S_SECRET>' psql -h 127.0.0.1 -U admin_user -d inventory -c "SELECT COUNT(*) FROM units; SELECT COUNT(*) FROM items; SELECT COUNT(*) FROM item_categories;"
 ```
 
 ## Seeded Data
