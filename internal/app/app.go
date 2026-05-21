@@ -39,6 +39,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
+	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 	"github.com/bengobox/inventory-service/internal/services/usersync"
 	"github.com/bengobox/inventory-service/internal/shared/logger"
 )
@@ -202,6 +203,11 @@ func New(ctx context.Context) (*App, error) {
 		branchSub := tenant.NewBranchSubscriber(ormClient, log)
 		if err := branchSub.RegisterSubscribers(eventSub); err != nil {
 			log.Error("failed to register branch subscribers", zap.Error(err))
+		}
+
+		subCacheSub := subscriptions.NewCacheSubscriber(redisClient, log)
+		if err := subCacheSub.Start(natsConn); err != nil {
+			log.Warn("app: failed to start subscription cache subscriber", zap.Error(err))
 		}
 	}
 
