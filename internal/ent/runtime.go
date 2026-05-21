@@ -38,6 +38,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -1011,6 +1012,78 @@ func init() {
 	tenantDescID := tenantFields[0].Descriptor()
 	// tenant.DefaultID holds the default value on creation for the id field.
 	tenant.DefaultID = tenantDescID.Default.(func() uuid.UUID)
+	tenantinventoryconfigFields := schema.TenantInventoryConfig{}.Fields()
+	_ = tenantinventoryconfigFields
+	// tenantinventoryconfigDescLowStockThresholdPct is the schema descriptor for low_stock_threshold_pct field.
+	tenantinventoryconfigDescLowStockThresholdPct := tenantinventoryconfigFields[2].Descriptor()
+	// tenantinventoryconfig.DefaultLowStockThresholdPct holds the default value on creation for the low_stock_threshold_pct field.
+	tenantinventoryconfig.DefaultLowStockThresholdPct = tenantinventoryconfigDescLowStockThresholdPct.Default.(float64)
+	// tenantinventoryconfigDescCriticalStockThresholdPct is the schema descriptor for critical_stock_threshold_pct field.
+	tenantinventoryconfigDescCriticalStockThresholdPct := tenantinventoryconfigFields[3].Descriptor()
+	// tenantinventoryconfig.DefaultCriticalStockThresholdPct holds the default value on creation for the critical_stock_threshold_pct field.
+	tenantinventoryconfig.DefaultCriticalStockThresholdPct = tenantinventoryconfigDescCriticalStockThresholdPct.Default.(float64)
+	// tenantinventoryconfigDescDefaultReorderLevel is the schema descriptor for default_reorder_level field.
+	tenantinventoryconfigDescDefaultReorderLevel := tenantinventoryconfigFields[4].Descriptor()
+	// tenantinventoryconfig.DefaultDefaultReorderLevel holds the default value on creation for the default_reorder_level field.
+	tenantinventoryconfig.DefaultDefaultReorderLevel = tenantinventoryconfigDescDefaultReorderLevel.Default.(int)
+	// tenantinventoryconfigDescExpiryWarningDays is the schema descriptor for expiry_warning_days field.
+	tenantinventoryconfigDescExpiryWarningDays := tenantinventoryconfigFields[5].Descriptor()
+	// tenantinventoryconfig.DefaultExpiryWarningDays holds the default value on creation for the expiry_warning_days field.
+	tenantinventoryconfig.DefaultExpiryWarningDays = tenantinventoryconfigDescExpiryWarningDays.Default.(int)
+	// tenantinventoryconfigDescEnableLowStockNotifications is the schema descriptor for enable_low_stock_notifications field.
+	tenantinventoryconfigDescEnableLowStockNotifications := tenantinventoryconfigFields[6].Descriptor()
+	// tenantinventoryconfig.DefaultEnableLowStockNotifications holds the default value on creation for the enable_low_stock_notifications field.
+	tenantinventoryconfig.DefaultEnableLowStockNotifications = tenantinventoryconfigDescEnableLowStockNotifications.Default.(bool)
+	// tenantinventoryconfigDescEnableExpiryNotifications is the schema descriptor for enable_expiry_notifications field.
+	tenantinventoryconfigDescEnableExpiryNotifications := tenantinventoryconfigFields[7].Descriptor()
+	// tenantinventoryconfig.DefaultEnableExpiryNotifications holds the default value on creation for the enable_expiry_notifications field.
+	tenantinventoryconfig.DefaultEnableExpiryNotifications = tenantinventoryconfigDescEnableExpiryNotifications.Default.(bool)
+	// tenantinventoryconfigDescEnableLotTracking is the schema descriptor for enable_lot_tracking field.
+	tenantinventoryconfigDescEnableLotTracking := tenantinventoryconfigFields[10].Descriptor()
+	// tenantinventoryconfig.DefaultEnableLotTracking holds the default value on creation for the enable_lot_tracking field.
+	tenantinventoryconfig.DefaultEnableLotTracking = tenantinventoryconfigDescEnableLotTracking.Default.(bool)
+	// tenantinventoryconfigDescEnableExpiryTracking is the schema descriptor for enable_expiry_tracking field.
+	tenantinventoryconfigDescEnableExpiryTracking := tenantinventoryconfigFields[11].Descriptor()
+	// tenantinventoryconfig.DefaultEnableExpiryTracking holds the default value on creation for the enable_expiry_tracking field.
+	tenantinventoryconfig.DefaultEnableExpiryTracking = tenantinventoryconfigDescEnableExpiryTracking.Default.(bool)
+	// tenantinventoryconfigDescPurchaseOrderApprovalRequired is the schema descriptor for purchase_order_approval_required field.
+	tenantinventoryconfigDescPurchaseOrderApprovalRequired := tenantinventoryconfigFields[12].Descriptor()
+	// tenantinventoryconfig.DefaultPurchaseOrderApprovalRequired holds the default value on creation for the purchase_order_approval_required field.
+	tenantinventoryconfig.DefaultPurchaseOrderApprovalRequired = tenantinventoryconfigDescPurchaseOrderApprovalRequired.Default.(bool)
+	// tenantinventoryconfigDescAutoAdjustOnTransfer is the schema descriptor for auto_adjust_on_transfer field.
+	tenantinventoryconfigDescAutoAdjustOnTransfer := tenantinventoryconfigFields[13].Descriptor()
+	// tenantinventoryconfig.DefaultAutoAdjustOnTransfer holds the default value on creation for the auto_adjust_on_transfer field.
+	tenantinventoryconfig.DefaultAutoAdjustOnTransfer = tenantinventoryconfigDescAutoAdjustOnTransfer.Default.(bool)
+	// tenantinventoryconfigDescLotsModuleEnabled is the schema descriptor for lots_module_enabled field.
+	tenantinventoryconfigDescLotsModuleEnabled := tenantinventoryconfigFields[14].Descriptor()
+	// tenantinventoryconfig.DefaultLotsModuleEnabled holds the default value on creation for the lots_module_enabled field.
+	tenantinventoryconfig.DefaultLotsModuleEnabled = tenantinventoryconfigDescLotsModuleEnabled.Default.(bool)
+	// tenantinventoryconfigDescRecipesModuleEnabled is the schema descriptor for recipes_module_enabled field.
+	tenantinventoryconfigDescRecipesModuleEnabled := tenantinventoryconfigFields[15].Descriptor()
+	// tenantinventoryconfig.DefaultRecipesModuleEnabled holds the default value on creation for the recipes_module_enabled field.
+	tenantinventoryconfig.DefaultRecipesModuleEnabled = tenantinventoryconfigDescRecipesModuleEnabled.Default.(bool)
+	// tenantinventoryconfigDescPurchaseOrdersEnabled is the schema descriptor for purchase_orders_enabled field.
+	tenantinventoryconfigDescPurchaseOrdersEnabled := tenantinventoryconfigFields[16].Descriptor()
+	// tenantinventoryconfig.DefaultPurchaseOrdersEnabled holds the default value on creation for the purchase_orders_enabled field.
+	tenantinventoryconfig.DefaultPurchaseOrdersEnabled = tenantinventoryconfigDescPurchaseOrdersEnabled.Default.(bool)
+	// tenantinventoryconfigDescSupplierManagementEnabled is the schema descriptor for supplier_management_enabled field.
+	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[17].Descriptor()
+	// tenantinventoryconfig.DefaultSupplierManagementEnabled holds the default value on creation for the supplier_management_enabled field.
+	tenantinventoryconfig.DefaultSupplierManagementEnabled = tenantinventoryconfigDescSupplierManagementEnabled.Default.(bool)
+	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[18].Descriptor()
+	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
+	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[19].Descriptor()
+	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
+	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tenantinventoryconfig.UpdateDefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// tenantinventoryconfigDescID is the schema descriptor for id field.
+	tenantinventoryconfigDescID := tenantinventoryconfigFields[0].Descriptor()
+	// tenantinventoryconfig.DefaultID holds the default value on creation for the id field.
+	tenantinventoryconfig.DefaultID = tenantinventoryconfigDescID.Default.(func() uuid.UUID)
 	unitFields := schema.Unit{}.Fields()
 	_ = unitFields
 	// unitDescName is the schema descriptor for name field.

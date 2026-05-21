@@ -105,6 +105,9 @@ type Supplier func(*sql.Selector)
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)
 
+// TenantInventoryConfig is the predicate function for tenantinventoryconfig builders.
+type TenantInventoryConfig func(*sql.Selector)
+
 // Unit is the predicate function for unit builders.
 type Unit func(*sql.Selector)
 

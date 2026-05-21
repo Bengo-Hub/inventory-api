@@ -78,6 +78,8 @@ type Tx struct {
 	Supplier *SupplierClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
+	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
+	TenantInventoryConfig *TenantInventoryConfigClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
@@ -254,6 +256,7 @@ func (tx *Tx) init() {
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
 	tx.Supplier = NewSupplierClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
+	tx.TenantInventoryConfig = NewTenantInventoryConfigClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.VariantAttribute = NewVariantAttributeClient(tx.config)

@@ -45,6 +45,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -144,6 +145,7 @@ func checkColumn(t, c string) error {
 			stocktransferline.Table:     stocktransferline.ValidColumn,
 			supplier.Table:              supplier.ValidColumn,
 			tenant.Table:                tenant.ValidColumn,
+			tenantinventoryconfig.Table: tenantinventoryconfig.ValidColumn,
 			unit.Table:                  unit.ValidColumn,
 			userroleassignment.Table:    userroleassignment.ValidColumn,
 			variantattribute.Table:      variantattribute.ValidColumn,

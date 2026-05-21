@@ -1351,6 +1351,42 @@ var (
 			},
 		},
 	}
+	// TenantInventoryConfigsColumns holds the columns for the "tenant_inventory_configs" table.
+	TenantInventoryConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "low_stock_threshold_pct", Type: field.TypeFloat64, Default: 20},
+		{Name: "critical_stock_threshold_pct", Type: field.TypeFloat64, Default: 5},
+		{Name: "default_reorder_level", Type: field.TypeInt, Default: 10},
+		{Name: "expiry_warning_days", Type: field.TypeInt, Default: 30},
+		{Name: "enable_low_stock_notifications", Type: field.TypeBool, Default: true},
+		{Name: "enable_expiry_notifications", Type: field.TypeBool, Default: true},
+		{Name: "notification_email", Type: field.TypeString, Nullable: true},
+		{Name: "default_warehouse_id", Type: field.TypeString, Nullable: true},
+		{Name: "enable_lot_tracking", Type: field.TypeBool, Default: false},
+		{Name: "enable_expiry_tracking", Type: field.TypeBool, Default: false},
+		{Name: "purchase_order_approval_required", Type: field.TypeBool, Default: false},
+		{Name: "auto_adjust_on_transfer", Type: field.TypeBool, Default: true},
+		{Name: "lots_module_enabled", Type: field.TypeBool, Default: false},
+		{Name: "recipes_module_enabled", Type: field.TypeBool, Default: false},
+		{Name: "purchase_orders_enabled", Type: field.TypeBool, Default: true},
+		{Name: "supplier_management_enabled", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TenantInventoryConfigsTable holds the schema information for the "tenant_inventory_configs" table.
+	TenantInventoryConfigsTable = &schema.Table{
+		Name:       "tenant_inventory_configs",
+		Columns:    TenantInventoryConfigsColumns,
+		PrimaryKey: []*schema.Column{TenantInventoryConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tenantinventoryconfig_tenant_id",
+				Unique:  true,
+				Columns: []*schema.Column{TenantInventoryConfigsColumns[1]},
+			},
+		},
+	}
 	// UnitsColumns holds the columns for the "units" table.
 	UnitsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1640,6 +1676,7 @@ var (
 		StockTransferLinesTable,
 		SuppliersTable,
 		TenantsTable,
+		TenantInventoryConfigsTable,
 		UnitsTable,
 		UserRoleAssignmentsTable,
 		VariantAttributesTable,
