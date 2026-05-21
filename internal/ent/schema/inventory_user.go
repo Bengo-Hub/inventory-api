@@ -34,6 +34,10 @@ func (InventoryUser) Fields() []ent.Field {
 		field.String("sync_status").
 			Default("synced").
 			Comment("Sync status: synced, pending, failed"),
+		field.String("pin_hash").
+			Optional().
+			Sensitive().
+			Comment("Bcrypt hash of the user's service PIN, synced from auth-api via NATS auth.user.pin_set"),
 		field.Time("last_sync_at").
 			Optional(),
 		field.Time("created_at").

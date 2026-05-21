@@ -116,6 +116,9 @@ func (r *EntRepository) UpdateUser(ctx context.Context, tenantID uuid.UUID, user
 	if updates.SyncStatus != nil {
 		builder.SetSyncStatus(*updates.SyncStatus)
 	}
+	if updates.PINHash != nil {
+		builder.SetPinHash(*updates.PINHash)
+	}
 
 	_, err := builder.Save(ctx)
 	if err != nil {
@@ -460,6 +463,9 @@ func mapEntUser(entUser *ent.InventoryUser) *InventoryUser {
 
 	if !entUser.LastSyncAt.IsZero() {
 		user.LastSyncAt = &entUser.LastSyncAt
+	}
+	if entUser.PinHash != "" {
+		user.PINHash = &entUser.PinHash
 	}
 
 	return user

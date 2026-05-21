@@ -70,6 +70,20 @@ func (_c *InventoryUserCreate) SetNillableSyncStatus(v *string) *InventoryUserCr
 	return _c
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (_c *InventoryUserCreate) SetPinHash(v string) *InventoryUserCreate {
+	_c.mutation.SetPinHash(v)
+	return _c
+}
+
+// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillablePinHash(v *string) *InventoryUserCreate {
+	if v != nil {
+		_c.SetPinHash(*v)
+	}
+	return _c
+}
+
 // SetLastSyncAt sets the "last_sync_at" field.
 func (_c *InventoryUserCreate) SetLastSyncAt(v time.Time) *InventoryUserCreate {
 	_c.mutation.SetLastSyncAt(v)
@@ -267,6 +281,10 @@ func (_c *InventoryUserCreate) createSpec() (*InventoryUser, *sqlgraph.CreateSpe
 		_spec.SetField(inventoryuser.FieldSyncStatus, field.TypeString, value)
 		_node.SyncStatus = value
 	}
+	if value, ok := _c.mutation.PinHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
+		_node.PinHash = value
+	}
 	if value, ok := _c.mutation.LastSyncAt(); ok {
 		_spec.SetField(inventoryuser.FieldLastSyncAt, field.TypeTime, value)
 		_node.LastSyncAt = value
@@ -388,6 +406,24 @@ func (u *InventoryUserUpsert) SetSyncStatus(v string) *InventoryUserUpsert {
 // UpdateSyncStatus sets the "sync_status" field to the value that was provided on create.
 func (u *InventoryUserUpsert) UpdateSyncStatus() *InventoryUserUpsert {
 	u.SetExcluded(inventoryuser.FieldSyncStatus)
+	return u
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsert) SetPinHash(v string) *InventoryUserUpsert {
+	u.Set(inventoryuser.FieldPinHash, v)
+	return u
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsert) UpdatePinHash() *InventoryUserUpsert {
+	u.SetExcluded(inventoryuser.FieldPinHash)
+	return u
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsert) ClearPinHash() *InventoryUserUpsert {
+	u.SetNull(inventoryuser.FieldPinHash)
 	return u
 }
 
@@ -539,6 +575,27 @@ func (u *InventoryUserUpsertOne) SetSyncStatus(v string) *InventoryUserUpsertOne
 func (u *InventoryUserUpsertOne) UpdateSyncStatus() *InventoryUserUpsertOne {
 	return u.Update(func(s *InventoryUserUpsert) {
 		s.UpdateSyncStatus()
+	})
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsertOne) SetPinHash(v string) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinHash(v)
+	})
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertOne) UpdatePinHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinHash()
+	})
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsertOne) ClearPinHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinHash()
 	})
 }
 
@@ -862,6 +919,27 @@ func (u *InventoryUserUpsertBulk) SetSyncStatus(v string) *InventoryUserUpsertBu
 func (u *InventoryUserUpsertBulk) UpdateSyncStatus() *InventoryUserUpsertBulk {
 	return u.Update(func(s *InventoryUserUpsert) {
 		s.UpdateSyncStatus()
+	})
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsertBulk) SetPinHash(v string) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinHash(v)
+	})
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertBulk) UpdatePinHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinHash()
+	})
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsertBulk) ClearPinHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinHash()
 	})
 }
 

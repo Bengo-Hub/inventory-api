@@ -8310,6 +8310,7 @@ type InventoryUserMutation struct {
 	email                *string
 	status               *string
 	sync_status          *string
+	pin_hash             *string
 	last_sync_at         *time.Time
 	created_at           *time.Time
 	updated_at           *time.Time
@@ -8603,6 +8604,55 @@ func (m *InventoryUserMutation) ResetSyncStatus() {
 	m.sync_status = nil
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (m *InventoryUserMutation) SetPinHash(s string) {
+	m.pin_hash = &s
+}
+
+// PinHash returns the value of the "pin_hash" field in the mutation.
+func (m *InventoryUserMutation) PinHash() (r string, exists bool) {
+	v := m.pin_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinHash returns the old "pin_hash" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldPinHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinHash: %w", err)
+	}
+	return oldValue.PinHash, nil
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (m *InventoryUserMutation) ClearPinHash() {
+	m.pin_hash = nil
+	m.clearedFields[inventoryuser.FieldPinHash] = struct{}{}
+}
+
+// PinHashCleared returns if the "pin_hash" field was cleared in this mutation.
+func (m *InventoryUserMutation) PinHashCleared() bool {
+	_, ok := m.clearedFields[inventoryuser.FieldPinHash]
+	return ok
+}
+
+// ResetPinHash resets all changes to the "pin_hash" field.
+func (m *InventoryUserMutation) ResetPinHash() {
+	m.pin_hash = nil
+	delete(m.clearedFields, inventoryuser.FieldPinHash)
+}
+
 // SetLastSyncAt sets the "last_sync_at" field.
 func (m *InventoryUserMutation) SetLastSyncAt(t time.Time) {
 	m.last_sync_at = &t
@@ -8758,7 +8808,7 @@ func (m *InventoryUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryUserMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.tenant_id != nil {
 		fields = append(fields, inventoryuser.FieldTenantID)
 	}
@@ -8773,6 +8823,9 @@ func (m *InventoryUserMutation) Fields() []string {
 	}
 	if m.sync_status != nil {
 		fields = append(fields, inventoryuser.FieldSyncStatus)
+	}
+	if m.pin_hash != nil {
+		fields = append(fields, inventoryuser.FieldPinHash)
 	}
 	if m.last_sync_at != nil {
 		fields = append(fields, inventoryuser.FieldLastSyncAt)
@@ -8801,6 +8854,8 @@ func (m *InventoryUserMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case inventoryuser.FieldSyncStatus:
 		return m.SyncStatus()
+	case inventoryuser.FieldPinHash:
+		return m.PinHash()
 	case inventoryuser.FieldLastSyncAt:
 		return m.LastSyncAt()
 	case inventoryuser.FieldCreatedAt:
@@ -8826,6 +8881,8 @@ func (m *InventoryUserMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStatus(ctx)
 	case inventoryuser.FieldSyncStatus:
 		return m.OldSyncStatus(ctx)
+	case inventoryuser.FieldPinHash:
+		return m.OldPinHash(ctx)
 	case inventoryuser.FieldLastSyncAt:
 		return m.OldLastSyncAt(ctx)
 	case inventoryuser.FieldCreatedAt:
@@ -8875,6 +8932,13 @@ func (m *InventoryUserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSyncStatus(v)
+		return nil
+	case inventoryuser.FieldPinHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinHash(v)
 		return nil
 	case inventoryuser.FieldLastSyncAt:
 		v, ok := value.(time.Time)
@@ -8927,6 +8991,9 @@ func (m *InventoryUserMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *InventoryUserMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(inventoryuser.FieldPinHash) {
+		fields = append(fields, inventoryuser.FieldPinHash)
+	}
 	if m.FieldCleared(inventoryuser.FieldLastSyncAt) {
 		fields = append(fields, inventoryuser.FieldLastSyncAt)
 	}
@@ -8944,6 +9011,9 @@ func (m *InventoryUserMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *InventoryUserMutation) ClearField(name string) error {
 	switch name {
+	case inventoryuser.FieldPinHash:
+		m.ClearPinHash()
+		return nil
 	case inventoryuser.FieldLastSyncAt:
 		m.ClearLastSyncAt()
 		return nil
@@ -8969,6 +9039,9 @@ func (m *InventoryUserMutation) ResetField(name string) error {
 		return nil
 	case inventoryuser.FieldSyncStatus:
 		m.ResetSyncStatus()
+		return nil
+	case inventoryuser.FieldPinHash:
+		m.ResetPinHash()
 		return nil
 	case inventoryuser.FieldLastSyncAt:
 		m.ResetLastSyncAt()

@@ -80,6 +80,11 @@ func SyncStatus(v string) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldEQ(FieldSyncStatus, v))
 }
 
+// PinHash applies equality check predicate on the "pin_hash" field. It's identical to PinHashEQ.
+func PinHash(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEQ(FieldPinHash, v))
+}
+
 // LastSyncAt applies equality check predicate on the "last_sync_at" field. It's identical to LastSyncAtEQ.
 func LastSyncAt(v time.Time) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldEQ(FieldLastSyncAt, v))
@@ -368,6 +373,81 @@ func SyncStatusEqualFold(v string) predicate.InventoryUser {
 // SyncStatusContainsFold applies the ContainsFold predicate on the "sync_status" field.
 func SyncStatusContainsFold(v string) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldContainsFold(FieldSyncStatus, v))
+}
+
+// PinHashEQ applies the EQ predicate on the "pin_hash" field.
+func PinHashEQ(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEQ(FieldPinHash, v))
+}
+
+// PinHashNEQ applies the NEQ predicate on the "pin_hash" field.
+func PinHashNEQ(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNEQ(FieldPinHash, v))
+}
+
+// PinHashIn applies the In predicate on the "pin_hash" field.
+func PinHashIn(vs ...string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldIn(FieldPinHash, vs...))
+}
+
+// PinHashNotIn applies the NotIn predicate on the "pin_hash" field.
+func PinHashNotIn(vs ...string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNotIn(FieldPinHash, vs...))
+}
+
+// PinHashGT applies the GT predicate on the "pin_hash" field.
+func PinHashGT(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldGT(FieldPinHash, v))
+}
+
+// PinHashGTE applies the GTE predicate on the "pin_hash" field.
+func PinHashGTE(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldGTE(FieldPinHash, v))
+}
+
+// PinHashLT applies the LT predicate on the "pin_hash" field.
+func PinHashLT(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldLT(FieldPinHash, v))
+}
+
+// PinHashLTE applies the LTE predicate on the "pin_hash" field.
+func PinHashLTE(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldLTE(FieldPinHash, v))
+}
+
+// PinHashContains applies the Contains predicate on the "pin_hash" field.
+func PinHashContains(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldContains(FieldPinHash, v))
+}
+
+// PinHashHasPrefix applies the HasPrefix predicate on the "pin_hash" field.
+func PinHashHasPrefix(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldHasPrefix(FieldPinHash, v))
+}
+
+// PinHashHasSuffix applies the HasSuffix predicate on the "pin_hash" field.
+func PinHashHasSuffix(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldHasSuffix(FieldPinHash, v))
+}
+
+// PinHashIsNil applies the IsNil predicate on the "pin_hash" field.
+func PinHashIsNil() predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldIsNull(FieldPinHash))
+}
+
+// PinHashNotNil applies the NotNil predicate on the "pin_hash" field.
+func PinHashNotNil() predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNotNull(FieldPinHash))
+}
+
+// PinHashEqualFold applies the EqualFold predicate on the "pin_hash" field.
+func PinHashEqualFold(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEqualFold(FieldPinHash, v))
+}
+
+// PinHashContainsFold applies the ContainsFold predicate on the "pin_hash" field.
+func PinHashContainsFold(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldContainsFold(FieldPinHash, v))
 }
 
 // LastSyncAtEQ applies the EQ predicate on the "last_sync_at" field.
