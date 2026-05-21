@@ -38,7 +38,7 @@ func (h *WarehouseLocationHandler) RegisterRoutes(r chi.Router) {
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
 
-	r.Route("/warehouses/{warehouseID}/locations", func(loc chi.Router) {
+	r.Route("/inventory/warehouses/{warehouseID}/locations", func(loc chi.Router) {
 		loc.Get("/", h.List)
 		loc.With(perm(rbac.PermWarehousesChange)).Post("/", h.Create)
 		loc.With(perm(rbac.PermWarehousesChange)).Put("/{locationID}", h.Update)

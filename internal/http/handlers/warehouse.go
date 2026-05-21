@@ -39,7 +39,7 @@ func (h *WarehouseHandler) RegisterRoutes(r chi.Router) {
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
 
-	r.Route("/warehouses", func(wh chi.Router) {
+	r.Route("/inventory/warehouses", func(wh chi.Router) {
 		wh.Get("/", h.ListWarehouses)
 		wh.With(perm(rbac.PermWarehousesAdd)).Post("/", h.CreateWarehouse)
 		wh.Get("/{warehouseID}", h.GetWarehouse)
@@ -48,8 +48,8 @@ func (h *WarehouseHandler) RegisterRoutes(r chi.Router) {
 	})
 
 	// Outlet config: assign a default warehouse to an outlet + set use_case metadata.
-	r.With(perm(rbac.PermConfigChange)).Put("/outlets/{outletID}/config", h.UpdateOutletConfig)
-	r.Get("/outlets/{outletID}/config", h.GetOutletConfig)
+	r.With(perm(rbac.PermConfigChange)).Put("/inventory/outlets/{outletID}/config", h.UpdateOutletConfig)
+	r.Get("/inventory/outlets/{outletID}/config", h.GetOutletConfig)
 }
 
 // outletConfigDTO is the request/response body for outlet warehouse config.
