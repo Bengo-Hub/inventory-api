@@ -116,25 +116,6 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 	return "viewer"
 }
 
-// SetUserPIN stores the pre-hashed PIN for a user, synced from auth-api via NATS.
-// The pinHash argument must already be a bcrypt hash — this method does NOT hash.
-func (s *Service) SetUserPIN(ctx context.Context, tenantID uuid.UUID, authServiceUserID uuid.UUID, pinHash string) error {
-	user, err := s.repo.GetUserByAuthServiceID(ctx, tenantID, authServiceUserID)
-	if err != nil {
-		return fmt.Errorf("user not found for PIN sync (auth_id=%s tenant=%s): %w", authServiceUserID, tenantID, err)
-	}
-
-	if err := s.repo.UpdateUser(ctx, tenantID, user.ID, &UserUpdates{PINHash: &pinHash}); err != nil {
-		return fmt.Errorf("update pin_hash: %w", err)
-	}
-
-	s.logger.Info("PIN synced from auth-service",
-		zap.String("tenant_id", tenantID.String()),
-		zap.String("auth_user_id", authServiceUserID.String()),
-	)
-	return nil
-}
-
 // SyncUser syncs a user from auth-service.
 func (s *Service) SyncUser(ctx context.Context, tenantID uuid.UUID, authServiceUserID uuid.UUID, email string) (*InventoryUser, error) {
 	// Check if user already exists

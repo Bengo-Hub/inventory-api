@@ -28,8 +28,6 @@ type InventoryUser struct {
 	Status string `json:"status,omitempty"`
 	// Sync status: synced, pending, failed
 	SyncStatus string `json:"sync_status,omitempty"`
-	// Bcrypt hash of the user's service PIN, synced from auth-api via NATS auth.user.pin_set
-	PinHash string `json:"-"`
 	// LastSyncAt holds the value of the "last_sync_at" field.
 	LastSyncAt time.Time `json:"last_sync_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -44,7 +42,7 @@ func (*InventoryUser) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventoryuser.FieldEmail, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus, inventoryuser.FieldPinHash:
+		case inventoryuser.FieldEmail, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus:
 			values[i] = new(sql.NullString)
 		case inventoryuser.FieldLastSyncAt, inventoryuser.FieldCreatedAt, inventoryuser.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -100,12 +98,6 @@ func (_m *InventoryUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sync_status", values[i])
 			} else if value.Valid {
 				_m.SyncStatus = value.String
-			}
-		case inventoryuser.FieldPinHash:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field pin_hash", values[i])
-			} else if value.Valid {
-				_m.PinHash = value.String
 			}
 		case inventoryuser.FieldLastSyncAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -175,8 +167,6 @@ func (_m *InventoryUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sync_status=")
 	builder.WriteString(_m.SyncStatus)
-	builder.WriteString(", ")
-	builder.WriteString("pin_hash=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("last_sync_at=")
 	builder.WriteString(_m.LastSyncAt.Format(time.ANSIC))

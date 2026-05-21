@@ -384,7 +384,6 @@ var (
 		{Name: "email", Type: field.TypeString},
 		{Name: "status", Type: field.TypeString, Default: "active"},
 		{Name: "sync_status", Type: field.TypeString, Default: "synced"},
-		{Name: "pin_hash", Type: field.TypeString, Nullable: true},
 		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

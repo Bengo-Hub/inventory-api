@@ -44,7 +44,6 @@ type Repository interface {
 type UserUpdates struct {
 	Status     *string
 	SyncStatus *string
-	PINHash    *string
 }
 
 // PermissionFilters for listing permissions.

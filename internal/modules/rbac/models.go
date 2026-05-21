@@ -12,7 +12,6 @@ type InventoryUser struct {
 	TenantID          uuid.UUID
 	AuthServiceUserID uuid.UUID
 	Email             string
-	PINHash           *string
 	Status            string
 	SyncStatus        string
 	LastSyncAt        *time.Time
