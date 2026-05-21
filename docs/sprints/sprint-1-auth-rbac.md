@@ -197,6 +197,13 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 - [x] Wire RBAC middleware to router (per-route with `perm()` helper)
 - [x] Add event listeners for auth.user.* events (`consumers/auth_events.go`)
 
+## Security Hardening (2026-05-21)
+- [x] Hardcoded `Vertex2020!` credentials removed from `docs/database_maintenance.md` (replaced with K8s secret refs)
+- [x] Request body size limited to 10MB (`middleware.RequestSize`) — prevents memory DoS
+- [x] IP rate limiting via Redis sliding window — 100 req/60s per IP, returns 429 + `X-RateLimit-*` headers
+- [x] `HTTP_ALLOWED_ORIGINS` default updated to production-only origins (localhost removed)
+- [x] `POST /api/v1/media/upload` now requires authentication (was unauthenticated)
+
 ## Completion Notes (2026-05-21)
 
 Sprint 1 RBAC backbone is complete. `user.go` handler file exists with `ListUsers`/`GetUser`. RBAC role assignment API endpoints (`POST /rbac/assignments`, `GET /rbac/assignments`, `DELETE /rbac/assignments/{id}`) registered via `rbacHandler.RegisterRBACRoutes(private)`. 4 roles seeded: `inventory_admin`, `warehouse_manager`, `stock_clerk`, `viewer` (99 permissions). Outlet-aware warehouse routing added (Sprint 2 ERP gaps). Seed guard for recipes added. `outlet_id` FK added to warehouse schema. Pricing tiers and warehouse locations schemas/handlers added (ERP gaps sprint).
