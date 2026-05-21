@@ -8,11 +8,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
+	ratelimitmw "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 	"github.com/google/uuid"
@@ -35,6 +37,7 @@ func New(
 	mediaHandler *handlers.MediaHandler,
 	mediaRoot string,
 	serviceConfigHandler *handlers.ServiceConfigHandler,
+	redisClient *redis.Client,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -44,6 +47,8 @@ func New(
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
+	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -58,9 +63,9 @@ func New(
 	r.Get("/metrics", health.Metrics)
 	r.Get("/v1/docs/*", handlers.SwaggerUI)
 
-	// Media upload endpoint (accepts multipart/form-data, no tenant scope required)
-	if mediaHandler != nil {
-		r.Post("/api/v1/media/upload", mediaHandler.Upload)
+	// Media upload endpoint — requires authentication to prevent anonymous file uploads
+	if mediaHandler != nil && authMiddleware != nil {
+		r.With(authMiddleware.RequireAuth).Post("/api/v1/media/upload", mediaHandler.Upload)
 	}
 
 	// Serve uploaded media files from the media root directory
