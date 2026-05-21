@@ -29,6 +29,7 @@ func New(
 	warehouseLocationHandler *handlers.WarehouseLocationHandler,
 	pricingTierHandler *handlers.PricingTierHandler,
 	transferHandler *handlers.TransferHandler,
+	inventoryExtrasHandler *handlers.InventoryExtrasHandler,
 	rbacHandler *handlers.RBACHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	tenantSyncer *tenant.Syncer,
@@ -37,6 +38,7 @@ func New(
 	mediaHandler *handlers.MediaHandler,
 	mediaRoot string,
 	serviceConfigHandler *handlers.ServiceConfigHandler,
+	inventorySettingsHandler *handlers.InventorySettingsHandler,
 	redisClient *redis.Client,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -170,6 +172,9 @@ func New(
 				if serviceConfigHandler != nil {
 					serviceConfigHandler.RegisterTenantRoutes(private)
 				}
+				if inventorySettingsHandler != nil {
+					inventorySettingsHandler.RegisterRoutes(private)
+				}
 			})
 
 			// Inventory Routes (Granular auth)
@@ -201,6 +206,9 @@ func New(
 					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
+					}
+					if inventoryExtrasHandler != nil {
+						inventoryExtrasHandler.RegisterRoutes(g)
 					}
 				})
 			}
@@ -254,6 +262,9 @@ func New(
 					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
+					}
+					if inventoryExtrasHandler != nil {
+						inventoryExtrasHandler.RegisterRoutes(g)
 					}
 				})
 			}
