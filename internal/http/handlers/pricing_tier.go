@@ -49,6 +49,10 @@ func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
 		ip.Get("/", h.GetItemPricing)
 		ip.With(perm(rbac.PermItemsChange)).Put("/", h.UpsertItemPricing)
 	})
+
+	// Bulk endpoint: returns default-tier price for every item in the tenant.
+	// Used by downstream services (pos-api, etc.) to show prices without N+1 calls.
+	r.Get("/inventory/items/pricing", h.ListAllItemPricing)
 }
 
 // --- PricingTier DTOs ---
@@ -342,6 +346,81 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, http.StatusOK, results)
+}
+
+// bulkItemPriceDTO is a flattened price entry used by downstream services.
+type bulkItemPriceDTO struct {
+	ItemID   uuid.UUID `json:"item_id"`
+	Price    float64   `json:"price"`
+	Currency string    `json:"currency"`
+	TierCode string    `json:"tier_code"`
+}
+
+// ListAllItemPricing returns the default-tier price for every item in the tenant.
+// Falls back to the first active pricing entry when no default tier exists.
+// GET /v1/{slug}/inventory/items/pricing
+func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	// Load pricing tiers to identify the default tier.
+	tiers, err := h.orm.PricingTier.Query().
+		Where(entpt.TenantID(tenantID), entpt.IsActive(true)).
+		All(r.Context())
+	if err != nil {
+		h.log.Error("list pricing tiers failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "LIST_FAILED", "Failed to list pricing tiers")
+		return
+	}
+	tierMeta := make(map[uuid.UUID]struct{ code string; isDefault bool }, len(tiers))
+	for _, t := range tiers {
+		tierMeta[t.ID] = struct{ code string; isDefault bool }{t.Code, t.IsDefault}
+	}
+
+	// Load all active pricing entries for the tenant in one query.
+	pricings, err := h.orm.ItemPricing.Query().
+		Where(entip.TenantID(tenantID), entip.IsActive(true)).
+		All(r.Context())
+	if err != nil {
+		h.log.Error("list all item pricing failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "LIST_FAILED", "Failed to list item pricing")
+		return
+	}
+
+	// For each item keep the default-tier entry; fall back to first found.
+	type entry struct {
+		price     float64
+		currency  string
+		tierCode  string
+		isDefault bool
+	}
+	best := make(map[uuid.UUID]entry, len(pricings))
+	for _, p := range pricings {
+		meta := tierMeta[p.PricingTierID]
+		prev, exists := best[p.ItemID]
+		if !exists || (!prev.isDefault && meta.isDefault) {
+			best[p.ItemID] = entry{
+				price:     p.Price,
+				currency:  p.Currency,
+				tierCode:  meta.code,
+				isDefault: meta.isDefault,
+			}
+		}
+	}
+
+	out := make([]bulkItemPriceDTO, 0, len(best))
+	for itemID, e := range best {
+		out = append(out, bulkItemPriceDTO{
+			ItemID:   itemID,
+			Price:    e.price,
+			Currency: e.currency,
+			TierCode: e.tierCode,
+		})
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func toPricingTierDTO(t *ent.PricingTier) pricingTierDTO {
