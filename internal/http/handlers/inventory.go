@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -31,6 +32,7 @@ type ItemsServicer interface {
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
+	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.
@@ -59,10 +61,13 @@ type RecipesServicer interface {
 type UnitsServicer interface {
 	ListUnits(ctx context.Context, tenantID uuid.UUID) ([]units.UnitDTO, error)
 	CreateUnit(ctx context.Context, tenantID uuid.UUID, dto units.UnitDTO) (*units.UnitDTO, error)
+	DeleteUnit(ctx context.Context, tenantID, id uuid.UUID) error
 }
 
 // ModifiersServicer defines the contract for modifier group/option management.
 type ModifiersServicer interface {
+	ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID) ([]modifiers.ModifierGroupDTO, error)
+	GetModifierGroup(ctx context.Context, tenantID, groupID uuid.UUID) (*modifiers.ModifierGroupDTO, error)
 	ListModifierGroups(ctx context.Context, tenantID, itemID uuid.UUID) ([]modifiers.ModifierGroupDTO, error)
 	CreateModifierGroup(ctx context.Context, tenantID uuid.UUID, req modifiers.CreateModifierGroupRequest) (*modifiers.ModifierGroupDTO, error)
 	UpdateModifierGroup(ctx context.Context, tenantID, groupID uuid.UUID, req modifiers.UpdateModifierGroupRequest) (*modifiers.ModifierGroupDTO, error)
@@ -137,6 +142,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
+		inv.With(perm(rbac.PermItemsDelete)).Delete("/categories/{categoryID}", h.DeleteCategory)
 
 		// Reservations
 		inv.With(perm(rbac.PermReservationsAdd)).Post("/reservations", h.CreateReservation)
@@ -164,8 +170,14 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)
 		inv.With(perm(rbac.PermUnitsAdd)).Post("/units", h.CreateUnit)
+		inv.With(perm(rbac.PermUnitsDelete)).Delete("/units/{unitID}", h.DeleteUnit)
+
+		// CSV bulk import
+		inv.With(perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
 
 		// Modifier Groups & Options
+		inv.Get("/modifier-groups", h.ListAllModifierGroups)
+		inv.Get("/modifier-groups/{id}", h.GetModifierGroup)
 		inv.Get("/items/{itemId}/modifier-groups", h.ListModifierGroups)
 		inv.With(perm(rbac.PermVariantsAdd)).Post("/modifier-groups", h.CreateModifierGroup)
 		inv.With(perm(rbac.PermVariantsChange)).Put("/modifier-groups/{id}", h.UpdateModifierGroup)
@@ -928,4 +940,148 @@ func (h *InventoryHandler) ListCategories(w http.ResponseWriter, r *http.Request
 		"data":  results,
 		"total": len(results),
 	})
+}
+
+// DeleteCategory handles DELETE /inventory/categories/{categoryID} — soft-deletes a category.
+func (h *InventoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	categoryID, err := uuid.Parse(chi.URLParam(r, "categoryID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid category ID")
+		return
+	}
+	if err := h.itemsSvc.DeleteCategory(r.Context(), tenantID, categoryID); err != nil {
+		h.log.Error("delete category failed", zap.Error(err))
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Category not found or could not be deleted")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// DeleteUnit handles DELETE /inventory/units/{unitID} — soft-deletes a unit of measure.
+func (h *InventoryHandler) DeleteUnit(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	unitID, err := uuid.Parse(chi.URLParam(r, "unitID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid unit ID")
+		return
+	}
+	if err := h.unitSvc.DeleteUnit(r.Context(), tenantID, unitID); err != nil {
+		h.log.Error("delete unit failed", zap.Error(err))
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Unit not found or could not be deleted")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+type importResult struct {
+	Created int      `json:"created"`
+	Updated int      `json:"updated"`
+	Failed  int      `json:"failed"`
+	Errors  []string `json:"errors,omitempty"`
+}
+
+// ImportItems handles POST /inventory/items/import — CSV bulk upsert.
+// Expected CSV columns (header row required): name, sku, type, category_id, unit_id
+func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_FORM", "Expected multipart/form-data with a 'file' field")
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "MISSING_FILE", "File field 'file' is required")
+		return
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	header, err := reader.Read()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_CSV", "Failed to read CSV header")
+		return
+	}
+
+	colIdx := make(map[string]int, len(header))
+	for i, col := range header {
+		colIdx[strings.ToLower(strings.TrimSpace(col))] = i
+	}
+
+	col := func(row []string, name string) string {
+		i, ok := colIdx[name]
+		if !ok || i >= len(row) {
+			return ""
+		}
+		return strings.TrimSpace(row[i])
+	}
+
+	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
+	existingItems, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "")
+	skuToID := make(map[string]uuid.UUID, len(existingItems))
+	for _, it := range existingItems {
+		skuToID[it.SKU] = it.ID
+	}
+
+	var result importResult
+	rows, _ := reader.ReadAll()
+	for i, row := range rows {
+		name := col(row, "name")
+		sku := col(row, "sku")
+		if name == "" || sku == "" {
+			result.Failed++
+			result.Errors = append(result.Errors, "row "+strings.Join([]string{}, "")+sku+": name and sku are required")
+			_ = i
+			continue
+		}
+
+		itemType := strings.ToUpper(col(row, "type"))
+		if itemType == "" {
+			itemType = "GOODS"
+		}
+
+		dto := items.ItemDTO{SKU: sku, Name: name, Type: itemType, IsActive: true}
+		if catStr := col(row, "category_id"); catStr != "" {
+			if catID, parseErr := uuid.Parse(catStr); parseErr == nil {
+				dto.CategoryID = &catID
+			}
+		}
+		if unitStr := col(row, "unit_id"); unitStr != "" {
+			if unitID, parseErr := uuid.Parse(unitStr); parseErr == nil {
+				dto.UnitID = &unitID
+			}
+		}
+
+		if existingID, exists := skuToID[sku]; exists {
+			if _, updateErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); updateErr != nil {
+				result.Failed++
+				result.Errors = append(result.Errors, "sku="+sku+": "+updateErr.Error())
+			} else {
+				result.Updated++
+			}
+		} else {
+			if created, createErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); createErr != nil {
+				result.Failed++
+				result.Errors = append(result.Errors, "sku="+sku+": "+createErr.Error())
+			} else {
+				skuToID[sku] = created.ID
+				result.Created++
+			}
+		}
+	}
+
+	writeJSON(w, http.StatusOK, result)
 }

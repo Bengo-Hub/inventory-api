@@ -52,7 +52,11 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/suppliers", h.ListSuppliers)
 	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/suppliers", h.CreateSupplier)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
+	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
+	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
+	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
+	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
 	r.Get("/inventory/activity", h.ListActivity)
 }
 
@@ -382,6 +386,242 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		})
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+// DeleteSupplier handles DELETE /inventory/suppliers/{supplierID} — soft-deletes a supplier.
+func (h *InventoryExtrasHandler) DeleteSupplier(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	supplierID, err := uuid.Parse(chi.URLParam(r, "supplierID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid supplier ID")
+		return
+	}
+	existing, err := h.orm.Supplier.Get(r.Context(), supplierID)
+	if err != nil || existing.TenantID != tenantID {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Supplier not found")
+		return
+	}
+	if _, err := h.orm.Supplier.UpdateOneID(supplierID).SetIsActive(false).Save(r.Context()); err != nil {
+		h.log.Error("delete supplier failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete supplier")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// ─── Purchase Order Writes ────────────────────────────────────────────────────
+
+type createPOLineInput struct {
+	ItemID    uuid.UUID `json:"item_id"`
+	Quantity  int       `json:"quantity"`
+	UnitPrice float64   `json:"unit_price"`
+}
+
+type createPOInput struct {
+	SupplierID           uuid.UUID         `json:"supplier_id"`
+	ExpectedDeliveryDate *time.Time        `json:"expected_delivery_date"`
+	Notes                string            `json:"notes"`
+	Lines                []createPOLineInput `json:"lines"`
+}
+
+// CreatePurchaseOrder handles POST /inventory/purchase-orders.
+func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	var req createPOInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if req.SupplierID == uuid.Nil {
+		writeError(w, http.StatusBadRequest, "MISSING_SUPPLIER", "supplier_id is required")
+		return
+	}
+	if len(req.Lines) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_LINES", "at least one line item is required")
+		return
+	}
+
+	tx, err := h.orm.Tx(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	var total float64
+	for _, l := range req.Lines {
+		total += float64(l.Quantity) * l.UnitPrice
+	}
+
+	poNumber := "PO-" + strings.ToUpper(tenantID.String()[:8]) + "-" + time.Now().Format("20060102150405")
+	poCreate := tx.PurchaseOrder.Create().
+		SetTenantID(tenantID).
+		SetSupplierID(req.SupplierID).
+		SetPoNumber(poNumber).
+		SetTotalAmount(total).
+		SetNotes(req.Notes)
+	if req.ExpectedDeliveryDate != nil {
+		poCreate = poCreate.SetExpectedDate(*req.ExpectedDeliveryDate)
+	}
+	po, err := poCreate.Save(r.Context())
+	if err != nil {
+		h.log.Error("create purchase order failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create purchase order")
+		return
+	}
+
+	for _, l := range req.Lines {
+		_, err = tx.PurchaseOrderLine.Create().
+			SetPoID(po.ID).
+			SetItemID(l.ItemID).
+			SetQuantityOrdered(l.Quantity).
+			SetUnitPrice(l.UnitPrice).
+			SetTotalPrice(float64(l.Quantity) * l.UnitPrice).
+			Save(r.Context())
+		if err != nil {
+			h.log.Error("create PO line failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create purchase order line")
+			return
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit purchase order")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id":        po.ID,
+		"po_number": po.PoNumber,
+		"status":    po.Status.String(),
+		"total":     po.TotalAmount,
+	})
+}
+
+// ReceivePurchaseOrder handles PUT /inventory/purchase-orders/{poID}/receive.
+// Marks the PO as received and increments on_hand stock for each line.
+func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	poID, err := uuid.Parse(chi.URLParam(r, "poID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
+		return
+	}
+
+	po, err := h.orm.PurchaseOrder.Query().
+		Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).
+		WithLines().
+		Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
+		return
+	}
+	if po.Status.String() != "pending" && po.Status.String() != "draft" {
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only pending/draft orders can be received")
+		return
+	}
+
+	tx, err := h.orm.Tx(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	for _, line := range po.Edges.Lines {
+		qty := line.QuantityOrdered
+		bal, balErr := tx.InventoryBalance.Query().
+			Where(entinventorybalance.TenantID(tenantID), entinventorybalance.ItemID(line.ItemID)).
+			First(r.Context())
+		if balErr != nil {
+			if !ent.IsNotFound(balErr) {
+				err = balErr
+				writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to query balance")
+				return
+			}
+			// Create balance record if it doesn't exist
+			_, err = tx.InventoryBalance.Create().
+				SetTenantID(tenantID).
+				SetItemID(line.ItemID).
+				SetOnHand(qty).
+				SetAvailable(qty).
+				SetReserved(0).
+				Save(r.Context())
+		} else {
+			_, err = tx.InventoryBalance.UpdateOneID(bal.ID).
+				SetOnHand(bal.OnHand + qty).
+				SetAvailable(bal.Available + qty).
+				Save(r.Context())
+		}
+		if err != nil {
+			h.log.Error("update balance on PO receive failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update inventory balance")
+			return
+		}
+	}
+
+	if _, err = tx.PurchaseOrder.UpdateOneID(poID).SetStatus("received").Save(r.Context()); err != nil {
+		h.log.Error("mark PO received failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to mark order received")
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "received"})
+}
+
+// CancelPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/cancel.
+func (h *InventoryExtrasHandler) CancelPurchaseOrder(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	poID, err := uuid.Parse(chi.URLParam(r, "poID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
+		return
+	}
+	po, err := h.orm.PurchaseOrder.Query().
+		Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).
+		Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
+		return
+	}
+	if po.Status.String() == "received" {
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Received orders cannot be cancelled")
+		return
+	}
+	if _, err := h.orm.PurchaseOrder.UpdateOneID(poID).SetStatus("cancelled").Save(r.Context()); err != nil {
+		h.log.Error("cancel PO failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CANCEL_FAILED", "Failed to cancel purchase order")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "cancelled"})
 }
 
 // ─── Activity ─────────────────────────────────────────────────────────────────

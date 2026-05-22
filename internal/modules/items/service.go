@@ -43,10 +43,20 @@ type ItemDTO struct {
 	Metadata        map[string]any `json:"metadata,omitempty"`
 	InitialQuantity int            `json:"initial_quantity,omitempty"`
 	ReorderLevel    int            `json:"reorder_level,omitempty"`
+	ReorderQuantity int            `json:"reorder_quantity,omitempty"`
 	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
 	CategoryName    string         `json:"category_name,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	// Extended fields for POS, logistics, compliance
+	Barcode                string             `json:"barcode,omitempty"`
+	BarcodeType            string             `json:"barcode_type,omitempty"`
+	RequiresAgeVerification bool              `json:"requires_age_verification"`
+	IsPerishable           bool               `json:"is_perishable"`
+	TrackLots              bool               `json:"track_lots"`
+	TrackSerialNumbers     bool               `json:"track_serial_numbers"`
+	WeightKg               *float64           `json:"weight_kg,omitempty"`
+	DimensionsCm           map[string]float64 `json:"dimensions_cm,omitempty"`
+	CreatedAt              time.Time          `json:"created_at"`
+	UpdatedAt              time.Time          `json:"updated_at"`
 }
 
 type CategoryDTO struct {
@@ -60,14 +70,17 @@ type CategoryDTO struct {
 
 // StockAvailability matches the DTO expected by the ordering-backend client.
 type StockAvailability struct {
-	ItemID        uuid.UUID `json:"item_id"`
-	SKU           string    `json:"sku"`
-	WarehouseID   uuid.UUID `json:"warehouse_id"`
-	OnHand        int       `json:"on_hand"`
-	Available     int       `json:"available"`
-	Reserved      int       `json:"reserved"`
-	UnitOfMeasure string    `json:"unit_of_measure"`
-	UpdatedAt     string    `json:"updated_at"`
+	ItemID              uuid.UUID  `json:"item_id"`
+	SKU                 string     `json:"sku"`
+	WarehouseID         uuid.UUID  `json:"warehouse_id"`
+	OnHand              int        `json:"on_hand"`
+	Available           int        `json:"available"`
+	Reserved            int        `json:"reserved"`
+	UnitOfMeasure       string     `json:"unit_of_measure"`
+	ReorderLevel        int        `json:"reorder_level"`
+	ReorderQuantity     int        `json:"reorder_quantity"`
+	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
+	UpdatedAt           string     `json:"updated_at"`
 }
 
 // Service handles item-related business logic.
@@ -157,14 +170,17 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 	}
 
 	return &StockAvailability{
-		ItemID:        itm.ID,
-		SKU:           itm.Sku,
-		WarehouseID:   bal.WarehouseID,
-		OnHand:        bal.OnHand,
-		Available:     bal.Available,
-		Reserved:      bal.Reserved,
-		UnitOfMeasure: bal.UnitOfMeasure,
-		UpdatedAt:     bal.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		ItemID:              itm.ID,
+		SKU:                 itm.Sku,
+		WarehouseID:         bal.WarehouseID,
+		OnHand:              bal.OnHand,
+		Available:           bal.Available,
+		Reserved:            bal.Reserved,
+		UnitOfMeasure:       bal.UnitOfMeasure,
+		ReorderLevel:        bal.ReorderLevel,
+		ReorderQuantity:     bal.ReorderQuantity,
+		PreferredSupplierID: bal.PreferredSupplierID,
+		UpdatedAt:           bal.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}, nil
 }
 
@@ -442,19 +458,27 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 
 func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	return &ItemDTO{
-		ID:          i.ID,
-		SKU:         i.Sku,
-		Name:        i.Name,
-		Description: i.Description,
-		CategoryID:  i.CategoryID,
-		UnitID:      i.UnitID,
-		Type:        string(i.Type),
-		IsActive:    i.IsActive,
-		ImageURL:    s.resolveMediaURL(i.ImageURL),
-		Tags:        i.Tags,
-		Metadata:    i.Metadata,
-		CreatedAt:   i.CreatedAt,
-		UpdatedAt:   i.UpdatedAt,
+		ID:                      i.ID,
+		SKU:                     i.Sku,
+		Name:                    i.Name,
+		Description:             i.Description,
+		CategoryID:              i.CategoryID,
+		UnitID:                  i.UnitID,
+		Type:                    string(i.Type),
+		IsActive:                i.IsActive,
+		ImageURL:                s.resolveMediaURL(i.ImageURL),
+		Tags:                    i.Tags,
+		Metadata:                i.Metadata,
+		Barcode:                 i.Barcode,
+		BarcodeType:             i.BarcodeType,
+		RequiresAgeVerification: i.RequiresAgeVerification,
+		IsPerishable:            i.IsPerishable,
+		TrackLots:               i.TrackLots,
+		TrackSerialNumbers:      i.TrackSerialNumbers,
+		WeightKg:                i.WeightKg,
+		DimensionsCm:            i.DimensionsCm,
+		CreatedAt:               i.CreatedAt,
+		UpdatedAt:               i.UpdatedAt,
 	}
 }
 
@@ -536,6 +560,27 @@ func containsAllTags(itemTags, required []string) bool {
 		}
 	}
 	return true
+}
+
+// DeleteCategory soft-deletes a category (sets is_active=false).
+func (s *Service) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error {
+	existing, err := s.client.ItemCategory.Query().
+		Where(itemcategory.TenantID(tenantID), itemcategory.ID(id)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("items: category not found")
+		}
+		return fmt.Errorf("items: query category: %w", err)
+	}
+	if _, err := s.client.ItemCategory.UpdateOneID(existing.ID).SetIsActive(false).Save(ctx); err != nil {
+		return fmt.Errorf("items: delete category: %w", err)
+	}
+	// Invalidate categories cache
+	if s.cache != nil {
+		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
+	}
+	return nil
 }
 
 // ListCategories returns all item categories for a tenant (cached 5 min).

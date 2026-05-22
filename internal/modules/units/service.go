@@ -52,6 +52,16 @@ func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error)
 	return result, nil
 }
 
+func (s *Service) DeleteUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID) error {
+	if _, err := s.client.Unit.UpdateOneID(id).SetIsActive(false).Save(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("units: unit not found")
+		}
+		return fmt.Errorf("units: delete unit: %w", err)
+	}
+	return nil
+}
+
 func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {

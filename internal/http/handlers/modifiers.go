@@ -11,6 +11,58 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 )
 
+// ListAllModifierGroups handles GET /inventory/modifier-groups — lists all groups for the tenant.
+func (h *InventoryHandler) ListAllModifierGroups(w http.ResponseWriter, r *http.Request) {
+	if h.modifiersSvc == nil {
+		writeError(w, http.StatusNotImplemented, "NOT_IMPLEMENTED", "Modifier groups not enabled")
+		return
+	}
+
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	groups, err := h.modifiersSvc.ListAllModifierGroups(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("list all modifier groups failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list modifier groups")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, groups)
+}
+
+// GetModifierGroup handles GET /inventory/modifier-groups/{id} — fetches a single group with options.
+func (h *InventoryHandler) GetModifierGroup(w http.ResponseWriter, r *http.Request) {
+	if h.modifiersSvc == nil {
+		writeError(w, http.StatusNotImplemented, "NOT_IMPLEMENTED", "Modifier groups not enabled")
+		return
+	}
+
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	groupID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid modifier group ID")
+		return
+	}
+
+	group, err := h.modifiersSvc.GetModifierGroup(r.Context(), tenantID, groupID)
+	if err != nil {
+		h.log.Error("get modifier group failed", zap.Error(err))
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Modifier group not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, group)
+}
+
 // ListModifierGroups handles GET /inventory/items/{itemId}/modifier-groups
 func (h *InventoryHandler) ListModifierGroups(w http.ResponseWriter, r *http.Request) {
 	if h.modifiersSvc == nil {
