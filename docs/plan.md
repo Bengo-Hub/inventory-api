@@ -1,6 +1,6 @@
 # Inventory API - MVP Plan
 
-**Last updated:** 2026-05-21
+**Last updated:** 2026-05-22
 
 **March 20 update:** Added item CRUD endpoints (`GET /items`, `POST /items`, `PUT /items/{sku}`), category listing (`GET /categories`), and `ListItems`/`ListCategories` service methods. Warehouse seed now uses deterministic UUID matching ordering-backend's outlet UUID formula for cross-service ID alignment. These endpoints enable ordering-backend and pos-api to create/verify inventory items via REST when users add menu items from the UI.
 **MVP deadline:** 2026-03-27
@@ -24,7 +24,7 @@ Sprint 1 + Sprint 2 + ERP Gaps sprint are substantially complete. The following 
 
 **Event Publishers:** `inventory.stock.updated`, `inventory.reservation.confirmed`, `inventory.reservation.released`, `inventory.stock.consumed`, `inventory.stock.low`, `inventory.stock.out` (all via outbox pattern).
 
-**inventory-ui:** ✅ Complete — SSO, multi-outlet, all pages data-integrated including post-MVP Phase 15 pages (recipe viewer, POs, suppliers, transfers, lots, reservations, warehouse locations, pricing tiers).
+**inventory-ui:** ✅ Complete — SSO, multi-outlet, all pages data-integrated including post-MVP Phase 15 pages (recipe viewer, POs, suppliers, transfers, lots, reservations, warehouse locations, pricing tiers). Full CRUD added: Items (create/edit/delete from catalog), Warehouses (create/edit/delete + locations tree), PO creation dialog with ItemSearchInput, delete actions on categories/units/suppliers, ItemSearchInput autocomplete in adjustments and transfers. URL prefix bugs fixed in modifiers and settings. Standalone modifier-group list/get endpoints added.
 
 ---
 
@@ -56,7 +56,7 @@ Sprint 1 + Sprint 2 + ERP Gaps sprint are substantially complete. The following 
 | # | Task | Status |
 |---|------|--------|
 | 12 | Superset read-only DB user | ❌ Not started |
-| 13 | Bulk item import endpoint | ❌ Not started |
+| 13 | Bulk item import endpoint | ✅ Done (`POST /inventory/items/import`, CSV upsert) |
 
 ## Remaining Gaps
 

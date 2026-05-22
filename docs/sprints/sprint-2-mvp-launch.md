@@ -32,7 +32,8 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### Seed Data Alignment (P0)
 
-- [ ] **S2-04:** Cross-reference all 39 SKUs with ordering-backend `menu_items` table
+- [x] **S2-04 (bulk import):** `POST /inventory/items/import` — CSV bulk upsert endpoint added ✅ 2026-05-22
+- [ ] **S2-04-legacy:** Cross-reference all 39 SKUs with ordering-backend `menu_items` table
   - Verify SKU strings match exactly (case-sensitive)
   - Verify categories align with ordering-backend's menu sections
   - Document any mismatches and fix in both services
