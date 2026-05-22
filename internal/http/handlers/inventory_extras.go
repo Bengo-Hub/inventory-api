@@ -13,6 +13,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entstockadjustment "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -54,6 +55,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
 	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
+	r.Get("/inventory/purchase-orders/{poID}", h.GetPurchaseOrder)
 	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
@@ -386,6 +388,86 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		})
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+// GetPurchaseOrder handles GET /inventory/purchase-orders/{poID}.
+func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	poID, err := uuid.Parse(chi.URLParam(r, "poID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
+		return
+	}
+	po, err := h.orm.PurchaseOrder.Query().
+		Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).
+		WithSupplier().
+		WithLines().
+		Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
+		return
+	}
+	supplierName := ""
+	if po.Edges.Supplier != nil {
+		supplierName = po.Edges.Supplier.Name
+	}
+	type lineDTO struct {
+		ID        uuid.UUID `json:"id"`
+		ItemID    uuid.UUID `json:"itemId"`
+		ItemName  string    `json:"itemName"`
+		SKU       string    `json:"sku"`
+		Quantity  int       `json:"quantity"`
+		UnitPrice float64   `json:"unitPrice"`
+		Total     float64   `json:"total"`
+	}
+	// Collect item IDs to fetch names/SKUs
+	itemIDs := make([]uuid.UUID, 0, len(po.Edges.Lines))
+	for _, l := range po.Edges.Lines {
+		itemIDs = append(itemIDs, l.ItemID)
+	}
+	itemNames := make(map[uuid.UUID]string)
+	itemSKUs := make(map[uuid.UUID]string)
+	if len(itemIDs) > 0 {
+		items, _ := h.orm.Item.Query().
+			Where(entitem.IDIn(itemIDs...)).
+			All(r.Context())
+		for _, it := range items {
+			itemNames[it.ID] = it.Name
+			itemSKUs[it.ID] = it.Sku
+		}
+	}
+	lines := make([]lineDTO, 0, len(po.Edges.Lines))
+	for _, l := range po.Edges.Lines {
+		lines = append(lines, lineDTO{
+			ID:        l.ID,
+			ItemID:    l.ItemID,
+			ItemName:  itemNames[l.ItemID],
+			SKU:       itemSKUs[l.ItemID],
+			Quantity:  l.QuantityOrdered,
+			UnitPrice: l.UnitPrice,
+			Total:     l.TotalPrice,
+		})
+	}
+	type poDetailDTO struct {
+		purchaseOrderDTO
+		LineItems []lineDTO `json:"lineItems"`
+	}
+	writeJSON(w, http.StatusOK, poDetailDTO{
+		purchaseOrderDTO: purchaseOrderDTO{
+			ID:           po.ID,
+			PONumber:     po.PoNumber,
+			SupplierName: supplierName,
+			SupplierID:   po.SupplierID,
+			Status:       po.Status.String(),
+			Total:        po.TotalAmount,
+			CreatedAt:    po.CreatedAt,
+		},
+		LineItems: lines,
+	})
 }
 
 // DeleteSupplier handles DELETE /inventory/suppliers/{supplierID} — soft-deletes a supplier.
