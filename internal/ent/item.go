@@ -63,6 +63,10 @@ type Item struct {
 	DurationMinutes *int `json:"duration_minutes,omitempty"`
 	// Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)
 	Tags []string `json:"tags,omitempty"`
+	// KRA eTIMS tax category code (e.g. VAT16, VAT8, EXM, ZER) for tax calculation
+	TaxCodeID string `json:"tax_code_id,omitempty"`
+	// True if selling price already includes VAT; treasury back-calculates tax portion
+	TaxInclusive bool `json:"tax_inclusive,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -253,13 +257,13 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots:
+		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
 		case item.FieldWeightKg:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldDurationMinutes:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -413,6 +417,18 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Tags); err != nil {
 					return fmt.Errorf("unmarshal field tags: %w", err)
 				}
+			}
+		case item.FieldTaxCodeID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tax_code_id", values[i])
+			} else if value.Valid {
+				_m.TaxCodeID = value.String
+			}
+		case item.FieldTaxInclusive:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field tax_inclusive", values[i])
+			} else if value.Valid {
+				_m.TaxInclusive = value.Bool
 			}
 		case item.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -607,6 +623,12 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tags=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Tags))
+	builder.WriteString(", ")
+	builder.WriteString("tax_code_id=")
+	builder.WriteString(_m.TaxCodeID)
+	builder.WriteString(", ")
+	builder.WriteString("tax_inclusive=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TaxInclusive))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))

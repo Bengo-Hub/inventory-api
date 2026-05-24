@@ -9057,6 +9057,8 @@ type ItemMutation struct {
 	addduration_minutes        *int
 	tags                       *[]string
 	appendtags                 []string
+	tax_code_id                *string
+	tax_inclusive              *bool
 	metadata                   *map[string]interface{}
 	created_at                 *time.Time
 	updated_at                 *time.Time
@@ -10102,6 +10104,91 @@ func (m *ItemMutation) ResetTags() {
 	m.appendtags = nil
 }
 
+// SetTaxCodeID sets the "tax_code_id" field.
+func (m *ItemMutation) SetTaxCodeID(s string) {
+	m.tax_code_id = &s
+}
+
+// TaxCodeID returns the value of the "tax_code_id" field in the mutation.
+func (m *ItemMutation) TaxCodeID() (r string, exists bool) {
+	v := m.tax_code_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaxCodeID returns the old "tax_code_id" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldTaxCodeID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaxCodeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaxCodeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaxCodeID: %w", err)
+	}
+	return oldValue.TaxCodeID, nil
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (m *ItemMutation) ClearTaxCodeID() {
+	m.tax_code_id = nil
+	m.clearedFields[item.FieldTaxCodeID] = struct{}{}
+}
+
+// TaxCodeIDCleared returns if the "tax_code_id" field was cleared in this mutation.
+func (m *ItemMutation) TaxCodeIDCleared() bool {
+	_, ok := m.clearedFields[item.FieldTaxCodeID]
+	return ok
+}
+
+// ResetTaxCodeID resets all changes to the "tax_code_id" field.
+func (m *ItemMutation) ResetTaxCodeID() {
+	m.tax_code_id = nil
+	delete(m.clearedFields, item.FieldTaxCodeID)
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (m *ItemMutation) SetTaxInclusive(b bool) {
+	m.tax_inclusive = &b
+}
+
+// TaxInclusive returns the value of the "tax_inclusive" field in the mutation.
+func (m *ItemMutation) TaxInclusive() (r bool, exists bool) {
+	v := m.tax_inclusive
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaxInclusive returns the old "tax_inclusive" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldTaxInclusive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaxInclusive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaxInclusive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaxInclusive: %w", err)
+	}
+	return oldValue.TaxInclusive, nil
+}
+
+// ResetTaxInclusive resets all changes to the "tax_inclusive" field.
+func (m *ItemMutation) ResetTaxInclusive() {
+	m.tax_inclusive = nil
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *ItemMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -10930,7 +11017,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 25)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -10991,6 +11078,12 @@ func (m *ItemMutation) Fields() []string {
 	if m.tags != nil {
 		fields = append(fields, item.FieldTags)
 	}
+	if m.tax_code_id != nil {
+		fields = append(fields, item.FieldTaxCodeID)
+	}
+	if m.tax_inclusive != nil {
+		fields = append(fields, item.FieldTaxInclusive)
+	}
 	if m.metadata != nil {
 		fields = append(fields, item.FieldMetadata)
 	}
@@ -11048,6 +11141,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.DurationMinutes()
 	case item.FieldTags:
 		return m.Tags()
+	case item.FieldTaxCodeID:
+		return m.TaxCodeID()
+	case item.FieldTaxInclusive:
+		return m.TaxInclusive()
 	case item.FieldMetadata:
 		return m.Metadata()
 	case item.FieldCreatedAt:
@@ -11103,6 +11200,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldDurationMinutes(ctx)
 	case item.FieldTags:
 		return m.OldTags(ctx)
+	case item.FieldTaxCodeID:
+		return m.OldTaxCodeID(ctx)
+	case item.FieldTaxInclusive:
+		return m.OldTaxInclusive(ctx)
 	case item.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case item.FieldCreatedAt:
@@ -11258,6 +11359,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTags(v)
 		return nil
+	case item.FieldTaxCodeID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaxCodeID(v)
+		return nil
+	case item.FieldTaxInclusive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaxInclusive(v)
+		return nil
 	case item.FieldMetadata:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -11363,6 +11478,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldDurationMinutes) {
 		fields = append(fields, item.FieldDurationMinutes)
 	}
+	if m.FieldCleared(item.FieldTaxCodeID) {
+		fields = append(fields, item.FieldTaxCodeID)
+	}
 	return fields
 }
 
@@ -11403,6 +11521,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldDurationMinutes:
 		m.ClearDurationMinutes()
+		return nil
+	case item.FieldTaxCodeID:
+		m.ClearTaxCodeID()
 		return nil
 	}
 	return fmt.Errorf("unknown Item nullable field %s", name)
@@ -11471,6 +11592,12 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldTags:
 		m.ResetTags()
+		return nil
+	case item.FieldTaxCodeID:
+		m.ResetTaxCodeID()
+		return nil
+	case item.FieldTaxInclusive:
+		m.ResetTaxInclusive()
 		return nil
 	case item.FieldMetadata:
 		m.ResetMetadata()

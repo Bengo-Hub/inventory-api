@@ -382,6 +382,40 @@ func (_u *ItemUpdate) AppendTags(v []string) *ItemUpdate {
 	return _u
 }
 
+// SetTaxCodeID sets the "tax_code_id" field.
+func (_u *ItemUpdate) SetTaxCodeID(v string) *ItemUpdate {
+	_u.mutation.SetTaxCodeID(v)
+	return _u
+}
+
+// SetNillableTaxCodeID sets the "tax_code_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTaxCodeID(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetTaxCodeID(*v)
+	}
+	return _u
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (_u *ItemUpdate) ClearTaxCodeID() *ItemUpdate {
+	_u.mutation.ClearTaxCodeID()
+	return _u
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (_u *ItemUpdate) SetTaxInclusive(v bool) *ItemUpdate {
+	_u.mutation.SetTaxInclusive(v)
+	return _u
+}
+
+// SetNillableTaxInclusive sets the "tax_inclusive" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTaxInclusive(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetTaxInclusive(*v)
+	}
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdate) SetMetadata(v map[string]interface{}) *ItemUpdate {
 	_u.mutation.SetMetadata(v)
@@ -998,6 +1032,15 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, item.FieldTags, value)
 		})
+	}
+	if value, ok := _u.mutation.TaxCodeID(); ok {
+		_spec.SetField(item.FieldTaxCodeID, field.TypeString, value)
+	}
+	if _u.mutation.TaxCodeIDCleared() {
+		_spec.ClearField(item.FieldTaxCodeID, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxInclusive(); ok {
+		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -1929,6 +1972,40 @@ func (_u *ItemUpdateOne) AppendTags(v []string) *ItemUpdateOne {
 	return _u
 }
 
+// SetTaxCodeID sets the "tax_code_id" field.
+func (_u *ItemUpdateOne) SetTaxCodeID(v string) *ItemUpdateOne {
+	_u.mutation.SetTaxCodeID(v)
+	return _u
+}
+
+// SetNillableTaxCodeID sets the "tax_code_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTaxCodeID(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTaxCodeID(*v)
+	}
+	return _u
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (_u *ItemUpdateOne) ClearTaxCodeID() *ItemUpdateOne {
+	_u.mutation.ClearTaxCodeID()
+	return _u
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (_u *ItemUpdateOne) SetTaxInclusive(v bool) *ItemUpdateOne {
+	_u.mutation.SetTaxInclusive(v)
+	return _u
+}
+
+// SetNillableTaxInclusive sets the "tax_inclusive" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTaxInclusive(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTaxInclusive(*v)
+	}
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdateOne) SetMetadata(v map[string]interface{}) *ItemUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -2575,6 +2652,15 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, item.FieldTags, value)
 		})
+	}
+	if value, ok := _u.mutation.TaxCodeID(); ok {
+		_spec.SetField(item.FieldTaxCodeID, field.TypeString, value)
+	}
+	if _u.mutation.TaxCodeIDCleared() {
+		_spec.ClearField(item.FieldTaxCodeID, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxInclusive(); ok {
+		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)

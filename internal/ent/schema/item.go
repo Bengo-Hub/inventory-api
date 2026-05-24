@@ -85,6 +85,13 @@ func (Item) Fields() []ent.Field {
 		field.JSON("tags", []string{}).
 			Default([]string{}).
 			Comment("Dietary, allergen, and custom tags (e.g. vegan, gluten_free, halal, contains_nuts)"),
+		// KRA eTIMS / tax fields (Phase 3) — enable correct tax calculation in treasury
+		field.String("tax_code_id").
+			Optional().
+			Comment("KRA eTIMS tax category code (e.g. VAT16, VAT8, EXM, ZER) for tax calculation"),
+		field.Bool("tax_inclusive").
+			Default(false).
+			Comment("True if selling price already includes VAT; treasury back-calculates tax portion"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").

@@ -352,16 +352,20 @@ func init() {
 	itemDescTags := itemFields[20].Descriptor()
 	// item.DefaultTags holds the default value on creation for the tags field.
 	item.DefaultTags = itemDescTags.Default.([]string)
+	// itemDescTaxInclusive is the schema descriptor for tax_inclusive field.
+	itemDescTaxInclusive := itemFields[22].Descriptor()
+	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
+	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[21].Descriptor()
+	itemDescMetadata := itemFields[23].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[22].Descriptor()
+	itemDescCreatedAt := itemFields[24].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[23].Descriptor()
+	itemDescUpdatedAt := itemFields[25].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
