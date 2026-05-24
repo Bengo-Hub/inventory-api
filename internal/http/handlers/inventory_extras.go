@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -37,6 +39,56 @@ func NewInventoryExtrasHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.S
 	}
 }
 
+// publishSupplierEvent writes a supplier event to the outbox table.
+func (h *InventoryExtrasHandler) publishSupplierEvent(ctx context.Context, s *ent.Supplier, eventType string) {
+	evt := &events.Event{
+		ID:            uuid.New(),
+		TenantID:      s.TenantID,
+		AggregateType: "supplier",
+		AggregateID:   s.ID,
+		EventType:     eventType,
+		Payload: map[string]any{
+			"id":                           s.ID,
+			"tenant_id":                    s.TenantID,
+			"name":                         s.Name,
+			"code":                         s.Code,
+			"contact_name":                 s.ContactName,
+			"contact_email":                s.ContactEmail,
+			"contact_phone":                s.ContactPhone,
+			"payment_method_type":          s.PaymentMethodType,
+			"mpesa_phone":                  s.MpesaPhone,
+			"mpesa_business_name":          s.MpesaBusinessName,
+			"bank_account_number":          s.BankAccountNumber,
+			"bank_name":                    s.BankName,
+			"bank_branch":                  s.BankBranch,
+			"tax_pin":                      s.TaxPin,
+			"paystack_recipient_code":      s.PaystackRecipientCode,
+			"requires_invoice_before_payment": s.RequiresInvoiceBeforePayment,
+			"is_active":                    s.IsActive,
+		},
+		Timestamp: time.Now().UTC(),
+	}
+
+	payload, err := evt.ToJSON()
+	if err != nil {
+		h.log.Warn("supplier event: marshal failed", zap.Error(err))
+		return
+	}
+	_, err = h.orm.OutboxEvent.Create().
+		SetID(evt.ID).
+		SetTenantID(s.TenantID).
+		SetAggregateType(evt.AggregateType).
+		SetAggregateID(evt.AggregateID.String()).
+		SetEventType(evt.EventType).
+		SetPayload(payload).
+		SetStatus("PENDING").
+		SetCreatedAt(evt.Timestamp).
+		Save(ctx)
+	if err != nil {
+		h.log.Warn("supplier event: outbox write failed", zap.Error(err))
+	}
+}
+
 // RegisterRoutes wires all extra inventory routes under /inventory/... on the given tenant router.
 func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	perm := func(code string) func(http.Handler) http.Handler {
@@ -52,6 +104,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/lots", h.ListLots)
 	r.Get("/inventory/suppliers", h.ListSuppliers)
 	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/suppliers", h.CreateSupplier)
+	r.Get("/inventory/suppliers/{supplierID}", h.GetSupplier)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
 	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
@@ -285,6 +338,7 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create supplier")
 		return
 	}
+	h.publishSupplierEvent(r.Context(), s, "inventory.supplier.created")
 	writeJSON(w, http.StatusCreated, supplierDTO{
 		ID:          s.ID,
 		Name:        s.Name,
@@ -292,6 +346,49 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		Email:       s.ContactEmail,
 		Phone:       s.ContactPhone,
 		Status:      "active",
+	})
+}
+
+func (h *InventoryExtrasHandler) GetSupplier(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	supplierID, err := uuid.Parse(chi.URLParam(r, "supplierID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid supplier ID")
+		return
+	}
+	s, err := h.orm.Supplier.Query().
+		Where(entsupplier.ID(supplierID), entsupplier.TenantID(tenantID)).
+		Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Supplier not found")
+		return
+	}
+	status := "inactive"
+	if s.IsActive {
+		status = "active"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"id":                             s.ID,
+		"name":                           s.Name,
+		"code":                           s.Code,
+		"contact_name":                   s.ContactName,
+		"contact_email":                  s.ContactEmail,
+		"contact_phone":                  s.ContactPhone,
+		"payment_method_type":            s.PaymentMethodType,
+		"mpesa_phone":                    s.MpesaPhone,
+		"mpesa_business_name":            s.MpesaBusinessName,
+		"bank_account_number":            s.BankAccountNumber,
+		"bank_name":                      s.BankName,
+		"bank_branch":                    s.BankBranch,
+		"tax_pin":                        s.TaxPin,
+		"requires_invoice_before_payment": s.RequiresInvoiceBeforePayment,
+		"credit_limit":                   s.CreditLimit,
+		"paystack_recipient_code":        s.PaystackRecipientCode,
+		"status":                         status,
 	})
 }
 
@@ -320,6 +417,7 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update supplier")
 		return
 	}
+	h.publishSupplierEvent(r.Context(), s, "inventory.supplier.updated")
 	status := "inactive"
 	if s.IsActive {
 		status = "active"
@@ -487,11 +585,13 @@ func (h *InventoryExtrasHandler) DeleteSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Supplier not found")
 		return
 	}
-	if _, err := h.orm.Supplier.UpdateOneID(supplierID).SetIsActive(false).Save(r.Context()); err != nil {
+	updated, err := h.orm.Supplier.UpdateOneID(supplierID).SetIsActive(false).Save(r.Context())
+	if err != nil {
 		h.log.Error("delete supplier failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", "Failed to delete supplier")
 		return
 	}
+	h.publishSupplierEvent(r.Context(), updated, "inventory.supplier.deleted")
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
@@ -672,6 +772,63 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit")
 		return
 	}
+
+	// Publish inventory.purchase_order.received with enriched supplier payment details for treasury auto-payout
+	go func() {
+		ctx := context.Background()
+		supplier, supErr := h.orm.Supplier.Get(ctx, po.SupplierID)
+
+		payload := map[string]any{
+			"po_id":        po.ID,
+			"po_number":    po.PoNumber,
+			"tenant_id":    tenantID,
+			"supplier_id":  po.SupplierID,
+			"total_amount": po.TotalAmount,
+			"currency":     po.Currency,
+		}
+		if supErr == nil {
+			payload["supplier_name"] = supplier.Name
+			payload["supplier_contact_email"] = supplier.ContactEmail
+			payload["supplier_contact_phone"] = supplier.ContactPhone
+			payload["supplier_payment_method"] = supplier.PaymentMethodType
+			payload["supplier_mpesa_phone"] = supplier.MpesaPhone
+			payload["supplier_mpesa_business_name"] = supplier.MpesaBusinessName
+			payload["supplier_bank_account_number"] = supplier.BankAccountNumber
+			payload["supplier_bank_name"] = supplier.BankName
+			payload["supplier_tax_pin"] = supplier.TaxPin
+			payload["supplier_paystack_recipient_code"] = supplier.PaystackRecipientCode
+			payload["requires_invoice_before_payment"] = supplier.RequiresInvoiceBeforePayment
+		}
+
+		evt := &events.Event{
+			ID:            uuid.New(),
+			TenantID:      tenantID,
+			AggregateType: "purchase_order",
+			AggregateID:   po.ID,
+			EventType:     "inventory.purchase_order.received",
+			Payload:       payload,
+			Timestamp:     time.Now().UTC(),
+		}
+		evtPayload, marshalErr := evt.ToJSON()
+		if marshalErr != nil {
+			h.log.Warn("PO received event: marshal failed", zap.Error(marshalErr))
+			return
+		}
+		_, writeErr := h.orm.OutboxEvent.Create().
+			SetID(evt.ID).
+			SetTenantID(tenantID).
+			SetAggregateType(evt.AggregateType).
+			SetAggregateID(evt.AggregateID.String()).
+			SetEventType(evt.EventType).
+			SetPayload(evtPayload).
+			SetStatus("PENDING").
+			SetCreatedAt(evt.Timestamp).
+			Save(ctx)
+		if writeErr != nil {
+			h.log.Warn("PO received event: outbox write failed", zap.Error(writeErr))
+		}
+	}()
+
 	writeJSON(w, http.StatusOK, map[string]string{"status": "received"})
 }
 

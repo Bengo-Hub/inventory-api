@@ -3,6 +3,7 @@
 package supplier
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -33,6 +34,26 @@ const (
 	FieldPaymentTerms = "payment_terms"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldPaymentMethodType holds the string denoting the payment_method_type field in the database.
+	FieldPaymentMethodType = "payment_method_type"
+	// FieldMpesaPhone holds the string denoting the mpesa_phone field in the database.
+	FieldMpesaPhone = "mpesa_phone"
+	// FieldMpesaBusinessName holds the string denoting the mpesa_business_name field in the database.
+	FieldMpesaBusinessName = "mpesa_business_name"
+	// FieldBankAccountNumber holds the string denoting the bank_account_number field in the database.
+	FieldBankAccountNumber = "bank_account_number"
+	// FieldBankName holds the string denoting the bank_name field in the database.
+	FieldBankName = "bank_name"
+	// FieldBankBranch holds the string denoting the bank_branch field in the database.
+	FieldBankBranch = "bank_branch"
+	// FieldTaxPin holds the string denoting the tax_pin field in the database.
+	FieldTaxPin = "tax_pin"
+	// FieldRequiresInvoiceBeforePayment holds the string denoting the requires_invoice_before_payment field in the database.
+	FieldRequiresInvoiceBeforePayment = "requires_invoice_before_payment"
+	// FieldCreditLimit holds the string denoting the credit_limit field in the database.
+	FieldCreditLimit = "credit_limit"
+	// FieldPaystackRecipientCode holds the string denoting the paystack_recipient_code field in the database.
+	FieldPaystackRecipientCode = "paystack_recipient_code"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -64,6 +85,16 @@ var Columns = []string{
 	FieldAddress,
 	FieldPaymentTerms,
 	FieldIsActive,
+	FieldPaymentMethodType,
+	FieldMpesaPhone,
+	FieldMpesaBusinessName,
+	FieldBankAccountNumber,
+	FieldBankName,
+	FieldBankBranch,
+	FieldTaxPin,
+	FieldRequiresInvoiceBeforePayment,
+	FieldCreditLimit,
+	FieldPaystackRecipientCode,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -86,6 +117,8 @@ var (
 	CodeValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultRequiresInvoiceBeforePayment holds the default value on creation for the "requires_invoice_before_payment" field.
+	DefaultRequiresInvoiceBeforePayment bool
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -97,6 +130,32 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// PaymentMethodType defines the type for the "payment_method_type" enum field.
+type PaymentMethodType string
+
+// PaymentMethodType values.
+const (
+	PaymentMethodTypeMpesa        PaymentMethodType = "mpesa"
+	PaymentMethodTypeMpesaB2b     PaymentMethodType = "mpesa_b2b"
+	PaymentMethodTypeBankTransfer PaymentMethodType = "bank_transfer"
+	PaymentMethodTypeCash         PaymentMethodType = "cash"
+	PaymentMethodTypeCheque       PaymentMethodType = "cheque"
+)
+
+func (pmt PaymentMethodType) String() string {
+	return string(pmt)
+}
+
+// PaymentMethodTypeValidator is a validator for the "payment_method_type" field enum values. It is called by the builders before save.
+func PaymentMethodTypeValidator(pmt PaymentMethodType) error {
+	switch pmt {
+	case PaymentMethodTypeMpesa, PaymentMethodTypeMpesaB2b, PaymentMethodTypeBankTransfer, PaymentMethodTypeCash, PaymentMethodTypeCheque:
+		return nil
+	default:
+		return fmt.Errorf("supplier: invalid enum value for payment_method_type field: %q", pmt)
+	}
+}
 
 // OrderOption defines the ordering options for the Supplier queries.
 type OrderOption func(*sql.Selector)
@@ -149,6 +208,56 @@ func ByPaymentTerms(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByPaymentMethodType orders the results by the payment_method_type field.
+func ByPaymentMethodType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPaymentMethodType, opts...).ToFunc()
+}
+
+// ByMpesaPhone orders the results by the mpesa_phone field.
+func ByMpesaPhone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMpesaPhone, opts...).ToFunc()
+}
+
+// ByMpesaBusinessName orders the results by the mpesa_business_name field.
+func ByMpesaBusinessName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMpesaBusinessName, opts...).ToFunc()
+}
+
+// ByBankAccountNumber orders the results by the bank_account_number field.
+func ByBankAccountNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBankAccountNumber, opts...).ToFunc()
+}
+
+// ByBankName orders the results by the bank_name field.
+func ByBankName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBankName, opts...).ToFunc()
+}
+
+// ByBankBranch orders the results by the bank_branch field.
+func ByBankBranch(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBankBranch, opts...).ToFunc()
+}
+
+// ByTaxPin orders the results by the tax_pin field.
+func ByTaxPin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaxPin, opts...).ToFunc()
+}
+
+// ByRequiresInvoiceBeforePayment orders the results by the requires_invoice_before_payment field.
+func ByRequiresInvoiceBeforePayment(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequiresInvoiceBeforePayment, opts...).ToFunc()
+}
+
+// ByCreditLimit orders the results by the credit_limit field.
+func ByCreditLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditLimit, opts...).ToFunc()
+}
+
+// ByPaystackRecipientCode orders the results by the paystack_recipient_code field.
+func ByPaystackRecipientCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPaystackRecipientCode, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

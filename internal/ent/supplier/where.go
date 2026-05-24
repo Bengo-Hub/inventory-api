@@ -101,6 +101,51 @@ func IsActive(v bool) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldIsActive, v))
 }
 
+// MpesaPhone applies equality check predicate on the "mpesa_phone" field. It's identical to MpesaPhoneEQ.
+func MpesaPhone(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldMpesaPhone, v))
+}
+
+// MpesaBusinessName applies equality check predicate on the "mpesa_business_name" field. It's identical to MpesaBusinessNameEQ.
+func MpesaBusinessName(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldMpesaBusinessName, v))
+}
+
+// BankAccountNumber applies equality check predicate on the "bank_account_number" field. It's identical to BankAccountNumberEQ.
+func BankAccountNumber(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankAccountNumber, v))
+}
+
+// BankName applies equality check predicate on the "bank_name" field. It's identical to BankNameEQ.
+func BankName(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankName, v))
+}
+
+// BankBranch applies equality check predicate on the "bank_branch" field. It's identical to BankBranchEQ.
+func BankBranch(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankBranch, v))
+}
+
+// TaxPin applies equality check predicate on the "tax_pin" field. It's identical to TaxPinEQ.
+func TaxPin(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldTaxPin, v))
+}
+
+// RequiresInvoiceBeforePayment applies equality check predicate on the "requires_invoice_before_payment" field. It's identical to RequiresInvoiceBeforePaymentEQ.
+func RequiresInvoiceBeforePayment(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldRequiresInvoiceBeforePayment, v))
+}
+
+// CreditLimit applies equality check predicate on the "credit_limit" field. It's identical to CreditLimitEQ.
+func CreditLimit(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCreditLimit, v))
+}
+
+// PaystackRecipientCode applies equality check predicate on the "paystack_recipient_code" field. It's identical to PaystackRecipientCodeEQ.
+func PaystackRecipientCode(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldPaystackRecipientCode, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldCreatedAt, v))
@@ -664,6 +709,621 @@ func IsActiveEQ(v bool) predicate.Supplier {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Supplier {
 	return predicate.Supplier(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// PaymentMethodTypeEQ applies the EQ predicate on the "payment_method_type" field.
+func PaymentMethodTypeEQ(v PaymentMethodType) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldPaymentMethodType, v))
+}
+
+// PaymentMethodTypeNEQ applies the NEQ predicate on the "payment_method_type" field.
+func PaymentMethodTypeNEQ(v PaymentMethodType) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldPaymentMethodType, v))
+}
+
+// PaymentMethodTypeIn applies the In predicate on the "payment_method_type" field.
+func PaymentMethodTypeIn(vs ...PaymentMethodType) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldPaymentMethodType, vs...))
+}
+
+// PaymentMethodTypeNotIn applies the NotIn predicate on the "payment_method_type" field.
+func PaymentMethodTypeNotIn(vs ...PaymentMethodType) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldPaymentMethodType, vs...))
+}
+
+// PaymentMethodTypeIsNil applies the IsNil predicate on the "payment_method_type" field.
+func PaymentMethodTypeIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldPaymentMethodType))
+}
+
+// PaymentMethodTypeNotNil applies the NotNil predicate on the "payment_method_type" field.
+func PaymentMethodTypeNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldPaymentMethodType))
+}
+
+// MpesaPhoneEQ applies the EQ predicate on the "mpesa_phone" field.
+func MpesaPhoneEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneNEQ applies the NEQ predicate on the "mpesa_phone" field.
+func MpesaPhoneNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneIn applies the In predicate on the "mpesa_phone" field.
+func MpesaPhoneIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldMpesaPhone, vs...))
+}
+
+// MpesaPhoneNotIn applies the NotIn predicate on the "mpesa_phone" field.
+func MpesaPhoneNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldMpesaPhone, vs...))
+}
+
+// MpesaPhoneGT applies the GT predicate on the "mpesa_phone" field.
+func MpesaPhoneGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneGTE applies the GTE predicate on the "mpesa_phone" field.
+func MpesaPhoneGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneLT applies the LT predicate on the "mpesa_phone" field.
+func MpesaPhoneLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneLTE applies the LTE predicate on the "mpesa_phone" field.
+func MpesaPhoneLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneContains applies the Contains predicate on the "mpesa_phone" field.
+func MpesaPhoneContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneHasPrefix applies the HasPrefix predicate on the "mpesa_phone" field.
+func MpesaPhoneHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneHasSuffix applies the HasSuffix predicate on the "mpesa_phone" field.
+func MpesaPhoneHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneIsNil applies the IsNil predicate on the "mpesa_phone" field.
+func MpesaPhoneIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldMpesaPhone))
+}
+
+// MpesaPhoneNotNil applies the NotNil predicate on the "mpesa_phone" field.
+func MpesaPhoneNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldMpesaPhone))
+}
+
+// MpesaPhoneEqualFold applies the EqualFold predicate on the "mpesa_phone" field.
+func MpesaPhoneEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldMpesaPhone, v))
+}
+
+// MpesaPhoneContainsFold applies the ContainsFold predicate on the "mpesa_phone" field.
+func MpesaPhoneContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldMpesaPhone, v))
+}
+
+// MpesaBusinessNameEQ applies the EQ predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameNEQ applies the NEQ predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameIn applies the In predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldMpesaBusinessName, vs...))
+}
+
+// MpesaBusinessNameNotIn applies the NotIn predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldMpesaBusinessName, vs...))
+}
+
+// MpesaBusinessNameGT applies the GT predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameGTE applies the GTE predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameLT applies the LT predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameLTE applies the LTE predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameContains applies the Contains predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameHasPrefix applies the HasPrefix predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameHasSuffix applies the HasSuffix predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameIsNil applies the IsNil predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldMpesaBusinessName))
+}
+
+// MpesaBusinessNameNotNil applies the NotNil predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldMpesaBusinessName))
+}
+
+// MpesaBusinessNameEqualFold applies the EqualFold predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldMpesaBusinessName, v))
+}
+
+// MpesaBusinessNameContainsFold applies the ContainsFold predicate on the "mpesa_business_name" field.
+func MpesaBusinessNameContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldMpesaBusinessName, v))
+}
+
+// BankAccountNumberEQ applies the EQ predicate on the "bank_account_number" field.
+func BankAccountNumberEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberNEQ applies the NEQ predicate on the "bank_account_number" field.
+func BankAccountNumberNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberIn applies the In predicate on the "bank_account_number" field.
+func BankAccountNumberIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldBankAccountNumber, vs...))
+}
+
+// BankAccountNumberNotIn applies the NotIn predicate on the "bank_account_number" field.
+func BankAccountNumberNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldBankAccountNumber, vs...))
+}
+
+// BankAccountNumberGT applies the GT predicate on the "bank_account_number" field.
+func BankAccountNumberGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberGTE applies the GTE predicate on the "bank_account_number" field.
+func BankAccountNumberGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberLT applies the LT predicate on the "bank_account_number" field.
+func BankAccountNumberLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberLTE applies the LTE predicate on the "bank_account_number" field.
+func BankAccountNumberLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberContains applies the Contains predicate on the "bank_account_number" field.
+func BankAccountNumberContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberHasPrefix applies the HasPrefix predicate on the "bank_account_number" field.
+func BankAccountNumberHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberHasSuffix applies the HasSuffix predicate on the "bank_account_number" field.
+func BankAccountNumberHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberIsNil applies the IsNil predicate on the "bank_account_number" field.
+func BankAccountNumberIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldBankAccountNumber))
+}
+
+// BankAccountNumberNotNil applies the NotNil predicate on the "bank_account_number" field.
+func BankAccountNumberNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldBankAccountNumber))
+}
+
+// BankAccountNumberEqualFold applies the EqualFold predicate on the "bank_account_number" field.
+func BankAccountNumberEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldBankAccountNumber, v))
+}
+
+// BankAccountNumberContainsFold applies the ContainsFold predicate on the "bank_account_number" field.
+func BankAccountNumberContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldBankAccountNumber, v))
+}
+
+// BankNameEQ applies the EQ predicate on the "bank_name" field.
+func BankNameEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankName, v))
+}
+
+// BankNameNEQ applies the NEQ predicate on the "bank_name" field.
+func BankNameNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldBankName, v))
+}
+
+// BankNameIn applies the In predicate on the "bank_name" field.
+func BankNameIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldBankName, vs...))
+}
+
+// BankNameNotIn applies the NotIn predicate on the "bank_name" field.
+func BankNameNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldBankName, vs...))
+}
+
+// BankNameGT applies the GT predicate on the "bank_name" field.
+func BankNameGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldBankName, v))
+}
+
+// BankNameGTE applies the GTE predicate on the "bank_name" field.
+func BankNameGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldBankName, v))
+}
+
+// BankNameLT applies the LT predicate on the "bank_name" field.
+func BankNameLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldBankName, v))
+}
+
+// BankNameLTE applies the LTE predicate on the "bank_name" field.
+func BankNameLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldBankName, v))
+}
+
+// BankNameContains applies the Contains predicate on the "bank_name" field.
+func BankNameContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldBankName, v))
+}
+
+// BankNameHasPrefix applies the HasPrefix predicate on the "bank_name" field.
+func BankNameHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldBankName, v))
+}
+
+// BankNameHasSuffix applies the HasSuffix predicate on the "bank_name" field.
+func BankNameHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldBankName, v))
+}
+
+// BankNameIsNil applies the IsNil predicate on the "bank_name" field.
+func BankNameIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldBankName))
+}
+
+// BankNameNotNil applies the NotNil predicate on the "bank_name" field.
+func BankNameNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldBankName))
+}
+
+// BankNameEqualFold applies the EqualFold predicate on the "bank_name" field.
+func BankNameEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldBankName, v))
+}
+
+// BankNameContainsFold applies the ContainsFold predicate on the "bank_name" field.
+func BankNameContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldBankName, v))
+}
+
+// BankBranchEQ applies the EQ predicate on the "bank_branch" field.
+func BankBranchEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankBranch, v))
+}
+
+// BankBranchNEQ applies the NEQ predicate on the "bank_branch" field.
+func BankBranchNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldBankBranch, v))
+}
+
+// BankBranchIn applies the In predicate on the "bank_branch" field.
+func BankBranchIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldBankBranch, vs...))
+}
+
+// BankBranchNotIn applies the NotIn predicate on the "bank_branch" field.
+func BankBranchNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldBankBranch, vs...))
+}
+
+// BankBranchGT applies the GT predicate on the "bank_branch" field.
+func BankBranchGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldBankBranch, v))
+}
+
+// BankBranchGTE applies the GTE predicate on the "bank_branch" field.
+func BankBranchGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldBankBranch, v))
+}
+
+// BankBranchLT applies the LT predicate on the "bank_branch" field.
+func BankBranchLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldBankBranch, v))
+}
+
+// BankBranchLTE applies the LTE predicate on the "bank_branch" field.
+func BankBranchLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldBankBranch, v))
+}
+
+// BankBranchContains applies the Contains predicate on the "bank_branch" field.
+func BankBranchContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldBankBranch, v))
+}
+
+// BankBranchHasPrefix applies the HasPrefix predicate on the "bank_branch" field.
+func BankBranchHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldBankBranch, v))
+}
+
+// BankBranchHasSuffix applies the HasSuffix predicate on the "bank_branch" field.
+func BankBranchHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldBankBranch, v))
+}
+
+// BankBranchIsNil applies the IsNil predicate on the "bank_branch" field.
+func BankBranchIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldBankBranch))
+}
+
+// BankBranchNotNil applies the NotNil predicate on the "bank_branch" field.
+func BankBranchNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldBankBranch))
+}
+
+// BankBranchEqualFold applies the EqualFold predicate on the "bank_branch" field.
+func BankBranchEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldBankBranch, v))
+}
+
+// BankBranchContainsFold applies the ContainsFold predicate on the "bank_branch" field.
+func BankBranchContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldBankBranch, v))
+}
+
+// TaxPinEQ applies the EQ predicate on the "tax_pin" field.
+func TaxPinEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldTaxPin, v))
+}
+
+// TaxPinNEQ applies the NEQ predicate on the "tax_pin" field.
+func TaxPinNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldTaxPin, v))
+}
+
+// TaxPinIn applies the In predicate on the "tax_pin" field.
+func TaxPinIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldTaxPin, vs...))
+}
+
+// TaxPinNotIn applies the NotIn predicate on the "tax_pin" field.
+func TaxPinNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldTaxPin, vs...))
+}
+
+// TaxPinGT applies the GT predicate on the "tax_pin" field.
+func TaxPinGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldTaxPin, v))
+}
+
+// TaxPinGTE applies the GTE predicate on the "tax_pin" field.
+func TaxPinGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldTaxPin, v))
+}
+
+// TaxPinLT applies the LT predicate on the "tax_pin" field.
+func TaxPinLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldTaxPin, v))
+}
+
+// TaxPinLTE applies the LTE predicate on the "tax_pin" field.
+func TaxPinLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldTaxPin, v))
+}
+
+// TaxPinContains applies the Contains predicate on the "tax_pin" field.
+func TaxPinContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldTaxPin, v))
+}
+
+// TaxPinHasPrefix applies the HasPrefix predicate on the "tax_pin" field.
+func TaxPinHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldTaxPin, v))
+}
+
+// TaxPinHasSuffix applies the HasSuffix predicate on the "tax_pin" field.
+func TaxPinHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldTaxPin, v))
+}
+
+// TaxPinIsNil applies the IsNil predicate on the "tax_pin" field.
+func TaxPinIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldTaxPin))
+}
+
+// TaxPinNotNil applies the NotNil predicate on the "tax_pin" field.
+func TaxPinNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldTaxPin))
+}
+
+// TaxPinEqualFold applies the EqualFold predicate on the "tax_pin" field.
+func TaxPinEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldTaxPin, v))
+}
+
+// TaxPinContainsFold applies the ContainsFold predicate on the "tax_pin" field.
+func TaxPinContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldTaxPin, v))
+}
+
+// RequiresInvoiceBeforePaymentEQ applies the EQ predicate on the "requires_invoice_before_payment" field.
+func RequiresInvoiceBeforePaymentEQ(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldRequiresInvoiceBeforePayment, v))
+}
+
+// RequiresInvoiceBeforePaymentNEQ applies the NEQ predicate on the "requires_invoice_before_payment" field.
+func RequiresInvoiceBeforePaymentNEQ(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldRequiresInvoiceBeforePayment, v))
+}
+
+// CreditLimitEQ applies the EQ predicate on the "credit_limit" field.
+func CreditLimitEQ(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCreditLimit, v))
+}
+
+// CreditLimitNEQ applies the NEQ predicate on the "credit_limit" field.
+func CreditLimitNEQ(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldCreditLimit, v))
+}
+
+// CreditLimitIn applies the In predicate on the "credit_limit" field.
+func CreditLimitIn(vs ...float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldCreditLimit, vs...))
+}
+
+// CreditLimitNotIn applies the NotIn predicate on the "credit_limit" field.
+func CreditLimitNotIn(vs ...float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldCreditLimit, vs...))
+}
+
+// CreditLimitGT applies the GT predicate on the "credit_limit" field.
+func CreditLimitGT(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldCreditLimit, v))
+}
+
+// CreditLimitGTE applies the GTE predicate on the "credit_limit" field.
+func CreditLimitGTE(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldCreditLimit, v))
+}
+
+// CreditLimitLT applies the LT predicate on the "credit_limit" field.
+func CreditLimitLT(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldCreditLimit, v))
+}
+
+// CreditLimitLTE applies the LTE predicate on the "credit_limit" field.
+func CreditLimitLTE(v float64) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldCreditLimit, v))
+}
+
+// CreditLimitIsNil applies the IsNil predicate on the "credit_limit" field.
+func CreditLimitIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldCreditLimit))
+}
+
+// CreditLimitNotNil applies the NotNil predicate on the "credit_limit" field.
+func CreditLimitNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldCreditLimit))
+}
+
+// PaystackRecipientCodeEQ applies the EQ predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeNEQ applies the NEQ predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeIn applies the In predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldPaystackRecipientCode, vs...))
+}
+
+// PaystackRecipientCodeNotIn applies the NotIn predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldPaystackRecipientCode, vs...))
+}
+
+// PaystackRecipientCodeGT applies the GT predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeGTE applies the GTE predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeLT applies the LT predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeLTE applies the LTE predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeContains applies the Contains predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeHasPrefix applies the HasPrefix predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeHasSuffix applies the HasSuffix predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeIsNil applies the IsNil predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldPaystackRecipientCode))
+}
+
+// PaystackRecipientCodeNotNil applies the NotNil predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldPaystackRecipientCode))
+}
+
+// PaystackRecipientCodeEqualFold applies the EqualFold predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldPaystackRecipientCode, v))
+}
+
+// PaystackRecipientCodeContainsFold applies the ContainsFold predicate on the "paystack_recipient_code" field.
+func PaystackRecipientCodeContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldPaystackRecipientCode, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

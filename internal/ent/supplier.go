@@ -37,6 +37,26 @@ type Supplier struct {
 	PaymentTerms string `json:"payment_terms,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// PaymentMethodType holds the value of the "payment_method_type" field.
+	PaymentMethodType supplier.PaymentMethodType `json:"payment_method_type,omitempty"`
+	// M-Pesa phone (254...) for B2C supplier payment
+	MpesaPhone string `json:"mpesa_phone,omitempty"`
+	// M-Pesa business name for B2B paybill payments
+	MpesaBusinessName string `json:"mpesa_business_name,omitempty"`
+	// BankAccountNumber holds the value of the "bank_account_number" field.
+	BankAccountNumber string `json:"bank_account_number,omitempty"`
+	// BankName holds the value of the "bank_name" field.
+	BankName string `json:"bank_name,omitempty"`
+	// BankBranch holds the value of the "bank_branch" field.
+	BankBranch string `json:"bank_branch,omitempty"`
+	// KRA PIN for WHT calculation on supplier payments
+	TaxPin string `json:"tax_pin,omitempty"`
+	// RequiresInvoiceBeforePayment holds the value of the "requires_invoice_before_payment" field.
+	RequiresInvoiceBeforePayment bool `json:"requires_invoice_before_payment,omitempty"`
+	// Maximum outstanding balance allowed for this supplier
+	CreditLimit float64 `json:"credit_limit,omitempty"`
+	// Cached Paystack RCP_xxx to avoid re-creating recipient on each payout
+	PaystackRecipientCode string `json:"paystack_recipient_code,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -74,9 +94,11 @@ func (*Supplier) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplier.FieldMetadata:
 			values[i] = new([]byte)
-		case supplier.FieldIsActive:
+		case supplier.FieldIsActive, supplier.FieldRequiresInvoiceBeforePayment:
 			values[i] = new(sql.NullBool)
-		case supplier.FieldName, supplier.FieldCode, supplier.FieldContactName, supplier.FieldContactEmail, supplier.FieldContactPhone, supplier.FieldAddress, supplier.FieldPaymentTerms:
+		case supplier.FieldCreditLimit:
+			values[i] = new(sql.NullFloat64)
+		case supplier.FieldName, supplier.FieldCode, supplier.FieldContactName, supplier.FieldContactEmail, supplier.FieldContactPhone, supplier.FieldAddress, supplier.FieldPaymentTerms, supplier.FieldPaymentMethodType, supplier.FieldMpesaPhone, supplier.FieldMpesaBusinessName, supplier.FieldBankAccountNumber, supplier.FieldBankName, supplier.FieldBankBranch, supplier.FieldTaxPin, supplier.FieldPaystackRecipientCode:
 			values[i] = new(sql.NullString)
 		case supplier.FieldCreatedAt, supplier.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -156,6 +178,66 @@ func (_m *Supplier) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case supplier.FieldPaymentMethodType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field payment_method_type", values[i])
+			} else if value.Valid {
+				_m.PaymentMethodType = supplier.PaymentMethodType(value.String)
+			}
+		case supplier.FieldMpesaPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mpesa_phone", values[i])
+			} else if value.Valid {
+				_m.MpesaPhone = value.String
+			}
+		case supplier.FieldMpesaBusinessName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mpesa_business_name", values[i])
+			} else if value.Valid {
+				_m.MpesaBusinessName = value.String
+			}
+		case supplier.FieldBankAccountNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bank_account_number", values[i])
+			} else if value.Valid {
+				_m.BankAccountNumber = value.String
+			}
+		case supplier.FieldBankName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bank_name", values[i])
+			} else if value.Valid {
+				_m.BankName = value.String
+			}
+		case supplier.FieldBankBranch:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bank_branch", values[i])
+			} else if value.Valid {
+				_m.BankBranch = value.String
+			}
+		case supplier.FieldTaxPin:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tax_pin", values[i])
+			} else if value.Valid {
+				_m.TaxPin = value.String
+			}
+		case supplier.FieldRequiresInvoiceBeforePayment:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field requires_invoice_before_payment", values[i])
+			} else if value.Valid {
+				_m.RequiresInvoiceBeforePayment = value.Bool
+			}
+		case supplier.FieldCreditLimit:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field credit_limit", values[i])
+			} else if value.Valid {
+				_m.CreditLimit = value.Float64
+			}
+		case supplier.FieldPaystackRecipientCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field paystack_recipient_code", values[i])
+			} else if value.Valid {
+				_m.PaystackRecipientCode = value.String
 			}
 		case supplier.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -244,6 +326,36 @@ func (_m *Supplier) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	builder.WriteString("payment_method_type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PaymentMethodType))
+	builder.WriteString(", ")
+	builder.WriteString("mpesa_phone=")
+	builder.WriteString(_m.MpesaPhone)
+	builder.WriteString(", ")
+	builder.WriteString("mpesa_business_name=")
+	builder.WriteString(_m.MpesaBusinessName)
+	builder.WriteString(", ")
+	builder.WriteString("bank_account_number=")
+	builder.WriteString(_m.BankAccountNumber)
+	builder.WriteString(", ")
+	builder.WriteString("bank_name=")
+	builder.WriteString(_m.BankName)
+	builder.WriteString(", ")
+	builder.WriteString("bank_branch=")
+	builder.WriteString(_m.BankBranch)
+	builder.WriteString(", ")
+	builder.WriteString("tax_pin=")
+	builder.WriteString(_m.TaxPin)
+	builder.WriteString(", ")
+	builder.WriteString("requires_invoice_before_payment=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RequiresInvoiceBeforePayment))
+	builder.WriteString(", ")
+	builder.WriteString("credit_limit=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CreditLimit))
+	builder.WriteString(", ")
+	builder.WriteString("paystack_recipient_code=")
+	builder.WriteString(_m.PaystackRecipientCode)
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
