@@ -56,6 +56,10 @@ const (
 	FieldDurationMinutes = "duration_minutes"
 	// FieldTags holds the string denoting the tags field in the database.
 	FieldTags = "tags"
+	// FieldTaxCodeID holds the string denoting the tax_code_id field in the database.
+	FieldTaxCodeID = "tax_code_id"
+	// FieldTaxInclusive holds the string denoting the tax_inclusive field in the database.
+	FieldTaxInclusive = "tax_inclusive"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -215,6 +219,8 @@ var Columns = []string{
 	FieldDimensionsCm,
 	FieldDurationMinutes,
 	FieldTags,
+	FieldTaxCodeID,
+	FieldTaxInclusive,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -249,6 +255,8 @@ var (
 	DefaultTrackLots bool
 	// DefaultTags holds the default value on creation for the "tags" field.
 	DefaultTags []string
+	// DefaultTaxInclusive holds the default value on creation for the "tax_inclusive" field.
+	DefaultTaxInclusive bool
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -387,6 +395,16 @@ func ByWeightKg(opts ...sql.OrderTermOption) OrderOption {
 // ByDurationMinutes orders the results by the duration_minutes field.
 func ByDurationMinutes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDurationMinutes, opts...).ToFunc()
+}
+
+// ByTaxCodeID orders the results by the tax_code_id field.
+func ByTaxCodeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaxCodeID, opts...).ToFunc()
+}
+
+// ByTaxInclusive orders the results by the tax_inclusive field.
+func ByTaxInclusive(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaxInclusive, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

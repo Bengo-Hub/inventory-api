@@ -141,6 +141,16 @@ func DurationMinutes(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldDurationMinutes, v))
 }
 
+// TaxCodeID applies equality check predicate on the "tax_code_id" field. It's identical to TaxCodeIDEQ.
+func TaxCodeID(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTaxCodeID, v))
+}
+
+// TaxInclusive applies equality check predicate on the "tax_inclusive" field. It's identical to TaxInclusiveEQ.
+func TaxInclusive(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTaxInclusive, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -849,6 +859,91 @@ func DurationMinutesIsNil() predicate.Item {
 // DurationMinutesNotNil applies the NotNil predicate on the "duration_minutes" field.
 func DurationMinutesNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldDurationMinutes))
+}
+
+// TaxCodeIDEQ applies the EQ predicate on the "tax_code_id" field.
+func TaxCodeIDEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDNEQ applies the NEQ predicate on the "tax_code_id" field.
+func TaxCodeIDNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDIn applies the In predicate on the "tax_code_id" field.
+func TaxCodeIDIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldTaxCodeID, vs...))
+}
+
+// TaxCodeIDNotIn applies the NotIn predicate on the "tax_code_id" field.
+func TaxCodeIDNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldTaxCodeID, vs...))
+}
+
+// TaxCodeIDGT applies the GT predicate on the "tax_code_id" field.
+func TaxCodeIDGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDGTE applies the GTE predicate on the "tax_code_id" field.
+func TaxCodeIDGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDLT applies the LT predicate on the "tax_code_id" field.
+func TaxCodeIDLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDLTE applies the LTE predicate on the "tax_code_id" field.
+func TaxCodeIDLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDContains applies the Contains predicate on the "tax_code_id" field.
+func TaxCodeIDContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDHasPrefix applies the HasPrefix predicate on the "tax_code_id" field.
+func TaxCodeIDHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDHasSuffix applies the HasSuffix predicate on the "tax_code_id" field.
+func TaxCodeIDHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDIsNil applies the IsNil predicate on the "tax_code_id" field.
+func TaxCodeIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldTaxCodeID))
+}
+
+// TaxCodeIDNotNil applies the NotNil predicate on the "tax_code_id" field.
+func TaxCodeIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldTaxCodeID))
+}
+
+// TaxCodeIDEqualFold applies the EqualFold predicate on the "tax_code_id" field.
+func TaxCodeIDEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldTaxCodeID, v))
+}
+
+// TaxCodeIDContainsFold applies the ContainsFold predicate on the "tax_code_id" field.
+func TaxCodeIDContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldTaxCodeID, v))
+}
+
+// TaxInclusiveEQ applies the EQ predicate on the "tax_inclusive" field.
+func TaxInclusiveEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTaxInclusive, v))
+}
+
+// TaxInclusiveNEQ applies the NEQ predicate on the "tax_inclusive" field.
+func TaxInclusiveNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTaxInclusive, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

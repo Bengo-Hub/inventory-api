@@ -441,6 +441,8 @@ var (
 		{Name: "dimensions_cm", Type: field.TypeJSON, Nullable: true},
 		{Name: "duration_minutes", Type: field.TypeInt, Nullable: true},
 		{Name: "tags", Type: field.TypeJSON},
+		{Name: "tax_code_id", Type: field.TypeString, Nullable: true},
+		{Name: "tax_inclusive", Type: field.TypeBool, Default: false},
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -456,19 +458,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[21]},
+				Columns:    []*schema.Column{ItemsColumns[23]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[22]},
+				Columns:    []*schema.Column{ItemsColumns[24]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[23]},
+				Columns:    []*schema.Column{ItemsColumns[25]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -477,22 +479,22 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[23], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[23], ItemsColumns[22]},
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[24]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[23], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[5]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[23], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[7]},
 			},
 		},
 	}

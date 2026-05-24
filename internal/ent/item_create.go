@@ -278,6 +278,34 @@ func (_c *ItemCreate) SetTags(v []string) *ItemCreate {
 	return _c
 }
 
+// SetTaxCodeID sets the "tax_code_id" field.
+func (_c *ItemCreate) SetTaxCodeID(v string) *ItemCreate {
+	_c.mutation.SetTaxCodeID(v)
+	return _c
+}
+
+// SetNillableTaxCodeID sets the "tax_code_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTaxCodeID(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetTaxCodeID(*v)
+	}
+	return _c
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (_c *ItemCreate) SetTaxInclusive(v bool) *ItemCreate {
+	_c.mutation.SetTaxInclusive(v)
+	return _c
+}
+
+// SetNillableTaxInclusive sets the "tax_inclusive" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTaxInclusive(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetTaxInclusive(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *ItemCreate) SetMetadata(v map[string]interface{}) *ItemCreate {
 	_c.mutation.SetMetadata(v)
@@ -605,6 +633,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultTags
 		_c.mutation.SetTags(v)
 	}
+	if _, ok := _c.mutation.TaxInclusive(); !ok {
+		v := item.DefaultTaxInclusive
+		_c.mutation.SetTaxInclusive(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := item.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -672,6 +704,9 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Item.tags"`)}
+	}
+	if _, ok := _c.mutation.TaxInclusive(); !ok {
+		return &ValidationError{Name: "tax_inclusive", err: errors.New(`ent: missing required field "Item.tax_inclusive"`)}
 	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		return &ValidationError{Name: "metadata", err: errors.New(`ent: missing required field "Item.metadata"`)}
@@ -788,6 +823,14 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Tags(); ok {
 		_spec.SetField(item.FieldTags, field.TypeJSON, value)
 		_node.Tags = value
+	}
+	if value, ok := _c.mutation.TaxCodeID(); ok {
+		_spec.SetField(item.FieldTaxCodeID, field.TypeString, value)
+		_node.TaxCodeID = value
+	}
+	if value, ok := _c.mutation.TaxInclusive(); ok {
+		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
+		_node.TaxInclusive = value
 	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -1386,6 +1429,36 @@ func (u *ItemUpsert) UpdateTags() *ItemUpsert {
 	return u
 }
 
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsert) SetTaxCodeID(v string) *ItemUpsert {
+	u.Set(item.FieldTaxCodeID, v)
+	return u
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTaxCodeID() *ItemUpsert {
+	u.SetExcluded(item.FieldTaxCodeID)
+	return u
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsert) ClearTaxCodeID() *ItemUpsert {
+	u.SetNull(item.FieldTaxCodeID)
+	return u
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsert) SetTaxInclusive(v bool) *ItemUpsert {
+	u.Set(item.FieldTaxInclusive, v)
+	return u
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTaxInclusive() *ItemUpsert {
+	u.SetExcluded(item.FieldTaxInclusive)
+	return u
+}
+
 // SetMetadata sets the "metadata" field.
 func (u *ItemUpsert) SetMetadata(v map[string]interface{}) *ItemUpsert {
 	u.Set(item.FieldMetadata, v)
@@ -1815,6 +1888,41 @@ func (u *ItemUpsertOne) SetTags(v []string) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateTags() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsertOne) SetTaxCodeID(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxCodeID(v)
+	})
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTaxCodeID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxCodeID()
+	})
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsertOne) ClearTaxCodeID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTaxCodeID()
+	})
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsertOne) SetTaxInclusive(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxInclusive(v)
+	})
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTaxInclusive() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxInclusive()
 	})
 }
 
@@ -2418,6 +2526,41 @@ func (u *ItemUpsertBulk) SetTags(v []string) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateTags() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTags()
+	})
+}
+
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsertBulk) SetTaxCodeID(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxCodeID(v)
+	})
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTaxCodeID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxCodeID()
+	})
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsertBulk) ClearTaxCodeID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTaxCodeID()
+	})
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsertBulk) SetTaxInclusive(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxInclusive(v)
+	})
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTaxInclusive() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxInclusive()
 	})
 }
 

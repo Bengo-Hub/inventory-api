@@ -55,8 +55,11 @@ type ItemDTO struct {
 	TrackSerialNumbers     bool               `json:"track_serial_numbers"`
 	WeightKg               *float64           `json:"weight_kg,omitempty"`
 	DimensionsCm           map[string]float64 `json:"dimensions_cm,omitempty"`
-	CreatedAt              time.Time          `json:"created_at"`
-	UpdatedAt              time.Time          `json:"updated_at"`
+	// KRA eTIMS tax fields
+	TaxCodeID    string `json:"tax_code_id,omitempty"`
+	TaxInclusive bool   `json:"tax_inclusive"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type CategoryDTO struct {
@@ -477,6 +480,8 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		TrackSerialNumbers:      i.TrackSerialNumbers,
 		WeightKg:                i.WeightKg,
 		DimensionsCm:            i.DimensionsCm,
+		TaxCodeID:               i.TaxCodeID,
+		TaxInclusive:            i.TaxInclusive,
 		CreatedAt:               i.CreatedAt,
 		UpdatedAt:               i.UpdatedAt,
 	}
