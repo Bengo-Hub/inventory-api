@@ -42,6 +42,33 @@ func (Supplier) Fields() []ent.Field {
 			Comment("Net30, Net60, COD, etc."),
 		field.Bool("is_active").
 			Default(true),
+		// Payment details for automated disbursements via treasury-api
+		field.Enum("payment_method_type").
+			Values("mpesa", "mpesa_b2b", "bank_transfer", "cash", "cheque").
+			Optional(),
+		field.String("mpesa_phone").
+			Optional().
+			Comment("M-Pesa phone (254...) for B2C supplier payment"),
+		field.String("mpesa_business_name").
+			Optional().
+			Comment("M-Pesa business name for B2B paybill payments"),
+		field.String("bank_account_number").
+			Optional(),
+		field.String("bank_name").
+			Optional(),
+		field.String("bank_branch").
+			Optional(),
+		field.String("tax_pin").
+			Optional().
+			Comment("KRA PIN for WHT calculation on supplier payments"),
+		field.Bool("requires_invoice_before_payment").
+			Default(false),
+		field.Float("credit_limit").
+			Optional().
+			Comment("Maximum outstanding balance allowed for this supplier"),
+		field.String("paystack_recipient_code").
+			Optional().
+			Comment("Cached Paystack RCP_xxx to avoid re-creating recipient on each payout"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").

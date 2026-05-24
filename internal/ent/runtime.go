@@ -962,16 +962,20 @@ func init() {
 	supplierDescIsActive := supplierFields[9].Descriptor()
 	// supplier.DefaultIsActive holds the default value on creation for the is_active field.
 	supplier.DefaultIsActive = supplierDescIsActive.Default.(bool)
+	// supplierDescRequiresInvoiceBeforePayment is the schema descriptor for requires_invoice_before_payment field.
+	supplierDescRequiresInvoiceBeforePayment := supplierFields[17].Descriptor()
+	// supplier.DefaultRequiresInvoiceBeforePayment holds the default value on creation for the requires_invoice_before_payment field.
+	supplier.DefaultRequiresInvoiceBeforePayment = supplierDescRequiresInvoiceBeforePayment.Default.(bool)
 	// supplierDescMetadata is the schema descriptor for metadata field.
-	supplierDescMetadata := supplierFields[10].Descriptor()
+	supplierDescMetadata := supplierFields[20].Descriptor()
 	// supplier.DefaultMetadata holds the default value on creation for the metadata field.
 	supplier.DefaultMetadata = supplierDescMetadata.Default.(map[string]interface{})
 	// supplierDescCreatedAt is the schema descriptor for created_at field.
-	supplierDescCreatedAt := supplierFields[11].Descriptor()
+	supplierDescCreatedAt := supplierFields[21].Descriptor()
 	// supplier.DefaultCreatedAt holds the default value on creation for the created_at field.
 	supplier.DefaultCreatedAt = supplierDescCreatedAt.Default.(func() time.Time)
 	// supplierDescUpdatedAt is the schema descriptor for updated_at field.
-	supplierDescUpdatedAt := supplierFields[12].Descriptor()
+	supplierDescUpdatedAt := supplierFields[22].Descriptor()
 	// supplier.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	supplier.DefaultUpdatedAt = supplierDescUpdatedAt.Default.(func() time.Time)
 	// supplier.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

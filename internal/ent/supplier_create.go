@@ -127,6 +127,146 @@ func (_c *SupplierCreate) SetNillableIsActive(v *bool) *SupplierCreate {
 	return _c
 }
 
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (_c *SupplierCreate) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierCreate {
+	_c.mutation.SetPaymentMethodType(v)
+	return _c
+}
+
+// SetNillablePaymentMethodType sets the "payment_method_type" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillablePaymentMethodType(v *supplier.PaymentMethodType) *SupplierCreate {
+	if v != nil {
+		_c.SetPaymentMethodType(*v)
+	}
+	return _c
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (_c *SupplierCreate) SetMpesaPhone(v string) *SupplierCreate {
+	_c.mutation.SetMpesaPhone(v)
+	return _c
+}
+
+// SetNillableMpesaPhone sets the "mpesa_phone" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableMpesaPhone(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetMpesaPhone(*v)
+	}
+	return _c
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (_c *SupplierCreate) SetMpesaBusinessName(v string) *SupplierCreate {
+	_c.mutation.SetMpesaBusinessName(v)
+	return _c
+}
+
+// SetNillableMpesaBusinessName sets the "mpesa_business_name" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableMpesaBusinessName(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetMpesaBusinessName(*v)
+	}
+	return _c
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (_c *SupplierCreate) SetBankAccountNumber(v string) *SupplierCreate {
+	_c.mutation.SetBankAccountNumber(v)
+	return _c
+}
+
+// SetNillableBankAccountNumber sets the "bank_account_number" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableBankAccountNumber(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetBankAccountNumber(*v)
+	}
+	return _c
+}
+
+// SetBankName sets the "bank_name" field.
+func (_c *SupplierCreate) SetBankName(v string) *SupplierCreate {
+	_c.mutation.SetBankName(v)
+	return _c
+}
+
+// SetNillableBankName sets the "bank_name" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableBankName(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetBankName(*v)
+	}
+	return _c
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (_c *SupplierCreate) SetBankBranch(v string) *SupplierCreate {
+	_c.mutation.SetBankBranch(v)
+	return _c
+}
+
+// SetNillableBankBranch sets the "bank_branch" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableBankBranch(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetBankBranch(*v)
+	}
+	return _c
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (_c *SupplierCreate) SetTaxPin(v string) *SupplierCreate {
+	_c.mutation.SetTaxPin(v)
+	return _c
+}
+
+// SetNillableTaxPin sets the "tax_pin" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableTaxPin(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetTaxPin(*v)
+	}
+	return _c
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (_c *SupplierCreate) SetRequiresInvoiceBeforePayment(v bool) *SupplierCreate {
+	_c.mutation.SetRequiresInvoiceBeforePayment(v)
+	return _c
+}
+
+// SetNillableRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableRequiresInvoiceBeforePayment(v *bool) *SupplierCreate {
+	if v != nil {
+		_c.SetRequiresInvoiceBeforePayment(*v)
+	}
+	return _c
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (_c *SupplierCreate) SetCreditLimit(v float64) *SupplierCreate {
+	_c.mutation.SetCreditLimit(v)
+	return _c
+}
+
+// SetNillableCreditLimit sets the "credit_limit" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableCreditLimit(v *float64) *SupplierCreate {
+	if v != nil {
+		_c.SetCreditLimit(*v)
+	}
+	return _c
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (_c *SupplierCreate) SetPaystackRecipientCode(v string) *SupplierCreate {
+	_c.mutation.SetPaystackRecipientCode(v)
+	return _c
+}
+
+// SetNillablePaystackRecipientCode sets the "paystack_recipient_code" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillablePaystackRecipientCode(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetPaystackRecipientCode(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *SupplierCreate) SetMetadata(v map[string]interface{}) *SupplierCreate {
 	_c.mutation.SetMetadata(v)
@@ -229,6 +369,10 @@ func (_c *SupplierCreate) defaults() {
 		v := supplier.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.RequiresInvoiceBeforePayment(); !ok {
+		v := supplier.DefaultRequiresInvoiceBeforePayment
+		_c.mutation.SetRequiresInvoiceBeforePayment(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := supplier.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -270,6 +414,14 @@ func (_c *SupplierCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Supplier.is_active"`)}
+	}
+	if v, ok := _c.mutation.PaymentMethodType(); ok {
+		if err := supplier.PaymentMethodTypeValidator(v); err != nil {
+			return &ValidationError{Name: "payment_method_type", err: fmt.Errorf(`ent: validator failed for field "Supplier.payment_method_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RequiresInvoiceBeforePayment(); !ok {
+		return &ValidationError{Name: "requires_invoice_before_payment", err: errors.New(`ent: missing required field "Supplier.requires_invoice_before_payment"`)}
 	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		return &ValidationError{Name: "metadata", err: errors.New(`ent: missing required field "Supplier.metadata"`)}
@@ -351,6 +503,46 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(supplier.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
+	}
+	if value, ok := _c.mutation.PaymentMethodType(); ok {
+		_spec.SetField(supplier.FieldPaymentMethodType, field.TypeEnum, value)
+		_node.PaymentMethodType = value
+	}
+	if value, ok := _c.mutation.MpesaPhone(); ok {
+		_spec.SetField(supplier.FieldMpesaPhone, field.TypeString, value)
+		_node.MpesaPhone = value
+	}
+	if value, ok := _c.mutation.MpesaBusinessName(); ok {
+		_spec.SetField(supplier.FieldMpesaBusinessName, field.TypeString, value)
+		_node.MpesaBusinessName = value
+	}
+	if value, ok := _c.mutation.BankAccountNumber(); ok {
+		_spec.SetField(supplier.FieldBankAccountNumber, field.TypeString, value)
+		_node.BankAccountNumber = value
+	}
+	if value, ok := _c.mutation.BankName(); ok {
+		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
+		_node.BankName = value
+	}
+	if value, ok := _c.mutation.BankBranch(); ok {
+		_spec.SetField(supplier.FieldBankBranch, field.TypeString, value)
+		_node.BankBranch = value
+	}
+	if value, ok := _c.mutation.TaxPin(); ok {
+		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
+		_node.TaxPin = value
+	}
+	if value, ok := _c.mutation.RequiresInvoiceBeforePayment(); ok {
+		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
+		_node.RequiresInvoiceBeforePayment = value
+	}
+	if value, ok := _c.mutation.CreditLimit(); ok {
+		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
+		_node.CreditLimit = value
+	}
+	if value, ok := _c.mutation.PaystackRecipientCode(); ok {
+		_spec.SetField(supplier.FieldPaystackRecipientCode, field.TypeString, value)
+		_node.PaystackRecipientCode = value
 	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(supplier.FieldMetadata, field.TypeJSON, value)
@@ -567,6 +759,186 @@ func (u *SupplierUpsert) SetIsActive(v bool) *SupplierUpsert {
 // UpdateIsActive sets the "is_active" field to the value that was provided on create.
 func (u *SupplierUpsert) UpdateIsActive() *SupplierUpsert {
 	u.SetExcluded(supplier.FieldIsActive)
+	return u
+}
+
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (u *SupplierUpsert) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierUpsert {
+	u.Set(supplier.FieldPaymentMethodType, v)
+	return u
+}
+
+// UpdatePaymentMethodType sets the "payment_method_type" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdatePaymentMethodType() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldPaymentMethodType)
+	return u
+}
+
+// ClearPaymentMethodType clears the value of the "payment_method_type" field.
+func (u *SupplierUpsert) ClearPaymentMethodType() *SupplierUpsert {
+	u.SetNull(supplier.FieldPaymentMethodType)
+	return u
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (u *SupplierUpsert) SetMpesaPhone(v string) *SupplierUpsert {
+	u.Set(supplier.FieldMpesaPhone, v)
+	return u
+}
+
+// UpdateMpesaPhone sets the "mpesa_phone" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateMpesaPhone() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldMpesaPhone)
+	return u
+}
+
+// ClearMpesaPhone clears the value of the "mpesa_phone" field.
+func (u *SupplierUpsert) ClearMpesaPhone() *SupplierUpsert {
+	u.SetNull(supplier.FieldMpesaPhone)
+	return u
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (u *SupplierUpsert) SetMpesaBusinessName(v string) *SupplierUpsert {
+	u.Set(supplier.FieldMpesaBusinessName, v)
+	return u
+}
+
+// UpdateMpesaBusinessName sets the "mpesa_business_name" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateMpesaBusinessName() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldMpesaBusinessName)
+	return u
+}
+
+// ClearMpesaBusinessName clears the value of the "mpesa_business_name" field.
+func (u *SupplierUpsert) ClearMpesaBusinessName() *SupplierUpsert {
+	u.SetNull(supplier.FieldMpesaBusinessName)
+	return u
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (u *SupplierUpsert) SetBankAccountNumber(v string) *SupplierUpsert {
+	u.Set(supplier.FieldBankAccountNumber, v)
+	return u
+}
+
+// UpdateBankAccountNumber sets the "bank_account_number" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateBankAccountNumber() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldBankAccountNumber)
+	return u
+}
+
+// ClearBankAccountNumber clears the value of the "bank_account_number" field.
+func (u *SupplierUpsert) ClearBankAccountNumber() *SupplierUpsert {
+	u.SetNull(supplier.FieldBankAccountNumber)
+	return u
+}
+
+// SetBankName sets the "bank_name" field.
+func (u *SupplierUpsert) SetBankName(v string) *SupplierUpsert {
+	u.Set(supplier.FieldBankName, v)
+	return u
+}
+
+// UpdateBankName sets the "bank_name" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateBankName() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldBankName)
+	return u
+}
+
+// ClearBankName clears the value of the "bank_name" field.
+func (u *SupplierUpsert) ClearBankName() *SupplierUpsert {
+	u.SetNull(supplier.FieldBankName)
+	return u
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (u *SupplierUpsert) SetBankBranch(v string) *SupplierUpsert {
+	u.Set(supplier.FieldBankBranch, v)
+	return u
+}
+
+// UpdateBankBranch sets the "bank_branch" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateBankBranch() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldBankBranch)
+	return u
+}
+
+// ClearBankBranch clears the value of the "bank_branch" field.
+func (u *SupplierUpsert) ClearBankBranch() *SupplierUpsert {
+	u.SetNull(supplier.FieldBankBranch)
+	return u
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (u *SupplierUpsert) SetTaxPin(v string) *SupplierUpsert {
+	u.Set(supplier.FieldTaxPin, v)
+	return u
+}
+
+// UpdateTaxPin sets the "tax_pin" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateTaxPin() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldTaxPin)
+	return u
+}
+
+// ClearTaxPin clears the value of the "tax_pin" field.
+func (u *SupplierUpsert) ClearTaxPin() *SupplierUpsert {
+	u.SetNull(supplier.FieldTaxPin)
+	return u
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (u *SupplierUpsert) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpsert {
+	u.Set(supplier.FieldRequiresInvoiceBeforePayment, v)
+	return u
+}
+
+// UpdateRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateRequiresInvoiceBeforePayment() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldRequiresInvoiceBeforePayment)
+	return u
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (u *SupplierUpsert) SetCreditLimit(v float64) *SupplierUpsert {
+	u.Set(supplier.FieldCreditLimit, v)
+	return u
+}
+
+// UpdateCreditLimit sets the "credit_limit" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateCreditLimit() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldCreditLimit)
+	return u
+}
+
+// AddCreditLimit adds v to the "credit_limit" field.
+func (u *SupplierUpsert) AddCreditLimit(v float64) *SupplierUpsert {
+	u.Add(supplier.FieldCreditLimit, v)
+	return u
+}
+
+// ClearCreditLimit clears the value of the "credit_limit" field.
+func (u *SupplierUpsert) ClearCreditLimit() *SupplierUpsert {
+	u.SetNull(supplier.FieldCreditLimit)
+	return u
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (u *SupplierUpsert) SetPaystackRecipientCode(v string) *SupplierUpsert {
+	u.Set(supplier.FieldPaystackRecipientCode, v)
+	return u
+}
+
+// UpdatePaystackRecipientCode sets the "paystack_recipient_code" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdatePaystackRecipientCode() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldPaystackRecipientCode)
+	return u
+}
+
+// ClearPaystackRecipientCode clears the value of the "paystack_recipient_code" field.
+func (u *SupplierUpsert) ClearPaystackRecipientCode() *SupplierUpsert {
+	u.SetNull(supplier.FieldPaystackRecipientCode)
 	return u
 }
 
@@ -803,6 +1175,216 @@ func (u *SupplierUpsertOne) SetIsActive(v bool) *SupplierUpsertOne {
 func (u *SupplierUpsertOne) UpdateIsActive() *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (u *SupplierUpsertOne) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaymentMethodType(v)
+	})
+}
+
+// UpdatePaymentMethodType sets the "payment_method_type" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdatePaymentMethodType() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaymentMethodType()
+	})
+}
+
+// ClearPaymentMethodType clears the value of the "payment_method_type" field.
+func (u *SupplierUpsertOne) ClearPaymentMethodType() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearPaymentMethodType()
+	})
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (u *SupplierUpsertOne) SetMpesaPhone(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetMpesaPhone(v)
+	})
+}
+
+// UpdateMpesaPhone sets the "mpesa_phone" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateMpesaPhone() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateMpesaPhone()
+	})
+}
+
+// ClearMpesaPhone clears the value of the "mpesa_phone" field.
+func (u *SupplierUpsertOne) ClearMpesaPhone() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearMpesaPhone()
+	})
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (u *SupplierUpsertOne) SetMpesaBusinessName(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetMpesaBusinessName(v)
+	})
+}
+
+// UpdateMpesaBusinessName sets the "mpesa_business_name" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateMpesaBusinessName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateMpesaBusinessName()
+	})
+}
+
+// ClearMpesaBusinessName clears the value of the "mpesa_business_name" field.
+func (u *SupplierUpsertOne) ClearMpesaBusinessName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearMpesaBusinessName()
+	})
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (u *SupplierUpsertOne) SetBankAccountNumber(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankAccountNumber(v)
+	})
+}
+
+// UpdateBankAccountNumber sets the "bank_account_number" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateBankAccountNumber() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankAccountNumber()
+	})
+}
+
+// ClearBankAccountNumber clears the value of the "bank_account_number" field.
+func (u *SupplierUpsertOne) ClearBankAccountNumber() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankAccountNumber()
+	})
+}
+
+// SetBankName sets the "bank_name" field.
+func (u *SupplierUpsertOne) SetBankName(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankName(v)
+	})
+}
+
+// UpdateBankName sets the "bank_name" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateBankName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankName()
+	})
+}
+
+// ClearBankName clears the value of the "bank_name" field.
+func (u *SupplierUpsertOne) ClearBankName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankName()
+	})
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (u *SupplierUpsertOne) SetBankBranch(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankBranch(v)
+	})
+}
+
+// UpdateBankBranch sets the "bank_branch" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateBankBranch() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankBranch()
+	})
+}
+
+// ClearBankBranch clears the value of the "bank_branch" field.
+func (u *SupplierUpsertOne) ClearBankBranch() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankBranch()
+	})
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (u *SupplierUpsertOne) SetTaxPin(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetTaxPin(v)
+	})
+}
+
+// UpdateTaxPin sets the "tax_pin" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateTaxPin() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateTaxPin()
+	})
+}
+
+// ClearTaxPin clears the value of the "tax_pin" field.
+func (u *SupplierUpsertOne) ClearTaxPin() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearTaxPin()
+	})
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (u *SupplierUpsertOne) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetRequiresInvoiceBeforePayment(v)
+	})
+}
+
+// UpdateRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateRequiresInvoiceBeforePayment() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateRequiresInvoiceBeforePayment()
+	})
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (u *SupplierUpsertOne) SetCreditLimit(v float64) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCreditLimit(v)
+	})
+}
+
+// AddCreditLimit adds v to the "credit_limit" field.
+func (u *SupplierUpsertOne) AddCreditLimit(v float64) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.AddCreditLimit(v)
+	})
+}
+
+// UpdateCreditLimit sets the "credit_limit" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateCreditLimit() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCreditLimit()
+	})
+}
+
+// ClearCreditLimit clears the value of the "credit_limit" field.
+func (u *SupplierUpsertOne) ClearCreditLimit() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCreditLimit()
+	})
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (u *SupplierUpsertOne) SetPaystackRecipientCode(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaystackRecipientCode(v)
+	})
+}
+
+// UpdatePaystackRecipientCode sets the "paystack_recipient_code" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdatePaystackRecipientCode() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaystackRecipientCode()
+	})
+}
+
+// ClearPaystackRecipientCode clears the value of the "paystack_recipient_code" field.
+func (u *SupplierUpsertOne) ClearPaystackRecipientCode() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearPaystackRecipientCode()
 	})
 }
 
@@ -1210,6 +1792,216 @@ func (u *SupplierUpsertBulk) SetIsActive(v bool) *SupplierUpsertBulk {
 func (u *SupplierUpsertBulk) UpdateIsActive() *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (u *SupplierUpsertBulk) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaymentMethodType(v)
+	})
+}
+
+// UpdatePaymentMethodType sets the "payment_method_type" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdatePaymentMethodType() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaymentMethodType()
+	})
+}
+
+// ClearPaymentMethodType clears the value of the "payment_method_type" field.
+func (u *SupplierUpsertBulk) ClearPaymentMethodType() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearPaymentMethodType()
+	})
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (u *SupplierUpsertBulk) SetMpesaPhone(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetMpesaPhone(v)
+	})
+}
+
+// UpdateMpesaPhone sets the "mpesa_phone" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateMpesaPhone() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateMpesaPhone()
+	})
+}
+
+// ClearMpesaPhone clears the value of the "mpesa_phone" field.
+func (u *SupplierUpsertBulk) ClearMpesaPhone() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearMpesaPhone()
+	})
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (u *SupplierUpsertBulk) SetMpesaBusinessName(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetMpesaBusinessName(v)
+	})
+}
+
+// UpdateMpesaBusinessName sets the "mpesa_business_name" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateMpesaBusinessName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateMpesaBusinessName()
+	})
+}
+
+// ClearMpesaBusinessName clears the value of the "mpesa_business_name" field.
+func (u *SupplierUpsertBulk) ClearMpesaBusinessName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearMpesaBusinessName()
+	})
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (u *SupplierUpsertBulk) SetBankAccountNumber(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankAccountNumber(v)
+	})
+}
+
+// UpdateBankAccountNumber sets the "bank_account_number" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateBankAccountNumber() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankAccountNumber()
+	})
+}
+
+// ClearBankAccountNumber clears the value of the "bank_account_number" field.
+func (u *SupplierUpsertBulk) ClearBankAccountNumber() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankAccountNumber()
+	})
+}
+
+// SetBankName sets the "bank_name" field.
+func (u *SupplierUpsertBulk) SetBankName(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankName(v)
+	})
+}
+
+// UpdateBankName sets the "bank_name" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateBankName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankName()
+	})
+}
+
+// ClearBankName clears the value of the "bank_name" field.
+func (u *SupplierUpsertBulk) ClearBankName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankName()
+	})
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (u *SupplierUpsertBulk) SetBankBranch(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankBranch(v)
+	})
+}
+
+// UpdateBankBranch sets the "bank_branch" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateBankBranch() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankBranch()
+	})
+}
+
+// ClearBankBranch clears the value of the "bank_branch" field.
+func (u *SupplierUpsertBulk) ClearBankBranch() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankBranch()
+	})
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (u *SupplierUpsertBulk) SetTaxPin(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetTaxPin(v)
+	})
+}
+
+// UpdateTaxPin sets the "tax_pin" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateTaxPin() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateTaxPin()
+	})
+}
+
+// ClearTaxPin clears the value of the "tax_pin" field.
+func (u *SupplierUpsertBulk) ClearTaxPin() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearTaxPin()
+	})
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (u *SupplierUpsertBulk) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetRequiresInvoiceBeforePayment(v)
+	})
+}
+
+// UpdateRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateRequiresInvoiceBeforePayment() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateRequiresInvoiceBeforePayment()
+	})
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (u *SupplierUpsertBulk) SetCreditLimit(v float64) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCreditLimit(v)
+	})
+}
+
+// AddCreditLimit adds v to the "credit_limit" field.
+func (u *SupplierUpsertBulk) AddCreditLimit(v float64) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.AddCreditLimit(v)
+	})
+}
+
+// UpdateCreditLimit sets the "credit_limit" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateCreditLimit() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCreditLimit()
+	})
+}
+
+// ClearCreditLimit clears the value of the "credit_limit" field.
+func (u *SupplierUpsertBulk) ClearCreditLimit() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCreditLimit()
+	})
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (u *SupplierUpsertBulk) SetPaystackRecipientCode(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaystackRecipientCode(v)
+	})
+}
+
+// UpdatePaystackRecipientCode sets the "paystack_recipient_code" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdatePaystackRecipientCode() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaystackRecipientCode()
+	})
+}
+
+// ClearPaystackRecipientCode clears the value of the "paystack_recipient_code" field.
+func (u *SupplierUpsertBulk) ClearPaystackRecipientCode() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearPaystackRecipientCode()
 	})
 }
 

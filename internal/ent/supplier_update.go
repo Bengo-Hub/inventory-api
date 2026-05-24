@@ -186,6 +186,207 @@ func (_u *SupplierUpdate) SetNillableIsActive(v *bool) *SupplierUpdate {
 	return _u
 }
 
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (_u *SupplierUpdate) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierUpdate {
+	_u.mutation.SetPaymentMethodType(v)
+	return _u
+}
+
+// SetNillablePaymentMethodType sets the "payment_method_type" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillablePaymentMethodType(v *supplier.PaymentMethodType) *SupplierUpdate {
+	if v != nil {
+		_u.SetPaymentMethodType(*v)
+	}
+	return _u
+}
+
+// ClearPaymentMethodType clears the value of the "payment_method_type" field.
+func (_u *SupplierUpdate) ClearPaymentMethodType() *SupplierUpdate {
+	_u.mutation.ClearPaymentMethodType()
+	return _u
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (_u *SupplierUpdate) SetMpesaPhone(v string) *SupplierUpdate {
+	_u.mutation.SetMpesaPhone(v)
+	return _u
+}
+
+// SetNillableMpesaPhone sets the "mpesa_phone" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableMpesaPhone(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetMpesaPhone(*v)
+	}
+	return _u
+}
+
+// ClearMpesaPhone clears the value of the "mpesa_phone" field.
+func (_u *SupplierUpdate) ClearMpesaPhone() *SupplierUpdate {
+	_u.mutation.ClearMpesaPhone()
+	return _u
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (_u *SupplierUpdate) SetMpesaBusinessName(v string) *SupplierUpdate {
+	_u.mutation.SetMpesaBusinessName(v)
+	return _u
+}
+
+// SetNillableMpesaBusinessName sets the "mpesa_business_name" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableMpesaBusinessName(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetMpesaBusinessName(*v)
+	}
+	return _u
+}
+
+// ClearMpesaBusinessName clears the value of the "mpesa_business_name" field.
+func (_u *SupplierUpdate) ClearMpesaBusinessName() *SupplierUpdate {
+	_u.mutation.ClearMpesaBusinessName()
+	return _u
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (_u *SupplierUpdate) SetBankAccountNumber(v string) *SupplierUpdate {
+	_u.mutation.SetBankAccountNumber(v)
+	return _u
+}
+
+// SetNillableBankAccountNumber sets the "bank_account_number" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableBankAccountNumber(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetBankAccountNumber(*v)
+	}
+	return _u
+}
+
+// ClearBankAccountNumber clears the value of the "bank_account_number" field.
+func (_u *SupplierUpdate) ClearBankAccountNumber() *SupplierUpdate {
+	_u.mutation.ClearBankAccountNumber()
+	return _u
+}
+
+// SetBankName sets the "bank_name" field.
+func (_u *SupplierUpdate) SetBankName(v string) *SupplierUpdate {
+	_u.mutation.SetBankName(v)
+	return _u
+}
+
+// SetNillableBankName sets the "bank_name" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableBankName(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetBankName(*v)
+	}
+	return _u
+}
+
+// ClearBankName clears the value of the "bank_name" field.
+func (_u *SupplierUpdate) ClearBankName() *SupplierUpdate {
+	_u.mutation.ClearBankName()
+	return _u
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (_u *SupplierUpdate) SetBankBranch(v string) *SupplierUpdate {
+	_u.mutation.SetBankBranch(v)
+	return _u
+}
+
+// SetNillableBankBranch sets the "bank_branch" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableBankBranch(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetBankBranch(*v)
+	}
+	return _u
+}
+
+// ClearBankBranch clears the value of the "bank_branch" field.
+func (_u *SupplierUpdate) ClearBankBranch() *SupplierUpdate {
+	_u.mutation.ClearBankBranch()
+	return _u
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (_u *SupplierUpdate) SetTaxPin(v string) *SupplierUpdate {
+	_u.mutation.SetTaxPin(v)
+	return _u
+}
+
+// SetNillableTaxPin sets the "tax_pin" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableTaxPin(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetTaxPin(*v)
+	}
+	return _u
+}
+
+// ClearTaxPin clears the value of the "tax_pin" field.
+func (_u *SupplierUpdate) ClearTaxPin() *SupplierUpdate {
+	_u.mutation.ClearTaxPin()
+	return _u
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (_u *SupplierUpdate) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpdate {
+	_u.mutation.SetRequiresInvoiceBeforePayment(v)
+	return _u
+}
+
+// SetNillableRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableRequiresInvoiceBeforePayment(v *bool) *SupplierUpdate {
+	if v != nil {
+		_u.SetRequiresInvoiceBeforePayment(*v)
+	}
+	return _u
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (_u *SupplierUpdate) SetCreditLimit(v float64) *SupplierUpdate {
+	_u.mutation.ResetCreditLimit()
+	_u.mutation.SetCreditLimit(v)
+	return _u
+}
+
+// SetNillableCreditLimit sets the "credit_limit" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableCreditLimit(v *float64) *SupplierUpdate {
+	if v != nil {
+		_u.SetCreditLimit(*v)
+	}
+	return _u
+}
+
+// AddCreditLimit adds value to the "credit_limit" field.
+func (_u *SupplierUpdate) AddCreditLimit(v float64) *SupplierUpdate {
+	_u.mutation.AddCreditLimit(v)
+	return _u
+}
+
+// ClearCreditLimit clears the value of the "credit_limit" field.
+func (_u *SupplierUpdate) ClearCreditLimit() *SupplierUpdate {
+	_u.mutation.ClearCreditLimit()
+	return _u
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (_u *SupplierUpdate) SetPaystackRecipientCode(v string) *SupplierUpdate {
+	_u.mutation.SetPaystackRecipientCode(v)
+	return _u
+}
+
+// SetNillablePaystackRecipientCode sets the "paystack_recipient_code" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillablePaystackRecipientCode(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetPaystackRecipientCode(*v)
+	}
+	return _u
+}
+
+// ClearPaystackRecipientCode clears the value of the "paystack_recipient_code" field.
+func (_u *SupplierUpdate) ClearPaystackRecipientCode() *SupplierUpdate {
+	_u.mutation.ClearPaystackRecipientCode()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *SupplierUpdate) SetMetadata(v map[string]interface{}) *SupplierUpdate {
 	_u.mutation.SetMetadata(v)
@@ -287,6 +488,11 @@ func (_u *SupplierUpdate) check() error {
 			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Supplier.code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PaymentMethodType(); ok {
+		if err := supplier.PaymentMethodTypeValidator(v); err != nil {
+			return &ValidationError{Name: "payment_method_type", err: fmt.Errorf(`ent: validator failed for field "Supplier.payment_method_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -343,6 +549,66 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(supplier.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PaymentMethodType(); ok {
+		_spec.SetField(supplier.FieldPaymentMethodType, field.TypeEnum, value)
+	}
+	if _u.mutation.PaymentMethodTypeCleared() {
+		_spec.ClearField(supplier.FieldPaymentMethodType, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.MpesaPhone(); ok {
+		_spec.SetField(supplier.FieldMpesaPhone, field.TypeString, value)
+	}
+	if _u.mutation.MpesaPhoneCleared() {
+		_spec.ClearField(supplier.FieldMpesaPhone, field.TypeString)
+	}
+	if value, ok := _u.mutation.MpesaBusinessName(); ok {
+		_spec.SetField(supplier.FieldMpesaBusinessName, field.TypeString, value)
+	}
+	if _u.mutation.MpesaBusinessNameCleared() {
+		_spec.ClearField(supplier.FieldMpesaBusinessName, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankAccountNumber(); ok {
+		_spec.SetField(supplier.FieldBankAccountNumber, field.TypeString, value)
+	}
+	if _u.mutation.BankAccountNumberCleared() {
+		_spec.ClearField(supplier.FieldBankAccountNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankName(); ok {
+		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
+	}
+	if _u.mutation.BankNameCleared() {
+		_spec.ClearField(supplier.FieldBankName, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankBranch(); ok {
+		_spec.SetField(supplier.FieldBankBranch, field.TypeString, value)
+	}
+	if _u.mutation.BankBranchCleared() {
+		_spec.ClearField(supplier.FieldBankBranch, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxPin(); ok {
+		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
+	}
+	if _u.mutation.TaxPinCleared() {
+		_spec.ClearField(supplier.FieldTaxPin, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
+		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CreditLimit(); ok {
+		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditLimit(); ok {
+		_spec.AddField(supplier.FieldCreditLimit, field.TypeFloat64, value)
+	}
+	if _u.mutation.CreditLimitCleared() {
+		_spec.ClearField(supplier.FieldCreditLimit, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PaystackRecipientCode(); ok {
+		_spec.SetField(supplier.FieldPaystackRecipientCode, field.TypeString, value)
+	}
+	if _u.mutation.PaystackRecipientCodeCleared() {
+		_spec.ClearField(supplier.FieldPaystackRecipientCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(supplier.FieldMetadata, field.TypeJSON, value)
@@ -571,6 +837,207 @@ func (_u *SupplierUpdateOne) SetNillableIsActive(v *bool) *SupplierUpdateOne {
 	return _u
 }
 
+// SetPaymentMethodType sets the "payment_method_type" field.
+func (_u *SupplierUpdateOne) SetPaymentMethodType(v supplier.PaymentMethodType) *SupplierUpdateOne {
+	_u.mutation.SetPaymentMethodType(v)
+	return _u
+}
+
+// SetNillablePaymentMethodType sets the "payment_method_type" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillablePaymentMethodType(v *supplier.PaymentMethodType) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetPaymentMethodType(*v)
+	}
+	return _u
+}
+
+// ClearPaymentMethodType clears the value of the "payment_method_type" field.
+func (_u *SupplierUpdateOne) ClearPaymentMethodType() *SupplierUpdateOne {
+	_u.mutation.ClearPaymentMethodType()
+	return _u
+}
+
+// SetMpesaPhone sets the "mpesa_phone" field.
+func (_u *SupplierUpdateOne) SetMpesaPhone(v string) *SupplierUpdateOne {
+	_u.mutation.SetMpesaPhone(v)
+	return _u
+}
+
+// SetNillableMpesaPhone sets the "mpesa_phone" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableMpesaPhone(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetMpesaPhone(*v)
+	}
+	return _u
+}
+
+// ClearMpesaPhone clears the value of the "mpesa_phone" field.
+func (_u *SupplierUpdateOne) ClearMpesaPhone() *SupplierUpdateOne {
+	_u.mutation.ClearMpesaPhone()
+	return _u
+}
+
+// SetMpesaBusinessName sets the "mpesa_business_name" field.
+func (_u *SupplierUpdateOne) SetMpesaBusinessName(v string) *SupplierUpdateOne {
+	_u.mutation.SetMpesaBusinessName(v)
+	return _u
+}
+
+// SetNillableMpesaBusinessName sets the "mpesa_business_name" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableMpesaBusinessName(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetMpesaBusinessName(*v)
+	}
+	return _u
+}
+
+// ClearMpesaBusinessName clears the value of the "mpesa_business_name" field.
+func (_u *SupplierUpdateOne) ClearMpesaBusinessName() *SupplierUpdateOne {
+	_u.mutation.ClearMpesaBusinessName()
+	return _u
+}
+
+// SetBankAccountNumber sets the "bank_account_number" field.
+func (_u *SupplierUpdateOne) SetBankAccountNumber(v string) *SupplierUpdateOne {
+	_u.mutation.SetBankAccountNumber(v)
+	return _u
+}
+
+// SetNillableBankAccountNumber sets the "bank_account_number" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableBankAccountNumber(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetBankAccountNumber(*v)
+	}
+	return _u
+}
+
+// ClearBankAccountNumber clears the value of the "bank_account_number" field.
+func (_u *SupplierUpdateOne) ClearBankAccountNumber() *SupplierUpdateOne {
+	_u.mutation.ClearBankAccountNumber()
+	return _u
+}
+
+// SetBankName sets the "bank_name" field.
+func (_u *SupplierUpdateOne) SetBankName(v string) *SupplierUpdateOne {
+	_u.mutation.SetBankName(v)
+	return _u
+}
+
+// SetNillableBankName sets the "bank_name" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableBankName(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetBankName(*v)
+	}
+	return _u
+}
+
+// ClearBankName clears the value of the "bank_name" field.
+func (_u *SupplierUpdateOne) ClearBankName() *SupplierUpdateOne {
+	_u.mutation.ClearBankName()
+	return _u
+}
+
+// SetBankBranch sets the "bank_branch" field.
+func (_u *SupplierUpdateOne) SetBankBranch(v string) *SupplierUpdateOne {
+	_u.mutation.SetBankBranch(v)
+	return _u
+}
+
+// SetNillableBankBranch sets the "bank_branch" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableBankBranch(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetBankBranch(*v)
+	}
+	return _u
+}
+
+// ClearBankBranch clears the value of the "bank_branch" field.
+func (_u *SupplierUpdateOne) ClearBankBranch() *SupplierUpdateOne {
+	_u.mutation.ClearBankBranch()
+	return _u
+}
+
+// SetTaxPin sets the "tax_pin" field.
+func (_u *SupplierUpdateOne) SetTaxPin(v string) *SupplierUpdateOne {
+	_u.mutation.SetTaxPin(v)
+	return _u
+}
+
+// SetNillableTaxPin sets the "tax_pin" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableTaxPin(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetTaxPin(*v)
+	}
+	return _u
+}
+
+// ClearTaxPin clears the value of the "tax_pin" field.
+func (_u *SupplierUpdateOne) ClearTaxPin() *SupplierUpdateOne {
+	_u.mutation.ClearTaxPin()
+	return _u
+}
+
+// SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
+func (_u *SupplierUpdateOne) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpdateOne {
+	_u.mutation.SetRequiresInvoiceBeforePayment(v)
+	return _u
+}
+
+// SetNillableRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableRequiresInvoiceBeforePayment(v *bool) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetRequiresInvoiceBeforePayment(*v)
+	}
+	return _u
+}
+
+// SetCreditLimit sets the "credit_limit" field.
+func (_u *SupplierUpdateOne) SetCreditLimit(v float64) *SupplierUpdateOne {
+	_u.mutation.ResetCreditLimit()
+	_u.mutation.SetCreditLimit(v)
+	return _u
+}
+
+// SetNillableCreditLimit sets the "credit_limit" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableCreditLimit(v *float64) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetCreditLimit(*v)
+	}
+	return _u
+}
+
+// AddCreditLimit adds value to the "credit_limit" field.
+func (_u *SupplierUpdateOne) AddCreditLimit(v float64) *SupplierUpdateOne {
+	_u.mutation.AddCreditLimit(v)
+	return _u
+}
+
+// ClearCreditLimit clears the value of the "credit_limit" field.
+func (_u *SupplierUpdateOne) ClearCreditLimit() *SupplierUpdateOne {
+	_u.mutation.ClearCreditLimit()
+	return _u
+}
+
+// SetPaystackRecipientCode sets the "paystack_recipient_code" field.
+func (_u *SupplierUpdateOne) SetPaystackRecipientCode(v string) *SupplierUpdateOne {
+	_u.mutation.SetPaystackRecipientCode(v)
+	return _u
+}
+
+// SetNillablePaystackRecipientCode sets the "paystack_recipient_code" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillablePaystackRecipientCode(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetPaystackRecipientCode(*v)
+	}
+	return _u
+}
+
+// ClearPaystackRecipientCode clears the value of the "paystack_recipient_code" field.
+func (_u *SupplierUpdateOne) ClearPaystackRecipientCode() *SupplierUpdateOne {
+	_u.mutation.ClearPaystackRecipientCode()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *SupplierUpdateOne) SetMetadata(v map[string]interface{}) *SupplierUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -685,6 +1152,11 @@ func (_u *SupplierUpdateOne) check() error {
 			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Supplier.code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PaymentMethodType(); ok {
+		if err := supplier.PaymentMethodTypeValidator(v); err != nil {
+			return &ValidationError{Name: "payment_method_type", err: fmt.Errorf(`ent: validator failed for field "Supplier.payment_method_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -758,6 +1230,66 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(supplier.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PaymentMethodType(); ok {
+		_spec.SetField(supplier.FieldPaymentMethodType, field.TypeEnum, value)
+	}
+	if _u.mutation.PaymentMethodTypeCleared() {
+		_spec.ClearField(supplier.FieldPaymentMethodType, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.MpesaPhone(); ok {
+		_spec.SetField(supplier.FieldMpesaPhone, field.TypeString, value)
+	}
+	if _u.mutation.MpesaPhoneCleared() {
+		_spec.ClearField(supplier.FieldMpesaPhone, field.TypeString)
+	}
+	if value, ok := _u.mutation.MpesaBusinessName(); ok {
+		_spec.SetField(supplier.FieldMpesaBusinessName, field.TypeString, value)
+	}
+	if _u.mutation.MpesaBusinessNameCleared() {
+		_spec.ClearField(supplier.FieldMpesaBusinessName, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankAccountNumber(); ok {
+		_spec.SetField(supplier.FieldBankAccountNumber, field.TypeString, value)
+	}
+	if _u.mutation.BankAccountNumberCleared() {
+		_spec.ClearField(supplier.FieldBankAccountNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankName(); ok {
+		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
+	}
+	if _u.mutation.BankNameCleared() {
+		_spec.ClearField(supplier.FieldBankName, field.TypeString)
+	}
+	if value, ok := _u.mutation.BankBranch(); ok {
+		_spec.SetField(supplier.FieldBankBranch, field.TypeString, value)
+	}
+	if _u.mutation.BankBranchCleared() {
+		_spec.ClearField(supplier.FieldBankBranch, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxPin(); ok {
+		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
+	}
+	if _u.mutation.TaxPinCleared() {
+		_spec.ClearField(supplier.FieldTaxPin, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
+		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CreditLimit(); ok {
+		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditLimit(); ok {
+		_spec.AddField(supplier.FieldCreditLimit, field.TypeFloat64, value)
+	}
+	if _u.mutation.CreditLimitCleared() {
+		_spec.ClearField(supplier.FieldCreditLimit, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PaystackRecipientCode(); ok {
+		_spec.SetField(supplier.FieldPaystackRecipientCode, field.TypeString, value)
+	}
+	if _u.mutation.PaystackRecipientCodeCleared() {
+		_spec.ClearField(supplier.FieldPaystackRecipientCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(supplier.FieldMetadata, field.TypeJSON, value)
