@@ -1309,6 +1309,8 @@ var (
 		{Name: "bank_branch", Type: field.TypeString, Nullable: true},
 		{Name: "tax_pin", Type: field.TypeString, Nullable: true},
 		{Name: "requires_invoice_before_payment", Type: field.TypeBool, Default: false},
+		{Name: "auto_pay_enabled", Type: field.TypeBool, Default: false},
+		{Name: "payment_terms_days", Type: field.TypeInt, Default: 0},
 		{Name: "credit_limit", Type: field.TypeFloat64, Nullable: true},
 		{Name: "paystack_recipient_code", Type: field.TypeString, Nullable: true},
 		{Name: "metadata", Type: field.TypeJSON},

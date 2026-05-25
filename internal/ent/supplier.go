@@ -53,6 +53,10 @@ type Supplier struct {
 	TaxPin string `json:"tax_pin,omitempty"`
 	// RequiresInvoiceBeforePayment holds the value of the "requires_invoice_before_payment" field.
 	RequiresInvoiceBeforePayment bool `json:"requires_invoice_before_payment,omitempty"`
+	// When true, treasury auto-disburses payment to supplier on PO receipt confirmation
+	AutoPayEnabled bool `json:"auto_pay_enabled,omitempty"`
+	// Net payment terms in days (0 = immediate, 30 = Net30, etc.)
+	PaymentTermsDays int `json:"payment_terms_days,omitempty"`
 	// Maximum outstanding balance allowed for this supplier
 	CreditLimit float64 `json:"credit_limit,omitempty"`
 	// Cached Paystack RCP_xxx to avoid re-creating recipient on each payout
@@ -94,10 +98,12 @@ func (*Supplier) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplier.FieldMetadata:
 			values[i] = new([]byte)
-		case supplier.FieldIsActive, supplier.FieldRequiresInvoiceBeforePayment:
+		case supplier.FieldIsActive, supplier.FieldRequiresInvoiceBeforePayment, supplier.FieldAutoPayEnabled:
 			values[i] = new(sql.NullBool)
 		case supplier.FieldCreditLimit:
 			values[i] = new(sql.NullFloat64)
+		case supplier.FieldPaymentTermsDays:
+			values[i] = new(sql.NullInt64)
 		case supplier.FieldName, supplier.FieldCode, supplier.FieldContactName, supplier.FieldContactEmail, supplier.FieldContactPhone, supplier.FieldAddress, supplier.FieldPaymentTerms, supplier.FieldPaymentMethodType, supplier.FieldMpesaPhone, supplier.FieldMpesaBusinessName, supplier.FieldBankAccountNumber, supplier.FieldBankName, supplier.FieldBankBranch, supplier.FieldTaxPin, supplier.FieldPaystackRecipientCode:
 			values[i] = new(sql.NullString)
 		case supplier.FieldCreatedAt, supplier.FieldUpdatedAt:
@@ -227,6 +233,18 @@ func (_m *Supplier) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RequiresInvoiceBeforePayment = value.Bool
 			}
+		case supplier.FieldAutoPayEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field auto_pay_enabled", values[i])
+			} else if value.Valid {
+				_m.AutoPayEnabled = value.Bool
+			}
+		case supplier.FieldPaymentTermsDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field payment_terms_days", values[i])
+			} else if value.Valid {
+				_m.PaymentTermsDays = int(value.Int64)
+			}
 		case supplier.FieldCreditLimit:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field credit_limit", values[i])
@@ -350,6 +368,12 @@ func (_m *Supplier) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("requires_invoice_before_payment=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequiresInvoiceBeforePayment))
+	builder.WriteString(", ")
+	builder.WriteString("auto_pay_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AutoPayEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("payment_terms_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PaymentTermsDays))
 	builder.WriteString(", ")
 	builder.WriteString("credit_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CreditLimit))

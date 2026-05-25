@@ -31247,6 +31247,9 @@ type SupplierMutation struct {
 	bank_branch                     *string
 	tax_pin                         *string
 	requires_invoice_before_payment *bool
+	auto_pay_enabled                *bool
+	payment_terms_days              *int
+	addpayment_terms_days           *int
 	credit_limit                    *float64
 	addcredit_limit                 *float64
 	paystack_recipient_code         *string
@@ -32134,6 +32137,98 @@ func (m *SupplierMutation) ResetRequiresInvoiceBeforePayment() {
 	m.requires_invoice_before_payment = nil
 }
 
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (m *SupplierMutation) SetAutoPayEnabled(b bool) {
+	m.auto_pay_enabled = &b
+}
+
+// AutoPayEnabled returns the value of the "auto_pay_enabled" field in the mutation.
+func (m *SupplierMutation) AutoPayEnabled() (r bool, exists bool) {
+	v := m.auto_pay_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoPayEnabled returns the old "auto_pay_enabled" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldAutoPayEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoPayEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoPayEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoPayEnabled: %w", err)
+	}
+	return oldValue.AutoPayEnabled, nil
+}
+
+// ResetAutoPayEnabled resets all changes to the "auto_pay_enabled" field.
+func (m *SupplierMutation) ResetAutoPayEnabled() {
+	m.auto_pay_enabled = nil
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (m *SupplierMutation) SetPaymentTermsDays(i int) {
+	m.payment_terms_days = &i
+	m.addpayment_terms_days = nil
+}
+
+// PaymentTermsDays returns the value of the "payment_terms_days" field in the mutation.
+func (m *SupplierMutation) PaymentTermsDays() (r int, exists bool) {
+	v := m.payment_terms_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentTermsDays returns the old "payment_terms_days" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldPaymentTermsDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentTermsDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentTermsDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentTermsDays: %w", err)
+	}
+	return oldValue.PaymentTermsDays, nil
+}
+
+// AddPaymentTermsDays adds i to the "payment_terms_days" field.
+func (m *SupplierMutation) AddPaymentTermsDays(i int) {
+	if m.addpayment_terms_days != nil {
+		*m.addpayment_terms_days += i
+	} else {
+		m.addpayment_terms_days = &i
+	}
+}
+
+// AddedPaymentTermsDays returns the value that was added to the "payment_terms_days" field in this mutation.
+func (m *SupplierMutation) AddedPaymentTermsDays() (r int, exists bool) {
+	v := m.addpayment_terms_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPaymentTermsDays resets all changes to the "payment_terms_days" field.
+func (m *SupplierMutation) ResetPaymentTermsDays() {
+	m.payment_terms_days = nil
+	m.addpayment_terms_days = nil
+}
+
 // SetCreditLimit sets the "credit_limit" field.
 func (m *SupplierMutation) SetCreditLimit(f float64) {
 	m.credit_limit = &f
@@ -32449,7 +32544,7 @@ func (m *SupplierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 24)
 	if m.tenant_id != nil {
 		fields = append(fields, supplier.FieldTenantID)
 	}
@@ -32500,6 +32595,12 @@ func (m *SupplierMutation) Fields() []string {
 	}
 	if m.requires_invoice_before_payment != nil {
 		fields = append(fields, supplier.FieldRequiresInvoiceBeforePayment)
+	}
+	if m.auto_pay_enabled != nil {
+		fields = append(fields, supplier.FieldAutoPayEnabled)
+	}
+	if m.payment_terms_days != nil {
+		fields = append(fields, supplier.FieldPaymentTermsDays)
 	}
 	if m.credit_limit != nil {
 		fields = append(fields, supplier.FieldCreditLimit)
@@ -32558,6 +32659,10 @@ func (m *SupplierMutation) Field(name string) (ent.Value, bool) {
 		return m.TaxPin()
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		return m.RequiresInvoiceBeforePayment()
+	case supplier.FieldAutoPayEnabled:
+		return m.AutoPayEnabled()
+	case supplier.FieldPaymentTermsDays:
+		return m.PaymentTermsDays()
 	case supplier.FieldCreditLimit:
 		return m.CreditLimit()
 	case supplier.FieldPaystackRecipientCode:
@@ -32611,6 +32716,10 @@ func (m *SupplierMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldTaxPin(ctx)
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		return m.OldRequiresInvoiceBeforePayment(ctx)
+	case supplier.FieldAutoPayEnabled:
+		return m.OldAutoPayEnabled(ctx)
+	case supplier.FieldPaymentTermsDays:
+		return m.OldPaymentTermsDays(ctx)
 	case supplier.FieldCreditLimit:
 		return m.OldCreditLimit(ctx)
 	case supplier.FieldPaystackRecipientCode:
@@ -32749,6 +32858,20 @@ func (m *SupplierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRequiresInvoiceBeforePayment(v)
 		return nil
+	case supplier.FieldAutoPayEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoPayEnabled(v)
+		return nil
+	case supplier.FieldPaymentTermsDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentTermsDays(v)
+		return nil
 	case supplier.FieldCreditLimit:
 		v, ok := value.(float64)
 		if !ok {
@@ -32792,6 +32915,9 @@ func (m *SupplierMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *SupplierMutation) AddedFields() []string {
 	var fields []string
+	if m.addpayment_terms_days != nil {
+		fields = append(fields, supplier.FieldPaymentTermsDays)
+	}
 	if m.addcredit_limit != nil {
 		fields = append(fields, supplier.FieldCreditLimit)
 	}
@@ -32803,6 +32929,8 @@ func (m *SupplierMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *SupplierMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case supplier.FieldPaymentTermsDays:
+		return m.AddedPaymentTermsDays()
 	case supplier.FieldCreditLimit:
 		return m.AddedCreditLimit()
 	}
@@ -32814,6 +32942,13 @@ func (m *SupplierMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SupplierMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case supplier.FieldPaymentTermsDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPaymentTermsDays(v)
+		return nil
 	case supplier.FieldCreditLimit:
 		v, ok := value.(float64)
 		if !ok {
@@ -32985,6 +33120,12 @@ func (m *SupplierMutation) ResetField(name string) error {
 		return nil
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		m.ResetRequiresInvoiceBeforePayment()
+		return nil
+	case supplier.FieldAutoPayEnabled:
+		m.ResetAutoPayEnabled()
+		return nil
+	case supplier.FieldPaymentTermsDays:
+		m.ResetPaymentTermsDays()
 		return nil
 	case supplier.FieldCreditLimit:
 		m.ResetCreditLimit()

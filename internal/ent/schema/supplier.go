@@ -63,6 +63,12 @@ func (Supplier) Fields() []ent.Field {
 			Comment("KRA PIN for WHT calculation on supplier payments"),
 		field.Bool("requires_invoice_before_payment").
 			Default(false),
+		field.Bool("auto_pay_enabled").
+			Default(false).
+			Comment("When true, treasury auto-disburses payment to supplier on PO receipt confirmation"),
+		field.Int("payment_terms_days").
+			Default(0).
+			Comment("Net payment terms in days (0 = immediate, 30 = Net30, etc.)"),
 		field.Float("credit_limit").
 			Optional().
 			Comment("Maximum outstanding balance allowed for this supplier"),
