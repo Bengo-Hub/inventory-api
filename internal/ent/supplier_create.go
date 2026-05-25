@@ -239,6 +239,34 @@ func (_c *SupplierCreate) SetNillableRequiresInvoiceBeforePayment(v *bool) *Supp
 	return _c
 }
 
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (_c *SupplierCreate) SetAutoPayEnabled(v bool) *SupplierCreate {
+	_c.mutation.SetAutoPayEnabled(v)
+	return _c
+}
+
+// SetNillableAutoPayEnabled sets the "auto_pay_enabled" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableAutoPayEnabled(v *bool) *SupplierCreate {
+	if v != nil {
+		_c.SetAutoPayEnabled(*v)
+	}
+	return _c
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (_c *SupplierCreate) SetPaymentTermsDays(v int) *SupplierCreate {
+	_c.mutation.SetPaymentTermsDays(v)
+	return _c
+}
+
+// SetNillablePaymentTermsDays sets the "payment_terms_days" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillablePaymentTermsDays(v *int) *SupplierCreate {
+	if v != nil {
+		_c.SetPaymentTermsDays(*v)
+	}
+	return _c
+}
+
 // SetCreditLimit sets the "credit_limit" field.
 func (_c *SupplierCreate) SetCreditLimit(v float64) *SupplierCreate {
 	_c.mutation.SetCreditLimit(v)
@@ -373,6 +401,14 @@ func (_c *SupplierCreate) defaults() {
 		v := supplier.DefaultRequiresInvoiceBeforePayment
 		_c.mutation.SetRequiresInvoiceBeforePayment(v)
 	}
+	if _, ok := _c.mutation.AutoPayEnabled(); !ok {
+		v := supplier.DefaultAutoPayEnabled
+		_c.mutation.SetAutoPayEnabled(v)
+	}
+	if _, ok := _c.mutation.PaymentTermsDays(); !ok {
+		v := supplier.DefaultPaymentTermsDays
+		_c.mutation.SetPaymentTermsDays(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := supplier.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -422,6 +458,12 @@ func (_c *SupplierCreate) check() error {
 	}
 	if _, ok := _c.mutation.RequiresInvoiceBeforePayment(); !ok {
 		return &ValidationError{Name: "requires_invoice_before_payment", err: errors.New(`ent: missing required field "Supplier.requires_invoice_before_payment"`)}
+	}
+	if _, ok := _c.mutation.AutoPayEnabled(); !ok {
+		return &ValidationError{Name: "auto_pay_enabled", err: errors.New(`ent: missing required field "Supplier.auto_pay_enabled"`)}
+	}
+	if _, ok := _c.mutation.PaymentTermsDays(); !ok {
+		return &ValidationError{Name: "payment_terms_days", err: errors.New(`ent: missing required field "Supplier.payment_terms_days"`)}
 	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		return &ValidationError{Name: "metadata", err: errors.New(`ent: missing required field "Supplier.metadata"`)}
@@ -535,6 +577,14 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
 		_node.RequiresInvoiceBeforePayment = value
+	}
+	if value, ok := _c.mutation.AutoPayEnabled(); ok {
+		_spec.SetField(supplier.FieldAutoPayEnabled, field.TypeBool, value)
+		_node.AutoPayEnabled = value
+	}
+	if value, ok := _c.mutation.PaymentTermsDays(); ok {
+		_spec.SetField(supplier.FieldPaymentTermsDays, field.TypeInt, value)
+		_node.PaymentTermsDays = value
 	}
 	if value, ok := _c.mutation.CreditLimit(); ok {
 		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
@@ -897,6 +947,36 @@ func (u *SupplierUpsert) SetRequiresInvoiceBeforePayment(v bool) *SupplierUpsert
 // UpdateRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field to the value that was provided on create.
 func (u *SupplierUpsert) UpdateRequiresInvoiceBeforePayment() *SupplierUpsert {
 	u.SetExcluded(supplier.FieldRequiresInvoiceBeforePayment)
+	return u
+}
+
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (u *SupplierUpsert) SetAutoPayEnabled(v bool) *SupplierUpsert {
+	u.Set(supplier.FieldAutoPayEnabled, v)
+	return u
+}
+
+// UpdateAutoPayEnabled sets the "auto_pay_enabled" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateAutoPayEnabled() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldAutoPayEnabled)
+	return u
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (u *SupplierUpsert) SetPaymentTermsDays(v int) *SupplierUpsert {
+	u.Set(supplier.FieldPaymentTermsDays, v)
+	return u
+}
+
+// UpdatePaymentTermsDays sets the "payment_terms_days" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdatePaymentTermsDays() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldPaymentTermsDays)
+	return u
+}
+
+// AddPaymentTermsDays adds v to the "payment_terms_days" field.
+func (u *SupplierUpsert) AddPaymentTermsDays(v int) *SupplierUpsert {
+	u.Add(supplier.FieldPaymentTermsDays, v)
 	return u
 }
 
@@ -1336,6 +1416,41 @@ func (u *SupplierUpsertOne) SetRequiresInvoiceBeforePayment(v bool) *SupplierUps
 func (u *SupplierUpsertOne) UpdateRequiresInvoiceBeforePayment() *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
 		s.UpdateRequiresInvoiceBeforePayment()
+	})
+}
+
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (u *SupplierUpsertOne) SetAutoPayEnabled(v bool) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAutoPayEnabled(v)
+	})
+}
+
+// UpdateAutoPayEnabled sets the "auto_pay_enabled" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateAutoPayEnabled() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAutoPayEnabled()
+	})
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (u *SupplierUpsertOne) SetPaymentTermsDays(v int) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaymentTermsDays(v)
+	})
+}
+
+// AddPaymentTermsDays adds v to the "payment_terms_days" field.
+func (u *SupplierUpsertOne) AddPaymentTermsDays(v int) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.AddPaymentTermsDays(v)
+	})
+}
+
+// UpdatePaymentTermsDays sets the "payment_terms_days" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdatePaymentTermsDays() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaymentTermsDays()
 	})
 }
 
@@ -1953,6 +2068,41 @@ func (u *SupplierUpsertBulk) SetRequiresInvoiceBeforePayment(v bool) *SupplierUp
 func (u *SupplierUpsertBulk) UpdateRequiresInvoiceBeforePayment() *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
 		s.UpdateRequiresInvoiceBeforePayment()
+	})
+}
+
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (u *SupplierUpsertBulk) SetAutoPayEnabled(v bool) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAutoPayEnabled(v)
+	})
+}
+
+// UpdateAutoPayEnabled sets the "auto_pay_enabled" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateAutoPayEnabled() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAutoPayEnabled()
+	})
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (u *SupplierUpsertBulk) SetPaymentTermsDays(v int) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetPaymentTermsDays(v)
+	})
+}
+
+// AddPaymentTermsDays adds v to the "payment_terms_days" field.
+func (u *SupplierUpsertBulk) AddPaymentTermsDays(v int) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.AddPaymentTermsDays(v)
+	})
+}
+
+// UpdatePaymentTermsDays sets the "payment_terms_days" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdatePaymentTermsDays() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdatePaymentTermsDays()
 	})
 }
 

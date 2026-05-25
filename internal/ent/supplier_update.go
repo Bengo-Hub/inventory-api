@@ -340,6 +340,41 @@ func (_u *SupplierUpdate) SetNillableRequiresInvoiceBeforePayment(v *bool) *Supp
 	return _u
 }
 
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (_u *SupplierUpdate) SetAutoPayEnabled(v bool) *SupplierUpdate {
+	_u.mutation.SetAutoPayEnabled(v)
+	return _u
+}
+
+// SetNillableAutoPayEnabled sets the "auto_pay_enabled" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableAutoPayEnabled(v *bool) *SupplierUpdate {
+	if v != nil {
+		_u.SetAutoPayEnabled(*v)
+	}
+	return _u
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (_u *SupplierUpdate) SetPaymentTermsDays(v int) *SupplierUpdate {
+	_u.mutation.ResetPaymentTermsDays()
+	_u.mutation.SetPaymentTermsDays(v)
+	return _u
+}
+
+// SetNillablePaymentTermsDays sets the "payment_terms_days" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillablePaymentTermsDays(v *int) *SupplierUpdate {
+	if v != nil {
+		_u.SetPaymentTermsDays(*v)
+	}
+	return _u
+}
+
+// AddPaymentTermsDays adds value to the "payment_terms_days" field.
+func (_u *SupplierUpdate) AddPaymentTermsDays(v int) *SupplierUpdate {
+	_u.mutation.AddPaymentTermsDays(v)
+	return _u
+}
+
 // SetCreditLimit sets the "credit_limit" field.
 func (_u *SupplierUpdate) SetCreditLimit(v float64) *SupplierUpdate {
 	_u.mutation.ResetCreditLimit()
@@ -594,6 +629,15 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AutoPayEnabled(); ok {
+		_spec.SetField(supplier.FieldAutoPayEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PaymentTermsDays(); ok {
+		_spec.SetField(supplier.FieldPaymentTermsDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPaymentTermsDays(); ok {
+		_spec.AddField(supplier.FieldPaymentTermsDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreditLimit(); ok {
 		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
@@ -991,6 +1035,41 @@ func (_u *SupplierUpdateOne) SetNillableRequiresInvoiceBeforePayment(v *bool) *S
 	return _u
 }
 
+// SetAutoPayEnabled sets the "auto_pay_enabled" field.
+func (_u *SupplierUpdateOne) SetAutoPayEnabled(v bool) *SupplierUpdateOne {
+	_u.mutation.SetAutoPayEnabled(v)
+	return _u
+}
+
+// SetNillableAutoPayEnabled sets the "auto_pay_enabled" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableAutoPayEnabled(v *bool) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetAutoPayEnabled(*v)
+	}
+	return _u
+}
+
+// SetPaymentTermsDays sets the "payment_terms_days" field.
+func (_u *SupplierUpdateOne) SetPaymentTermsDays(v int) *SupplierUpdateOne {
+	_u.mutation.ResetPaymentTermsDays()
+	_u.mutation.SetPaymentTermsDays(v)
+	return _u
+}
+
+// SetNillablePaymentTermsDays sets the "payment_terms_days" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillablePaymentTermsDays(v *int) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetPaymentTermsDays(*v)
+	}
+	return _u
+}
+
+// AddPaymentTermsDays adds value to the "payment_terms_days" field.
+func (_u *SupplierUpdateOne) AddPaymentTermsDays(v int) *SupplierUpdateOne {
+	_u.mutation.AddPaymentTermsDays(v)
+	return _u
+}
+
 // SetCreditLimit sets the "credit_limit" field.
 func (_u *SupplierUpdateOne) SetCreditLimit(v float64) *SupplierUpdateOne {
 	_u.mutation.ResetCreditLimit()
@@ -1275,6 +1354,15 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 	}
 	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AutoPayEnabled(); ok {
+		_spec.SetField(supplier.FieldAutoPayEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PaymentTermsDays(); ok {
+		_spec.SetField(supplier.FieldPaymentTermsDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPaymentTermsDays(); ok {
+		_spec.AddField(supplier.FieldPaymentTermsDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreditLimit(); ok {
 		_spec.SetField(supplier.FieldCreditLimit, field.TypeFloat64, value)
