@@ -198,13 +198,12 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	// Initialize NATS event subscribers for proactive provisioning
-	if natsConn != nil {
-		eventSub := events.NewSubscriber(natsConn, log)
-		branchSub := tenant.NewBranchSubscriber(ormClient, log)
-		if err := branchSub.RegisterSubscribers(eventSub); err != nil {
-			log.Error("failed to register branch subscribers", zap.Error(err))
-		}
+	branchSub := tenant.NewBranchSubscriber(ormClient, log)
+	if err := branchSub.Start(natsConn); err != nil {
+		log.Warn("app: failed to start outlet event subscriptions", zap.Error(err))
+	}
 
+	if natsConn != nil {
 		subCacheSub := subscriptions.NewCacheSubscriber(redisClient, log)
 		if err := subCacheSub.Start(natsConn); err != nil {
 			log.Warn("app: failed to start subscription cache subscriber", zap.Error(err))
