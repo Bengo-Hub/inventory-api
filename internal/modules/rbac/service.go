@@ -29,13 +29,15 @@ func NewService(repo Repository, logger *zap.Logger, tenantSyncer *tenant.Syncer
 // EnsureUserFromToken handles JIT provisioning of a user derived from an SSO token.
 // It also assigns service-level roles based on the user's global roles from JWT claims.
 func (s *Service) EnsureUserFromToken(ctx context.Context, tenantID uuid.UUID, userID uuid.UUID, email string, tenantSlug string, roles ...string) (*InventoryUser, error) {
-	// 1. If user already exists, we assume the tenant exists.
+	// 1. If user already exists, check if they need a role assignment (e.g. roles were seeded after user was first provisioned).
 	user, err := s.repo.GetUserByAuthServiceID(ctx, tenantID, userID)
 	if err == nil {
+		// Re-run role assignment idempotently in case the role was unavailable on first provisioning.
+		s.assignDefaultRoleFromJWT(ctx, tenantID, user.ID, userID, roles)
 		return user, nil
 	}
 
-	// 2. User doesn't exist. Attempt to sync the tenant seamlessly first!
+	// 2. User doesn't exist. Attempt to sync the tenant seamlessly first.
 	if s.tenantSyncer != nil && tenantSlug != "" {
 		_, syncErr := s.tenantSyncer.SyncTenant(ctx, tenantSlug)
 		if syncErr != nil {
