@@ -45,18 +45,19 @@ import (
 )
 
 type App struct {
-	cfg             *config.Config
-	log             *zap.Logger
-	httpServer      *http.Server
-	db              *pgxpool.Pool
-	cache           *redis.Client
-	events          *nats.Conn
-	orm             *ent.Client
+	cfg              *config.Config
+	log              *zap.Logger
+	httpServer       *http.Server
+	db               *pgxpool.Pool
+	cache            *redis.Client
+	events           *nats.Conn
+	orm              *ent.Client
 	outboxPublisher  *outbox.Publisher
 	orderConsumer    *consumers.OrderEventsConsumer
 	posSaleConsumer  *consumers.POSSaleEventsConsumer
 	authConsumer     *consumers.AuthEventsConsumer
 	returnConsumer   *consumers.ReturnEventsConsumer
+	stockConsumer    *consumers.StockEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -175,6 +176,9 @@ func New(ctx context.Context) (*App, error) {
 	// Return events consumer — restock inventory on pos.return.completed + ordering.return.approved
 	returnConsumer := consumers.NewReturnEventsConsumer(log, stockSvc)
 
+	// Stock low events consumer — auto-creates draft POs when auto_reorder_enabled
+	stockConsumer := consumers.NewStockEventsConsumer(log, ormClient)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -246,6 +250,7 @@ func New(ctx context.Context) (*App, error) {
 		posSaleConsumer:  posSaleConsumer,
 		authConsumer:     authConsumer,
 		returnConsumer:   returnConsumer,
+		stockConsumer:    stockConsumer,
 	}, nil
 }
 
@@ -295,6 +300,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("return events consumers started")
+			}
+
+			// Start stock low events consumer — auto-creates draft POs when auto_reorder_enabled
+			if a.stockConsumer != nil {
+				go func() {
+					if err := a.stockConsumer.Start(ctx, js); err != nil {
+						a.log.Error("stock events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("stock events consumer started")
 			}
 		}
 	}
