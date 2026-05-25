@@ -24,6 +24,7 @@ import (
 	entrp "github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	entsvc "github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
+	entring "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
@@ -720,9 +721,16 @@ func mimeFromURL(url string) string {
 // ---------------------------------------------------------------------------
 
 func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	// Try the canonical "MAIN" warehouse first; fall back to the default warehouse for tenants
+	// that don't use "MAIN" as their primary warehouse code (e.g. codevertex-demo uses "HOSP").
 	wh, err := client.Warehouse.Query().
 		Where(entwarehouse.TenantID(tenantID), entwarehouse.Code("MAIN")).
 		Only(ctx)
+	if ent.IsNotFound(err) {
+		wh, err = client.Warehouse.Query().
+			Where(entwarehouse.TenantID(tenantID), entwarehouse.IsDefault(true)).
+			First(ctx)
+	}
 	if err != nil {
 		return fmt.Errorf("find warehouse: %w", err)
 	}
@@ -1263,8 +1271,11 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 			rawItemID := itemUUID(tenantID, ing.RawSKU)
 			ingID := recipeIngredientUUID(recipeID, ing.RawSKU)
 
-			// Check if already exists by deterministic ID.
-			_, getErr := client.RecipeIngredient.Get(ctx, ingID)
+			// Check by (recipe_id, item_id) to handle seeds where ingredient was
+			// created with a different UUID in a prior run.
+			existing, getErr := client.RecipeIngredient.Query().
+				Where(entring.RecipeID(recipeID), entring.ItemID(rawItemID)).
+				First(ctx)
 			switch {
 			case ent.IsNotFound(getErr):
 				if _, createErr := client.RecipeIngredient.Create().
@@ -1281,7 +1292,7 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 			case getErr != nil:
 				return fmt.Errorf("check ingredient %s→%s: %w", rd.SKU, ing.RawSKU, getErr)
 			default:
-				if _, updateErr := client.RecipeIngredient.UpdateOneID(ingID).
+				if _, updateErr := client.RecipeIngredient.UpdateOneID(existing.ID).
 					SetQuantity(ing.Qty).
 					SetUnitOfMeasure(ing.UOM).
 					SetDisplayOrder(i).
