@@ -4124,6 +4124,8 @@ type InventoryBalanceMutation struct {
 	cleareditem           bool
 	warehouse             *uuid.UUID
 	clearedwarehouse      bool
+	location              *uuid.UUID
+	clearedlocation       bool
 	done                  bool
 	oldValue              func(context.Context) (*InventoryBalance, error)
 	predicates            []predicate.InventoryBalance
@@ -4742,6 +4744,55 @@ func (m *InventoryBalanceMutation) ResetAutoReorderEnabled() {
 	m.auto_reorder_enabled = nil
 }
 
+// SetLocationID sets the "location_id" field.
+func (m *InventoryBalanceMutation) SetLocationID(u uuid.UUID) {
+	m.location = &u
+}
+
+// LocationID returns the value of the "location_id" field in the mutation.
+func (m *InventoryBalanceMutation) LocationID() (r uuid.UUID, exists bool) {
+	v := m.location
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLocationID returns the old "location_id" field's value of the InventoryBalance entity.
+// If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryBalanceMutation) OldLocationID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLocationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLocationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLocationID: %w", err)
+	}
+	return oldValue.LocationID, nil
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (m *InventoryBalanceMutation) ClearLocationID() {
+	m.location = nil
+	m.clearedFields[inventorybalance.FieldLocationID] = struct{}{}
+}
+
+// LocationIDCleared returns if the "location_id" field was cleared in this mutation.
+func (m *InventoryBalanceMutation) LocationIDCleared() bool {
+	_, ok := m.clearedFields[inventorybalance.FieldLocationID]
+	return ok
+}
+
+// ResetLocationID resets all changes to the "location_id" field.
+func (m *InventoryBalanceMutation) ResetLocationID() {
+	m.location = nil
+	delete(m.clearedFields, inventorybalance.FieldLocationID)
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (m *InventoryBalanceMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
@@ -4832,6 +4883,33 @@ func (m *InventoryBalanceMutation) ResetWarehouse() {
 	m.clearedwarehouse = false
 }
 
+// ClearLocation clears the "location" edge to the WarehouseLocation entity.
+func (m *InventoryBalanceMutation) ClearLocation() {
+	m.clearedlocation = true
+	m.clearedFields[inventorybalance.FieldLocationID] = struct{}{}
+}
+
+// LocationCleared reports if the "location" edge to the WarehouseLocation entity was cleared.
+func (m *InventoryBalanceMutation) LocationCleared() bool {
+	return m.LocationIDCleared() || m.clearedlocation
+}
+
+// LocationIDs returns the "location" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LocationID instead. It exists only for internal usage by the builders.
+func (m *InventoryBalanceMutation) LocationIDs() (ids []uuid.UUID) {
+	if id := m.location; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLocation resets all changes to the "location" edge.
+func (m *InventoryBalanceMutation) ResetLocation() {
+	m.location = nil
+	m.clearedlocation = false
+}
+
 // Where appends a list predicates to the InventoryBalanceMutation builder.
 func (m *InventoryBalanceMutation) Where(ps ...predicate.InventoryBalance) {
 	m.predicates = append(m.predicates, ps...)
@@ -4866,7 +4944,7 @@ func (m *InventoryBalanceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryBalanceMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, inventorybalance.FieldTenantID)
 	}
@@ -4899,6 +4977,9 @@ func (m *InventoryBalanceMutation) Fields() []string {
 	}
 	if m.auto_reorder_enabled != nil {
 		fields = append(fields, inventorybalance.FieldAutoReorderEnabled)
+	}
+	if m.location != nil {
+		fields = append(fields, inventorybalance.FieldLocationID)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, inventorybalance.FieldUpdatedAt)
@@ -4933,6 +5014,8 @@ func (m *InventoryBalanceMutation) Field(name string) (ent.Value, bool) {
 		return m.PreferredSupplierID()
 	case inventorybalance.FieldAutoReorderEnabled:
 		return m.AutoReorderEnabled()
+	case inventorybalance.FieldLocationID:
+		return m.LocationID()
 	case inventorybalance.FieldUpdatedAt:
 		return m.UpdatedAt()
 	}
@@ -4966,6 +5049,8 @@ func (m *InventoryBalanceMutation) OldField(ctx context.Context, name string) (e
 		return m.OldPreferredSupplierID(ctx)
 	case inventorybalance.FieldAutoReorderEnabled:
 		return m.OldAutoReorderEnabled(ctx)
+	case inventorybalance.FieldLocationID:
+		return m.OldLocationID(ctx)
 	case inventorybalance.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	}
@@ -5053,6 +5138,13 @@ func (m *InventoryBalanceMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAutoReorderEnabled(v)
+		return nil
+	case inventorybalance.FieldLocationID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLocationID(v)
 		return nil
 	case inventorybalance.FieldUpdatedAt:
 		v, ok := value.(time.Time)
@@ -5157,6 +5249,9 @@ func (m *InventoryBalanceMutation) ClearedFields() []string {
 	if m.FieldCleared(inventorybalance.FieldPreferredSupplierID) {
 		fields = append(fields, inventorybalance.FieldPreferredSupplierID)
 	}
+	if m.FieldCleared(inventorybalance.FieldLocationID) {
+		fields = append(fields, inventorybalance.FieldLocationID)
+	}
 	return fields
 }
 
@@ -5173,6 +5268,9 @@ func (m *InventoryBalanceMutation) ClearField(name string) error {
 	switch name {
 	case inventorybalance.FieldPreferredSupplierID:
 		m.ClearPreferredSupplierID()
+		return nil
+	case inventorybalance.FieldLocationID:
+		m.ClearLocationID()
 		return nil
 	}
 	return fmt.Errorf("unknown InventoryBalance nullable field %s", name)
@@ -5215,6 +5313,9 @@ func (m *InventoryBalanceMutation) ResetField(name string) error {
 	case inventorybalance.FieldAutoReorderEnabled:
 		m.ResetAutoReorderEnabled()
 		return nil
+	case inventorybalance.FieldLocationID:
+		m.ResetLocationID()
+		return nil
 	case inventorybalance.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
@@ -5224,12 +5325,15 @@ func (m *InventoryBalanceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *InventoryBalanceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.item != nil {
 		edges = append(edges, inventorybalance.EdgeItem)
 	}
 	if m.warehouse != nil {
 		edges = append(edges, inventorybalance.EdgeWarehouse)
+	}
+	if m.location != nil {
+		edges = append(edges, inventorybalance.EdgeLocation)
 	}
 	return edges
 }
@@ -5246,13 +5350,17 @@ func (m *InventoryBalanceMutation) AddedIDs(name string) []ent.Value {
 		if id := m.warehouse; id != nil {
 			return []ent.Value{*id}
 		}
+	case inventorybalance.EdgeLocation:
+		if id := m.location; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *InventoryBalanceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -5264,12 +5372,15 @@ func (m *InventoryBalanceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *InventoryBalanceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.cleareditem {
 		edges = append(edges, inventorybalance.EdgeItem)
 	}
 	if m.clearedwarehouse {
 		edges = append(edges, inventorybalance.EdgeWarehouse)
+	}
+	if m.clearedlocation {
+		edges = append(edges, inventorybalance.EdgeLocation)
 	}
 	return edges
 }
@@ -5282,6 +5393,8 @@ func (m *InventoryBalanceMutation) EdgeCleared(name string) bool {
 		return m.cleareditem
 	case inventorybalance.EdgeWarehouse:
 		return m.clearedwarehouse
+	case inventorybalance.EdgeLocation:
+		return m.clearedlocation
 	}
 	return false
 }
@@ -5296,6 +5409,9 @@ func (m *InventoryBalanceMutation) ClearEdge(name string) error {
 	case inventorybalance.EdgeWarehouse:
 		m.ClearWarehouse()
 		return nil
+	case inventorybalance.EdgeLocation:
+		m.ClearLocation()
+		return nil
 	}
 	return fmt.Errorf("unknown InventoryBalance unique edge %s", name)
 }
@@ -5309,6 +5425,9 @@ func (m *InventoryBalanceMutation) ResetEdge(name string) error {
 		return nil
 	case inventorybalance.EdgeWarehouse:
 		m.ResetWarehouse()
+		return nil
+	case inventorybalance.EdgeLocation:
+		m.ResetLocation()
 		return nil
 	}
 	return fmt.Errorf("unknown InventoryBalance edge %s", name)

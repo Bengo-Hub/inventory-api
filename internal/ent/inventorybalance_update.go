@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/google/uuid"
 )
 
@@ -226,6 +227,26 @@ func (_u *InventoryBalanceUpdate) SetNillableAutoReorderEnabled(v *bool) *Invent
 	return _u
 }
 
+// SetLocationID sets the "location_id" field.
+func (_u *InventoryBalanceUpdate) SetLocationID(v uuid.UUID) *InventoryBalanceUpdate {
+	_u.mutation.SetLocationID(v)
+	return _u
+}
+
+// SetNillableLocationID sets the "location_id" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillableLocationID(v *uuid.UUID) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetLocationID(*v)
+	}
+	return _u
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (_u *InventoryBalanceUpdate) ClearLocationID() *InventoryBalanceUpdate {
+	_u.mutation.ClearLocationID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdate) SetUpdatedAt(v time.Time) *InventoryBalanceUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -242,6 +263,11 @@ func (_u *InventoryBalanceUpdate) SetWarehouse(v *Warehouse) *InventoryBalanceUp
 	return _u.SetWarehouseID(v.ID)
 }
 
+// SetLocation sets the "location" edge to the WarehouseLocation entity.
+func (_u *InventoryBalanceUpdate) SetLocation(v *WarehouseLocation) *InventoryBalanceUpdate {
+	return _u.SetLocationID(v.ID)
+}
+
 // Mutation returns the InventoryBalanceMutation object of the builder.
 func (_u *InventoryBalanceUpdate) Mutation() *InventoryBalanceMutation {
 	return _u.mutation
@@ -256,6 +282,12 @@ func (_u *InventoryBalanceUpdate) ClearItem() *InventoryBalanceUpdate {
 // ClearWarehouse clears the "warehouse" edge to the Warehouse entity.
 func (_u *InventoryBalanceUpdate) ClearWarehouse() *InventoryBalanceUpdate {
 	_u.mutation.ClearWarehouse()
+	return _u
+}
+
+// ClearLocation clears the "location" edge to the WarehouseLocation entity.
+func (_u *InventoryBalanceUpdate) ClearLocation() *InventoryBalanceUpdate {
+	_u.mutation.ClearLocation()
 	return _u
 }
 
@@ -417,6 +449,35 @@ func (_u *InventoryBalanceUpdate) sqlSave(ctx context.Context) (_node int, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(warehouse.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LocationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   inventorybalance.LocationTable,
+			Columns: []string{inventorybalance.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warehouselocation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   inventorybalance.LocationTable,
+			Columns: []string{inventorybalance.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warehouselocation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -639,6 +700,26 @@ func (_u *InventoryBalanceUpdateOne) SetNillableAutoReorderEnabled(v *bool) *Inv
 	return _u
 }
 
+// SetLocationID sets the "location_id" field.
+func (_u *InventoryBalanceUpdateOne) SetLocationID(v uuid.UUID) *InventoryBalanceUpdateOne {
+	_u.mutation.SetLocationID(v)
+	return _u
+}
+
+// SetNillableLocationID sets the "location_id" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillableLocationID(v *uuid.UUID) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetLocationID(*v)
+	}
+	return _u
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (_u *InventoryBalanceUpdateOne) ClearLocationID() *InventoryBalanceUpdateOne {
+	_u.mutation.ClearLocationID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdateOne) SetUpdatedAt(v time.Time) *InventoryBalanceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -655,6 +736,11 @@ func (_u *InventoryBalanceUpdateOne) SetWarehouse(v *Warehouse) *InventoryBalanc
 	return _u.SetWarehouseID(v.ID)
 }
 
+// SetLocation sets the "location" edge to the WarehouseLocation entity.
+func (_u *InventoryBalanceUpdateOne) SetLocation(v *WarehouseLocation) *InventoryBalanceUpdateOne {
+	return _u.SetLocationID(v.ID)
+}
+
 // Mutation returns the InventoryBalanceMutation object of the builder.
 func (_u *InventoryBalanceUpdateOne) Mutation() *InventoryBalanceMutation {
 	return _u.mutation
@@ -669,6 +755,12 @@ func (_u *InventoryBalanceUpdateOne) ClearItem() *InventoryBalanceUpdateOne {
 // ClearWarehouse clears the "warehouse" edge to the Warehouse entity.
 func (_u *InventoryBalanceUpdateOne) ClearWarehouse() *InventoryBalanceUpdateOne {
 	_u.mutation.ClearWarehouse()
+	return _u
+}
+
+// ClearLocation clears the "location" edge to the WarehouseLocation entity.
+func (_u *InventoryBalanceUpdateOne) ClearLocation() *InventoryBalanceUpdateOne {
+	_u.mutation.ClearLocation()
 	return _u
 }
 
@@ -860,6 +952,35 @@ func (_u *InventoryBalanceUpdateOne) sqlSave(ctx context.Context) (_node *Invent
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(warehouse.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LocationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   inventorybalance.LocationTable,
+			Columns: []string{inventorybalance.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warehouselocation.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   inventorybalance.LocationTable,
+			Columns: []string{inventorybalance.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warehouselocation.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

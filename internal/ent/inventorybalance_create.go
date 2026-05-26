@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/google/uuid"
 )
 
@@ -156,6 +157,20 @@ func (_c *InventoryBalanceCreate) SetNillableAutoReorderEnabled(v *bool) *Invent
 	return _c
 }
 
+// SetLocationID sets the "location_id" field.
+func (_c *InventoryBalanceCreate) SetLocationID(v uuid.UUID) *InventoryBalanceCreate {
+	_c.mutation.SetLocationID(v)
+	return _c
+}
+
+// SetNillableLocationID sets the "location_id" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillableLocationID(v *uuid.UUID) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetLocationID(*v)
+	}
+	return _c
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_c *InventoryBalanceCreate) SetUpdatedAt(v time.Time) *InventoryBalanceCreate {
 	_c.mutation.SetUpdatedAt(v)
@@ -192,6 +207,11 @@ func (_c *InventoryBalanceCreate) SetItem(v *Item) *InventoryBalanceCreate {
 // SetWarehouse sets the "warehouse" edge to the Warehouse entity.
 func (_c *InventoryBalanceCreate) SetWarehouse(v *Warehouse) *InventoryBalanceCreate {
 	return _c.SetWarehouseID(v.ID)
+}
+
+// SetLocation sets the "location" edge to the WarehouseLocation entity.
+func (_c *InventoryBalanceCreate) SetLocation(v *WarehouseLocation) *InventoryBalanceCreate {
+	return _c.SetLocationID(v.ID)
 }
 
 // Mutation returns the InventoryBalanceMutation object of the builder.
@@ -418,6 +438,23 @@ func (_c *InventoryBalanceCreate) createSpec() (*InventoryBalance, *sqlgraph.Cre
 		_node.WarehouseID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   inventorybalance.LocationTable,
+			Columns: []string{inventorybalance.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(warehouselocation.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.LocationID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -635,6 +672,24 @@ func (u *InventoryBalanceUpsert) SetAutoReorderEnabled(v bool) *InventoryBalance
 // UpdateAutoReorderEnabled sets the "auto_reorder_enabled" field to the value that was provided on create.
 func (u *InventoryBalanceUpsert) UpdateAutoReorderEnabled() *InventoryBalanceUpsert {
 	u.SetExcluded(inventorybalance.FieldAutoReorderEnabled)
+	return u
+}
+
+// SetLocationID sets the "location_id" field.
+func (u *InventoryBalanceUpsert) SetLocationID(v uuid.UUID) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldLocationID, v)
+	return u
+}
+
+// UpdateLocationID sets the "location_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdateLocationID() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldLocationID)
+	return u
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (u *InventoryBalanceUpsert) ClearLocationID() *InventoryBalanceUpsert {
+	u.SetNull(inventorybalance.FieldLocationID)
 	return u
 }
 
@@ -891,6 +946,27 @@ func (u *InventoryBalanceUpsertOne) SetAutoReorderEnabled(v bool) *InventoryBala
 func (u *InventoryBalanceUpsertOne) UpdateAutoReorderEnabled() *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateAutoReorderEnabled()
+	})
+}
+
+// SetLocationID sets the "location_id" field.
+func (u *InventoryBalanceUpsertOne) SetLocationID(v uuid.UUID) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetLocationID(v)
+	})
+}
+
+// UpdateLocationID sets the "location_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdateLocationID() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateLocationID()
+	})
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (u *InventoryBalanceUpsertOne) ClearLocationID() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.ClearLocationID()
 	})
 }
 
@@ -1316,6 +1392,27 @@ func (u *InventoryBalanceUpsertBulk) SetAutoReorderEnabled(v bool) *InventoryBal
 func (u *InventoryBalanceUpsertBulk) UpdateAutoReorderEnabled() *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.UpdateAutoReorderEnabled()
+	})
+}
+
+// SetLocationID sets the "location_id" field.
+func (u *InventoryBalanceUpsertBulk) SetLocationID(v uuid.UUID) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetLocationID(v)
+	})
+}
+
+// UpdateLocationID sets the "location_id" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdateLocationID() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateLocationID()
+	})
+}
+
+// ClearLocationID clears the value of the "location_id" field.
+func (u *InventoryBalanceUpsertBulk) ClearLocationID() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.ClearLocationID()
 	})
 }
 

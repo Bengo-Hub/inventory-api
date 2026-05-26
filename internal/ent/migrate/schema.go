@@ -210,6 +210,7 @@ var (
 		{Name: "preferred_supplier_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "auto_reorder_enabled", Type: field.TypeBool, Default: false},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "location_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "warehouse_id", Type: field.TypeUUID},
 	}
@@ -220,14 +221,20 @@ var (
 		PrimaryKey: []*schema.Column{InventoryBalancesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "inventory_balances_items_balances",
+				Symbol:     "inventory_balances_warehouse_locations_location",
 				Columns:    []*schema.Column{InventoryBalancesColumns[11]},
+				RefColumns: []*schema.Column{WarehouseLocationsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "inventory_balances_items_balances",
+				Columns:    []*schema.Column{InventoryBalancesColumns[12]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "inventory_balances_warehouses_balances",
-				Columns:    []*schema.Column{InventoryBalancesColumns[12]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[13]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -236,12 +243,12 @@ var (
 			{
 				Name:    "inventorybalance_tenant_id_item_id_warehouse_id",
 				Unique:  true,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[11], InventoryBalancesColumns[12]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[12], InventoryBalancesColumns[13]},
 			},
 			{
 				Name:    "inventorybalance_tenant_id_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[11]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[12]},
 			},
 		},
 	}
@@ -1707,8 +1714,9 @@ func init() {
 	CustomFieldDefinitionsTable.ForeignKeys[0].RefTable = ItemCategoriesTable
 	CustomFieldValuesTable.ForeignKeys[0].RefTable = CustomFieldDefinitionsTable
 	CustomFieldValuesTable.ForeignKeys[1].RefTable = ItemsTable
-	InventoryBalancesTable.ForeignKeys[0].RefTable = ItemsTable
-	InventoryBalancesTable.ForeignKeys[1].RefTable = WarehousesTable
+	InventoryBalancesTable.ForeignKeys[0].RefTable = WarehouseLocationsTable
+	InventoryBalancesTable.ForeignKeys[1].RefTable = ItemsTable
+	InventoryBalancesTable.ForeignKeys[2].RefTable = WarehousesTable
 	InventoryLotsTable.ForeignKeys[0].RefTable = ItemsTable
 	InventoryLotsTable.ForeignKeys[1].RefTable = WarehousesTable
 	ItemsTable.ForeignKeys[0].RefTable = UnitsTable

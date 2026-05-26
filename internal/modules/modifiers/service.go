@@ -443,9 +443,9 @@ func (s *Service) publishItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenan
 	event := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
-		AggregateType: "item",
+		AggregateType: "inventory",
 		AggregateID:   itemID,
-		EventType:     "inventory.item.updated",
+		EventType:     "item.updated",
 		Payload: map[string]any{
 			"item_id": itemID,
 			"reason":  reason,

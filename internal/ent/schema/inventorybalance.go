@@ -50,6 +50,10 @@ func (InventoryBalance) Fields() []ent.Field {
 		field.Bool("auto_reorder_enabled").
 			Default(false).
 			Comment("Enable auto-creation of draft POs when below reorder_level"),
+		field.UUID("location_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Optional sub-location within the warehouse (zone/aisle/rack/shelf/bin)"),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now),
@@ -69,6 +73,9 @@ func (InventoryBalance) Edges() []ent.Edge {
 			Field("warehouse_id").
 			Unique().
 			Required(),
+		edge.To("location", WarehouseLocation.Type).
+			Field("location_id").
+			Unique(),
 	}
 }
 

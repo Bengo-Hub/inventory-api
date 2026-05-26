@@ -800,9 +800,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	event := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
-		AggregateType: "item",
+		AggregateType: "inventory",
 		AggregateID:   i.ID,
-		EventType:     "inventory.item.created",
+		EventType:     "item.created",
 		Payload: map[string]any{
 			"id":                        i.ID,
 			"sku":                       i.Sku,
@@ -912,9 +912,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	event := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
-		AggregateType: "item",
+		AggregateType: "inventory",
 		AggregateID:   i.ID,
-		EventType:     "inventory.item.updated",
+		EventType:     "item.updated",
 		Payload: map[string]any{
 			"id":                        i.ID,
 			"sku":                       i.Sku,

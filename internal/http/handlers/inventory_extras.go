@@ -803,9 +803,9 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		evt := &events.Event{
 			ID:            uuid.New(),
 			TenantID:      tenantID,
-			AggregateType: "purchase_order",
+			AggregateType: "inventory",
 			AggregateID:   po.ID,
-			EventType:     "inventory.purchase_order.received",
+			EventType:     "purchase_order.received",
 			Payload:       payload,
 			Timestamp:     time.Now().UTC(),
 		}

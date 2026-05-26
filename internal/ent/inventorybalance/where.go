@@ -111,6 +111,11 @@ func AutoReorderEnabled(v bool) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldAutoReorderEnabled, v))
 }
 
+// LocationID applies equality check predicate on the "location_id" field. It's identical to LocationIDEQ.
+func LocationID(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldLocationID, v))
+}
+
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUpdatedAt, v))
@@ -521,6 +526,36 @@ func AutoReorderEnabledNEQ(v bool) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNEQ(FieldAutoReorderEnabled, v))
 }
 
+// LocationIDEQ applies the EQ predicate on the "location_id" field.
+func LocationIDEQ(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldLocationID, v))
+}
+
+// LocationIDNEQ applies the NEQ predicate on the "location_id" field.
+func LocationIDNEQ(v uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldLocationID, v))
+}
+
+// LocationIDIn applies the In predicate on the "location_id" field.
+func LocationIDIn(vs ...uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIn(FieldLocationID, vs...))
+}
+
+// LocationIDNotIn applies the NotIn predicate on the "location_id" field.
+func LocationIDNotIn(vs ...uuid.UUID) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotIn(FieldLocationID, vs...))
+}
+
+// LocationIDIsNil applies the IsNil predicate on the "location_id" field.
+func LocationIDIsNil() predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldIsNull(FieldLocationID))
+}
+
+// LocationIDNotNil applies the NotNil predicate on the "location_id" field.
+func LocationIDNotNil() predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNotNull(FieldLocationID))
+}
+
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUpdatedAt, v))
@@ -599,6 +634,29 @@ func HasWarehouse() predicate.InventoryBalance {
 func HasWarehouseWith(preds ...predicate.Warehouse) predicate.InventoryBalance {
 	return predicate.InventoryBalance(func(s *sql.Selector) {
 		step := newWarehouseStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLocation applies the HasEdge predicate on the "location" edge.
+func HasLocation() predicate.InventoryBalance {
+	return predicate.InventoryBalance(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, LocationTable, LocationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLocationWith applies the HasEdge predicate on the "location" edge with a given conditions (other predicates).
+func HasLocationWith(preds ...predicate.WarehouseLocation) predicate.InventoryBalance {
+	return predicate.InventoryBalance(func(s *sql.Selector) {
+		step := newLocationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

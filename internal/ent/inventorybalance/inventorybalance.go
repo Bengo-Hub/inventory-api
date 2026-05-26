@@ -37,12 +37,16 @@ const (
 	FieldPreferredSupplierID = "preferred_supplier_id"
 	// FieldAutoReorderEnabled holds the string denoting the auto_reorder_enabled field in the database.
 	FieldAutoReorderEnabled = "auto_reorder_enabled"
+	// FieldLocationID holds the string denoting the location_id field in the database.
+	FieldLocationID = "location_id"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// EdgeWarehouse holds the string denoting the warehouse edge name in mutations.
 	EdgeWarehouse = "warehouse"
+	// EdgeLocation holds the string denoting the location edge name in mutations.
+	EdgeLocation = "location"
 	// Table holds the table name of the inventorybalance in the database.
 	Table = "inventory_balances"
 	// ItemTable is the table that holds the item relation/edge.
@@ -59,6 +63,13 @@ const (
 	WarehouseInverseTable = "warehouses"
 	// WarehouseColumn is the table column denoting the warehouse relation/edge.
 	WarehouseColumn = "warehouse_id"
+	// LocationTable is the table that holds the location relation/edge.
+	LocationTable = "inventory_balances"
+	// LocationInverseTable is the table name for the WarehouseLocation entity.
+	// It exists in this package in order to avoid circular dependency with the "warehouselocation" package.
+	LocationInverseTable = "warehouse_locations"
+	// LocationColumn is the table column denoting the location relation/edge.
+	LocationColumn = "location_id"
 )
 
 // Columns holds all SQL columns for inventorybalance fields.
@@ -75,6 +86,7 @@ var Columns = []string{
 	FieldReorderQuantity,
 	FieldPreferredSupplierID,
 	FieldAutoReorderEnabled,
+	FieldLocationID,
 	FieldUpdatedAt,
 }
 
@@ -174,6 +186,11 @@ func ByAutoReorderEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAutoReorderEnabled, opts...).ToFunc()
 }
 
+// ByLocationID orders the results by the location_id field.
+func ByLocationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocationID, opts...).ToFunc()
+}
+
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
@@ -192,6 +209,13 @@ func ByWarehouseField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newWarehouseStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByLocationField orders the results by location field.
+func ByLocationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLocationStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newItemStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -204,5 +228,12 @@ func newWarehouseStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WarehouseInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WarehouseTable, WarehouseColumn),
+	)
+}
+func newLocationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LocationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, LocationTable, LocationColumn),
 	)
 }
