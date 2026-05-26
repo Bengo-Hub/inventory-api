@@ -242,7 +242,7 @@ func (c *StockEventsConsumer) handleLowStock(ctx context.Context, tenantID, item
 		SetAggregateType("purchase_order").
 		SetAggregateID(po.ID.String()).
 		SetEventType("inventory.purchase_order.auto_created").
-		SetPayload(eventPayload).
+		SetPayload(json.RawMessage(eventPayload)).
 		SetStatus("PENDING").
 		Save(ctx)
 	if outboxErr != nil {

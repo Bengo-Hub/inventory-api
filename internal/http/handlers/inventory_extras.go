@@ -80,7 +80,7 @@ func (h *InventoryExtrasHandler) publishSupplierEvent(ctx context.Context, s *en
 		SetAggregateType(evt.AggregateType).
 		SetAggregateID(evt.AggregateID.String()).
 		SetEventType(evt.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(evt.Timestamp).
 		Save(ctx)
@@ -820,7 +820,7 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 			SetAggregateType(evt.AggregateType).
 			SetAggregateID(evt.AggregateID.String()).
 			SetEventType(evt.EventType).
-			SetPayload(evtPayload).
+			SetPayload(json.RawMessage(evtPayload)).
 			SetStatus("PENDING").
 			SetCreatedAt(evt.Timestamp).
 			Save(ctx)

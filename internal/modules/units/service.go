@@ -2,6 +2,7 @@ package units
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -103,7 +104,7 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		SetAggregateType(event.AggregateType).
 		SetAggregateID(event.AggregateID.String()).
 		SetEventType(event.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(event.Timestamp).
 		Save(ctx)
