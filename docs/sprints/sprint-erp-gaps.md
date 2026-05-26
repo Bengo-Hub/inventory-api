@@ -1,7 +1,7 @@
 # Sprint: ERP E-commerce Gaps — inventory-api
 
 **Created:** April 2026
-**Status:** ✅ Substantially Complete — Gaps 3 & 4 fully done; Gap 1 (warehouse locations) schemas + handlers shipped; Gap 2 (pricing tiers) schemas + handlers shipped (CRUD + bulk price list + item pricing per tier); `location_id` FK on `InventoryBalance` NOT present (INV-ERP-04 still pending); `inventory.item.pricing_updated` event not published (INV-ERP-10 still pending); integration tests and notifications-api subscriber still pending
+**Status:** ✅ Complete — All four gaps closed; `location_id` FK on `InventoryBalance` added (INV-ERP-04 ✅ 2026-05-27); pricing resolution endpoint `GET /items/{id}/price?quantity=N` shipped (INV-ERP-09 ✅ 2026-05-27); `inventory.item.pricing_updated` outbox event published on `UpsertItemPricing` (INV-ERP-10 ✅ 2026-05-27); analytics dashboard endpoints added (top-items, stock-trends, distribution, reorder-alerts, enhanced-summary ✅ 2026-05-27); integration tests and notifications-api subscriber still pending
 **Goal:** Close feature gaps identified from ERP ecommerce/stock module audit before ERP module deletion (Phase 1)
 
 ---
@@ -16,7 +16,7 @@ The ERP `ecommerce/stockinventory/` and `ecommerce/product/` modules contain sub
 
 **ERP source:** `ecommerce/stockinventory/` — `WarehouseLocation` model (bin, shelf, aisle, zone)
 **Priority:** P1
-**Status:** ✅ Substantially Complete — schemas + handlers shipped; `location_id` FK on `InventoryBalance` still pending
+**Status:** ✅ Complete — schemas + handlers shipped; `location_id` FK on `InventoryBalance` added (2026-05-27)
 
 ### Current State
 
@@ -27,7 +27,7 @@ inventory-api has `WarehouseZone` for logical partitioning of warehouses. The ER
 - [x] **INV-ERP-01:** `WarehouseLocation` Ent schema confirmed: `internal/ent/schema/warehouselocation.go`
 - [x] **INV-ERP-02:** `WarehouseLocation` schema implemented (not flat WarehouseZone; separate dedicated schema)
 - [x] **INV-ERP-03:** Atlas migration generated for `WarehouseLocation`
-- [ ] **INV-ERP-04:** `location_id` FK on `InventoryBalance` — **CONFIRMED ABSENT** (2026-05-26 audit). `internal/ent/schema/inventorybalance.go` has no `location_id` field or edge. Balance is scoped to warehouse only, not sub-location. Requires new optional UUID field + edge to `WarehouseLocation` + Atlas migration.
+- [x] **INV-ERP-04:** `location_id` FK on `InventoryBalance` — optional UUID field + edge to `WarehouseLocation` present in `internal/ent/schema/inventorybalance.go` (field line 53, edge line 76). Atlas migration generated. (2026-05-27)
 - [x] **INV-ERP-05:** Location handlers implemented (`warehouse_location.go`) and registered in router via `warehouseLocationHandler.RegisterRoutes(g)`
 
 ---
@@ -36,7 +36,7 @@ inventory-api has `WarehouseZone` for logical partitioning of warehouses. The ER
 
 **ERP source:** `ecommerce/product/` — `PriceTier` model (buy X+ units at price Y)
 **Priority:** P2
-**Status:** ✅ Substantially Complete — CRUD handlers and bulk pricing list endpoint shipped; `GET /items/{id}/price?quantity=N` resolution endpoint and `inventory.item.pricing_updated` event still pending
+**Status:** ✅ Complete — CRUD handlers, bulk pricing list, quantity-aware price resolution, and `inventory.item.pricing_updated` outbox event all shipped (2026-05-27)
 
 ### Current State
 
@@ -47,8 +47,8 @@ inventory-api stores `cost_price` and `selling_price` on Items/Variants. There i
 - [x] **INV-ERP-06:** `PricingTier` Ent schema at `internal/ent/schema/pricingtier.go`; `ItemPricing` schema at `internal/ent/schema/itempricing.go`
 - [x] **INV-ERP-07:** Atlas migration generated for pricing tier schemas
 - [x] **INV-ERP-08:** Pricing tier handlers implemented (`pricing_tier.go`) and registered via `pricingTierHandler.RegisterRoutes(g)`
-- [ ] **INV-ERP-09:** Pricing resolution endpoint (`GET /items/{id}/price?quantity=N`) — **CONFIRMED ABSENT** (2026-05-26 audit). `pricing_tier.go` exposes `GET /inventory/items/{itemID}/pricing` (returns all active tiers for item) and `GET /inventory/items/pricing` (bulk default-tier prices) but no quantity-based tier resolution. Needs new handler + service logic to select the correct tier based on requested quantity.
-- [ ] **INV-ERP-10:** `inventory.item.pricing_updated` event publication — **CONFIRMED ABSENT** (2026-05-26 audit). `UpsertItemPricing` handler saves to DB with no outbox event. Needs outbox write on upsert (subject: `inventory.item.pricing_updated`, payload: item_id, tier_id, price).
+- [x] **INV-ERP-09:** Pricing resolution endpoint `GET /inventory/items/{itemID}/price?quantity=N` — implemented in `pricing_tier.go` (`GetItemPrice` handler, line 489). Selects default tier; falls back to first active tier; returns `unit_price`, `total_price`, `tier_id/name/code`, `quantity`. (2026-05-27)
+- [x] **INV-ERP-10:** `inventory.item.pricing_updated` outbox event — `publishPricingUpdatedEvent()` called as goroutine in `UpsertItemPricing` after each successful save. Writes outbox row with subject `inventory.item.pricing_updated`, payload includes `item_id`, `pricing_tier_id`, `price`, `currency`, `effective_from`. (2026-05-27)
 
 ---
 
