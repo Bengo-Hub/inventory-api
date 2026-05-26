@@ -162,6 +162,7 @@ func New(ctx context.Context) (*App, error) {
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc)
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
+	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
 
@@ -227,7 +228,7 @@ func New(ctx context.Context) (*App, error) {
 	// Typed tenant inventory config (thresholds, module toggles, tracking settings)
 	inventorySettingsHandler := handlers.NewInventorySettingsHandler(log, ormClient)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
