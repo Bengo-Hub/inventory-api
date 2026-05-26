@@ -144,6 +144,7 @@ func New(ctx context.Context) (*App, error) {
 	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService, rbacRepo)
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
+	authHandler := handlers.NewAuthHandler(log, rbacService)
 
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
@@ -226,7 +227,7 @@ func New(ctx context.Context) (*App, error) {
 	// Typed tenant inventory config (thresholds, module toggles, tracking settings)
 	inventorySettingsHandler := handlers.NewInventorySettingsHandler(log, ormClient)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, rbacHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

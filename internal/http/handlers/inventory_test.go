@@ -90,6 +90,10 @@ func (m *mockItemsSvc) ListCategories(ctx context.Context, tenantID uuid.UUID) (
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error {
+	return nil
+}
+
 type mockStockSvc struct {
 	createReservationFn     func(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error)
 	getReservationFn        func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)
