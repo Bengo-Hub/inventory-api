@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -19339,8 +19340,8 @@ type OutboxEventMutation struct {
 	aggregate_type  *string
 	aggregate_id    *string
 	event_type      *string
-	payload         *[]uint8
-	appendpayload   []uint8
+	payload         *json.RawMessage
+	appendpayload   json.RawMessage
 	status          *string
 	attempts        *int
 	addattempts     *int
@@ -19603,13 +19604,13 @@ func (m *OutboxEventMutation) ResetEventType() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *OutboxEventMutation) SetPayload(u []uint8) {
-	m.payload = &u
+func (m *OutboxEventMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
 	m.appendpayload = nil
 }
 
 // Payload returns the value of the "payload" field in the mutation.
-func (m *OutboxEventMutation) Payload() (r []uint8, exists bool) {
+func (m *OutboxEventMutation) Payload() (r json.RawMessage, exists bool) {
 	v := m.payload
 	if v == nil {
 		return
@@ -19620,7 +19621,7 @@ func (m *OutboxEventMutation) Payload() (r []uint8, exists bool) {
 // OldPayload returns the old "payload" field's value of the OutboxEvent entity.
 // If the OutboxEvent object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboxEventMutation) OldPayload(ctx context.Context) (v []uint8, err error) {
+func (m *OutboxEventMutation) OldPayload(ctx context.Context) (v json.RawMessage, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
 	}
@@ -19634,13 +19635,13 @@ func (m *OutboxEventMutation) OldPayload(ctx context.Context) (v []uint8, err er
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds u to the "payload" field.
-func (m *OutboxEventMutation) AppendPayload(u []uint8) {
-	m.appendpayload = append(m.appendpayload, u...)
+// AppendPayload adds jm to the "payload" field.
+func (m *OutboxEventMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
-func (m *OutboxEventMutation) AppendedPayload() ([]uint8, bool) {
+func (m *OutboxEventMutation) AppendedPayload() (json.RawMessage, bool) {
 	if len(m.appendpayload) == 0 {
 		return nil, false
 	}
@@ -20095,7 +20096,7 @@ func (m *OutboxEventMutation) SetField(name string, value ent.Value) error {
 		m.SetEventType(v)
 		return nil
 	case outboxevent.FieldPayload:
-		v, ok := value.([]uint8)
+		v, ok := value.(json.RawMessage)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

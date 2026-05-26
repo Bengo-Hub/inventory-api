@@ -2,6 +2,7 @@ package modifiers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -464,7 +465,7 @@ func (s *Service) publishItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenan
 		SetAggregateType(event.AggregateType).
 		SetAggregateID(event.AggregateID.String()).
 		SetEventType(event.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(event.Timestamp).
 		Save(ctx)

@@ -387,7 +387,7 @@ func (h *PricingTierHandler) publishPricingUpdatedEvent(ctx context.Context, ten
 		SetAggregateType(evt.AggregateType).
 		SetAggregateID(evt.AggregateID.String()).
 		SetEventType(evt.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(evt.Timestamp).
 		Save(ctx)

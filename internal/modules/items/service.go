@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -841,7 +842,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetAggregateType(event.AggregateType).
 		SetAggregateID(event.AggregateID.String()).
 		SetEventType(event.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(event.Timestamp).
 		Save(ctx)
@@ -953,7 +954,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetAggregateType(event.AggregateType).
 		SetAggregateID(event.AggregateID.String()).
 		SetEventType(event.EventType).
-		SetPayload(payload).
+		SetPayload(json.RawMessage(payload)).
 		SetStatus("PENDING").
 		SetCreatedAt(event.Timestamp).
 		Save(ctx)

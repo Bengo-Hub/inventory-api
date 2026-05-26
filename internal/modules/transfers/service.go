@@ -2,6 +2,7 @@ package transfers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -479,7 +480,7 @@ func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, ag
 		SetAggregateType(aggregateType).
 		SetAggregateID(aggregateID.String()).
 		SetEventType(eventType).
-		SetPayload(data).
+		SetPayload(json.RawMessage(data)).
 		Save(ctx)
 	if err != nil {
 		s.log.Warn("outbox: write event", zap.Error(err), zap.String("event_type", eventType))
