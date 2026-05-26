@@ -136,6 +136,16 @@ func RequiresInvoiceBeforePayment(v bool) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldRequiresInvoiceBeforePayment, v))
 }
 
+// AutoPayEnabled applies equality check predicate on the "auto_pay_enabled" field. It's identical to AutoPayEnabledEQ.
+func AutoPayEnabled(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAutoPayEnabled, v))
+}
+
+// PaymentTermsDays applies equality check predicate on the "payment_terms_days" field. It's identical to PaymentTermsDaysEQ.
+func PaymentTermsDays(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldPaymentTermsDays, v))
+}
+
 // CreditLimit applies equality check predicate on the "credit_limit" field. It's identical to CreditLimitEQ.
 func CreditLimit(v float64) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldCreditLimit, v))
@@ -1199,6 +1209,56 @@ func RequiresInvoiceBeforePaymentEQ(v bool) predicate.Supplier {
 // RequiresInvoiceBeforePaymentNEQ applies the NEQ predicate on the "requires_invoice_before_payment" field.
 func RequiresInvoiceBeforePaymentNEQ(v bool) predicate.Supplier {
 	return predicate.Supplier(sql.FieldNEQ(FieldRequiresInvoiceBeforePayment, v))
+}
+
+// AutoPayEnabledEQ applies the EQ predicate on the "auto_pay_enabled" field.
+func AutoPayEnabledEQ(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAutoPayEnabled, v))
+}
+
+// AutoPayEnabledNEQ applies the NEQ predicate on the "auto_pay_enabled" field.
+func AutoPayEnabledNEQ(v bool) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldAutoPayEnabled, v))
+}
+
+// PaymentTermsDaysEQ applies the EQ predicate on the "payment_terms_days" field.
+func PaymentTermsDaysEQ(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldPaymentTermsDays, v))
+}
+
+// PaymentTermsDaysNEQ applies the NEQ predicate on the "payment_terms_days" field.
+func PaymentTermsDaysNEQ(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldPaymentTermsDays, v))
+}
+
+// PaymentTermsDaysIn applies the In predicate on the "payment_terms_days" field.
+func PaymentTermsDaysIn(vs ...int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldPaymentTermsDays, vs...))
+}
+
+// PaymentTermsDaysNotIn applies the NotIn predicate on the "payment_terms_days" field.
+func PaymentTermsDaysNotIn(vs ...int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldPaymentTermsDays, vs...))
+}
+
+// PaymentTermsDaysGT applies the GT predicate on the "payment_terms_days" field.
+func PaymentTermsDaysGT(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldPaymentTermsDays, v))
+}
+
+// PaymentTermsDaysGTE applies the GTE predicate on the "payment_terms_days" field.
+func PaymentTermsDaysGTE(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldPaymentTermsDays, v))
+}
+
+// PaymentTermsDaysLT applies the LT predicate on the "payment_terms_days" field.
+func PaymentTermsDaysLT(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldPaymentTermsDays, v))
+}
+
+// PaymentTermsDaysLTE applies the LTE predicate on the "payment_terms_days" field.
+func PaymentTermsDaysLTE(v int) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldPaymentTermsDays, v))
 }
 
 // CreditLimitEQ applies the EQ predicate on the "credit_limit" field.

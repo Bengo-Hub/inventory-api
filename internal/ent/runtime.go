@@ -199,7 +199,7 @@ func init() {
 	// inventorybalance.DefaultAutoReorderEnabled holds the default value on creation for the auto_reorder_enabled field.
 	inventorybalance.DefaultAutoReorderEnabled = inventorybalanceDescAutoReorderEnabled.Default.(bool)
 	// inventorybalanceDescUpdatedAt is the schema descriptor for updated_at field.
-	inventorybalanceDescUpdatedAt := inventorybalanceFields[12].Descriptor()
+	inventorybalanceDescUpdatedAt := inventorybalanceFields[13].Descriptor()
 	// inventorybalance.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventorybalance.DefaultUpdatedAt = inventorybalanceDescUpdatedAt.Default.(func() time.Time)
 	// inventorybalance.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -970,16 +970,24 @@ func init() {
 	supplierDescRequiresInvoiceBeforePayment := supplierFields[17].Descriptor()
 	// supplier.DefaultRequiresInvoiceBeforePayment holds the default value on creation for the requires_invoice_before_payment field.
 	supplier.DefaultRequiresInvoiceBeforePayment = supplierDescRequiresInvoiceBeforePayment.Default.(bool)
+	// supplierDescAutoPayEnabled is the schema descriptor for auto_pay_enabled field.
+	supplierDescAutoPayEnabled := supplierFields[18].Descriptor()
+	// supplier.DefaultAutoPayEnabled holds the default value on creation for the auto_pay_enabled field.
+	supplier.DefaultAutoPayEnabled = supplierDescAutoPayEnabled.Default.(bool)
+	// supplierDescPaymentTermsDays is the schema descriptor for payment_terms_days field.
+	supplierDescPaymentTermsDays := supplierFields[19].Descriptor()
+	// supplier.DefaultPaymentTermsDays holds the default value on creation for the payment_terms_days field.
+	supplier.DefaultPaymentTermsDays = supplierDescPaymentTermsDays.Default.(int)
 	// supplierDescMetadata is the schema descriptor for metadata field.
-	supplierDescMetadata := supplierFields[20].Descriptor()
+	supplierDescMetadata := supplierFields[22].Descriptor()
 	// supplier.DefaultMetadata holds the default value on creation for the metadata field.
 	supplier.DefaultMetadata = supplierDescMetadata.Default.(map[string]interface{})
 	// supplierDescCreatedAt is the schema descriptor for created_at field.
-	supplierDescCreatedAt := supplierFields[21].Descriptor()
+	supplierDescCreatedAt := supplierFields[23].Descriptor()
 	// supplier.DefaultCreatedAt holds the default value on creation for the created_at field.
 	supplier.DefaultCreatedAt = supplierDescCreatedAt.Default.(func() time.Time)
 	// supplierDescUpdatedAt is the schema descriptor for updated_at field.
-	supplierDescUpdatedAt := supplierFields[22].Descriptor()
+	supplierDescUpdatedAt := supplierFields[24].Descriptor()
 	// supplier.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	supplier.DefaultUpdatedAt = supplierDescUpdatedAt.Default.(func() time.Time)
 	// supplier.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -50,6 +50,10 @@ const (
 	FieldTaxPin = "tax_pin"
 	// FieldRequiresInvoiceBeforePayment holds the string denoting the requires_invoice_before_payment field in the database.
 	FieldRequiresInvoiceBeforePayment = "requires_invoice_before_payment"
+	// FieldAutoPayEnabled holds the string denoting the auto_pay_enabled field in the database.
+	FieldAutoPayEnabled = "auto_pay_enabled"
+	// FieldPaymentTermsDays holds the string denoting the payment_terms_days field in the database.
+	FieldPaymentTermsDays = "payment_terms_days"
 	// FieldCreditLimit holds the string denoting the credit_limit field in the database.
 	FieldCreditLimit = "credit_limit"
 	// FieldPaystackRecipientCode holds the string denoting the paystack_recipient_code field in the database.
@@ -93,6 +97,8 @@ var Columns = []string{
 	FieldBankBranch,
 	FieldTaxPin,
 	FieldRequiresInvoiceBeforePayment,
+	FieldAutoPayEnabled,
+	FieldPaymentTermsDays,
 	FieldCreditLimit,
 	FieldPaystackRecipientCode,
 	FieldMetadata,
@@ -119,6 +125,10 @@ var (
 	DefaultIsActive bool
 	// DefaultRequiresInvoiceBeforePayment holds the default value on creation for the "requires_invoice_before_payment" field.
 	DefaultRequiresInvoiceBeforePayment bool
+	// DefaultAutoPayEnabled holds the default value on creation for the "auto_pay_enabled" field.
+	DefaultAutoPayEnabled bool
+	// DefaultPaymentTermsDays holds the default value on creation for the "payment_terms_days" field.
+	DefaultPaymentTermsDays int
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -248,6 +258,16 @@ func ByTaxPin(opts ...sql.OrderTermOption) OrderOption {
 // ByRequiresInvoiceBeforePayment orders the results by the requires_invoice_before_payment field.
 func ByRequiresInvoiceBeforePayment(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequiresInvoiceBeforePayment, opts...).ToFunc()
+}
+
+// ByAutoPayEnabled orders the results by the auto_pay_enabled field.
+func ByAutoPayEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutoPayEnabled, opts...).ToFunc()
+}
+
+// ByPaymentTermsDays orders the results by the payment_terms_days field.
+func ByPaymentTermsDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPaymentTermsDays, opts...).ToFunc()
 }
 
 // ByCreditLimit orders the results by the credit_limit field.

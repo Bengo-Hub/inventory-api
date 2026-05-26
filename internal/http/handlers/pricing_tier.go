@@ -1,14 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entip "github.com/bengobox/inventory-service/internal/ent/itempricing"
 	entpt "github.com/bengobox/inventory-service/internal/ent/pricingtier"
@@ -49,6 +52,9 @@ func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
 		ip.Get("/", h.GetItemPricing)
 		ip.With(perm(rbac.PermItemsChange)).Put("/", h.UpsertItemPricing)
 	})
+
+	// Quantity-aware price resolution: returns unit price + total for N units using default tier.
+	r.Get("/inventory/items/{itemID}/price", h.GetItemPrice)
 
 	// Bulk endpoint: returns default-tier price for every item in the tenant.
 	// Used by downstream services (pos-api, etc.) to show prices without N+1 calls.
@@ -343,9 +349,51 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 			return
 		}
 		results = append(results, toItemPricingDTO(saved))
+
+		// Publish pricing_updated event to outbox (best-effort, non-blocking).
+		go h.publishPricingUpdatedEvent(r.Context(), tenantID, itemID, saved)
 	}
 
 	writeJSON(w, http.StatusOK, results)
+}
+
+// publishPricingUpdatedEvent writes an inventory.item.pricing_updated outbox event.
+func (h *PricingTierHandler) publishPricingUpdatedEvent(ctx context.Context, tenantID, itemID uuid.UUID, p *ent.ItemPricing) {
+	evt := &events.Event{
+		ID:            uuid.New(),
+		TenantID:      tenantID,
+		AggregateType: "item_pricing",
+		AggregateID:   itemID,
+		EventType:     "inventory.item.pricing_updated",
+		Payload: map[string]any{
+			"item_id":         itemID,
+			"pricing_tier_id": p.PricingTierID,
+			"price":           p.Price,
+			"currency":        p.Currency,
+			"effective_from":  p.EffectiveFrom,
+			"is_active":       p.IsActive,
+			"updated_at":      p.UpdatedAt,
+		},
+		Timestamp: time.Now().UTC(),
+	}
+	payload, err := evt.ToJSON()
+	if err != nil {
+		h.log.Warn("pricing_updated event: marshal failed", zap.Error(err))
+		return
+	}
+	_, err = h.orm.OutboxEvent.Create().
+		SetID(evt.ID).
+		SetTenantID(tenantID).
+		SetAggregateType(evt.AggregateType).
+		SetAggregateID(evt.AggregateID.String()).
+		SetEventType(evt.EventType).
+		SetPayload(payload).
+		SetStatus("PENDING").
+		SetCreatedAt(evt.Timestamp).
+		Save(ctx)
+	if err != nil {
+		h.log.Warn("pricing_updated event: outbox write failed", zap.Error(err))
+	}
 }
 
 // bulkItemPriceDTO is a flattened price entry used by downstream services.
@@ -421,6 +469,107 @@ func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.R
 		})
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// itemPriceDTO is the response for the quantity-aware price resolution endpoint.
+type itemPriceDTO struct {
+	ItemID     uuid.UUID `json:"item_id"`
+	TierID     uuid.UUID `json:"tier_id"`
+	TierName   string    `json:"tier_name"`
+	TierCode   string    `json:"tier_code"`
+	UnitPrice  float64   `json:"unit_price"`
+	Currency   string    `json:"currency"`
+	Quantity   int       `json:"quantity"`
+	TotalPrice float64   `json:"total_price"`
+}
+
+// GetItemPrice resolves the effective price for an item at a given quantity.
+// Uses the default pricing tier; falls back to the first active tier if no default exists.
+// GET /v1/{slug}/inventory/items/{itemID}/price?quantity=N
+func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	itemID, err := uuid.Parse(chi.URLParam(r, "itemID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ITEM", "Invalid item ID")
+		return
+	}
+
+	quantity := 1
+	if qStr := r.URL.Query().Get("quantity"); qStr != "" {
+		if q, parseErr := strconv.Atoi(qStr); parseErr == nil && q > 0 {
+			quantity = q
+		}
+	}
+
+	ctx := r.Context()
+
+	// Load active pricing tiers to identify the default.
+	tiers, err := h.orm.PricingTier.Query().
+		Where(entpt.TenantID(tenantID), entpt.IsActive(true)).
+		All(ctx)
+	if err != nil {
+		h.log.Error("GetItemPrice: load tiers failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "QUERY_FAILED", "Failed to load pricing tiers")
+		return
+	}
+
+	tierMeta := make(map[uuid.UUID]*ent.PricingTier, len(tiers))
+	for _, t := range tiers {
+		tierMeta[t.ID] = t
+	}
+
+	// Load all active pricing entries for this item.
+	pricings, err := h.orm.ItemPricing.Query().
+		Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.IsActive(true)).
+		All(ctx)
+	if err != nil {
+		h.log.Error("GetItemPrice: load pricings failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "QUERY_FAILED", "Failed to load item pricing")
+		return
+	}
+
+	if len(pricings) == 0 {
+		writeError(w, http.StatusNotFound, "NO_PRICING", "No active pricing found for this item")
+		return
+	}
+
+	// Prefer default tier; fall back to first active entry.
+	var chosen *ent.ItemPricing
+	var chosenTier *ent.PricingTier
+	for _, p := range pricings {
+		t := tierMeta[p.PricingTierID]
+		if chosen == nil {
+			chosen = p
+			chosenTier = t
+			continue
+		}
+		if t != nil && t.IsDefault && (chosenTier == nil || !chosenTier.IsDefault) {
+			chosen = p
+			chosenTier = t
+		}
+	}
+
+	dto := itemPriceDTO{
+		ItemID:     itemID,
+		UnitPrice:  chosen.Price,
+		Currency:   chosen.Currency,
+		Quantity:   quantity,
+		TotalPrice: chosen.Price * float64(quantity),
+	}
+	if chosenTier != nil {
+		dto.TierID = chosenTier.ID
+		dto.TierName = chosenTier.Name
+		dto.TierCode = chosenTier.Code
+	} else {
+		dto.TierID = chosen.PricingTierID
+	}
+
+	writeJSON(w, http.StatusOK, dto)
 }
 
 func toPricingTierDTO(t *ent.PricingTier) pricingTierDTO {

@@ -1469,6 +1469,22 @@ func (c *InventoryBalanceClient) QueryWarehouse(_m *InventoryBalance) *Warehouse
 	return query
 }
 
+// QueryLocation queries the location edge of a InventoryBalance.
+func (c *InventoryBalanceClient) QueryLocation(_m *InventoryBalance) *WarehouseLocationQuery {
+	query := (&WarehouseLocationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventorybalance.Table, inventorybalance.FieldID, id),
+			sqlgraph.To(warehouselocation.Table, warehouselocation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, inventorybalance.LocationTable, inventorybalance.LocationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *InventoryBalanceClient) Hooks() []Hook {
 	return c.hooks.InventoryBalance

@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/google/uuid"
 )
 
@@ -27,6 +28,7 @@ type InventoryBalanceQuery struct {
 	predicates    []predicate.InventoryBalance
 	withItem      *ItemQuery
 	withWarehouse *WarehouseQuery
+	withLocation  *WarehouseLocationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -100,6 +102,28 @@ func (_q *InventoryBalanceQuery) QueryWarehouse() *WarehouseQuery {
 			sqlgraph.From(inventorybalance.Table, inventorybalance.FieldID, selector),
 			sqlgraph.To(warehouse.Table, warehouse.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, inventorybalance.WarehouseTable, inventorybalance.WarehouseColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLocation chains the current query on the "location" edge.
+func (_q *InventoryBalanceQuery) QueryLocation() *WarehouseLocationQuery {
+	query := (&WarehouseLocationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inventorybalance.Table, inventorybalance.FieldID, selector),
+			sqlgraph.To(warehouselocation.Table, warehouselocation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, inventorybalance.LocationTable, inventorybalance.LocationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -301,6 +325,7 @@ func (_q *InventoryBalanceQuery) Clone() *InventoryBalanceQuery {
 		predicates:    append([]predicate.InventoryBalance{}, _q.predicates...),
 		withItem:      _q.withItem.Clone(),
 		withWarehouse: _q.withWarehouse.Clone(),
+		withLocation:  _q.withLocation.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -326,6 +351,17 @@ func (_q *InventoryBalanceQuery) WithWarehouse(opts ...func(*WarehouseQuery)) *I
 		opt(query)
 	}
 	_q.withWarehouse = query
+	return _q
+}
+
+// WithLocation tells the query-builder to eager-load the nodes that are connected to
+// the "location" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *InventoryBalanceQuery) WithLocation(opts ...func(*WarehouseLocationQuery)) *InventoryBalanceQuery {
+	query := (&WarehouseLocationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLocation = query
 	return _q
 }
 
@@ -407,9 +443,10 @@ func (_q *InventoryBalanceQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 	var (
 		nodes       = []*InventoryBalance{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withItem != nil,
 			_q.withWarehouse != nil,
+			_q.withLocation != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -439,6 +476,12 @@ func (_q *InventoryBalanceQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 	if query := _q.withWarehouse; query != nil {
 		if err := _q.loadWarehouse(ctx, query, nodes, nil,
 			func(n *InventoryBalance, e *Warehouse) { n.Edges.Warehouse = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLocation; query != nil {
+		if err := _q.loadLocation(ctx, query, nodes, nil,
+			func(n *InventoryBalance, e *WarehouseLocation) { n.Edges.Location = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -503,6 +546,38 @@ func (_q *InventoryBalanceQuery) loadWarehouse(ctx context.Context, query *Wareh
 	}
 	return nil
 }
+func (_q *InventoryBalanceQuery) loadLocation(ctx context.Context, query *WarehouseLocationQuery, nodes []*InventoryBalance, init func(*InventoryBalance), assign func(*InventoryBalance, *WarehouseLocation)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*InventoryBalance)
+	for i := range nodes {
+		if nodes[i].LocationID == nil {
+			continue
+		}
+		fk := *nodes[i].LocationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(warehouselocation.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "location_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *InventoryBalanceQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -534,6 +609,9 @@ func (_q *InventoryBalanceQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWarehouse != nil {
 			_spec.Node.AddColumnOnce(inventorybalance.FieldWarehouseID)
+		}
+		if _q.withLocation != nil {
+			_spec.Node.AddColumnOnce(inventorybalance.FieldLocationID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

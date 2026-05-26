@@ -12,6 +12,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/google/uuid"
 )
 
@@ -42,6 +43,8 @@ type InventoryBalance struct {
 	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
 	// Enable auto-creation of draft POs when below reorder_level
 	AutoReorderEnabled bool `json:"auto_reorder_enabled,omitempty"`
+	// Optional sub-location within the warehouse (zone/aisle/rack/shelf/bin)
+	LocationID *uuid.UUID `json:"location_id,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -56,9 +59,11 @@ type InventoryBalanceEdges struct {
 	Item *Item `json:"item,omitempty"`
 	// Warehouse holds the value of the warehouse edge.
 	Warehouse *Warehouse `json:"warehouse,omitempty"`
+	// Location holds the value of the location edge.
+	Location *WarehouseLocation `json:"location,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ItemOrErr returns the Item value or an error if the edge
@@ -83,12 +88,23 @@ func (e InventoryBalanceEdges) WarehouseOrErr() (*Warehouse, error) {
 	return nil, &NotLoadedError{edge: "warehouse"}
 }
 
+// LocationOrErr returns the Location value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e InventoryBalanceEdges) LocationOrErr() (*WarehouseLocation, error) {
+	if e.Location != nil {
+		return e.Location, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: warehouselocation.Label}
+	}
+	return nil, &NotLoadedError{edge: "location"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*InventoryBalance) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventorybalance.FieldPreferredSupplierID:
+		case inventorybalance.FieldPreferredSupplierID, inventorybalance.FieldLocationID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case inventorybalance.FieldAutoReorderEnabled:
 			values[i] = new(sql.NullBool)
@@ -188,6 +204,13 @@ func (_m *InventoryBalance) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AutoReorderEnabled = value.Bool
 			}
+		case inventorybalance.FieldLocationID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field location_id", values[i])
+			} else if value.Valid {
+				_m.LocationID = new(uuid.UUID)
+				*_m.LocationID = *value.S.(*uuid.UUID)
+			}
 		case inventorybalance.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
@@ -215,6 +238,11 @@ func (_m *InventoryBalance) QueryItem() *ItemQuery {
 // QueryWarehouse queries the "warehouse" edge of the InventoryBalance entity.
 func (_m *InventoryBalance) QueryWarehouse() *WarehouseQuery {
 	return NewInventoryBalanceClient(_m.config).QueryWarehouse(_m)
+}
+
+// QueryLocation queries the "location" edge of the InventoryBalance entity.
+func (_m *InventoryBalance) QueryLocation() *WarehouseLocationQuery {
+	return NewInventoryBalanceClient(_m.config).QueryLocation(_m)
 }
 
 // Update returns a builder for updating this InventoryBalance.
@@ -274,6 +302,11 @@ func (_m *InventoryBalance) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("auto_reorder_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AutoReorderEnabled))
+	builder.WriteString(", ")
+	if v := _m.LocationID; v != nil {
+		builder.WriteString("location_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
