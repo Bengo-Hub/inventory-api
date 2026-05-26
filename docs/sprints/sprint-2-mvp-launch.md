@@ -1,6 +1,6 @@
 # Sprint 2 - MVP Launch (March 27, 2026)
 
-**Status:** 🟡 P0 Events Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented. Recipe seed, SKU cross-reference, integration tests, and RBAC seed still pending.
+**Status:** 🟡 P0 Core Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented; recipe seed (39 items) and RBAC seed fully done in `cmd/seed/main.go`. SKU cross-reference with ordering-backend, integration tests, and RBAC role distinction (S2-13/S2-14) still pending.
 **Start:** 2026-03-06
 **Deadline:** 2026-03-27
 **Goal:** Ship inventory-api changes required for BengoBox MVP launch at Urban Loft Cafe (Busia outlet)
@@ -17,10 +17,10 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### Recipe/BOM Mapping (P0)
 
-- [ ] **S2-01:** Seed `recipe` and `recipeingredient` rows for all 39 menu items
-  - Each menu-item SKU (e.g., `BEV-ESP-001`) gets a recipe record
-  - Map composite items to their raw ingredients (e.g., Latte = espresso shot + steamed milk)
-  - Simple items map 1:1 (finished good = inventory item)
+- [x] **S2-01:** Seed `recipe` and `recipeingredient` rows for all 39 menu items ✅ DONE (2026-05-26 audit)
+  - `cmd/seed/main.go:seedRecipes()` seeds all RECIPE-type SKUs in `recipeDefs` (39 menu items) for `urban-loft` tenant only
+  - Full BOM mapping: composite items to raw ingredients (e.g., Latte = espresso shot + steamed milk)
+  - Raw ingredient items seeded in `catalogItemDefs` as `TypeINGREDIENT`
 - [x] **S2-02:** Add recipe-aware availability check ✅ DONE
   - When ordering-backend calls `GET /items/{sku}`, resolve recipe ingredients
   - Return availability based on the limiting ingredient (BOM explosion in `items/service.go`)
@@ -37,9 +37,9 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
   - Verify SKU strings match exactly (case-sensitive)
   - Verify categories align with ordering-backend's menu sections
   - Document any mismatches and fix in both services
-- [ ] **S2-05:** Update warehouse seed: rename "Nairobi CBD" address to Busia address
-  - The only active outlet is Busia, not Nairobi
-  - Keep warehouse code `MAIN`
+- [x] **S2-05:** Warehouse seed uses correct Busia address ✅ DONE (2026-05-26 audit)
+  - `cmd/seed/main.go:warehouseDefsByTenant["urban-loft"]` seeds `"Main Street, Busia Town, Busia County, Kenya"` with code `MAIN`
+  - Outlet slug `"busia"` aligned with auth-api deterministic UUID formula
 
 ### Atlas Migration Transition (P0)
 
@@ -74,12 +74,14 @@ Sprint 1 delivered core schemas and 8 HTTP endpoints. The ordering-backend can n
 
 ### RBAC & Admin Separation (P1)
 
-- [ ] **S2-13:** Define platform-admin vs tenant-admin role distinction
-  - Platform admin: can manage all tenants, create warehouses, seed data
-  - Tenant admin: can manage stock, view reports for their tenant only
-- [ ] **S2-14:** Seed RBAC roles and permissions for MVP
-  - `platform_admin`, `tenant_admin`, `stock_keeper`, `viewer`
-  - Wire permission middleware to inventory endpoints
+- [ ] **S2-13:** Define platform-admin vs tenant-admin role distinction — **PENDING**
+  - Current roles are `inventory_admin`, `warehouse_manager`, `stock_clerk`, `viewer` (all tenant-scoped)
+  - No explicit platform-admin vs tenant-admin separation in current seed; platform owner uses JWT `is_platform_owner` bypass
+  - Platform admin: can manage all tenants, create warehouses, seed data — not yet modelled as an explicit role
+- [x] **S2-14:** Seed RBAC roles and permissions — **DONE** (2026-05-26 audit, done differently from original spec)
+  - Roles seeded: `inventory_admin` (all 99 perms), `warehouse_manager`, `stock_clerk`, `viewer`
+  - Note: original spec listed `platform_admin` / `tenant_admin` roles; actual implementation uses `inventory_admin` as the top tier instead
+  - Permission middleware wired to inventory endpoints via `perm()` helper in all handler `RegisterRoutes()`
 
 ### Stock Adjustments (P1)
 

@@ -1,6 +1,6 @@
 # Sprint 1 – Authentication, RBAC & User Management
 
-**Status**: 🟡 Substantially Complete — JWT/RBAC middleware, schemas, permission checks, role assignment API, event listeners, ListUsers/GetUser handlers all done; role/permission seed data and explicit user sync service pending  
+**Status**: ✅ Complete — JWT/RBAC middleware, schemas, permission checks, role assignment API, event listeners, ListUsers/GetUser handlers all done; `GET /auth/me` implemented and registered; 4 roles + 99 permissions seeded in `cmd/seed/main.go`; explicit user sync service still pending (non-blocking)  
 **Priority**: **CRITICAL - MUST BE FIRST SPRINT**  
 **Start Date**: TBD  
 **Duration**: 2-3 weeks
@@ -107,9 +107,9 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 - [x] Ent schema for `inventory_permissions` table
 - [x] Ent schema for `role_permissions` junction table
 - [x] Ent schema for `user_role_assignments` table
-- [ ] Seed data for 3 default roles (Warehouse Manager, Stock Keeper, Viewer)
-- [ ] Seed data for all inventory permissions
-- [ ] Role-permission mappings defined
+- [x] Seed data for 4 default roles (`inventory_admin`, `warehouse_manager`, `stock_clerk`, `viewer`) — `cmd/seed/main.go:seedRoles()`
+- [x] Seed data for all inventory permissions (99 permissions across 11 modules) — `cmd/seed/main.go:seedPermissions()`
+- [x] Role-permission mappings defined — `cmd/seed/main.go:seedRolePermissions()` with `rolePermMap`
 
 ### US-1.4: Permission Middleware
 **As a** system  
@@ -132,7 +132,17 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 - [x] `POST /api/v1/{tenantID}/rbac/assignments` - Assign role
 - [x] `GET /api/v1/{tenantID}/rbac/assignments` - List assignments
 - [x] `DELETE /api/v1/{tenantID}/rbac/assignments/{id}` - Revoke role
-- [ ] Only Warehouse Manager can assign roles
+- [ ] Only Warehouse Manager can assign roles — permission middleware not scoped to `warehouse_manager` role specifically; `inventory.users.manage` permission enforced but any role holding it can assign
+
+### US-1.6: GET /auth/me Endpoint
+**As a** inventory-ui frontend  
+**I want** a service-specific auth/me endpoint  
+**So that** the UI can bootstrap local RBAC roles and permissions after SSO login
+
+**Acceptance Criteria**:
+- [x] `GET /api/v1/{tenantID}/auth/me` — implemented in `internal/http/handlers/auth.go`
+- [x] Returns JWT claims augmented with service-level RBAC roles and permissions
+- [x] Registered in router via `authHandler.RegisterAuthRoutes(private)`
 
 ---
 
@@ -193,7 +203,7 @@ Sprint 1 focuses on implementing service-level authentication, RBAC, permissions
 - [x] Implement permission middleware (`http/middleware/rbac.go`)
 - [x] Create role assignment handlers (`http/handlers/rbac.go`)
 - [x] Create user management handlers (`http/handlers/user.go` — ListUsers/GetUser confirmed by handler file)
-- [ ] Seed default roles and permissions (pending — see sprint-2-mvp-launch.md S2-14)
+- [x] Seed default roles and permissions — `seedRoles()` + `seedRolePermissions()` + `seedPermissions()` in `cmd/seed/main.go`: 4 roles (`inventory_admin`, `warehouse_manager`, `stock_clerk`, `viewer`) + 99 permissions (11 modules × 9 actions)
 - [x] Wire RBAC middleware to router (per-route with `perm()` helper)
 - [x] Add event listeners for auth.user.* events (`consumers/auth_events.go`)
 
