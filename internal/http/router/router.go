@@ -31,6 +31,7 @@ func New(
 	transferHandler *handlers.TransferHandler,
 	inventoryExtrasHandler *handlers.InventoryExtrasHandler,
 	rbacHandler *handlers.RBACHandler,
+	authHandler *handlers.AuthHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	tenantSyncer *tenant.Syncer,
 	rbacService *rbac.Service,
@@ -167,6 +168,10 @@ func New(
 					private.Use(authMiddleware.RequireAuth)
 					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
 					private.Use(authclient.RequireActiveSubscription())
+				}
+				// Auth sync endpoint — inventory-ui calls this after SSO callback to get local RBAC
+				if authHandler != nil {
+					authHandler.RegisterAuthRoutes(private)
 				}
 				userHandler.RegisterRoutes(private)
 				if rbacHandler != nil {
