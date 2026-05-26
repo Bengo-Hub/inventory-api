@@ -30,6 +30,7 @@ func New(
 	pricingTierHandler *handlers.PricingTierHandler,
 	transferHandler *handlers.TransferHandler,
 	inventoryExtrasHandler *handlers.InventoryExtrasHandler,
+	analyticsHandler *handlers.AnalyticsHandler,
 	rbacHandler *handlers.RBACHandler,
 	authHandler *handlers.AuthHandler,
 	authMiddleware *authclient.AuthMiddleware,
@@ -220,6 +221,9 @@ func New(
 					if inventoryExtrasHandler != nil {
 						inventoryExtrasHandler.RegisterRoutes(g)
 					}
+					if analyticsHandler != nil {
+						analyticsHandler.RegisterRoutes(g)
+					}
 				})
 			}
 		})
@@ -280,6 +284,9 @@ func New(
 					}
 					if inventoryExtrasHandler != nil {
 						inventoryExtrasHandler.RegisterRoutes(g)
+					}
+					if analyticsHandler != nil {
+						analyticsHandler.RegisterRoutes(g)
 					}
 				})
 			}
