@@ -13,10 +13,13 @@ import (
 	"go.uber.org/zap"
 
 	events "github.com/Bengo-Hub/shared-events"
+	entdialect "entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
@@ -490,10 +493,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	}
 }
 
-// ListItems returns a paginated list of active items for a tenant.
-// For tag-filtered queries, all matching items are cached and pagination is applied in-memory
-// (JSON array columns cannot be filtered at DB level with Ent).
-// For type-only or unfiltered queries, DB-level COUNT + LIMIT/OFFSET is used.
+// ListItems returns a paginated list of active items for a tenant with DB-level filtering.
 func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().
@@ -521,6 +521,13 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 				item.NameContainsFold(search),
 				item.SkuContainsFold(search),
 			))
+		}
+		// Tag filtering via JSONB containment — each tag is ANDed at DB level.
+		for _, tag := range tagsFilter {
+			tagVal := tag
+			q = q.Where(predicate.Item(func(s *entdialect.Selector) {
+				s.Where(sqljson.ValueContains(item.FieldTags, tagVal))
+			}))
 		}
 		return q
 	}
@@ -550,38 +557,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		return dtos, nil
 	}
 
-	if len(tagsFilter) > 0 {
-		// Tag filtering is in-memory; cache the full tag-filtered set, slice for pagination.
-		tagKey := strings.Join(tagsFilter, ",")
-		key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter, tagKey)
-		all, err := sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLModerate, func(innerCtx context.Context) ([]ItemDTO, error) {
-			itms, err := buildQuery().Order(ent.Asc(item.FieldSku)).All(innerCtx)
-			if err != nil {
-				return nil, fmt.Errorf("items: list: %w", err)
-			}
-			var filtered []*ent.Item
-			for _, it := range itms {
-				if containsAllTags(it.Tags, tagsFilter) {
-					filtered = append(filtered, it)
-				}
-			}
-			return buildDTOs(innerCtx, filtered)
-		})
-		if err != nil {
-			return nil, 0, err
-		}
-		total := len(all)
-		end := offset + limit
-		if end > total {
-			end = total
-		}
-		if offset >= total {
-			return []ItemDTO{}, total, nil
-		}
-		return all[offset:end], total, nil
-	}
-
-	// No tag filter: DB-level pagination.
+	// DB-level pagination for all queries (including tag-filtered).
 	total, err := buildQuery().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: count: %w", err)
@@ -598,20 +574,6 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		return nil, 0, err
 	}
 	return dtos, total, nil
-}
-
-// containsAllTags checks whether itemTags contains every tag in required.
-func containsAllTags(itemTags, required []string) bool {
-	set := make(map[string]struct{}, len(itemTags))
-	for _, t := range itemTags {
-		set[t] = struct{}{}
-	}
-	for _, r := range required {
-		if _, ok := set[r]; !ok {
-			return false
-		}
-	}
-	return true
 }
 
 // DeleteCategory soft-deletes a category (sets is_active=false).

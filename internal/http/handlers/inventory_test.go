@@ -24,14 +24,16 @@ import (
 // ─── Mock Services ──────────────────────────────────────────────────────
 
 type mockItemsSvc struct {
-	getStockFn      func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
-	bulkAvailFn     func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
-	bomAvailFn      func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
-	summaryFn       func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
-	createItemFn    func(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	updateItemFn    func(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	listItemsFn     func(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	getStockFn       func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error)
+	bulkAvailFn      func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
+	bomAvailFn       func(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
+	summaryFn        func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	createItemFn     func(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	updateItemFn     func(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	listItemsFn      func(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	listCategoriesFn func(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
+	createCategoryFn func(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
+	updateCategoryFn func(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 }
 
 func (m *mockItemsSvc) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error) {
@@ -76,11 +78,25 @@ func (m *mockItemsSvc) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uu
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, tagsFilter ...string) ([]items.ItemDTO, int, error) {
+func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error) {
 	if m.listItemsFn != nil {
-		return m.listItemsFn(ctx, tenantID, typeFilter, limit, offset, tagsFilter...)
+		return m.listItemsFn(ctx, tenantID, typeFilter, limit, offset, categoryID, unitID, search, tagsFilter...)
 	}
 	return nil, 0, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error) {
+	if m.createCategoryFn != nil {
+		return m.createCategoryFn(ctx, tenantID, dto)
+	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error) {
+	if m.updateCategoryFn != nil {
+		return m.updateCategoryFn(ctx, tenantID, id, dto)
+	}
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (m *mockItemsSvc) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error) {
@@ -178,7 +194,7 @@ func newTestHandler(t *testing.T, itemsSvc handlers.ItemsServicer, stockSvc hand
 
 func newChiRouter(h *handlers.InventoryHandler) *chi.Mux {
 	r := chi.NewRouter()
-	r.Route("/v1/{tenantID}", func(sub chi.Router) {
+	r.Route("/v1/{tenant}", func(sub chi.Router) {
 		h.RegisterRoutes(sub)
 	})
 	return r
