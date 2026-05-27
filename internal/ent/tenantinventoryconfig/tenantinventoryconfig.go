@@ -22,6 +22,8 @@ const (
 	FieldCriticalStockThresholdPct = "critical_stock_threshold_pct"
 	// FieldDefaultReorderLevel holds the string denoting the default_reorder_level field in the database.
 	FieldDefaultReorderLevel = "default_reorder_level"
+	// FieldUnitReorderDefaults holds the string denoting the unit_reorder_defaults field in the database.
+	FieldUnitReorderDefaults = "unit_reorder_defaults"
 	// FieldExpiryWarningDays holds the string denoting the expiry_warning_days field in the database.
 	FieldExpiryWarningDays = "expiry_warning_days"
 	// FieldEnableLowStockNotifications holds the string denoting the enable_low_stock_notifications field in the database.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldLowStockThresholdPct,
 	FieldCriticalStockThresholdPct,
 	FieldDefaultReorderLevel,
+	FieldUnitReorderDefaults,
 	FieldExpiryWarningDays,
 	FieldEnableLowStockNotifications,
 	FieldEnableExpiryNotifications,

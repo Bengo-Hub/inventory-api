@@ -106,6 +106,18 @@ func (_u *TenantInventoryConfigUpdate) AddDefaultReorderLevel(v int) *TenantInve
 	return _u
 }
 
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (_u *TenantInventoryConfigUpdate) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigUpdate {
+	_u.mutation.SetUnitReorderDefaults(v)
+	return _u
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (_u *TenantInventoryConfigUpdate) ClearUnitReorderDefaults() *TenantInventoryConfigUpdate {
+	_u.mutation.ClearUnitReorderDefaults()
+	return _u
+}
+
 // SetExpiryWarningDays sets the "expiry_warning_days" field.
 func (_u *TenantInventoryConfigUpdate) SetExpiryWarningDays(v int) *TenantInventoryConfigUpdate {
 	_u.mutation.ResetExpiryWarningDays()
@@ -384,6 +396,12 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	if value, ok := _u.mutation.AddedDefaultReorderLevel(); ok {
 		_spec.AddField(tenantinventoryconfig.FieldDefaultReorderLevel, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.UnitReorderDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldUnitReorderDefaults, field.TypeJSON, value)
+	}
+	if _u.mutation.UnitReorderDefaultsCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldUnitReorderDefaults, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.ExpiryWarningDays(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldExpiryWarningDays, field.TypeInt, value)
 	}
@@ -529,6 +547,18 @@ func (_u *TenantInventoryConfigUpdateOne) SetNillableDefaultReorderLevel(v *int)
 // AddDefaultReorderLevel adds value to the "default_reorder_level" field.
 func (_u *TenantInventoryConfigUpdateOne) AddDefaultReorderLevel(v int) *TenantInventoryConfigUpdateOne {
 	_u.mutation.AddDefaultReorderLevel(v)
+	return _u
+}
+
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (_u *TenantInventoryConfigUpdateOne) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetUnitReorderDefaults(v)
+	return _u
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (_u *TenantInventoryConfigUpdateOne) ClearUnitReorderDefaults() *TenantInventoryConfigUpdateOne {
+	_u.mutation.ClearUnitReorderDefaults()
 	return _u
 }
 
@@ -839,6 +869,12 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.AddedDefaultReorderLevel(); ok {
 		_spec.AddField(tenantinventoryconfig.FieldDefaultReorderLevel, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.UnitReorderDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldUnitReorderDefaults, field.TypeJSON, value)
+	}
+	if _u.mutation.UnitReorderDefaultsCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldUnitReorderDefaults, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ExpiryWarningDays(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldExpiryWarningDays, field.TypeInt, value)

@@ -1379,6 +1379,7 @@ var (
 		{Name: "low_stock_threshold_pct", Type: field.TypeFloat64, Default: 20},
 		{Name: "critical_stock_threshold_pct", Type: field.TypeFloat64, Default: 5},
 		{Name: "default_reorder_level", Type: field.TypeInt, Default: 10},
+		{Name: "unit_reorder_defaults", Type: field.TypeJSON, Nullable: true},
 		{Name: "expiry_warning_days", Type: field.TypeInt, Default: 30},
 		{Name: "enable_low_stock_notifications", Type: field.TypeBool, Default: true},
 		{Name: "enable_expiry_notifications", Type: field.TypeBool, Default: true},

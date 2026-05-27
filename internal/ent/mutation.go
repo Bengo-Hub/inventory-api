@@ -34373,6 +34373,7 @@ type TenantInventoryConfigMutation struct {
 	addcritical_stock_threshold_pct  *float64
 	default_reorder_level            *int
 	adddefault_reorder_level         *int
+	unit_reorder_defaults            *map[string]int
 	expiry_warning_days              *int
 	addexpiry_warning_days           *int
 	enable_low_stock_notifications   *bool
@@ -34701,6 +34702,55 @@ func (m *TenantInventoryConfigMutation) AddedDefaultReorderLevel() (r int, exist
 func (m *TenantInventoryConfigMutation) ResetDefaultReorderLevel() {
 	m.default_reorder_level = nil
 	m.adddefault_reorder_level = nil
+}
+
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (m *TenantInventoryConfigMutation) SetUnitReorderDefaults(value map[string]int) {
+	m.unit_reorder_defaults = &value
+}
+
+// UnitReorderDefaults returns the value of the "unit_reorder_defaults" field in the mutation.
+func (m *TenantInventoryConfigMutation) UnitReorderDefaults() (r map[string]int, exists bool) {
+	v := m.unit_reorder_defaults
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitReorderDefaults returns the old "unit_reorder_defaults" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldUnitReorderDefaults(ctx context.Context) (v map[string]int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitReorderDefaults is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitReorderDefaults requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitReorderDefaults: %w", err)
+	}
+	return oldValue.UnitReorderDefaults, nil
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (m *TenantInventoryConfigMutation) ClearUnitReorderDefaults() {
+	m.unit_reorder_defaults = nil
+	m.clearedFields[tenantinventoryconfig.FieldUnitReorderDefaults] = struct{}{}
+}
+
+// UnitReorderDefaultsCleared returns if the "unit_reorder_defaults" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) UnitReorderDefaultsCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldUnitReorderDefaults]
+	return ok
+}
+
+// ResetUnitReorderDefaults resets all changes to the "unit_reorder_defaults" field.
+func (m *TenantInventoryConfigMutation) ResetUnitReorderDefaults() {
+	m.unit_reorder_defaults = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldUnitReorderDefaults)
 }
 
 // SetExpiryWarningDays sets the "expiry_warning_days" field.
@@ -35323,7 +35373,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 20)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -35335,6 +35385,9 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	}
 	if m.default_reorder_level != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultReorderLevel)
+	}
+	if m.unit_reorder_defaults != nil {
+		fields = append(fields, tenantinventoryconfig.FieldUnitReorderDefaults)
 	}
 	if m.expiry_warning_days != nil {
 		fields = append(fields, tenantinventoryconfig.FieldExpiryWarningDays)
@@ -35397,6 +35450,8 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.CriticalStockThresholdPct()
 	case tenantinventoryconfig.FieldDefaultReorderLevel:
 		return m.DefaultReorderLevel()
+	case tenantinventoryconfig.FieldUnitReorderDefaults:
+		return m.UnitReorderDefaults()
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		return m.ExpiryWarningDays()
 	case tenantinventoryconfig.FieldEnableLowStockNotifications:
@@ -35444,6 +35499,8 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldCriticalStockThresholdPct(ctx)
 	case tenantinventoryconfig.FieldDefaultReorderLevel:
 		return m.OldDefaultReorderLevel(ctx)
+	case tenantinventoryconfig.FieldUnitReorderDefaults:
+		return m.OldUnitReorderDefaults(ctx)
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		return m.OldExpiryWarningDays(ctx)
 	case tenantinventoryconfig.FieldEnableLowStockNotifications:
@@ -35510,6 +35567,13 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefaultReorderLevel(v)
+		return nil
+	case tenantinventoryconfig.FieldUnitReorderDefaults:
+		v, ok := value.(map[string]int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitReorderDefaults(v)
 		return nil
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		v, ok := value.(int)
@@ -35697,6 +35761,9 @@ func (m *TenantInventoryConfigMutation) AddField(name string, value ent.Value) e
 // mutation.
 func (m *TenantInventoryConfigMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(tenantinventoryconfig.FieldUnitReorderDefaults) {
+		fields = append(fields, tenantinventoryconfig.FieldUnitReorderDefaults)
+	}
 	if m.FieldCleared(tenantinventoryconfig.FieldNotificationEmail) {
 		fields = append(fields, tenantinventoryconfig.FieldNotificationEmail)
 	}
@@ -35717,6 +35784,9 @@ func (m *TenantInventoryConfigMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *TenantInventoryConfigMutation) ClearField(name string) error {
 	switch name {
+	case tenantinventoryconfig.FieldUnitReorderDefaults:
+		m.ClearUnitReorderDefaults()
+		return nil
 	case tenantinventoryconfig.FieldNotificationEmail:
 		m.ClearNotificationEmail()
 		return nil
@@ -35742,6 +35812,9 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultReorderLevel:
 		m.ResetDefaultReorderLevel()
+		return nil
+	case tenantinventoryconfig.FieldUnitReorderDefaults:
+		m.ResetUnitReorderDefaults()
 		return nil
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		m.ResetExpiryWarningDays()
