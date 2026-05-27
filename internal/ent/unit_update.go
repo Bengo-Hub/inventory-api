@@ -64,6 +64,26 @@ func (_u *UnitUpdate) ClearAbbreviation() *UnitUpdate {
 	return _u
 }
 
+// SetType sets the "type" field.
+func (_u *UnitUpdate) SetType(v string) *UnitUpdate {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *UnitUpdate) SetNillableType(v *string) *UnitUpdate {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
+// ClearType clears the value of the "type" field.
+func (_u *UnitUpdate) ClearType() *UnitUpdate {
+	_u.mutation.ClearType()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *UnitUpdate) SetIsActive(v bool) *UnitUpdate {
 	_u.mutation.SetIsActive(v)
@@ -192,6 +212,12 @@ func (_u *UnitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.AbbreviationCleared() {
 		_spec.ClearField(unit.FieldAbbreviation, field.TypeString)
 	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(unit.FieldType, field.TypeString, value)
+	}
+	if _u.mutation.TypeCleared() {
+		_spec.ClearField(unit.FieldType, field.TypeString)
+	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
 	}
@@ -294,6 +320,26 @@ func (_u *UnitUpdateOne) SetNillableAbbreviation(v *string) *UnitUpdateOne {
 // ClearAbbreviation clears the value of the "abbreviation" field.
 func (_u *UnitUpdateOne) ClearAbbreviation() *UnitUpdateOne {
 	_u.mutation.ClearAbbreviation()
+	return _u
+}
+
+// SetType sets the "type" field.
+func (_u *UnitUpdateOne) SetType(v string) *UnitUpdateOne {
+	_u.mutation.SetType(v)
+	return _u
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_u *UnitUpdateOne) SetNillableType(v *string) *UnitUpdateOne {
+	if v != nil {
+		_u.SetType(*v)
+	}
+	return _u
+}
+
+// ClearType clears the value of the "type" field.
+func (_u *UnitUpdateOne) ClearType() *UnitUpdateOne {
+	_u.mutation.ClearType()
 	return _u
 }
 
@@ -454,6 +500,12 @@ func (_u *UnitUpdateOne) sqlSave(ctx context.Context) (_node *Unit, err error) {
 	}
 	if _u.mutation.AbbreviationCleared() {
 		_spec.ClearField(unit.FieldAbbreviation, field.TypeString)
+	}
+	if value, ok := _u.mutation.GetType(); ok {
+		_spec.SetField(unit.FieldType, field.TypeString, value)
+	}
+	if _u.mutation.TypeCleared() {
+		_spec.ClearField(unit.FieldType, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)

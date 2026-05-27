@@ -19,6 +19,8 @@ const (
 	FieldName = "name"
 	// FieldAbbreviation holds the string denoting the abbreviation field in the database.
 	FieldAbbreviation = "abbreviation"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -43,6 +45,7 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldAbbreviation,
+	FieldType,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -89,6 +92,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByAbbreviation orders the results by the abbreviation field.
 func ByAbbreviation(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAbbreviation, opts...).ToFunc()
+}
+
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

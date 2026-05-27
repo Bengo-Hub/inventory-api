@@ -28,6 +28,9 @@ func (Unit) Fields() []ent.Field {
 		field.String("abbreviation").
 			Optional().
 			Comment("Short name, e.g., kg, g, pc"),
+		field.String("type").
+			Optional().
+			Comment("Unit type: weight, volume, count, length, area, other"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

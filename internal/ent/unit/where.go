@@ -66,6 +66,11 @@ func Abbreviation(v string) predicate.Unit {
 	return predicate.Unit(sql.FieldEQ(FieldAbbreviation, v))
 }
 
+// Type applies equality check predicate on the "type" field. It's identical to TypeEQ.
+func Type(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEQ(FieldType, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.Unit {
 	return predicate.Unit(sql.FieldEQ(FieldIsActive, v))
@@ -219,6 +224,81 @@ func AbbreviationEqualFold(v string) predicate.Unit {
 // AbbreviationContainsFold applies the ContainsFold predicate on the "abbreviation" field.
 func AbbreviationContainsFold(v string) predicate.Unit {
 	return predicate.Unit(sql.FieldContainsFold(FieldAbbreviation, v))
+}
+
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEQ(FieldType, v))
+}
+
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldNEQ(FieldType, v))
+}
+
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...string) predicate.Unit {
+	return predicate.Unit(sql.FieldIn(FieldType, vs...))
+}
+
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...string) predicate.Unit {
+	return predicate.Unit(sql.FieldNotIn(FieldType, vs...))
+}
+
+// TypeGT applies the GT predicate on the "type" field.
+func TypeGT(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldGT(FieldType, v))
+}
+
+// TypeGTE applies the GTE predicate on the "type" field.
+func TypeGTE(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldGTE(FieldType, v))
+}
+
+// TypeLT applies the LT predicate on the "type" field.
+func TypeLT(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldLT(FieldType, v))
+}
+
+// TypeLTE applies the LTE predicate on the "type" field.
+func TypeLTE(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldLTE(FieldType, v))
+}
+
+// TypeContains applies the Contains predicate on the "type" field.
+func TypeContains(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldContains(FieldType, v))
+}
+
+// TypeHasPrefix applies the HasPrefix predicate on the "type" field.
+func TypeHasPrefix(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldHasPrefix(FieldType, v))
+}
+
+// TypeHasSuffix applies the HasSuffix predicate on the "type" field.
+func TypeHasSuffix(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldHasSuffix(FieldType, v))
+}
+
+// TypeIsNil applies the IsNil predicate on the "type" field.
+func TypeIsNil() predicate.Unit {
+	return predicate.Unit(sql.FieldIsNull(FieldType))
+}
+
+// TypeNotNil applies the NotNil predicate on the "type" field.
+func TypeNotNil() predicate.Unit {
+	return predicate.Unit(sql.FieldNotNull(FieldType))
+}
+
+// TypeEqualFold applies the EqualFold predicate on the "type" field.
+func TypeEqualFold(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEqualFold(FieldType, v))
+}
+
+// TypeContainsFold applies the ContainsFold predicate on the "type" field.
+func TypeContainsFold(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldContainsFold(FieldType, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

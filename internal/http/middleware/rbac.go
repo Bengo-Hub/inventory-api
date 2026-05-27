@@ -47,11 +47,13 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 				return
 			}
 
-			// inventory_admin role always bypasses per-route permission checks.
-			isAdmin, _ := svc.HasRole(ctx, tenantID, userID, "inventory_admin")
-			if isAdmin {
-				next.ServeHTTP(w, r)
-				return
+			// HQ admin roles always bypass per-route permission checks.
+			for _, adminRole := range []string{"inventory_admin", "admin", "manager", "super_admin", "store_manager"} {
+				isAdmin, _ := svc.HasRole(ctx, tenantID, userID, adminRole)
+				if isAdmin {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 
 			ok, err = svc.HasPermission(ctx, tenantID, userID, permissionCode)
@@ -108,10 +110,12 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
-			isAdmin, _ := svc.HasRole(ctx, tenantID, userID, "inventory_admin")
-			if isAdmin {
-				next.ServeHTTP(w, r)
-				return
+			for _, adminRole := range []string{"inventory_admin", "admin", "manager", "super_admin", "store_manager"} {
+				isAdmin, _ := svc.HasRole(ctx, tenantID, userID, adminRole)
+				if isAdmin {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 
 			for _, code := range permissionCodes {

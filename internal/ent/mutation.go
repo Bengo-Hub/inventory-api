@@ -35921,6 +35921,7 @@ type UnitMutation struct {
 	id            *uuid.UUID
 	name          *string
 	abbreviation  *string
+	_type         *string
 	is_active     *bool
 	created_at    *time.Time
 	updated_at    *time.Time
@@ -36122,6 +36123,55 @@ func (m *UnitMutation) ResetAbbreviation() {
 	delete(m.clearedFields, unit.FieldAbbreviation)
 }
 
+// SetType sets the "type" field.
+func (m *UnitMutation) SetType(s string) {
+	m._type = &s
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *UnitMutation) GetType() (r string, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the Unit entity.
+// If the Unit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnitMutation) OldType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ClearType clears the value of the "type" field.
+func (m *UnitMutation) ClearType() {
+	m._type = nil
+	m.clearedFields[unit.FieldType] = struct{}{}
+}
+
+// TypeCleared returns if the "type" field was cleared in this mutation.
+func (m *UnitMutation) TypeCleared() bool {
+	_, ok := m.clearedFields[unit.FieldType]
+	return ok
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *UnitMutation) ResetType() {
+	m._type = nil
+	delete(m.clearedFields, unit.FieldType)
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *UnitMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -36318,12 +36368,15 @@ func (m *UnitMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnitMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.name != nil {
 		fields = append(fields, unit.FieldName)
 	}
 	if m.abbreviation != nil {
 		fields = append(fields, unit.FieldAbbreviation)
+	}
+	if m._type != nil {
+		fields = append(fields, unit.FieldType)
 	}
 	if m.is_active != nil {
 		fields = append(fields, unit.FieldIsActive)
@@ -36346,6 +36399,8 @@ func (m *UnitMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case unit.FieldAbbreviation:
 		return m.Abbreviation()
+	case unit.FieldType:
+		return m.GetType()
 	case unit.FieldIsActive:
 		return m.IsActive()
 	case unit.FieldCreatedAt:
@@ -36365,6 +36420,8 @@ func (m *UnitMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case unit.FieldAbbreviation:
 		return m.OldAbbreviation(ctx)
+	case unit.FieldType:
+		return m.OldType(ctx)
 	case unit.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case unit.FieldCreatedAt:
@@ -36393,6 +36450,13 @@ func (m *UnitMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAbbreviation(v)
+		return nil
+	case unit.FieldType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
 		return nil
 	case unit.FieldIsActive:
 		v, ok := value.(bool)
@@ -36448,6 +36512,9 @@ func (m *UnitMutation) ClearedFields() []string {
 	if m.FieldCleared(unit.FieldAbbreviation) {
 		fields = append(fields, unit.FieldAbbreviation)
 	}
+	if m.FieldCleared(unit.FieldType) {
+		fields = append(fields, unit.FieldType)
+	}
 	return fields
 }
 
@@ -36465,6 +36532,9 @@ func (m *UnitMutation) ClearField(name string) error {
 	case unit.FieldAbbreviation:
 		m.ClearAbbreviation()
 		return nil
+	case unit.FieldType:
+		m.ClearType()
+		return nil
 	}
 	return fmt.Errorf("unknown Unit nullable field %s", name)
 }
@@ -36478,6 +36548,9 @@ func (m *UnitMutation) ResetField(name string) error {
 		return nil
 	case unit.FieldAbbreviation:
 		m.ResetAbbreviation()
+		return nil
+	case unit.FieldType:
+		m.ResetType()
 		return nil
 	case unit.FieldIsActive:
 		m.ResetIsActive()

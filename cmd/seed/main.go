@@ -27,6 +27,7 @@ import (
 	entring "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/http/handlers"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
@@ -105,6 +106,17 @@ func main() {
 
 		if err := seedInventoryConfig(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed inventory config for %s: %v", slug, err)
+		}
+
+		if slug == "codevertex-demo" {
+			supplierID, err := seedSuppliers(ctx, client, tenantID)
+			if err != nil {
+				log.Printf("[WARN] seed suppliers for %s: %v", slug, err)
+			} else if supplierID != uuid.Nil {
+				if err := seedReorderConfig(ctx, client, tenantID, supplierID); err != nil {
+					log.Printf("[WARN] seed reorder config for %s: %v", slug, err)
+				}
+			}
 		}
 
 		if err := seedRoles(ctx, client, tenantID); err != nil {
@@ -1365,3 +1377,79 @@ func seedInventoryConfig(ctx context.Context, client *ent.Client, tenantID uuid.
 	}
 	return nil
 }
+
+// ---------------------------------------------------------------------------
+// Suppliers — seed a default demo supplier for auto-reorder workflow testing
+// ---------------------------------------------------------------------------
+
+func seedSuppliers(ctx context.Context, client *ent.Client, tenantID uuid.UUID) (uuid.UUID, error) {
+	const demoSupplierName = "Demo Distributor Co."
+
+	existing, err := client.Supplier.Query().
+		Where(entsupplier.TenantID(tenantID), entsupplier.NameEQ(demoSupplierName)).
+		Only(ctx)
+	if err == nil {
+		log.Printf("supplier already exists: %s", existing.Name)
+		return existing.ID, nil
+	}
+	if !ent.IsNotFound(err) {
+		return uuid.Nil, fmt.Errorf("query supplier: %w", err)
+	}
+
+	phone := "254700000001"
+	email := "orders@demo-distributor.com"
+	pmType := entsupplier.PaymentMethodTypeMpesa
+
+	sup, err := client.Supplier.Create().
+		SetTenantID(tenantID).
+		SetName(demoSupplierName).
+		SetCode("DEMO-DIST-001").
+		SetNillableContactName(strPtr("John Distributor")).
+		SetNillableContactEmail(&email).
+		SetNillableContactPhone(&phone).
+		SetNillablePaymentMethodType(&pmType).
+		SetNillableMpesaPhone(&phone).
+		SetIsActive(true).
+		Save(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("create supplier: %w", err)
+	}
+	log.Printf("created demo supplier: %s (%s)", sup.Name, sup.ID)
+	return sup.ID, nil
+}
+
+// seedReorderConfig wires preferred_supplier_id + auto_reorder_enabled on a
+// handful of balances so the stock-low → auto-PO workflow works in demo.
+func seedReorderConfig(ctx context.Context, client *ent.Client, tenantID, supplierID uuid.UUID) error {
+	// SKUs that get auto-reorder enabled in the demo tenant.
+	autoreorderSKUs := []string{"BEV-ESP-001", "BEV-CAP-001", "BEV-LAT-001"}
+
+	for _, sku := range autoreorderSKUs {
+		item, err := client.Item.Query().
+			Where(entitem.TenantID(tenantID), entitem.SkuEQ(sku)).
+			Only(ctx)
+		if err != nil {
+			log.Printf("[WARN] reorder config: item %s not found: %v", sku, err)
+			continue
+		}
+
+		n, err := client.InventoryBalance.Update().
+			Where(
+				entinvbal.TenantID(tenantID),
+				entinvbal.ItemID(item.ID),
+			).
+			SetPreferredSupplierID(supplierID).
+			SetAutoReorderEnabled(true).
+			SetReorderLevel(10).
+			SetReorderQuantity(50).
+			Save(ctx)
+		if err != nil {
+			log.Printf("[WARN] reorder config update for %s: %v", sku, err)
+			continue
+		}
+		log.Printf("reorder config set for %s (rows updated: %d)", sku, n)
+	}
+	return nil
+}
+
+func strPtr(s string) *string { return &s }
