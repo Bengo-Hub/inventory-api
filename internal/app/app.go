@@ -29,7 +29,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
-	"github.com/bengobox/inventory-service/internal/modules/outbox"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -52,7 +51,7 @@ type App struct {
 	cache            *redis.Client
 	events           *nats.Conn
 	orm              *ent.Client
-	outboxPublisher  *outbox.Publisher
+	outboxPublisher  *eventslib.OutboxPoller
 	orderConsumer    *consumers.OrderEventsConsumer
 	posSaleConsumer  *consumers.POSSaleEventsConsumer
 	authConsumer     *consumers.AuthEventsConsumer
@@ -120,15 +119,15 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	// Initialize outbox background publisher (Transactional Outbox Pattern)
-	var outboxPublisher *outbox.Publisher
+	var outboxPublisher *eventslib.OutboxPoller
 	if natsConn != nil && cfg.Events.OutboxEnabled {
 		outboxRepo := eventslib.NewSQLOutboxRepository(sqlDB)
-		outboxNatsPublisher := events.NewOutboxPublisher(natsConn, log)
-		outboxCfg := outbox.PublisherConfig{
+		outboxNatsPublisher := eventslib.NewNATSAdapter(natsConn, log)
+		outboxCfg := eventslib.PollerConfig{
 			BatchSize:  cfg.Events.OutboxBatchSize,
 			PollPeriod: cfg.Events.OutboxPollPeriod,
 		}
-		outboxPublisher = outbox.NewPublisher(outboxRepo, outboxNatsPublisher, log, outboxCfg)
+		outboxPublisher = eventslib.NewOutboxPoller(outboxRepo, outboxNatsPublisher, log, outboxCfg)
 		outboxPublisher.Start(ctx)
 		log.Info("outbox background publisher started",
 			zap.Int("batch_size", cfg.Events.OutboxBatchSize),
