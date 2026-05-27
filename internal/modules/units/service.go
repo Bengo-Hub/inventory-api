@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/Bengo-Hub/shared-events"
 )
@@ -18,7 +19,9 @@ type UnitDTO struct {
 	ID           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`
 	Abbreviation string    `json:"abbreviation,omitempty"`
+	Type         string    `json:"type,omitempty"`
 	IsActive     bool      `json:"is_active"`
+	ItemCount    int       `json:"item_count"`
 }
 
 type Service struct {
@@ -34,20 +37,45 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 }
 
 func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error) {
-	units, err := s.client.Unit.Query().
+	us, err := s.client.Unit.Query().
 		Where(unit.IsActive(true)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("units: query units: %w", err)
 	}
 
-	result := make([]UnitDTO, len(units))
-	for i, u := range units {
+	// Collect unit IDs to batch-count linked items
+	ids := make([]uuid.UUID, len(us))
+	for i, u := range us {
+		ids[i] = u.ID
+	}
+
+	var counts []struct {
+		UnitID uuid.UUID `json:"unit_id"`
+		Count  int       `json:"count"`
+	}
+	if scanErr := s.client.Item.Query().
+		Where(entitem.UnitIDIn(ids...)).
+		GroupBy(entitem.FieldUnitID).
+		Aggregate(ent.Count()).
+		Scan(ctx, &counts); scanErr != nil {
+		// non-fatal: proceed with zero counts
+	}
+
+	countMap := make(map[uuid.UUID]int, len(counts))
+	for _, c := range counts {
+		countMap[c.UnitID] = c.Count
+	}
+
+	result := make([]UnitDTO, len(us))
+	for i, u := range us {
 		result[i] = UnitDTO{
 			ID:           u.ID,
 			Name:         u.Name,
 			Abbreviation: u.Abbreviation,
+			Type:         u.Type,
 			IsActive:     u.IsActive,
+			ItemCount:    countMap[u.ID],
 		}
 	}
 	return result, nil
@@ -64,10 +92,15 @@ func (s *Service) DeleteUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID) err
 }
 
 func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
-	u, err := s.client.Unit.UpdateOneID(id).
+	upd := s.client.Unit.UpdateOneID(id).
 		SetName(dto.Name).
-		SetNillableAbbreviation(&dto.Abbreviation).
-		Save(ctx)
+		SetNillableAbbreviation(&dto.Abbreviation)
+	if dto.Type != "" {
+		upd = upd.SetType(dto.Type)
+	} else {
+		upd = upd.ClearType()
+	}
+	u, err := upd.Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, fmt.Errorf("units: unit not found")
@@ -78,6 +111,7 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 		ID:           u.ID,
 		Name:         u.Name,
 		Abbreviation: u.Abbreviation,
+		Type:         u.Type,
 		IsActive:     u.IsActive,
 	}, nil
 }
@@ -93,11 +127,14 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		}
 	}()
 
-	u, err := tx.Unit.Create().
+	cre := tx.Unit.Create().
 		SetName(dto.Name).
 		SetNillableAbbreviation(&dto.Abbreviation).
-		SetIsActive(true).
-		Save(ctx)
+		SetIsActive(true)
+	if dto.Type != "" {
+		cre = cre.SetType(dto.Type)
+	}
+	u, err := cre.Save(ctx)
 	// Publish event to outbox
 	event := &events.Event{
 		ID:            uuid.New(),
@@ -139,6 +176,7 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		ID:           u.ID,
 		Name:         u.Name,
 		Abbreviation: u.Abbreviation,
+		Type:         u.Type,
 		IsActive:     u.IsActive,
 	}, nil
 }

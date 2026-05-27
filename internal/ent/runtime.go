@@ -1107,15 +1107,15 @@ func init() {
 	// unit.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	unit.NameValidator = unitDescName.Validators[0].(func(string) error)
 	// unitDescIsActive is the schema descriptor for is_active field.
-	unitDescIsActive := unitFields[3].Descriptor()
+	unitDescIsActive := unitFields[4].Descriptor()
 	// unit.DefaultIsActive holds the default value on creation for the is_active field.
 	unit.DefaultIsActive = unitDescIsActive.Default.(bool)
 	// unitDescCreatedAt is the schema descriptor for created_at field.
-	unitDescCreatedAt := unitFields[4].Descriptor()
+	unitDescCreatedAt := unitFields[5].Descriptor()
 	// unit.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unit.DefaultCreatedAt = unitDescCreatedAt.Default.(func() time.Time)
 	// unitDescUpdatedAt is the schema descriptor for updated_at field.
-	unitDescUpdatedAt := unitFields[5].Descriptor()
+	unitDescUpdatedAt := unitFields[6].Descriptor()
 	// unit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	unit.DefaultUpdatedAt = unitDescUpdatedAt.Default.(func() time.Time)
 	// unit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

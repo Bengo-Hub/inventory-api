@@ -70,6 +70,7 @@ type CategoryDTO struct {
 	Description string     `json:"description,omitempty"`
 	Icon        string     `json:"icon,omitempty"`
 	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
+	ParentName  string     `json:"parent_name,omitempty"`
 	IsActive    bool       `json:"is_active"`
 }
 
@@ -493,12 +494,11 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 // For tag-filtered queries, all matching items are cached and pagination is applied in-memory
 // (JSON array columns cannot be filtered at DB level with Ent).
 // For type-only or unfiltered queries, DB-level COUNT + LIMIT/OFFSET is used.
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, tagsFilter ...string) ([]ItemDTO, int, error) {
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().
 			Where(item.TenantID(tenantID), item.IsActive(true))
 		if typeFilter != "" {
-			// Support comma-separated type filters (e.g. "GOODS,RECIPE")
 			types := strings.Split(typeFilter, ",")
 			if len(types) == 1 {
 				q = q.Where(item.TypeEQ(item.Type(strings.TrimSpace(types[0]))))
@@ -509,6 +509,18 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 				}
 				q = q.Where(item.TypeIn(typeVals...))
 			}
+		}
+		if categoryID != nil {
+			q = q.Where(item.CategoryID(*categoryID))
+		}
+		if unitID != nil {
+			q = q.Where(item.UnitID(*unitID))
+		}
+		if search != "" {
+			q = q.Where(item.Or(
+				item.NameContainsFold(search),
+				item.SkuContainsFold(search),
+			))
 		}
 		return q
 	}
@@ -638,6 +650,9 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 	if dto.Icon != "" {
 		q = q.SetIcon(dto.Icon)
 	}
+	if dto.ParentID != nil {
+		q = q.SetParentID(*dto.ParentID)
+	}
 	c, err := q.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: create category: %w", err)
@@ -651,6 +666,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		Code:        c.Code,
 		Description: c.Description,
 		Icon:        c.Icon,
+		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
 	}, nil
 }
@@ -678,6 +694,11 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 	if dto.Icon != "" {
 		q = q.SetIcon(dto.Icon)
 	}
+	if dto.ParentID != nil {
+		q = q.SetParentID(*dto.ParentID)
+	} else {
+		q = q.ClearParentID()
+	}
 	c, err := q.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: update category: %w", err)
@@ -691,6 +712,7 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		Code:        c.Code,
 		Description: c.Description,
 		Icon:        c.Icon,
+		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
 	}, nil
 }
@@ -705,16 +727,28 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 		if err != nil {
 			return nil, fmt.Errorf("items: list categories: %w", err)
 		}
+		// Build a name lookup map for parent_name resolution
+		nameMap := make(map[uuid.UUID]string, len(cats))
+		for _, c := range cats {
+			nameMap[c.ID] = c.Name
+		}
 		dtos := make([]CategoryDTO, len(cats))
 		for i, c := range cats {
-			dtos[i] = CategoryDTO{
+			dto := CategoryDTO{
 				ID:          c.ID,
 				Name:        c.Name,
 				Code:        c.Code,
 				Description: c.Description,
 				Icon:        s.resolveMediaURL(c.Icon),
+				ParentID:    c.ParentID,
 				IsActive:    c.IsActive,
 			}
+			if c.ParentID != nil {
+				if pName, ok := nameMap[*c.ParentID]; ok {
+					dto.ParentName = pName
+				}
+			}
+			dtos[i] = dto
 		}
 		return dtos, nil
 	}

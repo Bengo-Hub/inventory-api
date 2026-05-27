@@ -22,6 +22,8 @@ type Unit struct {
 	Name string `json:"name,omitempty"`
 	// Short name, e.g., kg, g, pc
 	Abbreviation string `json:"abbreviation,omitempty"`
+	// Unit type: weight, volume, count, length, area, other
+	Type string `json:"type,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -59,7 +61,7 @@ func (*Unit) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case unit.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case unit.FieldName, unit.FieldAbbreviation:
+		case unit.FieldName, unit.FieldAbbreviation, unit.FieldType:
 			values[i] = new(sql.NullString)
 		case unit.FieldCreatedAt, unit.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -97,6 +99,12 @@ func (_m *Unit) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field abbreviation", values[i])
 			} else if value.Valid {
 				_m.Abbreviation = value.String
+			}
+		case unit.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
+			} else if value.Valid {
+				_m.Type = value.String
 			}
 		case unit.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -162,6 +170,9 @@ func (_m *Unit) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("abbreviation=")
 	builder.WriteString(_m.Abbreviation)
+	builder.WriteString(", ")
+	builder.WriteString("type=")
+	builder.WriteString(_m.Type)
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

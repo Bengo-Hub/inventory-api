@@ -45,6 +45,20 @@ func (_c *UnitCreate) SetNillableAbbreviation(v *string) *UnitCreate {
 	return _c
 }
 
+// SetType sets the "type" field.
+func (_c *UnitCreate) SetType(v string) *UnitCreate {
+	_c.mutation.SetType(v)
+	return _c
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (_c *UnitCreate) SetNillableType(v *string) *UnitCreate {
+	if v != nil {
+		_c.SetType(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *UnitCreate) SetIsActive(v bool) *UnitCreate {
 	_c.mutation.SetIsActive(v)
@@ -232,6 +246,10 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 		_spec.SetField(unit.FieldAbbreviation, field.TypeString, value)
 		_node.Abbreviation = value
 	}
+	if value, ok := _c.mutation.GetType(); ok {
+		_spec.SetField(unit.FieldType, field.TypeString, value)
+		_node.Type = value
+	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
@@ -342,6 +360,24 @@ func (u *UnitUpsert) ClearAbbreviation() *UnitUpsert {
 	return u
 }
 
+// SetType sets the "type" field.
+func (u *UnitUpsert) SetType(v string) *UnitUpsert {
+	u.Set(unit.FieldType, v)
+	return u
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateType() *UnitUpsert {
+	u.SetExcluded(unit.FieldType)
+	return u
+}
+
+// ClearType clears the value of the "type" field.
+func (u *UnitUpsert) ClearType() *UnitUpsert {
+	u.SetNull(unit.FieldType)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *UnitUpsert) SetIsActive(v bool) *UnitUpsert {
 	u.Set(unit.FieldIsActive, v)
@@ -449,6 +485,27 @@ func (u *UnitUpsertOne) UpdateAbbreviation() *UnitUpsertOne {
 func (u *UnitUpsertOne) ClearAbbreviation() *UnitUpsertOne {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearAbbreviation()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *UnitUpsertOne) SetType(v string) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateType() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateType()
+	})
+}
+
+// ClearType clears the value of the "type" field.
+func (u *UnitUpsertOne) ClearType() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearType()
 	})
 }
 
@@ -730,6 +787,27 @@ func (u *UnitUpsertBulk) UpdateAbbreviation() *UnitUpsertBulk {
 func (u *UnitUpsertBulk) ClearAbbreviation() *UnitUpsertBulk {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearAbbreviation()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *UnitUpsertBulk) SetType(v string) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateType() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateType()
+	})
+}
+
+// ClearType clears the value of the "type" field.
+func (u *UnitUpsertBulk) ClearType() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearType()
 	})
 }
 
