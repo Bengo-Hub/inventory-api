@@ -489,13 +489,12 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	}
 }
 
-// ListItems returns all active items for a tenant (cached 1 min).
-// When typeFilter is non-empty (e.g. "INGREDIENT"), only items of that type are returned.
-// When tagsFilter is non-empty, only items containing ALL specified tags are returned.
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]ItemDTO, error) {
-	tagKey := strings.Join(tagsFilter, ",")
-	key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter, tagKey)
-	fetch := func(ctx context.Context) ([]ItemDTO, error) {
+// ListItems returns a paginated list of active items for a tenant.
+// For tag-filtered queries, all matching items are cached and pagination is applied in-memory
+// (JSON array columns cannot be filtered at DB level with Ent).
+// For type-only or unfiltered queries, DB-level COUNT + LIMIT/OFFSET is used.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, tagsFilter ...string) ([]ItemDTO, int, error) {
+	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().
 			Where(item.TenantID(tenantID), item.IsActive(true))
 		if typeFilter != "" {
@@ -511,39 +510,25 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 				q = q.Where(item.TypeIn(typeVals...))
 			}
 		}
-		itms, err := q.Order(ent.Asc(item.FieldSku)).All(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("items: list: %w", err)
-		}
-		// Filter by tags in-memory (JSON array column; ent doesn't support contains for JSON arrays)
-		var filtered []*ent.Item
-		if len(tagsFilter) > 0 {
-			for _, it := range itms {
-				if containsAllTags(it.Tags, tagsFilter) {
-					filtered = append(filtered, it)
-				}
-			}
-		} else {
-			filtered = itms
-		}
-		// Build category name lookup
-		catIDs := make([]uuid.UUID, 0)
-		for _, it := range filtered {
+		return q
+	}
+
+	buildDTOs := func(innerCtx context.Context, itms []*ent.Item) ([]ItemDTO, error) {
+		catIDs := make([]uuid.UUID, 0, len(itms))
+		for _, it := range itms {
 			if it.CategoryID != nil {
 				catIDs = append(catIDs, *it.CategoryID)
 			}
 		}
 		catNames := make(map[uuid.UUID]string)
 		if len(catIDs) > 0 {
-			cats, catErr := s.client.ItemCategory.Query().Where(itemcategory.IDIn(catIDs...)).All(ctx)
-			if catErr == nil {
-				for _, c := range cats {
-					catNames[c.ID] = c.Name
-				}
+			cats, _ := s.client.ItemCategory.Query().Where(itemcategory.IDIn(catIDs...)).All(innerCtx)
+			for _, c := range cats {
+				catNames[c.ID] = c.Name
 			}
 		}
-		dtos := make([]ItemDTO, len(filtered))
-		for i, it := range filtered {
+		dtos := make([]ItemDTO, len(itms))
+		for i, it := range itms {
 			dto := s.mapToDTO(it)
 			if it.CategoryID != nil {
 				dto.CategoryName = catNames[*it.CategoryID]
@@ -552,7 +537,55 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 		}
 		return dtos, nil
 	}
-	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLModerate, fetch)
+
+	if len(tagsFilter) > 0 {
+		// Tag filtering is in-memory; cache the full tag-filtered set, slice for pagination.
+		tagKey := strings.Join(tagsFilter, ",")
+		key := sharedcache.Key("inv", "items", tenantID.String(), typeFilter, tagKey)
+		all, err := sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLModerate, func(innerCtx context.Context) ([]ItemDTO, error) {
+			itms, err := buildQuery().Order(ent.Asc(item.FieldSku)).All(innerCtx)
+			if err != nil {
+				return nil, fmt.Errorf("items: list: %w", err)
+			}
+			var filtered []*ent.Item
+			for _, it := range itms {
+				if containsAllTags(it.Tags, tagsFilter) {
+					filtered = append(filtered, it)
+				}
+			}
+			return buildDTOs(innerCtx, filtered)
+		})
+		if err != nil {
+			return nil, 0, err
+		}
+		total := len(all)
+		end := offset + limit
+		if end > total {
+			end = total
+		}
+		if offset >= total {
+			return []ItemDTO{}, total, nil
+		}
+		return all[offset:end], total, nil
+	}
+
+	// No tag filter: DB-level pagination.
+	total, err := buildQuery().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("items: count: %w", err)
+	}
+	if total == 0 {
+		return []ItemDTO{}, 0, nil
+	}
+	itms, err := buildQuery().Order(ent.Asc(item.FieldSku)).Limit(limit).Offset(offset).All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("items: list: %w", err)
+	}
+	dtos, err := buildDTOs(ctx, itms)
+	if err != nil {
+		return nil, 0, err
+	}
+	return dtos, total, nil
 }
 
 // containsAllTags checks whether itemTags contains every tag in required.
