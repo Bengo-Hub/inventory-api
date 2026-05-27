@@ -6,6 +6,23 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Added (2026-05-27 — Batch 2: UX, RBAC & ERP polish)
+- **Unit type field:** Added `type` (weight/volume/count/length/area/other) to `Unit` schema and Atlas migration `20260527144311_add_unit_type.sql`. `GET /units` now returns `type` and `item_count` per unit.
+- **Items filter params:** `GET /inventory/items` now accepts `category_id`, `unit_id`, and `search` query params for server-side filtering.
+- **Category hierarchy:** `GET /inventory/categories` now returns `parent_id` and `parent_name`. `POST`/`PUT` category endpoints accept and persist `parent_id` for subcategory creation.
+- **Demo supplier seed:** `cmd/seed` seeds "Demo Distributor Co." supplier for `codevertex-demo` tenant and enables auto-reorder on 3 items (BEV-ESP-001, BEV-CAP-001, BEV-LAT-001) via `seedSuppliers` + `seedReorderConfig`.
+
+### Fixed (2026-05-27 — Batch 2)
+- **RBAC 403 for admin users:** `RequirePermission` and `RequireAnyPermission` middleware now bypass permission checks for `admin`, `manager`, `super_admin`, and `store_manager` roles in addition to `inventory_admin`. Demo tenant admins with the `admin` role can now access all guarded endpoints.
+- **ListItems cache invalidation:** `search`, `category_id`, and `unit_id` filters correctly bypass the Redis cache for dynamic queries.
+
+### Changed (2026-05-27 — Batch 2)
+- `UnitDTO` extended with `type` (string) and `item_count` (int) fields.
+- `CategoryDTO` extended with `parent_name` (string) and now always populates `parent_id`.
+- `ListItems` service function signature extended: `categoryID *uuid.UUID`, `unitID *uuid.UUID`, `search string` added before the variadic `tagsFilter`.
+
+---
+
 ### Changed
 - Standardized API base path to `/api/v1` (previously `/v1`)
 - Standardized Swagger documentation path to `/v1/docs` (previously `/swagger/*`)

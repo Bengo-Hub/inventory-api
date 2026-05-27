@@ -1,6 +1,6 @@
 # RBAC and Seed (inventory-api)
 
-**Last updated**: March 2026
+**Last updated**: May 2026
 
 ## RBAC: DB-backed Permission/Role schema
 
@@ -74,17 +74,37 @@ All RBAC endpoints are under `/{tenant}/` and require authentication:
 | `GET`  | `/{tenant}/users/me/roles` | Get current user's roles |
 | `GET`  | `/{tenant}/users/me/permissions` | Get current user's permissions |
 
+## RBAC Bypass — HQ Roles
+
+The `RequirePermission` and `RequireAnyPermission` middleware short-circuit the DB permission check for the following roles, granting full access to all guarded endpoints:
+
+| Role | Notes |
+|------|-------|
+| `inventory_admin` | Original bypass role |
+| `admin` | HQ/tenant admin (auth-service role synced to inventory) |
+| `manager` | Senior manager with full inventory access |
+| `super_admin` | Platform superuser |
+| `store_manager` | Store-level manager |
+
+This means any user assigned one of these roles via `POST /{tenant}/rbac/assignments` will bypass per-endpoint RBAC without needing explicit permission assignments. Downstream roles (`warehouse_manager`, `stock_clerk`, `viewer`) still require explicit grants.
+
+**Why:** The demo tenant admin account uses the `admin` role (not `inventory_admin`), which previously caused 403 on all guarded endpoints.
+
+---
+
 ## Seed
 
 Run `go run ./cmd/seed` to seed:
 
 1. **Units** (global, no tenant_id)
-2. **Warehouses, categories, items, balances** (tenant-scoped for urban-loft)
-3. **Permissions** (99 permissions: 11 modules x 9 actions)
-4. **Roles** (4 system roles per tenant)
-5. **Role-permission assignments** (admin gets all, others get subsets)
-6. **Rate limit configs** (global, per-tenant, per-IP, per-user, per-endpoint)
-7. **Service configs** (platform-level defaults)
+2. **Warehouses, categories, items, balances** (tenant-scoped for urban-loft + codevertex-demo)
+3. **Suppliers** — `codevertex-demo` gets "Demo Distributor Co." (MPESA, 30-day terms) via `seedSuppliers()`
+4. **Reorder config** — 3 items (BEV-ESP-001, BEV-CAP-001, BEV-LAT-001) on `codevertex-demo` get `auto_reorder_enabled=true`, `preferred_supplier_id=<demo-supplier>`, `reorder_level=10`, `reorder_quantity=50` via `seedReorderConfig()`
+5. **Permissions** (99 permissions: 11 modules x 9 actions)
+6. **Roles** (4 system roles per tenant)
+7. **Role-permission assignments** (admin gets all, others get subsets)
+8. **Rate limit configs** (global, per-tenant, per-IP, per-user, per-endpoint)
+9. **Service configs** (platform-level defaults)
 
 ### Important: `units` module
 
