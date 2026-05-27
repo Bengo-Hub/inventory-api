@@ -12,8 +12,11 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entbal "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entwh "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/http/handlers"
 )
 
 const (
@@ -171,13 +174,14 @@ func (c *StockEventsConsumer) handleLowStock(ctx context.Context, tenantID, item
 		targetWarehouseID = wh.ID
 	}
 
-	// Determine reorder quantity: use configured value or default to 2× the reorder threshold
+	// Determine reorder quantity: use configured value, fall back to 2× reorder level,
+	// then to the tenant's unit-aware default, then to a global fallback of 10.
 	reorderQty := bal.ReorderQuantity
 	if reorderQty <= 0 {
 		reorderQty = bal.ReorderLevel * 2
-		if reorderQty <= 0 {
-			reorderQty = 10
-		}
+	}
+	if reorderQty <= 0 {
+		reorderQty = c.unitDefaultReorderQty(ctx, tenantID, itemID)
 	}
 
 	// Generate PO number using date + short item ID suffix for idempotency
@@ -256,4 +260,47 @@ func (c *StockEventsConsumer) handleLowStock(ctx context.Context, tenantID, item
 		zap.Stringer("po_id", po.ID),
 	)
 	return nil
+}
+
+// unitDefaultReorderQty looks up the tenant's per-unit reorder default for the
+// given item. Falls back to DefaultUnitReorderLevels, then to 10.
+func (c *StockEventsConsumer) unitDefaultReorderQty(ctx context.Context, tenantID, itemID uuid.UUID) int {
+	// Fetch item with its unit edge to get the unit abbreviation
+	it, err := c.orm.Item.Query().
+		Where(entitem.IDEQ(itemID)).
+		WithUnits().
+		Only(ctx)
+	if err != nil {
+		c.log.Debug("unitDefaultReorderQty: could not load item", zap.Error(err))
+		return 10
+	}
+
+	unitAbbr := ""
+	if it.Edges.Units != nil {
+		unitAbbr = it.Edges.Units.Abbreviation
+	}
+
+	// Look up tenant config for custom unit defaults
+	cfg, err := c.orm.TenantInventoryConfig.Query().
+		Where(entconfig.TenantID(tenantID)).
+		Only(ctx)
+
+	var unitDefaults map[string]int
+	if err == nil && cfg.UnitReorderDefaults != nil {
+		unitDefaults = cfg.UnitReorderDefaults
+	} else {
+		unitDefaults = handlers.DefaultUnitReorderLevels()
+	}
+
+	if unitAbbr != "" {
+		if v, ok := unitDefaults[unitAbbr]; ok && v > 0 {
+			return v
+		}
+	}
+
+	// Fall back to the tenant's global default_reorder_level, then 10
+	if err == nil && cfg.DefaultReorderLevel > 0 {
+		return cfg.DefaultReorderLevel
+	}
+	return 10
 }

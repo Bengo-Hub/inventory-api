@@ -72,6 +72,12 @@ func (_c *TenantInventoryConfigCreate) SetNillableDefaultReorderLevel(v *int) *T
 	return _c
 }
 
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (_c *TenantInventoryConfigCreate) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigCreate {
+	_c.mutation.SetUnitReorderDefaults(v)
+	return _c
+}
+
 // SetExpiryWarningDays sets the "expiry_warning_days" field.
 func (_c *TenantInventoryConfigCreate) SetExpiryWarningDays(v int) *TenantInventoryConfigCreate {
 	_c.mutation.SetExpiryWarningDays(v)
@@ -506,6 +512,10 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 		_spec.SetField(tenantinventoryconfig.FieldDefaultReorderLevel, field.TypeInt, value)
 		_node.DefaultReorderLevel = value
 	}
+	if value, ok := _c.mutation.UnitReorderDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldUnitReorderDefaults, field.TypeJSON, value)
+		_node.UnitReorderDefaults = value
+	}
 	if value, ok := _c.mutation.ExpiryWarningDays(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldExpiryWarningDays, field.TypeInt, value)
 		_node.ExpiryWarningDays = value
@@ -681,6 +691,24 @@ func (u *TenantInventoryConfigUpsert) UpdateDefaultReorderLevel() *TenantInvento
 // AddDefaultReorderLevel adds v to the "default_reorder_level" field.
 func (u *TenantInventoryConfigUpsert) AddDefaultReorderLevel(v int) *TenantInventoryConfigUpsert {
 	u.Add(tenantinventoryconfig.FieldDefaultReorderLevel, v)
+	return u
+}
+
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsert) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldUnitReorderDefaults, v)
+	return u
+}
+
+// UpdateUnitReorderDefaults sets the "unit_reorder_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateUnitReorderDefaults() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldUnitReorderDefaults)
+	return u
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsert) ClearUnitReorderDefaults() *TenantInventoryConfigUpsert {
+	u.SetNull(tenantinventoryconfig.FieldUnitReorderDefaults)
 	return u
 }
 
@@ -995,6 +1023,27 @@ func (u *TenantInventoryConfigUpsertOne) AddDefaultReorderLevel(v int) *TenantIn
 func (u *TenantInventoryConfigUpsertOne) UpdateDefaultReorderLevel() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateDefaultReorderLevel()
+	})
+}
+
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsertOne) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetUnitReorderDefaults(v)
+	})
+}
+
+// UpdateUnitReorderDefaults sets the "unit_reorder_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateUnitReorderDefaults() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateUnitReorderDefaults()
+	})
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsertOne) ClearUnitReorderDefaults() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearUnitReorderDefaults()
 	})
 }
 
@@ -1507,6 +1556,27 @@ func (u *TenantInventoryConfigUpsertBulk) AddDefaultReorderLevel(v int) *TenantI
 func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultReorderLevel() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateDefaultReorderLevel()
+	})
+}
+
+// SetUnitReorderDefaults sets the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsertBulk) SetUnitReorderDefaults(v map[string]int) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetUnitReorderDefaults(v)
+	})
+}
+
+// UpdateUnitReorderDefaults sets the "unit_reorder_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateUnitReorderDefaults() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateUnitReorderDefaults()
+	})
+}
+
+// ClearUnitReorderDefaults clears the value of the "unit_reorder_defaults" field.
+func (u *TenantInventoryConfigUpsertBulk) ClearUnitReorderDefaults() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearUnitReorderDefaults()
 	})
 }
 

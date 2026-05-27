@@ -32,7 +32,10 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 			Comment("Percentage of reorder level at which critical-stock alert fires"),
 		field.Int("default_reorder_level").
 			Default(10).
-			Comment("Default reorder quantity applied to new items"),
+			Comment("Default reorder quantity applied to new items when no unit-specific default is configured"),
+		field.JSON("unit_reorder_defaults", map[string]int{}).
+			Optional().
+			Comment("Per-unit default reorder levels: maps unit abbreviation (e.g. 'kg','g','pc') to minimum quantity"),
 		field.Int("expiry_warning_days").
 			Default(30).
 			Comment("Days before expiry to trigger expiry-approaching alert"),

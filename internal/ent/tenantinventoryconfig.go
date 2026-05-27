@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -24,8 +25,10 @@ type TenantInventoryConfig struct {
 	LowStockThresholdPct float64 `json:"low_stock_threshold_pct,omitempty"`
 	// Percentage of reorder level at which critical-stock alert fires
 	CriticalStockThresholdPct float64 `json:"critical_stock_threshold_pct,omitempty"`
-	// Default reorder quantity applied to new items
+	// Default reorder quantity applied to new items when no unit-specific default is configured
 	DefaultReorderLevel int `json:"default_reorder_level,omitempty"`
+	// Per-unit default reorder levels: maps unit abbreviation (e.g. 'kg','g','pc') to minimum quantity
+	UnitReorderDefaults map[string]int `json:"unit_reorder_defaults,omitempty"`
 	// Days before expiry to trigger expiry-approaching alert
 	ExpiryWarningDays int `json:"expiry_warning_days,omitempty"`
 	// EnableLowStockNotifications holds the value of the "enable_low_stock_notifications" field.
@@ -64,6 +67,8 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case tenantinventoryconfig.FieldUnitReorderDefaults:
+			values[i] = new([]byte)
 		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled:
 			values[i] = new(sql.NullBool)
 		case tenantinventoryconfig.FieldLowStockThresholdPct, tenantinventoryconfig.FieldCriticalStockThresholdPct:
@@ -120,6 +125,14 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 				return fmt.Errorf("unexpected type %T for field default_reorder_level", values[i])
 			} else if value.Valid {
 				_m.DefaultReorderLevel = int(value.Int64)
+			}
+		case tenantinventoryconfig.FieldUnitReorderDefaults:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_reorder_defaults", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UnitReorderDefaults); err != nil {
+					return fmt.Errorf("unmarshal field unit_reorder_defaults: %w", err)
+				}
 			}
 		case tenantinventoryconfig.FieldExpiryWarningDays:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -260,6 +273,9 @@ func (_m *TenantInventoryConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_reorder_level=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DefaultReorderLevel))
+	builder.WriteString(", ")
+	builder.WriteString("unit_reorder_defaults=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UnitReorderDefaults))
 	builder.WriteString(", ")
 	builder.WriteString("expiry_warning_days=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ExpiryWarningDays))

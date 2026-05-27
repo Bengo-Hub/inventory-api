@@ -310,6 +310,16 @@ func DefaultReorderLevelLTE(v int) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldLTE(FieldDefaultReorderLevel, v))
 }
 
+// UnitReorderDefaultsIsNil applies the IsNil predicate on the "unit_reorder_defaults" field.
+func UnitReorderDefaultsIsNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIsNull(FieldUnitReorderDefaults))
+}
+
+// UnitReorderDefaultsNotNil applies the NotNil predicate on the "unit_reorder_defaults" field.
+func UnitReorderDefaultsNotNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotNull(FieldUnitReorderDefaults))
+}
+
 // ExpiryWarningDaysEQ applies the EQ predicate on the "expiry_warning_days" field.
 func ExpiryWarningDaysEQ(v int) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldExpiryWarningDays, v))

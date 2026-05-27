@@ -12,6 +12,29 @@ import (
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 )
 
+// DefaultUnitReorderLevels returns sensible per-unit reorder minimums used when
+// an item has no explicit reorder level configured and the tenant has no custom
+// unit defaults saved. Values are in the natural unit (e.g. g for GRAM, ml for ML).
+func DefaultUnitReorderLevels() map[string]int {
+	return map[string]int{
+		"pc":   10,   // PIECE
+		"cup":  10,   // CUP
+		"srv":  20,   // SERVING
+		"bowl": 5,    // BOWL
+		"plate": 5,   // PLATE
+		"slice": 10,  // SLICE
+		"kg":   5,    // KG
+		"g":    500,  // GRAM
+		"L":    5,    // LITRE
+		"ml":   500,  // ML
+		"box":  3,    // BOX
+		"btl":  5,    // BOTTLE
+		"shot": 50,   // SHOT
+		"pack": 5,    // PACK
+		"bag":  5,    // BAG
+	}
+}
+
 // InventorySettingsHandler manages typed tenant inventory configuration.
 type InventorySettingsHandler struct {
 	log *zap.Logger
@@ -25,10 +48,11 @@ func NewInventorySettingsHandler(log *zap.Logger, db *ent.Client) *InventorySett
 type inventorySettingsResponse struct {
 	TenantID string `json:"tenant_id"`
 	// Stock thresholds
-	LowStockThresholdPct      float64 `json:"low_stock_threshold_pct"`
-	CriticalStockThresholdPct float64 `json:"critical_stock_threshold_pct"`
-	DefaultReorderLevel       int     `json:"default_reorder_level"`
-	ExpiryWarningDays         int     `json:"expiry_warning_days"`
+	LowStockThresholdPct      float64            `json:"low_stock_threshold_pct"`
+	CriticalStockThresholdPct float64            `json:"critical_stock_threshold_pct"`
+	DefaultReorderLevel       int                `json:"default_reorder_level"`
+	UnitReorderDefaults       map[string]int     `json:"unit_reorder_defaults"`
+	ExpiryWarningDays         int                `json:"expiry_warning_days"`
 	// Notifications
 	EnableLowStockNotifications bool    `json:"enable_low_stock_notifications"`
 	EnableExpiryNotifications   bool    `json:"enable_expiry_notifications"`
@@ -48,11 +72,16 @@ type inventorySettingsResponse struct {
 }
 
 func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettingsResponse {
+	unitDefaults := c.UnitReorderDefaults
+	if unitDefaults == nil {
+		unitDefaults = DefaultUnitReorderLevels()
+	}
 	return inventorySettingsResponse{
 		TenantID:                      c.TenantID.String(),
 		LowStockThresholdPct:          c.LowStockThresholdPct,
 		CriticalStockThresholdPct:     c.CriticalStockThresholdPct,
 		DefaultReorderLevel:           c.DefaultReorderLevel,
+		UnitReorderDefaults:           unitDefaults,
 		ExpiryWarningDays:             c.ExpiryWarningDays,
 		EnableLowStockNotifications:   c.EnableLowStockNotifications,
 		EnableExpiryNotifications:     c.EnableExpiryNotifications,
@@ -103,18 +132,19 @@ func (h *InventorySettingsHandler) GetSettings(w http.ResponseWriter, r *http.Re
 }
 
 type updateInventorySettingsInput struct {
-	LowStockThresholdPct          *float64 `json:"low_stock_threshold_pct"`
-	CriticalStockThresholdPct     *float64 `json:"critical_stock_threshold_pct"`
-	DefaultReorderLevel           *int     `json:"default_reorder_level"`
-	ExpiryWarningDays             *int     `json:"expiry_warning_days"`
-	EnableLowStockNotifications   *bool    `json:"enable_low_stock_notifications"`
-	EnableExpiryNotifications     *bool    `json:"enable_expiry_notifications"`
-	NotificationEmail             *string  `json:"notification_email"`
-	DefaultWarehouseID            *string  `json:"default_warehouse_id"`
-	EnableLotTracking             *bool    `json:"enable_lot_tracking"`
-	EnableExpiryTracking          *bool    `json:"enable_expiry_tracking"`
-	PurchaseOrderApprovalRequired *bool    `json:"purchase_order_approval_required"`
-	AutoAdjustOnTransfer          *bool    `json:"auto_adjust_on_transfer"`
+	LowStockThresholdPct          *float64        `json:"low_stock_threshold_pct"`
+	CriticalStockThresholdPct     *float64        `json:"critical_stock_threshold_pct"`
+	DefaultReorderLevel           *int            `json:"default_reorder_level"`
+	UnitReorderDefaults           map[string]int  `json:"unit_reorder_defaults"`
+	ExpiryWarningDays             *int            `json:"expiry_warning_days"`
+	EnableLowStockNotifications   *bool           `json:"enable_low_stock_notifications"`
+	EnableExpiryNotifications     *bool           `json:"enable_expiry_notifications"`
+	NotificationEmail             *string         `json:"notification_email"`
+	DefaultWarehouseID            *string         `json:"default_warehouse_id"`
+	EnableLotTracking             *bool           `json:"enable_lot_tracking"`
+	EnableExpiryTracking          *bool           `json:"enable_expiry_tracking"`
+	PurchaseOrderApprovalRequired *bool           `json:"purchase_order_approval_required"`
+	AutoAdjustOnTransfer          *bool           `json:"auto_adjust_on_transfer"`
 }
 
 // PutSettings handles PUT /{tenant}/inventory/settings
@@ -147,6 +177,9 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.DefaultReorderLevel != nil {
 		upd = upd.SetDefaultReorderLevel(*input.DefaultReorderLevel)
+	}
+	if input.UnitReorderDefaults != nil {
+		upd = upd.SetUnitReorderDefaults(input.UnitReorderDefaults)
 	}
 	if input.ExpiryWarningDays != nil {
 		upd = upd.SetExpiryWarningDays(*input.ExpiryWarningDays)

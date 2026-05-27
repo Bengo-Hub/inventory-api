@@ -26,6 +26,8 @@ import (
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	entring "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/http/handlers"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
 
@@ -99,6 +101,10 @@ func main() {
 
 		if err := seedBalances(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed balances for %s: %v", slug, err)
+		}
+
+		if err := seedInventoryConfig(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed inventory config for %s: %v", slug, err)
 		}
 
 		if err := seedRoles(ctx, client, tenantID); err != nil {
@@ -1305,5 +1311,44 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 	}
 
 	log.Printf("seeded %d recipes with BOM ingredients", len(recipeDefs))
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Inventory Config — upsert per-unit reorder defaults per tenant
+// ---------------------------------------------------------------------------
+
+func seedInventoryConfig(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	defaults := handlers.DefaultUnitReorderLevels()
+
+	existing, err := client.TenantInventoryConfig.Query().
+		Where(entconfig.TenantID(tenantID)).
+		Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return fmt.Errorf("query inventory config: %w", err)
+	}
+
+	if ent.IsNotFound(err) {
+		_, err = client.TenantInventoryConfig.Create().
+			SetTenantID(tenantID).
+			SetUnitReorderDefaults(defaults).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("create inventory config: %w", err)
+		}
+		log.Printf("created inventory config with unit reorder defaults for tenant %s", tenantID)
+		return nil
+	}
+
+	// Only write unit_reorder_defaults if not already customised
+	if existing.UnitReorderDefaults == nil {
+		_, err = existing.Update().
+			SetUnitReorderDefaults(defaults).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("update inventory config: %w", err)
+		}
+		log.Printf("seeded unit reorder defaults for tenant %s", tenantID)
+	}
 	return nil
 }
