@@ -32,6 +32,8 @@ type ItemsServicer interface {
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
+	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
+	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
 }
 
@@ -61,6 +63,7 @@ type RecipesServicer interface {
 type UnitsServicer interface {
 	ListUnits(ctx context.Context, tenantID uuid.UUID) ([]units.UnitDTO, error)
 	CreateUnit(ctx context.Context, tenantID uuid.UUID, dto units.UnitDTO) (*units.UnitDTO, error)
+	UpdateUnit(ctx context.Context, tenantID, id uuid.UUID, dto units.UnitDTO) (*units.UnitDTO, error)
 	DeleteUnit(ctx context.Context, tenantID, id uuid.UUID) error
 }
 
@@ -142,6 +145,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
+		inv.With(perm(rbac.PermItemsAdd)).Post("/categories", h.CreateCategory)
+		inv.With(perm(rbac.PermItemsChange)).Put("/categories/{categoryID}", h.UpdateCategory)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/categories/{categoryID}", h.DeleteCategory)
 
 		// Reservations
@@ -170,6 +175,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)
 		inv.With(perm(rbac.PermUnitsAdd)).Post("/units", h.CreateUnit)
+		inv.With(perm(rbac.PermUnitsChange)).Put("/units/{unitID}", h.UpdateUnit)
 		inv.With(perm(rbac.PermUnitsDelete)).Delete("/units/{unitID}", h.DeleteUnit)
 
 		// CSV bulk import
@@ -615,6 +621,32 @@ func (h *InventoryHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, result)
 }
 
+// UpdateUnit handles PUT /v1/{tenant}/inventory/units/{unitID} — updates a unit of measure.
+func (h *InventoryHandler) UpdateUnit(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	unitID, err := uuid.Parse(chi.URLParam(r, "unitID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid unit ID")
+		return
+	}
+	var req units.UnitDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	result, err := h.unitSvc.UpdateUnit(r.Context(), tenantID, unitID, req)
+	if err != nil {
+		h.log.Error("update unit failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 // ListItems handles GET /v1/{tenant}/inventory/items — returns all active items for the tenant.
 func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -960,6 +992,61 @@ func (h *InventoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// CreateCategory handles POST /v1/{tenant}/inventory/categories — creates a new item category.
+func (h *InventoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	var req items.CategoryDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Name is required")
+		return
+	}
+	result, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("create category failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, result)
+}
+
+// UpdateCategory handles PUT /v1/{tenant}/inventory/categories/{categoryID} — updates an item category.
+func (h *InventoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	categoryID, err := uuid.Parse(chi.URLParam(r, "categoryID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid category ID")
+		return
+	}
+	var req items.CategoryDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Name is required")
+		return
+	}
+	result, err := h.itemsSvc.UpdateCategory(r.Context(), tenantID, categoryID, req)
+	if err != nil {
+		h.log.Error("update category failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 // DeleteUnit handles DELETE /inventory/units/{unitID} — soft-deletes a unit of measure.
