@@ -64,12 +64,13 @@ type ItemDTO struct {
 }
 
 type CategoryDTO struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Code        string    `json:"code,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Icon        string    `json:"icon,omitempty"`
-	IsActive    bool      `json:"is_active"`
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	Code        string     `json:"code,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Icon        string     `json:"icon,omitempty"`
+	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
+	IsActive    bool       `json:"is_active"`
 }
 
 // StockAvailability matches the DTO expected by the ordering-backend client.
@@ -587,6 +588,78 @@ func (s *Service) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) er
 		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
 	}
 	return nil
+}
+
+// CreateCategory creates a new item category for the tenant.
+func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
+	q := s.client.ItemCategory.Create().
+		SetTenantID(tenantID).
+		SetName(dto.Name).
+		SetIsActive(true)
+	if dto.Code != "" {
+		q = q.SetCode(dto.Code)
+	}
+	if dto.Description != "" {
+		q = q.SetDescription(dto.Description)
+	}
+	if dto.Icon != "" {
+		q = q.SetIcon(dto.Icon)
+	}
+	c, err := q.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: create category: %w", err)
+	}
+	if s.cache != nil {
+		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
+	}
+	return &CategoryDTO{
+		ID:          c.ID,
+		Name:        c.Name,
+		Code:        c.Code,
+		Description: c.Description,
+		Icon:        c.Icon,
+		IsActive:    c.IsActive,
+	}, nil
+}
+
+// UpdateCategory updates an existing item category.
+func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
+	_, err := s.client.ItemCategory.Query().
+		Where(itemcategory.TenantID(tenantID), itemcategory.ID(id)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("items: category not found")
+		}
+		return nil, fmt.Errorf("items: query category for update: %w", err)
+	}
+	q := s.client.ItemCategory.UpdateOneID(id).
+		SetName(dto.Name).
+		SetIsActive(dto.IsActive)
+	if dto.Code != "" {
+		q = q.SetCode(dto.Code)
+	}
+	if dto.Description != "" {
+		q = q.SetDescription(dto.Description)
+	}
+	if dto.Icon != "" {
+		q = q.SetIcon(dto.Icon)
+	}
+	c, err := q.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: update category: %w", err)
+	}
+	if s.cache != nil {
+		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
+	}
+	return &CategoryDTO{
+		ID:          c.ID,
+		Name:        c.Name,
+		Code:        c.Code,
+		Description: c.Description,
+		Icon:        c.Icon,
+		IsActive:    c.IsActive,
+	}, nil
 }
 
 // ListCategories returns all item categories for a tenant (cached 5 min).

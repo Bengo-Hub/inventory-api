@@ -63,6 +63,25 @@ func (s *Service) DeleteUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID) err
 	return nil
 }
 
+func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
+	u, err := s.client.Unit.UpdateOneID(id).
+		SetName(dto.Name).
+		SetNillableAbbreviation(&dto.Abbreviation).
+		Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("units: unit not found")
+		}
+		return nil, fmt.Errorf("units: update unit: %w", err)
+	}
+	return &UnitDTO{
+		ID:           u.ID,
+		Name:         u.Name,
+		Abbreviation: u.Abbreviation,
+		IsActive:     u.IsActive,
+	}, nil
+}
+
 func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
