@@ -49,23 +49,27 @@ type RecipeIngredientDTO struct {
 	DisplayOrder  int       `json:"display_order"`
 }
 
-// ListRecipes returns all recipes for a tenant.
-func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID) ([]RecipeDTO, error) {
-	recipes, err := s.client.Recipe.Query().
-		Where(recipe.TenantID(tenantID)).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+// ListRecipes returns a paginated list of recipes for a tenant.
+func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]RecipeDTO, int, error) {
+	q := s.client.Recipe.Query().Where(recipe.TenantID(tenantID))
+	total, _ := q.Clone().Count(ctx)
+	recs, err := q.
+		WithIngredients(func(iq *ent.RecipeIngredientQuery) {
+			iq.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
 		}).
+		Order(ent.Asc(recipe.FieldName)).
+		Limit(limit).
+		Offset(offset).
 		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("recipes: list: %w", err)
+		return nil, 0, fmt.Errorf("recipes: list: %w", err)
 	}
 
-	result := make([]RecipeDTO, len(recipes))
-	for i, r := range recipes {
+	result := make([]RecipeDTO, len(recs))
+	for i, r := range recs {
 		result[i] = s.toDTO(r)
 	}
-	return result, nil
+	return result, total, nil
 }
 
 // GetRecipe returns a single recipe by ID.
