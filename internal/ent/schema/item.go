@@ -141,5 +141,7 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("tenant_id", "category_id"),
 		index.Fields("tenant_id", "is_active"),
 		index.Fields("tenant_id", "barcode"),
+		index.Fields("tenant_id", "created_at"),
+		index.Fields("tenant_id", "unit_id"),
 	}
 }

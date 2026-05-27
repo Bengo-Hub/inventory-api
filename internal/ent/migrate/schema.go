@@ -503,6 +503,16 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[7]},
 			},
+			{
+				Name:    "item_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[21]},
+			},
+			{
+				Name:    "item_tenant_id_unit_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[23]},
+			},
 		},
 	}
 	// ItemAssetsColumns holds the columns for the "item_assets" table.
