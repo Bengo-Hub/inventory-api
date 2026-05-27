@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -30,7 +31,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, tagsFilter ...string) ([]items.ItemDTO, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -647,7 +648,7 @@ func (h *InventoryHandler) UpdateUnit(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
-// ListItems handles GET /v1/{tenant}/inventory/items — returns all active items for the tenant.
+// ListItems handles GET /v1/{tenant}/inventory/items — returns a paginated list of active items.
 func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -668,17 +669,15 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	results, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, tagsFilter...)
+	p := pagination.Parse(r)
+	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, p.Limit, p.Offset, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"data":  results,
-		"total": len(results),
-	})
+	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
 }
 
 // CreateItem handles POST /v1/{tenant}/inventory/items — creates a new inventory item.
@@ -1117,7 +1116,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
-	existingItems, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", 10000, 0)
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
