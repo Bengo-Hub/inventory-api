@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/pagination"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
@@ -523,28 +524,28 @@ func (h *InventoryExtrasHandler) ListSuppliers(w http.ResponseWriter, r *http.Re
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+	p := pagination.Parse(r)
 	search := r.URL.Query().Get("search")
 
-	suppliers, err := h.orm.Supplier.Query().
-		Where(entsupplier.TenantID(tenantID)).
-		All(r.Context())
+	q := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID))
+	if search != "" {
+		q = q.Where(entsupplier.Or(
+			entsupplier.NameContainsFold(search),
+			entsupplier.ContactNameContainsFold(search),
+		))
+	}
+	total, _ := q.Clone().Count(r.Context())
+	suppliers, err := q.Order(ent.Asc(entsupplier.FieldName)).Limit(p.Limit).Offset(p.Offset).All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list suppliers")
 		return
 	}
 
-	result := make([]supplierDTO, 0, len(suppliers))
-	for _, s := range suppliers {
-		if search != "" {
-			needle := strings.ToLower(search)
-			if !strings.Contains(strings.ToLower(s.Name), needle) &&
-				!strings.Contains(strings.ToLower(s.ContactName), needle) {
-				continue
-			}
-		}
-		result = append(result, supplierToDTO(s))
+	result := make([]supplierDTO, len(suppliers))
+	for i, s := range suppliers {
+		result[i] = supplierToDTO(s)
 	}
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
 }
 
 func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.Request) {

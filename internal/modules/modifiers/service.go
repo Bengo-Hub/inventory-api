@@ -97,24 +97,30 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 	}
 }
 
-// ListAllModifierGroups returns all modifier groups for a tenant across all items.
-func (s *Service) ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID) ([]ModifierGroupDTO, error) {
-	groups, err := s.client.ModifierGroup.Query().
-		Where(modifiergroup.TenantID(tenantID)).
-		WithOptions(func(q *ent.ModifierOptionQuery) {
-			q.Order(ent.Asc(modifieroption.FieldDisplayOrder))
+// ListAllModifierGroups returns a paginated list of modifier groups for a tenant.
+func (s *Service) ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID, limit, offset int, search string) ([]ModifierGroupDTO, int, error) {
+	q := s.client.ModifierGroup.Query().Where(modifiergroup.TenantID(tenantID))
+	if search != "" {
+		q = q.Where(modifiergroup.NameContainsFold(search))
+	}
+	total, _ := q.Clone().Count(ctx)
+	groups, err := q.
+		WithOptions(func(oq *ent.ModifierOptionQuery) {
+			oq.Order(ent.Asc(modifieroption.FieldDisplayOrder))
 		}).
 		Order(ent.Asc(modifiergroup.FieldDisplayOrder)).
+		Limit(limit).
+		Offset(offset).
 		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("modifiers: list all groups: %w", err)
+		return nil, 0, fmt.Errorf("modifiers: list all groups: %w", err)
 	}
 
 	dtos := make([]ModifierGroupDTO, len(groups))
 	for i, g := range groups {
 		dtos[i] = s.mapGroupToDTO(g)
 	}
-	return dtos, nil
+	return dtos, total, nil
 }
 
 // GetModifierGroup returns a single modifier group with its options.

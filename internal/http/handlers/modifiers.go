@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -24,14 +25,16 @@ func (h *InventoryHandler) ListAllModifierGroups(w http.ResponseWriter, r *http.
 		return
 	}
 
-	groups, err := h.modifiersSvc.ListAllModifierGroups(r.Context(), tenantID)
+	p := pagination.Parse(r)
+	search := r.URL.Query().Get("search")
+	groups, total, err := h.modifiersSvc.ListAllModifierGroups(r.Context(), tenantID, p.Limit, p.Offset, search)
 	if err != nil {
 		h.log.Error("list all modifier groups failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list modifier groups")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, groups)
+	writeJSON(w, http.StatusOK, pagination.NewResponse(groups, total, p))
 }
 
 // GetModifierGroup handles GET /inventory/modifier-groups/{id} — fetches a single group with options.

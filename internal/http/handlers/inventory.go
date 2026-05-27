@@ -52,7 +52,7 @@ type StockServicer interface {
 
 // RecipesServicer defines the contract for recipe management.
 type RecipesServicer interface {
-	ListRecipes(ctx context.Context, tenantID uuid.UUID) ([]recipes.RecipeDTO, error)
+	ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]recipes.RecipeDTO, int, error)
 	GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*recipes.RecipeDTO, error)
 	CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
 	UpdateRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
@@ -70,7 +70,7 @@ type UnitsServicer interface {
 
 // ModifiersServicer defines the contract for modifier group/option management.
 type ModifiersServicer interface {
-	ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID) ([]modifiers.ModifierGroupDTO, error)
+	ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID, limit, offset int, search string) ([]modifiers.ModifierGroupDTO, int, error)
 	GetModifierGroup(ctx context.Context, tenantID, groupID uuid.UUID) (*modifiers.ModifierGroupDTO, error)
 	ListModifierGroups(ctx context.Context, tenantID, itemID uuid.UUID) ([]modifiers.ModifierGroupDTO, error)
 	CreateModifierGroup(ctx context.Context, tenantID uuid.UUID, req modifiers.CreateModifierGroupRequest) (*modifiers.ModifierGroupDTO, error)
@@ -452,14 +452,15 @@ func (h *InventoryHandler) ListRecipes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := h.recipeSvc.ListRecipes(r.Context(), tenantID)
+	p := pagination.Parse(r)
+	results, total, err := h.recipeSvc.ListRecipes(r.Context(), tenantID, p.Limit, p.Offset)
 	if err != nil {
 		h.log.Error("list recipes failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list recipes")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, results)
+	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
 }
 
 // GetRecipe handles GET /v1/{tenant}/inventory/recipes/{recipeID}
