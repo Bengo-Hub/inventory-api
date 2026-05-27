@@ -20,7 +20,10 @@ import (
 func main() {
 	_ = godotenv.Load()
 
-	dsn := os.Getenv("POSTGRES_URL")
+	dsn := os.Getenv("POSTGRES_MIGRATE_URL")
+	if dsn == "" {
+		dsn = os.Getenv("POSTGRES_URL")
+	}
 	if dsn == "" {
 		dsn = "postgres://postgres:postgres@localhost:5432/inventory?sslmode=disable"
 	}
