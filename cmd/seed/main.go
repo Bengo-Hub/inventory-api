@@ -161,6 +161,7 @@ var unitDefs = []unitDef{
 	{"SHOT", "shot"},
 	{"PACK", "pack"},
 	{"BAG", "bag"},
+	{"TICKET", "tkt"},
 }
 
 func unitUUID(name string) uuid.UUID {
@@ -372,6 +373,7 @@ var categoryDefs = []categoryDef{
 	{"fashion", "Fashion", "FSH", "Clothing and apparel", "/media/icons/fashion-colored.svg"},
 	{"fresh", "Fresh", "FRS", "Fresh fruits, vegetables, and produce", "/media/icons/fresh-colored.svg"},
 	{"juice", "Juice", "JCE", "Fresh juices and smoothies", "/media/icons/juice-colored.svg"},
+	{"events", "Events & Experiences", "EVT", "Live events, workshops, and curated dining experiences", "/media/icons/events-colored.svg"},
 }
 
 func categoryUUID(tenantID uuid.UUID, slug string) uuid.UUID {
@@ -458,145 +460,154 @@ type itemDef struct {
 	UnitName     string // matches Unit.Name (e.g. "CUP", "PIECE")
 	ImageURL     string
 	OnHand       int
+	Tags         []string
 }
 
 // catalogItemDefs is the authoritative list of Urban Loft café items.
 // Inventory-api is the single source of truth; ordering-backend and pos-api project from here.
 var catalogItemDefs = []itemDef{
 	// ── Hot Beverages ─────────────────────────────────────────────────────────
-	{"BEV-ESP-001", "Espresso", "Single shot of rich espresso", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 500},
-	{"BEV-ESP-002", "Double Espresso", "Double shot espresso", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 500},
-	{"BEV-LAT-001", "Caffe Latte", "Espresso with steamed milk", "hot-beverages", entitem.TypeRECIPE, "CUP", imgCappuccino, 400},
-	{"BEV-CAP-001", "Cappuccino", "Espresso with frothed milk and cocoa", "hot-beverages", entitem.TypeRECIPE, "CUP", imgCappuccino, 400},
-	{"BEV-AME-001", "Americano", "Espresso with hot water", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 500},
-	{"BEV-MOC-001", "Mocha", "Espresso, chocolate, steamed milk, whipped cream", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 300},
-	{"BEV-MAC-001", "Macchiato", "Espresso with a dash of milk foam", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 400},
-	{"BEV-TEA-001", "Kenya AA Black Tea", "Premium Kenyan black tea", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 600},
-	{"BEV-TEA-002", "Masala Chai", "Spiced tea latte with cardamom and ginger", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 400},
-	{"BEV-HOT-001", "Hot Chocolate", "Rich hot chocolate with whipped cream", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 300},
+	{"BEV-ESP-001", "Espresso", "Single shot of rich espresso", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 500, nil},
+	{"BEV-ESP-002", "Double Espresso", "Double shot espresso", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 500, nil},
+	{"BEV-LAT-001", "Caffe Latte", "Espresso with steamed milk", "hot-beverages", entitem.TypeRECIPE, "CUP", imgCappuccino, 400, nil},
+	{"BEV-CAP-001", "Cappuccino", "Espresso with frothed milk and cocoa", "hot-beverages", entitem.TypeRECIPE, "CUP", imgCappuccino, 400, nil},
+	{"BEV-AME-001", "Americano", "Espresso with hot water", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 500, nil},
+	{"BEV-MOC-001", "Mocha", "Espresso, chocolate, steamed milk, whipped cream", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 300, nil},
+	{"BEV-MAC-001", "Macchiato", "Espresso with a dash of milk foam", "hot-beverages", entitem.TypeRECIPE, "CUP", imgEspresso, 400, nil},
+	{"BEV-TEA-001", "Kenya AA Black Tea", "Premium Kenyan black tea", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 600, nil},
+	{"BEV-TEA-002", "Masala Chai", "Spiced tea latte with cardamom and ginger", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 400, nil},
+	{"BEV-HOT-001", "Hot Chocolate", "Rich hot chocolate with whipped cream", "hot-beverages", entitem.TypeRECIPE, "CUP", imgHotCoffee, 300, nil},
 
 	// ── Cold Beverages ────────────────────────────────────────────────────────
-	{"BEV-ICE-001", "Iced Latte", "Chilled espresso with cold milk over ice", "cold-beverages", entitem.TypeRECIPE, "CUP", imgIcedLatte, 300},
-	{"BEV-ICE-002", "Iced Americano", "Espresso over ice with cold water", "cold-beverages", entitem.TypeRECIPE, "CUP", imgIcedLatte, 300},
-	{"BEV-FRP-001", "Caramel Frappe", "Blended iced coffee with caramel drizzle", "cold-beverages", entitem.TypeRECIPE, "CUP", imgMilkshake, 200},
-	{"BEV-FRP-002", "Vanilla Frappe", "Blended iced coffee with vanilla", "cold-beverages", entitem.TypeRECIPE, "CUP", imgMilkshake, 200},
-	{"BEV-SMO-001", "Mango Smoothie", "Fresh mango blended with yoghurt", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 150},
-	{"BEV-SMO-002", "Mixed Berry Smoothie", "Strawberry, blueberry, and banana blend", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 150},
-	{"BEV-JCE-001", "Fresh Orange Juice", "Freshly squeezed orange juice", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 200},
+	{"BEV-ICE-001", "Iced Latte", "Chilled espresso with cold milk over ice", "cold-beverages", entitem.TypeRECIPE, "CUP", imgIcedLatte, 300, nil},
+	{"BEV-ICE-002", "Iced Americano", "Espresso over ice with cold water", "cold-beverages", entitem.TypeRECIPE, "CUP", imgIcedLatte, 300, nil},
+	{"BEV-FRP-001", "Caramel Frappe", "Blended iced coffee with caramel drizzle", "cold-beverages", entitem.TypeRECIPE, "CUP", imgMilkshake, 200, nil},
+	{"BEV-FRP-002", "Vanilla Frappe", "Blended iced coffee with vanilla", "cold-beverages", entitem.TypeRECIPE, "CUP", imgMilkshake, 200, nil},
+	{"BEV-SMO-001", "Mango Smoothie", "Fresh mango blended with yoghurt", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 150, nil},
+	{"BEV-SMO-002", "Mixed Berry Smoothie", "Strawberry, blueberry, and banana blend", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 150, nil},
+	{"BEV-JCE-001", "Fresh Orange Juice", "Freshly squeezed orange juice", "cold-beverages", entitem.TypeRECIPE, "CUP", imgCocktail, 200, nil},
 
 	// ── Pastries & Bakery ─────────────────────────────────────────────────────
-	{"PST-CRO-001", "Butter Croissant", "Flaky French butter croissant", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 100},
-	{"PST-CRO-002", "Chocolate Croissant", "Croissant filled with dark chocolate", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80},
-	{"PST-MUF-001", "Blueberry Muffin", "Moist muffin loaded with blueberries", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80},
-	{"PST-MUF-002", "Banana Walnut Muffin", "Banana muffin with crunchy walnuts", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80},
-	{"PST-CKE-001", "Carrot Cake Slice", "Spiced carrot cake with cream cheese frosting", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 50},
-	{"PST-CKE-002", "Red Velvet Cake Slice", "Classic red velvet with vanilla cream cheese", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 40},
-	{"PST-CKE-003", "Chocolate Fudge Cake Slice", "Rich chocolate fudge layer cake", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 40},
-	{"PST-DAN-001", "Danish Pastry", "Flaky pastry with custard and fruit", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 60},
-	{"PST-SCO-001", "Classic Scone", "Buttermilk scone with clotted cream and jam", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 70},
+	{"PST-CRO-001", "Butter Croissant", "Flaky French butter croissant", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 100, nil},
+	{"PST-CRO-002", "Chocolate Croissant", "Croissant filled with dark chocolate", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80, nil},
+	{"PST-MUF-001", "Blueberry Muffin", "Moist muffin loaded with blueberries", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80, nil},
+	{"PST-MUF-002", "Banana Walnut Muffin", "Banana muffin with crunchy walnuts", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 80, nil},
+	{"PST-CKE-001", "Carrot Cake Slice", "Spiced carrot cake with cream cheese frosting", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 50, nil},
+	{"PST-CKE-002", "Red Velvet Cake Slice", "Classic red velvet with vanilla cream cheese", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 40, nil},
+	{"PST-CKE-003", "Chocolate Fudge Cake Slice", "Rich chocolate fudge layer cake", "pastries", entitem.TypeGOODS, "SLICE", imgLavaCake, 40, nil},
+	{"PST-DAN-001", "Danish Pastry", "Flaky pastry with custard and fruit", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 60, nil},
+	{"PST-SCO-001", "Classic Scone", "Buttermilk scone with clotted cream and jam", "pastries", entitem.TypeGOODS, "PIECE", imgDessert, 70, nil},
 
 	// ── Sandwiches & Wraps ────────────────────────────────────────────────────
-	{"SND-CLB-001", "Club Sandwich", "Triple-decker with chicken, bacon, lettuce, tomato", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 60},
-	{"SND-GRL-001", "Grilled Chicken Panini", "Grilled chicken, pesto, mozzarella on ciabatta", "sandwiches", entitem.TypeRECIPE, "PIECE", imgChicken, 50},
-	{"SND-VEG-001", "Veggie Wrap", "Hummus, avocado, roasted vegetables in tortilla", "sandwiches", entitem.TypeRECIPE, "PIECE", imgSalad, 50},
-	{"SND-BLT-001", "BLT Sandwich", "Bacon, lettuce, tomato on toasted sourdough", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 50},
-	{"SND-TUN-001", "Tuna Melt", "Tuna salad with melted cheddar on rye bread", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 40},
+	{"SND-CLB-001", "Club Sandwich", "Triple-decker with chicken, bacon, lettuce, tomato", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 60, nil},
+	{"SND-GRL-001", "Grilled Chicken Panini", "Grilled chicken, pesto, mozzarella on ciabatta", "sandwiches", entitem.TypeRECIPE, "PIECE", imgChicken, 50, nil},
+	{"SND-VEG-001", "Veggie Wrap", "Hummus, avocado, roasted vegetables in tortilla", "sandwiches", entitem.TypeRECIPE, "PIECE", imgSalad, 50, nil},
+	{"SND-BLT-001", "BLT Sandwich", "Bacon, lettuce, tomato on toasted sourdough", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 50, nil},
+	{"SND-TUN-001", "Tuna Melt", "Tuna salad with melted cheddar on rye bread", "sandwiches", entitem.TypeRECIPE, "PIECE", imgMain1, 40, nil},
 
 	// ── Salads ────────────────────────────────────────────────────────────────
-	{"SAL-CES-001", "Caesar Salad", "Romaine, croutons, parmesan, caesar dressing", "salads", entitem.TypeRECIPE, "BOWL", imgSalad, 40},
-	{"SAL-GRK-001", "Greek Salad", "Cucumber, tomato, olives, feta, olive oil", "salads", entitem.TypeRECIPE, "BOWL", imgSalad, 40},
+	{"SAL-CES-001", "Caesar Salad", "Romaine, croutons, parmesan, caesar dressing", "salads", entitem.TypeRECIPE, "BOWL", imgSalad, 40, nil},
+	{"SAL-GRK-001", "Greek Salad", "Cucumber, tomato, olives, feta, olive oil", "salads", entitem.TypeRECIPE, "BOWL", imgSalad, 40, nil},
 
 	// ── Light Bites ───────────────────────────────────────────────────────────
-	{"BTE-SAM-001", "Samosa (3pc)", "Crispy vegetable samosas with tamarind chutney", "light-bites", entitem.TypeRECIPE, "SERVING", imgMain2, 80},
-	{"BTE-SPR-001", "Spring Rolls (4pc)", "Crispy vegetable spring rolls with sweet chilli sauce", "light-bites", entitem.TypeRECIPE, "SERVING", imgMain2, 60},
+	{"BTE-SAM-001", "Samosa (3pc)", "Crispy vegetable samosas with tamarind chutney", "light-bites", entitem.TypeRECIPE, "SERVING", imgMain2, 80, nil},
+	{"BTE-SPR-001", "Spring Rolls (4pc)", "Crispy vegetable spring rolls with sweet chilli sauce", "light-bites", entitem.TypeRECIPE, "SERVING", imgMain2, 60, nil},
 
 	// ── Main Courses ──────────────────────────────────────────────────────────
-	{"MIN-GRL-001", "Grilled Beef Fillet", "250g beef fillet with pepper sauce, mash and seasonal veg", "main-courses", entitem.TypeRECIPE, "PLATE", imgMain1, 30},
-	{"MIN-GRL-002", "Grilled Chicken Breast", "Herb-marinated chicken with gravy, rice and vegetables", "main-courses", entitem.TypeRECIPE, "PLATE", imgChickenUgali, 40},
-	{"MIN-CUR-001", "Chicken Curry", "Spiced chicken curry with basmati rice and naan", "main-courses", entitem.TypeRECIPE, "PLATE", imgChicken, 40},
-	{"MIN-CUR-002", "Beef Stew", "Tender beef stew with potatoes and carrots, served with ugali or rice", "main-courses", entitem.TypeRECIPE, "PLATE", imgPilau, 40},
-	{"MIN-SEA-001", "Fish and Chips", "Beer-battered fish with chips and tartar sauce", "main-courses", entitem.TypeRECIPE, "PLATE", imgFish, 30},
-	{"MIN-PAS-001", "Spaghetti Bolognese", "Classic beef bolognese with parmesan and garlic bread", "main-courses", entitem.TypeRECIPE, "PLATE", imgMain1, 30},
-	{"MIN-RIC-001", "Pilau Rice Bowl", "Spiced pilau rice with choice of beef, chicken or veg", "main-courses", entitem.TypeRECIPE, "BOWL", imgPilau, 50},
+	{"MIN-GRL-001", "Grilled Beef Fillet", "250g beef fillet with pepper sauce, mash and seasonal veg", "main-courses", entitem.TypeRECIPE, "PLATE", imgMain1, 30, nil},
+	{"MIN-GRL-002", "Grilled Chicken Breast", "Herb-marinated chicken with gravy, rice and vegetables", "main-courses", entitem.TypeRECIPE, "PLATE", imgChickenUgali, 40, nil},
+	{"MIN-CUR-001", "Chicken Curry", "Spiced chicken curry with basmati rice and naan", "main-courses", entitem.TypeRECIPE, "PLATE", imgChicken, 40, nil},
+	{"MIN-CUR-002", "Beef Stew", "Tender beef stew with potatoes and carrots, served with ugali or rice", "main-courses", entitem.TypeRECIPE, "PLATE", imgPilau, 40, nil},
+	{"MIN-SEA-001", "Fish and Chips", "Beer-battered fish with chips and tartar sauce", "main-courses", entitem.TypeRECIPE, "PLATE", imgFish, 30, nil},
+	{"MIN-PAS-001", "Spaghetti Bolognese", "Classic beef bolognese with parmesan and garlic bread", "main-courses", entitem.TypeRECIPE, "PLATE", imgMain1, 30, nil},
+	{"MIN-RIC-001", "Pilau Rice Bowl", "Spiced pilau rice with choice of beef, chicken or veg", "main-courses", entitem.TypeRECIPE, "BOWL", imgPilau, 50, nil},
 
 	// ── Breakfast ─────────────────────────────────────────────────────────────
-	{"BRK-FUL-001", "Full English Breakfast", "Eggs, bacon, sausage, beans, toast, tomato", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50},
-	{"BRK-PAN-001", "Pancake Stack", "Fluffy pancakes with maple syrup and berries", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50},
-	{"BRK-AVT-001", "Avocado Toast", "Smashed avocado on sourdough with poached egg", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50},
-	{"BRK-OAT-001", "Overnight Oats", "Oats soaked in almond milk with fresh fruits and honey", "breakfast", entitem.TypeRECIPE, "BOWL", imgOats, 40},
+	{"BRK-FUL-001", "Full English Breakfast", "Eggs, bacon, sausage, beans, toast, tomato", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50, nil},
+	{"BRK-PAN-001", "Pancake Stack", "Fluffy pancakes with maple syrup and berries", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50, nil},
+	{"BRK-AVT-001", "Avocado Toast", "Smashed avocado on sourdough with poached egg", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50, nil},
+	{"BRK-OAT-001", "Overnight Oats", "Oats soaked in almond milk with fresh fruits and honey", "breakfast", entitem.TypeRECIPE, "BOWL", imgOats, 40, nil},
 
 	// ── Pizza ─────────────────────────────────────────────────────────────────
-	{"PIZ-MAR-001", "Margherita Pizza", "Fresh mozzarella, tomato sauce, and basil", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30},
-	{"PIZ-PEP-001", "Pepperoni Pizza", "Classic pepperoni with mozzarella and tomato sauce", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30},
+	{"PIZ-MAR-001", "Margherita Pizza", "Fresh mozzarella, tomato sauce, and basil", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30, nil},
+	{"PIZ-PEP-001", "Pepperoni Pizza", "Classic pepperoni with mozzarella and tomato sauce", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30, nil},
 
 	// ── Raw Ingredients (INGREDIENT) ───────────────────────────────────────────────
-	{"RAW-ESP-001", "Espresso Beans", "Premium roasted espresso beans", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 50},
-	{"RAW-MLK-001", "Fresh Milk", "Full-cream fresh milk", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 100},
-	{"RAW-CHO-001", "Chocolate Syrup", "Dark chocolate syrup", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20},
-	{"RAW-SGR-001", "Sugar", "White granulated sugar", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 50},
-	{"RAW-VAN-001", "Vanilla Syrup", "Vanilla flavoured syrup", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 15},
-	{"RAW-CAR-001", "Caramel Syrup", "Caramel flavoured syrup", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 15},
-	{"RAW-ICE-001", "Ice Cubes", "Filtered water ice cubes", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 200},
-	{"RAW-CRM-001", "Whipped Cream", "Ready whipped cream", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20},
-	{"RAW-COC-001", "Cocoa Powder", "Dutch-process cocoa powder", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-TEA-001", "Kenya AA Tea Leaves", "Premium Kenyan black tea leaves", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-GNG-001", "Ginger", "Fresh ginger root", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-CDM-001", "Cardamom", "Ground cardamom spice", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 5},
-	{"RAW-MNG-001", "Fresh Mango", "Ripe mangoes", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-YGT-001", "Yoghurt", "Plain natural yoghurt", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20},
-	{"RAW-BRY-001", "Mixed Berries", "Frozen mixed berries (strawberry, blueberry)", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 15},
-	{"RAW-BNA-001", "Bananas", "Fresh bananas", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-ORG-001", "Fresh Oranges", "Navel oranges for juicing", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 40},
-	{"RAW-BRD-001", "Sourdough Bread", "Artisan sourdough loaf", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 30},
-	{"RAW-CKN-001", "Chicken Breast", "Fresh boneless chicken breast", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-BCN-001", "Bacon", "Smoked streaky bacon", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-LET-001", "Lettuce", "Fresh iceberg and romaine lettuce", "salads", entitem.TypeINGREDIENT, "KG", "", 25},
-	{"RAW-TMT-001", "Tomatoes", "Fresh vine tomatoes", "salads", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-CHZ-001", "Mozzarella Cheese", "Fresh mozzarella", "pizza", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-PRM-001", "Parmesan Cheese", "Aged parmesan block", "salads", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-PST-001", "Pesto Sauce", "Basil pesto", "sandwiches", entitem.TypeINGREDIENT, "LITRE", "", 10},
-	{"RAW-TRT-001", "Tortilla Wraps", "Large flour tortilla wraps", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 50},
-	{"RAW-HUM-001", "Hummus", "Classic chickpea hummus", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-AVO-001", "Avocado", "Fresh ripe avocados", "salads", entitem.TypeINGREDIENT, "PIECE", "", 40},
-	{"RAW-TNA-001", "Canned Tuna", "Tuna chunks in brine", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-CDD-001", "Cheddar Cheese", "Mature cheddar slices", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 15},
-	{"RAW-RYE-001", "Rye Bread", "Dark rye bread loaf", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 20},
-	{"RAW-OLV-001", "Olives", "Kalamata olives", "salads", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-FTA-001", "Feta Cheese", "Greek feta cheese", "salads", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-CUC-001", "Cucumber", "Fresh cucumbers", "salads", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-OVO-001", "Olive Oil", "Extra virgin olive oil", "salads", entitem.TypeINGREDIENT, "LITRE", "", 15},
-	{"RAW-CRT-001", "Croutons", "Seasoned croutons", "salads", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-CSR-001", "Caesar Dressing", "Classic caesar dressing", "salads", entitem.TypeINGREDIENT, "LITRE", "", 10},
-	{"RAW-SAM-001", "Samosa Wraps", "Pre-made samosa pastry wraps", "light-bites", entitem.TypeINGREDIENT, "PIECE", "", 100},
-	{"RAW-SPW-001", "Spring Roll Wraps", "Rice paper spring roll wraps", "light-bites", entitem.TypeINGREDIENT, "PIECE", "", 100},
-	{"RAW-BEF-001", "Beef Fillet", "Prime beef fillet steaks", "main-courses", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-RIC-001", "Basmati Rice", "Long-grain basmati rice", "main-courses", entitem.TypeINGREDIENT, "KG", "", 50},
-	{"RAW-NAN-001", "Naan Bread", "Fresh tandoori naan", "main-courses", entitem.TypeINGREDIENT, "PIECE", "", 40},
-	{"RAW-POT-001", "Potatoes", "Fresh white potatoes", "main-courses", entitem.TypeINGREDIENT, "KG", "", 50},
-	{"RAW-FSH-001", "White Fish Fillet", "Beer-batter-ready cod/tilapia fillets", "main-courses", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-SPG-001", "Spaghetti", "Dried spaghetti pasta", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-MNC-001", "Minced Beef", "Lean minced beef", "main-courses", entitem.TypeINGREDIENT, "KG", "", 25},
-	{"RAW-PIL-001", "Pilau Spice Mix", "Traditional pilau masala", "main-courses", entitem.TypeINGREDIENT, "KG", "", 5},
-	{"RAW-EGG-001", "Eggs", "Free-range eggs", "breakfast", entitem.TypeINGREDIENT, "PIECE", "", 200},
-	{"RAW-SSG-001", "Pork Sausages", "Breakfast pork sausages", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-BNS-001", "Baked Beans", "Tinned baked beans", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-PNC-001", "Pancake Mix", "Ready-mix pancake batter", "breakfast", entitem.TypeINGREDIENT, "KG", "", 15},
-	{"RAW-MPS-001", "Maple Syrup", "Canadian maple syrup", "breakfast", entitem.TypeINGREDIENT, "LITRE", "", 10},
-	{"RAW-OAT-001", "Rolled Oats", "Organic rolled oats", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20},
-	{"RAW-ALM-001", "Almond Milk", "Unsweetened almond milk", "breakfast", entitem.TypeINGREDIENT, "LITRE", "", 15},
-	{"RAW-HNY-001", "Honey", "Raw natural honey", "breakfast", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-TMC-001", "Tomato Sauce", "Pizza and pasta tomato sauce", "pizza", entitem.TypeINGREDIENT, "LITRE", "", 20},
-	{"RAW-BSL-001", "Fresh Basil", "Fresh basil leaves", "pizza", entitem.TypeINGREDIENT, "KG", "", 5},
-	{"RAW-PEP-001", "Pepperoni", "Sliced pepperoni", "pizza", entitem.TypeINGREDIENT, "KG", "", 10},
-	{"RAW-PZD-001", "Pizza Dough", "Fresh pizza dough balls", "pizza", entitem.TypeINGREDIENT, "PIECE", "", 40},
-	{"RAW-FLR-001", "Wheat Flour", "All-purpose wheat flour", "pastries", entitem.TypeINGREDIENT, "KG", "", 50},
-	{"RAW-BTR-001", "Butter", "Unsalted butter blocks", "pastries", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-CRY-001", "Curry Powder", "Blended curry powder", "main-courses", entitem.TypeINGREDIENT, "KG", "", 5},
-	{"RAW-UGL-001", "Ugali Flour", "White maize flour for ugali", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-TAR-001", "Tartar Sauce", "Ready tartar sauce", "main-courses", entitem.TypeINGREDIENT, "LITRE", "", 10},
-	{"RAW-VEG-001", "Mixed Vegetables", "Seasonal mixed vegetables", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30},
-	{"RAW-TMR-001", "Tamarind Chutney", "Tangy tamarind chutney", "light-bites", entitem.TypeINGREDIENT, "LITRE", "", 5},
-	{"RAW-SCS-001", "Sweet Chilli Sauce", "Thai sweet chilli dipping sauce", "light-bites", entitem.TypeINGREDIENT, "LITRE", "", 10},
+	{"RAW-ESP-001", "Espresso Beans", "Premium roasted espresso beans", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 50, nil},
+	{"RAW-MLK-001", "Fresh Milk", "Full-cream fresh milk", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 100, nil},
+	{"RAW-CHO-001", "Chocolate Syrup", "Dark chocolate syrup", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20, nil},
+	{"RAW-SGR-001", "Sugar", "White granulated sugar", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 50, nil},
+	{"RAW-VAN-001", "Vanilla Syrup", "Vanilla flavoured syrup", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 15, nil},
+	{"RAW-CAR-001", "Caramel Syrup", "Caramel flavoured syrup", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 15, nil},
+	{"RAW-ICE-001", "Ice Cubes", "Filtered water ice cubes", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 200, nil},
+	{"RAW-CRM-001", "Whipped Cream", "Ready whipped cream", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20, nil},
+	{"RAW-COC-001", "Cocoa Powder", "Dutch-process cocoa powder", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-TEA-001", "Kenya AA Tea Leaves", "Premium Kenyan black tea leaves", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-GNG-001", "Ginger", "Fresh ginger root", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-CDM-001", "Cardamom", "Ground cardamom spice", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 5, nil},
+	{"RAW-MNG-001", "Fresh Mango", "Ripe mangoes", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-YGT-001", "Yoghurt", "Plain natural yoghurt", "cold-beverages", entitem.TypeINGREDIENT, "LITRE", "", 20, nil},
+	{"RAW-BRY-001", "Mixed Berries", "Frozen mixed berries (strawberry, blueberry)", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 15, nil},
+	{"RAW-BNA-001", "Bananas", "Fresh bananas", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-ORG-001", "Fresh Oranges", "Navel oranges for juicing", "cold-beverages", entitem.TypeINGREDIENT, "KG", "", 40, nil},
+	{"RAW-BRD-001", "Sourdough Bread", "Artisan sourdough loaf", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 30, nil},
+	{"RAW-CKN-001", "Chicken Breast", "Fresh boneless chicken breast", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-BCN-001", "Bacon", "Smoked streaky bacon", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-LET-001", "Lettuce", "Fresh iceberg and romaine lettuce", "salads", entitem.TypeINGREDIENT, "KG", "", 25, nil},
+	{"RAW-TMT-001", "Tomatoes", "Fresh vine tomatoes", "salads", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-CHZ-001", "Mozzarella Cheese", "Fresh mozzarella", "pizza", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-PRM-001", "Parmesan Cheese", "Aged parmesan block", "salads", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-PST-001", "Pesto Sauce", "Basil pesto", "sandwiches", entitem.TypeINGREDIENT, "LITRE", "", 10, nil},
+	{"RAW-TRT-001", "Tortilla Wraps", "Large flour tortilla wraps", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 50, nil},
+	{"RAW-HUM-001", "Hummus", "Classic chickpea hummus", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-AVO-001", "Avocado", "Fresh ripe avocados", "salads", entitem.TypeINGREDIENT, "PIECE", "", 40, nil},
+	{"RAW-TNA-001", "Canned Tuna", "Tuna chunks in brine", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-CDD-001", "Cheddar Cheese", "Mature cheddar slices", "sandwiches", entitem.TypeINGREDIENT, "KG", "", 15, nil},
+	{"RAW-RYE-001", "Rye Bread", "Dark rye bread loaf", "sandwiches", entitem.TypeINGREDIENT, "PIECE", "", 20, nil},
+	{"RAW-OLV-001", "Olives", "Kalamata olives", "salads", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-FTA-001", "Feta Cheese", "Greek feta cheese", "salads", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-CUC-001", "Cucumber", "Fresh cucumbers", "salads", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-OVO-001", "Olive Oil", "Extra virgin olive oil", "salads", entitem.TypeINGREDIENT, "LITRE", "", 15, nil},
+	{"RAW-CRT-001", "Croutons", "Seasoned croutons", "salads", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-CSR-001", "Caesar Dressing", "Classic caesar dressing", "salads", entitem.TypeINGREDIENT, "LITRE", "", 10, nil},
+	{"RAW-SAM-001", "Samosa Wraps", "Pre-made samosa pastry wraps", "light-bites", entitem.TypeINGREDIENT, "PIECE", "", 100, nil},
+	{"RAW-SPW-001", "Spring Roll Wraps", "Rice paper spring roll wraps", "light-bites", entitem.TypeINGREDIENT, "PIECE", "", 100, nil},
+	{"RAW-BEF-001", "Beef Fillet", "Prime beef fillet steaks", "main-courses", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-RIC-001", "Basmati Rice", "Long-grain basmati rice", "main-courses", entitem.TypeINGREDIENT, "KG", "", 50, nil},
+	{"RAW-NAN-001", "Naan Bread", "Fresh tandoori naan", "main-courses", entitem.TypeINGREDIENT, "PIECE", "", 40, nil},
+	{"RAW-POT-001", "Potatoes", "Fresh white potatoes", "main-courses", entitem.TypeINGREDIENT, "KG", "", 50, nil},
+	{"RAW-FSH-001", "White Fish Fillet", "Beer-batter-ready cod/tilapia fillets", "main-courses", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-SPG-001", "Spaghetti", "Dried spaghetti pasta", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-MNC-001", "Minced Beef", "Lean minced beef", "main-courses", entitem.TypeINGREDIENT, "KG", "", 25, nil},
+	{"RAW-PIL-001", "Pilau Spice Mix", "Traditional pilau masala", "main-courses", entitem.TypeINGREDIENT, "KG", "", 5, nil},
+	{"RAW-EGG-001", "Eggs", "Free-range eggs", "breakfast", entitem.TypeINGREDIENT, "PIECE", "", 200, nil},
+	{"RAW-SSG-001", "Pork Sausages", "Breakfast pork sausages", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-BNS-001", "Baked Beans", "Tinned baked beans", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-PNC-001", "Pancake Mix", "Ready-mix pancake batter", "breakfast", entitem.TypeINGREDIENT, "KG", "", 15, nil},
+	{"RAW-MPS-001", "Maple Syrup", "Canadian maple syrup", "breakfast", entitem.TypeINGREDIENT, "LITRE", "", 10, nil},
+	{"RAW-OAT-001", "Rolled Oats", "Organic rolled oats", "breakfast", entitem.TypeINGREDIENT, "KG", "", 20, nil},
+	{"RAW-ALM-001", "Almond Milk", "Unsweetened almond milk", "breakfast", entitem.TypeINGREDIENT, "LITRE", "", 15, nil},
+	{"RAW-HNY-001", "Honey", "Raw natural honey", "breakfast", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-TMC-001", "Tomato Sauce", "Pizza and pasta tomato sauce", "pizza", entitem.TypeINGREDIENT, "LITRE", "", 20, nil},
+	{"RAW-BSL-001", "Fresh Basil", "Fresh basil leaves", "pizza", entitem.TypeINGREDIENT, "KG", "", 5, nil},
+	{"RAW-PEP-001", "Pepperoni", "Sliced pepperoni", "pizza", entitem.TypeINGREDIENT, "KG", "", 10, nil},
+	{"RAW-PZD-001", "Pizza Dough", "Fresh pizza dough balls", "pizza", entitem.TypeINGREDIENT, "PIECE", "", 40, nil},
+	{"RAW-FLR-001", "Wheat Flour", "All-purpose wheat flour", "pastries", entitem.TypeINGREDIENT, "KG", "", 50, nil},
+	{"RAW-BTR-001", "Butter", "Unsalted butter blocks", "pastries", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-CRY-001", "Curry Powder", "Blended curry powder", "main-courses", entitem.TypeINGREDIENT, "KG", "", 5, nil},
+	{"RAW-UGL-001", "Ugali Flour", "White maize flour for ugali", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-TAR-001", "Tartar Sauce", "Ready tartar sauce", "main-courses", entitem.TypeINGREDIENT, "LITRE", "", 10, nil},
+	{"RAW-VEG-001", "Mixed Vegetables", "Seasonal mixed vegetables", "main-courses", entitem.TypeINGREDIENT, "KG", "", 30, nil},
+	{"RAW-TMR-001", "Tamarind Chutney", "Tangy tamarind chutney", "light-bites", entitem.TypeINGREDIENT, "LITRE", "", 5, nil},
+	{"RAW-SCS-001", "Sweet Chilli Sauce", "Thai sweet chilli dipping sauce", "light-bites", entitem.TypeINGREDIENT, "LITRE", "", 10, nil},
+
+	// ── Events & Experiences (SERVICE — non-stockable) ─────────────────────────
+	{"EVT-JAZ-001", "Weekend Jazz Night", "Live jazz performance with a curated dinner menu and ambient lighting", "events", entitem.TypeSERVICE, "TICKET", imgCocktail, 0, []string{"event"}},
+	{"EVT-BAR-001", "Barista Masterclass", "Learn espresso extraction, latte art, and coffee tasting in our roastery corner", "events", entitem.TypeSERVICE, "TICKET", imgEspresso, 0, []string{"event"}},
+	{"EVT-WIN-001", "Wine & Cheese Evening", "Sommelier-guided wine pairing with artisan cheeses and charcuterie boards", "events", entitem.TypeSERVICE, "TICKET", imgCocktail, 0, []string{"event"}},
+	{"EVT-BRN-001", "Sunday Brunch Buffet", "Unlimited brunch spread: eggs, pastries, fresh juices, and live cooking stations", "events", entitem.TypeSERVICE, "TICKET", imgBreakfast, 0, []string{"event"}},
+	{"EVT-MIX-001", "Cocktail Mixology Workshop", "Shake, stir, and muddle — craft Urban Loft signature cocktails with our expert bartender", "events", entitem.TypeSERVICE, "TICKET", imgCocktail, 0, []string{"event"}},
+	{"EVT-QUZ-001", "Urban Loft Quiz Night", "Monthly trivia night with themed rounds, prizes, and a two-course dinner included", "events", entitem.TypeSERVICE, "TICKET", imgMain1, 0, []string{"event"}},
 }
 
 func itemUUID(tenantID uuid.UUID, sku string) uuid.UUID {
@@ -639,6 +650,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, catI
 				SetUnitID(unitID).
 				SetType(def.ItemType).
 				SetImageURL(imgURL).
+				SetTags(def.Tags).
 				SetIsActive(true).
 				Save(ctx); createErr != nil {
 				return fmt.Errorf("create item %s: %w", def.SKU, createErr)
@@ -647,7 +659,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, catI
 		case err != nil:
 			return fmt.Errorf("check item %s: %w", def.SKU, err)
 		default:
-			// Update mutable fields: name, description, category, unit, type, image.
+			// Update mutable fields: name, description, category, unit, type, image, tags.
 			if _, updateErr := client.Item.UpdateOneID(id).
 				SetName(def.Name).
 				SetDescription(def.Description).
@@ -655,6 +667,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, catI
 				SetUnitID(unitID).
 				SetType(def.ItemType).
 				SetImageURL(imgURL).
+				SetTags(def.Tags).
 				Save(ctx); updateErr != nil {
 				return fmt.Errorf("update item %s: %w", def.SKU, updateErr)
 			}
