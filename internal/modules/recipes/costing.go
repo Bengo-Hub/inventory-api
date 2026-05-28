@@ -13,12 +13,13 @@ import (
 )
 
 // RecalculateRecipeCosts computes and persists total_cost, cost_per_portion, and suggested_price
-// for a recipe by summing ingredient cost_prices and applying the target (or tenant-default) margin.
+// for a recipe by summing ingredient cost_prices (and sub-recipe cost_per_portion) and applying
+// the target (or tenant-default) margin.
 func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error {
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.ID(recipeID)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.WithItem()
+			q.WithItem().WithSubRecipe()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -29,10 +30,21 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	hasCost := false
 
 	for _, ing := range r.Edges.Ingredients {
+		effectiveQty := ing.Quantity * (1 + ing.WastePercent/100)
+
+		// Sub-recipe ingredient: use its cost_per_portion instead of a raw item cost.
+		if ing.SubRecipeID != nil && ing.Edges.SubRecipe != nil {
+			sub := ing.Edges.SubRecipe
+			if sub.CostPerPortion != nil {
+				totalCost += effectiveQty * *sub.CostPerPortion
+				hasCost = true
+			}
+			continue
+		}
+
 		if ing.Edges.Item == nil || ing.Edges.Item.CostPrice == nil {
 			continue
 		}
-		effectiveQty := ing.Quantity * (1 + ing.WastePercent/100)
 		totalCost += effectiveQty * *ing.Edges.Item.CostPrice
 		hasCost = true
 	}

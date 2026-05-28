@@ -38,6 +38,8 @@ type RecipeIngredient struct {
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Shrinkage/waste factor in %; effective qty = quantity * (1 + waste_percent/100)
 	WastePercent float64 `json:"waste_percent,omitempty"`
+	// FK → Recipe used as a prep/sub-recipe instead of a raw item
+	SubRecipeID *uuid.UUID `json:"sub_recipe_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RecipeIngredientQuery when eager-loading is set.
 	Edges        RecipeIngredientEdges `json:"edges"`
@@ -52,9 +54,11 @@ type RecipeIngredientEdges struct {
 	Item *Item `json:"item,omitempty"`
 	// Unit holds the value of the unit edge.
 	Unit *Unit `json:"unit,omitempty"`
+	// SubRecipe holds the value of the sub_recipe edge.
+	SubRecipe *Recipe `json:"sub_recipe,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // RecipeOrErr returns the Recipe value or an error if the edge
@@ -90,12 +94,23 @@ func (e RecipeIngredientEdges) UnitOrErr() (*Unit, error) {
 	return nil, &NotLoadedError{edge: "unit"}
 }
 
+// SubRecipeOrErr returns the SubRecipe value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RecipeIngredientEdges) SubRecipeOrErr() (*Recipe, error) {
+	if e.SubRecipe != nil {
+		return e.SubRecipe, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: recipe.Label}
+	}
+	return nil, &NotLoadedError{edge: "sub_recipe"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*RecipeIngredient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case recipeingredient.FieldUnitID:
+		case recipeingredient.FieldUnitID, recipeingredient.FieldSubRecipeID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case recipeingredient.FieldQuantity, recipeingredient.FieldWastePercent:
 			values[i] = new(sql.NullFloat64)
@@ -181,6 +196,13 @@ func (_m *RecipeIngredient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.WastePercent = value.Float64
 			}
+		case recipeingredient.FieldSubRecipeID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field sub_recipe_id", values[i])
+			} else if value.Valid {
+				_m.SubRecipeID = new(uuid.UUID)
+				*_m.SubRecipeID = *value.S.(*uuid.UUID)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -207,6 +229,11 @@ func (_m *RecipeIngredient) QueryItem() *ItemQuery {
 // QueryUnit queries the "unit" edge of the RecipeIngredient entity.
 func (_m *RecipeIngredient) QueryUnit() *UnitQuery {
 	return NewRecipeIngredientClient(_m.config).QueryUnit(_m)
+}
+
+// QuerySubRecipe queries the "sub_recipe" edge of the RecipeIngredient entity.
+func (_m *RecipeIngredient) QuerySubRecipe() *RecipeQuery {
+	return NewRecipeIngredientClient(_m.config).QuerySubRecipe(_m)
 }
 
 // Update returns a builder for updating this RecipeIngredient.
@@ -260,6 +287,11 @@ func (_m *RecipeIngredient) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("waste_percent=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WastePercent))
+	builder.WriteString(", ")
+	if v := _m.SubRecipeID; v != nil {
+		builder.WriteString("sub_recipe_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -1059,6 +1059,7 @@ var (
 		{Name: "waste_percent", Type: field.TypeFloat64, Nullable: true, Default: 0},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "recipe_id", Type: field.TypeUUID},
+		{Name: "sub_recipe_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// RecipeIngredientsTable holds the schema information for the "recipe_ingredients" table.
@@ -1080,8 +1081,14 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "recipe_ingredients_units_recipe_ingredients",
+				Symbol:     "recipe_ingredients_recipes_used_as_ingredient",
 				Columns:    []*schema.Column{RecipeIngredientsColumns[9]},
+				RefColumns: []*schema.Column{RecipesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "recipe_ingredients_units_recipe_ingredients",
+				Columns:    []*schema.Column{RecipeIngredientsColumns[10]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1771,7 +1778,8 @@ func init() {
 	RecipesTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
-	RecipeIngredientsTable.ForeignKeys[2].RefTable = UnitsTable
+	RecipeIngredientsTable.ForeignKeys[2].RefTable = RecipesTable
+	RecipeIngredientsTable.ForeignKeys[3].RefTable = UnitsTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = InventoryRolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = InventoryPermissionsTable

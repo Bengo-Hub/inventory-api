@@ -24659,38 +24659,41 @@ func (m *RateLimitConfigMutation) ResetEdge(name string) error {
 // RecipeMutation represents an operation that mutates the Recipe nodes in the graph.
 type RecipeMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *uuid.UUID
-	tenant_id                *uuid.UUID
-	sku                      *string
-	name                     *string
-	output_qty               *float64
-	addoutput_qty            *float64
-	unit_of_measure          *string
-	is_active                *bool
-	total_cost               *float64
-	addtotal_cost            *float64
-	cost_per_portion         *float64
-	addcost_per_portion      *float64
-	target_margin_percent    *float64
-	addtarget_margin_percent *float64
-	suggested_price          *float64
-	addsuggested_price       *float64
-	prep_time_minutes        *int
-	addprep_time_minutes     *int
-	metadata                 *map[string]interface{}
-	created_at               *time.Time
-	updated_at               *time.Time
-	clearedFields            map[string]struct{}
-	ingredients              map[uuid.UUID]struct{}
-	removedingredients       map[uuid.UUID]struct{}
-	clearedingredients       bool
-	item                     *uuid.UUID
-	cleareditem              bool
-	done                     bool
-	oldValue                 func(context.Context) (*Recipe, error)
-	predicates               []predicate.Recipe
+	op                        Op
+	typ                       string
+	id                        *uuid.UUID
+	tenant_id                 *uuid.UUID
+	sku                       *string
+	name                      *string
+	output_qty                *float64
+	addoutput_qty             *float64
+	unit_of_measure           *string
+	is_active                 *bool
+	total_cost                *float64
+	addtotal_cost             *float64
+	cost_per_portion          *float64
+	addcost_per_portion       *float64
+	target_margin_percent     *float64
+	addtarget_margin_percent  *float64
+	suggested_price           *float64
+	addsuggested_price        *float64
+	prep_time_minutes         *int
+	addprep_time_minutes      *int
+	metadata                  *map[string]interface{}
+	created_at                *time.Time
+	updated_at                *time.Time
+	clearedFields             map[string]struct{}
+	ingredients               map[uuid.UUID]struct{}
+	removedingredients        map[uuid.UUID]struct{}
+	clearedingredients        bool
+	used_as_ingredient        map[uuid.UUID]struct{}
+	removedused_as_ingredient map[uuid.UUID]struct{}
+	clearedused_as_ingredient bool
+	item                      *uuid.UUID
+	cleareditem               bool
+	done                      bool
+	oldValue                  func(context.Context) (*Recipe, error)
+	predicates                []predicate.Recipe
 }
 
 var _ ent.Mutation = (*RecipeMutation)(nil)
@@ -25607,6 +25610,60 @@ func (m *RecipeMutation) ResetIngredients() {
 	m.removedingredients = nil
 }
 
+// AddUsedAsIngredientIDs adds the "used_as_ingredient" edge to the RecipeIngredient entity by ids.
+func (m *RecipeMutation) AddUsedAsIngredientIDs(ids ...uuid.UUID) {
+	if m.used_as_ingredient == nil {
+		m.used_as_ingredient = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.used_as_ingredient[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUsedAsIngredient clears the "used_as_ingredient" edge to the RecipeIngredient entity.
+func (m *RecipeMutation) ClearUsedAsIngredient() {
+	m.clearedused_as_ingredient = true
+}
+
+// UsedAsIngredientCleared reports if the "used_as_ingredient" edge to the RecipeIngredient entity was cleared.
+func (m *RecipeMutation) UsedAsIngredientCleared() bool {
+	return m.clearedused_as_ingredient
+}
+
+// RemoveUsedAsIngredientIDs removes the "used_as_ingredient" edge to the RecipeIngredient entity by IDs.
+func (m *RecipeMutation) RemoveUsedAsIngredientIDs(ids ...uuid.UUID) {
+	if m.removedused_as_ingredient == nil {
+		m.removedused_as_ingredient = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.used_as_ingredient, ids[i])
+		m.removedused_as_ingredient[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUsedAsIngredient returns the removed IDs of the "used_as_ingredient" edge to the RecipeIngredient entity.
+func (m *RecipeMutation) RemovedUsedAsIngredientIDs() (ids []uuid.UUID) {
+	for id := range m.removedused_as_ingredient {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UsedAsIngredientIDs returns the "used_as_ingredient" edge IDs in the mutation.
+func (m *RecipeMutation) UsedAsIngredientIDs() (ids []uuid.UUID) {
+	for id := range m.used_as_ingredient {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUsedAsIngredient resets all changes to the "used_as_ingredient" edge.
+func (m *RecipeMutation) ResetUsedAsIngredient() {
+	m.used_as_ingredient = nil
+	m.clearedused_as_ingredient = false
+	m.removedused_as_ingredient = nil
+}
+
 // ClearItem clears the "item" edge to the Item entity.
 func (m *RecipeMutation) ClearItem() {
 	m.cleareditem = true
@@ -26125,9 +26182,12 @@ func (m *RecipeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RecipeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.ingredients != nil {
 		edges = append(edges, recipe.EdgeIngredients)
+	}
+	if m.used_as_ingredient != nil {
+		edges = append(edges, recipe.EdgeUsedAsIngredient)
 	}
 	if m.item != nil {
 		edges = append(edges, recipe.EdgeItem)
@@ -26145,6 +26205,12 @@ func (m *RecipeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case recipe.EdgeUsedAsIngredient:
+		ids := make([]ent.Value, 0, len(m.used_as_ingredient))
+		for id := range m.used_as_ingredient {
+			ids = append(ids, id)
+		}
+		return ids
 	case recipe.EdgeItem:
 		if id := m.item; id != nil {
 			return []ent.Value{*id}
@@ -26155,9 +26221,12 @@ func (m *RecipeMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RecipeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedingredients != nil {
 		edges = append(edges, recipe.EdgeIngredients)
+	}
+	if m.removedused_as_ingredient != nil {
+		edges = append(edges, recipe.EdgeUsedAsIngredient)
 	}
 	return edges
 }
@@ -26172,15 +26241,24 @@ func (m *RecipeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case recipe.EdgeUsedAsIngredient:
+		ids := make([]ent.Value, 0, len(m.removedused_as_ingredient))
+		for id := range m.removedused_as_ingredient {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RecipeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedingredients {
 		edges = append(edges, recipe.EdgeIngredients)
+	}
+	if m.clearedused_as_ingredient {
+		edges = append(edges, recipe.EdgeUsedAsIngredient)
 	}
 	if m.cleareditem {
 		edges = append(edges, recipe.EdgeItem)
@@ -26194,6 +26272,8 @@ func (m *RecipeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case recipe.EdgeIngredients:
 		return m.clearedingredients
+	case recipe.EdgeUsedAsIngredient:
+		return m.clearedused_as_ingredient
 	case recipe.EdgeItem:
 		return m.cleareditem
 	}
@@ -26218,6 +26298,9 @@ func (m *RecipeMutation) ResetEdge(name string) error {
 	case recipe.EdgeIngredients:
 		m.ResetIngredients()
 		return nil
+	case recipe.EdgeUsedAsIngredient:
+		m.ResetUsedAsIngredient()
+		return nil
 	case recipe.EdgeItem:
 		m.ResetItem()
 		return nil
@@ -26228,28 +26311,30 @@ func (m *RecipeMutation) ResetEdge(name string) error {
 // RecipeIngredientMutation represents an operation that mutates the RecipeIngredient nodes in the graph.
 type RecipeIngredientMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	item_sku         *string
-	quantity         *float64
-	addquantity      *float64
-	unit_of_measure  *string
-	notes            *string
-	display_order    *int
-	adddisplay_order *int
-	waste_percent    *float64
-	addwaste_percent *float64
-	clearedFields    map[string]struct{}
-	recipe           *uuid.UUID
-	clearedrecipe    bool
-	item             *uuid.UUID
-	cleareditem      bool
-	unit             *uuid.UUID
-	clearedunit      bool
-	done             bool
-	oldValue         func(context.Context) (*RecipeIngredient, error)
-	predicates       []predicate.RecipeIngredient
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	item_sku          *string
+	quantity          *float64
+	addquantity       *float64
+	unit_of_measure   *string
+	notes             *string
+	display_order     *int
+	adddisplay_order  *int
+	waste_percent     *float64
+	addwaste_percent  *float64
+	clearedFields     map[string]struct{}
+	recipe            *uuid.UUID
+	clearedrecipe     bool
+	item              *uuid.UUID
+	cleareditem       bool
+	unit              *uuid.UUID
+	clearedunit       bool
+	sub_recipe        *uuid.UUID
+	clearedsub_recipe bool
+	done              bool
+	oldValue          func(context.Context) (*RecipeIngredient, error)
+	predicates        []predicate.RecipeIngredient
 }
 
 var _ ent.Mutation = (*RecipeIngredientMutation)(nil)
@@ -26780,6 +26865,55 @@ func (m *RecipeIngredientMutation) ResetWastePercent() {
 	delete(m.clearedFields, recipeingredient.FieldWastePercent)
 }
 
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (m *RecipeIngredientMutation) SetSubRecipeID(u uuid.UUID) {
+	m.sub_recipe = &u
+}
+
+// SubRecipeID returns the value of the "sub_recipe_id" field in the mutation.
+func (m *RecipeIngredientMutation) SubRecipeID() (r uuid.UUID, exists bool) {
+	v := m.sub_recipe
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubRecipeID returns the old "sub_recipe_id" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldSubRecipeID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubRecipeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubRecipeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubRecipeID: %w", err)
+	}
+	return oldValue.SubRecipeID, nil
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (m *RecipeIngredientMutation) ClearSubRecipeID() {
+	m.sub_recipe = nil
+	m.clearedFields[recipeingredient.FieldSubRecipeID] = struct{}{}
+}
+
+// SubRecipeIDCleared returns if the "sub_recipe_id" field was cleared in this mutation.
+func (m *RecipeIngredientMutation) SubRecipeIDCleared() bool {
+	_, ok := m.clearedFields[recipeingredient.FieldSubRecipeID]
+	return ok
+}
+
+// ResetSubRecipeID resets all changes to the "sub_recipe_id" field.
+func (m *RecipeIngredientMutation) ResetSubRecipeID() {
+	m.sub_recipe = nil
+	delete(m.clearedFields, recipeingredient.FieldSubRecipeID)
+}
+
 // ClearRecipe clears the "recipe" edge to the Recipe entity.
 func (m *RecipeIngredientMutation) ClearRecipe() {
 	m.clearedrecipe = true
@@ -26861,6 +26995,33 @@ func (m *RecipeIngredientMutation) ResetUnit() {
 	m.clearedunit = false
 }
 
+// ClearSubRecipe clears the "sub_recipe" edge to the Recipe entity.
+func (m *RecipeIngredientMutation) ClearSubRecipe() {
+	m.clearedsub_recipe = true
+	m.clearedFields[recipeingredient.FieldSubRecipeID] = struct{}{}
+}
+
+// SubRecipeCleared reports if the "sub_recipe" edge to the Recipe entity was cleared.
+func (m *RecipeIngredientMutation) SubRecipeCleared() bool {
+	return m.SubRecipeIDCleared() || m.clearedsub_recipe
+}
+
+// SubRecipeIDs returns the "sub_recipe" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SubRecipeID instead. It exists only for internal usage by the builders.
+func (m *RecipeIngredientMutation) SubRecipeIDs() (ids []uuid.UUID) {
+	if id := m.sub_recipe; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSubRecipe resets all changes to the "sub_recipe" edge.
+func (m *RecipeIngredientMutation) ResetSubRecipe() {
+	m.sub_recipe = nil
+	m.clearedsub_recipe = false
+}
+
 // Where appends a list predicates to the RecipeIngredientMutation builder.
 func (m *RecipeIngredientMutation) Where(ps ...predicate.RecipeIngredient) {
 	m.predicates = append(m.predicates, ps...)
@@ -26895,7 +27056,7 @@ func (m *RecipeIngredientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeIngredientMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.recipe != nil {
 		fields = append(fields, recipeingredient.FieldRecipeID)
 	}
@@ -26923,6 +27084,9 @@ func (m *RecipeIngredientMutation) Fields() []string {
 	if m.waste_percent != nil {
 		fields = append(fields, recipeingredient.FieldWastePercent)
 	}
+	if m.sub_recipe != nil {
+		fields = append(fields, recipeingredient.FieldSubRecipeID)
+	}
 	return fields
 }
 
@@ -26949,6 +27113,8 @@ func (m *RecipeIngredientMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitID()
 	case recipeingredient.FieldWastePercent:
 		return m.WastePercent()
+	case recipeingredient.FieldSubRecipeID:
+		return m.SubRecipeID()
 	}
 	return nil, false
 }
@@ -26976,6 +27142,8 @@ func (m *RecipeIngredientMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUnitID(ctx)
 	case recipeingredient.FieldWastePercent:
 		return m.OldWastePercent(ctx)
+	case recipeingredient.FieldSubRecipeID:
+		return m.OldSubRecipeID(ctx)
 	}
 	return nil, fmt.Errorf("unknown RecipeIngredient field %s", name)
 }
@@ -27047,6 +27215,13 @@ func (m *RecipeIngredientMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWastePercent(v)
+		return nil
+	case recipeingredient.FieldSubRecipeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubRecipeID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient field %s", name)
@@ -27126,6 +27301,9 @@ func (m *RecipeIngredientMutation) ClearedFields() []string {
 	if m.FieldCleared(recipeingredient.FieldWastePercent) {
 		fields = append(fields, recipeingredient.FieldWastePercent)
 	}
+	if m.FieldCleared(recipeingredient.FieldSubRecipeID) {
+		fields = append(fields, recipeingredient.FieldSubRecipeID)
+	}
 	return fields
 }
 
@@ -27148,6 +27326,9 @@ func (m *RecipeIngredientMutation) ClearField(name string) error {
 		return nil
 	case recipeingredient.FieldWastePercent:
 		m.ClearWastePercent()
+		return nil
+	case recipeingredient.FieldSubRecipeID:
+		m.ClearSubRecipeID()
 		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient nullable field %s", name)
@@ -27184,13 +27365,16 @@ func (m *RecipeIngredientMutation) ResetField(name string) error {
 	case recipeingredient.FieldWastePercent:
 		m.ResetWastePercent()
 		return nil
+	case recipeingredient.FieldSubRecipeID:
+		m.ResetSubRecipeID()
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RecipeIngredientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.recipe != nil {
 		edges = append(edges, recipeingredient.EdgeRecipe)
 	}
@@ -27199,6 +27383,9 @@ func (m *RecipeIngredientMutation) AddedEdges() []string {
 	}
 	if m.unit != nil {
 		edges = append(edges, recipeingredient.EdgeUnit)
+	}
+	if m.sub_recipe != nil {
+		edges = append(edges, recipeingredient.EdgeSubRecipe)
 	}
 	return edges
 }
@@ -27219,13 +27406,17 @@ func (m *RecipeIngredientMutation) AddedIDs(name string) []ent.Value {
 		if id := m.unit; id != nil {
 			return []ent.Value{*id}
 		}
+	case recipeingredient.EdgeSubRecipe:
+		if id := m.sub_recipe; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RecipeIngredientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -27237,7 +27428,7 @@ func (m *RecipeIngredientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RecipeIngredientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedrecipe {
 		edges = append(edges, recipeingredient.EdgeRecipe)
 	}
@@ -27246,6 +27437,9 @@ func (m *RecipeIngredientMutation) ClearedEdges() []string {
 	}
 	if m.clearedunit {
 		edges = append(edges, recipeingredient.EdgeUnit)
+	}
+	if m.clearedsub_recipe {
+		edges = append(edges, recipeingredient.EdgeSubRecipe)
 	}
 	return edges
 }
@@ -27260,6 +27454,8 @@ func (m *RecipeIngredientMutation) EdgeCleared(name string) bool {
 		return m.cleareditem
 	case recipeingredient.EdgeUnit:
 		return m.clearedunit
+	case recipeingredient.EdgeSubRecipe:
+		return m.clearedsub_recipe
 	}
 	return false
 }
@@ -27277,6 +27473,9 @@ func (m *RecipeIngredientMutation) ClearEdge(name string) error {
 	case recipeingredient.EdgeUnit:
 		m.ClearUnit()
 		return nil
+	case recipeingredient.EdgeSubRecipe:
+		m.ClearSubRecipe()
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient unique edge %s", name)
 }
@@ -27293,6 +27492,9 @@ func (m *RecipeIngredientMutation) ResetEdge(name string) error {
 		return nil
 	case recipeingredient.EdgeUnit:
 		m.ResetUnit()
+		return nil
+	case recipeingredient.EdgeSubRecipe:
+		m.ResetSubRecipe()
 		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient edge %s", name)

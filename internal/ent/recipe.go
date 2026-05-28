@@ -60,11 +60,13 @@ type Recipe struct {
 type RecipeEdges struct {
 	// Ingredients holds the value of the ingredients edge.
 	Ingredients []*RecipeIngredient `json:"ingredients,omitempty"`
+	// UsedAsIngredient holds the value of the used_as_ingredient edge.
+	UsedAsIngredient []*RecipeIngredient `json:"used_as_ingredient,omitempty"`
 	// Item holds the value of the item edge.
 	Item *Item `json:"item,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // IngredientsOrErr returns the Ingredients value or an error if the edge
@@ -76,12 +78,21 @@ func (e RecipeEdges) IngredientsOrErr() ([]*RecipeIngredient, error) {
 	return nil, &NotLoadedError{edge: "ingredients"}
 }
 
+// UsedAsIngredientOrErr returns the UsedAsIngredient value or an error if the edge
+// was not loaded in eager-loading.
+func (e RecipeEdges) UsedAsIngredientOrErr() ([]*RecipeIngredient, error) {
+	if e.loadedTypes[1] {
+		return e.UsedAsIngredient, nil
+	}
+	return nil, &NotLoadedError{edge: "used_as_ingredient"}
+}
+
 // ItemOrErr returns the Item value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e RecipeEdges) ItemOrErr() (*Item, error) {
 	if e.Item != nil {
 		return e.Item, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: item.Label}
 	}
 	return nil, &NotLoadedError{edge: "item"}
@@ -243,6 +254,11 @@ func (_m *Recipe) Value(name string) (ent.Value, error) {
 // QueryIngredients queries the "ingredients" edge of the Recipe entity.
 func (_m *Recipe) QueryIngredients() *RecipeIngredientQuery {
 	return NewRecipeClient(_m.config).QueryIngredients(_m)
+}
+
+// QueryUsedAsIngredient queries the "used_as_ingredient" edge of the Recipe entity.
+func (_m *Recipe) QueryUsedAsIngredient() *RecipeIngredientQuery {
+	return NewRecipeClient(_m.config).QueryUsedAsIngredient(_m)
 }
 
 // QueryItem queries the "item" edge of the Recipe entity.
