@@ -444,6 +444,120 @@ func (_u *ItemUpdate) ClearCostPrice() *ItemUpdate {
 	return _u
 }
 
+// SetTotalCapacity sets the "total_capacity" field.
+func (_u *ItemUpdate) SetTotalCapacity(v int) *ItemUpdate {
+	_u.mutation.ResetTotalCapacity()
+	_u.mutation.SetTotalCapacity(v)
+	return _u
+}
+
+// SetNillableTotalCapacity sets the "total_capacity" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTotalCapacity(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetTotalCapacity(*v)
+	}
+	return _u
+}
+
+// AddTotalCapacity adds value to the "total_capacity" field.
+func (_u *ItemUpdate) AddTotalCapacity(v int) *ItemUpdate {
+	_u.mutation.AddTotalCapacity(v)
+	return _u
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (_u *ItemUpdate) ClearTotalCapacity() *ItemUpdate {
+	_u.mutation.ClearTotalCapacity()
+	return _u
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (_u *ItemUpdate) SetBookedCapacity(v int) *ItemUpdate {
+	_u.mutation.ResetBookedCapacity()
+	_u.mutation.SetBookedCapacity(v)
+	return _u
+}
+
+// SetNillableBookedCapacity sets the "booked_capacity" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableBookedCapacity(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetBookedCapacity(*v)
+	}
+	return _u
+}
+
+// AddBookedCapacity adds value to the "booked_capacity" field.
+func (_u *ItemUpdate) AddBookedCapacity(v int) *ItemUpdate {
+	_u.mutation.AddBookedCapacity(v)
+	return _u
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (_u *ItemUpdate) ClearBookedCapacity() *ItemUpdate {
+	_u.mutation.ClearBookedCapacity()
+	return _u
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (_u *ItemUpdate) SetEventStartAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetEventStartAt(v)
+	return _u
+}
+
+// SetNillableEventStartAt sets the "event_start_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEventStartAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetEventStartAt(*v)
+	}
+	return _u
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (_u *ItemUpdate) ClearEventStartAt() *ItemUpdate {
+	_u.mutation.ClearEventStartAt()
+	return _u
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (_u *ItemUpdate) SetEventEndAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetEventEndAt(v)
+	return _u
+}
+
+// SetNillableEventEndAt sets the "event_end_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEventEndAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetEventEndAt(*v)
+	}
+	return _u
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (_u *ItemUpdate) ClearEventEndAt() *ItemUpdate {
+	_u.mutation.ClearEventEndAt()
+	return _u
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (_u *ItemUpdate) SetEventVenue(v string) *ItemUpdate {
+	_u.mutation.SetEventVenue(v)
+	return _u
+}
+
+// SetNillableEventVenue sets the "event_venue" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEventVenue(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetEventVenue(*v)
+	}
+	return _u
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (_u *ItemUpdate) ClearEventVenue() *ItemUpdate {
+	_u.mutation.ClearEventVenue()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdate) SetMetadata(v map[string]interface{}) *ItemUpdate {
 	_u.mutation.SetMetadata(v)
@@ -985,6 +1099,11 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EventVenue(); ok {
+		if err := item.EventVenueValidator(v); err != nil {
+			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Item.tenant"`)
 	}
@@ -1103,6 +1222,42 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CostPriceCleared() {
 		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TotalCapacity(); ok {
+		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCapacity(); ok {
+		_spec.AddField(item.FieldTotalCapacity, field.TypeInt, value)
+	}
+	if _u.mutation.TotalCapacityCleared() {
+		_spec.ClearField(item.FieldTotalCapacity, field.TypeInt)
+	}
+	if value, ok := _u.mutation.BookedCapacity(); ok {
+		_spec.SetField(item.FieldBookedCapacity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedBookedCapacity(); ok {
+		_spec.AddField(item.FieldBookedCapacity, field.TypeInt, value)
+	}
+	if _u.mutation.BookedCapacityCleared() {
+		_spec.ClearField(item.FieldBookedCapacity, field.TypeInt)
+	}
+	if value, ok := _u.mutation.EventStartAt(); ok {
+		_spec.SetField(item.FieldEventStartAt, field.TypeTime, value)
+	}
+	if _u.mutation.EventStartAtCleared() {
+		_spec.ClearField(item.FieldEventStartAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EventEndAt(); ok {
+		_spec.SetField(item.FieldEventEndAt, field.TypeTime, value)
+	}
+	if _u.mutation.EventEndAtCleared() {
+		_spec.ClearField(item.FieldEventEndAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EventVenue(); ok {
+		_spec.SetField(item.FieldEventVenue, field.TypeString, value)
+	}
+	if _u.mutation.EventVenueCleared() {
+		_spec.ClearField(item.FieldEventVenue, field.TypeString)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -2124,6 +2279,120 @@ func (_u *ItemUpdateOne) ClearCostPrice() *ItemUpdateOne {
 	return _u
 }
 
+// SetTotalCapacity sets the "total_capacity" field.
+func (_u *ItemUpdateOne) SetTotalCapacity(v int) *ItemUpdateOne {
+	_u.mutation.ResetTotalCapacity()
+	_u.mutation.SetTotalCapacity(v)
+	return _u
+}
+
+// SetNillableTotalCapacity sets the "total_capacity" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTotalCapacity(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTotalCapacity(*v)
+	}
+	return _u
+}
+
+// AddTotalCapacity adds value to the "total_capacity" field.
+func (_u *ItemUpdateOne) AddTotalCapacity(v int) *ItemUpdateOne {
+	_u.mutation.AddTotalCapacity(v)
+	return _u
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (_u *ItemUpdateOne) ClearTotalCapacity() *ItemUpdateOne {
+	_u.mutation.ClearTotalCapacity()
+	return _u
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (_u *ItemUpdateOne) SetBookedCapacity(v int) *ItemUpdateOne {
+	_u.mutation.ResetBookedCapacity()
+	_u.mutation.SetBookedCapacity(v)
+	return _u
+}
+
+// SetNillableBookedCapacity sets the "booked_capacity" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableBookedCapacity(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetBookedCapacity(*v)
+	}
+	return _u
+}
+
+// AddBookedCapacity adds value to the "booked_capacity" field.
+func (_u *ItemUpdateOne) AddBookedCapacity(v int) *ItemUpdateOne {
+	_u.mutation.AddBookedCapacity(v)
+	return _u
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (_u *ItemUpdateOne) ClearBookedCapacity() *ItemUpdateOne {
+	_u.mutation.ClearBookedCapacity()
+	return _u
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (_u *ItemUpdateOne) SetEventStartAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetEventStartAt(v)
+	return _u
+}
+
+// SetNillableEventStartAt sets the "event_start_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEventStartAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEventStartAt(*v)
+	}
+	return _u
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (_u *ItemUpdateOne) ClearEventStartAt() *ItemUpdateOne {
+	_u.mutation.ClearEventStartAt()
+	return _u
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (_u *ItemUpdateOne) SetEventEndAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetEventEndAt(v)
+	return _u
+}
+
+// SetNillableEventEndAt sets the "event_end_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEventEndAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEventEndAt(*v)
+	}
+	return _u
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (_u *ItemUpdateOne) ClearEventEndAt() *ItemUpdateOne {
+	_u.mutation.ClearEventEndAt()
+	return _u
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (_u *ItemUpdateOne) SetEventVenue(v string) *ItemUpdateOne {
+	_u.mutation.SetEventVenue(v)
+	return _u
+}
+
+// SetNillableEventVenue sets the "event_venue" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEventVenue(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEventVenue(*v)
+	}
+	return _u
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (_u *ItemUpdateOne) ClearEventVenue() *ItemUpdateOne {
+	_u.mutation.ClearEventVenue()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdateOne) SetMetadata(v map[string]interface{}) *ItemUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -2678,6 +2947,11 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EventVenue(); ok {
+		if err := item.EventVenueValidator(v); err != nil {
+			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
+		}
+	}
 	if _u.mutation.TenantCleared() && len(_u.mutation.TenantIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Item.tenant"`)
 	}
@@ -2813,6 +3087,42 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.CostPriceCleared() {
 		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TotalCapacity(); ok {
+		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedTotalCapacity(); ok {
+		_spec.AddField(item.FieldTotalCapacity, field.TypeInt, value)
+	}
+	if _u.mutation.TotalCapacityCleared() {
+		_spec.ClearField(item.FieldTotalCapacity, field.TypeInt)
+	}
+	if value, ok := _u.mutation.BookedCapacity(); ok {
+		_spec.SetField(item.FieldBookedCapacity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedBookedCapacity(); ok {
+		_spec.AddField(item.FieldBookedCapacity, field.TypeInt, value)
+	}
+	if _u.mutation.BookedCapacityCleared() {
+		_spec.ClearField(item.FieldBookedCapacity, field.TypeInt)
+	}
+	if value, ok := _u.mutation.EventStartAt(); ok {
+		_spec.SetField(item.FieldEventStartAt, field.TypeTime, value)
+	}
+	if _u.mutation.EventStartAtCleared() {
+		_spec.ClearField(item.FieldEventStartAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EventEndAt(); ok {
+		_spec.SetField(item.FieldEventEndAt, field.TypeTime, value)
+	}
+	if _u.mutation.EventEndAtCleared() {
+		_spec.ClearField(item.FieldEventEndAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EventVenue(); ok {
+		_spec.SetField(item.FieldEventVenue, field.TypeString, value)
+	}
+	if _u.mutation.EventVenueCleared() {
+		_spec.ClearField(item.FieldEventVenue, field.TypeString)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)

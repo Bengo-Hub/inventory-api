@@ -70,6 +70,16 @@ type Item struct {
 	TaxInclusive bool `json:"tax_inclusive,omitempty"`
 	// Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations
 	CostPrice *float64 `json:"cost_price,omitempty"`
+	// Total seats/tickets for SERVICE-type event items
+	TotalCapacity *int `json:"total_capacity,omitempty"`
+	// Confirmed bookings against total_capacity
+	BookedCapacity *int `json:"booked_capacity,omitempty"`
+	// Event start datetime for SERVICE-type event items
+	EventStartAt *time.Time `json:"event_start_at,omitempty"`
+	// Event end datetime for SERVICE-type event items
+	EventEndAt *time.Time `json:"event_end_at,omitempty"`
+	// Venue name/address for event items
+	EventVenue *string `json:"event_venue,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -277,11 +287,11 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case item.FieldWeightKg, item.FieldCostPrice:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldDurationMinutes:
+		case item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt:
+		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case item.FieldID, item.FieldTenantID:
 			values[i] = new(uuid.UUID)
@@ -452,6 +462,41 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CostPrice = new(float64)
 				*_m.CostPrice = value.Float64
+			}
+		case item.FieldTotalCapacity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field total_capacity", values[i])
+			} else if value.Valid {
+				_m.TotalCapacity = new(int)
+				*_m.TotalCapacity = int(value.Int64)
+			}
+		case item.FieldBookedCapacity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field booked_capacity", values[i])
+			} else if value.Valid {
+				_m.BookedCapacity = new(int)
+				*_m.BookedCapacity = int(value.Int64)
+			}
+		case item.FieldEventStartAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field event_start_at", values[i])
+			} else if value.Valid {
+				_m.EventStartAt = new(time.Time)
+				*_m.EventStartAt = value.Time
+			}
+		case item.FieldEventEndAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field event_end_at", values[i])
+			} else if value.Valid {
+				_m.EventEndAt = new(time.Time)
+				*_m.EventEndAt = value.Time
+			}
+		case item.FieldEventVenue:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field event_venue", values[i])
+			} else if value.Valid {
+				_m.EventVenue = new(string)
+				*_m.EventVenue = value.String
 			}
 		case item.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -661,6 +706,31 @@ func (_m *Item) String() string {
 	if v := _m.CostPrice; v != nil {
 		builder.WriteString("cost_price=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.TotalCapacity; v != nil {
+		builder.WriteString("total_capacity=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.BookedCapacity; v != nil {
+		builder.WriteString("booked_capacity=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.EventStartAt; v != nil {
+		builder.WriteString("event_start_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.EventEndAt; v != nil {
+		builder.WriteString("event_end_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.EventVenue; v != nil {
+		builder.WriteString("event_venue=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")

@@ -32,6 +32,7 @@ type ItemsServicer interface {
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -172,6 +173,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 			rec.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
 			rec.With(perm(rbac.PermRecipesDelete)).Delete("/recipes/{recipeID}", h.DeleteRecipe)
 		})
+
+		// Events — SERVICE-type items with event_start_at set
+		inv.Get("/events", h.ListEventItems)
 
 		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)
@@ -693,6 +697,24 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
+}
+
+// ListEventItems handles GET /v1/{tenant}/inventory/events
+// Returns SERVICE-type items that have event_start_at set, ordered by start time ascending.
+func (h *InventoryHandler) ListEventItems(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	p := pagination.Parse(r)
+	results, total, err := h.itemsSvc.ListEventItems(r.Context(), tenantID, p.Limit, p.Offset)
+	if err != nil {
+		h.log.Error("list event items failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list events")
+		return
+	}
 	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
 }
 

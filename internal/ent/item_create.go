@@ -321,6 +321,76 @@ func (_c *ItemCreate) SetNillableCostPrice(v *float64) *ItemCreate {
 	return _c
 }
 
+// SetTotalCapacity sets the "total_capacity" field.
+func (_c *ItemCreate) SetTotalCapacity(v int) *ItemCreate {
+	_c.mutation.SetTotalCapacity(v)
+	return _c
+}
+
+// SetNillableTotalCapacity sets the "total_capacity" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTotalCapacity(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetTotalCapacity(*v)
+	}
+	return _c
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (_c *ItemCreate) SetBookedCapacity(v int) *ItemCreate {
+	_c.mutation.SetBookedCapacity(v)
+	return _c
+}
+
+// SetNillableBookedCapacity sets the "booked_capacity" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableBookedCapacity(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetBookedCapacity(*v)
+	}
+	return _c
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (_c *ItemCreate) SetEventStartAt(v time.Time) *ItemCreate {
+	_c.mutation.SetEventStartAt(v)
+	return _c
+}
+
+// SetNillableEventStartAt sets the "event_start_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEventStartAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetEventStartAt(*v)
+	}
+	return _c
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (_c *ItemCreate) SetEventEndAt(v time.Time) *ItemCreate {
+	_c.mutation.SetEventEndAt(v)
+	return _c
+}
+
+// SetNillableEventEndAt sets the "event_end_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEventEndAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetEventEndAt(*v)
+	}
+	return _c
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (_c *ItemCreate) SetEventVenue(v string) *ItemCreate {
+	_c.mutation.SetEventVenue(v)
+	return _c
+}
+
+// SetNillableEventVenue sets the "event_venue" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEventVenue(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetEventVenue(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *ItemCreate) SetMetadata(v map[string]interface{}) *ItemCreate {
 	_c.mutation.SetMetadata(v)
@@ -671,6 +741,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultTaxInclusive
 		_c.mutation.SetTaxInclusive(v)
 	}
+	if _, ok := _c.mutation.BookedCapacity(); !ok {
+		v := item.DefaultBookedCapacity
+		_c.mutation.SetBookedCapacity(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := item.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -741,6 +815,11 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.TaxInclusive(); !ok {
 		return &ValidationError{Name: "tax_inclusive", err: errors.New(`ent: missing required field "Item.tax_inclusive"`)}
+	}
+	if v, ok := _c.mutation.EventVenue(); ok {
+		if err := item.EventVenueValidator(v); err != nil {
+			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		return &ValidationError{Name: "metadata", err: errors.New(`ent: missing required field "Item.metadata"`)}
@@ -869,6 +948,26 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CostPrice(); ok {
 		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
 		_node.CostPrice = &value
+	}
+	if value, ok := _c.mutation.TotalCapacity(); ok {
+		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
+		_node.TotalCapacity = &value
+	}
+	if value, ok := _c.mutation.BookedCapacity(); ok {
+		_spec.SetField(item.FieldBookedCapacity, field.TypeInt, value)
+		_node.BookedCapacity = &value
+	}
+	if value, ok := _c.mutation.EventStartAt(); ok {
+		_spec.SetField(item.FieldEventStartAt, field.TypeTime, value)
+		_node.EventStartAt = &value
+	}
+	if value, ok := _c.mutation.EventEndAt(); ok {
+		_spec.SetField(item.FieldEventEndAt, field.TypeTime, value)
+		_node.EventEndAt = &value
+	}
+	if value, ok := _c.mutation.EventVenue(); ok {
+		_spec.SetField(item.FieldEventVenue, field.TypeString, value)
+		_node.EventVenue = &value
 	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -1537,6 +1636,108 @@ func (u *ItemUpsert) ClearCostPrice() *ItemUpsert {
 	return u
 }
 
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsert) SetTotalCapacity(v int) *ItemUpsert {
+	u.Set(item.FieldTotalCapacity, v)
+	return u
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTotalCapacity() *ItemUpsert {
+	u.SetExcluded(item.FieldTotalCapacity)
+	return u
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsert) AddTotalCapacity(v int) *ItemUpsert {
+	u.Add(item.FieldTotalCapacity, v)
+	return u
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsert) ClearTotalCapacity() *ItemUpsert {
+	u.SetNull(item.FieldTotalCapacity)
+	return u
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsert) SetBookedCapacity(v int) *ItemUpsert {
+	u.Set(item.FieldBookedCapacity, v)
+	return u
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBookedCapacity() *ItemUpsert {
+	u.SetExcluded(item.FieldBookedCapacity)
+	return u
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsert) AddBookedCapacity(v int) *ItemUpsert {
+	u.Add(item.FieldBookedCapacity, v)
+	return u
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsert) ClearBookedCapacity() *ItemUpsert {
+	u.SetNull(item.FieldBookedCapacity)
+	return u
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsert) SetEventStartAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldEventStartAt, v)
+	return u
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventStartAt() *ItemUpsert {
+	u.SetExcluded(item.FieldEventStartAt)
+	return u
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsert) ClearEventStartAt() *ItemUpsert {
+	u.SetNull(item.FieldEventStartAt)
+	return u
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsert) SetEventEndAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldEventEndAt, v)
+	return u
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventEndAt() *ItemUpsert {
+	u.SetExcluded(item.FieldEventEndAt)
+	return u
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsert) ClearEventEndAt() *ItemUpsert {
+	u.SetNull(item.FieldEventEndAt)
+	return u
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsert) SetEventVenue(v string) *ItemUpsert {
+	u.Set(item.FieldEventVenue, v)
+	return u
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventVenue() *ItemUpsert {
+	u.SetExcluded(item.FieldEventVenue)
+	return u
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsert) ClearEventVenue() *ItemUpsert {
+	u.SetNull(item.FieldEventVenue)
+	return u
+}
+
 // SetMetadata sets the "metadata" field.
 func (u *ItemUpsert) SetMetadata(v map[string]interface{}) *ItemUpsert {
 	u.Set(item.FieldMetadata, v)
@@ -2029,6 +2230,125 @@ func (u *ItemUpsertOne) UpdateCostPrice() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearCostPrice() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCostPrice()
+	})
+}
+
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsertOne) SetTotalCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTotalCapacity(v)
+	})
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsertOne) AddTotalCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTotalCapacity(v)
+	})
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTotalCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTotalCapacity()
+	})
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsertOne) ClearTotalCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTotalCapacity()
+	})
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsertOne) SetBookedCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBookedCapacity(v)
+	})
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsertOne) AddBookedCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddBookedCapacity(v)
+	})
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBookedCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBookedCapacity()
+	})
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsertOne) ClearBookedCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBookedCapacity()
+	})
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsertOne) SetEventStartAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventStartAt(v)
+	})
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventStartAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventStartAt()
+	})
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsertOne) ClearEventStartAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventStartAt()
+	})
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsertOne) SetEventEndAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventEndAt(v)
+	})
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventEndAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventEndAt()
+	})
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsertOne) ClearEventEndAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventEndAt()
+	})
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsertOne) SetEventVenue(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventVenue(v)
+	})
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventVenue() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventVenue()
+	})
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsertOne) ClearEventVenue() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventVenue()
 	})
 }
 
@@ -2695,6 +3015,125 @@ func (u *ItemUpsertBulk) UpdateCostPrice() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearCostPrice() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCostPrice()
+	})
+}
+
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsertBulk) SetTotalCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTotalCapacity(v)
+	})
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsertBulk) AddTotalCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTotalCapacity(v)
+	})
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTotalCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTotalCapacity()
+	})
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsertBulk) ClearTotalCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTotalCapacity()
+	})
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsertBulk) SetBookedCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBookedCapacity(v)
+	})
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsertBulk) AddBookedCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddBookedCapacity(v)
+	})
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBookedCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBookedCapacity()
+	})
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsertBulk) ClearBookedCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBookedCapacity()
+	})
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsertBulk) SetEventStartAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventStartAt(v)
+	})
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventStartAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventStartAt()
+	})
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsertBulk) ClearEventStartAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventStartAt()
+	})
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsertBulk) SetEventEndAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventEndAt(v)
+	})
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventEndAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventEndAt()
+	})
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsertBulk) ClearEventEndAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventEndAt()
+	})
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsertBulk) SetEventVenue(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventVenue(v)
+	})
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventVenue() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventVenue()
+	})
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsertBulk) ClearEventVenue() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventVenue()
 	})
 }
 

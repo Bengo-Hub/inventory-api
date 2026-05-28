@@ -62,6 +62,16 @@ const (
 	FieldTaxInclusive = "tax_inclusive"
 	// FieldCostPrice holds the string denoting the cost_price field in the database.
 	FieldCostPrice = "cost_price"
+	// FieldTotalCapacity holds the string denoting the total_capacity field in the database.
+	FieldTotalCapacity = "total_capacity"
+	// FieldBookedCapacity holds the string denoting the booked_capacity field in the database.
+	FieldBookedCapacity = "booked_capacity"
+	// FieldEventStartAt holds the string denoting the event_start_at field in the database.
+	FieldEventStartAt = "event_start_at"
+	// FieldEventEndAt holds the string denoting the event_end_at field in the database.
+	FieldEventEndAt = "event_end_at"
+	// FieldEventVenue holds the string denoting the event_venue field in the database.
+	FieldEventVenue = "event_venue"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -233,6 +243,11 @@ var Columns = []string{
 	FieldTaxCodeID,
 	FieldTaxInclusive,
 	FieldCostPrice,
+	FieldTotalCapacity,
+	FieldBookedCapacity,
+	FieldEventStartAt,
+	FieldEventEndAt,
+	FieldEventVenue,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -269,6 +284,10 @@ var (
 	DefaultTags []string
 	// DefaultTaxInclusive holds the default value on creation for the "tax_inclusive" field.
 	DefaultTaxInclusive bool
+	// DefaultBookedCapacity holds the default value on creation for the "booked_capacity" field.
+	DefaultBookedCapacity int
+	// EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
+	EventVenueValidator func(string) error
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -422,6 +441,31 @@ func ByTaxInclusive(opts ...sql.OrderTermOption) OrderOption {
 // ByCostPrice orders the results by the cost_price field.
 func ByCostPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCostPrice, opts...).ToFunc()
+}
+
+// ByTotalCapacity orders the results by the total_capacity field.
+func ByTotalCapacity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalCapacity, opts...).ToFunc()
+}
+
+// ByBookedCapacity orders the results by the booked_capacity field.
+func ByBookedCapacity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBookedCapacity, opts...).ToFunc()
+}
+
+// ByEventStartAt orders the results by the event_start_at field.
+func ByEventStartAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEventStartAt, opts...).ToFunc()
+}
+
+// ByEventEndAt orders the results by the event_end_at field.
+func ByEventEndAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEventEndAt, opts...).ToFunc()
+}
+
+// ByEventVenue orders the results by the event_venue field.
+func ByEventVenue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEventVenue, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

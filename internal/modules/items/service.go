@@ -62,8 +62,14 @@ type ItemDTO struct {
 	// KRA eTIMS tax fields
 	TaxCodeID    string `json:"tax_code_id,omitempty"`
 	TaxInclusive bool   `json:"tax_inclusive"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	// Event capacity fields — SERVICE type only
+	TotalCapacity  *int       `json:"total_capacity,omitempty"`
+	BookedCapacity *int       `json:"booked_capacity,omitempty"`
+	EventStartAt   *time.Time `json:"event_start_at,omitempty"`
+	EventEndAt     *time.Time `json:"event_end_at,omitempty"`
+	EventVenue     *string    `json:"event_venue,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 type CategoryDTO struct {
@@ -488,6 +494,11 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		DimensionsCm:            i.DimensionsCm,
 		TaxCodeID:               i.TaxCodeID,
 		TaxInclusive:            i.TaxInclusive,
+		TotalCapacity:           i.TotalCapacity,
+		BookedCapacity:          i.BookedCapacity,
+		EventStartAt:            i.EventStartAt,
+		EventEndAt:              i.EventEndAt,
+		EventVenue:              i.EventVenue,
 		CreatedAt:               i.CreatedAt,
 		UpdatedAt:               i.UpdatedAt,
 	}
@@ -572,6 +583,35 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter 
 	dtos, err := buildDTOs(ctx, itms)
 	if err != nil {
 		return nil, 0, err
+	}
+	return dtos, total, nil
+}
+
+// ListEventItems returns SERVICE-type items that have an event_start_at set,
+// ordered by event_start_at ascending (upcoming first).
+func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]ItemDTO, int, error) {
+	q := s.client.Item.Query().
+		Where(
+			item.TenantID(tenantID),
+			item.IsActive(true),
+			item.TypeEQ(item.TypeSERVICE),
+			item.EventStartAtNotNil(),
+		)
+
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("items: count events: %w", err)
+	}
+	if total == 0 {
+		return []ItemDTO{}, 0, nil
+	}
+	itms, err := q.Order(ent.Asc(item.FieldEventStartAt)).Limit(limit).Offset(offset).All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("items: list events: %w", err)
+	}
+	dtos := make([]ItemDTO, len(itms))
+	for i, it := range itms {
+		dtos[i] = *s.mapToDTO(it)
 	}
 	return dtos, total, nil
 }

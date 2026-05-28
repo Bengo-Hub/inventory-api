@@ -95,6 +95,10 @@ func main() {
 			log.Fatalf("seed balances for %s: %v", slug, err)
 		}
 
+		if err := seedEventCapacity(ctx, client, tenantID); err != nil {
+			log.Printf("[WARN] seed event capacity for %s: %v", slug, err)
+		}
+
 		if err := seedRecipes(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed recipes for %s: %v", slug, err)
 		}
