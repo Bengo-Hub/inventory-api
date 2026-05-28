@@ -197,6 +197,42 @@ var catalogItemDefs = []itemDef{
 	{"EVT-BRN-001", "Sunday Brunch Buffet", "Unlimited brunch spread with live cooking stations", "events", entitem.TypeSERVICE, "TICKET", imgBreakfast, 0, []string{"event"}, nil},
 	{"EVT-MIX-001", "Cocktail Mixology Workshop", "Craft Urban Loft signature cocktails with our expert bartender", "events", entitem.TypeSERVICE, "TICKET", imgCocktail, 0, []string{"event"}, nil},
 	{"EVT-QUZ-001", "Urban Loft Quiz Night", "Monthly trivia night with prizes and two-course dinner", "events", entitem.TypeSERVICE, "TICKET", imgMain1, 0, []string{"event"}, nil},
+
+	// ── Pharmacy / OTC Medications (GOODS — no prescription required) ─────────
+	{"PHM-ANL-001", "Paracetamol 500mg", "Pain reliever and fever reducer (pack of 24 tablets)", "pharmacy", entitem.TypeGOODS, "PACK", mediaPlaceholder, 200, []string{"otc", "pain-relief"}, ptr(80.0)},
+	{"PHM-ANL-002", "Ibuprofen 400mg", "Anti-inflammatory and pain reliever (pack of 16 tablets)", "pharmacy", entitem.TypeGOODS, "PACK", mediaPlaceholder, 150, []string{"otc", "pain-relief"}, ptr(120.0)},
+	{"PHM-ANT-001", "Antacid Tablets", "Rapid relief from heartburn and indigestion (pack of 20)", "pharmacy", entitem.TypeGOODS, "PACK", mediaPlaceholder, 100, []string{"otc", "digestive"}, ptr(90.0)},
+	{"PHM-VIT-001", "Vitamin C 1000mg", "Immune support supplement (bottle of 60 tablets)", "pharmacy", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 80, []string{"otc", "vitamins"}, ptr(350.0)},
+	{"PHM-VIT-002", "Multivitamin Daily", "Comprehensive daily multivitamin (bottle of 30 tablets)", "pharmacy", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 60, []string{"otc", "vitamins"}, ptr(480.0)},
+	{"PHM-ANT-002", "Antihistamine 10mg", "Allergy relief antihistamine tablets (pack of 10)", "pharmacy", entitem.TypeGOODS, "PACK", mediaPlaceholder, 120, []string{"otc", "allergy"}, ptr(95.0)},
+	{"PHM-CLD-001", "Cold & Flu Relief", "Multi-symptom cold and flu formula (pack of 12 capsules)", "pharmacy", entitem.TypeGOODS, "PACK", mediaPlaceholder, 90, []string{"otc", "cold-flu"}, ptr(180.0)},
+	{"PHM-SAL-001", "Saline Nasal Spray", "Isotonic nasal spray for congestion relief (100ml)", "pharmacy", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 75, []string{"otc", "nasal"}, ptr(200.0)},
+	{"PHM-SKN-001", "Hydrocortisone Cream 1%", "Mild steroid cream for skin irritation and itch (30g tube)", "pharmacy", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 50, []string{"otc", "skin"}, ptr(250.0)},
+	{"PHM-EYE-001", "Eye Drops Lubricant", "Artificial tears for dry eye relief (10ml)", "pharmacy", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 60, []string{"otc", "eye"}, ptr(300.0)},
+
+	// ── Beauty & Spa Services (SERVICE type — no stock) ───────────────────────
+	{"SVC-HAR-001", "Ladies Haircut & Style", "Wash, cut, and blow-dry (60 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"hair", "ladies"}, nil},
+	{"SVC-HAR-002", "Gents Haircut", "Classic or fade haircut with finish (45 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"hair", "gents"}, nil},
+	{"SVC-HAR-003", "Hair Colour & Highlights", "Full colour or highlight treatment (90 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"hair", "colour"}, nil},
+	{"SVC-MAS-001", "Swedish Massage (60 min)", "Full-body relaxation massage with aromatherapy oil", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"massage", "wellness"}, nil},
+	{"SVC-MAS-002", "Deep Tissue Massage (45 min)", "Targeted deep muscle relief massage", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"massage", "therapy"}, nil},
+	{"SVC-FCI-001", "Classic Facial (60 min)", "Deep cleansing, exfoliation, and hydration facial", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"facial", "skin"}, nil},
+	{"SVC-MNI-001", "Manicure", "Classic nail care, shaping, and polish (30 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"nails", "beauty"}, nil},
+	{"SVC-PED-001", "Pedicure", "Foot soak, exfoliation, nail care, and polish (45 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"nails", "beauty"}, nil},
+	{"SVC-EYB-001", "Eyebrow Threading", "Precise brow shaping by threading (15 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"brows", "beauty"}, nil},
+	{"SVC-WAX-001", "Full Leg Wax", "Smooth full leg waxing treatment (45 min)", "events", entitem.TypeSERVICE, "PIECE", mediaPlaceholder, 0, []string{"waxing", "beauty"}, nil},
+
+	// ── Retail Goods (GOODS type) ─────────────────────────────────────────────
+	{"RTL-SHP-001", "Shampoo 400ml", "Moisturising shampoo for all hair types", "retail", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 40, []string{"haircare"}, ptr(380.0)},
+	{"RTL-SHP-002", "Conditioner 400ml", "Deep conditioning treatment for frizz control", "retail", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 35, []string{"haircare"}, ptr(380.0)},
+	{"RTL-BSP-001", "Body Wash 500ml", "Gentle daily body cleanser with aloe vera", "retail", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 50, []string{"bodycare"}, ptr(250.0)},
+	{"RTL-LOT-001", "Body Lotion 250ml", "Intensive moisture lotion with shea butter", "retail", entitem.TypeGOODS, "BOTTLE", mediaPlaceholder, 45, []string{"bodycare"}, ptr(320.0)},
+	{"RTL-SPF-001", "Sunscreen SPF50 75ml", "Broad-spectrum UVA/UVB protection", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 30, []string{"skincare"}, ptr(600.0)},
+	{"RTL-MSK-001", "Face Mask Sheet", "Hydrating sheet mask with hyaluronic acid", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 80, []string{"skincare"}, ptr(150.0)},
+	{"RTL-DEO-001", "Roll-On Deodorant 50ml", "48hr protection anti-perspirant roll-on", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 60, []string{"personal-care"}, ptr(180.0)},
+	{"RTL-NAP-001", "Nail Polish (assorted)", "Long-lasting gel-effect nail colour", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 100, []string{"nails", "beauty"}, ptr(250.0)},
+	{"RTL-ACC-001", "Hair Accessories Set", "Set of clips, bands, and pins", "retail", entitem.TypeGOODS, "PACK", mediaPlaceholder, 35, []string{"accessories"}, ptr(200.0)},
+	{"RTL-GFT-001", "Spa Gift Set", "Curated spa experience gift set with towel and products", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 20, []string{"gift", "spa"}, ptr(1200.0)},
 }
 
 func itemUUID(tenantID uuid.UUID, sku string) uuid.UUID {
