@@ -20,11 +20,12 @@ import (
 
 // InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
 type InventoryExtrasHandler struct {
-	log         *zap.Logger
-	orm         *ent.Client
-	rbacSvc     *rbac.Service
-	bundleSvc   *bundles.Service
-	varianceSvc *recipes.VarianceService
+	log          *zap.Logger
+	orm          *ent.Client
+	rbacSvc      *rbac.Service
+	bundleSvc    *bundles.Service
+	varianceSvc  *recipes.VarianceService
+	menuEngSvc   *recipes.MenuEngineeringService
 }
 
 // NewInventoryExtrasHandler creates the handler.
@@ -137,4 +138,5 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Reports
 	r.Get("/inventory/reports/food-cost-variance", h.FoodCostVarianceReport)
+	r.Get("/inventory/reports/menu-engineering", h.MenuEngineeringReport)
 }

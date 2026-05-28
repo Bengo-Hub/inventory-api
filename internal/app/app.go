@@ -166,6 +166,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetBundleService(bundleSvc)
 	varianceSvc := recipes.NewVarianceService(ormClient, log, cfg.Services.OrderingURL, cfg.Auth.APIKey)
 	inventoryExtrasHandler.SetVarianceService(varianceSvc)
+	menuEngSvc := recipes.NewMenuEngineeringService(ormClient, log, cfg.Services.OrderingURL, cfg.Auth.APIKey)
+	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
