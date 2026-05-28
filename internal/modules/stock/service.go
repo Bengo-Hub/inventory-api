@@ -129,7 +129,9 @@ type StockAdjustmentDTO struct {
 	ID             uuid.UUID `json:"id"`
 	TenantID       uuid.UUID `json:"tenant_id"`
 	ItemID         uuid.UUID `json:"item_id"`
+	ItemName       string    `json:"item_name,omitempty"`
 	WarehouseID    uuid.UUID `json:"warehouse_id"`
+	WarehouseName  string    `json:"warehouse_name,omitempty"`
 	QuantityBefore float64   `json:"quantity_before"`
 	QuantityChange float64   `json:"quantity_change"`
 	QuantityAfter  float64   `json:"quantity_after"`
@@ -321,13 +323,60 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 		return nil, fmt.Errorf("stock: list adjustments: %w", err)
 	}
 
+	// Collect unique item and warehouse IDs for batch lookup.
+	itemIDSet := make(map[uuid.UUID]struct{})
+	whIDSet := make(map[uuid.UUID]struct{})
+	for _, a := range adjustments {
+		itemIDSet[a.ItemID] = struct{}{}
+		whIDSet[a.WarehouseID] = struct{}{}
+	}
+
+	itemIDs := make([]uuid.UUID, 0, len(itemIDSet))
+	for id := range itemIDSet {
+		itemIDs = append(itemIDs, id)
+	}
+	whIDs := make([]uuid.UUID, 0, len(whIDSet))
+	for id := range whIDSet {
+		whIDs = append(whIDs, id)
+	}
+
+	// Batch-fetch item names.
+	itemNames := make(map[uuid.UUID]string)
+	if len(itemIDs) > 0 {
+		items, itemErr := s.client.Item.Query().
+			Where(item.IDIn(itemIDs...)).
+			Select(item.FieldID, item.FieldName).
+			All(ctx)
+		if itemErr == nil {
+			for _, itm := range items {
+				itemNames[itm.ID] = itm.Name
+			}
+		}
+	}
+
+	// Batch-fetch warehouse names.
+	warehouseNames := make(map[uuid.UUID]string)
+	if len(whIDs) > 0 {
+		warehouses, whErr := s.client.Warehouse.Query().
+			Where(warehouse.IDIn(whIDs...)).
+			Select(warehouse.FieldID, warehouse.FieldName).
+			All(ctx)
+		if whErr == nil {
+			for _, wh := range warehouses {
+				warehouseNames[wh.ID] = wh.Name
+			}
+		}
+	}
+
 	result := make([]StockAdjustmentDTO, len(adjustments))
 	for i, a := range adjustments {
 		result[i] = StockAdjustmentDTO{
 			ID:             a.ID,
 			TenantID:       a.TenantID,
 			ItemID:         a.ItemID,
+			ItemName:       itemNames[a.ItemID],
 			WarehouseID:    a.WarehouseID,
+			WarehouseName:  warehouseNames[a.WarehouseID],
 			QuantityBefore: a.QuantityBefore,
 			QuantityChange: a.QuantityChange,
 			QuantityAfter:  a.QuantityAfter,

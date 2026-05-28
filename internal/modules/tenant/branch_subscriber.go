@@ -15,6 +15,17 @@ import (
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
+// inventoryAcceptedUseCases is the set of outlet use_cases whose outlets get a warehouse mirror.
+// Logistics hubs and weighbridge stations don't hold inventory stock.
+var inventoryAcceptedUseCases = map[string]bool{
+	"hospitality":  true,
+	"retail":       true,
+	"quick_service": true,
+	"pharmacy":     true,
+	"services":     true,
+	"warehouse":    true,
+}
+
 const authStream = "auth"
 
 // BranchSubscriber syncs auth.outlet.* events from auth-api into inventory
@@ -110,6 +121,15 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 	isHQ, _ := evt.Payload["is_hq"].(bool)
 	status, _ := evt.Payload["status"].(string)
 
+	// Logistics hubs, weighbridge stations, and enforcement checkpoints don't hold stock.
+	// Only create warehouses for outlets that actually store inventory.
+	if useCase != "" && !inventoryAcceptedUseCases[useCase] {
+		s.logger.Info("skipping outlet: use_case not applicable to inventory warehouses",
+			zap.String("outlet_id", outletIDStr),
+			zap.String("use_case", useCase))
+		return nil
+	}
+
 	outletID, err := uuid.Parse(outletIDStr)
 	if err != nil {
 		return fmt.Errorf("invalid outlet_id %q: %w", outletIDStr, err)
@@ -162,6 +182,7 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 }
 
 // handleArchive deactivates the warehouse when the outlet is archived.
+// If the outlet was never mirrored (filtered by use_case), this is a no-op.
 func (s *BranchSubscriber) handleArchive(ctx context.Context, evt *sharedevents.Event) error {
 	outletIDStr, _ := evt.Payload["outlet_id"].(string)
 	outletID, err := uuid.Parse(outletIDStr)
@@ -180,7 +201,7 @@ func (s *BranchSubscriber) handleArchive(ctx context.Context, evt *sharedevents.
 		s.logger.Info("warehouse deactivated from auth.outlet.archived",
 			zap.String("outlet_id", outletIDStr))
 	}
-	return nil
+	return nil // n==0 means outlet was never mirrored — safe to ignore
 }
 
 // slugify converts a name to an upper-case alphanumeric code (max 8 chars).

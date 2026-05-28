@@ -82,6 +82,12 @@ func main() {
 		}
 		log.Printf("▶ Seeding inventory for tenant: %s (%s)", slug, tenantID)
 
+		// Remove warehouses that were incorrectly created for non-inventory outlets
+		// (logistics hubs, weighbridge stations don't hold stock).
+		if err := cleanupNonInventoryWarehouses(ctx, client, tenantID); err != nil {
+			log.Printf("  ⚠️  cleanup non-inventory warehouses for %s: %v", slug, err)
+		}
+
 		if err := seedWarehouse(ctx, client, tenantID, slug); err != nil {
 			log.Fatalf("seed warehouse for %s: %v", slug, err)
 		}
@@ -292,14 +298,52 @@ var warehouseDefsByTenant = map[string][]warehouseSeedDef{
 			code:     "SVC",
 			address:  "Demo Towers, Kilimani, Nairobi",
 		},
+		// Standalone warehouse — inventory-only, no POS or ordering
 		{
-			whID:     warehouseUUID("codevertex-demo", "demo-logistics"),
-			outletID: outletID("codevertex-demo", "demo-logistics"),
-			name:     "Demo Logistics Warehouse",
-			code:     "LOGIS",
-			address:  "Demo Industrial Area, Nairobi",
+			whID:     warehouseUUID("codevertex-demo", "demo-warehouse"),
+			outletID: outletID("codevertex-demo", "demo-warehouse"),
+			name:     "Demo Central Warehouse",
+			code:     "WH",
+			address:  "Demo Warehouse Park, Mombasa Road, Nairobi",
 		},
 	},
+}
+
+// nonInventoryOutletSlugs is the set of outlet slugs (per tenant) whose use_cases
+// do not involve stock holding — warehouses must not exist for these outlets.
+var nonInventoryOutletSlugs = []string{
+	"demo-logistics",   // logistics-api only
+	"demo-commercial",  // truload commercial_weighing
+	"demo-enforcement", // truload axle_load_enforcement
+}
+
+// cleanupNonInventoryWarehouses deletes any warehouse rows that were incorrectly
+// created for logistics/weighbridge outlets that don't hold inventory stock.
+// This is idempotent and safe to run on every seed execution.
+func cleanupNonInventoryWarehouses(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+	// Collect outlet IDs for non-inventory outlet slugs across all known tenant slugs.
+	// We check by outlet_id since use_case is not stored in the warehouse table.
+	tenantSlugs := []string{"codevertex-demo", "urban-loft"}
+	var nonInventoryOutletIDs []uuid.UUID
+	for _, tSlug := range tenantSlugs {
+		for _, oSlug := range nonInventoryOutletSlugs {
+			nonInventoryOutletIDs = append(nonInventoryOutletIDs, outletID(tSlug, oSlug))
+		}
+	}
+
+	n, err := client.Warehouse.Delete().
+		Where(
+			entwarehouse.TenantID(tenantID),
+			entwarehouse.OutletIDIn(nonInventoryOutletIDs...),
+		).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("delete non-inventory warehouses: %w", err)
+	}
+	if n > 0 {
+		log.Printf("  🗑  Removed %d non-inventory warehouse(s) for tenant %s", n, tenantID)
+	}
+	return nil
 }
 
 func seedWarehouse(ctx context.Context, client *ent.Client, tenantID uuid.UUID, tenantSlug string) error {
