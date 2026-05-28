@@ -410,6 +410,8 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			zap.String("sku", itm.Sku),
 			zap.Int("available", bal.Available),
 		)
+		// Cascade: mark recipe items as unavailable when an ingredient runs out.
+		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID)
 	} else if bal.Available <= bal.ReorderLevel {
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
@@ -1055,6 +1057,9 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.U
 		if err != nil {
 			return fmt.Errorf("stock: restock balance sku=%s: %w", ri.SKU, err)
 		}
+
+		// Cascade: unblock recipe items when all their ingredients are back in stock.
+		s.cascadeIngredientRestocked(ctx, tx, tenantID, itm.ID, whID)
 
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.restocked", map[string]any{
 			"tenant_id":    tenantID.String(),
