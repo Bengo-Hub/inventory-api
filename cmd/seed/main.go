@@ -72,6 +72,17 @@ func main() {
 		log.Fatalf("seed units: %v", err)
 	}
 
+	// Seed platform-wide data first — permissions must exist before role-permission links are created.
+	if err := seedPermissions(ctx, client); err != nil {
+		log.Fatalf("seed permissions: %v", err)
+	}
+	if err := seedRateLimitConfigs(ctx, client); err != nil {
+		log.Fatalf("seed rate limit configs: %v", err)
+	}
+	if err := seedServiceConfigs(ctx, client); err != nil {
+		log.Fatalf("seed service configs: %v", err)
+	}
+
 	// Seed per-tenant data: urban-loft (real client) + codevertex-demo (cross-platform demo).
 	tenantsToSeed := []string{"urban-loft", "codevertex-demo"}
 	for _, slug := range tenantsToSeed {
@@ -124,6 +135,8 @@ func main() {
 		if err := seedRolePermissions(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed role-permissions for %s: %v", slug, err)
 		}
+		// NOTE: tenant users are JIT-provisioned by the RBAC middleware on first authenticated
+		// request — no seed step needed. Roles are assigned from JWT claims via mapGlobalRoleToInventoryRole.
 		// Recipes are only seeded for urban-loft (the café tenant).
 		if slug == "urban-loft" {
 			if err := seedRecipes(ctx, client, tenantID); err != nil {
@@ -131,17 +144,6 @@ func main() {
 			}
 		}
 		log.Printf("✅ Inventory tenant %s seeded", slug)
-	}
-
-	// Platform-wide data seeded once.
-	if err := seedPermissions(ctx, client); err != nil {
-		log.Fatalf("seed permissions: %v", err)
-	}
-	if err := seedRateLimitConfigs(ctx, client); err != nil {
-		log.Fatalf("seed rate limit configs: %v", err)
-	}
-	if err := seedServiceConfigs(ctx, client); err != nil {
-		log.Fatalf("seed service configs: %v", err)
 	}
 
 	log.Println("seed completed successfully")
