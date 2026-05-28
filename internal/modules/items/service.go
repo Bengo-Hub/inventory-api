@@ -556,10 +556,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 
 	buildDTOs := func(innerCtx context.Context, itms []*ent.Item) ([]ItemDTO, error) {
 		catIDs := make([]uuid.UUID, 0, len(itms))
+		itemIDs := make([]uuid.UUID, 0, len(itms))
 		for _, it := range itms {
 			if it.CategoryID != nil {
 				catIDs = append(catIDs, *it.CategoryID)
 			}
+			itemIDs = append(itemIDs, it.ID)
 		}
 		catNames := make(map[uuid.UUID]string)
 		if len(catIDs) > 0 {
@@ -568,11 +570,28 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				catNames[c.ID] = c.Name
 			}
 		}
+		// Load first balance per item to surface reorder_level and reorder_quantity.
+		type balSummary struct{ reorderLevel, reorderQuantity int }
+		balMap := make(map[uuid.UUID]balSummary, len(itemIDs))
+		if len(itemIDs) > 0 {
+			bals, _ := s.client.InventoryBalance.Query().
+				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.ItemIDIn(itemIDs...)).
+				All(innerCtx)
+			for _, b := range bals {
+				if _, seen := balMap[b.ItemID]; !seen {
+					balMap[b.ItemID] = balSummary{b.ReorderLevel, b.ReorderQuantity}
+				}
+			}
+		}
 		dtos := make([]ItemDTO, len(itms))
 		for i, it := range itms {
 			dto := s.mapToDTO(it)
 			if it.CategoryID != nil {
 				dto.CategoryName = catNames[*it.CategoryID]
+			}
+			if bs, ok := balMap[it.ID]; ok {
+				dto.ReorderLevel = bs.reorderLevel
+				dto.ReorderQuantity = bs.reorderQuantity
 			}
 			dtos[i] = *dto
 		}
@@ -843,7 +862,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		tags = []string{}
 	}
 
-	i, err := tx.Item.Create().
+	createBuilder := tx.Item.Create().
 		SetTenantID(tenantID).
 		SetSku(dto.SKU).
 		SetName(dto.Name).
@@ -856,7 +875,21 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetTags(tags).
 		SetMetadata(dto.Metadata).
 		SetNillableCostPrice(dto.CostPrice).
-		Save(ctx)
+		SetRequiresAgeVerification(dto.RequiresAgeVerification).
+		SetIsPerishable(dto.IsPerishable).
+		SetTrackLots(dto.TrackLots).
+		SetTrackSerialNumbers(dto.TrackSerialNumbers).
+		SetTaxInclusive(dto.TaxInclusive)
+	if dto.Barcode != "" {
+		createBuilder = createBuilder.SetBarcode(dto.Barcode)
+	}
+	if dto.BarcodeType != "" {
+		createBuilder = createBuilder.SetBarcodeType(dto.BarcodeType)
+	}
+	if dto.TaxCodeID != "" {
+		createBuilder = createBuilder.SetTaxCodeID(dto.TaxCodeID)
+	}
+	i, err := createBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: create item: %w", err)
 	}
@@ -1028,7 +1061,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		updateTags = []string{}
 	}
 
-	builder := tx.Item.UpdateOneID(id).
+	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).
 		SetName(dto.Name).
 		SetNillableDescription(&dto.Description).
@@ -1039,11 +1072,44 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetNillableImageURL(&dto.ImageURL).
 		SetTags(updateTags).
 		SetMetadata(dto.Metadata).
-		SetNillableCostPrice(dto.CostPrice)
+		SetNillableCostPrice(dto.CostPrice).
+		SetRequiresAgeVerification(dto.RequiresAgeVerification).
+		SetIsPerishable(dto.IsPerishable).
+		SetTrackLots(dto.TrackLots).
+		SetTrackSerialNumbers(dto.TrackSerialNumbers).
+		SetTaxInclusive(dto.TaxInclusive)
+	if dto.Barcode != "" {
+		updateBuilder = updateBuilder.SetBarcode(dto.Barcode)
+	}
+	if dto.BarcodeType != "" {
+		updateBuilder = updateBuilder.SetBarcodeType(dto.BarcodeType)
+	}
+	if dto.TaxCodeID != "" {
+		updateBuilder = updateBuilder.SetTaxCodeID(dto.TaxCodeID)
+	}
 
-	i, err := builder.Save(ctx)
+	i, err := updateBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: update item: %w", err)
+	}
+
+	// Update reorder level/quantity on all InventoryBalance records for this item if provided.
+	if dto.ReorderLevel > 0 || dto.ReorderQuantity > 0 {
+		bals, balErr := tx.InventoryBalance.Query().
+			Where(inventorybalance.ItemID(i.ID), inventorybalance.TenantID(tenantID)).
+			All(ctx)
+		if balErr == nil {
+			for _, bal := range bals {
+				upd := tx.InventoryBalance.UpdateOneID(bal.ID)
+				if dto.ReorderLevel > 0 {
+					upd = upd.SetReorderLevel(dto.ReorderLevel)
+				}
+				if dto.ReorderQuantity > 0 {
+					upd = upd.SetReorderQuantity(dto.ReorderQuantity)
+				}
+				_, _ = upd.Save(ctx)
+			}
+		}
 	}
 
 	// Resolve category name for enriched event payload
