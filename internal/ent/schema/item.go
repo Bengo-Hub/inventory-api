@@ -96,6 +96,29 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations"),
+		// Event capacity fields (Phase 2) — SERVICE-type items only
+		field.Int("total_capacity").
+			Optional().
+			Nillable().
+			Comment("Total seats/tickets for SERVICE-type event items"),
+		field.Int("booked_capacity").
+			Optional().
+			Nillable().
+			Default(0).
+			Comment("Confirmed bookings against total_capacity"),
+		field.Time("event_start_at").
+			Optional().
+			Nillable().
+			Comment("Event start datetime for SERVICE-type event items"),
+		field.Time("event_end_at").
+			Optional().
+			Nillable().
+			Comment("Event end datetime for SERVICE-type event items"),
+		field.String("event_venue").
+			Optional().
+			Nillable().
+			MaxLen(500).
+			Comment("Venue name/address for event items"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").

@@ -9181,6 +9181,13 @@ type ItemMutation struct {
 	tax_inclusive              *bool
 	cost_price                 *float64
 	addcost_price              *float64
+	total_capacity             *int
+	addtotal_capacity          *int
+	booked_capacity            *int
+	addbooked_capacity         *int
+	event_start_at             *time.Time
+	event_end_at               *time.Time
+	event_venue                *string
 	metadata                   *map[string]interface{}
 	created_at                 *time.Time
 	updated_at                 *time.Time
@@ -10383,6 +10390,293 @@ func (m *ItemMutation) ResetCostPrice() {
 	delete(m.clearedFields, item.FieldCostPrice)
 }
 
+// SetTotalCapacity sets the "total_capacity" field.
+func (m *ItemMutation) SetTotalCapacity(i int) {
+	m.total_capacity = &i
+	m.addtotal_capacity = nil
+}
+
+// TotalCapacity returns the value of the "total_capacity" field in the mutation.
+func (m *ItemMutation) TotalCapacity() (r int, exists bool) {
+	v := m.total_capacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalCapacity returns the old "total_capacity" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldTotalCapacity(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalCapacity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalCapacity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalCapacity: %w", err)
+	}
+	return oldValue.TotalCapacity, nil
+}
+
+// AddTotalCapacity adds i to the "total_capacity" field.
+func (m *ItemMutation) AddTotalCapacity(i int) {
+	if m.addtotal_capacity != nil {
+		*m.addtotal_capacity += i
+	} else {
+		m.addtotal_capacity = &i
+	}
+}
+
+// AddedTotalCapacity returns the value that was added to the "total_capacity" field in this mutation.
+func (m *ItemMutation) AddedTotalCapacity() (r int, exists bool) {
+	v := m.addtotal_capacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (m *ItemMutation) ClearTotalCapacity() {
+	m.total_capacity = nil
+	m.addtotal_capacity = nil
+	m.clearedFields[item.FieldTotalCapacity] = struct{}{}
+}
+
+// TotalCapacityCleared returns if the "total_capacity" field was cleared in this mutation.
+func (m *ItemMutation) TotalCapacityCleared() bool {
+	_, ok := m.clearedFields[item.FieldTotalCapacity]
+	return ok
+}
+
+// ResetTotalCapacity resets all changes to the "total_capacity" field.
+func (m *ItemMutation) ResetTotalCapacity() {
+	m.total_capacity = nil
+	m.addtotal_capacity = nil
+	delete(m.clearedFields, item.FieldTotalCapacity)
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (m *ItemMutation) SetBookedCapacity(i int) {
+	m.booked_capacity = &i
+	m.addbooked_capacity = nil
+}
+
+// BookedCapacity returns the value of the "booked_capacity" field in the mutation.
+func (m *ItemMutation) BookedCapacity() (r int, exists bool) {
+	v := m.booked_capacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBookedCapacity returns the old "booked_capacity" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldBookedCapacity(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBookedCapacity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBookedCapacity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBookedCapacity: %w", err)
+	}
+	return oldValue.BookedCapacity, nil
+}
+
+// AddBookedCapacity adds i to the "booked_capacity" field.
+func (m *ItemMutation) AddBookedCapacity(i int) {
+	if m.addbooked_capacity != nil {
+		*m.addbooked_capacity += i
+	} else {
+		m.addbooked_capacity = &i
+	}
+}
+
+// AddedBookedCapacity returns the value that was added to the "booked_capacity" field in this mutation.
+func (m *ItemMutation) AddedBookedCapacity() (r int, exists bool) {
+	v := m.addbooked_capacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (m *ItemMutation) ClearBookedCapacity() {
+	m.booked_capacity = nil
+	m.addbooked_capacity = nil
+	m.clearedFields[item.FieldBookedCapacity] = struct{}{}
+}
+
+// BookedCapacityCleared returns if the "booked_capacity" field was cleared in this mutation.
+func (m *ItemMutation) BookedCapacityCleared() bool {
+	_, ok := m.clearedFields[item.FieldBookedCapacity]
+	return ok
+}
+
+// ResetBookedCapacity resets all changes to the "booked_capacity" field.
+func (m *ItemMutation) ResetBookedCapacity() {
+	m.booked_capacity = nil
+	m.addbooked_capacity = nil
+	delete(m.clearedFields, item.FieldBookedCapacity)
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (m *ItemMutation) SetEventStartAt(t time.Time) {
+	m.event_start_at = &t
+}
+
+// EventStartAt returns the value of the "event_start_at" field in the mutation.
+func (m *ItemMutation) EventStartAt() (r time.Time, exists bool) {
+	v := m.event_start_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventStartAt returns the old "event_start_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEventStartAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventStartAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventStartAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventStartAt: %w", err)
+	}
+	return oldValue.EventStartAt, nil
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (m *ItemMutation) ClearEventStartAt() {
+	m.event_start_at = nil
+	m.clearedFields[item.FieldEventStartAt] = struct{}{}
+}
+
+// EventStartAtCleared returns if the "event_start_at" field was cleared in this mutation.
+func (m *ItemMutation) EventStartAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldEventStartAt]
+	return ok
+}
+
+// ResetEventStartAt resets all changes to the "event_start_at" field.
+func (m *ItemMutation) ResetEventStartAt() {
+	m.event_start_at = nil
+	delete(m.clearedFields, item.FieldEventStartAt)
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (m *ItemMutation) SetEventEndAt(t time.Time) {
+	m.event_end_at = &t
+}
+
+// EventEndAt returns the value of the "event_end_at" field in the mutation.
+func (m *ItemMutation) EventEndAt() (r time.Time, exists bool) {
+	v := m.event_end_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventEndAt returns the old "event_end_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEventEndAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventEndAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventEndAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventEndAt: %w", err)
+	}
+	return oldValue.EventEndAt, nil
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (m *ItemMutation) ClearEventEndAt() {
+	m.event_end_at = nil
+	m.clearedFields[item.FieldEventEndAt] = struct{}{}
+}
+
+// EventEndAtCleared returns if the "event_end_at" field was cleared in this mutation.
+func (m *ItemMutation) EventEndAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldEventEndAt]
+	return ok
+}
+
+// ResetEventEndAt resets all changes to the "event_end_at" field.
+func (m *ItemMutation) ResetEventEndAt() {
+	m.event_end_at = nil
+	delete(m.clearedFields, item.FieldEventEndAt)
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (m *ItemMutation) SetEventVenue(s string) {
+	m.event_venue = &s
+}
+
+// EventVenue returns the value of the "event_venue" field in the mutation.
+func (m *ItemMutation) EventVenue() (r string, exists bool) {
+	v := m.event_venue
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventVenue returns the old "event_venue" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEventVenue(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventVenue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventVenue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventVenue: %w", err)
+	}
+	return oldValue.EventVenue, nil
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (m *ItemMutation) ClearEventVenue() {
+	m.event_venue = nil
+	m.clearedFields[item.FieldEventVenue] = struct{}{}
+}
+
+// EventVenueCleared returns if the "event_venue" field was cleared in this mutation.
+func (m *ItemMutation) EventVenueCleared() bool {
+	_, ok := m.clearedFields[item.FieldEventVenue]
+	return ok
+}
+
+// ResetEventVenue resets all changes to the "event_venue" field.
+func (m *ItemMutation) ResetEventVenue() {
+	m.event_venue = nil
+	delete(m.clearedFields, item.FieldEventVenue)
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *ItemMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -11250,7 +11544,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 31)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -11320,6 +11614,21 @@ func (m *ItemMutation) Fields() []string {
 	if m.cost_price != nil {
 		fields = append(fields, item.FieldCostPrice)
 	}
+	if m.total_capacity != nil {
+		fields = append(fields, item.FieldTotalCapacity)
+	}
+	if m.booked_capacity != nil {
+		fields = append(fields, item.FieldBookedCapacity)
+	}
+	if m.event_start_at != nil {
+		fields = append(fields, item.FieldEventStartAt)
+	}
+	if m.event_end_at != nil {
+		fields = append(fields, item.FieldEventEndAt)
+	}
+	if m.event_venue != nil {
+		fields = append(fields, item.FieldEventVenue)
+	}
 	if m.metadata != nil {
 		fields = append(fields, item.FieldMetadata)
 	}
@@ -11383,6 +11692,16 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.TaxInclusive()
 	case item.FieldCostPrice:
 		return m.CostPrice()
+	case item.FieldTotalCapacity:
+		return m.TotalCapacity()
+	case item.FieldBookedCapacity:
+		return m.BookedCapacity()
+	case item.FieldEventStartAt:
+		return m.EventStartAt()
+	case item.FieldEventEndAt:
+		return m.EventEndAt()
+	case item.FieldEventVenue:
+		return m.EventVenue()
 	case item.FieldMetadata:
 		return m.Metadata()
 	case item.FieldCreatedAt:
@@ -11444,6 +11763,16 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTaxInclusive(ctx)
 	case item.FieldCostPrice:
 		return m.OldCostPrice(ctx)
+	case item.FieldTotalCapacity:
+		return m.OldTotalCapacity(ctx)
+	case item.FieldBookedCapacity:
+		return m.OldBookedCapacity(ctx)
+	case item.FieldEventStartAt:
+		return m.OldEventStartAt(ctx)
+	case item.FieldEventEndAt:
+		return m.OldEventEndAt(ctx)
+	case item.FieldEventVenue:
+		return m.OldEventVenue(ctx)
 	case item.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case item.FieldCreatedAt:
@@ -11620,6 +11949,41 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCostPrice(v)
 		return nil
+	case item.FieldTotalCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalCapacity(v)
+		return nil
+	case item.FieldBookedCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBookedCapacity(v)
+		return nil
+	case item.FieldEventStartAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventStartAt(v)
+		return nil
+	case item.FieldEventEndAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventEndAt(v)
+		return nil
+	case item.FieldEventVenue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventVenue(v)
+		return nil
 	case item.FieldMetadata:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -11658,6 +12022,12 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addcost_price != nil {
 		fields = append(fields, item.FieldCostPrice)
 	}
+	if m.addtotal_capacity != nil {
+		fields = append(fields, item.FieldTotalCapacity)
+	}
+	if m.addbooked_capacity != nil {
+		fields = append(fields, item.FieldBookedCapacity)
+	}
 	return fields
 }
 
@@ -11672,6 +12042,10 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedDurationMinutes()
 	case item.FieldCostPrice:
 		return m.AddedCostPrice()
+	case item.FieldTotalCapacity:
+		return m.AddedTotalCapacity()
+	case item.FieldBookedCapacity:
+		return m.AddedBookedCapacity()
 	}
 	return nil, false
 }
@@ -11701,6 +12075,20 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddCostPrice(v)
+		return nil
+	case item.FieldTotalCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalCapacity(v)
+		return nil
+	case item.FieldBookedCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBookedCapacity(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Item numeric field %s", name)
@@ -11742,6 +12130,21 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldCostPrice) {
 		fields = append(fields, item.FieldCostPrice)
+	}
+	if m.FieldCleared(item.FieldTotalCapacity) {
+		fields = append(fields, item.FieldTotalCapacity)
+	}
+	if m.FieldCleared(item.FieldBookedCapacity) {
+		fields = append(fields, item.FieldBookedCapacity)
+	}
+	if m.FieldCleared(item.FieldEventStartAt) {
+		fields = append(fields, item.FieldEventStartAt)
+	}
+	if m.FieldCleared(item.FieldEventEndAt) {
+		fields = append(fields, item.FieldEventEndAt)
+	}
+	if m.FieldCleared(item.FieldEventVenue) {
+		fields = append(fields, item.FieldEventVenue)
 	}
 	return fields
 }
@@ -11789,6 +12192,21 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldCostPrice:
 		m.ClearCostPrice()
+		return nil
+	case item.FieldTotalCapacity:
+		m.ClearTotalCapacity()
+		return nil
+	case item.FieldBookedCapacity:
+		m.ClearBookedCapacity()
+		return nil
+	case item.FieldEventStartAt:
+		m.ClearEventStartAt()
+		return nil
+	case item.FieldEventEndAt:
+		m.ClearEventEndAt()
+		return nil
+	case item.FieldEventVenue:
+		m.ClearEventVenue()
 		return nil
 	}
 	return fmt.Errorf("unknown Item nullable field %s", name)
@@ -11866,6 +12284,21 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldCostPrice:
 		m.ResetCostPrice()
+		return nil
+	case item.FieldTotalCapacity:
+		m.ResetTotalCapacity()
+		return nil
+	case item.FieldBookedCapacity:
+		m.ResetBookedCapacity()
+		return nil
+	case item.FieldEventStartAt:
+		m.ResetEventStartAt()
+		return nil
+	case item.FieldEventEndAt:
+		m.ResetEventEndAt()
+		return nil
+	case item.FieldEventVenue:
+		m.ResetEventVenue()
 		return nil
 	case item.FieldMetadata:
 		m.ResetMetadata()

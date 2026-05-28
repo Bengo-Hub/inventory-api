@@ -451,6 +451,11 @@ var (
 		{Name: "tax_code_id", Type: field.TypeString, Nullable: true},
 		{Name: "tax_inclusive", Type: field.TypeBool, Default: false},
 		{Name: "cost_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "total_capacity", Type: field.TypeInt, Nullable: true},
+		{Name: "booked_capacity", Type: field.TypeInt, Nullable: true, Default: 0},
+		{Name: "event_start_at", Type: field.TypeTime, Nullable: true},
+		{Name: "event_end_at", Type: field.TypeTime, Nullable: true},
+		{Name: "event_venue", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -466,19 +471,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[24]},
+				Columns:    []*schema.Column{ItemsColumns[29]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[25]},
+				Columns:    []*schema.Column{ItemsColumns[30]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[26]},
+				Columns:    []*schema.Column{ItemsColumns[31]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -487,32 +492,32 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[25]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[30]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[5]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[7]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[22]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[27]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[24]},
+				Columns: []*schema.Column{ItemsColumns[31], ItemsColumns[29]},
 			},
 		},
 	}

@@ -156,6 +156,31 @@ func CostPrice(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCostPrice, v))
 }
 
+// TotalCapacity applies equality check predicate on the "total_capacity" field. It's identical to TotalCapacityEQ.
+func TotalCapacity(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTotalCapacity, v))
+}
+
+// BookedCapacity applies equality check predicate on the "booked_capacity" field. It's identical to BookedCapacityEQ.
+func BookedCapacity(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBookedCapacity, v))
+}
+
+// EventStartAt applies equality check predicate on the "event_start_at" field. It's identical to EventStartAtEQ.
+func EventStartAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventStartAt, v))
+}
+
+// EventEndAt applies equality check predicate on the "event_end_at" field. It's identical to EventEndAtEQ.
+func EventEndAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventEndAt, v))
+}
+
+// EventVenue applies equality check predicate on the "event_venue" field. It's identical to EventVenueEQ.
+func EventVenue(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventVenue, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -999,6 +1024,281 @@ func CostPriceIsNil() predicate.Item {
 // CostPriceNotNil applies the NotNil predicate on the "cost_price" field.
 func CostPriceNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldCostPrice))
+}
+
+// TotalCapacityEQ applies the EQ predicate on the "total_capacity" field.
+func TotalCapacityEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTotalCapacity, v))
+}
+
+// TotalCapacityNEQ applies the NEQ predicate on the "total_capacity" field.
+func TotalCapacityNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTotalCapacity, v))
+}
+
+// TotalCapacityIn applies the In predicate on the "total_capacity" field.
+func TotalCapacityIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldTotalCapacity, vs...))
+}
+
+// TotalCapacityNotIn applies the NotIn predicate on the "total_capacity" field.
+func TotalCapacityNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldTotalCapacity, vs...))
+}
+
+// TotalCapacityGT applies the GT predicate on the "total_capacity" field.
+func TotalCapacityGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldTotalCapacity, v))
+}
+
+// TotalCapacityGTE applies the GTE predicate on the "total_capacity" field.
+func TotalCapacityGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldTotalCapacity, v))
+}
+
+// TotalCapacityLT applies the LT predicate on the "total_capacity" field.
+func TotalCapacityLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldTotalCapacity, v))
+}
+
+// TotalCapacityLTE applies the LTE predicate on the "total_capacity" field.
+func TotalCapacityLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldTotalCapacity, v))
+}
+
+// TotalCapacityIsNil applies the IsNil predicate on the "total_capacity" field.
+func TotalCapacityIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldTotalCapacity))
+}
+
+// TotalCapacityNotNil applies the NotNil predicate on the "total_capacity" field.
+func TotalCapacityNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldTotalCapacity))
+}
+
+// BookedCapacityEQ applies the EQ predicate on the "booked_capacity" field.
+func BookedCapacityEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBookedCapacity, v))
+}
+
+// BookedCapacityNEQ applies the NEQ predicate on the "booked_capacity" field.
+func BookedCapacityNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldBookedCapacity, v))
+}
+
+// BookedCapacityIn applies the In predicate on the "booked_capacity" field.
+func BookedCapacityIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldBookedCapacity, vs...))
+}
+
+// BookedCapacityNotIn applies the NotIn predicate on the "booked_capacity" field.
+func BookedCapacityNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldBookedCapacity, vs...))
+}
+
+// BookedCapacityGT applies the GT predicate on the "booked_capacity" field.
+func BookedCapacityGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldBookedCapacity, v))
+}
+
+// BookedCapacityGTE applies the GTE predicate on the "booked_capacity" field.
+func BookedCapacityGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldBookedCapacity, v))
+}
+
+// BookedCapacityLT applies the LT predicate on the "booked_capacity" field.
+func BookedCapacityLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldBookedCapacity, v))
+}
+
+// BookedCapacityLTE applies the LTE predicate on the "booked_capacity" field.
+func BookedCapacityLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldBookedCapacity, v))
+}
+
+// BookedCapacityIsNil applies the IsNil predicate on the "booked_capacity" field.
+func BookedCapacityIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldBookedCapacity))
+}
+
+// BookedCapacityNotNil applies the NotNil predicate on the "booked_capacity" field.
+func BookedCapacityNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldBookedCapacity))
+}
+
+// EventStartAtEQ applies the EQ predicate on the "event_start_at" field.
+func EventStartAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventStartAt, v))
+}
+
+// EventStartAtNEQ applies the NEQ predicate on the "event_start_at" field.
+func EventStartAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEventStartAt, v))
+}
+
+// EventStartAtIn applies the In predicate on the "event_start_at" field.
+func EventStartAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEventStartAt, vs...))
+}
+
+// EventStartAtNotIn applies the NotIn predicate on the "event_start_at" field.
+func EventStartAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEventStartAt, vs...))
+}
+
+// EventStartAtGT applies the GT predicate on the "event_start_at" field.
+func EventStartAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEventStartAt, v))
+}
+
+// EventStartAtGTE applies the GTE predicate on the "event_start_at" field.
+func EventStartAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEventStartAt, v))
+}
+
+// EventStartAtLT applies the LT predicate on the "event_start_at" field.
+func EventStartAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEventStartAt, v))
+}
+
+// EventStartAtLTE applies the LTE predicate on the "event_start_at" field.
+func EventStartAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEventStartAt, v))
+}
+
+// EventStartAtIsNil applies the IsNil predicate on the "event_start_at" field.
+func EventStartAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEventStartAt))
+}
+
+// EventStartAtNotNil applies the NotNil predicate on the "event_start_at" field.
+func EventStartAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEventStartAt))
+}
+
+// EventEndAtEQ applies the EQ predicate on the "event_end_at" field.
+func EventEndAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventEndAt, v))
+}
+
+// EventEndAtNEQ applies the NEQ predicate on the "event_end_at" field.
+func EventEndAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEventEndAt, v))
+}
+
+// EventEndAtIn applies the In predicate on the "event_end_at" field.
+func EventEndAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEventEndAt, vs...))
+}
+
+// EventEndAtNotIn applies the NotIn predicate on the "event_end_at" field.
+func EventEndAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEventEndAt, vs...))
+}
+
+// EventEndAtGT applies the GT predicate on the "event_end_at" field.
+func EventEndAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEventEndAt, v))
+}
+
+// EventEndAtGTE applies the GTE predicate on the "event_end_at" field.
+func EventEndAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEventEndAt, v))
+}
+
+// EventEndAtLT applies the LT predicate on the "event_end_at" field.
+func EventEndAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEventEndAt, v))
+}
+
+// EventEndAtLTE applies the LTE predicate on the "event_end_at" field.
+func EventEndAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEventEndAt, v))
+}
+
+// EventEndAtIsNil applies the IsNil predicate on the "event_end_at" field.
+func EventEndAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEventEndAt))
+}
+
+// EventEndAtNotNil applies the NotNil predicate on the "event_end_at" field.
+func EventEndAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEventEndAt))
+}
+
+// EventVenueEQ applies the EQ predicate on the "event_venue" field.
+func EventVenueEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEventVenue, v))
+}
+
+// EventVenueNEQ applies the NEQ predicate on the "event_venue" field.
+func EventVenueNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEventVenue, v))
+}
+
+// EventVenueIn applies the In predicate on the "event_venue" field.
+func EventVenueIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEventVenue, vs...))
+}
+
+// EventVenueNotIn applies the NotIn predicate on the "event_venue" field.
+func EventVenueNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEventVenue, vs...))
+}
+
+// EventVenueGT applies the GT predicate on the "event_venue" field.
+func EventVenueGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEventVenue, v))
+}
+
+// EventVenueGTE applies the GTE predicate on the "event_venue" field.
+func EventVenueGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEventVenue, v))
+}
+
+// EventVenueLT applies the LT predicate on the "event_venue" field.
+func EventVenueLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEventVenue, v))
+}
+
+// EventVenueLTE applies the LTE predicate on the "event_venue" field.
+func EventVenueLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEventVenue, v))
+}
+
+// EventVenueContains applies the Contains predicate on the "event_venue" field.
+func EventVenueContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldEventVenue, v))
+}
+
+// EventVenueHasPrefix applies the HasPrefix predicate on the "event_venue" field.
+func EventVenueHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldEventVenue, v))
+}
+
+// EventVenueHasSuffix applies the HasSuffix predicate on the "event_venue" field.
+func EventVenueHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldEventVenue, v))
+}
+
+// EventVenueIsNil applies the IsNil predicate on the "event_venue" field.
+func EventVenueIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEventVenue))
+}
+
+// EventVenueNotNil applies the NotNil predicate on the "event_venue" field.
+func EventVenueNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEventVenue))
+}
+
+// EventVenueEqualFold applies the EqualFold predicate on the "event_venue" field.
+func EventVenueEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldEventVenue, v))
+}
+
+// EventVenueContainsFold applies the ContainsFold predicate on the "event_venue" field.
+func EventVenueContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldEventVenue, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

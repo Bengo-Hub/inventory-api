@@ -1,4 +1,4 @@
-h1:ZyiB4waWvtKsUza41lEUcGHLppfZkJQZK43PyaGRrSY=
+h1:0QjaOSYSHnKKlr5W+ZkJrrpRZr1ajCwIc0r58RAo7Y8=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -12,3 +12,4 @@ h1:ZyiB4waWvtKsUza41lEUcGHLppfZkJQZK43PyaGRrSY=
 20260527144311_add_unit_type.sql h1:eOs/+dDtPc2otAN3qEWDbTaKo0oGnK0Sc/STK5Ya3e8=
 20260527163101_add_item_filter_indexes.sql h1:NRDOX05P086DsHcOAACTKrKXPJQwdrCC/n8csutIixo=
 20260528134021_recipe_bom_cost_fields.sql h1:d+YhnDObfu8gqJTY4+PMq1u6OQJkrMdBYy78XQaaWdg=
+20260528141134_event_capacity_fields.sql h1:sB56L1Gfvhg5Q4tecKyZKQdhn+xMMlh18gLjbsiOXpk=

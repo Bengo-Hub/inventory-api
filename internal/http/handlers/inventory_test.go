@@ -85,6 +85,10 @@ func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFi
 	return nil, 0, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error) {
+	return []items.ItemDTO{}, 0, nil
+}
+
 func (m *mockItemsSvc) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error) {
 	if m.createCategoryFn != nil {
 		return m.createCategoryFn(ctx, tenantID, dto)
