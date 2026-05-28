@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
@@ -128,6 +129,21 @@ func (_c *UnitCreate) AddItems(v ...*Item) *UnitCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddItemIDs(ids...)
+}
+
+// AddRecipeIngredientIDs adds the "recipe_ingredients" edge to the RecipeIngredient entity by IDs.
+func (_c *UnitCreate) AddRecipeIngredientIDs(ids ...uuid.UUID) *UnitCreate {
+	_c.mutation.AddRecipeIngredientIDs(ids...)
+	return _c
+}
+
+// AddRecipeIngredients adds the "recipe_ingredients" edges to the RecipeIngredient entity.
+func (_c *UnitCreate) AddRecipeIngredients(v ...*RecipeIngredient) *UnitCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRecipeIngredientIDs(ids...)
 }
 
 // Mutation returns the UnitMutation object of the builder.
@@ -271,6 +287,22 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RecipeIngredientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

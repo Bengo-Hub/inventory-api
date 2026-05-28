@@ -13,6 +13,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
@@ -67,6 +68,8 @@ type Item struct {
 	TaxCodeID string `json:"tax_code_id,omitempty"`
 	// True if selling price already includes VAT; treasury back-calculates tax portion
 	TaxInclusive bool `json:"tax_inclusive,omitempty"`
+	// Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations
+	CostPrice *float64 `json:"cost_price,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -107,11 +110,13 @@ type ItemEdges struct {
 	BundleComponents []*BundleComponent `json:"bundle_components,omitempty"`
 	// Warranties holds the value of the warranties edge.
 	Warranties []*Warranty `json:"warranties,omitempty"`
+	// The Recipe (BOM) that produces this RECIPE-type item
+	ProducedByRecipe *Recipe `json:"produced_by_recipe,omitempty"`
 	// ItemCategory holds the value of the item_category edge.
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [14]bool
+	loadedTypes [15]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -237,12 +242,23 @@ func (e ItemEdges) WarrantiesOrErr() ([]*Warranty, error) {
 	return nil, &NotLoadedError{edge: "warranties"}
 }
 
+// ProducedByRecipeOrErr returns the ProducedByRecipe value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) ProducedByRecipeOrErr() (*Recipe, error) {
+	if e.ProducedByRecipe != nil {
+		return e.ProducedByRecipe, nil
+	} else if e.loadedTypes[13] {
+		return nil, &NotFoundError{label: recipe.Label}
+	}
+	return nil, &NotLoadedError{edge: "produced_by_recipe"}
+}
+
 // ItemCategoryOrErr returns the ItemCategory value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
 	if e.ItemCategory != nil {
 		return e.ItemCategory, nil
-	} else if e.loadedTypes[13] {
+	} else if e.loadedTypes[14] {
 		return nil, &NotFoundError{label: itemcategory.Label}
 	}
 	return nil, &NotLoadedError{edge: "item_category"}
@@ -259,7 +275,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
-		case item.FieldWeightKg:
+		case item.FieldWeightKg, item.FieldCostPrice:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldDurationMinutes:
 			values[i] = new(sql.NullInt64)
@@ -430,6 +446,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TaxInclusive = value.Bool
 			}
+		case item.FieldCostPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_price", values[i])
+			} else if value.Valid {
+				_m.CostPrice = new(float64)
+				*_m.CostPrice = value.Float64
+			}
 		case item.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
@@ -526,6 +549,11 @@ func (_m *Item) QueryBundleComponents() *BundleComponentQuery {
 // QueryWarranties queries the "warranties" edge of the Item entity.
 func (_m *Item) QueryWarranties() *WarrantyQuery {
 	return NewItemClient(_m.config).QueryWarranties(_m)
+}
+
+// QueryProducedByRecipe queries the "produced_by_recipe" edge of the Item entity.
+func (_m *Item) QueryProducedByRecipe() *RecipeQuery {
+	return NewItemClient(_m.config).QueryProducedByRecipe(_m)
 }
 
 // QueryItemCategory queries the "item_category" edge of the Item entity.
@@ -629,6 +657,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tax_inclusive=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TaxInclusive))
+	builder.WriteString(", ")
+	if v := _m.CostPrice; v != nil {
+		builder.WriteString("cost_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))

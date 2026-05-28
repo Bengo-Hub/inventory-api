@@ -111,6 +111,11 @@ func PrepTimeMinutes(v int) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldPrepTimeMinutes, v))
 }
 
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldItemID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldCreatedAt, v))
@@ -656,6 +661,36 @@ func PrepTimeMinutesNotNil() predicate.Recipe {
 	return predicate.Recipe(sql.FieldNotNull(FieldPrepTimeMinutes))
 }
 
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldItemID, vs...))
+}
+
+// ItemIDIsNil applies the IsNil predicate on the "item_id" field.
+func ItemIDIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldItemID))
+}
+
+// ItemIDNotNil applies the NotNil predicate on the "item_id" field.
+func ItemIDNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldItemID))
+}
+
 // MetadataIsNil applies the IsNil predicate on the "metadata" field.
 func MetadataIsNil() predicate.Recipe {
 	return predicate.Recipe(sql.FieldIsNull(FieldMetadata))
@@ -761,6 +796,29 @@ func HasIngredients() predicate.Recipe {
 func HasIngredientsWith(preds ...predicate.RecipeIngredient) predicate.Recipe {
 	return predicate.Recipe(func(s *sql.Selector) {
 		step := newIngredientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasItem applies the HasEdge predicate on the "item" edge.
+func HasItem() predicate.Recipe {
+	return predicate.Recipe(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ItemTable, ItemColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasItemWith applies the HasEdge predicate on the "item" edge with a given conditions (other predicates).
+func HasItemWith(preds ...predicate.Item) predicate.Recipe {
+	return predicate.Recipe(func(s *sql.Selector) {
+		step := newItemStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

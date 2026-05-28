@@ -357,15 +357,15 @@ func init() {
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[23].Descriptor()
+	itemDescMetadata := itemFields[24].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[24].Descriptor()
+	itemDescCreatedAt := itemFields[25].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[25].Descriptor()
+	itemDescUpdatedAt := itemFields[26].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -793,15 +793,15 @@ func init() {
 	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
 	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
 	// recipeDescMetadata is the schema descriptor for metadata field.
-	recipeDescMetadata := recipeFields[12].Descriptor()
+	recipeDescMetadata := recipeFields[13].Descriptor()
 	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
 	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
 	// recipeDescCreatedAt is the schema descriptor for created_at field.
-	recipeDescCreatedAt := recipeFields[13].Descriptor()
+	recipeDescCreatedAt := recipeFields[14].Descriptor()
 	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
 	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
-	recipeDescUpdatedAt := recipeFields[14].Descriptor()
+	recipeDescUpdatedAt := recipeFields[15].Descriptor()
 	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
 	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -848,6 +848,10 @@ func init() {
 	recipeingredientDescDisplayOrder := recipeingredientFields[7].Descriptor()
 	// recipeingredient.DefaultDisplayOrder holds the default value on creation for the display_order field.
 	recipeingredient.DefaultDisplayOrder = recipeingredientDescDisplayOrder.Default.(int)
+	// recipeingredientDescWastePercent is the schema descriptor for waste_percent field.
+	recipeingredientDescWastePercent := recipeingredientFields[9].Descriptor()
+	// recipeingredient.DefaultWastePercent holds the default value on creation for the waste_percent field.
+	recipeingredient.DefaultWastePercent = recipeingredientDescWastePercent.Default.(float64)
 	// recipeingredientDescID is the schema descriptor for id field.
 	recipeingredientDescID := recipeingredientFields[0].Descriptor()
 	// recipeingredient.DefaultID holds the default value on creation for the id field.
@@ -1086,12 +1090,16 @@ func init() {
 	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[18].Descriptor()
 	// tenantinventoryconfig.DefaultSupplierManagementEnabled holds the default value on creation for the supplier_management_enabled field.
 	tenantinventoryconfig.DefaultSupplierManagementEnabled = tenantinventoryconfigDescSupplierManagementEnabled.Default.(bool)
+	// tenantinventoryconfigDescDefaultTargetMarginPercent is the schema descriptor for default_target_margin_percent field.
+	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[19].Descriptor()
+	// tenantinventoryconfig.DefaultDefaultTargetMarginPercent holds the default value on creation for the default_target_margin_percent field.
+	tenantinventoryconfig.DefaultDefaultTargetMarginPercent = tenantinventoryconfigDescDefaultTargetMarginPercent.Default.(float64)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[19].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[20].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[20].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[21].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

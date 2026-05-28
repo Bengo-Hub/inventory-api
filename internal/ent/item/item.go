@@ -60,6 +60,8 @@ const (
 	FieldTaxCodeID = "tax_code_id"
 	// FieldTaxInclusive holds the string denoting the tax_inclusive field in the database.
 	FieldTaxInclusive = "tax_inclusive"
+	// FieldCostPrice holds the string denoting the cost_price field in the database.
+	FieldCostPrice = "cost_price"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -92,6 +94,8 @@ const (
 	EdgeBundleComponents = "bundle_components"
 	// EdgeWarranties holds the string denoting the warranties edge name in mutations.
 	EdgeWarranties = "warranties"
+	// EdgeProducedByRecipe holds the string denoting the produced_by_recipe edge name in mutations.
+	EdgeProducedByRecipe = "produced_by_recipe"
 	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
 	EdgeItemCategory = "item_category"
 	// Table holds the table name of the item in the database.
@@ -187,6 +191,13 @@ const (
 	WarrantiesInverseTable = "warranties"
 	// WarrantiesColumn is the table column denoting the warranties relation/edge.
 	WarrantiesColumn = "item_id"
+	// ProducedByRecipeTable is the table that holds the produced_by_recipe relation/edge.
+	ProducedByRecipeTable = "recipes"
+	// ProducedByRecipeInverseTable is the table name for the Recipe entity.
+	// It exists in this package in order to avoid circular dependency with the "recipe" package.
+	ProducedByRecipeInverseTable = "recipes"
+	// ProducedByRecipeColumn is the table column denoting the produced_by_recipe relation/edge.
+	ProducedByRecipeColumn = "item_id"
 	// ItemCategoryTable is the table that holds the item_category relation/edge.
 	ItemCategoryTable = "items"
 	// ItemCategoryInverseTable is the table name for the ItemCategory entity.
@@ -221,6 +232,7 @@ var Columns = []string{
 	FieldTags,
 	FieldTaxCodeID,
 	FieldTaxInclusive,
+	FieldCostPrice,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -407,6 +419,11 @@ func ByTaxInclusive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTaxInclusive, opts...).ToFunc()
 }
 
+// ByCostPrice orders the results by the cost_price field.
+func ByCostPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostPrice, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -578,6 +595,13 @@ func ByWarranties(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByProducedByRecipeField orders the results by produced_by_recipe field.
+func ByProducedByRecipeField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProducedByRecipeStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByItemCategoryField orders the results by item_category field.
 func ByItemCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -673,6 +697,13 @@ func newWarrantiesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WarrantiesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, WarrantiesTable, WarrantiesColumn),
+	)
+}
+func newProducedByRecipeStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProducedByRecipeInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProducedByRecipeTable, ProducedByRecipeColumn),
 	)
 }
 func newItemCategoryStep() *sqlgraph.Step {

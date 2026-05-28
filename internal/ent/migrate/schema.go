@@ -450,6 +450,7 @@ var (
 		{Name: "tags", Type: field.TypeJSON},
 		{Name: "tax_code_id", Type: field.TypeString, Nullable: true},
 		{Name: "tax_inclusive", Type: field.TypeBool, Default: false},
+		{Name: "cost_price", Type: field.TypeFloat64, Nullable: true},
 		{Name: "metadata", Type: field.TypeJSON},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -465,19 +466,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[23]},
+				Columns:    []*schema.Column{ItemsColumns[24]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[24]},
+				Columns:    []*schema.Column{ItemsColumns[25]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[25]},
+				Columns:    []*schema.Column{ItemsColumns[26]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -486,32 +487,32 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[24]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[25]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[5]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[7]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[21]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[22]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[25], ItemsColumns[23]},
+				Columns: []*schema.Column{ItemsColumns[26], ItemsColumns[24]},
 			},
 		},
 	}
@@ -1014,12 +1015,21 @@ var (
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "item_id", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// RecipesTable holds the schema information for the "recipes" table.
 	RecipesTable = &schema.Table{
 		Name:       "recipes",
 		Columns:    RecipesColumns,
 		PrimaryKey: []*schema.Column{RecipesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "recipes_items_produced_by_recipe",
+				Columns:    []*schema.Column{RecipesColumns[15]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "recipe_tenant_id_sku",
@@ -1041,8 +1051,10 @@ var (
 		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PIECE"},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "display_order", Type: field.TypeInt, Default: 0},
+		{Name: "waste_percent", Type: field.TypeFloat64, Nullable: true, Default: 0},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "recipe_id", Type: field.TypeUUID},
+		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// RecipeIngredientsTable holds the schema information for the "recipe_ingredients" table.
 	RecipeIngredientsTable = &schema.Table{
@@ -1052,27 +1064,33 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "recipe_ingredients_items_recipe_ingredients",
-				Columns:    []*schema.Column{RecipeIngredientsColumns[6]},
+				Columns:    []*schema.Column{RecipeIngredientsColumns[7]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "recipe_ingredients_recipes_ingredients",
-				Columns:    []*schema.Column{RecipeIngredientsColumns[7]},
+				Columns:    []*schema.Column{RecipeIngredientsColumns[8]},
 				RefColumns: []*schema.Column{RecipesColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "recipe_ingredients_units_recipe_ingredients",
+				Columns:    []*schema.Column{RecipeIngredientsColumns[9]},
+				RefColumns: []*schema.Column{UnitsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "recipeingredient_recipe_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{RecipeIngredientsColumns[7], RecipeIngredientsColumns[6]},
+				Columns: []*schema.Column{RecipeIngredientsColumns[8], RecipeIngredientsColumns[7]},
 			},
 			{
 				Name:    "recipeingredient_recipe_id",
 				Unique:  false,
-				Columns: []*schema.Column{RecipeIngredientsColumns[7]},
+				Columns: []*schema.Column{RecipeIngredientsColumns[8]},
 			},
 			{
 				Name:    "recipeingredient_item_sku",
@@ -1403,6 +1421,7 @@ var (
 		{Name: "recipes_module_enabled", Type: field.TypeBool, Default: false},
 		{Name: "purchase_orders_enabled", Type: field.TypeBool, Default: true},
 		{Name: "supplier_management_enabled", Type: field.TypeBool, Default: true},
+		{Name: "default_target_margin_percent", Type: field.TypeFloat64, Nullable: true, Default: 30},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -1744,8 +1763,10 @@ func init() {
 	PurchaseOrdersTable.ForeignKeys[0].RefTable = SuppliersTable
 	PurchaseOrdersTable.ForeignKeys[1].RefTable = WarehousesTable
 	PurchaseOrderLinesTable.ForeignKeys[0].RefTable = PurchaseOrdersTable
+	RecipesTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
+	RecipeIngredientsTable.ForeignKeys[2].RefTable = UnitsTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = InventoryRolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = InventoryPermissionsTable

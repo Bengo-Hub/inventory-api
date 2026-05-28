@@ -27,10 +27,16 @@ const (
 	FieldNotes = "notes"
 	// FieldDisplayOrder holds the string denoting the display_order field in the database.
 	FieldDisplayOrder = "display_order"
+	// FieldUnitID holds the string denoting the unit_id field in the database.
+	FieldUnitID = "unit_id"
+	// FieldWastePercent holds the string denoting the waste_percent field in the database.
+	FieldWastePercent = "waste_percent"
 	// EdgeRecipe holds the string denoting the recipe edge name in mutations.
 	EdgeRecipe = "recipe"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
+	// EdgeUnit holds the string denoting the unit edge name in mutations.
+	EdgeUnit = "unit"
 	// Table holds the table name of the recipeingredient in the database.
 	Table = "recipe_ingredients"
 	// RecipeTable is the table that holds the recipe relation/edge.
@@ -47,6 +53,13 @@ const (
 	ItemInverseTable = "items"
 	// ItemColumn is the table column denoting the item relation/edge.
 	ItemColumn = "item_id"
+	// UnitTable is the table that holds the unit relation/edge.
+	UnitTable = "recipe_ingredients"
+	// UnitInverseTable is the table name for the Unit entity.
+	// It exists in this package in order to avoid circular dependency with the "unit" package.
+	UnitInverseTable = "units"
+	// UnitColumn is the table column denoting the unit relation/edge.
+	UnitColumn = "unit_id"
 )
 
 // Columns holds all SQL columns for recipeingredient fields.
@@ -59,6 +72,8 @@ var Columns = []string{
 	FieldUnitOfMeasure,
 	FieldNotes,
 	FieldDisplayOrder,
+	FieldUnitID,
+	FieldWastePercent,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -84,6 +99,8 @@ var (
 	NotesValidator func(string) error
 	// DefaultDisplayOrder holds the default value on creation for the "display_order" field.
 	DefaultDisplayOrder int
+	// DefaultWastePercent holds the default value on creation for the "waste_percent" field.
+	DefaultWastePercent float64
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -131,6 +148,16 @@ func ByDisplayOrder(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisplayOrder, opts...).ToFunc()
 }
 
+// ByUnitID orders the results by the unit_id field.
+func ByUnitID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitID, opts...).ToFunc()
+}
+
+// ByWastePercent orders the results by the waste_percent field.
+func ByWastePercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWastePercent, opts...).ToFunc()
+}
+
 // ByRecipeField orders the results by recipe field.
 func ByRecipeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -142,6 +169,13 @@ func ByRecipeField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newItemStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByUnitField orders the results by unit field.
+func ByUnitField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUnitStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newRecipeStep() *sqlgraph.Step {
@@ -156,5 +190,12 @@ func newItemStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ItemTable, ItemColumn),
+	)
+}
+func newUnitStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UnitInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UnitTable, UnitColumn),
 	)
 }

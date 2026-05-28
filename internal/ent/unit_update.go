@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
@@ -119,6 +120,21 @@ func (_u *UnitUpdate) AddItems(v ...*Item) *UnitUpdate {
 	return _u.AddItemIDs(ids...)
 }
 
+// AddRecipeIngredientIDs adds the "recipe_ingredients" edge to the RecipeIngredient entity by IDs.
+func (_u *UnitUpdate) AddRecipeIngredientIDs(ids ...uuid.UUID) *UnitUpdate {
+	_u.mutation.AddRecipeIngredientIDs(ids...)
+	return _u
+}
+
+// AddRecipeIngredients adds the "recipe_ingredients" edges to the RecipeIngredient entity.
+func (_u *UnitUpdate) AddRecipeIngredients(v ...*RecipeIngredient) *UnitUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRecipeIngredientIDs(ids...)
+}
+
 // Mutation returns the UnitMutation object of the builder.
 func (_u *UnitUpdate) Mutation() *UnitMutation {
 	return _u.mutation
@@ -143,6 +159,27 @@ func (_u *UnitUpdate) RemoveItems(v ...*Item) *UnitUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearRecipeIngredients clears all "recipe_ingredients" edges to the RecipeIngredient entity.
+func (_u *UnitUpdate) ClearRecipeIngredients() *UnitUpdate {
+	_u.mutation.ClearRecipeIngredients()
+	return _u
+}
+
+// RemoveRecipeIngredientIDs removes the "recipe_ingredients" edge to RecipeIngredient entities by IDs.
+func (_u *UnitUpdate) RemoveRecipeIngredientIDs(ids ...uuid.UUID) *UnitUpdate {
+	_u.mutation.RemoveRecipeIngredientIDs(ids...)
+	return _u
+}
+
+// RemoveRecipeIngredients removes "recipe_ingredients" edges to RecipeIngredient entities.
+func (_u *UnitUpdate) RemoveRecipeIngredients(v ...*RecipeIngredient) *UnitUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRecipeIngredientIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -269,6 +306,51 @@ func (_u *UnitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.RecipeIngredientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRecipeIngredientsIDs(); len(nodes) > 0 && !_u.mutation.RecipeIngredientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RecipeIngredientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{unit.Label}
@@ -378,6 +460,21 @@ func (_u *UnitUpdateOne) AddItems(v ...*Item) *UnitUpdateOne {
 	return _u.AddItemIDs(ids...)
 }
 
+// AddRecipeIngredientIDs adds the "recipe_ingredients" edge to the RecipeIngredient entity by IDs.
+func (_u *UnitUpdateOne) AddRecipeIngredientIDs(ids ...uuid.UUID) *UnitUpdateOne {
+	_u.mutation.AddRecipeIngredientIDs(ids...)
+	return _u
+}
+
+// AddRecipeIngredients adds the "recipe_ingredients" edges to the RecipeIngredient entity.
+func (_u *UnitUpdateOne) AddRecipeIngredients(v ...*RecipeIngredient) *UnitUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRecipeIngredientIDs(ids...)
+}
+
 // Mutation returns the UnitMutation object of the builder.
 func (_u *UnitUpdateOne) Mutation() *UnitMutation {
 	return _u.mutation
@@ -402,6 +499,27 @@ func (_u *UnitUpdateOne) RemoveItems(v ...*Item) *UnitUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveItemIDs(ids...)
+}
+
+// ClearRecipeIngredients clears all "recipe_ingredients" edges to the RecipeIngredient entity.
+func (_u *UnitUpdateOne) ClearRecipeIngredients() *UnitUpdateOne {
+	_u.mutation.ClearRecipeIngredients()
+	return _u
+}
+
+// RemoveRecipeIngredientIDs removes the "recipe_ingredients" edge to RecipeIngredient entities by IDs.
+func (_u *UnitUpdateOne) RemoveRecipeIngredientIDs(ids ...uuid.UUID) *UnitUpdateOne {
+	_u.mutation.RemoveRecipeIngredientIDs(ids...)
+	return _u
+}
+
+// RemoveRecipeIngredients removes "recipe_ingredients" edges to RecipeIngredient entities.
+func (_u *UnitUpdateOne) RemoveRecipeIngredients(v ...*RecipeIngredient) *UnitUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRecipeIngredientIDs(ids...)
 }
 
 // Where appends a list predicates to the UnitUpdate builder.
@@ -551,6 +669,51 @@ func (_u *UnitUpdateOne) sqlSave(ctx context.Context) (_node *Unit, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RecipeIngredientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRecipeIngredientsIDs(); len(nodes) > 0 && !_u.mutation.RecipeIngredientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RecipeIngredientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   unit.RecipeIngredientsTable,
+			Columns: []string{unit.RecipeIngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

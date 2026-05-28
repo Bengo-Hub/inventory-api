@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -148,6 +149,53 @@ func (_u *RecipeIngredientUpdate) AddDisplayOrder(v int) *RecipeIngredientUpdate
 	return _u
 }
 
+// SetUnitID sets the "unit_id" field.
+func (_u *RecipeIngredientUpdate) SetUnitID(v uuid.UUID) *RecipeIngredientUpdate {
+	_u.mutation.SetUnitID(v)
+	return _u
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *RecipeIngredientUpdate) SetNillableUnitID(v *uuid.UUID) *RecipeIngredientUpdate {
+	if v != nil {
+		_u.SetUnitID(*v)
+	}
+	return _u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *RecipeIngredientUpdate) ClearUnitID() *RecipeIngredientUpdate {
+	_u.mutation.ClearUnitID()
+	return _u
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (_u *RecipeIngredientUpdate) SetWastePercent(v float64) *RecipeIngredientUpdate {
+	_u.mutation.ResetWastePercent()
+	_u.mutation.SetWastePercent(v)
+	return _u
+}
+
+// SetNillableWastePercent sets the "waste_percent" field if the given value is not nil.
+func (_u *RecipeIngredientUpdate) SetNillableWastePercent(v *float64) *RecipeIngredientUpdate {
+	if v != nil {
+		_u.SetWastePercent(*v)
+	}
+	return _u
+}
+
+// AddWastePercent adds value to the "waste_percent" field.
+func (_u *RecipeIngredientUpdate) AddWastePercent(v float64) *RecipeIngredientUpdate {
+	_u.mutation.AddWastePercent(v)
+	return _u
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (_u *RecipeIngredientUpdate) ClearWastePercent() *RecipeIngredientUpdate {
+	_u.mutation.ClearWastePercent()
+	return _u
+}
+
 // SetRecipe sets the "recipe" edge to the Recipe entity.
 func (_u *RecipeIngredientUpdate) SetRecipe(v *Recipe) *RecipeIngredientUpdate {
 	return _u.SetRecipeID(v.ID)
@@ -156,6 +204,11 @@ func (_u *RecipeIngredientUpdate) SetRecipe(v *Recipe) *RecipeIngredientUpdate {
 // SetItem sets the "item" edge to the Item entity.
 func (_u *RecipeIngredientUpdate) SetItem(v *Item) *RecipeIngredientUpdate {
 	return _u.SetItemID(v.ID)
+}
+
+// SetUnit sets the "unit" edge to the Unit entity.
+func (_u *RecipeIngredientUpdate) SetUnit(v *Unit) *RecipeIngredientUpdate {
+	return _u.SetUnitID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -172,6 +225,12 @@ func (_u *RecipeIngredientUpdate) ClearRecipe() *RecipeIngredientUpdate {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *RecipeIngredientUpdate) ClearItem() *RecipeIngredientUpdate {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearUnit clears the "unit" edge to the Unit entity.
+func (_u *RecipeIngredientUpdate) ClearUnit() *RecipeIngredientUpdate {
+	_u.mutation.ClearUnit()
 	return _u
 }
 
@@ -269,6 +328,15 @@ func (_u *RecipeIngredientUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedDisplayOrder(); ok {
 		_spec.AddField(recipeingredient.FieldDisplayOrder, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.WastePercent(); ok {
+		_spec.SetField(recipeingredient.FieldWastePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWastePercent(); ok {
+		_spec.AddField(recipeingredient.FieldWastePercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.WastePercentCleared() {
+		_spec.ClearField(recipeingredient.FieldWastePercent, field.TypeFloat64)
+	}
 	if _u.mutation.RecipeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -320,6 +388,35 @@ func (_u *RecipeIngredientUpdate) sqlSave(ctx context.Context) (_node int, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UnitCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.UnitTable,
+			Columns: []string{recipeingredient.UnitColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UnitIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.UnitTable,
+			Columns: []string{recipeingredient.UnitColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -465,6 +562,53 @@ func (_u *RecipeIngredientUpdateOne) AddDisplayOrder(v int) *RecipeIngredientUpd
 	return _u
 }
 
+// SetUnitID sets the "unit_id" field.
+func (_u *RecipeIngredientUpdateOne) SetUnitID(v uuid.UUID) *RecipeIngredientUpdateOne {
+	_u.mutation.SetUnitID(v)
+	return _u
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *RecipeIngredientUpdateOne) SetNillableUnitID(v *uuid.UUID) *RecipeIngredientUpdateOne {
+	if v != nil {
+		_u.SetUnitID(*v)
+	}
+	return _u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *RecipeIngredientUpdateOne) ClearUnitID() *RecipeIngredientUpdateOne {
+	_u.mutation.ClearUnitID()
+	return _u
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (_u *RecipeIngredientUpdateOne) SetWastePercent(v float64) *RecipeIngredientUpdateOne {
+	_u.mutation.ResetWastePercent()
+	_u.mutation.SetWastePercent(v)
+	return _u
+}
+
+// SetNillableWastePercent sets the "waste_percent" field if the given value is not nil.
+func (_u *RecipeIngredientUpdateOne) SetNillableWastePercent(v *float64) *RecipeIngredientUpdateOne {
+	if v != nil {
+		_u.SetWastePercent(*v)
+	}
+	return _u
+}
+
+// AddWastePercent adds value to the "waste_percent" field.
+func (_u *RecipeIngredientUpdateOne) AddWastePercent(v float64) *RecipeIngredientUpdateOne {
+	_u.mutation.AddWastePercent(v)
+	return _u
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (_u *RecipeIngredientUpdateOne) ClearWastePercent() *RecipeIngredientUpdateOne {
+	_u.mutation.ClearWastePercent()
+	return _u
+}
+
 // SetRecipe sets the "recipe" edge to the Recipe entity.
 func (_u *RecipeIngredientUpdateOne) SetRecipe(v *Recipe) *RecipeIngredientUpdateOne {
 	return _u.SetRecipeID(v.ID)
@@ -473,6 +617,11 @@ func (_u *RecipeIngredientUpdateOne) SetRecipe(v *Recipe) *RecipeIngredientUpdat
 // SetItem sets the "item" edge to the Item entity.
 func (_u *RecipeIngredientUpdateOne) SetItem(v *Item) *RecipeIngredientUpdateOne {
 	return _u.SetItemID(v.ID)
+}
+
+// SetUnit sets the "unit" edge to the Unit entity.
+func (_u *RecipeIngredientUpdateOne) SetUnit(v *Unit) *RecipeIngredientUpdateOne {
+	return _u.SetUnitID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -489,6 +638,12 @@ func (_u *RecipeIngredientUpdateOne) ClearRecipe() *RecipeIngredientUpdateOne {
 // ClearItem clears the "item" edge to the Item entity.
 func (_u *RecipeIngredientUpdateOne) ClearItem() *RecipeIngredientUpdateOne {
 	_u.mutation.ClearItem()
+	return _u
+}
+
+// ClearUnit clears the "unit" edge to the Unit entity.
+func (_u *RecipeIngredientUpdateOne) ClearUnit() *RecipeIngredientUpdateOne {
+	_u.mutation.ClearUnit()
 	return _u
 }
 
@@ -616,6 +771,15 @@ func (_u *RecipeIngredientUpdateOne) sqlSave(ctx context.Context) (_node *Recipe
 	if value, ok := _u.mutation.AddedDisplayOrder(); ok {
 		_spec.AddField(recipeingredient.FieldDisplayOrder, field.TypeInt, value)
 	}
+	if value, ok := _u.mutation.WastePercent(); ok {
+		_spec.SetField(recipeingredient.FieldWastePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWastePercent(); ok {
+		_spec.AddField(recipeingredient.FieldWastePercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.WastePercentCleared() {
+		_spec.ClearField(recipeingredient.FieldWastePercent, field.TypeFloat64)
+	}
 	if _u.mutation.RecipeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -667,6 +831,35 @@ func (_u *RecipeIngredientUpdateOne) sqlSave(ctx context.Context) (_node *Recipe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UnitCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.UnitTable,
+			Columns: []string{recipeingredient.UnitColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UnitIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.UnitTable,
+			Columns: []string{recipeingredient.UnitColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

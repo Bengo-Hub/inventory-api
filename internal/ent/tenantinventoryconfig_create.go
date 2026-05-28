@@ -260,6 +260,20 @@ func (_c *TenantInventoryConfigCreate) SetNillableSupplierManagementEnabled(v *b
 	return _c
 }
 
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (_c *TenantInventoryConfigCreate) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigCreate {
+	_c.mutation.SetDefaultTargetMarginPercent(v)
+	return _c
+}
+
+// SetNillableDefaultTargetMarginPercent sets the "default_target_margin_percent" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableDefaultTargetMarginPercent(v *float64) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetDefaultTargetMarginPercent(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *TenantInventoryConfigCreate) SetCreatedAt(v time.Time) *TenantInventoryConfigCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -392,6 +406,10 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 	if _, ok := _c.mutation.SupplierManagementEnabled(); !ok {
 		v := tenantinventoryconfig.DefaultSupplierManagementEnabled
 		_c.mutation.SetSupplierManagementEnabled(v)
+	}
+	if _, ok := _c.mutation.DefaultTargetMarginPercent(); !ok {
+		v := tenantinventoryconfig.DefaultDefaultTargetMarginPercent
+		_c.mutation.SetDefaultTargetMarginPercent(v)
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := tenantinventoryconfig.DefaultCreatedAt()
@@ -567,6 +585,10 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
 		_node.SupplierManagementEnabled = value
+	}
+	if value, ok := _c.mutation.DefaultTargetMarginPercent(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
+		_node.DefaultTargetMarginPercent = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldCreatedAt, field.TypeTime, value)
@@ -883,6 +905,30 @@ func (u *TenantInventoryConfigUpsert) SetSupplierManagementEnabled(v bool) *Tena
 // UpdateSupplierManagementEnabled sets the "supplier_management_enabled" field to the value that was provided on create.
 func (u *TenantInventoryConfigUpsert) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsert {
 	u.SetExcluded(tenantinventoryconfig.FieldSupplierManagementEnabled)
+	return u
+}
+
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsert) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldDefaultTargetMarginPercent, v)
+	return u
+}
+
+// UpdateDefaultTargetMarginPercent sets the "default_target_margin_percent" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateDefaultTargetMarginPercent() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldDefaultTargetMarginPercent)
+	return u
+}
+
+// AddDefaultTargetMarginPercent adds v to the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsert) AddDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsert {
+	u.Add(tenantinventoryconfig.FieldDefaultTargetMarginPercent, v)
+	return u
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsert) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsert {
+	u.SetNull(tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	return u
 }
 
@@ -1247,6 +1293,34 @@ func (u *TenantInventoryConfigUpsertOne) SetSupplierManagementEnabled(v bool) *T
 func (u *TenantInventoryConfigUpsertOne) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertOne) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetDefaultTargetMarginPercent(v)
+	})
+}
+
+// AddDefaultTargetMarginPercent adds v to the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertOne) AddDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.AddDefaultTargetMarginPercent(v)
+	})
+}
+
+// UpdateDefaultTargetMarginPercent sets the "default_target_margin_percent" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateDefaultTargetMarginPercent() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateDefaultTargetMarginPercent()
+	})
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertOne) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearDefaultTargetMarginPercent()
 	})
 }
 
@@ -1780,6 +1854,34 @@ func (u *TenantInventoryConfigUpsertBulk) SetSupplierManagementEnabled(v bool) *
 func (u *TenantInventoryConfigUpsertBulk) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertBulk) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetDefaultTargetMarginPercent(v)
+	})
+}
+
+// AddDefaultTargetMarginPercent adds v to the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertBulk) AddDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.AddDefaultTargetMarginPercent(v)
+	})
+}
+
+// UpdateDefaultTargetMarginPercent sets the "default_target_margin_percent" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultTargetMarginPercent() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateDefaultTargetMarginPercent()
+	})
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (u *TenantInventoryConfigUpsertBulk) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearDefaultTargetMarginPercent()
 	})
 }
 

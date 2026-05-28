@@ -62,6 +62,10 @@ func (Recipe) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Preparation time in minutes"),
+		field.UUID("item_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("FK → the RECIPE-type Item this BOM produces"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}).
 			Optional(),
@@ -78,6 +82,10 @@ func (Recipe) Fields() []ent.Field {
 func (Recipe) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("ingredients", RecipeIngredient.Type),
+		edge.From("item", Item.Type).
+			Ref("produced_by_recipe").
+			Field("item_id").
+			Unique(),
 	}
 }
 

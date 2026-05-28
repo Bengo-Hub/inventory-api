@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/google/uuid"
@@ -155,6 +156,20 @@ func (_c *RecipeCreate) SetNillablePrepTimeMinutes(v *int) *RecipeCreate {
 	return _c
 }
 
+// SetItemID sets the "item_id" field.
+func (_c *RecipeCreate) SetItemID(v uuid.UUID) *RecipeCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableItemID(v *uuid.UUID) *RecipeCreate {
+	if v != nil {
+		_c.SetItemID(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *RecipeCreate) SetMetadata(v map[string]interface{}) *RecipeCreate {
 	_c.mutation.SetMetadata(v)
@@ -216,6 +231,11 @@ func (_c *RecipeCreate) AddIngredients(v ...*RecipeIngredient) *RecipeCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddIngredientIDs(ids...)
+}
+
+// SetItem sets the "item" edge to the Item entity.
+func (_c *RecipeCreate) SetItem(v *Item) *RecipeCreate {
+	return _c.SetItemID(v.ID)
 }
 
 // Mutation returns the RecipeMutation object of the builder.
@@ -435,6 +455,23 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   recipe.ItemTable,
+			Columns: []string{recipe.ItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ItemID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -684,6 +721,24 @@ func (u *RecipeUpsert) AddPrepTimeMinutes(v int) *RecipeUpsert {
 // ClearPrepTimeMinutes clears the value of the "prep_time_minutes" field.
 func (u *RecipeUpsert) ClearPrepTimeMinutes() *RecipeUpsert {
 	u.SetNull(recipe.FieldPrepTimeMinutes)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeUpsert) SetItemID(v uuid.UUID) *RecipeUpsert {
+	u.Set(recipe.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateItemID() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldItemID)
+	return u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RecipeUpsert) ClearItemID() *RecipeUpsert {
+	u.SetNull(recipe.FieldItemID)
 	return u
 }
 
@@ -996,6 +1051,27 @@ func (u *RecipeUpsertOne) UpdatePrepTimeMinutes() *RecipeUpsertOne {
 func (u *RecipeUpsertOne) ClearPrepTimeMinutes() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.ClearPrepTimeMinutes()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeUpsertOne) SetItemID(v uuid.UUID) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateItemID() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RecipeUpsertOne) ClearItemID() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearItemID()
 	})
 }
 
@@ -1480,6 +1556,27 @@ func (u *RecipeUpsertBulk) UpdatePrepTimeMinutes() *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) ClearPrepTimeMinutes() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.ClearPrepTimeMinutes()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeUpsertBulk) SetItemID(v uuid.UUID) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateItemID() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RecipeUpsertBulk) ClearItemID() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearItemID()
 	})
 }
 

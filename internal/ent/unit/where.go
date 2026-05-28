@@ -414,6 +414,29 @@ func HasItemsWith(preds ...predicate.Item) predicate.Unit {
 	})
 }
 
+// HasRecipeIngredients applies the HasEdge predicate on the "recipe_ingredients" edge.
+func HasRecipeIngredients() predicate.Unit {
+	return predicate.Unit(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RecipeIngredientsTable, RecipeIngredientsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRecipeIngredientsWith applies the HasEdge predicate on the "recipe_ingredients" edge with a given conditions (other predicates).
+func HasRecipeIngredientsWith(preds ...predicate.RecipeIngredient) predicate.Unit {
+	return predicate.Unit(func(s *sql.Selector) {
+		step := newRecipeIngredientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Unit) predicate.Unit {
 	return predicate.Unit(sql.AndPredicates(predicates...))

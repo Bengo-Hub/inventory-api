@@ -89,6 +89,16 @@ func DisplayOrder(v int) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldEQ(FieldDisplayOrder, v))
 }
 
+// UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
+func UnitID(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldUnitID, v))
+}
+
+// WastePercent applies equality check predicate on the "waste_percent" field. It's identical to WastePercentEQ.
+func WastePercent(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldWastePercent, v))
+}
+
 // RecipeIDEQ applies the EQ predicate on the "recipe_id" field.
 func RecipeIDEQ(v uuid.UUID) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldEQ(FieldRecipeID, v))
@@ -414,6 +424,86 @@ func DisplayOrderLTE(v int) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldLTE(FieldDisplayOrder, v))
 }
 
+// UnitIDEQ applies the EQ predicate on the "unit_id" field.
+func UnitIDEQ(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldUnitID, v))
+}
+
+// UnitIDNEQ applies the NEQ predicate on the "unit_id" field.
+func UnitIDNEQ(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNEQ(FieldUnitID, v))
+}
+
+// UnitIDIn applies the In predicate on the "unit_id" field.
+func UnitIDIn(vs ...uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIn(FieldUnitID, vs...))
+}
+
+// UnitIDNotIn applies the NotIn predicate on the "unit_id" field.
+func UnitIDNotIn(vs ...uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotIn(FieldUnitID, vs...))
+}
+
+// UnitIDIsNil applies the IsNil predicate on the "unit_id" field.
+func UnitIDIsNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIsNull(FieldUnitID))
+}
+
+// UnitIDNotNil applies the NotNil predicate on the "unit_id" field.
+func UnitIDNotNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotNull(FieldUnitID))
+}
+
+// WastePercentEQ applies the EQ predicate on the "waste_percent" field.
+func WastePercentEQ(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldWastePercent, v))
+}
+
+// WastePercentNEQ applies the NEQ predicate on the "waste_percent" field.
+func WastePercentNEQ(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNEQ(FieldWastePercent, v))
+}
+
+// WastePercentIn applies the In predicate on the "waste_percent" field.
+func WastePercentIn(vs ...float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIn(FieldWastePercent, vs...))
+}
+
+// WastePercentNotIn applies the NotIn predicate on the "waste_percent" field.
+func WastePercentNotIn(vs ...float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotIn(FieldWastePercent, vs...))
+}
+
+// WastePercentGT applies the GT predicate on the "waste_percent" field.
+func WastePercentGT(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldGT(FieldWastePercent, v))
+}
+
+// WastePercentGTE applies the GTE predicate on the "waste_percent" field.
+func WastePercentGTE(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldGTE(FieldWastePercent, v))
+}
+
+// WastePercentLT applies the LT predicate on the "waste_percent" field.
+func WastePercentLT(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldLT(FieldWastePercent, v))
+}
+
+// WastePercentLTE applies the LTE predicate on the "waste_percent" field.
+func WastePercentLTE(v float64) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldLTE(FieldWastePercent, v))
+}
+
+// WastePercentIsNil applies the IsNil predicate on the "waste_percent" field.
+func WastePercentIsNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIsNull(FieldWastePercent))
+}
+
+// WastePercentNotNil applies the NotNil predicate on the "waste_percent" field.
+func WastePercentNotNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotNull(FieldWastePercent))
+}
+
 // HasRecipe applies the HasEdge predicate on the "recipe" edge.
 func HasRecipe() predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(func(s *sql.Selector) {
@@ -452,6 +542,29 @@ func HasItem() predicate.RecipeIngredient {
 func HasItemWith(preds ...predicate.Item) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(func(s *sql.Selector) {
 		step := newItemStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUnit applies the HasEdge predicate on the "unit" edge.
+func HasUnit() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UnitTable, UnitColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUnitWith applies the HasEdge predicate on the "unit" edge with a given conditions (other predicates).
+func HasUnitWith(preds ...predicate.Unit) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(func(s *sql.Selector) {
+		step := newUnitStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
