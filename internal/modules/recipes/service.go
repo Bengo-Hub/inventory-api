@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 )
@@ -51,18 +52,38 @@ type RecipeDTO struct {
 
 // RecipeIngredientDTO represents a single ingredient in a recipe.
 type RecipeIngredientDTO struct {
-	ID            uuid.UUID  `json:"id"`
-	ItemID        uuid.UUID  `json:"item_id"`
-	ItemSKU       string     `json:"item_sku"`
-	ItemName      string     `json:"item_name"`
-	Quantity      float64    `json:"quantity"`
-	UnitOfMeasure string     `json:"unit_of_measure"`
-	UnitID        *uuid.UUID `json:"unit_id,omitempty"`
-	WastePercent  float64    `json:"waste_percent"`
-	Notes         string     `json:"notes"`
-	DisplayOrder  int        `json:"display_order"`
-	SubRecipeID   *uuid.UUID `json:"sub_recipe_id,omitempty"`
-	SubRecipeName string     `json:"sub_recipe_name,omitempty"`
+	ID             uuid.UUID  `json:"id"`
+	ItemID         uuid.UUID  `json:"item_id"`
+	ItemSKU        string     `json:"item_sku"`
+	ItemName       string     `json:"item_name"`
+	ItemCostPrice  *float64   `json:"item_cost_price,omitempty"`
+	Quantity       float64    `json:"quantity"`
+	UnitOfMeasure  string     `json:"unit_of_measure"`
+	UnitID         *uuid.UUID `json:"unit_id,omitempty"`
+	WastePercent   float64    `json:"waste_percent"`
+	Notes          string     `json:"notes"`
+	DisplayOrder   int        `json:"display_order"`
+	SubRecipeID    *uuid.UUID `json:"sub_recipe_id,omitempty"`
+	SubRecipeName  string     `json:"sub_recipe_name,omitempty"`
+}
+
+// resolveItemSKUs fetches SKU strings for ingredient item IDs in one query.
+func resolveItemSKUs(ctx context.Context, tx *ent.Tx, itemIDs []uuid.UUID) (map[uuid.UUID]string, error) {
+	if len(itemIDs) == 0 {
+		return map[uuid.UUID]string{}, nil
+	}
+	its, err := tx.Item.Query().
+		Where(entitem.IDIn(itemIDs...)).
+		Select(entitem.FieldID, entitem.FieldSku).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[uuid.UUID]string, len(its))
+	for _, it := range its {
+		m[it.ID] = it.Sku
+	}
+	return m, nil
 }
 
 // ListRecipes returns a paginated list of recipes for a tenant.
@@ -150,6 +171,22 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 		return nil, fmt.Errorf("recipes: create recipe: %w", err)
 	}
 
+	// Resolve item SKUs for ingredients that omit them (frontend may not send item_sku).
+	if len(dto.Ingredients) > 0 {
+		ingIDs := make([]uuid.UUID, 0, len(dto.Ingredients))
+		for _, ing := range dto.Ingredients {
+			ingIDs = append(ingIDs, ing.ItemID)
+		}
+		skuMap, skuErr := resolveItemSKUs(ctx, tx, ingIDs)
+		if skuErr == nil {
+			for j := range dto.Ingredients {
+				if dto.Ingredients[j].ItemSKU == "" {
+					dto.Ingredients[j].ItemSKU = skuMap[dto.Ingredients[j].ItemID]
+				}
+			}
+		}
+	}
+
 	for i, ing := range dto.Ingredients {
 		b := tx.RecipeIngredient.Create().
 			SetRecipe(r).
@@ -211,6 +248,22 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 		Exec(ctx); err != nil {
 		_ = tx.Rollback()
 		return nil, fmt.Errorf("recipes: clear old ingredients: %w", err)
+	}
+
+	// Resolve item SKUs for ingredients that omit them.
+	if len(dto.Ingredients) > 0 {
+		ingIDs := make([]uuid.UUID, 0, len(dto.Ingredients))
+		for _, ing := range dto.Ingredients {
+			ingIDs = append(ingIDs, ing.ItemID)
+		}
+		skuMap, skuErr := resolveItemSKUs(ctx, tx, ingIDs)
+		if skuErr == nil {
+			for j := range dto.Ingredients {
+				if dto.Ingredients[j].ItemSKU == "" {
+					dto.Ingredients[j].ItemSKU = skuMap[dto.Ingredients[j].ItemID]
+				}
+			}
+		}
 	}
 
 	for i, ing := range dto.Ingredients {
@@ -290,6 +343,7 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		}
 		if ing.Edges.Item != nil {
 			ingDTO.ItemName = ing.Edges.Item.Name
+			ingDTO.ItemCostPrice = ing.Edges.Item.CostPrice
 			for _, tag := range ing.Edges.Item.Tags {
 				if strings.HasPrefix(tag, "contains_") {
 					allergenSet[tag] = struct{}{}
