@@ -31,7 +31,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -662,6 +662,7 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	typeFilter := r.URL.Query().Get("type")
+	statusFilter := r.URL.Query().Get("status") // "active" | "inactive" | "all"; default = active
 	searchFilter := r.URL.Query().Get("search")
 
 	var categoryID *uuid.UUID
@@ -690,7 +691,7 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := pagination.Parse(r)
-	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, tagsFilter...)
+	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
@@ -1154,7 +1155,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", 10000, 0, nil, nil, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID

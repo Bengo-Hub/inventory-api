@@ -59,6 +59,8 @@ type ItemDTO struct {
 	TrackSerialNumbers     bool               `json:"track_serial_numbers"`
 	WeightKg               *float64           `json:"weight_kg,omitempty"`
 	DimensionsCm           map[string]float64 `json:"dimensions_cm,omitempty"`
+	// Cost / pricing fields
+	CostPrice *float64 `json:"cost_price,omitempty"`
 	// KRA eTIMS tax fields
 	TaxCodeID    string `json:"tax_code_id,omitempty"`
 	TaxInclusive bool   `json:"tax_inclusive"`
@@ -492,6 +494,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		TrackSerialNumbers:      i.TrackSerialNumbers,
 		WeightKg:                i.WeightKg,
 		DimensionsCm:            i.DimensionsCm,
+		CostPrice:               i.CostPrice,
 		TaxCodeID:               i.TaxCodeID,
 		TaxInclusive:            i.TaxInclusive,
 		TotalCapacity:           i.TotalCapacity,
@@ -504,11 +507,19 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	}
 }
 
-// ListItems returns a paginated list of active items for a tenant with DB-level filtering.
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]ItemDTO, int, error) {
+// ListItems returns a paginated list of items for a tenant with DB-level filtering.
+// statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	buildQuery := func() *ent.ItemQuery {
-		q := s.client.Item.Query().
-			Where(item.TenantID(tenantID), item.IsActive(true))
+		q := s.client.Item.Query().Where(item.TenantID(tenantID))
+		switch statusFilter {
+		case "inactive":
+			q = q.Where(item.IsActive(false))
+		case "all":
+			// no is_active filter
+		default:
+			q = q.Where(item.IsActive(true))
+		}
 		if typeFilter != "" {
 			types := strings.Split(typeFilter, ",")
 			if len(types) == 1 {
@@ -844,6 +855,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetNillableImageURL(&dto.ImageURL).
 		SetTags(tags).
 		SetMetadata(dto.Metadata).
+		SetNillableCostPrice(dto.CostPrice).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: create item: %w", err)
@@ -1026,7 +1038,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetIsActive(dto.IsActive).
 		SetNillableImageURL(&dto.ImageURL).
 		SetTags(updateTags).
-		SetMetadata(dto.Metadata)
+		SetMetadata(dto.Metadata).
+		SetNillableCostPrice(dto.CostPrice)
 
 	i, err := builder.Save(ctx)
 	if err != nil {
