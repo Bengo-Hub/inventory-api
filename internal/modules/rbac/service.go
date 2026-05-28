@@ -106,16 +106,42 @@ func (s *Service) assignDefaultRoleFromJWT(ctx context.Context, tenantID uuid.UU
 }
 
 // mapGlobalRoleToInventoryRole maps global SSO roles to inventory service roles.
+// Priority order: most privileged role wins.
 func mapGlobalRoleToInventoryRole(roles []string) string {
+	best := ""
+	rank := func(code string) int {
+		switch code {
+		case "inventory_admin":
+			return 4
+		case "warehouse_manager":
+			return 3
+		case "stock_clerk":
+			return 2
+		case "viewer":
+			return 1
+		}
+		return 0
+	}
 	for _, r := range roles {
+		var mapped string
 		switch r {
-		case "superuser", "admin":
-			return "inventory_admin"
-		case "staff":
-			return "warehouse_manager"
+		case "superuser", "admin", "tenant_admin", "owner":
+			mapped = "inventory_admin"
+		case "staff", "manager", "store_manager":
+			mapped = "warehouse_manager"
+		case "cashier", "kitchen", "bar", "stock_clerk":
+			mapped = "stock_clerk"
+		default:
+			mapped = "viewer"
+		}
+		if rank(mapped) > rank(best) {
+			best = mapped
 		}
 	}
-	return "viewer"
+	if best == "" {
+		return "viewer"
+	}
+	return best
 }
 
 // SyncUser syncs a user from auth-service.

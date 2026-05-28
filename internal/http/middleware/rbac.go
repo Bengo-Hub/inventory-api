@@ -25,8 +25,14 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 				return
 			}
 
-			// Platform owners and superusers (service accounts) bypass all permission checks.
+			// Platform owners and superusers bypass all permission checks (JWT source of truth).
 			if claims.IsPlatformOwner || claims.IsSuperuser() {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Tenant admins bypass all permission checks (JWT source of truth — no DB round-trip needed).
+			if claims.IsAdmin() {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -47,13 +53,17 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 				return
 			}
 
-			// HQ admin roles always bypass per-route permission checks.
-			for _, adminRole := range []string{"inventory_admin", "admin", "manager", "super_admin", "store_manager"} {
-				isAdmin, _ := svc.HasRole(ctx, tenantID, userID, adminRole)
-				if isAdmin {
-					next.ServeHTTP(w, r)
-					return
-				}
+			// JIT-provision the user and assign their default inventory role from the JWT.
+			// This runs after RequireAuth so claims are always present here.
+			if svc != nil {
+				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
+			}
+
+			// Check local DB role — inventory_admin bypasses per-route permission checks.
+			isAdmin, _ := svc.HasRole(ctx, tenantID, userID, rbac.RoleInventoryAdmin)
+			if isAdmin {
+				next.ServeHTTP(w, r)
+				return
 			}
 
 			ok, err = svc.HasPermission(ctx, tenantID, userID, permissionCode)
@@ -94,6 +104,12 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
+			// Tenant admins bypass all permission checks via JWT (source of truth).
+			if claims.IsAdmin() {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			tenantIDStr := httpware.GetTenantID(ctx)
 			if tenantIDStr == "" {
 				tenantIDStr = claims.TenantID
@@ -110,12 +126,16 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
-			for _, adminRole := range []string{"inventory_admin", "admin", "manager", "super_admin", "store_manager"} {
-				isAdmin, _ := svc.HasRole(ctx, tenantID, userID, adminRole)
-				if isAdmin {
-					next.ServeHTTP(w, r)
-					return
-				}
+			// JIT-provision after auth so claims are always present.
+			if svc != nil {
+				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
+			}
+
+			// inventory_admin bypasses per-route permission checks.
+			isAdmin, _ := svc.HasRole(ctx, tenantID, userID, rbac.RoleInventoryAdmin)
+			if isAdmin {
+				next.ServeHTTP(w, r)
+				return
 			}
 
 			for _, code := range permissionCodes {
