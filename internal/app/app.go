@@ -26,6 +26,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/migrate"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
+	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
@@ -161,6 +162,8 @@ func New(ctx context.Context) (*App, error) {
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc)
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
+	bundleSvc := bundles.NewService(ormClient, log)
+	inventoryExtrasHandler.SetBundleService(bundleSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
