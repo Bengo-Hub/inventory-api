@@ -172,10 +172,12 @@ func (h *InventoryExtrasHandler) CreateLot(w http.ResponseWriter, r *http.Reques
 }
 
 type updateLotInput struct {
-	ExpiryDate  *time.Time `json:"expiry_date"`
-	Quantity    int        `json:"quantity"`
-	Status      string     `json:"status"`
-	SupplierRef string     `json:"supplier_reference"`
+	ExpiryDate       *time.Time `json:"expiry_date"`
+	ManufacturedDate *time.Time `json:"manufacture_date"`
+	Quantity         int        `json:"quantity"`
+	CostPrice        *float64   `json:"cost_per_unit"`
+	Status           string     `json:"status"`
+	SupplierRef      string     `json:"supplier_reference"`
 }
 
 func (h *InventoryExtrasHandler) UpdateLot(w http.ResponseWriter, r *http.Request) {
@@ -212,6 +214,12 @@ func (h *InventoryExtrasHandler) UpdateLot(w http.ResponseWriter, r *http.Reques
 	}
 	if req.ExpiryDate != nil {
 		update = update.SetExpiryDate(*req.ExpiryDate)
+	}
+	if req.ManufacturedDate != nil {
+		update = update.SetManufacturedDate(*req.ManufacturedDate)
+	}
+	if req.CostPrice != nil {
+		update = update.SetCostPrice(*req.CostPrice)
 	}
 	if req.Status != "" {
 		update = update.SetStatus(entinventorylot.Status(req.Status))
