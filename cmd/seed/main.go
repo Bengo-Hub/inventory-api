@@ -91,6 +91,10 @@ func main() {
 			log.Fatalf("seed inventory config for %s: %v", slug, err)
 		}
 
+		if err := seedWarehouses(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed warehouses for %s: %v", slug, err)
+		}
+
 		if err := seedBalances(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed balances for %s: %v", slug, err)
 		}
