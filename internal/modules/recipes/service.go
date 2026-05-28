@@ -3,6 +3,8 @@ package recipes
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -43,6 +45,7 @@ type RecipeDTO struct {
 	TargetMarginPercent *float64               `json:"target_margin_percent"`
 	SuggestedPrice      *float64               `json:"suggested_price"`
 	PrepTimeMinutes     *int                   `json:"prep_time_minutes,omitempty"`
+	Allergens           []string               `json:"allergens"`
 	Ingredients         []RecipeIngredientDTO  `json:"ingredients"`
 }
 
@@ -265,8 +268,11 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		TargetMarginPercent: r.TargetMarginPercent,
 		SuggestedPrice:      r.SuggestedPrice,
 		PrepTimeMinutes:     r.PrepTimeMinutes,
+		Allergens:     []string{},
 		Ingredients:   make([]RecipeIngredientDTO, len(r.Edges.Ingredients)),
 	}
+
+	allergenSet := map[string]struct{}{}
 
 	for i, ing := range r.Edges.Ingredients {
 		ingDTO := RecipeIngredientDTO{
@@ -284,6 +290,11 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		}
 		if ing.Edges.Item != nil {
 			ingDTO.ItemName = ing.Edges.Item.Name
+			for _, tag := range ing.Edges.Item.Tags {
+				if strings.HasPrefix(tag, "contains_") {
+					allergenSet[tag] = struct{}{}
+				}
+			}
 		}
 		if ing.SubRecipeID != nil {
 			ingDTO.SubRecipeID = ing.SubRecipeID
@@ -293,5 +304,11 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		}
 		dto.Ingredients[i] = ingDTO
 	}
+
+	for tag := range allergenSet {
+		dto.Allergens = append(dto.Allergens, tag)
+	}
+	sort.Strings(dto.Allergens)
+
 	return dto
 }
