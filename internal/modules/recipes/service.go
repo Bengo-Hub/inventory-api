@@ -11,8 +11,10 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
 // Service handles recipe (BOM) management.
@@ -87,8 +89,36 @@ func resolveItemSKUs(ctx context.Context, tx *ent.Tx, itemIDs []uuid.UUID) (map[
 }
 
 // ListRecipes returns a paginated list of recipes for a tenant.
-func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]RecipeDTO, int, error) {
+// When outletID is set, only recipes whose linked item is accessible from that outlet are returned.
+// Recipes with no item_id (standalone) are always included.
+func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int, outletID *uuid.UUID) ([]RecipeDTO, int, error) {
 	q := s.client.Recipe.Query().Where(recipe.TenantID(tenantID))
+
+	if outletID != nil {
+		wIDs, _ := s.client.Warehouse.Query().
+			Where(
+				warehouse.TenantID(tenantID),
+				warehouse.Or(
+					warehouse.OutletIDEQ(*outletID),
+					warehouse.OutletIDIsNil(),
+				),
+			).IDs(ctx)
+		if len(wIDs) > 0 {
+			bals, _ := s.client.InventoryBalance.Query().
+				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
+				All(ctx)
+			idSet := make(map[uuid.UUID]struct{}, len(bals))
+			for _, b := range bals {
+				idSet[b.ItemID] = struct{}{}
+			}
+			outletItemIDs := make([]uuid.UUID, 0, len(idSet))
+			for id := range idSet {
+				outletItemIDs = append(outletItemIDs, id)
+			}
+			q = q.Where(recipe.Or(recipe.ItemIDIsNil(), recipe.ItemIDIn(outletItemIDs...)))
+		}
+	}
+
 	total, _ := q.Clone().Count(ctx)
 	recs, err := q.
 		WithIngredients(func(iq *ent.RecipeIngredientQuery) {
