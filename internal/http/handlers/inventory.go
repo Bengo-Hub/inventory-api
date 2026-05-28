@@ -31,7 +31,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -53,7 +53,7 @@ type StockServicer interface {
 
 // RecipesServicer defines the contract for recipe management.
 type RecipesServicer interface {
-	ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]recipes.RecipeDTO, int, error)
+	ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, offset int, outletID *uuid.UUID) ([]recipes.RecipeDTO, int, error)
 	GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*recipes.RecipeDTO, error)
 	CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
 	UpdateRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
@@ -456,8 +456,15 @@ func (h *InventoryHandler) ListRecipes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var recipeOutletID *uuid.UUID
+	if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+		if oid, err := uuid.Parse(outletStr); err == nil {
+			recipeOutletID = &oid
+		}
+	}
+
 	p := pagination.Parse(r)
-	results, total, err := h.recipeSvc.ListRecipes(r.Context(), tenantID, p.Limit, p.Offset)
+	results, total, err := h.recipeSvc.ListRecipes(r.Context(), tenantID, p.Limit, p.Offset, recipeOutletID)
 	if err != nil {
 		h.log.Error("list recipes failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list recipes")
@@ -690,8 +697,15 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var outletID *uuid.UUID
+	if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+		if oid, err := uuid.Parse(outletStr); err == nil {
+			outletID = &oid
+		}
+	}
+
 	p := pagination.Parse(r)
-	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, tagsFilter...)
+	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
@@ -1155,7 +1169,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil)
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID

@@ -44,6 +44,7 @@ var categoryDefs = []categoryDef{
 	{"fresh", "Fresh", "FRS", "Fresh fruits, vegetables, and produce", "/media/icons/fresh-colored.svg"},
 	{"juice", "Juice", "JCE", "Fresh juices and smoothies", "/media/icons/juice-colored.svg"},
 	{"events", "Events & Experiences", "EVT", "Live events, workshops, and curated dining experiences", "/media/icons/events-colored.svg"},
+	{"beauty-services", "Beauty & Spa", "BEA", "Hair, nail, skin, and wellness services", "/media/icons/beauty-colored.svg"},
 }
 
 func categoryUUID(tenantID uuid.UUID, slug string) uuid.UUID {

@@ -23,6 +23,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -46,8 +47,9 @@ type ItemDTO struct {
 	Tags            []string       `json:"tags,omitempty"`
 	Metadata        map[string]any `json:"metadata,omitempty"`
 	InitialQuantity int            `json:"initial_quantity,omitempty"`
-	ReorderLevel    int            `json:"reorder_level,omitempty"`
-	ReorderQuantity int            `json:"reorder_quantity,omitempty"`
+	ReorderLevel    int            `json:"reorder_level"`
+	ReorderQuantity int            `json:"reorder_quantity"`
+	SuggestedPrice  *float64       `json:"suggested_price,omitempty"`
 	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
 	CategoryName    string         `json:"category_name,omitempty"`
 	// Extended fields for POS, logistics, compliance
@@ -509,7 +511,38 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 
 // ListItems returns a paginated list of items for a tenant with DB-level filtering.
 // statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, tagsFilter ...string) ([]ItemDTO, int, error) {
+// outletID: when set, restricts items to those with a balance in the outlet's warehouses or shared warehouses (outlet_id IS NULL).
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, tagsFilter ...string) ([]ItemDTO, int, error) {
+	// Pre-compute outlet-scoped item IDs when outlet context is active.
+	var outletItemIDs []uuid.UUID
+	if outletID != nil {
+		wIDs, _ := s.client.Warehouse.Query().
+			Where(
+				warehouse.TenantID(tenantID),
+				warehouse.Or(
+					warehouse.OutletIDEQ(*outletID),
+					warehouse.OutletIDIsNil(),
+				),
+			).IDs(ctx)
+		if len(wIDs) == 0 {
+			return []ItemDTO{}, 0, nil
+		}
+		bals, _ := s.client.InventoryBalance.Query().
+			Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
+			All(ctx)
+		idSet := make(map[uuid.UUID]struct{}, len(bals))
+		for _, b := range bals {
+			idSet[b.ItemID] = struct{}{}
+		}
+		if len(idSet) == 0 {
+			return []ItemDTO{}, 0, nil
+		}
+		outletItemIDs = make([]uuid.UUID, 0, len(idSet))
+		for id := range idSet {
+			outletItemIDs = append(outletItemIDs, id)
+		}
+	}
+
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().Where(item.TenantID(tenantID))
 		switch statusFilter {
@@ -551,6 +584,10 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				s.Where(sqljson.ValueContains(item.FieldTags, tagVal))
 			}))
 		}
+		// Outlet scope: restrict to items with balances in this outlet's warehouses.
+		if outletItemIDs != nil {
+			q = q.Where(item.IDIn(outletItemIDs...))
+		}
 		return q
 	}
 
@@ -583,6 +620,10 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				}
 			}
 		}
+		// Load tenant config once for suggested price computation.
+		cfg, _ := s.client.TenantInventoryConfig.Query().
+			Where(tenantinventoryconfig.TenantID(tenantID)).
+			Only(innerCtx)
 		dtos := make([]ItemDTO, len(itms))
 		for i, it := range itms {
 			dto := s.mapToDTO(it)
@@ -592,6 +633,13 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			if bs, ok := balMap[it.ID]; ok {
 				dto.ReorderLevel = bs.reorderLevel
 				dto.ReorderQuantity = bs.reorderQuantity
+			}
+			if cfg != nil && it.CostPrice != nil && *it.CostPrice > 0 && cfg.DefaultTargetMarginPercent != nil {
+				m := *cfg.DefaultTargetMarginPercent
+				if m > 0 && m < 100 {
+					sp := *it.CostPrice / (1 - m/100)
+					dto.SuggestedPrice = &sp
+				}
 			}
 			dtos[i] = *dto
 		}

@@ -269,19 +269,11 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 	for _, rd := range recipeDefs {
 		recipeID := recipeUUID(tenantID, rd.SKU)
 
-		var recipeName string
-		for _, item := range catalogItemDefs {
-			if item.SKU == rd.SKU {
-				recipeName = item.Name
-				break
-			}
-		}
-		if recipeName == "" {
-			recipeName = rd.SKU
-		}
-
-		// item_id links recipe → its RECIPE-type catalog item.
 		itemID := itemUUID(tenantID, rd.SKU)
+		recipeName := rd.SKU
+		if it, getErr := client.Item.Get(ctx, itemID); getErr == nil {
+			recipeName = it.Name
+		}
 
 		_, err := client.Recipe.Get(ctx, recipeID)
 		switch {

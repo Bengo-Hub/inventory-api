@@ -83,7 +83,7 @@ func main() {
 			log.Fatalf("resolve unit IDs: %v", err)
 		}
 
-		if err := seedItems(ctx, client, tenantID, catIDs, unitIDs); err != nil {
+		if err := seedItems(ctx, client, tenantID, slug, catIDs, unitIDs); err != nil {
 			log.Fatalf("seed items for %s: %v", slug, err)
 		}
 
@@ -95,7 +95,7 @@ func main() {
 			log.Fatalf("seed warehouses for %s: %v", slug, err)
 		}
 
-		if err := seedBalances(ctx, client, tenantID); err != nil {
+		if err := seedBalances(ctx, client, tenantID, slug); err != nil {
 			log.Fatalf("seed balances for %s: %v", slug, err)
 		}
 
