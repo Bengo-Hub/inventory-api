@@ -69,6 +69,18 @@ func (f CustomFieldValueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CustomFieldValueMutation", m)
 }
 
+// The FoodCostVarianceFunc type is an adapter to allow the use of ordinary
+// function as FoodCostVariance mutator.
+type FoodCostVarianceFunc func(context.Context, *ent.FoodCostVarianceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FoodCostVarianceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FoodCostVarianceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FoodCostVarianceMutation", m)
+}
+
 // The InventoryBalanceFunc type is an adapter to allow the use of ordinary
 // function as InventoryBalance mutator.
 type InventoryBalanceFunc func(context.Context, *ent.InventoryBalanceMutation) (ent.Value, error)

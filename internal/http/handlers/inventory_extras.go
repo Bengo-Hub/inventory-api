@@ -15,14 +15,16 @@ import (
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/modules/recipes"
 )
 
-// InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, and activity endpoints.
+// InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
 type InventoryExtrasHandler struct {
-	log       *zap.Logger
-	orm       *ent.Client
-	rbacSvc   *rbac.Service
-	bundleSvc *bundles.Service
+	log         *zap.Logger
+	orm         *ent.Client
+	rbacSvc     *rbac.Service
+	bundleSvc   *bundles.Service
+	varianceSvc *recipes.VarianceService
 }
 
 // NewInventoryExtrasHandler creates the handler.
@@ -132,4 +134,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/bundles/{bundleID}", h.GetBundle)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/bundles/{bundleID}", h.UpdateBundle)
 	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/bundles/{bundleID}", h.DeleteBundle)
+
+	// Reports
+	r.Get("/inventory/reports/food-cost-variance", h.FoodCostVarianceReport)
 }

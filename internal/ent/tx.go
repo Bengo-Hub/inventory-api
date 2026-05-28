@@ -22,6 +22,8 @@ type Tx struct {
 	CustomFieldDefinition *CustomFieldDefinitionClient
 	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
 	CustomFieldValue *CustomFieldValueClient
+	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
+	FoodCostVariance *FoodCostVarianceClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -228,6 +230,7 @@ func (tx *Tx) init() {
 	tx.Consumption = NewConsumptionClient(tx.config)
 	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
 	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
+	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.InventoryLot = NewInventoryLotClient(tx.config)
 	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)
