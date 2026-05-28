@@ -164,6 +164,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
 	bundleSvc := bundles.NewService(ormClient, log)
 	inventoryExtrasHandler.SetBundleService(bundleSvc)
+	varianceSvc := recipes.NewVarianceService(ormClient, log, cfg.Services.OrderingURL, cfg.Auth.APIKey)
+	inventoryExtrasHandler.SetVarianceService(varianceSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api

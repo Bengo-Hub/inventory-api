@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -71,6 +72,7 @@ const (
 	TypeConsumption           = "Consumption"
 	TypeCustomFieldDefinition = "CustomFieldDefinition"
 	TypeCustomFieldValue      = "CustomFieldValue"
+	TypeFoodCostVariance      = "FoodCostVariance"
 	TypeInventoryBalance      = "InventoryBalance"
 	TypeInventoryLot          = "InventoryLot"
 	TypeInventoryPermission   = "InventoryPermission"
@@ -4097,6 +4099,948 @@ func (m *CustomFieldValueMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown CustomFieldValue edge %s", name)
+}
+
+// FoodCostVarianceMutation represents an operation that mutates the FoodCostVariance nodes in the graph.
+type FoodCostVarianceMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	tenant_id           *uuid.UUID
+	period_start        *time.Time
+	period_end          *time.Time
+	recipe_sku          *string
+	recipe_name         *string
+	theoretical_cost    *float64
+	addtheoretical_cost *float64
+	actual_cost         *float64
+	addactual_cost      *float64
+	variance_pct        *float64
+	addvariance_pct     *float64
+	breakdown           *map[string]interface{}
+	calculated_at       *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*FoodCostVariance, error)
+	predicates          []predicate.FoodCostVariance
+}
+
+var _ ent.Mutation = (*FoodCostVarianceMutation)(nil)
+
+// foodcostvarianceOption allows management of the mutation configuration using functional options.
+type foodcostvarianceOption func(*FoodCostVarianceMutation)
+
+// newFoodCostVarianceMutation creates new mutation for the FoodCostVariance entity.
+func newFoodCostVarianceMutation(c config, op Op, opts ...foodcostvarianceOption) *FoodCostVarianceMutation {
+	m := &FoodCostVarianceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFoodCostVariance,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFoodCostVarianceID sets the ID field of the mutation.
+func withFoodCostVarianceID(id uuid.UUID) foodcostvarianceOption {
+	return func(m *FoodCostVarianceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FoodCostVariance
+		)
+		m.oldValue = func(ctx context.Context) (*FoodCostVariance, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FoodCostVariance.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFoodCostVariance sets the old FoodCostVariance of the mutation.
+func withFoodCostVariance(node *FoodCostVariance) foodcostvarianceOption {
+	return func(m *FoodCostVarianceMutation) {
+		m.oldValue = func(context.Context) (*FoodCostVariance, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FoodCostVarianceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FoodCostVarianceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FoodCostVariance entities.
+func (m *FoodCostVarianceMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FoodCostVarianceMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FoodCostVarianceMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FoodCostVariance.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *FoodCostVarianceMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *FoodCostVarianceMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *FoodCostVarianceMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetPeriodStart sets the "period_start" field.
+func (m *FoodCostVarianceMutation) SetPeriodStart(t time.Time) {
+	m.period_start = &t
+}
+
+// PeriodStart returns the value of the "period_start" field in the mutation.
+func (m *FoodCostVarianceMutation) PeriodStart() (r time.Time, exists bool) {
+	v := m.period_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriodStart returns the old "period_start" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldPeriodStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriodStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriodStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriodStart: %w", err)
+	}
+	return oldValue.PeriodStart, nil
+}
+
+// ResetPeriodStart resets all changes to the "period_start" field.
+func (m *FoodCostVarianceMutation) ResetPeriodStart() {
+	m.period_start = nil
+}
+
+// SetPeriodEnd sets the "period_end" field.
+func (m *FoodCostVarianceMutation) SetPeriodEnd(t time.Time) {
+	m.period_end = &t
+}
+
+// PeriodEnd returns the value of the "period_end" field in the mutation.
+func (m *FoodCostVarianceMutation) PeriodEnd() (r time.Time, exists bool) {
+	v := m.period_end
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPeriodEnd returns the old "period_end" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldPeriodEnd(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPeriodEnd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPeriodEnd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPeriodEnd: %w", err)
+	}
+	return oldValue.PeriodEnd, nil
+}
+
+// ResetPeriodEnd resets all changes to the "period_end" field.
+func (m *FoodCostVarianceMutation) ResetPeriodEnd() {
+	m.period_end = nil
+}
+
+// SetRecipeSku sets the "recipe_sku" field.
+func (m *FoodCostVarianceMutation) SetRecipeSku(s string) {
+	m.recipe_sku = &s
+}
+
+// RecipeSku returns the value of the "recipe_sku" field in the mutation.
+func (m *FoodCostVarianceMutation) RecipeSku() (r string, exists bool) {
+	v := m.recipe_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipeSku returns the old "recipe_sku" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldRecipeSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipeSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipeSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipeSku: %w", err)
+	}
+	return oldValue.RecipeSku, nil
+}
+
+// ResetRecipeSku resets all changes to the "recipe_sku" field.
+func (m *FoodCostVarianceMutation) ResetRecipeSku() {
+	m.recipe_sku = nil
+}
+
+// SetRecipeName sets the "recipe_name" field.
+func (m *FoodCostVarianceMutation) SetRecipeName(s string) {
+	m.recipe_name = &s
+}
+
+// RecipeName returns the value of the "recipe_name" field in the mutation.
+func (m *FoodCostVarianceMutation) RecipeName() (r string, exists bool) {
+	v := m.recipe_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipeName returns the old "recipe_name" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldRecipeName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipeName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipeName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipeName: %w", err)
+	}
+	return oldValue.RecipeName, nil
+}
+
+// ResetRecipeName resets all changes to the "recipe_name" field.
+func (m *FoodCostVarianceMutation) ResetRecipeName() {
+	m.recipe_name = nil
+}
+
+// SetTheoreticalCost sets the "theoretical_cost" field.
+func (m *FoodCostVarianceMutation) SetTheoreticalCost(f float64) {
+	m.theoretical_cost = &f
+	m.addtheoretical_cost = nil
+}
+
+// TheoreticalCost returns the value of the "theoretical_cost" field in the mutation.
+func (m *FoodCostVarianceMutation) TheoreticalCost() (r float64, exists bool) {
+	v := m.theoretical_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTheoreticalCost returns the old "theoretical_cost" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldTheoreticalCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTheoreticalCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTheoreticalCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTheoreticalCost: %w", err)
+	}
+	return oldValue.TheoreticalCost, nil
+}
+
+// AddTheoreticalCost adds f to the "theoretical_cost" field.
+func (m *FoodCostVarianceMutation) AddTheoreticalCost(f float64) {
+	if m.addtheoretical_cost != nil {
+		*m.addtheoretical_cost += f
+	} else {
+		m.addtheoretical_cost = &f
+	}
+}
+
+// AddedTheoreticalCost returns the value that was added to the "theoretical_cost" field in this mutation.
+func (m *FoodCostVarianceMutation) AddedTheoreticalCost() (r float64, exists bool) {
+	v := m.addtheoretical_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTheoreticalCost resets all changes to the "theoretical_cost" field.
+func (m *FoodCostVarianceMutation) ResetTheoreticalCost() {
+	m.theoretical_cost = nil
+	m.addtheoretical_cost = nil
+}
+
+// SetActualCost sets the "actual_cost" field.
+func (m *FoodCostVarianceMutation) SetActualCost(f float64) {
+	m.actual_cost = &f
+	m.addactual_cost = nil
+}
+
+// ActualCost returns the value of the "actual_cost" field in the mutation.
+func (m *FoodCostVarianceMutation) ActualCost() (r float64, exists bool) {
+	v := m.actual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActualCost returns the old "actual_cost" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldActualCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActualCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActualCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActualCost: %w", err)
+	}
+	return oldValue.ActualCost, nil
+}
+
+// AddActualCost adds f to the "actual_cost" field.
+func (m *FoodCostVarianceMutation) AddActualCost(f float64) {
+	if m.addactual_cost != nil {
+		*m.addactual_cost += f
+	} else {
+		m.addactual_cost = &f
+	}
+}
+
+// AddedActualCost returns the value that was added to the "actual_cost" field in this mutation.
+func (m *FoodCostVarianceMutation) AddedActualCost() (r float64, exists bool) {
+	v := m.addactual_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetActualCost resets all changes to the "actual_cost" field.
+func (m *FoodCostVarianceMutation) ResetActualCost() {
+	m.actual_cost = nil
+	m.addactual_cost = nil
+}
+
+// SetVariancePct sets the "variance_pct" field.
+func (m *FoodCostVarianceMutation) SetVariancePct(f float64) {
+	m.variance_pct = &f
+	m.addvariance_pct = nil
+}
+
+// VariancePct returns the value of the "variance_pct" field in the mutation.
+func (m *FoodCostVarianceMutation) VariancePct() (r float64, exists bool) {
+	v := m.variance_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVariancePct returns the old "variance_pct" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldVariancePct(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVariancePct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVariancePct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVariancePct: %w", err)
+	}
+	return oldValue.VariancePct, nil
+}
+
+// AddVariancePct adds f to the "variance_pct" field.
+func (m *FoodCostVarianceMutation) AddVariancePct(f float64) {
+	if m.addvariance_pct != nil {
+		*m.addvariance_pct += f
+	} else {
+		m.addvariance_pct = &f
+	}
+}
+
+// AddedVariancePct returns the value that was added to the "variance_pct" field in this mutation.
+func (m *FoodCostVarianceMutation) AddedVariancePct() (r float64, exists bool) {
+	v := m.addvariance_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVariancePct resets all changes to the "variance_pct" field.
+func (m *FoodCostVarianceMutation) ResetVariancePct() {
+	m.variance_pct = nil
+	m.addvariance_pct = nil
+}
+
+// SetBreakdown sets the "breakdown" field.
+func (m *FoodCostVarianceMutation) SetBreakdown(value map[string]interface{}) {
+	m.breakdown = &value
+}
+
+// Breakdown returns the value of the "breakdown" field in the mutation.
+func (m *FoodCostVarianceMutation) Breakdown() (r map[string]interface{}, exists bool) {
+	v := m.breakdown
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBreakdown returns the old "breakdown" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldBreakdown(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBreakdown is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBreakdown requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBreakdown: %w", err)
+	}
+	return oldValue.Breakdown, nil
+}
+
+// ClearBreakdown clears the value of the "breakdown" field.
+func (m *FoodCostVarianceMutation) ClearBreakdown() {
+	m.breakdown = nil
+	m.clearedFields[foodcostvariance.FieldBreakdown] = struct{}{}
+}
+
+// BreakdownCleared returns if the "breakdown" field was cleared in this mutation.
+func (m *FoodCostVarianceMutation) BreakdownCleared() bool {
+	_, ok := m.clearedFields[foodcostvariance.FieldBreakdown]
+	return ok
+}
+
+// ResetBreakdown resets all changes to the "breakdown" field.
+func (m *FoodCostVarianceMutation) ResetBreakdown() {
+	m.breakdown = nil
+	delete(m.clearedFields, foodcostvariance.FieldBreakdown)
+}
+
+// SetCalculatedAt sets the "calculated_at" field.
+func (m *FoodCostVarianceMutation) SetCalculatedAt(t time.Time) {
+	m.calculated_at = &t
+}
+
+// CalculatedAt returns the value of the "calculated_at" field in the mutation.
+func (m *FoodCostVarianceMutation) CalculatedAt() (r time.Time, exists bool) {
+	v := m.calculated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCalculatedAt returns the old "calculated_at" field's value of the FoodCostVariance entity.
+// If the FoodCostVariance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FoodCostVarianceMutation) OldCalculatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCalculatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCalculatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCalculatedAt: %w", err)
+	}
+	return oldValue.CalculatedAt, nil
+}
+
+// ResetCalculatedAt resets all changes to the "calculated_at" field.
+func (m *FoodCostVarianceMutation) ResetCalculatedAt() {
+	m.calculated_at = nil
+}
+
+// Where appends a list predicates to the FoodCostVarianceMutation builder.
+func (m *FoodCostVarianceMutation) Where(ps ...predicate.FoodCostVariance) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FoodCostVarianceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FoodCostVarianceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FoodCostVariance, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FoodCostVarianceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FoodCostVarianceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FoodCostVariance).
+func (m *FoodCostVarianceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FoodCostVarianceMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.tenant_id != nil {
+		fields = append(fields, foodcostvariance.FieldTenantID)
+	}
+	if m.period_start != nil {
+		fields = append(fields, foodcostvariance.FieldPeriodStart)
+	}
+	if m.period_end != nil {
+		fields = append(fields, foodcostvariance.FieldPeriodEnd)
+	}
+	if m.recipe_sku != nil {
+		fields = append(fields, foodcostvariance.FieldRecipeSku)
+	}
+	if m.recipe_name != nil {
+		fields = append(fields, foodcostvariance.FieldRecipeName)
+	}
+	if m.theoretical_cost != nil {
+		fields = append(fields, foodcostvariance.FieldTheoreticalCost)
+	}
+	if m.actual_cost != nil {
+		fields = append(fields, foodcostvariance.FieldActualCost)
+	}
+	if m.variance_pct != nil {
+		fields = append(fields, foodcostvariance.FieldVariancePct)
+	}
+	if m.breakdown != nil {
+		fields = append(fields, foodcostvariance.FieldBreakdown)
+	}
+	if m.calculated_at != nil {
+		fields = append(fields, foodcostvariance.FieldCalculatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FoodCostVarianceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case foodcostvariance.FieldTenantID:
+		return m.TenantID()
+	case foodcostvariance.FieldPeriodStart:
+		return m.PeriodStart()
+	case foodcostvariance.FieldPeriodEnd:
+		return m.PeriodEnd()
+	case foodcostvariance.FieldRecipeSku:
+		return m.RecipeSku()
+	case foodcostvariance.FieldRecipeName:
+		return m.RecipeName()
+	case foodcostvariance.FieldTheoreticalCost:
+		return m.TheoreticalCost()
+	case foodcostvariance.FieldActualCost:
+		return m.ActualCost()
+	case foodcostvariance.FieldVariancePct:
+		return m.VariancePct()
+	case foodcostvariance.FieldBreakdown:
+		return m.Breakdown()
+	case foodcostvariance.FieldCalculatedAt:
+		return m.CalculatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FoodCostVarianceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case foodcostvariance.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case foodcostvariance.FieldPeriodStart:
+		return m.OldPeriodStart(ctx)
+	case foodcostvariance.FieldPeriodEnd:
+		return m.OldPeriodEnd(ctx)
+	case foodcostvariance.FieldRecipeSku:
+		return m.OldRecipeSku(ctx)
+	case foodcostvariance.FieldRecipeName:
+		return m.OldRecipeName(ctx)
+	case foodcostvariance.FieldTheoreticalCost:
+		return m.OldTheoreticalCost(ctx)
+	case foodcostvariance.FieldActualCost:
+		return m.OldActualCost(ctx)
+	case foodcostvariance.FieldVariancePct:
+		return m.OldVariancePct(ctx)
+	case foodcostvariance.FieldBreakdown:
+		return m.OldBreakdown(ctx)
+	case foodcostvariance.FieldCalculatedAt:
+		return m.OldCalculatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FoodCostVariance field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FoodCostVarianceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case foodcostvariance.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case foodcostvariance.FieldPeriodStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriodStart(v)
+		return nil
+	case foodcostvariance.FieldPeriodEnd:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPeriodEnd(v)
+		return nil
+	case foodcostvariance.FieldRecipeSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipeSku(v)
+		return nil
+	case foodcostvariance.FieldRecipeName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipeName(v)
+		return nil
+	case foodcostvariance.FieldTheoreticalCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTheoreticalCost(v)
+		return nil
+	case foodcostvariance.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActualCost(v)
+		return nil
+	case foodcostvariance.FieldVariancePct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVariancePct(v)
+		return nil
+	case foodcostvariance.FieldBreakdown:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBreakdown(v)
+		return nil
+	case foodcostvariance.FieldCalculatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCalculatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FoodCostVariance field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FoodCostVarianceMutation) AddedFields() []string {
+	var fields []string
+	if m.addtheoretical_cost != nil {
+		fields = append(fields, foodcostvariance.FieldTheoreticalCost)
+	}
+	if m.addactual_cost != nil {
+		fields = append(fields, foodcostvariance.FieldActualCost)
+	}
+	if m.addvariance_pct != nil {
+		fields = append(fields, foodcostvariance.FieldVariancePct)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FoodCostVarianceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case foodcostvariance.FieldTheoreticalCost:
+		return m.AddedTheoreticalCost()
+	case foodcostvariance.FieldActualCost:
+		return m.AddedActualCost()
+	case foodcostvariance.FieldVariancePct:
+		return m.AddedVariancePct()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FoodCostVarianceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case foodcostvariance.FieldTheoreticalCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTheoreticalCost(v)
+		return nil
+	case foodcostvariance.FieldActualCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActualCost(v)
+		return nil
+	case foodcostvariance.FieldVariancePct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVariancePct(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FoodCostVariance numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FoodCostVarianceMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(foodcostvariance.FieldBreakdown) {
+		fields = append(fields, foodcostvariance.FieldBreakdown)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FoodCostVarianceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FoodCostVarianceMutation) ClearField(name string) error {
+	switch name {
+	case foodcostvariance.FieldBreakdown:
+		m.ClearBreakdown()
+		return nil
+	}
+	return fmt.Errorf("unknown FoodCostVariance nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FoodCostVarianceMutation) ResetField(name string) error {
+	switch name {
+	case foodcostvariance.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case foodcostvariance.FieldPeriodStart:
+		m.ResetPeriodStart()
+		return nil
+	case foodcostvariance.FieldPeriodEnd:
+		m.ResetPeriodEnd()
+		return nil
+	case foodcostvariance.FieldRecipeSku:
+		m.ResetRecipeSku()
+		return nil
+	case foodcostvariance.FieldRecipeName:
+		m.ResetRecipeName()
+		return nil
+	case foodcostvariance.FieldTheoreticalCost:
+		m.ResetTheoreticalCost()
+		return nil
+	case foodcostvariance.FieldActualCost:
+		m.ResetActualCost()
+		return nil
+	case foodcostvariance.FieldVariancePct:
+		m.ResetVariancePct()
+		return nil
+	case foodcostvariance.FieldBreakdown:
+		m.ResetBreakdown()
+		return nil
+	case foodcostvariance.FieldCalculatedAt:
+		m.ResetCalculatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FoodCostVariance field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FoodCostVarianceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FoodCostVarianceMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FoodCostVarianceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FoodCostVarianceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FoodCostVarianceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FoodCostVarianceMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FoodCostVarianceMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown FoodCostVariance unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FoodCostVarianceMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown FoodCostVariance edge %s", name)
 }
 
 // InventoryBalanceMutation represents an operation that mutates the InventoryBalance nodes in the graph.

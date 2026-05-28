@@ -20,6 +20,7 @@ type Config struct {
 	Telemetry TelemetryConfig
 	Auth      AuthConfig
 	Media     MediaConfig
+	Services  ServicesConfig
 }
 
 type MediaConfig struct {
@@ -79,6 +80,10 @@ type TelemetryConfig struct {
 	OTLPEndpoint string `envconfig:"OTLP_ENDPOINT"`
 	MetricsURL   string `envconfig:"METRICS_ENDPOINT"`
 	TracingURL   string `envconfig:"TRACING_ENDPOINT"`
+}
+
+type ServicesConfig struct {
+	OrderingURL string `envconfig:"ORDERING_SERVICE_URL" default:"https://orderingapi.codevertexitsolutions.com"`
 }
 
 type AuthConfig struct {

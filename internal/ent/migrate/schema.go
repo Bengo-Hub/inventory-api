@@ -197,6 +197,38 @@ var (
 			},
 		},
 	}
+	// FoodCostVariancesColumns holds the columns for the "food_cost_variances" table.
+	FoodCostVariancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "period_start", Type: field.TypeTime},
+		{Name: "period_end", Type: field.TypeTime},
+		{Name: "recipe_sku", Type: field.TypeString},
+		{Name: "recipe_name", Type: field.TypeString},
+		{Name: "theoretical_cost", Type: field.TypeFloat64},
+		{Name: "actual_cost", Type: field.TypeFloat64},
+		{Name: "variance_pct", Type: field.TypeFloat64},
+		{Name: "breakdown", Type: field.TypeJSON, Nullable: true},
+		{Name: "calculated_at", Type: field.TypeTime},
+	}
+	// FoodCostVariancesTable holds the schema information for the "food_cost_variances" table.
+	FoodCostVariancesTable = &schema.Table{
+		Name:       "food_cost_variances",
+		Columns:    FoodCostVariancesColumns,
+		PrimaryKey: []*schema.Column{FoodCostVariancesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "foodcostvariance_tenant_id_period_start_period_end",
+				Unique:  false,
+				Columns: []*schema.Column{FoodCostVariancesColumns[1], FoodCostVariancesColumns[2], FoodCostVariancesColumns[3]},
+			},
+			{
+				Name:    "foodcostvariance_tenant_id_recipe_sku",
+				Unique:  false,
+				Columns: []*schema.Column{FoodCostVariancesColumns[1], FoodCostVariancesColumns[4]},
+			},
+		},
+	}
 	// InventoryBalancesColumns holds the columns for the "inventory_balances" table.
 	InventoryBalancesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1712,6 +1744,7 @@ var (
 		ConsumptionsTable,
 		CustomFieldDefinitionsTable,
 		CustomFieldValuesTable,
+		FoodCostVariancesTable,
 		InventoryBalancesTable,
 		InventoryLotsTable,
 		InventoryPermissionsTable,

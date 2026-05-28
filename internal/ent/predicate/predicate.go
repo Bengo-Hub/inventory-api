@@ -21,6 +21,9 @@ type CustomFieldDefinition func(*sql.Selector)
 // CustomFieldValue is the predicate function for customfieldvalue builders.
 type CustomFieldValue func(*sql.Selector)
 
+// FoodCostVariance is the predicate function for foodcostvariance builders.
+type FoodCostVariance func(*sql.Selector)
+
 // InventoryBalance is the predicate function for inventorybalance builders.
 type InventoryBalance func(*sql.Selector)
 

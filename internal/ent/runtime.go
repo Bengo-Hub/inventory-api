@@ -10,6 +10,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -168,6 +169,24 @@ func init() {
 	customfieldvalueDescID := customfieldvalueFields[0].Descriptor()
 	// customfieldvalue.DefaultID holds the default value on creation for the id field.
 	customfieldvalue.DefaultID = customfieldvalueDescID.Default.(func() uuid.UUID)
+	foodcostvarianceFields := schema.FoodCostVariance{}.Fields()
+	_ = foodcostvarianceFields
+	// foodcostvarianceDescRecipeSku is the schema descriptor for recipe_sku field.
+	foodcostvarianceDescRecipeSku := foodcostvarianceFields[4].Descriptor()
+	// foodcostvariance.RecipeSkuValidator is a validator for the "recipe_sku" field. It is called by the builders before save.
+	foodcostvariance.RecipeSkuValidator = foodcostvarianceDescRecipeSku.Validators[0].(func(string) error)
+	// foodcostvarianceDescRecipeName is the schema descriptor for recipe_name field.
+	foodcostvarianceDescRecipeName := foodcostvarianceFields[5].Descriptor()
+	// foodcostvariance.RecipeNameValidator is a validator for the "recipe_name" field. It is called by the builders before save.
+	foodcostvariance.RecipeNameValidator = foodcostvarianceDescRecipeName.Validators[0].(func(string) error)
+	// foodcostvarianceDescCalculatedAt is the schema descriptor for calculated_at field.
+	foodcostvarianceDescCalculatedAt := foodcostvarianceFields[10].Descriptor()
+	// foodcostvariance.DefaultCalculatedAt holds the default value on creation for the calculated_at field.
+	foodcostvariance.DefaultCalculatedAt = foodcostvarianceDescCalculatedAt.Default.(func() time.Time)
+	// foodcostvarianceDescID is the schema descriptor for id field.
+	foodcostvarianceDescID := foodcostvarianceFields[0].Descriptor()
+	// foodcostvariance.DefaultID holds the default value on creation for the id field.
+	foodcostvariance.DefaultID = foodcostvarianceDescID.Default.(func() uuid.UUID)
 	inventorybalanceFields := schema.InventoryBalance{}.Fields()
 	_ = inventorybalanceFields
 	// inventorybalanceDescOnHand is the schema descriptor for on_hand field.

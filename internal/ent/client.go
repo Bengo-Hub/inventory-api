@@ -21,6 +21,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -73,6 +74,8 @@ type Client struct {
 	CustomFieldDefinition *CustomFieldDefinitionClient
 	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
 	CustomFieldValue *CustomFieldValueClient
+	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
+	FoodCostVariance *FoodCostVarianceClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -159,6 +162,7 @@ func (c *Client) init() {
 	c.Consumption = NewConsumptionClient(c.config)
 	c.CustomFieldDefinition = NewCustomFieldDefinitionClient(c.config)
 	c.CustomFieldValue = NewCustomFieldValueClient(c.config)
+	c.FoodCostVariance = NewFoodCostVarianceClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
 	c.InventoryLot = NewInventoryLotClient(c.config)
 	c.InventoryPermission = NewInventoryPermissionClient(c.config)
@@ -291,6 +295,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Consumption:           NewConsumptionClient(cfg),
 		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
+		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
 		InventoryPermission:   NewInventoryPermissionClient(cfg),
@@ -350,6 +355,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Consumption:           NewConsumptionClient(cfg),
 		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
+		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
 		InventoryPermission:   NewInventoryPermissionClient(cfg),
@@ -415,13 +421,13 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Bundle, c.BundleComponent, c.Consumption, c.CustomFieldDefinition,
-		c.CustomFieldValue, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
-		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
+		c.CustomFieldValue, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.StockAdjustment, c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
 		c.TenantInventoryConfig, c.Unit, c.UserRoleAssignment, c.VariantAttribute,
 		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
@@ -434,13 +440,13 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Bundle, c.BundleComponent, c.Consumption, c.CustomFieldDefinition,
-		c.CustomFieldValue, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.PurchaseOrder,
-		c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe, c.RecipeIngredient,
-		c.Reservation, c.RolePermission, c.ServiceConfig, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
+		c.CustomFieldValue, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.StockAdjustment, c.StockTransfer, c.StockTransferLine, c.Supplier, c.Tenant,
 		c.TenantInventoryConfig, c.Unit, c.UserRoleAssignment, c.VariantAttribute,
 		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
@@ -461,6 +467,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CustomFieldDefinition.mutate(ctx, m)
 	case *CustomFieldValueMutation:
 		return c.CustomFieldValue.mutate(ctx, m)
+	case *FoodCostVarianceMutation:
+		return c.FoodCostVariance.mutate(ctx, m)
 	case *InventoryBalanceMutation:
 		return c.InventoryBalance.mutate(ctx, m)
 	case *InventoryLotMutation:
@@ -1326,6 +1334,139 @@ func (c *CustomFieldValueClient) mutate(ctx context.Context, m *CustomFieldValue
 		return (&CustomFieldValueDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CustomFieldValue mutation op: %q", m.Op())
+	}
+}
+
+// FoodCostVarianceClient is a client for the FoodCostVariance schema.
+type FoodCostVarianceClient struct {
+	config
+}
+
+// NewFoodCostVarianceClient returns a client for the FoodCostVariance from the given config.
+func NewFoodCostVarianceClient(c config) *FoodCostVarianceClient {
+	return &FoodCostVarianceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `foodcostvariance.Hooks(f(g(h())))`.
+func (c *FoodCostVarianceClient) Use(hooks ...Hook) {
+	c.hooks.FoodCostVariance = append(c.hooks.FoodCostVariance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `foodcostvariance.Intercept(f(g(h())))`.
+func (c *FoodCostVarianceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FoodCostVariance = append(c.inters.FoodCostVariance, interceptors...)
+}
+
+// Create returns a builder for creating a FoodCostVariance entity.
+func (c *FoodCostVarianceClient) Create() *FoodCostVarianceCreate {
+	mutation := newFoodCostVarianceMutation(c.config, OpCreate)
+	return &FoodCostVarianceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FoodCostVariance entities.
+func (c *FoodCostVarianceClient) CreateBulk(builders ...*FoodCostVarianceCreate) *FoodCostVarianceCreateBulk {
+	return &FoodCostVarianceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FoodCostVarianceClient) MapCreateBulk(slice any, setFunc func(*FoodCostVarianceCreate, int)) *FoodCostVarianceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FoodCostVarianceCreateBulk{err: fmt.Errorf("calling to FoodCostVarianceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FoodCostVarianceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FoodCostVarianceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FoodCostVariance.
+func (c *FoodCostVarianceClient) Update() *FoodCostVarianceUpdate {
+	mutation := newFoodCostVarianceMutation(c.config, OpUpdate)
+	return &FoodCostVarianceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FoodCostVarianceClient) UpdateOne(_m *FoodCostVariance) *FoodCostVarianceUpdateOne {
+	mutation := newFoodCostVarianceMutation(c.config, OpUpdateOne, withFoodCostVariance(_m))
+	return &FoodCostVarianceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FoodCostVarianceClient) UpdateOneID(id uuid.UUID) *FoodCostVarianceUpdateOne {
+	mutation := newFoodCostVarianceMutation(c.config, OpUpdateOne, withFoodCostVarianceID(id))
+	return &FoodCostVarianceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FoodCostVariance.
+func (c *FoodCostVarianceClient) Delete() *FoodCostVarianceDelete {
+	mutation := newFoodCostVarianceMutation(c.config, OpDelete)
+	return &FoodCostVarianceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FoodCostVarianceClient) DeleteOne(_m *FoodCostVariance) *FoodCostVarianceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FoodCostVarianceClient) DeleteOneID(id uuid.UUID) *FoodCostVarianceDeleteOne {
+	builder := c.Delete().Where(foodcostvariance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FoodCostVarianceDeleteOne{builder}
+}
+
+// Query returns a query builder for FoodCostVariance.
+func (c *FoodCostVarianceClient) Query() *FoodCostVarianceQuery {
+	return &FoodCostVarianceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFoodCostVariance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FoodCostVariance entity by its id.
+func (c *FoodCostVarianceClient) Get(ctx context.Context, id uuid.UUID) (*FoodCostVariance, error) {
+	return c.Query().Where(foodcostvariance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FoodCostVarianceClient) GetX(ctx context.Context, id uuid.UUID) *FoodCostVariance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FoodCostVarianceClient) Hooks() []Hook {
+	return c.hooks.FoodCostVariance
+}
+
+// Interceptors returns the client interceptors.
+func (c *FoodCostVarianceClient) Interceptors() []Interceptor {
+	return c.inters.FoodCostVariance
+}
+
+func (c *FoodCostVarianceClient) mutate(ctx context.Context, m *FoodCostVarianceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FoodCostVarianceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FoodCostVarianceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FoodCostVarianceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FoodCostVarianceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FoodCostVariance mutation op: %q", m.Op())
 	}
 }
 
@@ -7044,24 +7185,24 @@ func (c *WarrantyClient) mutate(ctx context.Context, m *WarrantyMutation) (Value
 type (
 	hooks struct {
 		Bundle, BundleComponent, Consumption, CustomFieldDefinition, CustomFieldValue,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
-		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, Tenant, TenantInventoryConfig, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe,
+		RecipeIngredient, Reservation, RolePermission, ServiceConfig, StockAdjustment,
+		StockTransfer, StockTransferLine, Supplier, Tenant, TenantInventoryConfig,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
 		Warranty []ent.Hook
 	}
 	inters struct {
 		Bundle, BundleComponent, Consumption, CustomFieldDefinition, CustomFieldValue,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe, RecipeIngredient,
-		Reservation, RolePermission, ServiceConfig, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, Tenant, TenantInventoryConfig, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, PurchaseOrder, PurchaseOrderLine, RateLimitConfig, Recipe,
+		RecipeIngredient, Reservation, RolePermission, ServiceConfig, StockAdjustment,
+		StockTransfer, StockTransferLine, Supplier, Tenant, TenantInventoryConfig,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
 		Warranty []ent.Interceptor
 	}
 )
