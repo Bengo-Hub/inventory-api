@@ -4487,6 +4487,22 @@ func (c *RecipeClient) QueryIngredients(_m *Recipe) *RecipeIngredientQuery {
 	return query
 }
 
+// QueryUsedAsIngredient queries the used_as_ingredient edge of a Recipe.
+func (c *RecipeClient) QueryUsedAsIngredient(_m *Recipe) *RecipeIngredientQuery {
+	query := (&RecipeIngredientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(recipe.Table, recipe.FieldID, id),
+			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, recipe.UsedAsIngredientTable, recipe.UsedAsIngredientColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryItem queries the item edge of a Recipe.
 func (c *RecipeClient) QueryItem(_m *Recipe) *ItemQuery {
 	query := (&ItemClient{config: c.config}).Query()
@@ -4677,6 +4693,22 @@ func (c *RecipeIngredientClient) QueryUnit(_m *RecipeIngredient) *UnitQuery {
 			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, id),
 			sqlgraph.To(unit.Table, unit.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.UnitTable, recipeingredient.UnitColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubRecipe queries the sub_recipe edge of a RecipeIngredient.
+func (c *RecipeIngredientClient) QuerySubRecipe(_m *RecipeIngredient) *RecipeQuery {
+	query := (&RecipeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, id),
+			sqlgraph.To(recipe.Table, recipe.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.SubRecipeTable, recipeingredient.SubRecipeColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

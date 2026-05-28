@@ -99,6 +99,11 @@ func WastePercent(v float64) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldEQ(FieldWastePercent, v))
 }
 
+// SubRecipeID applies equality check predicate on the "sub_recipe_id" field. It's identical to SubRecipeIDEQ.
+func SubRecipeID(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldSubRecipeID, v))
+}
+
 // RecipeIDEQ applies the EQ predicate on the "recipe_id" field.
 func RecipeIDEQ(v uuid.UUID) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldEQ(FieldRecipeID, v))
@@ -504,6 +509,36 @@ func WastePercentNotNil() predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(sql.FieldNotNull(FieldWastePercent))
 }
 
+// SubRecipeIDEQ applies the EQ predicate on the "sub_recipe_id" field.
+func SubRecipeIDEQ(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldEQ(FieldSubRecipeID, v))
+}
+
+// SubRecipeIDNEQ applies the NEQ predicate on the "sub_recipe_id" field.
+func SubRecipeIDNEQ(v uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNEQ(FieldSubRecipeID, v))
+}
+
+// SubRecipeIDIn applies the In predicate on the "sub_recipe_id" field.
+func SubRecipeIDIn(vs ...uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIn(FieldSubRecipeID, vs...))
+}
+
+// SubRecipeIDNotIn applies the NotIn predicate on the "sub_recipe_id" field.
+func SubRecipeIDNotIn(vs ...uuid.UUID) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotIn(FieldSubRecipeID, vs...))
+}
+
+// SubRecipeIDIsNil applies the IsNil predicate on the "sub_recipe_id" field.
+func SubRecipeIDIsNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldIsNull(FieldSubRecipeID))
+}
+
+// SubRecipeIDNotNil applies the NotNil predicate on the "sub_recipe_id" field.
+func SubRecipeIDNotNil() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(sql.FieldNotNull(FieldSubRecipeID))
+}
+
 // HasRecipe applies the HasEdge predicate on the "recipe" edge.
 func HasRecipe() predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(func(s *sql.Selector) {
@@ -565,6 +600,29 @@ func HasUnit() predicate.RecipeIngredient {
 func HasUnitWith(preds ...predicate.Unit) predicate.RecipeIngredient {
 	return predicate.RecipeIngredient(func(s *sql.Selector) {
 		step := newUnitStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSubRecipe applies the HasEdge predicate on the "sub_recipe" edge.
+func HasSubRecipe() predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, SubRecipeTable, SubRecipeColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubRecipeWith applies the HasEdge predicate on the "sub_recipe" edge with a given conditions (other predicates).
+func HasSubRecipeWith(preds ...predicate.Recipe) predicate.RecipeIngredient {
+	return predicate.RecipeIngredient(func(s *sql.Selector) {
+		step := newSubRecipeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

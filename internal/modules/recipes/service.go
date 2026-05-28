@@ -58,6 +58,8 @@ type RecipeIngredientDTO struct {
 	WastePercent  float64    `json:"waste_percent"`
 	Notes         string     `json:"notes"`
 	DisplayOrder  int        `json:"display_order"`
+	SubRecipeID   *uuid.UUID `json:"sub_recipe_id,omitempty"`
+	SubRecipeName string     `json:"sub_recipe_name,omitempty"`
 }
 
 // ListRecipes returns a paginated list of recipes for a tenant.
@@ -68,7 +70,8 @@ func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, of
 		WithIngredients(func(iq *ent.RecipeIngredientQuery) {
 			iq.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
 				WithItem().
-				WithUnit()
+				WithUnit().
+				WithSubRecipe()
 		}).
 		Order(ent.Asc(recipe.FieldName)).
 		Limit(limit).
@@ -92,7 +95,8 @@ func (s *Service) GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*Recip
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
 			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
 				WithItem().
-				WithUnit()
+				WithUnit().
+				WithSubRecipe()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -109,7 +113,8 @@ func (s *Service) GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, skuCod
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
 			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
 				WithItem().
-				WithUnit()
+				WithUnit().
+				WithSubRecipe()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -143,18 +148,18 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 	}
 
 	for i, ing := range dto.Ingredients {
-		_, err := tx.RecipeIngredient.Create().
+		b := tx.RecipeIngredient.Create().
 			SetRecipe(r).
 			SetItemID(ing.ItemID).
 			SetItemSku(ing.ItemSKU).
 			SetQuantity(ing.Quantity).
 			SetUnitOfMeasure(ing.UnitOfMeasure).
 			SetNillableUnitID(ing.UnitID).
+			SetNillableSubRecipeID(ing.SubRecipeID).
 			SetWastePercent(ing.WastePercent).
 			SetNotes(ing.Notes).
-			SetDisplayOrder(i).
-			Save(ctx)
-		if err != nil {
+			SetDisplayOrder(i)
+		if _, err := b.Save(ctx); err != nil {
 			_ = tx.Rollback()
 			return nil, fmt.Errorf("recipes: create ingredient %d: %w", i, err)
 		}
@@ -206,18 +211,18 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 	}
 
 	for i, ing := range dto.Ingredients {
-		_, err := tx.RecipeIngredient.Create().
+		b := tx.RecipeIngredient.Create().
 			SetRecipeID(id).
 			SetItemID(ing.ItemID).
 			SetItemSku(ing.ItemSKU).
 			SetQuantity(ing.Quantity).
 			SetUnitOfMeasure(ing.UnitOfMeasure).
 			SetNillableUnitID(ing.UnitID).
+			SetNillableSubRecipeID(ing.SubRecipeID).
 			SetWastePercent(ing.WastePercent).
 			SetNotes(ing.Notes).
-			SetDisplayOrder(i).
-			Save(ctx)
-		if err != nil {
+			SetDisplayOrder(i)
+		if _, err := b.Save(ctx); err != nil {
 			_ = tx.Rollback()
 			return nil, fmt.Errorf("recipes: update ingredient %d: %w", i, err)
 		}
@@ -279,6 +284,12 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		}
 		if ing.Edges.Item != nil {
 			ingDTO.ItemName = ing.Edges.Item.Name
+		}
+		if ing.SubRecipeID != nil {
+			ingDTO.SubRecipeID = ing.SubRecipeID
+		}
+		if ing.Edges.SubRecipe != nil {
+			ingDTO.SubRecipeName = ing.Edges.SubRecipe.Name
 		}
 		dto.Ingredients[i] = ingDTO
 	}

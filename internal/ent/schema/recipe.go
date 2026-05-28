@@ -82,6 +82,7 @@ func (Recipe) Fields() []ent.Field {
 func (Recipe) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("ingredients", RecipeIngredient.Type),
+		edge.To("used_as_ingredient", RecipeIngredient.Type),
 		edge.From("item", Item.Type).
 			Ref("produced_by_recipe").
 			Field("item_id").

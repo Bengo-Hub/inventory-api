@@ -49,6 +49,10 @@ func (RecipeIngredient) Fields() []ent.Field {
 			Default(0).
 			Optional().
 			Comment("Shrinkage/waste factor in %; effective qty = quantity * (1 + waste_percent/100)"),
+		field.UUID("sub_recipe_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("FK → Recipe used as a prep/sub-recipe instead of a raw item"),
 	}
 }
 
@@ -68,6 +72,10 @@ func (RecipeIngredient) Edges() []ent.Edge {
 		edge.From("unit", Unit.Type).
 			Ref("recipe_ingredients").
 			Field("unit_id").
+			Unique(),
+		edge.From("sub_recipe", Recipe.Type).
+			Ref("used_as_ingredient").
+			Field("sub_recipe_id").
 			Unique(),
 	}
 }

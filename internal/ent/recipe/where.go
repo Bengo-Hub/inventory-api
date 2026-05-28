@@ -804,6 +804,29 @@ func HasIngredientsWith(preds ...predicate.RecipeIngredient) predicate.Recipe {
 	})
 }
 
+// HasUsedAsIngredient applies the HasEdge predicate on the "used_as_ingredient" edge.
+func HasUsedAsIngredient() predicate.Recipe {
+	return predicate.Recipe(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UsedAsIngredientTable, UsedAsIngredientColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUsedAsIngredientWith applies the HasEdge predicate on the "used_as_ingredient" edge with a given conditions (other predicates).
+func HasUsedAsIngredientWith(preds ...predicate.RecipeIngredient) predicate.Recipe {
+	return predicate.Recipe(func(s *sql.Selector) {
+		step := newUsedAsIngredientStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasItem applies the HasEdge predicate on the "item" edge.
 func HasItem() predicate.Recipe {
 	return predicate.Recipe(func(s *sql.Selector) {

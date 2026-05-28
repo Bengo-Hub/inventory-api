@@ -47,6 +47,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeIngredients holds the string denoting the ingredients edge name in mutations.
 	EdgeIngredients = "ingredients"
+	// EdgeUsedAsIngredient holds the string denoting the used_as_ingredient edge name in mutations.
+	EdgeUsedAsIngredient = "used_as_ingredient"
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
 	// Table holds the table name of the recipe in the database.
@@ -58,6 +60,13 @@ const (
 	IngredientsInverseTable = "recipe_ingredients"
 	// IngredientsColumn is the table column denoting the ingredients relation/edge.
 	IngredientsColumn = "recipe_id"
+	// UsedAsIngredientTable is the table that holds the used_as_ingredient relation/edge.
+	UsedAsIngredientTable = "recipe_ingredients"
+	// UsedAsIngredientInverseTable is the table name for the RecipeIngredient entity.
+	// It exists in this package in order to avoid circular dependency with the "recipeingredient" package.
+	UsedAsIngredientInverseTable = "recipe_ingredients"
+	// UsedAsIngredientColumn is the table column denoting the used_as_ingredient relation/edge.
+	UsedAsIngredientColumn = "sub_recipe_id"
 	// ItemTable is the table that holds the item relation/edge.
 	ItemTable = "recipes"
 	// ItemInverseTable is the table name for the Item entity.
@@ -216,6 +225,20 @@ func ByIngredients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByUsedAsIngredientCount orders the results by used_as_ingredient count.
+func ByUsedAsIngredientCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUsedAsIngredientStep(), opts...)
+	}
+}
+
+// ByUsedAsIngredient orders the results by used_as_ingredient terms.
+func ByUsedAsIngredient(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUsedAsIngredientStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByItemField orders the results by item field.
 func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -227,6 +250,13 @@ func newIngredientsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IngredientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IngredientsTable, IngredientsColumn),
+	)
+}
+func newUsedAsIngredientStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UsedAsIngredientInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UsedAsIngredientTable, UsedAsIngredientColumn),
 	)
 }
 func newItemStep() *sqlgraph.Step {

@@ -120,6 +120,20 @@ func (_c *RecipeIngredientCreate) SetNillableWastePercent(v *float64) *RecipeIng
 	return _c
 }
 
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (_c *RecipeIngredientCreate) SetSubRecipeID(v uuid.UUID) *RecipeIngredientCreate {
+	_c.mutation.SetSubRecipeID(v)
+	return _c
+}
+
+// SetNillableSubRecipeID sets the "sub_recipe_id" field if the given value is not nil.
+func (_c *RecipeIngredientCreate) SetNillableSubRecipeID(v *uuid.UUID) *RecipeIngredientCreate {
+	if v != nil {
+		_c.SetSubRecipeID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *RecipeIngredientCreate) SetID(v uuid.UUID) *RecipeIngredientCreate {
 	_c.mutation.SetID(v)
@@ -147,6 +161,11 @@ func (_c *RecipeIngredientCreate) SetItem(v *Item) *RecipeIngredientCreate {
 // SetUnit sets the "unit" edge to the Unit entity.
 func (_c *RecipeIngredientCreate) SetUnit(v *Unit) *RecipeIngredientCreate {
 	return _c.SetUnitID(v.ID)
+}
+
+// SetSubRecipe sets the "sub_recipe" edge to the Recipe entity.
+func (_c *RecipeIngredientCreate) SetSubRecipe(v *Recipe) *RecipeIngredientCreate {
+	return _c.SetSubRecipeID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -359,6 +378,23 @@ func (_c *RecipeIngredientCreate) createSpec() (*RecipeIngredient, *sqlgraph.Cre
 		_node.UnitID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.SubRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.SubRecipeTable,
+			Columns: []string{recipeingredient.SubRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.SubRecipeID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -552,6 +588,24 @@ func (u *RecipeIngredientUpsert) AddWastePercent(v float64) *RecipeIngredientUps
 // ClearWastePercent clears the value of the "waste_percent" field.
 func (u *RecipeIngredientUpsert) ClearWastePercent() *RecipeIngredientUpsert {
 	u.SetNull(recipeingredient.FieldWastePercent)
+	return u
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsert) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldSubRecipeID, v)
+	return u
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateSubRecipeID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldSubRecipeID)
+	return u
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsert) ClearSubRecipeID() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldSubRecipeID)
 	return u
 }
 
@@ -768,6 +822,27 @@ func (u *RecipeIngredientUpsertOne) UpdateWastePercent() *RecipeIngredientUpsert
 func (u *RecipeIngredientUpsertOne) ClearWastePercent() *RecipeIngredientUpsertOne {
 	return u.Update(func(s *RecipeIngredientUpsert) {
 		s.ClearWastePercent()
+	})
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertOne) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetSubRecipeID(v)
+	})
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateSubRecipeID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateSubRecipeID()
+	})
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertOne) ClearSubRecipeID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearSubRecipeID()
 	})
 }
 
@@ -1151,6 +1226,27 @@ func (u *RecipeIngredientUpsertBulk) UpdateWastePercent() *RecipeIngredientUpser
 func (u *RecipeIngredientUpsertBulk) ClearWastePercent() *RecipeIngredientUpsertBulk {
 	return u.Update(func(s *RecipeIngredientUpsert) {
 		s.ClearWastePercent()
+	})
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertBulk) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetSubRecipeID(v)
+	})
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateSubRecipeID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateSubRecipeID()
+	})
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertBulk) ClearSubRecipeID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearSubRecipeID()
 	})
 }
 

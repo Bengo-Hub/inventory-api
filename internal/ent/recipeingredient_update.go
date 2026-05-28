@@ -196,6 +196,26 @@ func (_u *RecipeIngredientUpdate) ClearWastePercent() *RecipeIngredientUpdate {
 	return _u
 }
 
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (_u *RecipeIngredientUpdate) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpdate {
+	_u.mutation.SetSubRecipeID(v)
+	return _u
+}
+
+// SetNillableSubRecipeID sets the "sub_recipe_id" field if the given value is not nil.
+func (_u *RecipeIngredientUpdate) SetNillableSubRecipeID(v *uuid.UUID) *RecipeIngredientUpdate {
+	if v != nil {
+		_u.SetSubRecipeID(*v)
+	}
+	return _u
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (_u *RecipeIngredientUpdate) ClearSubRecipeID() *RecipeIngredientUpdate {
+	_u.mutation.ClearSubRecipeID()
+	return _u
+}
+
 // SetRecipe sets the "recipe" edge to the Recipe entity.
 func (_u *RecipeIngredientUpdate) SetRecipe(v *Recipe) *RecipeIngredientUpdate {
 	return _u.SetRecipeID(v.ID)
@@ -209,6 +229,11 @@ func (_u *RecipeIngredientUpdate) SetItem(v *Item) *RecipeIngredientUpdate {
 // SetUnit sets the "unit" edge to the Unit entity.
 func (_u *RecipeIngredientUpdate) SetUnit(v *Unit) *RecipeIngredientUpdate {
 	return _u.SetUnitID(v.ID)
+}
+
+// SetSubRecipe sets the "sub_recipe" edge to the Recipe entity.
+func (_u *RecipeIngredientUpdate) SetSubRecipe(v *Recipe) *RecipeIngredientUpdate {
+	return _u.SetSubRecipeID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -231,6 +256,12 @@ func (_u *RecipeIngredientUpdate) ClearItem() *RecipeIngredientUpdate {
 // ClearUnit clears the "unit" edge to the Unit entity.
 func (_u *RecipeIngredientUpdate) ClearUnit() *RecipeIngredientUpdate {
 	_u.mutation.ClearUnit()
+	return _u
+}
+
+// ClearSubRecipe clears the "sub_recipe" edge to the Recipe entity.
+func (_u *RecipeIngredientUpdate) ClearSubRecipe() *RecipeIngredientUpdate {
+	_u.mutation.ClearSubRecipe()
 	return _u
 }
 
@@ -424,6 +455,35 @@ func (_u *RecipeIngredientUpdate) sqlSave(ctx context.Context) (_node int, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SubRecipeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.SubRecipeTable,
+			Columns: []string{recipeingredient.SubRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.SubRecipeTable,
+			Columns: []string{recipeingredient.SubRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{recipeingredient.Label}
@@ -609,6 +669,26 @@ func (_u *RecipeIngredientUpdateOne) ClearWastePercent() *RecipeIngredientUpdate
 	return _u
 }
 
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (_u *RecipeIngredientUpdateOne) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpdateOne {
+	_u.mutation.SetSubRecipeID(v)
+	return _u
+}
+
+// SetNillableSubRecipeID sets the "sub_recipe_id" field if the given value is not nil.
+func (_u *RecipeIngredientUpdateOne) SetNillableSubRecipeID(v *uuid.UUID) *RecipeIngredientUpdateOne {
+	if v != nil {
+		_u.SetSubRecipeID(*v)
+	}
+	return _u
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (_u *RecipeIngredientUpdateOne) ClearSubRecipeID() *RecipeIngredientUpdateOne {
+	_u.mutation.ClearSubRecipeID()
+	return _u
+}
+
 // SetRecipe sets the "recipe" edge to the Recipe entity.
 func (_u *RecipeIngredientUpdateOne) SetRecipe(v *Recipe) *RecipeIngredientUpdateOne {
 	return _u.SetRecipeID(v.ID)
@@ -622,6 +702,11 @@ func (_u *RecipeIngredientUpdateOne) SetItem(v *Item) *RecipeIngredientUpdateOne
 // SetUnit sets the "unit" edge to the Unit entity.
 func (_u *RecipeIngredientUpdateOne) SetUnit(v *Unit) *RecipeIngredientUpdateOne {
 	return _u.SetUnitID(v.ID)
+}
+
+// SetSubRecipe sets the "sub_recipe" edge to the Recipe entity.
+func (_u *RecipeIngredientUpdateOne) SetSubRecipe(v *Recipe) *RecipeIngredientUpdateOne {
+	return _u.SetSubRecipeID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -644,6 +729,12 @@ func (_u *RecipeIngredientUpdateOne) ClearItem() *RecipeIngredientUpdateOne {
 // ClearUnit clears the "unit" edge to the Unit entity.
 func (_u *RecipeIngredientUpdateOne) ClearUnit() *RecipeIngredientUpdateOne {
 	_u.mutation.ClearUnit()
+	return _u
+}
+
+// ClearSubRecipe clears the "sub_recipe" edge to the Recipe entity.
+func (_u *RecipeIngredientUpdateOne) ClearSubRecipe() *RecipeIngredientUpdateOne {
+	_u.mutation.ClearSubRecipe()
 	return _u
 }
 
@@ -860,6 +951,35 @@ func (_u *RecipeIngredientUpdateOne) sqlSave(ctx context.Context) (_node *Recipe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SubRecipeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.SubRecipeTable,
+			Columns: []string{recipeingredient.SubRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SubRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.SubRecipeTable,
+			Columns: []string{recipeingredient.SubRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

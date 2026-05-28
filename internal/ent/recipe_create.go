@@ -233,6 +233,21 @@ func (_c *RecipeCreate) AddIngredients(v ...*RecipeIngredient) *RecipeCreate {
 	return _c.AddIngredientIDs(ids...)
 }
 
+// AddUsedAsIngredientIDs adds the "used_as_ingredient" edge to the RecipeIngredient entity by IDs.
+func (_c *RecipeCreate) AddUsedAsIngredientIDs(ids ...uuid.UUID) *RecipeCreate {
+	_c.mutation.AddUsedAsIngredientIDs(ids...)
+	return _c
+}
+
+// AddUsedAsIngredient adds the "used_as_ingredient" edges to the RecipeIngredient entity.
+func (_c *RecipeCreate) AddUsedAsIngredient(v ...*RecipeIngredient) *RecipeCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddUsedAsIngredientIDs(ids...)
+}
+
 // SetItem sets the "item" edge to the Item entity.
 func (_c *RecipeCreate) SetItem(v *Item) *RecipeCreate {
 	return _c.SetItemID(v.ID)
@@ -447,6 +462,22 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 			Inverse: false,
 			Table:   recipe.IngredientsTable,
 			Columns: []string{recipe.IngredientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UsedAsIngredientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   recipe.UsedAsIngredientTable,
+			Columns: []string{recipe.UsedAsIngredientColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),

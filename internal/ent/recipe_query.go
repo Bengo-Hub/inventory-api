@@ -22,12 +22,13 @@ import (
 // RecipeQuery is the builder for querying Recipe entities.
 type RecipeQuery struct {
 	config
-	ctx             *QueryContext
-	order           []recipe.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Recipe
-	withIngredients *RecipeIngredientQuery
-	withItem        *ItemQuery
+	ctx                  *QueryContext
+	order                []recipe.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Recipe
+	withIngredients      *RecipeIngredientQuery
+	withUsedAsIngredient *RecipeIngredientQuery
+	withItem             *ItemQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +80,28 @@ func (_q *RecipeQuery) QueryIngredients() *RecipeIngredientQuery {
 			sqlgraph.From(recipe.Table, recipe.FieldID, selector),
 			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, recipe.IngredientsTable, recipe.IngredientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUsedAsIngredient chains the current query on the "used_as_ingredient" edge.
+func (_q *RecipeQuery) QueryUsedAsIngredient() *RecipeIngredientQuery {
+	query := (&RecipeIngredientClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(recipe.Table, recipe.FieldID, selector),
+			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, recipe.UsedAsIngredientTable, recipe.UsedAsIngredientColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +318,14 @@ func (_q *RecipeQuery) Clone() *RecipeQuery {
 		return nil
 	}
 	return &RecipeQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]recipe.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.Recipe{}, _q.predicates...),
-		withIngredients: _q.withIngredients.Clone(),
-		withItem:        _q.withItem.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]recipe.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.Recipe{}, _q.predicates...),
+		withIngredients:      _q.withIngredients.Clone(),
+		withUsedAsIngredient: _q.withUsedAsIngredient.Clone(),
+		withItem:             _q.withItem.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -316,6 +340,17 @@ func (_q *RecipeQuery) WithIngredients(opts ...func(*RecipeIngredientQuery)) *Re
 		opt(query)
 	}
 	_q.withIngredients = query
+	return _q
+}
+
+// WithUsedAsIngredient tells the query-builder to eager-load the nodes that are connected to
+// the "used_as_ingredient" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RecipeQuery) WithUsedAsIngredient(opts ...func(*RecipeIngredientQuery)) *RecipeQuery {
+	query := (&RecipeIngredientClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUsedAsIngredient = query
 	return _q
 }
 
@@ -408,8 +443,9 @@ func (_q *RecipeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Recip
 	var (
 		nodes       = []*Recipe{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withIngredients != nil,
+			_q.withUsedAsIngredient != nil,
 			_q.withItem != nil,
 		}
 	)
@@ -435,6 +471,13 @@ func (_q *RecipeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Recip
 		if err := _q.loadIngredients(ctx, query, nodes,
 			func(n *Recipe) { n.Edges.Ingredients = []*RecipeIngredient{} },
 			func(n *Recipe, e *RecipeIngredient) { n.Edges.Ingredients = append(n.Edges.Ingredients, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUsedAsIngredient; query != nil {
+		if err := _q.loadUsedAsIngredient(ctx, query, nodes,
+			func(n *Recipe) { n.Edges.UsedAsIngredient = []*RecipeIngredient{} },
+			func(n *Recipe, e *RecipeIngredient) { n.Edges.UsedAsIngredient = append(n.Edges.UsedAsIngredient, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -472,6 +515,39 @@ func (_q *RecipeQuery) loadIngredients(ctx context.Context, query *RecipeIngredi
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "recipe_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *RecipeQuery) loadUsedAsIngredient(ctx context.Context, query *RecipeIngredientQuery, nodes []*Recipe, init func(*Recipe), assign func(*Recipe, *RecipeIngredient)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Recipe)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(recipeingredient.FieldSubRecipeID)
+	}
+	query.Where(predicate.RecipeIngredient(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(recipe.UsedAsIngredientColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SubRecipeID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "sub_recipe_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "sub_recipe_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
