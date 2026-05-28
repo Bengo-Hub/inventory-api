@@ -50,6 +50,8 @@ const (
 	FieldPurchaseOrdersEnabled = "purchase_orders_enabled"
 	// FieldSupplierManagementEnabled holds the string denoting the supplier_management_enabled field in the database.
 	FieldSupplierManagementEnabled = "supplier_management_enabled"
+	// FieldDefaultTargetMarginPercent holds the string denoting the default_target_margin_percent field in the database.
+	FieldDefaultTargetMarginPercent = "default_target_margin_percent"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -79,6 +81,7 @@ var Columns = []string{
 	FieldRecipesModuleEnabled,
 	FieldPurchaseOrdersEnabled,
 	FieldSupplierManagementEnabled,
+	FieldDefaultTargetMarginPercent,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -122,6 +125,8 @@ var (
 	DefaultPurchaseOrdersEnabled bool
 	// DefaultSupplierManagementEnabled holds the default value on creation for the "supplier_management_enabled" field.
 	DefaultSupplierManagementEnabled bool
+	// DefaultDefaultTargetMarginPercent holds the default value on creation for the "default_target_margin_percent" field.
+	DefaultDefaultTargetMarginPercent float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -223,6 +228,11 @@ func ByPurchaseOrdersEnabled(opts ...sql.OrderTermOption) OrderOption {
 // BySupplierManagementEnabled orders the results by the supplier_management_enabled field.
 func BySupplierManagementEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSupplierManagementEnabled, opts...).ToFunc()
+}
+
+// ByDefaultTargetMarginPercent orders the results by the default_target_margin_percent field.
+func ByDefaultTargetMarginPercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultTargetMarginPercent, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

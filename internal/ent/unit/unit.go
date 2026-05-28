@@ -29,6 +29,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeItems holds the string denoting the items edge name in mutations.
 	EdgeItems = "items"
+	// EdgeRecipeIngredients holds the string denoting the recipe_ingredients edge name in mutations.
+	EdgeRecipeIngredients = "recipe_ingredients"
 	// Table holds the table name of the unit in the database.
 	Table = "units"
 	// ItemsTable is the table that holds the items relation/edge.
@@ -38,6 +40,13 @@ const (
 	ItemsInverseTable = "items"
 	// ItemsColumn is the table column denoting the items relation/edge.
 	ItemsColumn = "unit_id"
+	// RecipeIngredientsTable is the table that holds the recipe_ingredients relation/edge.
+	RecipeIngredientsTable = "recipe_ingredients"
+	// RecipeIngredientsInverseTable is the table name for the RecipeIngredient entity.
+	// It exists in this package in order to avoid circular dependency with the "recipeingredient" package.
+	RecipeIngredientsInverseTable = "recipe_ingredients"
+	// RecipeIngredientsColumn is the table column denoting the recipe_ingredients relation/edge.
+	RecipeIngredientsColumn = "unit_id"
 )
 
 // Columns holds all SQL columns for unit fields.
@@ -127,10 +136,31 @@ func ByItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newItemsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRecipeIngredientsCount orders the results by recipe_ingredients count.
+func ByRecipeIngredientsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRecipeIngredientsStep(), opts...)
+	}
+}
+
+// ByRecipeIngredients orders the results by recipe_ingredients terms.
+func ByRecipeIngredients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRecipeIngredientsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newItemsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ItemsTable, ItemsColumn),
+	)
+}
+func newRecipeIngredientsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RecipeIngredientsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RecipeIngredientsTable, RecipeIngredientsColumn),
 	)
 }

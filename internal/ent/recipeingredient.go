@@ -11,6 +11,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -33,6 +34,10 @@ type RecipeIngredient struct {
 	Notes string `json:"notes,omitempty"`
 	// Sort order within the recipe
 	DisplayOrder int `json:"display_order,omitempty"`
+	// FK → Unit (preferred over unit_of_measure string for UI)
+	UnitID *uuid.UUID `json:"unit_id,omitempty"`
+	// Shrinkage/waste factor in %; effective qty = quantity * (1 + waste_percent/100)
+	WastePercent float64 `json:"waste_percent,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RecipeIngredientQuery when eager-loading is set.
 	Edges        RecipeIngredientEdges `json:"edges"`
@@ -45,9 +50,11 @@ type RecipeIngredientEdges struct {
 	Recipe *Recipe `json:"recipe,omitempty"`
 	// Item holds the value of the item edge.
 	Item *Item `json:"item,omitempty"`
+	// Unit holds the value of the unit edge.
+	Unit *Unit `json:"unit,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // RecipeOrErr returns the Recipe value or an error if the edge
@@ -72,12 +79,25 @@ func (e RecipeIngredientEdges) ItemOrErr() (*Item, error) {
 	return nil, &NotLoadedError{edge: "item"}
 }
 
+// UnitOrErr returns the Unit value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RecipeIngredientEdges) UnitOrErr() (*Unit, error) {
+	if e.Unit != nil {
+		return e.Unit, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: unit.Label}
+	}
+	return nil, &NotLoadedError{edge: "unit"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*RecipeIngredient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case recipeingredient.FieldQuantity:
+		case recipeingredient.FieldUnitID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case recipeingredient.FieldQuantity, recipeingredient.FieldWastePercent:
 			values[i] = new(sql.NullFloat64)
 		case recipeingredient.FieldDisplayOrder:
 			values[i] = new(sql.NullInt64)
@@ -148,6 +168,19 @@ func (_m *RecipeIngredient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DisplayOrder = int(value.Int64)
 			}
+		case recipeingredient.FieldUnitID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_id", values[i])
+			} else if value.Valid {
+				_m.UnitID = new(uuid.UUID)
+				*_m.UnitID = *value.S.(*uuid.UUID)
+			}
+		case recipeingredient.FieldWastePercent:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field waste_percent", values[i])
+			} else if value.Valid {
+				_m.WastePercent = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -169,6 +202,11 @@ func (_m *RecipeIngredient) QueryRecipe() *RecipeQuery {
 // QueryItem queries the "item" edge of the RecipeIngredient entity.
 func (_m *RecipeIngredient) QueryItem() *ItemQuery {
 	return NewRecipeIngredientClient(_m.config).QueryItem(_m)
+}
+
+// QueryUnit queries the "unit" edge of the RecipeIngredient entity.
+func (_m *RecipeIngredient) QueryUnit() *UnitQuery {
+	return NewRecipeIngredientClient(_m.config).QueryUnit(_m)
 }
 
 // Update returns a builder for updating this RecipeIngredient.
@@ -214,6 +252,14 @@ func (_m *RecipeIngredient) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("display_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DisplayOrder))
+	builder.WriteString(", ")
+	if v := _m.UnitID; v != nil {
+		builder.WriteString("unit_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("waste_percent=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WastePercent))
 	builder.WriteByte(')')
 	return builder.String()
 }

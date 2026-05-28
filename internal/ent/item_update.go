@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -416,6 +417,33 @@ func (_u *ItemUpdate) SetNillableTaxInclusive(v *bool) *ItemUpdate {
 	return _u
 }
 
+// SetCostPrice sets the "cost_price" field.
+func (_u *ItemUpdate) SetCostPrice(v float64) *ItemUpdate {
+	_u.mutation.ResetCostPrice()
+	_u.mutation.SetCostPrice(v)
+	return _u
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableCostPrice(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetCostPrice(*v)
+	}
+	return _u
+}
+
+// AddCostPrice adds value to the "cost_price" field.
+func (_u *ItemUpdate) AddCostPrice(v float64) *ItemUpdate {
+	_u.mutation.AddCostPrice(v)
+	return _u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (_u *ItemUpdate) ClearCostPrice() *ItemUpdate {
+	_u.mutation.ClearCostPrice()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdate) SetMetadata(v map[string]interface{}) *ItemUpdate {
 	_u.mutation.SetMetadata(v)
@@ -619,6 +647,25 @@ func (_u *ItemUpdate) AddWarranties(v ...*Warranty) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddWarrantyIDs(ids...)
+}
+
+// SetProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID.
+func (_u *ItemUpdate) SetProducedByRecipeID(id uuid.UUID) *ItemUpdate {
+	_u.mutation.SetProducedByRecipeID(id)
+	return _u
+}
+
+// SetNillableProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID if the given value is not nil.
+func (_u *ItemUpdate) SetNillableProducedByRecipeID(id *uuid.UUID) *ItemUpdate {
+	if id != nil {
+		_u = _u.SetProducedByRecipeID(*id)
+	}
+	return _u
+}
+
+// SetProducedByRecipe sets the "produced_by_recipe" edge to the Recipe entity.
+func (_u *ItemUpdate) SetProducedByRecipe(v *Recipe) *ItemUpdate {
+	return _u.SetProducedByRecipeID(v.ID)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -873,6 +920,12 @@ func (_u *ItemUpdate) RemoveWarranties(v ...*Warranty) *ItemUpdate {
 	return _u.RemoveWarrantyIDs(ids...)
 }
 
+// ClearProducedByRecipe clears the "produced_by_recipe" edge to the Recipe entity.
+func (_u *ItemUpdate) ClearProducedByRecipe() *ItemUpdate {
+	_u.mutation.ClearProducedByRecipe()
+	return _u
+}
+
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdate) ClearItemCategory() *ItemUpdate {
 	_u.mutation.ClearItemCategory()
@@ -1041,6 +1094,15 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.TaxInclusive(); ok {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CostPrice(); ok {
+		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPrice(); ok {
+		_spec.AddField(item.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPriceCleared() {
+		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -1578,6 +1640,35 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProducedByRecipeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.ProducedByRecipeTable,
+			Columns: []string{item.ProducedByRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProducedByRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.ProducedByRecipeTable,
+			Columns: []string{item.ProducedByRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2006,6 +2097,33 @@ func (_u *ItemUpdateOne) SetNillableTaxInclusive(v *bool) *ItemUpdateOne {
 	return _u
 }
 
+// SetCostPrice sets the "cost_price" field.
+func (_u *ItemUpdateOne) SetCostPrice(v float64) *ItemUpdateOne {
+	_u.mutation.ResetCostPrice()
+	_u.mutation.SetCostPrice(v)
+	return _u
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableCostPrice(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetCostPrice(*v)
+	}
+	return _u
+}
+
+// AddCostPrice adds value to the "cost_price" field.
+func (_u *ItemUpdateOne) AddCostPrice(v float64) *ItemUpdateOne {
+	_u.mutation.AddCostPrice(v)
+	return _u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (_u *ItemUpdateOne) ClearCostPrice() *ItemUpdateOne {
+	_u.mutation.ClearCostPrice()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdateOne) SetMetadata(v map[string]interface{}) *ItemUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -2209,6 +2327,25 @@ func (_u *ItemUpdateOne) AddWarranties(v ...*Warranty) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddWarrantyIDs(ids...)
+}
+
+// SetProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID.
+func (_u *ItemUpdateOne) SetProducedByRecipeID(id uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetProducedByRecipeID(id)
+	return _u
+}
+
+// SetNillableProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableProducedByRecipeID(id *uuid.UUID) *ItemUpdateOne {
+	if id != nil {
+		_u = _u.SetProducedByRecipeID(*id)
+	}
+	return _u
+}
+
+// SetProducedByRecipe sets the "produced_by_recipe" edge to the Recipe entity.
+func (_u *ItemUpdateOne) SetProducedByRecipe(v *Recipe) *ItemUpdateOne {
+	return _u.SetProducedByRecipeID(v.ID)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -2463,6 +2600,12 @@ func (_u *ItemUpdateOne) RemoveWarranties(v ...*Warranty) *ItemUpdateOne {
 	return _u.RemoveWarrantyIDs(ids...)
 }
 
+// ClearProducedByRecipe clears the "produced_by_recipe" edge to the Recipe entity.
+func (_u *ItemUpdateOne) ClearProducedByRecipe() *ItemUpdateOne {
+	_u.mutation.ClearProducedByRecipe()
+	return _u
+}
+
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdateOne) ClearItemCategory() *ItemUpdateOne {
 	_u.mutation.ClearItemCategory()
@@ -2661,6 +2804,15 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.TaxInclusive(); ok {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.CostPrice(); ok {
+		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCostPrice(); ok {
+		_spec.AddField(item.FieldCostPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.CostPriceCleared() {
+		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -3198,6 +3350,35 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProducedByRecipeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.ProducedByRecipeTable,
+			Columns: []string{item.ProducedByRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProducedByRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.ProducedByRecipeTable,
+			Columns: []string{item.ProducedByRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

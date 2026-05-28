@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
@@ -256,6 +257,26 @@ func (_u *RecipeUpdate) ClearPrepTimeMinutes() *RecipeUpdate {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *RecipeUpdate) SetItemID(v uuid.UUID) *RecipeUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableItemID(v *uuid.UUID) *RecipeUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (_u *RecipeUpdate) ClearItemID() *RecipeUpdate {
+	_u.mutation.ClearItemID()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *RecipeUpdate) SetMetadata(v map[string]interface{}) *RecipeUpdate {
 	_u.mutation.SetMetadata(v)
@@ -289,6 +310,11 @@ func (_u *RecipeUpdate) AddIngredients(v ...*RecipeIngredient) *RecipeUpdate {
 	return _u.AddIngredientIDs(ids...)
 }
 
+// SetItem sets the "item" edge to the Item entity.
+func (_u *RecipeUpdate) SetItem(v *Item) *RecipeUpdate {
+	return _u.SetItemID(v.ID)
+}
+
 // Mutation returns the RecipeMutation object of the builder.
 func (_u *RecipeUpdate) Mutation() *RecipeMutation {
 	return _u.mutation
@@ -313,6 +339,12 @@ func (_u *RecipeUpdate) RemoveIngredients(v ...*RecipeIngredient) *RecipeUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIngredientIDs(ids...)
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (_u *RecipeUpdate) ClearItem() *RecipeUpdate {
+	_u.mutation.ClearItem()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -501,6 +533,35 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   recipe.ItemTable,
+			Columns: []string{recipe.ItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   recipe.ItemTable,
+			Columns: []string{recipe.ItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -754,6 +815,26 @@ func (_u *RecipeUpdateOne) ClearPrepTimeMinutes() *RecipeUpdateOne {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *RecipeUpdateOne) SetItemID(v uuid.UUID) *RecipeUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableItemID(v *uuid.UUID) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (_u *RecipeUpdateOne) ClearItemID() *RecipeUpdateOne {
+	_u.mutation.ClearItemID()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *RecipeUpdateOne) SetMetadata(v map[string]interface{}) *RecipeUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -787,6 +868,11 @@ func (_u *RecipeUpdateOne) AddIngredients(v ...*RecipeIngredient) *RecipeUpdateO
 	return _u.AddIngredientIDs(ids...)
 }
 
+// SetItem sets the "item" edge to the Item entity.
+func (_u *RecipeUpdateOne) SetItem(v *Item) *RecipeUpdateOne {
+	return _u.SetItemID(v.ID)
+}
+
 // Mutation returns the RecipeMutation object of the builder.
 func (_u *RecipeUpdateOne) Mutation() *RecipeMutation {
 	return _u.mutation
@@ -811,6 +897,12 @@ func (_u *RecipeUpdateOne) RemoveIngredients(v ...*RecipeIngredient) *RecipeUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIngredientIDs(ids...)
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (_u *RecipeUpdateOne) ClearItem() *RecipeUpdateOne {
+	_u.mutation.ClearItem()
+	return _u
 }
 
 // Where appends a list predicates to the RecipeUpdate builder.
@@ -1029,6 +1121,35 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   recipe.ItemTable,
+			Columns: []string{recipe.ItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   recipe.ItemTable,
+			Columns: []string{recipe.ItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

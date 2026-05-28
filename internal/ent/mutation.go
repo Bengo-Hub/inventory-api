@@ -9179,6 +9179,8 @@ type ItemMutation struct {
 	appendtags                 []string
 	tax_code_id                *string
 	tax_inclusive              *bool
+	cost_price                 *float64
+	addcost_price              *float64
 	metadata                   *map[string]interface{}
 	created_at                 *time.Time
 	updated_at                 *time.Time
@@ -9219,6 +9221,8 @@ type ItemMutation struct {
 	warranties                 map[uuid.UUID]struct{}
 	removedwarranties          map[uuid.UUID]struct{}
 	clearedwarranties          bool
+	produced_by_recipe         *uuid.UUID
+	clearedproduced_by_recipe  bool
 	item_category              *uuid.UUID
 	cleareditem_category       bool
 	done                       bool
@@ -10309,6 +10313,76 @@ func (m *ItemMutation) ResetTaxInclusive() {
 	m.tax_inclusive = nil
 }
 
+// SetCostPrice sets the "cost_price" field.
+func (m *ItemMutation) SetCostPrice(f float64) {
+	m.cost_price = &f
+	m.addcost_price = nil
+}
+
+// CostPrice returns the value of the "cost_price" field in the mutation.
+func (m *ItemMutation) CostPrice() (r float64, exists bool) {
+	v := m.cost_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostPrice returns the old "cost_price" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldCostPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostPrice: %w", err)
+	}
+	return oldValue.CostPrice, nil
+}
+
+// AddCostPrice adds f to the "cost_price" field.
+func (m *ItemMutation) AddCostPrice(f float64) {
+	if m.addcost_price != nil {
+		*m.addcost_price += f
+	} else {
+		m.addcost_price = &f
+	}
+}
+
+// AddedCostPrice returns the value that was added to the "cost_price" field in this mutation.
+func (m *ItemMutation) AddedCostPrice() (r float64, exists bool) {
+	v := m.addcost_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (m *ItemMutation) ClearCostPrice() {
+	m.cost_price = nil
+	m.addcost_price = nil
+	m.clearedFields[item.FieldCostPrice] = struct{}{}
+}
+
+// CostPriceCleared returns if the "cost_price" field was cleared in this mutation.
+func (m *ItemMutation) CostPriceCleared() bool {
+	_, ok := m.clearedFields[item.FieldCostPrice]
+	return ok
+}
+
+// ResetCostPrice resets all changes to the "cost_price" field.
+func (m *ItemMutation) ResetCostPrice() {
+	m.cost_price = nil
+	m.addcost_price = nil
+	delete(m.clearedFields, item.FieldCostPrice)
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *ItemMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -11063,6 +11137,45 @@ func (m *ItemMutation) ResetWarranties() {
 	m.removedwarranties = nil
 }
 
+// SetProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by id.
+func (m *ItemMutation) SetProducedByRecipeID(id uuid.UUID) {
+	m.produced_by_recipe = &id
+}
+
+// ClearProducedByRecipe clears the "produced_by_recipe" edge to the Recipe entity.
+func (m *ItemMutation) ClearProducedByRecipe() {
+	m.clearedproduced_by_recipe = true
+}
+
+// ProducedByRecipeCleared reports if the "produced_by_recipe" edge to the Recipe entity was cleared.
+func (m *ItemMutation) ProducedByRecipeCleared() bool {
+	return m.clearedproduced_by_recipe
+}
+
+// ProducedByRecipeID returns the "produced_by_recipe" edge ID in the mutation.
+func (m *ItemMutation) ProducedByRecipeID() (id uuid.UUID, exists bool) {
+	if m.produced_by_recipe != nil {
+		return *m.produced_by_recipe, true
+	}
+	return
+}
+
+// ProducedByRecipeIDs returns the "produced_by_recipe" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProducedByRecipeID instead. It exists only for internal usage by the builders.
+func (m *ItemMutation) ProducedByRecipeIDs() (ids []uuid.UUID) {
+	if id := m.produced_by_recipe; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProducedByRecipe resets all changes to the "produced_by_recipe" edge.
+func (m *ItemMutation) ResetProducedByRecipe() {
+	m.produced_by_recipe = nil
+	m.clearedproduced_by_recipe = false
+}
+
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by id.
 func (m *ItemMutation) SetItemCategoryID(id uuid.UUID) {
 	m.item_category = &id
@@ -11137,7 +11250,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 26)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -11204,6 +11317,9 @@ func (m *ItemMutation) Fields() []string {
 	if m.tax_inclusive != nil {
 		fields = append(fields, item.FieldTaxInclusive)
 	}
+	if m.cost_price != nil {
+		fields = append(fields, item.FieldCostPrice)
+	}
 	if m.metadata != nil {
 		fields = append(fields, item.FieldMetadata)
 	}
@@ -11265,6 +11381,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.TaxCodeID()
 	case item.FieldTaxInclusive:
 		return m.TaxInclusive()
+	case item.FieldCostPrice:
+		return m.CostPrice()
 	case item.FieldMetadata:
 		return m.Metadata()
 	case item.FieldCreatedAt:
@@ -11324,6 +11442,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTaxCodeID(ctx)
 	case item.FieldTaxInclusive:
 		return m.OldTaxInclusive(ctx)
+	case item.FieldCostPrice:
+		return m.OldCostPrice(ctx)
 	case item.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case item.FieldCreatedAt:
@@ -11493,6 +11613,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTaxInclusive(v)
 		return nil
+	case item.FieldCostPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostPrice(v)
+		return nil
 	case item.FieldMetadata:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -11528,6 +11655,9 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addduration_minutes != nil {
 		fields = append(fields, item.FieldDurationMinutes)
 	}
+	if m.addcost_price != nil {
+		fields = append(fields, item.FieldCostPrice)
+	}
 	return fields
 }
 
@@ -11540,6 +11670,8 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeightKg()
 	case item.FieldDurationMinutes:
 		return m.AddedDurationMinutes()
+	case item.FieldCostPrice:
+		return m.AddedCostPrice()
 	}
 	return nil, false
 }
@@ -11562,6 +11694,13 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDurationMinutes(v)
+		return nil
+	case item.FieldCostPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostPrice(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Item numeric field %s", name)
@@ -11600,6 +11739,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldTaxCodeID) {
 		fields = append(fields, item.FieldTaxCodeID)
+	}
+	if m.FieldCleared(item.FieldCostPrice) {
+		fields = append(fields, item.FieldCostPrice)
 	}
 	return fields
 }
@@ -11644,6 +11786,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldTaxCodeID:
 		m.ClearTaxCodeID()
+		return nil
+	case item.FieldCostPrice:
+		m.ClearCostPrice()
 		return nil
 	}
 	return fmt.Errorf("unknown Item nullable field %s", name)
@@ -11719,6 +11864,9 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldTaxInclusive:
 		m.ResetTaxInclusive()
 		return nil
+	case item.FieldCostPrice:
+		m.ResetCostPrice()
+		return nil
 	case item.FieldMetadata:
 		m.ResetMetadata()
 		return nil
@@ -11734,7 +11882,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.tenant != nil {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -11773,6 +11921,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.warranties != nil {
 		edges = append(edges, item.EdgeWarranties)
+	}
+	if m.produced_by_recipe != nil {
+		edges = append(edges, item.EdgeProducedByRecipe)
 	}
 	if m.item_category != nil {
 		edges = append(edges, item.EdgeItemCategory)
@@ -11856,6 +12007,10 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case item.EdgeProducedByRecipe:
+		if id := m.produced_by_recipe; id != nil {
+			return []ent.Value{*id}
+		}
 	case item.EdgeItemCategory:
 		if id := m.item_category; id != nil {
 			return []ent.Value{*id}
@@ -11866,7 +12021,7 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.removedbalances != nil {
 		edges = append(edges, item.EdgeBalances)
 	}
@@ -11970,7 +12125,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 14)
+	edges := make([]string, 0, 15)
 	if m.clearedtenant {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -12010,6 +12165,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	if m.clearedwarranties {
 		edges = append(edges, item.EdgeWarranties)
 	}
+	if m.clearedproduced_by_recipe {
+		edges = append(edges, item.EdgeProducedByRecipe)
+	}
 	if m.cleareditem_category {
 		edges = append(edges, item.EdgeItemCategory)
 	}
@@ -12046,6 +12204,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.clearedbundle_components
 	case item.EdgeWarranties:
 		return m.clearedwarranties
+	case item.EdgeProducedByRecipe:
+		return m.clearedproduced_by_recipe
 	case item.EdgeItemCategory:
 		return m.cleareditem_category
 	}
@@ -12064,6 +12224,9 @@ func (m *ItemMutation) ClearEdge(name string) error {
 		return nil
 	case item.EdgeBundle:
 		m.ClearBundle()
+		return nil
+	case item.EdgeProducedByRecipe:
+		m.ClearProducedByRecipe()
 		return nil
 	case item.EdgeItemCategory:
 		m.ClearItemCategory()
@@ -12114,6 +12277,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgeWarranties:
 		m.ResetWarranties()
+		return nil
+	case item.EdgeProducedByRecipe:
+		m.ResetProducedByRecipe()
 		return nil
 	case item.EdgeItemCategory:
 		m.ResetItemCategory()
@@ -24087,6 +24253,8 @@ type RecipeMutation struct {
 	ingredients              map[uuid.UUID]struct{}
 	removedingredients       map[uuid.UUID]struct{}
 	clearedingredients       bool
+	item                     *uuid.UUID
+	cleareditem              bool
 	done                     bool
 	oldValue                 func(context.Context) (*Recipe, error)
 	predicates               []predicate.Recipe
@@ -24782,6 +24950,55 @@ func (m *RecipeMutation) ResetPrepTimeMinutes() {
 	delete(m.clearedFields, recipe.FieldPrepTimeMinutes)
 }
 
+// SetItemID sets the "item_id" field.
+func (m *RecipeMutation) SetItemID(u uuid.UUID) {
+	m.item = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *RecipeMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldItemID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (m *RecipeMutation) ClearItemID() {
+	m.item = nil
+	m.clearedFields[recipe.FieldItemID] = struct{}{}
+}
+
+// ItemIDCleared returns if the "item_id" field was cleared in this mutation.
+func (m *RecipeMutation) ItemIDCleared() bool {
+	_, ok := m.clearedFields[recipe.FieldItemID]
+	return ok
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *RecipeMutation) ResetItemID() {
+	m.item = nil
+	delete(m.clearedFields, recipe.FieldItemID)
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *RecipeMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -24957,6 +25174,33 @@ func (m *RecipeMutation) ResetIngredients() {
 	m.removedingredients = nil
 }
 
+// ClearItem clears the "item" edge to the Item entity.
+func (m *RecipeMutation) ClearItem() {
+	m.cleareditem = true
+	m.clearedFields[recipe.FieldItemID] = struct{}{}
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *RecipeMutation) ItemCleared() bool {
+	return m.ItemIDCleared() || m.cleareditem
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *RecipeMutation) ItemIDs() (ids []uuid.UUID) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *RecipeMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
 // Where appends a list predicates to the RecipeMutation builder.
 func (m *RecipeMutation) Where(ps ...predicate.Recipe) {
 	m.predicates = append(m.predicates, ps...)
@@ -24991,7 +25235,7 @@ func (m *RecipeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.tenant_id != nil {
 		fields = append(fields, recipe.FieldTenantID)
 	}
@@ -25024,6 +25268,9 @@ func (m *RecipeMutation) Fields() []string {
 	}
 	if m.prep_time_minutes != nil {
 		fields = append(fields, recipe.FieldPrepTimeMinutes)
+	}
+	if m.item != nil {
+		fields = append(fields, recipe.FieldItemID)
 	}
 	if m.metadata != nil {
 		fields = append(fields, recipe.FieldMetadata)
@@ -25064,6 +25311,8 @@ func (m *RecipeMutation) Field(name string) (ent.Value, bool) {
 		return m.SuggestedPrice()
 	case recipe.FieldPrepTimeMinutes:
 		return m.PrepTimeMinutes()
+	case recipe.FieldItemID:
+		return m.ItemID()
 	case recipe.FieldMetadata:
 		return m.Metadata()
 	case recipe.FieldCreatedAt:
@@ -25101,6 +25350,8 @@ func (m *RecipeMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldSuggestedPrice(ctx)
 	case recipe.FieldPrepTimeMinutes:
 		return m.OldPrepTimeMinutes(ctx)
+	case recipe.FieldItemID:
+		return m.OldItemID(ctx)
 	case recipe.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case recipe.FieldCreatedAt:
@@ -25192,6 +25443,13 @@ func (m *RecipeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPrepTimeMinutes(v)
+		return nil
+	case recipe.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
 		return nil
 	case recipe.FieldMetadata:
 		v, ok := value.(map[string]interface{})
@@ -25334,6 +25592,9 @@ func (m *RecipeMutation) ClearedFields() []string {
 	if m.FieldCleared(recipe.FieldPrepTimeMinutes) {
 		fields = append(fields, recipe.FieldPrepTimeMinutes)
 	}
+	if m.FieldCleared(recipe.FieldItemID) {
+		fields = append(fields, recipe.FieldItemID)
+	}
 	if m.FieldCleared(recipe.FieldMetadata) {
 		fields = append(fields, recipe.FieldMetadata)
 	}
@@ -25365,6 +25626,9 @@ func (m *RecipeMutation) ClearField(name string) error {
 		return nil
 	case recipe.FieldPrepTimeMinutes:
 		m.ClearPrepTimeMinutes()
+		return nil
+	case recipe.FieldItemID:
+		m.ClearItemID()
 		return nil
 	case recipe.FieldMetadata:
 		m.ClearMetadata()
@@ -25410,6 +25674,9 @@ func (m *RecipeMutation) ResetField(name string) error {
 	case recipe.FieldPrepTimeMinutes:
 		m.ResetPrepTimeMinutes()
 		return nil
+	case recipe.FieldItemID:
+		m.ResetItemID()
+		return nil
 	case recipe.FieldMetadata:
 		m.ResetMetadata()
 		return nil
@@ -25425,9 +25692,12 @@ func (m *RecipeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RecipeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.ingredients != nil {
 		edges = append(edges, recipe.EdgeIngredients)
+	}
+	if m.item != nil {
+		edges = append(edges, recipe.EdgeItem)
 	}
 	return edges
 }
@@ -25442,13 +25712,17 @@ func (m *RecipeMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case recipe.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RecipeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedingredients != nil {
 		edges = append(edges, recipe.EdgeIngredients)
 	}
@@ -25471,9 +25745,12 @@ func (m *RecipeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RecipeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedingredients {
 		edges = append(edges, recipe.EdgeIngredients)
+	}
+	if m.cleareditem {
+		edges = append(edges, recipe.EdgeItem)
 	}
 	return edges
 }
@@ -25484,6 +25761,8 @@ func (m *RecipeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case recipe.EdgeIngredients:
 		return m.clearedingredients
+	case recipe.EdgeItem:
+		return m.cleareditem
 	}
 	return false
 }
@@ -25492,6 +25771,9 @@ func (m *RecipeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *RecipeMutation) ClearEdge(name string) error {
 	switch name {
+	case recipe.EdgeItem:
+		m.ClearItem()
+		return nil
 	}
 	return fmt.Errorf("unknown Recipe unique edge %s", name)
 }
@@ -25502,6 +25784,9 @@ func (m *RecipeMutation) ResetEdge(name string) error {
 	switch name {
 	case recipe.EdgeIngredients:
 		m.ResetIngredients()
+		return nil
+	case recipe.EdgeItem:
+		m.ResetItem()
 		return nil
 	}
 	return fmt.Errorf("unknown Recipe edge %s", name)
@@ -25520,11 +25805,15 @@ type RecipeIngredientMutation struct {
 	notes            *string
 	display_order    *int
 	adddisplay_order *int
+	waste_percent    *float64
+	addwaste_percent *float64
 	clearedFields    map[string]struct{}
 	recipe           *uuid.UUID
 	clearedrecipe    bool
 	item             *uuid.UUID
 	cleareditem      bool
+	unit             *uuid.UUID
+	clearedunit      bool
 	done             bool
 	oldValue         func(context.Context) (*RecipeIngredient, error)
 	predicates       []predicate.RecipeIngredient
@@ -25939,6 +26228,125 @@ func (m *RecipeIngredientMutation) ResetDisplayOrder() {
 	m.adddisplay_order = nil
 }
 
+// SetUnitID sets the "unit_id" field.
+func (m *RecipeIngredientMutation) SetUnitID(u uuid.UUID) {
+	m.unit = &u
+}
+
+// UnitID returns the value of the "unit_id" field in the mutation.
+func (m *RecipeIngredientMutation) UnitID() (r uuid.UUID, exists bool) {
+	v := m.unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitID returns the old "unit_id" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldUnitID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitID: %w", err)
+	}
+	return oldValue.UnitID, nil
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (m *RecipeIngredientMutation) ClearUnitID() {
+	m.unit = nil
+	m.clearedFields[recipeingredient.FieldUnitID] = struct{}{}
+}
+
+// UnitIDCleared returns if the "unit_id" field was cleared in this mutation.
+func (m *RecipeIngredientMutation) UnitIDCleared() bool {
+	_, ok := m.clearedFields[recipeingredient.FieldUnitID]
+	return ok
+}
+
+// ResetUnitID resets all changes to the "unit_id" field.
+func (m *RecipeIngredientMutation) ResetUnitID() {
+	m.unit = nil
+	delete(m.clearedFields, recipeingredient.FieldUnitID)
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (m *RecipeIngredientMutation) SetWastePercent(f float64) {
+	m.waste_percent = &f
+	m.addwaste_percent = nil
+}
+
+// WastePercent returns the value of the "waste_percent" field in the mutation.
+func (m *RecipeIngredientMutation) WastePercent() (r float64, exists bool) {
+	v := m.waste_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWastePercent returns the old "waste_percent" field's value of the RecipeIngredient entity.
+// If the RecipeIngredient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeIngredientMutation) OldWastePercent(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWastePercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWastePercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWastePercent: %w", err)
+	}
+	return oldValue.WastePercent, nil
+}
+
+// AddWastePercent adds f to the "waste_percent" field.
+func (m *RecipeIngredientMutation) AddWastePercent(f float64) {
+	if m.addwaste_percent != nil {
+		*m.addwaste_percent += f
+	} else {
+		m.addwaste_percent = &f
+	}
+}
+
+// AddedWastePercent returns the value that was added to the "waste_percent" field in this mutation.
+func (m *RecipeIngredientMutation) AddedWastePercent() (r float64, exists bool) {
+	v := m.addwaste_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (m *RecipeIngredientMutation) ClearWastePercent() {
+	m.waste_percent = nil
+	m.addwaste_percent = nil
+	m.clearedFields[recipeingredient.FieldWastePercent] = struct{}{}
+}
+
+// WastePercentCleared returns if the "waste_percent" field was cleared in this mutation.
+func (m *RecipeIngredientMutation) WastePercentCleared() bool {
+	_, ok := m.clearedFields[recipeingredient.FieldWastePercent]
+	return ok
+}
+
+// ResetWastePercent resets all changes to the "waste_percent" field.
+func (m *RecipeIngredientMutation) ResetWastePercent() {
+	m.waste_percent = nil
+	m.addwaste_percent = nil
+	delete(m.clearedFields, recipeingredient.FieldWastePercent)
+}
+
 // ClearRecipe clears the "recipe" edge to the Recipe entity.
 func (m *RecipeIngredientMutation) ClearRecipe() {
 	m.clearedrecipe = true
@@ -25993,6 +26401,33 @@ func (m *RecipeIngredientMutation) ResetItem() {
 	m.cleareditem = false
 }
 
+// ClearUnit clears the "unit" edge to the Unit entity.
+func (m *RecipeIngredientMutation) ClearUnit() {
+	m.clearedunit = true
+	m.clearedFields[recipeingredient.FieldUnitID] = struct{}{}
+}
+
+// UnitCleared reports if the "unit" edge to the Unit entity was cleared.
+func (m *RecipeIngredientMutation) UnitCleared() bool {
+	return m.UnitIDCleared() || m.clearedunit
+}
+
+// UnitIDs returns the "unit" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UnitID instead. It exists only for internal usage by the builders.
+func (m *RecipeIngredientMutation) UnitIDs() (ids []uuid.UUID) {
+	if id := m.unit; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUnit resets all changes to the "unit" edge.
+func (m *RecipeIngredientMutation) ResetUnit() {
+	m.unit = nil
+	m.clearedunit = false
+}
+
 // Where appends a list predicates to the RecipeIngredientMutation builder.
 func (m *RecipeIngredientMutation) Where(ps ...predicate.RecipeIngredient) {
 	m.predicates = append(m.predicates, ps...)
@@ -26027,7 +26462,7 @@ func (m *RecipeIngredientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeIngredientMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.recipe != nil {
 		fields = append(fields, recipeingredient.FieldRecipeID)
 	}
@@ -26048,6 +26483,12 @@ func (m *RecipeIngredientMutation) Fields() []string {
 	}
 	if m.display_order != nil {
 		fields = append(fields, recipeingredient.FieldDisplayOrder)
+	}
+	if m.unit != nil {
+		fields = append(fields, recipeingredient.FieldUnitID)
+	}
+	if m.waste_percent != nil {
+		fields = append(fields, recipeingredient.FieldWastePercent)
 	}
 	return fields
 }
@@ -26071,6 +26512,10 @@ func (m *RecipeIngredientMutation) Field(name string) (ent.Value, bool) {
 		return m.Notes()
 	case recipeingredient.FieldDisplayOrder:
 		return m.DisplayOrder()
+	case recipeingredient.FieldUnitID:
+		return m.UnitID()
+	case recipeingredient.FieldWastePercent:
+		return m.WastePercent()
 	}
 	return nil, false
 }
@@ -26094,6 +26539,10 @@ func (m *RecipeIngredientMutation) OldField(ctx context.Context, name string) (e
 		return m.OldNotes(ctx)
 	case recipeingredient.FieldDisplayOrder:
 		return m.OldDisplayOrder(ctx)
+	case recipeingredient.FieldUnitID:
+		return m.OldUnitID(ctx)
+	case recipeingredient.FieldWastePercent:
+		return m.OldWastePercent(ctx)
 	}
 	return nil, fmt.Errorf("unknown RecipeIngredient field %s", name)
 }
@@ -26152,6 +26601,20 @@ func (m *RecipeIngredientMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetDisplayOrder(v)
 		return nil
+	case recipeingredient.FieldUnitID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitID(v)
+		return nil
+	case recipeingredient.FieldWastePercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWastePercent(v)
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient field %s", name)
 }
@@ -26166,6 +26629,9 @@ func (m *RecipeIngredientMutation) AddedFields() []string {
 	if m.adddisplay_order != nil {
 		fields = append(fields, recipeingredient.FieldDisplayOrder)
 	}
+	if m.addwaste_percent != nil {
+		fields = append(fields, recipeingredient.FieldWastePercent)
+	}
 	return fields
 }
 
@@ -26178,6 +26644,8 @@ func (m *RecipeIngredientMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedQuantity()
 	case recipeingredient.FieldDisplayOrder:
 		return m.AddedDisplayOrder()
+	case recipeingredient.FieldWastePercent:
+		return m.AddedWastePercent()
 	}
 	return nil, false
 }
@@ -26201,6 +26669,13 @@ func (m *RecipeIngredientMutation) AddField(name string, value ent.Value) error 
 		}
 		m.AddDisplayOrder(v)
 		return nil
+	case recipeingredient.FieldWastePercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWastePercent(v)
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient numeric field %s", name)
 }
@@ -26211,6 +26686,12 @@ func (m *RecipeIngredientMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(recipeingredient.FieldNotes) {
 		fields = append(fields, recipeingredient.FieldNotes)
+	}
+	if m.FieldCleared(recipeingredient.FieldUnitID) {
+		fields = append(fields, recipeingredient.FieldUnitID)
+	}
+	if m.FieldCleared(recipeingredient.FieldWastePercent) {
+		fields = append(fields, recipeingredient.FieldWastePercent)
 	}
 	return fields
 }
@@ -26228,6 +26709,12 @@ func (m *RecipeIngredientMutation) ClearField(name string) error {
 	switch name {
 	case recipeingredient.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case recipeingredient.FieldUnitID:
+		m.ClearUnitID()
+		return nil
+	case recipeingredient.FieldWastePercent:
+		m.ClearWastePercent()
 		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient nullable field %s", name)
@@ -26258,18 +26745,27 @@ func (m *RecipeIngredientMutation) ResetField(name string) error {
 	case recipeingredient.FieldDisplayOrder:
 		m.ResetDisplayOrder()
 		return nil
+	case recipeingredient.FieldUnitID:
+		m.ResetUnitID()
+		return nil
+	case recipeingredient.FieldWastePercent:
+		m.ResetWastePercent()
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RecipeIngredientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.recipe != nil {
 		edges = append(edges, recipeingredient.EdgeRecipe)
 	}
 	if m.item != nil {
 		edges = append(edges, recipeingredient.EdgeItem)
+	}
+	if m.unit != nil {
+		edges = append(edges, recipeingredient.EdgeUnit)
 	}
 	return edges
 }
@@ -26286,13 +26782,17 @@ func (m *RecipeIngredientMutation) AddedIDs(name string) []ent.Value {
 		if id := m.item; id != nil {
 			return []ent.Value{*id}
 		}
+	case recipeingredient.EdgeUnit:
+		if id := m.unit; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RecipeIngredientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -26304,12 +26804,15 @@ func (m *RecipeIngredientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RecipeIngredientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedrecipe {
 		edges = append(edges, recipeingredient.EdgeRecipe)
 	}
 	if m.cleareditem {
 		edges = append(edges, recipeingredient.EdgeItem)
+	}
+	if m.clearedunit {
+		edges = append(edges, recipeingredient.EdgeUnit)
 	}
 	return edges
 }
@@ -26322,6 +26825,8 @@ func (m *RecipeIngredientMutation) EdgeCleared(name string) bool {
 		return m.clearedrecipe
 	case recipeingredient.EdgeItem:
 		return m.cleareditem
+	case recipeingredient.EdgeUnit:
+		return m.clearedunit
 	}
 	return false
 }
@@ -26336,6 +26841,9 @@ func (m *RecipeIngredientMutation) ClearEdge(name string) error {
 	case recipeingredient.EdgeItem:
 		m.ClearItem()
 		return nil
+	case recipeingredient.EdgeUnit:
+		m.ClearUnit()
+		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient unique edge %s", name)
 }
@@ -26349,6 +26857,9 @@ func (m *RecipeIngredientMutation) ResetEdge(name string) error {
 		return nil
 	case recipeingredient.EdgeItem:
 		m.ResetItem()
+		return nil
+	case recipeingredient.EdgeUnit:
+		m.ResetUnit()
 		return nil
 	}
 	return fmt.Errorf("unknown RecipeIngredient edge %s", name)
@@ -34388,6 +34899,8 @@ type TenantInventoryConfigMutation struct {
 	recipes_module_enabled           *bool
 	purchase_orders_enabled          *bool
 	supplier_management_enabled      *bool
+	default_target_margin_percent    *float64
+	adddefault_target_margin_percent *float64
 	created_at                       *time.Time
 	updated_at                       *time.Time
 	clearedFields                    map[string]struct{}
@@ -35267,6 +35780,76 @@ func (m *TenantInventoryConfigMutation) ResetSupplierManagementEnabled() {
 	m.supplier_management_enabled = nil
 }
 
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (m *TenantInventoryConfigMutation) SetDefaultTargetMarginPercent(f float64) {
+	m.default_target_margin_percent = &f
+	m.adddefault_target_margin_percent = nil
+}
+
+// DefaultTargetMarginPercent returns the value of the "default_target_margin_percent" field in the mutation.
+func (m *TenantInventoryConfigMutation) DefaultTargetMarginPercent() (r float64, exists bool) {
+	v := m.default_target_margin_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultTargetMarginPercent returns the old "default_target_margin_percent" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldDefaultTargetMarginPercent(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultTargetMarginPercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultTargetMarginPercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultTargetMarginPercent: %w", err)
+	}
+	return oldValue.DefaultTargetMarginPercent, nil
+}
+
+// AddDefaultTargetMarginPercent adds f to the "default_target_margin_percent" field.
+func (m *TenantInventoryConfigMutation) AddDefaultTargetMarginPercent(f float64) {
+	if m.adddefault_target_margin_percent != nil {
+		*m.adddefault_target_margin_percent += f
+	} else {
+		m.adddefault_target_margin_percent = &f
+	}
+}
+
+// AddedDefaultTargetMarginPercent returns the value that was added to the "default_target_margin_percent" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedDefaultTargetMarginPercent() (r float64, exists bool) {
+	v := m.adddefault_target_margin_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (m *TenantInventoryConfigMutation) ClearDefaultTargetMarginPercent() {
+	m.default_target_margin_percent = nil
+	m.adddefault_target_margin_percent = nil
+	m.clearedFields[tenantinventoryconfig.FieldDefaultTargetMarginPercent] = struct{}{}
+}
+
+// DefaultTargetMarginPercentCleared returns if the "default_target_margin_percent" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) DefaultTargetMarginPercentCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldDefaultTargetMarginPercent]
+	return ok
+}
+
+// ResetDefaultTargetMarginPercent resets all changes to the "default_target_margin_percent" field.
+func (m *TenantInventoryConfigMutation) ResetDefaultTargetMarginPercent() {
+	m.default_target_margin_percent = nil
+	m.adddefault_target_margin_percent = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *TenantInventoryConfigMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -35373,7 +35956,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -35428,6 +36011,9 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	if m.supplier_management_enabled != nil {
 		fields = append(fields, tenantinventoryconfig.FieldSupplierManagementEnabled)
 	}
+	if m.default_target_margin_percent != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
+	}
 	if m.created_at != nil {
 		fields = append(fields, tenantinventoryconfig.FieldCreatedAt)
 	}
@@ -35478,6 +36064,8 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchaseOrdersEnabled()
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.SupplierManagementEnabled()
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		return m.DefaultTargetMarginPercent()
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.CreatedAt()
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -35527,6 +36115,8 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldPurchaseOrdersEnabled(ctx)
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.OldSupplierManagementEnabled(ctx)
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		return m.OldDefaultTargetMarginPercent(ctx)
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -35666,6 +36256,13 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 		}
 		m.SetSupplierManagementEnabled(v)
 		return nil
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultTargetMarginPercent(v)
+		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -35700,6 +36297,9 @@ func (m *TenantInventoryConfigMutation) AddedFields() []string {
 	if m.addexpiry_warning_days != nil {
 		fields = append(fields, tenantinventoryconfig.FieldExpiryWarningDays)
 	}
+	if m.adddefault_target_margin_percent != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
+	}
 	return fields
 }
 
@@ -35716,6 +36316,8 @@ func (m *TenantInventoryConfigMutation) AddedField(name string) (ent.Value, bool
 		return m.AddedDefaultReorderLevel()
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		return m.AddedExpiryWarningDays()
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		return m.AddedDefaultTargetMarginPercent()
 	}
 	return nil, false
 }
@@ -35753,6 +36355,13 @@ func (m *TenantInventoryConfigMutation) AddField(name string, value ent.Value) e
 		}
 		m.AddExpiryWarningDays(v)
 		return nil
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDefaultTargetMarginPercent(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TenantInventoryConfig numeric field %s", name)
 }
@@ -35769,6 +36378,9 @@ func (m *TenantInventoryConfigMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(tenantinventoryconfig.FieldDefaultWarehouseID) {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultWarehouseID)
+	}
+	if m.FieldCleared(tenantinventoryconfig.FieldDefaultTargetMarginPercent) {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	}
 	return fields
 }
@@ -35792,6 +36404,9 @@ func (m *TenantInventoryConfigMutation) ClearField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultWarehouseID:
 		m.ClearDefaultWarehouseID()
+		return nil
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		m.ClearDefaultTargetMarginPercent()
 		return nil
 	}
 	return fmt.Errorf("unknown TenantInventoryConfig nullable field %s", name)
@@ -35855,6 +36470,9 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		m.ResetSupplierManagementEnabled()
 		return nil
+	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
+		m.ResetDefaultTargetMarginPercent()
+		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
@@ -35916,22 +36534,25 @@ func (m *TenantInventoryConfigMutation) ResetEdge(name string) error {
 // UnitMutation represents an operation that mutates the Unit nodes in the graph.
 type UnitMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	name          *string
-	abbreviation  *string
-	_type         *string
-	is_active     *bool
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	items         map[uuid.UUID]struct{}
-	removeditems  map[uuid.UUID]struct{}
-	cleareditems  bool
-	done          bool
-	oldValue      func(context.Context) (*Unit, error)
-	predicates    []predicate.Unit
+	op                        Op
+	typ                       string
+	id                        *uuid.UUID
+	name                      *string
+	abbreviation              *string
+	_type                     *string
+	is_active                 *bool
+	created_at                *time.Time
+	updated_at                *time.Time
+	clearedFields             map[string]struct{}
+	items                     map[uuid.UUID]struct{}
+	removeditems              map[uuid.UUID]struct{}
+	cleareditems              bool
+	recipe_ingredients        map[uuid.UUID]struct{}
+	removedrecipe_ingredients map[uuid.UUID]struct{}
+	clearedrecipe_ingredients bool
+	done                      bool
+	oldValue                  func(context.Context) (*Unit, error)
+	predicates                []predicate.Unit
 }
 
 var _ ent.Mutation = (*UnitMutation)(nil)
@@ -36334,6 +36955,60 @@ func (m *UnitMutation) ResetItems() {
 	m.removeditems = nil
 }
 
+// AddRecipeIngredientIDs adds the "recipe_ingredients" edge to the RecipeIngredient entity by ids.
+func (m *UnitMutation) AddRecipeIngredientIDs(ids ...uuid.UUID) {
+	if m.recipe_ingredients == nil {
+		m.recipe_ingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.recipe_ingredients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRecipeIngredients clears the "recipe_ingredients" edge to the RecipeIngredient entity.
+func (m *UnitMutation) ClearRecipeIngredients() {
+	m.clearedrecipe_ingredients = true
+}
+
+// RecipeIngredientsCleared reports if the "recipe_ingredients" edge to the RecipeIngredient entity was cleared.
+func (m *UnitMutation) RecipeIngredientsCleared() bool {
+	return m.clearedrecipe_ingredients
+}
+
+// RemoveRecipeIngredientIDs removes the "recipe_ingredients" edge to the RecipeIngredient entity by IDs.
+func (m *UnitMutation) RemoveRecipeIngredientIDs(ids ...uuid.UUID) {
+	if m.removedrecipe_ingredients == nil {
+		m.removedrecipe_ingredients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.recipe_ingredients, ids[i])
+		m.removedrecipe_ingredients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRecipeIngredients returns the removed IDs of the "recipe_ingredients" edge to the RecipeIngredient entity.
+func (m *UnitMutation) RemovedRecipeIngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedrecipe_ingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RecipeIngredientsIDs returns the "recipe_ingredients" edge IDs in the mutation.
+func (m *UnitMutation) RecipeIngredientsIDs() (ids []uuid.UUID) {
+	for id := range m.recipe_ingredients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRecipeIngredients resets all changes to the "recipe_ingredients" edge.
+func (m *UnitMutation) ResetRecipeIngredients() {
+	m.recipe_ingredients = nil
+	m.clearedrecipe_ingredients = false
+	m.removedrecipe_ingredients = nil
+}
+
 // Where appends a list predicates to the UnitMutation builder.
 func (m *UnitMutation) Where(ps ...predicate.Unit) {
 	m.predicates = append(m.predicates, ps...)
@@ -36567,9 +37242,12 @@ func (m *UnitMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UnitMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.items != nil {
 		edges = append(edges, unit.EdgeItems)
+	}
+	if m.recipe_ingredients != nil {
+		edges = append(edges, unit.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -36584,15 +37262,24 @@ func (m *UnitMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case unit.EdgeRecipeIngredients:
+		ids := make([]ent.Value, 0, len(m.recipe_ingredients))
+		for id := range m.recipe_ingredients {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UnitMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removeditems != nil {
 		edges = append(edges, unit.EdgeItems)
+	}
+	if m.removedrecipe_ingredients != nil {
+		edges = append(edges, unit.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -36607,15 +37294,24 @@ func (m *UnitMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case unit.EdgeRecipeIngredients:
+		ids := make([]ent.Value, 0, len(m.removedrecipe_ingredients))
+		for id := range m.removedrecipe_ingredients {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UnitMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.cleareditems {
 		edges = append(edges, unit.EdgeItems)
+	}
+	if m.clearedrecipe_ingredients {
+		edges = append(edges, unit.EdgeRecipeIngredients)
 	}
 	return edges
 }
@@ -36626,6 +37322,8 @@ func (m *UnitMutation) EdgeCleared(name string) bool {
 	switch name {
 	case unit.EdgeItems:
 		return m.cleareditems
+	case unit.EdgeRecipeIngredients:
+		return m.clearedrecipe_ingredients
 	}
 	return false
 }
@@ -36644,6 +37342,9 @@ func (m *UnitMutation) ResetEdge(name string) error {
 	switch name {
 	case unit.EdgeItems:
 		m.ResetItems()
+		return nil
+	case unit.EdgeRecipeIngredients:
+		m.ResetRecipeIngredients()
 		return nil
 	}
 	return fmt.Errorf("unknown Unit edge %s", name)

@@ -40,9 +40,11 @@ type Unit struct {
 type UnitEdges struct {
 	// Items holds the value of the items edge.
 	Items []*Item `json:"items,omitempty"`
+	// RecipeIngredients holds the value of the recipe_ingredients edge.
+	RecipeIngredients []*RecipeIngredient `json:"recipe_ingredients,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ItemsOrErr returns the Items value or an error if the edge
@@ -52,6 +54,15 @@ func (e UnitEdges) ItemsOrErr() ([]*Item, error) {
 		return e.Items, nil
 	}
 	return nil, &NotLoadedError{edge: "items"}
+}
+
+// RecipeIngredientsOrErr returns the RecipeIngredients value or an error if the edge
+// was not loaded in eager-loading.
+func (e UnitEdges) RecipeIngredientsOrErr() ([]*RecipeIngredient, error) {
+	if e.loadedTypes[1] {
+		return e.RecipeIngredients, nil
+	}
+	return nil, &NotLoadedError{edge: "recipe_ingredients"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -140,6 +151,11 @@ func (_m *Unit) Value(name string) (ent.Value, error) {
 // QueryItems queries the "items" edge of the Unit entity.
 func (_m *Unit) QueryItems() *ItemQuery {
 	return NewUnitClient(_m.config).QueryItems(_m)
+}
+
+// QueryRecipeIngredients queries the "recipe_ingredients" edge of the Unit entity.
+func (_m *Unit) QueryRecipeIngredients() *RecipeIngredientQuery {
+	return NewUnitClient(_m.config).QueryRecipeIngredients(_m)
 }
 
 // Update returns a builder for updating this Unit.

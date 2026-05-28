@@ -92,6 +92,10 @@ func (Item) Fields() []ent.Field {
 		field.Bool("tax_inclusive").
 			Default(false).
 			Comment("True if selling price already includes VAT; treasury back-calculates tax portion"),
+		field.Float("cost_price").
+			Optional().
+			Nillable().
+			Comment("Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").
@@ -127,6 +131,9 @@ func (Item) Edges() []ent.Edge {
 		edge.To("bundle_components", BundleComponent.Type).
 			Comment("Items where this item is a component in a bundle"),
 		edge.To("warranties", Warranty.Type),
+		edge.To("produced_by_recipe", Recipe.Type).
+			Unique().
+			Comment("The Recipe (BOM) that produces this RECIPE-type item"),
 		edge.From("item_category", ItemCategory.Type).
 			Ref("items").
 			Unique().

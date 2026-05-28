@@ -41,6 +41,14 @@ func (RecipeIngredient) Fields() []ent.Field {
 		field.Int("display_order").
 			Default(0).
 			Comment("Sort order within the recipe"),
+		field.UUID("unit_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("FK → Unit (preferred over unit_of_measure string for UI)"),
+		field.Float("waste_percent").
+			Default(0).
+			Optional().
+			Comment("Shrinkage/waste factor in %; effective qty = quantity * (1 + waste_percent/100)"),
 	}
 }
 
@@ -57,6 +65,10 @@ func (RecipeIngredient) Edges() []ent.Edge {
 			Field("item_id").
 			Unique().
 			Required(),
+		edge.From("unit", Unit.Type).
+			Ref("recipe_ingredients").
+			Field("unit_id").
+			Unique(),
 	}
 }
 

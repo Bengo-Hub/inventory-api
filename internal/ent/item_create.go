@@ -23,6 +23,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -306,6 +307,20 @@ func (_c *ItemCreate) SetNillableTaxInclusive(v *bool) *ItemCreate {
 	return _c
 }
 
+// SetCostPrice sets the "cost_price" field.
+func (_c *ItemCreate) SetCostPrice(v float64) *ItemCreate {
+	_c.mutation.SetCostPrice(v)
+	return _c
+}
+
+// SetNillableCostPrice sets the "cost_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableCostPrice(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetCostPrice(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *ItemCreate) SetMetadata(v map[string]interface{}) *ItemCreate {
 	_c.mutation.SetMetadata(v)
@@ -545,6 +560,25 @@ func (_c *ItemCreate) AddWarranties(v ...*Warranty) *ItemCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddWarrantyIDs(ids...)
+}
+
+// SetProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID.
+func (_c *ItemCreate) SetProducedByRecipeID(id uuid.UUID) *ItemCreate {
+	_c.mutation.SetProducedByRecipeID(id)
+	return _c
+}
+
+// SetNillableProducedByRecipeID sets the "produced_by_recipe" edge to the Recipe entity by ID if the given value is not nil.
+func (_c *ItemCreate) SetNillableProducedByRecipeID(id *uuid.UUID) *ItemCreate {
+	if id != nil {
+		_c = _c.SetProducedByRecipeID(*id)
+	}
+	return _c
+}
+
+// SetProducedByRecipe sets the "produced_by_recipe" edge to the Recipe entity.
+func (_c *ItemCreate) SetProducedByRecipe(v *Recipe) *ItemCreate {
+	return _c.SetProducedByRecipeID(v.ID)
 }
 
 // SetItemCategoryID sets the "item_category" edge to the ItemCategory entity by ID.
@@ -832,6 +866,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
 		_node.TaxInclusive = value
 	}
+	if value, ok := _c.mutation.CostPrice(); ok {
+		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
+		_node.CostPrice = &value
+	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
@@ -1047,6 +1085,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProducedByRecipeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   item.ProducedByRecipeTable,
+			Columns: []string{item.ProducedByRecipeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(recipe.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1456,6 +1510,30 @@ func (u *ItemUpsert) SetTaxInclusive(v bool) *ItemUpsert {
 // UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateTaxInclusive() *ItemUpsert {
 	u.SetExcluded(item.FieldTaxInclusive)
+	return u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsert) SetCostPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldCostPrice, v)
+	return u
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCostPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldCostPrice)
+	return u
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsert) AddCostPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldCostPrice, v)
+	return u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsert) ClearCostPrice() *ItemUpsert {
+	u.SetNull(item.FieldCostPrice)
 	return u
 }
 
@@ -1923,6 +2001,34 @@ func (u *ItemUpsertOne) SetTaxInclusive(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateTaxInclusive() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTaxInclusive()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsertOne) SetCostPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsertOne) AddCostPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCostPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsertOne) ClearCostPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCostPrice()
 	})
 }
 
@@ -2561,6 +2667,34 @@ func (u *ItemUpsertBulk) SetTaxInclusive(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateTaxInclusive() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTaxInclusive()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsertBulk) SetCostPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsertBulk) AddCostPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCostPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsertBulk) ClearCostPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCostPrice()
 	})
 }
 

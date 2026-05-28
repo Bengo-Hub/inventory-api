@@ -319,6 +319,33 @@ func (_u *TenantInventoryConfigUpdate) SetNillableSupplierManagementEnabled(v *b
 	return _u
 }
 
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdate) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdate {
+	_u.mutation.ResetDefaultTargetMarginPercent()
+	_u.mutation.SetDefaultTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableDefaultTargetMarginPercent sets the "default_target_margin_percent" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableDefaultTargetMarginPercent(v *float64) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetDefaultTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddDefaultTargetMarginPercent adds value to the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdate) AddDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdate {
+	_u.mutation.AddDefaultTargetMarginPercent(v)
+	return _u
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdate) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpdate {
+	_u.mutation.ClearDefaultTargetMarginPercent()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdate) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -449,6 +476,15 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DefaultTargetMarginPercent(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultTargetMarginPercent(); ok {
+		_spec.AddField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.DefaultTargetMarginPercentCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)
@@ -763,6 +799,33 @@ func (_u *TenantInventoryConfigUpdateOne) SetNillableSupplierManagementEnabled(v
 	return _u
 }
 
+// SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdateOne) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdateOne {
+	_u.mutation.ResetDefaultTargetMarginPercent()
+	_u.mutation.SetDefaultTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableDefaultTargetMarginPercent sets the "default_target_margin_percent" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableDefaultTargetMarginPercent(v *float64) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetDefaultTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddDefaultTargetMarginPercent adds value to the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdateOne) AddDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdateOne {
+	_u.mutation.AddDefaultTargetMarginPercent(v)
+	return _u
+}
+
+// ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
+func (_u *TenantInventoryConfigUpdateOne) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpdateOne {
+	_u.mutation.ClearDefaultTargetMarginPercent()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdateOne) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -923,6 +986,15 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DefaultTargetMarginPercent(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultTargetMarginPercent(); ok {
+		_spec.AddField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.DefaultTargetMarginPercentCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)

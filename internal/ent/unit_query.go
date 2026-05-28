@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
@@ -21,11 +22,12 @@ import (
 // UnitQuery is the builder for querying Unit entities.
 type UnitQuery struct {
 	config
-	ctx        *QueryContext
-	order      []unit.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Unit
-	withItems  *ItemQuery
+	ctx                   *QueryContext
+	order                 []unit.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.Unit
+	withItems             *ItemQuery
+	withRecipeIngredients *RecipeIngredientQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +79,28 @@ func (_q *UnitQuery) QueryItems() *ItemQuery {
 			sqlgraph.From(unit.Table, unit.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, unit.ItemsTable, unit.ItemsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRecipeIngredients chains the current query on the "recipe_ingredients" edge.
+func (_q *UnitQuery) QueryRecipeIngredients() *RecipeIngredientQuery {
+	query := (&RecipeIngredientClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unit.Table, unit.FieldID, selector),
+			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, unit.RecipeIngredientsTable, unit.RecipeIngredientsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -271,12 +295,13 @@ func (_q *UnitQuery) Clone() *UnitQuery {
 		return nil
 	}
 	return &UnitQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]unit.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Unit{}, _q.predicates...),
-		withItems:  _q.withItems.Clone(),
+		config:                _q.config,
+		ctx:                   _q.ctx.Clone(),
+		order:                 append([]unit.OrderOption{}, _q.order...),
+		inters:                append([]Interceptor{}, _q.inters...),
+		predicates:            append([]predicate.Unit{}, _q.predicates...),
+		withItems:             _q.withItems.Clone(),
+		withRecipeIngredients: _q.withRecipeIngredients.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -291,6 +316,17 @@ func (_q *UnitQuery) WithItems(opts ...func(*ItemQuery)) *UnitQuery {
 		opt(query)
 	}
 	_q.withItems = query
+	return _q
+}
+
+// WithRecipeIngredients tells the query-builder to eager-load the nodes that are connected to
+// the "recipe_ingredients" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UnitQuery) WithRecipeIngredients(opts ...func(*RecipeIngredientQuery)) *UnitQuery {
+	query := (&RecipeIngredientClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRecipeIngredients = query
 	return _q
 }
 
@@ -372,8 +408,9 @@ func (_q *UnitQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Unit, e
 	var (
 		nodes       = []*Unit{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withItems != nil,
+			_q.withRecipeIngredients != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -401,6 +438,13 @@ func (_q *UnitQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Unit, e
 			return nil, err
 		}
 	}
+	if query := _q.withRecipeIngredients; query != nil {
+		if err := _q.loadRecipeIngredients(ctx, query, nodes,
+			func(n *Unit) { n.Edges.RecipeIngredients = []*RecipeIngredient{} },
+			func(n *Unit, e *RecipeIngredient) { n.Edges.RecipeIngredients = append(n.Edges.RecipeIngredients, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -419,6 +463,39 @@ func (_q *UnitQuery) loadItems(ctx context.Context, query *ItemQuery, nodes []*U
 	}
 	query.Where(predicate.Item(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(unit.ItemsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UnitID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "unit_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "unit_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UnitQuery) loadRecipeIngredients(ctx context.Context, query *RecipeIngredientQuery, nodes []*Unit, init func(*Unit), assign func(*Unit, *RecipeIngredient)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Unit)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(recipeingredient.FieldUnitID)
+	}
+	query.Where(predicate.RecipeIngredient(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(unit.RecipeIngredientsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

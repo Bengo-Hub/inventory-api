@@ -2470,6 +2470,22 @@ func (c *ItemClient) QueryWarranties(_m *Item) *WarrantyQuery {
 	return query
 }
 
+// QueryProducedByRecipe queries the produced_by_recipe edge of a Item.
+func (c *ItemClient) QueryProducedByRecipe(_m *Item) *RecipeQuery {
+	query := (&RecipeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(recipe.Table, recipe.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, item.ProducedByRecipeTable, item.ProducedByRecipeColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryItemCategory queries the item_category edge of a Item.
 func (c *ItemClient) QueryItemCategory(_m *Item) *ItemCategoryQuery {
 	query := (&ItemCategoryClient{config: c.config}).Query()
@@ -4471,6 +4487,22 @@ func (c *RecipeClient) QueryIngredients(_m *Recipe) *RecipeIngredientQuery {
 	return query
 }
 
+// QueryItem queries the item edge of a Recipe.
+func (c *RecipeClient) QueryItem(_m *Recipe) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(recipe.Table, recipe.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, recipe.ItemTable, recipe.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RecipeClient) Hooks() []Hook {
 	return c.hooks.Recipe
@@ -4629,6 +4661,22 @@ func (c *RecipeIngredientClient) QueryItem(_m *RecipeIngredient) *ItemQuery {
 			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.ItemTable, recipeingredient.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUnit queries the unit edge of a RecipeIngredient.
+func (c *RecipeIngredientClient) QueryUnit(_m *RecipeIngredient) *UnitQuery {
+	query := (&UnitClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(recipeingredient.Table, recipeingredient.FieldID, id),
+			sqlgraph.To(unit.Table, unit.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, recipeingredient.UnitTable, recipeingredient.UnitColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6119,6 +6167,22 @@ func (c *UnitClient) QueryItems(_m *Unit) *ItemQuery {
 			sqlgraph.From(unit.Table, unit.FieldID, id),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, unit.ItemsTable, unit.ItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRecipeIngredients queries the recipe_ingredients edge of a Unit.
+func (c *UnitClient) QueryRecipeIngredients(_m *Unit) *RecipeIngredientQuery {
+	query := (&RecipeIngredientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unit.Table, unit.FieldID, id),
+			sqlgraph.To(recipeingredient.Table, recipeingredient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, unit.RecipeIngredientsTable, unit.RecipeIngredientsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

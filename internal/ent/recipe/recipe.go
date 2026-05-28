@@ -37,6 +37,8 @@ const (
 	FieldSuggestedPrice = "suggested_price"
 	// FieldPrepTimeMinutes holds the string denoting the prep_time_minutes field in the database.
 	FieldPrepTimeMinutes = "prep_time_minutes"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -45,6 +47,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeIngredients holds the string denoting the ingredients edge name in mutations.
 	EdgeIngredients = "ingredients"
+	// EdgeItem holds the string denoting the item edge name in mutations.
+	EdgeItem = "item"
 	// Table holds the table name of the recipe in the database.
 	Table = "recipes"
 	// IngredientsTable is the table that holds the ingredients relation/edge.
@@ -54,6 +58,13 @@ const (
 	IngredientsInverseTable = "recipe_ingredients"
 	// IngredientsColumn is the table column denoting the ingredients relation/edge.
 	IngredientsColumn = "recipe_id"
+	// ItemTable is the table that holds the item relation/edge.
+	ItemTable = "recipes"
+	// ItemInverseTable is the table name for the Item entity.
+	// It exists in this package in order to avoid circular dependency with the "item" package.
+	ItemInverseTable = "items"
+	// ItemColumn is the table column denoting the item relation/edge.
+	ItemColumn = "item_id"
 )
 
 // Columns holds all SQL columns for recipe fields.
@@ -70,6 +81,7 @@ var Columns = []string{
 	FieldTargetMarginPercent,
 	FieldSuggestedPrice,
 	FieldPrepTimeMinutes,
+	FieldItemID,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -175,6 +187,11 @@ func ByPrepTimeMinutes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrepTimeMinutes, opts...).ToFunc()
 }
 
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -198,10 +215,24 @@ func ByIngredients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newIngredientsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByItemField orders the results by item field.
+func ByItemField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newItemStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newIngredientsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IngredientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IngredientsTable, IngredientsColumn),
+	)
+}
+func newItemStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ItemInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, ItemTable, ItemColumn),
 	)
 }

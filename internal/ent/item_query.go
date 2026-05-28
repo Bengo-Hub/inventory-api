@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -51,6 +52,7 @@ type ItemQuery struct {
 	withBundle            *BundleQuery
 	withBundleComponents  *BundleComponentQuery
 	withWarranties        *WarrantyQuery
+	withProducedByRecipe  *RecipeQuery
 	withItemCategory      *ItemCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -374,6 +376,28 @@ func (_q *ItemQuery) QueryWarranties() *WarrantyQuery {
 	return query
 }
 
+// QueryProducedByRecipe chains the current query on the "produced_by_recipe" edge.
+func (_q *ItemQuery) QueryProducedByRecipe() *RecipeQuery {
+	query := (&RecipeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(recipe.Table, recipe.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, item.ProducedByRecipeTable, item.ProducedByRecipeColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryItemCategory chains the current query on the "item_category" edge.
 func (_q *ItemQuery) QueryItemCategory() *ItemCategoryQuery {
 	query := (&ItemCategoryClient{config: _q.config}).Query()
@@ -601,6 +625,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withBundle:            _q.withBundle.Clone(),
 		withBundleComponents:  _q.withBundleComponents.Clone(),
 		withWarranties:        _q.withWarranties.Clone(),
+		withProducedByRecipe:  _q.withProducedByRecipe.Clone(),
 		withItemCategory:      _q.withItemCategory.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -751,6 +776,17 @@ func (_q *ItemQuery) WithWarranties(opts ...func(*WarrantyQuery)) *ItemQuery {
 	return _q
 }
 
+// WithProducedByRecipe tells the query-builder to eager-load the nodes that are connected to
+// the "produced_by_recipe" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithProducedByRecipe(opts ...func(*RecipeQuery)) *ItemQuery {
+	query := (&RecipeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProducedByRecipe = query
+	return _q
+}
+
 // WithItemCategory tells the query-builder to eager-load the nodes that are connected to
 // the "item_category" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *ItemQuery) WithItemCategory(opts ...func(*ItemCategoryQuery)) *ItemQuery {
@@ -840,7 +876,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [14]bool{
+		loadedTypes = [15]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
@@ -854,6 +890,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withBundle != nil,
 			_q.withBundleComponents != nil,
 			_q.withWarranties != nil,
+			_q.withProducedByRecipe != nil,
 			_q.withItemCategory != nil,
 		}
 	)
@@ -960,6 +997,12 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadWarranties(ctx, query, nodes,
 			func(n *Item) { n.Edges.Warranties = []*Warranty{} },
 			func(n *Item, e *Warranty) { n.Edges.Warranties = append(n.Edges.Warranties, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProducedByRecipe; query != nil {
+		if err := _q.loadProducedByRecipe(ctx, query, nodes, nil,
+			func(n *Item, e *Recipe) { n.Edges.ProducedByRecipe = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -1355,6 +1398,36 @@ func (_q *ItemQuery) loadWarranties(ctx context.Context, query *WarrantyQuery, n
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ItemQuery) loadProducedByRecipe(ctx context.Context, query *RecipeQuery, nodes []*Item, init func(*Item), assign func(*Item, *Recipe)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Item)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(recipe.FieldItemID)
+	}
+	query.Where(predicate.Recipe(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(item.ProducedByRecipeColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ItemID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "item_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "item_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

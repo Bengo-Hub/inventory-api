@@ -140,6 +140,11 @@ func SupplierManagementEnabled(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldSupplierManagementEnabled, v))
 }
 
+// DefaultTargetMarginPercent applies equality check predicate on the "default_target_margin_percent" field. It's identical to DefaultTargetMarginPercentEQ.
+func DefaultTargetMarginPercent(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTargetMarginPercent, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldCreatedAt, v))
@@ -608,6 +613,56 @@ func SupplierManagementEnabledEQ(v bool) predicate.TenantInventoryConfig {
 // SupplierManagementEnabledNEQ applies the NEQ predicate on the "supplier_management_enabled" field.
 func SupplierManagementEnabledNEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldSupplierManagementEnabled, v))
+}
+
+// DefaultTargetMarginPercentEQ applies the EQ predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentEQ(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentNEQ applies the NEQ predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentNEQ(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentIn applies the In predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentIn(vs ...float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIn(FieldDefaultTargetMarginPercent, vs...))
+}
+
+// DefaultTargetMarginPercentNotIn applies the NotIn predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentNotIn(vs ...float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotIn(FieldDefaultTargetMarginPercent, vs...))
+}
+
+// DefaultTargetMarginPercentGT applies the GT predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentGT(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGT(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentGTE applies the GTE predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentGTE(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGTE(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentLT applies the LT predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentLT(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLT(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentLTE applies the LTE predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentLTE(v float64) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLTE(FieldDefaultTargetMarginPercent, v))
+}
+
+// DefaultTargetMarginPercentIsNil applies the IsNil predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentIsNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIsNull(FieldDefaultTargetMarginPercent))
+}
+
+// DefaultTargetMarginPercentNotNil applies the NotNil predicate on the "default_target_margin_percent" field.
+func DefaultTargetMarginPercentNotNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotNull(FieldDefaultTargetMarginPercent))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

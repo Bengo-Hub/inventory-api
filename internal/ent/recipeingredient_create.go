@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
 )
 
@@ -91,6 +92,34 @@ func (_c *RecipeIngredientCreate) SetNillableDisplayOrder(v *int) *RecipeIngredi
 	return _c
 }
 
+// SetUnitID sets the "unit_id" field.
+func (_c *RecipeIngredientCreate) SetUnitID(v uuid.UUID) *RecipeIngredientCreate {
+	_c.mutation.SetUnitID(v)
+	return _c
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_c *RecipeIngredientCreate) SetNillableUnitID(v *uuid.UUID) *RecipeIngredientCreate {
+	if v != nil {
+		_c.SetUnitID(*v)
+	}
+	return _c
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (_c *RecipeIngredientCreate) SetWastePercent(v float64) *RecipeIngredientCreate {
+	_c.mutation.SetWastePercent(v)
+	return _c
+}
+
+// SetNillableWastePercent sets the "waste_percent" field if the given value is not nil.
+func (_c *RecipeIngredientCreate) SetNillableWastePercent(v *float64) *RecipeIngredientCreate {
+	if v != nil {
+		_c.SetWastePercent(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *RecipeIngredientCreate) SetID(v uuid.UUID) *RecipeIngredientCreate {
 	_c.mutation.SetID(v)
@@ -113,6 +142,11 @@ func (_c *RecipeIngredientCreate) SetRecipe(v *Recipe) *RecipeIngredientCreate {
 // SetItem sets the "item" edge to the Item entity.
 func (_c *RecipeIngredientCreate) SetItem(v *Item) *RecipeIngredientCreate {
 	return _c.SetItemID(v.ID)
+}
+
+// SetUnit sets the "unit" edge to the Unit entity.
+func (_c *RecipeIngredientCreate) SetUnit(v *Unit) *RecipeIngredientCreate {
+	return _c.SetUnitID(v.ID)
 }
 
 // Mutation returns the RecipeIngredientMutation object of the builder.
@@ -157,6 +191,10 @@ func (_c *RecipeIngredientCreate) defaults() {
 	if _, ok := _c.mutation.DisplayOrder(); !ok {
 		v := recipeingredient.DefaultDisplayOrder
 		_c.mutation.SetDisplayOrder(v)
+	}
+	if _, ok := _c.mutation.WastePercent(); !ok {
+		v := recipeingredient.DefaultWastePercent
+		_c.mutation.SetWastePercent(v)
 	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := recipeingredient.DefaultID()
@@ -266,6 +304,10 @@ func (_c *RecipeIngredientCreate) createSpec() (*RecipeIngredient, *sqlgraph.Cre
 		_spec.SetField(recipeingredient.FieldDisplayOrder, field.TypeInt, value)
 		_node.DisplayOrder = value
 	}
+	if value, ok := _c.mutation.WastePercent(); ok {
+		_spec.SetField(recipeingredient.FieldWastePercent, field.TypeFloat64, value)
+		_node.WastePercent = value
+	}
 	if nodes := _c.mutation.RecipeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -298,6 +340,23 @@ func (_c *RecipeIngredientCreate) createSpec() (*RecipeIngredient, *sqlgraph.Cre
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ItemID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UnitIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   recipeingredient.UnitTable,
+			Columns: []string{recipeingredient.UnitColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(unit.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UnitID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -451,6 +510,48 @@ func (u *RecipeIngredientUpsert) UpdateDisplayOrder() *RecipeIngredientUpsert {
 // AddDisplayOrder adds v to the "display_order" field.
 func (u *RecipeIngredientUpsert) AddDisplayOrder(v int) *RecipeIngredientUpsert {
 	u.Add(recipeingredient.FieldDisplayOrder, v)
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsert) SetUnitID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldUnitID, v)
+	return u
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateUnitID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldUnitID)
+	return u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsert) ClearUnitID() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldUnitID)
+	return u
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsert) SetWastePercent(v float64) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldWastePercent, v)
+	return u
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateWastePercent() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldWastePercent)
+	return u
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsert) AddWastePercent(v float64) *RecipeIngredientUpsert {
+	u.Add(recipeingredient.FieldWastePercent, v)
+	return u
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsert) ClearWastePercent() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldWastePercent)
 	return u
 }
 
@@ -618,6 +719,55 @@ func (u *RecipeIngredientUpsertOne) AddDisplayOrder(v int) *RecipeIngredientUpse
 func (u *RecipeIngredientUpsertOne) UpdateDisplayOrder() *RecipeIngredientUpsertOne {
 	return u.Update(func(s *RecipeIngredientUpsert) {
 		s.UpdateDisplayOrder()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsertOne) SetUnitID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateUnitID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsertOne) ClearUnitID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) SetWastePercent(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetWastePercent(v)
+	})
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) AddWastePercent(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddWastePercent(v)
+	})
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateWastePercent() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateWastePercent()
+	})
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) ClearWastePercent() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearWastePercent()
 	})
 }
 
@@ -952,6 +1102,55 @@ func (u *RecipeIngredientUpsertBulk) AddDisplayOrder(v int) *RecipeIngredientUps
 func (u *RecipeIngredientUpsertBulk) UpdateDisplayOrder() *RecipeIngredientUpsertBulk {
 	return u.Update(func(s *RecipeIngredientUpsert) {
 		s.UpdateDisplayOrder()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsertBulk) SetUnitID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateUnitID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsertBulk) ClearUnitID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) SetWastePercent(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetWastePercent(v)
+	})
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) AddWastePercent(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddWastePercent(v)
+	})
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateWastePercent() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateWastePercent()
+	})
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) ClearWastePercent() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearWastePercent()
 	})
 }
 

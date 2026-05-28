@@ -28,25 +28,36 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 
 // RecipeDTO represents a recipe with its ingredients.
 type RecipeDTO struct {
-	ID            uuid.UUID              `json:"id"`
-	TenantID      uuid.UUID              `json:"tenant_id"`
-	SKU           string                 `json:"sku"`
-	Name          string                 `json:"name"`
-	OutputQty     float64                `json:"output_qty"`
-	UnitOfMeasure string                 `json:"unit_of_measure"`
-	IsActive      bool                   `json:"is_active"`
-	Ingredients   []RecipeIngredientDTO `json:"ingredients"`
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	SKU                 string                 `json:"sku"`
+	Name                string                 `json:"name"`
+	ItemName            string                 `json:"item_name"`
+	ItemID              *uuid.UUID             `json:"item_id,omitempty"`
+	OutputQty           float64                `json:"output_qty"`
+	Servings            float64                `json:"servings"`
+	UnitOfMeasure       string                 `json:"unit_of_measure"`
+	IsActive            bool                   `json:"is_active"`
+	TotalCost           *float64               `json:"total_cost"`
+	CostPerPortion      *float64               `json:"cost_per_portion"`
+	TargetMarginPercent *float64               `json:"target_margin_percent"`
+	SuggestedPrice      *float64               `json:"suggested_price"`
+	PrepTimeMinutes     *int                   `json:"prep_time_minutes,omitempty"`
+	Ingredients         []RecipeIngredientDTO  `json:"ingredients"`
 }
 
 // RecipeIngredientDTO represents a single ingredient in a recipe.
 type RecipeIngredientDTO struct {
-	ID            uuid.UUID `json:"id"`
-	ItemID        uuid.UUID `json:"item_id"`
-	ItemSKU       string    `json:"item_sku"`
-	Quantity      float64   `json:"quantity"`
-	UnitOfMeasure string    `json:"unit_of_measure"`
-	Notes         string    `json:"notes"`
-	DisplayOrder  int       `json:"display_order"`
+	ID            uuid.UUID  `json:"id"`
+	ItemID        uuid.UUID  `json:"item_id"`
+	ItemSKU       string     `json:"item_sku"`
+	ItemName      string     `json:"item_name"`
+	Quantity      float64    `json:"quantity"`
+	UnitOfMeasure string     `json:"unit_of_measure"`
+	UnitID        *uuid.UUID `json:"unit_id,omitempty"`
+	WastePercent  float64    `json:"waste_percent"`
+	Notes         string     `json:"notes"`
+	DisplayOrder  int        `json:"display_order"`
 }
 
 // ListRecipes returns a paginated list of recipes for a tenant.
@@ -55,7 +66,9 @@ func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, of
 	total, _ := q.Clone().Count(ctx)
 	recs, err := q.
 		WithIngredients(func(iq *ent.RecipeIngredientQuery) {
-			iq.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+			iq.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
+				WithItem().
+				WithUnit()
 		}).
 		Order(ent.Asc(recipe.FieldName)).
 		Limit(limit).
@@ -77,7 +90,9 @@ func (s *Service) GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*Recip
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.ID(id)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
+				WithItem().
+				WithUnit()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -92,7 +107,9 @@ func (s *Service) GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, skuCod
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.Sku(skuCode)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
+				WithItem().
+				WithUnit()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -109,16 +126,19 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 		return nil, err
 	}
 
-	r, err := tx.Recipe.Create().
+	create := tx.Recipe.Create().
 		SetTenantID(tenantID).
 		SetSku(dto.SKU).
 		SetName(dto.Name).
 		SetOutputQty(dto.OutputQty).
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
-		Save(ctx)
+		SetNillableItemID(dto.ItemID).
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent)
+
+	r, err := create.Save(ctx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("recipes: create recipe: %w", err)
 	}
 
@@ -129,17 +149,24 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 			SetItemSku(ing.ItemSKU).
 			SetQuantity(ing.Quantity).
 			SetUnitOfMeasure(ing.UnitOfMeasure).
+			SetNillableUnitID(ing.UnitID).
+			SetWastePercent(ing.WastePercent).
 			SetNotes(ing.Notes).
 			SetDisplayOrder(i).
 			Save(ctx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return nil, fmt.Errorf("recipes: create ingredient %d: %w", i, err)
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, err
+	}
+
+	// Recalculate costs after create (needs committed data).
+	if calcErr := s.RecalculateRecipeCosts(ctx, tenantID, r.ID); calcErr != nil {
+		s.log.Warn("recipe cost calculation failed after create", zap.Error(calcErr))
 	}
 
 	return s.GetRecipe(ctx, tenantID, r.ID)
@@ -152,25 +179,29 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 		return nil, err
 	}
 
-	_, err = tx.Recipe.Update().
+	update := tx.Recipe.Update().
 		Where(recipe.TenantID(tenantID), recipe.ID(id)).
 		SetSku(dto.SKU).
 		SetName(dto.Name).
 		SetOutputQty(dto.OutputQty).
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
-		Save(ctx)
-	if err != nil {
-		tx.Rollback()
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent)
+
+	if dto.ItemID != nil {
+		update = update.SetNillableItemID(dto.ItemID)
+	}
+
+	if _, err = update.Save(ctx); err != nil {
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("recipes: update recipe: %w", err)
 	}
 
-	// Delete existing ingredients and re-create (simplest way to handle updates/removals)
-	_, err = tx.RecipeIngredient.Delete().
+	// Delete existing ingredients and re-create.
+	if _, err = tx.RecipeIngredient.Delete().
 		Where(recipeingredient.HasRecipeWith(recipe.ID(id))).
-		Exec(ctx)
-	if err != nil {
-		tx.Rollback()
+		Exec(ctx); err != nil {
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("recipes: clear old ingredients: %w", err)
 	}
 
@@ -181,17 +212,24 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 			SetItemSku(ing.ItemSKU).
 			SetQuantity(ing.Quantity).
 			SetUnitOfMeasure(ing.UnitOfMeasure).
+			SetNillableUnitID(ing.UnitID).
+			SetWastePercent(ing.WastePercent).
 			SetNotes(ing.Notes).
 			SetDisplayOrder(i).
 			Save(ctx)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return nil, fmt.Errorf("recipes: update ingredient %d: %w", i, err)
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, err
+	}
+
+	// Recalculate costs after ingredients are saved (needs committed data for item cost_price lookup).
+	if calcErr := s.RecalculateRecipeCosts(ctx, tenantID, id); calcErr != nil {
+		s.log.Warn("recipe cost calculation failed after update", zap.Error(calcErr))
 	}
 
 	return s.GetRecipe(ctx, tenantID, id)
@@ -211,22 +249,38 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		TenantID:      r.TenantID,
 		SKU:           r.Sku,
 		Name:          r.Name,
+		ItemName:      r.Name,
+		ItemID:        r.ItemID,
 		OutputQty:     r.OutputQty,
+		Servings:      r.OutputQty,
 		UnitOfMeasure: r.UnitOfMeasure,
 		IsActive:      r.IsActive,
+		TotalCost:           r.TotalCost,
+		CostPerPortion:      r.CostPerPortion,
+		TargetMarginPercent: r.TargetMarginPercent,
+		SuggestedPrice:      r.SuggestedPrice,
+		PrepTimeMinutes:     r.PrepTimeMinutes,
 		Ingredients:   make([]RecipeIngredientDTO, len(r.Edges.Ingredients)),
 	}
 
 	for i, ing := range r.Edges.Ingredients {
-		dto.Ingredients[i] = RecipeIngredientDTO{
+		ingDTO := RecipeIngredientDTO{
 			ID:            ing.ID,
 			ItemID:        ing.ItemID,
 			ItemSKU:       ing.ItemSku,
 			Quantity:      ing.Quantity,
 			UnitOfMeasure: ing.UnitOfMeasure,
+			WastePercent:  ing.WastePercent,
 			Notes:         ing.Notes,
 			DisplayOrder:  ing.DisplayOrder,
 		}
+		if ing.UnitID != nil {
+			ingDTO.UnitID = ing.UnitID
+		}
+		if ing.Edges.Item != nil {
+			ingDTO.ItemName = ing.Edges.Item.Name
+		}
+		dto.Ingredients[i] = ingDTO
 	}
 	return dto
 }

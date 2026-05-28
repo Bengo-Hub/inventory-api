@@ -78,6 +78,11 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Bool("supplier_management_enabled").
 			Default(true).
 			Comment("Supplier directory and contract management"),
+		field.Float("default_target_margin_percent").
+			Optional().
+			Nillable().
+			Default(30.0).
+			Comment("Default profit margin % for recipe costing when no per-recipe margin is set"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),

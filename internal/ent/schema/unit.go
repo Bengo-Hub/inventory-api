@@ -47,6 +47,7 @@ func (Unit) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("items", Item.Type).
 			Ref("units"),
+		edge.To("recipe_ingredients", RecipeIngredient.Type),
 	}
 }
 

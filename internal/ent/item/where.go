@@ -151,6 +151,11 @@ func TaxInclusive(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldTaxInclusive, v))
 }
 
+// CostPrice applies equality check predicate on the "cost_price" field. It's identical to CostPriceEQ.
+func CostPrice(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldCostPrice, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -946,6 +951,56 @@ func TaxInclusiveNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldTaxInclusive, v))
 }
 
+// CostPriceEQ applies the EQ predicate on the "cost_price" field.
+func CostPriceEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldCostPrice, v))
+}
+
+// CostPriceNEQ applies the NEQ predicate on the "cost_price" field.
+func CostPriceNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldCostPrice, v))
+}
+
+// CostPriceIn applies the In predicate on the "cost_price" field.
+func CostPriceIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldCostPrice, vs...))
+}
+
+// CostPriceNotIn applies the NotIn predicate on the "cost_price" field.
+func CostPriceNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldCostPrice, vs...))
+}
+
+// CostPriceGT applies the GT predicate on the "cost_price" field.
+func CostPriceGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldCostPrice, v))
+}
+
+// CostPriceGTE applies the GTE predicate on the "cost_price" field.
+func CostPriceGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldCostPrice, v))
+}
+
+// CostPriceLT applies the LT predicate on the "cost_price" field.
+func CostPriceLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldCostPrice, v))
+}
+
+// CostPriceLTE applies the LTE predicate on the "cost_price" field.
+func CostPriceLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldCostPrice, v))
+}
+
+// CostPriceIsNil applies the IsNil predicate on the "cost_price" field.
+func CostPriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldCostPrice))
+}
+
+// CostPriceNotNil applies the NotNil predicate on the "cost_price" field.
+func CostPriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldCostPrice))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -1317,6 +1372,29 @@ func HasWarranties() predicate.Item {
 func HasWarrantiesWith(preds ...predicate.Warranty) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newWarrantiesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProducedByRecipe applies the HasEdge predicate on the "produced_by_recipe" edge.
+func HasProducedByRecipe() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ProducedByRecipeTable, ProducedByRecipeColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProducedByRecipeWith applies the HasEdge predicate on the "produced_by_recipe" edge with a given conditions (other predicates).
+func HasProducedByRecipeWith(preds ...predicate.Recipe) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newProducedByRecipeStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/google/uuid"
 )
@@ -41,6 +42,8 @@ type Recipe struct {
 	SuggestedPrice *float64 `json:"suggested_price,omitempty"`
 	// Preparation time in minutes
 	PrepTimeMinutes *int `json:"prep_time_minutes,omitempty"`
+	// FK → the RECIPE-type Item this BOM produces
+	ItemID *uuid.UUID `json:"item_id,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -57,9 +60,11 @@ type Recipe struct {
 type RecipeEdges struct {
 	// Ingredients holds the value of the ingredients edge.
 	Ingredients []*RecipeIngredient `json:"ingredients,omitempty"`
+	// Item holds the value of the item edge.
+	Item *Item `json:"item,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // IngredientsOrErr returns the Ingredients value or an error if the edge
@@ -71,11 +76,24 @@ func (e RecipeEdges) IngredientsOrErr() ([]*RecipeIngredient, error) {
 	return nil, &NotLoadedError{edge: "ingredients"}
 }
 
+// ItemOrErr returns the Item value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RecipeEdges) ItemOrErr() (*Item, error) {
+	if e.Item != nil {
+		return e.Item, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: item.Label}
+	}
+	return nil, &NotLoadedError{edge: "item"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Recipe) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case recipe.FieldItemID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case recipe.FieldMetadata:
 			values[i] = new([]byte)
 		case recipe.FieldIsActive:
@@ -182,6 +200,13 @@ func (_m *Recipe) assignValues(columns []string, values []any) error {
 				_m.PrepTimeMinutes = new(int)
 				*_m.PrepTimeMinutes = int(value.Int64)
 			}
+		case recipe.FieldItemID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value.Valid {
+				_m.ItemID = new(uuid.UUID)
+				*_m.ItemID = *value.S.(*uuid.UUID)
+			}
 		case recipe.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
@@ -218,6 +243,11 @@ func (_m *Recipe) Value(name string) (ent.Value, error) {
 // QueryIngredients queries the "ingredients" edge of the Recipe entity.
 func (_m *Recipe) QueryIngredients() *RecipeIngredientQuery {
 	return NewRecipeClient(_m.config).QueryIngredients(_m)
+}
+
+// QueryItem queries the "item" edge of the Recipe entity.
+func (_m *Recipe) QueryItem() *ItemQuery {
+	return NewRecipeClient(_m.config).QueryItem(_m)
 }
 
 // Update returns a builder for updating this Recipe.
@@ -283,6 +313,11 @@ func (_m *Recipe) String() string {
 	builder.WriteString(", ")
 	if v := _m.PrepTimeMinutes; v != nil {
 		builder.WriteString("prep_time_minutes=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ItemID; v != nil {
+		builder.WriteString("item_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
