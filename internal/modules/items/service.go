@@ -665,15 +665,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	return dtos, total, nil
 }
 
-// ListEventItems returns SERVICE-type items that have an event_start_at set,
-// ordered by event_start_at ascending (upcoming first).
+// ListEventItems returns all active SERVICE-type items (one-time and recurring),
+// ordered by event_start_at ascending; recurring events without a date appear last.
 func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]ItemDTO, int, error) {
 	q := s.client.Item.Query().
 		Where(
 			item.TenantID(tenantID),
 			item.IsActive(true),
 			item.TypeEQ(item.TypeSERVICE),
-			item.EventStartAtNotNil(),
 		)
 
 	total, err := q.Count(ctx)
@@ -683,7 +682,11 @@ func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit,
 	if total == 0 {
 		return []ItemDTO{}, 0, nil
 	}
-	itms, err := q.Order(ent.Asc(item.FieldEventStartAt)).Limit(limit).Offset(offset).All(ctx)
+	itms, err := q.
+		Order(func(s *entdialect.Selector) {
+			s.OrderExpr(entdialect.Expr(item.FieldEventStartAt + " ASC NULLS LAST"))
+		}).
+		Limit(limit).Offset(offset).All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: list events: %w", err)
 	}
