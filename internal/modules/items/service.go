@@ -937,6 +937,18 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.TaxCodeID != "" {
 		createBuilder = createBuilder.SetTaxCodeID(dto.TaxCodeID)
 	}
+	if dto.TotalCapacity != nil {
+		createBuilder = createBuilder.SetTotalCapacity(*dto.TotalCapacity)
+	}
+	if dto.EventStartAt != nil {
+		createBuilder = createBuilder.SetEventStartAt(*dto.EventStartAt)
+	}
+	if dto.EventEndAt != nil {
+		createBuilder = createBuilder.SetEventEndAt(*dto.EventEndAt)
+	}
+	if dto.EventVenue != nil {
+		createBuilder = createBuilder.SetEventVenue(*dto.EventVenue)
+	}
 	i, err := createBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: create item: %w", err)
@@ -1134,6 +1146,18 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	}
 	if dto.TaxCodeID != "" {
 		updateBuilder = updateBuilder.SetTaxCodeID(dto.TaxCodeID)
+	}
+	if dto.TotalCapacity != nil {
+		updateBuilder = updateBuilder.SetTotalCapacity(*dto.TotalCapacity)
+	}
+	if dto.EventStartAt != nil {
+		updateBuilder = updateBuilder.SetEventStartAt(*dto.EventStartAt)
+	}
+	if dto.EventEndAt != nil {
+		updateBuilder = updateBuilder.SetEventEndAt(*dto.EventEndAt)
+	}
+	if dto.EventVenue != nil {
+		updateBuilder = updateBuilder.SetEventVenue(*dto.EventVenue)
 	}
 
 	i, err := updateBuilder.Save(ctx)
