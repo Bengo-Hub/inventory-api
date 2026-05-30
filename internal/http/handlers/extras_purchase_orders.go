@@ -198,7 +198,7 @@ type createPOLineInput struct {
 type createPOInput struct {
 	SupplierID   uuid.UUID           `json:"supplier_id"`
 	WarehouseID  uuid.UUID           `json:"warehouse_id"`
-	ExpectedDate *time.Time          `json:"expected_date"`
+	ExpectedDate *string             `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
 	Notes        string              `json:"notes"`
 	LineItems    []createPOLineInput `json:"line_items"`
 }
@@ -252,8 +252,18 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		SetPoNumber(poNumber).
 		SetTotalAmount(total).
 		SetNotes(req.Notes)
-	if req.ExpectedDate != nil {
-		poCreate = poCreate.SetExpectedDate(*req.ExpectedDate)
+	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
+		var expDate time.Time
+		// Accept both "YYYY-MM-DD" (from date inputs) and RFC3339
+		if t, parseErr := time.Parse("2006-01-02", *req.ExpectedDate); parseErr == nil {
+			expDate = t
+		} else if t, parseErr := time.Parse(time.RFC3339, *req.ExpectedDate); parseErr == nil {
+			expDate = t
+		} else {
+			writeError(w, http.StatusBadRequest, "INVALID_DATE", "expected_date must be YYYY-MM-DD or RFC3339")
+			return
+		}
+		poCreate = poCreate.SetExpectedDate(expDate)
 	}
 	po, err := poCreate.Save(r.Context())
 	if err != nil {

@@ -158,6 +158,7 @@ func New(ctx context.Context) (*App, error) {
 	inventoryHandler.SetModifiersService(modifiersSvc)
 	inventoryHandler.SetRBACService(rbacService)
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
+	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc)

@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -19,6 +22,7 @@ type WarehouseHandler struct {
 	log     *zap.Logger
 	orm     *ent.Client
 	rbacSvc *rbac.Service
+	authURL string // base URL of auth-api, e.g. "https://sso.codevertexitsolutions.com"
 }
 
 // NewWarehouseHandler creates a warehouse handler.
@@ -28,6 +32,11 @@ func NewWarehouseHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service
 		orm:     orm,
 		rbacSvc: rbacSvc,
 	}
+}
+
+// SetAuthURL sets the auth-api base URL used for the outlet proxy endpoint.
+func (h *WarehouseHandler) SetAuthURL(url string) {
+	h.authURL = strings.TrimRight(url, "/")
 }
 
 // RegisterRoutes wires warehouse routes onto the given chi.Router.
@@ -47,6 +56,8 @@ func (h *WarehouseHandler) RegisterRoutes(r chi.Router) {
 		wh.With(perm(rbac.PermWarehousesDelete)).Delete("/{warehouseID}", h.DeleteWarehouse)
 	})
 
+	// Outlet listing — proxies to auth-api so the UI has a single base URL.
+	r.Get("/inventory/outlets", h.ListOutlets)
 	// Outlet config: assign a default warehouse to an outlet + set use_case metadata.
 	r.With(perm(rbac.PermConfigChange)).Put("/inventory/outlets/{outletID}/config", h.UpdateOutletConfig)
 	r.Get("/inventory/outlets/{outletID}/config", h.GetOutletConfig)
@@ -162,6 +173,49 @@ func (h *WarehouseHandler) GetOutletConfig(w http.ResponseWriter, r *http.Reques
 		"warehouse_name":       wh.Name,
 		"warehouse_code":       wh.Code,
 	})
+}
+
+// ListOutlets handles GET /inventory/outlets.
+// It proxies to auth-api so the frontend only needs one base URL.
+func (h *WarehouseHandler) ListOutlets(w http.ResponseWriter, r *http.Request) {
+	if h.authURL == "" {
+		writeError(w, http.StatusServiceUnavailable, "NOT_CONFIGURED", "Auth service URL not configured")
+		return
+	}
+
+	// Resolve tenant slug from request context or URL param.
+	slug := chi.URLParam(r, "tenant")
+	if slug == "" {
+		slug = r.Header.Get("X-Tenant-Slug")
+	}
+	if slug == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_TENANT", "Tenant slug required")
+		return
+	}
+
+	url := fmt.Sprintf("%s/api/v1/tenants/%s/outlets", h.authURL, slug)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		h.log.Error("build outlet proxy request failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to build request")
+		return
+	}
+	// Forward the caller's auth token so auth-api can scope to the tenant.
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		h.log.Error("outlet proxy request failed", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "PROXY_ERROR", "Failed to fetch outlets")
+		return
+	}
+	defer resp.Body.Close()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 // warehouseDTO is the request body for creating/updating a warehouse.
