@@ -65,7 +65,7 @@ func main() {
 		log.Fatalf("seed service configs: %v", err)
 	}
 
-	for _, slug := range []string{"urban-loft", "codevertex-demo"} {
+	for _, slug := range []string{"codevertex-demo"} {
 		tenantID, resolveErr := syncer.SyncTenant(ctx, slug)
 		if resolveErr != nil {
 			log.Printf("[SKIP] could not resolve %s from auth-api: %v", slug, resolveErr)
