@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -363,7 +366,46 @@ func (h *WarehouseHandler) CreateWarehouse(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	h.publishWarehouseCreated(r.Context(), wh)
+
 	writeJSON(w, http.StatusCreated, warehouseToResponse(wh))
+}
+
+// publishWarehouseCreated writes an inventory.warehouse.created outbox event.
+// Consumed by subscriptions-api to track inventory_max_warehouses plan limit usage.
+func (h *WarehouseHandler) publishWarehouseCreated(ctx context.Context, wh *ent.Warehouse) {
+	evt := &events.Event{
+		ID:            uuid.New(),
+		TenantID:      wh.TenantID,
+		AggregateType: "warehouse",
+		AggregateID:   wh.ID,
+		EventType:     "inventory.warehouse.created",
+		Payload: map[string]any{
+			"warehouse_id": wh.ID.String(),
+			"tenant_id":    wh.TenantID.String(),
+			"name":         wh.Name,
+			"code":         wh.Code,
+		},
+		Timestamp: time.Now().UTC(),
+	}
+
+	payload, err := evt.ToJSON()
+	if err != nil {
+		h.log.Warn("warehouse.created event: marshal failed", zap.Error(err))
+		return
+	}
+	if _, err := h.orm.OutboxEvent.Create().
+		SetID(evt.ID).
+		SetTenantID(wh.TenantID).
+		SetAggregateType(evt.AggregateType).
+		SetAggregateID(evt.AggregateID.String()).
+		SetEventType(evt.EventType).
+		SetPayload(json.RawMessage(payload)).
+		SetStatus("PENDING").
+		SetCreatedAt(evt.Timestamp).
+		Save(ctx); err != nil {
+		h.log.Warn("warehouse.created event: outbox write failed", zap.Error(err))
+	}
 }
 
 // UpdateWarehouse handles PUT /{tenant}/inventory/warehouses/{warehouseID}.
