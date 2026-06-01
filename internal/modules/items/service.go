@@ -63,6 +63,11 @@ type ItemDTO struct {
 	DimensionsCm           map[string]float64 `json:"dimensions_cm,omitempty"`
 	// Cost / pricing fields
 	CostPrice *float64 `json:"cost_price,omitempty"`
+	// Purchase / supplier fields — enable auto EP-cost calculation
+	PurchasePrice    *float64 `json:"purchase_price,omitempty"`
+	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
+	PurchaseUnit     string   `json:"purchase_unit,omitempty"`
+	YieldPct         *float64 `json:"yield_pct,omitempty"` // 0 < y <= 1; default 1.0
 	// KRA eTIMS tax fields
 	TaxCodeID    string `json:"tax_code_id,omitempty"`
 	TaxInclusive bool   `json:"tax_inclusive"`
@@ -497,6 +502,10 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		WeightKg:                i.WeightKg,
 		DimensionsCm:            i.DimensionsCm,
 		CostPrice:               i.CostPrice,
+		PurchasePrice:           i.PurchasePrice,
+		PurchasePackSize:        i.PurchasePackSize,
+		PurchaseUnit:            i.PurchaseUnit,
+		YieldPct:                i.YieldPct,
 		TaxCodeID:               i.TaxCodeID,
 		TaxInclusive:            i.TaxInclusive,
 		TotalCapacity:           i.TotalCapacity,
@@ -887,6 +896,50 @@ func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryI
 	return fmt.Sprintf("%s%03d", prefix, count+1), nil
 }
 
+// resolveEPCost auto-computes cost_price (EP unit cost) from purchase fields when all three
+// are present and cost_price was not explicitly provided.
+// Formula: cost_price = purchase_price / purchase_pack_size / yield_pct
+func resolveEPCost(dto *ItemDTO) {
+	if dto.CostPrice != nil {
+		return // caller provided cost_price explicitly — respect it
+	}
+	if dto.PurchasePrice == nil || dto.PurchasePackSize == nil {
+		return
+	}
+	if *dto.PurchasePackSize <= 0 {
+		return
+	}
+	yieldPct := 1.0
+	if dto.YieldPct != nil && *dto.YieldPct > 0 && *dto.YieldPct <= 1 {
+		yieldPct = *dto.YieldPct
+	}
+	ep := *dto.PurchasePrice / *dto.PurchasePackSize / yieldPct
+	dto.CostPrice = &ep
+}
+
+// resolveReorderLevel returns the effective reorder_level for a new item.
+// Resolution order: explicit DTO value → unit-based tenant default → global tenant default → hard fallback.
+func resolveReorderLevel(ctx context.Context, client *ent.Client, tenantID uuid.UUID, unitAbbr string, dtoLevel int) int {
+	if dtoLevel > 0 {
+		return dtoLevel
+	}
+	cfg, err := client.TenantInventoryConfig.Query().
+		Where(tenantinventoryconfig.TenantID(tenantID)).
+		Only(ctx)
+	if err != nil {
+		return 1 // hard fallback
+	}
+	if unitAbbr != "" && cfg.UnitReorderDefaults != nil {
+		if v, ok := cfg.UnitReorderDefaults[unitAbbr]; ok && v > 0 {
+			return v
+		}
+	}
+	if cfg.DefaultReorderLevel > 0 {
+		return cfg.DefaultReorderLevel
+	}
+	return 1
+}
+
 // CreateItem creates a new item and records an outbox event within a transaction.
 func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
 	// Auto-generate SKU if not provided
@@ -897,6 +950,8 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		}
 		dto.SKU = sku
 	}
+	// Auto-compute EP cost from purchase fields when not explicitly set.
+	resolveEPCost(&dto)
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
@@ -926,11 +981,17 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetTags(tags).
 		SetMetadata(dto.Metadata).
 		SetNillableCostPrice(dto.CostPrice).
+		SetNillablePurchasePrice(dto.PurchasePrice).
+		SetNillablePurchasePackSize(dto.PurchasePackSize).
+		SetNillableYieldPct(dto.YieldPct).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
 		SetIsPerishable(dto.IsPerishable).
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
 		SetTaxInclusive(dto.TaxInclusive)
+	if dto.PurchaseUnit != "" {
+		createBuilder = createBuilder.SetPurchaseUnit(dto.PurchaseUnit)
+	}
 	if dto.Barcode != "" {
 		createBuilder = createBuilder.SetBarcode(dto.Barcode)
 	}
@@ -962,10 +1023,15 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if initialQty <= 0 {
 		initialQty = 1
 	}
-	reorderLevel := dto.ReorderLevel
-	if reorderLevel <= 0 {
-		reorderLevel = 1
+
+	// Auto-seed reorder level from tenant unit defaults when not explicitly provided.
+	unitAbbr := ""
+	if dto.UnitID != nil {
+		if u, uLookupErr := s.client.Unit.Get(ctx, *dto.UnitID); uLookupErr == nil {
+			unitAbbr = u.Abbreviation
+		}
 	}
+	reorderLevel := resolveReorderLevel(ctx, s.client, tenantID, unitAbbr, dto.ReorderLevel)
 
 	// Resolve default warehouse
 	wh, whErr := s.client.Warehouse.Query().
@@ -1124,6 +1190,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		updateTags = []string{}
 	}
 
+	// Auto-compute EP cost from purchase fields if not explicitly provided.
+	resolveEPCost(&dto)
+
 	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).
 		SetName(dto.Name).
@@ -1136,11 +1205,17 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetTags(updateTags).
 		SetMetadata(dto.Metadata).
 		SetNillableCostPrice(dto.CostPrice).
+		SetNillablePurchasePrice(dto.PurchasePrice).
+		SetNillablePurchasePackSize(dto.PurchasePackSize).
+		SetNillableYieldPct(dto.YieldPct).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
 		SetIsPerishable(dto.IsPerishable).
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
 		SetTaxInclusive(dto.TaxInclusive)
+	if dto.PurchaseUnit != "" {
+		updateBuilder = updateBuilder.SetPurchaseUnit(dto.PurchaseUnit)
+	}
 	if dto.Barcode != "" {
 		updateBuilder = updateBuilder.SetBarcode(dto.Barcode)
 	}

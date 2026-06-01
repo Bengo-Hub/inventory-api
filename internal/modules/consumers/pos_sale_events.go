@@ -26,9 +26,16 @@ const (
 
 // posSaleItem is a line item from the POS sale event.
 type posSaleItem struct {
-	SKU      string  `json:"sku"`
-	Quantity float64 `json:"quantity"`
-	UOMCode  string  `json:"uom_code"`
+	SKU             string              `json:"sku"`
+	Quantity        float64             `json:"quantity"`
+	UOMCode         string              `json:"uom_code"`
+	ModifierOptions []posModifierOption `json:"modifier_options,omitempty"`
+}
+
+// posModifierOption is a selected modifier option on a sale line.
+type posModifierOption struct {
+	SKU      string  `json:"sku"`       // inventory SKU of the modifier ingredient (may be empty)
+	Quantity float64 `json:"quantity"`  // per-unit quantity to deduct (e.g. 40g of cheese)
 }
 
 // POSSaleEventsConsumer consumes pos.sale.finalized events to record stock consumption.
@@ -181,6 +188,17 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 			consumptionItems = append(consumptionItems, stock.ConsumptionItem{
 				SKU:      si.SKU,
 				Quantity: si.Quantity,
+			})
+		}
+
+		// Add stock draw for any selected modifier options that are linked to inventory SKUs.
+		for _, mod := range si.ModifierOptions {
+			if mod.SKU == "" || mod.Quantity <= 0 {
+				continue
+			}
+			consumptionItems = append(consumptionItems, stock.ConsumptionItem{
+				SKU:      mod.SKU,
+				Quantity: mod.Quantity * si.Quantity, // scale by sale qty
 			})
 		}
 	}

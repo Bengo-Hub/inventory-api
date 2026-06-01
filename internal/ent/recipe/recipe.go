@@ -35,6 +35,12 @@ const (
 	FieldTargetMarginPercent = "target_margin_percent"
 	// FieldSuggestedPrice holds the string denoting the suggested_price field in the database.
 	FieldSuggestedPrice = "suggested_price"
+	// FieldSellingPrice holds the string denoting the selling_price field in the database.
+	FieldSellingPrice = "selling_price"
+	// FieldFoodCostPct holds the string denoting the food_cost_pct field in the database.
+	FieldFoodCostPct = "food_cost_pct"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// FieldPrepTimeMinutes holds the string denoting the prep_time_minutes field in the database.
 	FieldPrepTimeMinutes = "prep_time_minutes"
 	// FieldItemID holds the string denoting the item_id field in the database.
@@ -89,6 +95,9 @@ var Columns = []string{
 	FieldCostPerPortion,
 	FieldTargetMarginPercent,
 	FieldSuggestedPrice,
+	FieldSellingPrice,
+	FieldFoodCostPct,
+	FieldStatus,
 	FieldPrepTimeMinutes,
 	FieldItemID,
 	FieldMetadata,
@@ -121,6 +130,8 @@ var (
 	UnitOfMeasureValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	StatusValidator func(string) error
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
 	DefaultMetadata map[string]interface{}
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -189,6 +200,21 @@ func ByTargetMarginPercent(opts ...sql.OrderTermOption) OrderOption {
 // BySuggestedPrice orders the results by the suggested_price field.
 func BySuggestedPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSuggestedPrice, opts...).ToFunc()
+}
+
+// BySellingPrice orders the results by the selling_price field.
+func BySellingPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSellingPrice, opts...).ToFunc()
+}
+
+// ByFoodCostPct orders the results by the food_cost_pct field.
+func ByFoodCostPct(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFoodCostPct, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByPrepTimeMinutes orders the results by the prep_time_minutes field.

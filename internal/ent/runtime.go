@@ -375,24 +375,32 @@ func init() {
 	itemDescTaxInclusive := itemFields[22].Descriptor()
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
+	// itemDescPurchaseUnit is the schema descriptor for purchase_unit field.
+	itemDescPurchaseUnit := itemFields[26].Descriptor()
+	// item.PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
+	item.PurchaseUnitValidator = itemDescPurchaseUnit.Validators[0].(func(string) error)
+	// itemDescYieldPct is the schema descriptor for yield_pct field.
+	itemDescYieldPct := itemFields[27].Descriptor()
+	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
+	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[25].Descriptor()
+	itemDescBookedCapacity := itemFields[29].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[28].Descriptor()
+	itemDescEventVenue := itemFields[32].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[29].Descriptor()
+	itemDescMetadata := itemFields[33].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[30].Descriptor()
+	itemDescCreatedAt := itemFields[34].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[31].Descriptor()
+	itemDescUpdatedAt := itemFields[35].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -819,16 +827,20 @@ func init() {
 	recipeDescIsActive := recipeFields[6].Descriptor()
 	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
 	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
+	// recipeDescStatus is the schema descriptor for status field.
+	recipeDescStatus := recipeFields[13].Descriptor()
+	// recipe.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	recipe.StatusValidator = recipeDescStatus.Validators[0].(func(string) error)
 	// recipeDescMetadata is the schema descriptor for metadata field.
-	recipeDescMetadata := recipeFields[13].Descriptor()
+	recipeDescMetadata := recipeFields[16].Descriptor()
 	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
 	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
 	// recipeDescCreatedAt is the schema descriptor for created_at field.
-	recipeDescCreatedAt := recipeFields[14].Descriptor()
+	recipeDescCreatedAt := recipeFields[17].Descriptor()
 	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
 	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
-	recipeDescUpdatedAt := recipeFields[15].Descriptor()
+	recipeDescUpdatedAt := recipeFields[18].Descriptor()
 	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
 	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
