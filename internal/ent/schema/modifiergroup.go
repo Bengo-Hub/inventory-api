@@ -60,6 +60,8 @@ func (ModifierGroup) Edges() []ent.Edge {
 // Indexes of the ModifierGroup.
 func (ModifierGroup) Indexes() []ent.Index {
 	return []ent.Index{
+		// Unique per item — prevents duplicate group names on re-upload (idempotency).
+		index.Fields("tenant_id", "item_id", "name").Unique(),
 		index.Fields("tenant_id", "item_id"),
 		index.Fields("item_id", "display_order"),
 	}

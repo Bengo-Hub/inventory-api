@@ -61,6 +61,8 @@ func (ModifierOption) Edges() []ent.Edge {
 // Indexes of the ModifierOption.
 func (ModifierOption) Indexes() []ent.Index {
 	return []ent.Index{
+		// Unique per group — prevents duplicate option names on re-upload (idempotency).
+		index.Fields("group_id", "name").Unique(),
 		index.Fields("group_id", "display_order"),
 	}
 }
