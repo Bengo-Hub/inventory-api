@@ -1,4 +1,4 @@
-h1:8FJDKevdw8HPsJoB0LH/XFyMDOlusnJlsJj1KR91kSI=
+h1:GNryqF8aZARg5MpBoJ8psl7WTrBX67ccmq7JEDRJskE=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -16,3 +16,4 @@ h1:8FJDKevdw8HPsJoB0LH/XFyMDOlusnJlsJj1KR91kSI=
 20260528143623_sub_recipe_support.sql h1:pps8iZRY2exJ/Wo3c20IZ0OuFVT3zfnIkOwuIgeXhIU=
 20260528153039_food_cost_variance.sql h1:QJBi1FwyS/uRAZHRds7sHzPrn4pUozZnxDDn8MeigsY=
 20260601134857_menu_item_crud_fields.sql h1:mlbfPhISKIi6BfUqaNY0KTpUWLplvmypQMMfB3PYMKA=
+20260601141815_modifier_unique_constraints.sql h1:RxT6aZls/0o38R6hPMeKCnqYaWUw4Q65+P7TLQMT7ns=

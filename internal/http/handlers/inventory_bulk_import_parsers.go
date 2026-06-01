@@ -13,6 +13,55 @@ import (
 	"github.com/google/uuid"
 )
 
+// resolveOrCreateModifierGroup returns the group UUID for (itemID, groupName),
+// creating it if it doesn't exist. Re-entrant: if a unique-constraint error fires
+// another request already created it, so we fall back to a list lookup.
+func (h *InventoryHandler) resolveOrCreateModifierGroup(
+	r *http.Request,
+	tenantID, itemID uuid.UUID,
+	req modifiers.CreateModifierGroupRequest,
+) (uuid.UUID, bool, error) {
+	// Try to find existing group by name first (idempotent path).
+	existing, _ := h.modifiersSvc.ListModifierGroups(r.Context(), tenantID, itemID)
+	for _, g := range existing {
+		if strings.EqualFold(g.Name, req.Name) {
+			return g.ID, false, nil // found — skip creation
+		}
+	}
+	// Not found — create.
+	created, err := h.modifiersSvc.CreateModifierGroup(r.Context(), tenantID, req)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			// Race condition: another goroutine/request just created it — look up again.
+			existing2, _ := h.modifiersSvc.ListModifierGroups(r.Context(), tenantID, itemID)
+			for _, g := range existing2 {
+				if strings.EqualFold(g.Name, req.Name) {
+					return g.ID, false, nil
+				}
+			}
+		}
+		return uuid.Nil, false, err
+	}
+	return created.ID, true, nil
+}
+
+// resolveOrCreateModifierOption creates an option if it doesn't already exist
+// in the group (idempotent by group_id + name unique constraint).
+func (h *InventoryHandler) resolveOrCreateModifierOption(
+	r *http.Request,
+	tenantID, groupID uuid.UUID,
+	req modifiers.CreateModifierOptionRequest,
+) (bool, error) {
+	_, err := h.modifiersSvc.CreateModifierOption(r.Context(), tenantID, groupID, req)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			return false, nil // already exists — treat as idempotent skip
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 // parseXLSXItems processes the "Items" sheet rows (row 0 = header).
 func (h *InventoryHandler) parseXLSXItems(
 	r *http.Request,
@@ -242,22 +291,7 @@ func (h *InventoryHandler) parseXLSXModifiers(
 			maxSel   := parseInt(col(nil, "max_selections"), 5)
 			dispOrd  := parseInt(col(nil, "display_order"), 1)
 
-			// Check if group already exists for this item+name.
-			existing, _ := h.modifiersSvc.ListModifierGroups(r.Context(), tenantID, itemID)
-			var foundID uuid.UUID
-			for _, g := range existing {
-				if strings.EqualFold(g.Name, groupName) {
-					foundID = g.ID
-					break
-				}
-			}
-			if foundID != uuid.Nil {
-				groupIDMap[modifierGroupKey{itemSKU, groupName}] = foundID
-				res.Updated++
-				continue
-			}
-
-			created, err := h.modifiersSvc.CreateModifierGroup(r.Context(), tenantID, modifiers.CreateModifierGroupRequest{
+			gID, created, gErr := h.resolveOrCreateModifierGroup(r, tenantID, itemID, modifiers.CreateModifierGroupRequest{
 				ItemID:        itemID,
 				Name:          groupName,
 				IsRequired:    isReq,
@@ -265,13 +299,17 @@ func (h *InventoryHandler) parseXLSXModifiers(
 				MaxSelections: maxSel,
 				DisplayOrder:  dispOrd,
 			})
-			if err != nil {
+			if gErr != nil {
 				res.Failed++
-				res.Errors = append(res.Errors, fmt.Sprintf("modifier_group item=%s group=%s: %s", itemSKU, groupName, err.Error()))
+				res.Errors = append(res.Errors, fmt.Sprintf("modifier_group item=%s group=%s: %s", itemSKU, groupName, gErr.Error()))
 				continue
 			}
-			groupIDMap[modifierGroupKey{itemSKU, groupName}] = created.ID
-			res.Created++
+			groupIDMap[modifierGroupKey{itemSKU, groupName}] = gID
+			if created {
+				res.Created++
+			} else {
+				res.Updated++ // already existed — idempotent skip
+			}
 		}
 	}
 
@@ -320,18 +358,21 @@ func (h *InventoryHandler) parseXLSXModifiers(
 			dispOrd   := parseInt(col(nil, "display_order"), 1)
 			optSKU    := col(nil, "option_sku")
 
-			if _, err := h.modifiersSvc.CreateModifierOption(r.Context(), tenantID, groupID, modifiers.CreateModifierOptionRequest{
+			optCreated, optErr := h.resolveOrCreateModifierOption(r, tenantID, groupID, modifiers.CreateModifierOptionRequest{
 				Name:            optionName,
 				SKU:             optSKU,
 				PriceAdjustment: priceAdj,
 				IsDefault:       isDefault,
 				IsActive:        true,
 				DisplayOrder:    dispOrd,
-			}); err != nil {
+			})
+			if optErr != nil {
 				res.Failed++
-				res.Errors = append(res.Errors, fmt.Sprintf("modifier_option item=%s opt=%s: %s", itemSKU, optionName, err.Error()))
-			} else {
+				res.Errors = append(res.Errors, fmt.Sprintf("modifier_option item=%s opt=%s: %s", itemSKU, optionName, optErr.Error()))
+			} else if optCreated {
 				res.Created++
+			} else {
+				res.Updated++ // already existed — idempotent skip
 			}
 		}
 	}

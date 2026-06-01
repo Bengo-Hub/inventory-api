@@ -805,6 +805,11 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
+				Name:    "modifiergroup_tenant_id_item_id_name",
+				Unique:  true,
+				Columns: []*schema.Column{ModifierGroupsColumns[1], ModifierGroupsColumns[9], ModifierGroupsColumns[2]},
+			},
+			{
 				Name:    "modifiergroup_tenant_id_item_id",
 				Unique:  false,
 				Columns: []*schema.Column{ModifierGroupsColumns[1], ModifierGroupsColumns[9]},
@@ -843,6 +848,11 @@ var (
 			},
 		},
 		Indexes: []*schema.Index{
+			{
+				Name:    "modifieroption_group_id_name",
+				Unique:  true,
+				Columns: []*schema.Column{ModifierOptionsColumns[9], ModifierOptionsColumns[1]},
+			},
 			{
 				Name:    "modifieroption_group_id_display_order",
 				Unique:  false,
