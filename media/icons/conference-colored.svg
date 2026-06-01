@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_conf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4338ca;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_conf)"/>
+  <!-- table -->
+  <ellipse cx="200" cy="270" rx="130" ry="30" fill="#fff" opacity="0.15"/>
+  <rect x="70" y="250" width="260" height="12" rx="6" fill="#fff" opacity="0.9"/>
+  <!-- left person -->
+  <circle cx="100" cy="200" r="22" fill="#fff" opacity="0.9"/>
+  <path d="M68,240 Q68,260 100,260 Q132,260 132,240 L132,235 Q132,225 100,225 Q68,225 68,235 Z" fill="#fff" opacity="0.9"/>
+  <!-- center person (presenter) -->
+  <circle cx="200" cy="185" r="26" fill="#fff"/>
+  <path d="M163,230 Q163,255 200,255 Q237,255 237,230 L237,224 Q237,212 200,212 Q163,212 163,224 Z" fill="#fff"/>
+  <!-- right person -->
+  <circle cx="300" cy="200" r="22" fill="#fff" opacity="0.9"/>
+  <path d="M268,240 Q268,260 300,260 Q332,260 332,240 L332,235 Q332,225 300,225 Q268,225 268,235 Z" fill="#fff" opacity="0.9"/>
+  <!-- speech bubble -->
+  <rect x="148" y="100" width="104" height="55" rx="12" fill="#fff" opacity="0.25"/>
+  <polygon points="190,155 200,172 210,155" fill="#fff" opacity="0.25"/>
+  <line x1="164" y1="118" x2="232" y2="118" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <line x1="164" y1="133" x2="220" y2="133" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg>

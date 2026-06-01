@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_mshk" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#be185d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_mshk)"/>
+  <!-- glass -->
+  <path d="M140,170 L155,310 Q200,330 245,310 L260,170 Z" fill="#fff" opacity="0.25"/>
+  <path d="M145,178 L158,305 Q200,322 242,305 L255,178 Z" fill="#fce7f3" opacity="0.7"/>
+  <!-- glass top rim -->
+  <ellipse cx="200" cy="170" rx="62" ry="14" fill="#fff" opacity="0.9"/>
+  <!-- whipped cream -->
+  <path d="M148,168 Q150,140 165,130 Q175,118 200,115 Q225,118 235,130 Q250,140 252,168" fill="#fff"/>
+  <path d="M165,130 Q170,118 185,112 Q200,105 215,112 Q230,118 235,130" fill="#fff"/>
+  <path d="M185,110 Q192,100 200,98 Q208,100 215,110" fill="#fff"/>
+  <!-- cherry -->
+  <circle cx="200" cy="93" r="14" fill="#ef4444"/>
+  <path d="M200,82 Q215,65 225,70" stroke="#16a34a" stroke-width="3" fill="none"/>
+  <!-- straw -->
+  <rect x="218" y="80" width="10" height="200" rx="5" fill="#fbbf24" opacity="0.9"/>
+  <rect x="218" y="80" width="10" height="80" rx="5" fill="#f472b6"/>
+  <!-- sprinkles -->
+  <rect x="165" y="148" width="12" height="5" rx="2" fill="#ef4444" transform="rotate(30,171,150)"/>
+  <rect x="220" y="152" width="12" height="5" rx="2" fill="#3b82f6" transform="rotate(-20,226,154)"/>
+  <rect x="190" y="155" width="12" height="5" rx="2" fill="#a3e635" transform="rotate(10,196,157)"/>
+</svg>

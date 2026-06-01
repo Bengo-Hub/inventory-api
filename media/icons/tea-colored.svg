@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_tea" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#16a34a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15803d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_tea)"/>
+  <!-- teacup -->
+  <path d="M100,190 Q100,300 200,305 Q300,300 300,190 L100,190" fill="#fff" opacity="0.9"/>
+  <rect x="90" y="178" width="220" height="18" rx="9" fill="#fff"/>
+  <!-- handle -->
+  <path d="M300,205 Q345,205 345,235 Q345,265 300,265" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+  <!-- tea colour fill -->
+  <path d="M115,195 Q115,290 200,295 Q285,290 285,195 Z" fill="#a16207" opacity="0.35"/>
+  <!-- steam -->
+  <g stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.6">
+    <path d="M155,155 Q145,135 155,115"/>
+    <path d="M200,148 Q190,128 200,108"/>
+    <path d="M245,155 Q235,135 245,115"/>
+  </g>
+  <!-- tea bag string -->
+  <line x1="200" y1="108" x2="200" y2="260" stroke="#d97706" stroke-width="3" opacity="0.7"/>
+  <rect x="188" y="255" width="24" height="18" rx="3" fill="#d97706" opacity="0.8"/>
+  <!-- leaf -->
+  <ellipse cx="168" cy="338" rx="40" ry="16" fill="#86efac" opacity="0.7" transform="rotate(-15,168,338)"/>
+  <line x1="148" y1="336" x2="188" y2="340" stroke="#15803d" stroke-width="2" opacity="0.8"/>
+  <ellipse cx="232" cy="342" rx="36" ry="14" fill="#86efac" opacity="0.7" transform="rotate(10,232,342)"/>
+</svg>
