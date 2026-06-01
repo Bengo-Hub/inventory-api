@@ -141,9 +141,16 @@ func (s *Service) ListRecipes(ctx context.Context, tenantID uuid.UUID, limit, of
 		return nil, 0, fmt.Errorf("recipes: list: %w", err)
 	}
 
+	nameMap := s.itemNamesForRecipes(ctx, recs)
 	result := make([]RecipeDTO, len(recs))
 	for i, r := range recs {
-		result[i] = s.toDTO(r)
+		var linkedName string
+		if nameMap != nil && r.ItemID != nil {
+			if info, ok := nameMap[*r.ItemID]; ok {
+				linkedName = info[0]
+			}
+		}
+		result[i] = s.toDTOWithItemName(r, linkedName)
 	}
 	return result, total, nil
 }
@@ -162,7 +169,14 @@ func (s *Service) GetRecipe(ctx context.Context, tenantID, id uuid.UUID) (*Recip
 	if err != nil {
 		return nil, fmt.Errorf("recipes: get: %w", err)
 	}
-	dto := s.toDTO(r)
+	nameMap := s.itemNamesForRecipes(ctx, []*ent.Recipe{r})
+	var linkedName string
+	if nameMap != nil && r.ItemID != nil {
+		if info, ok := nameMap[*r.ItemID]; ok {
+			linkedName = info[0]
+		}
+	}
+	dto := s.toDTOWithItemName(r, linkedName)
 	return &dto, nil
 }
 
@@ -180,7 +194,14 @@ func (s *Service) GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, skuCod
 	if err != nil {
 		return nil, fmt.Errorf("recipes: get by sku: %w", err)
 	}
-	dto := s.toDTO(r)
+	nameMap := s.itemNamesForRecipes(ctx, []*ent.Recipe{r})
+	var linkedName string
+	if nameMap != nil && r.ItemID != nil {
+		if info, ok := nameMap[*r.ItemID]; ok {
+			linkedName = info[0]
+		}
+	}
+	dto := s.toDTOWithItemName(r, linkedName)
 	return &dto, nil
 }
 
@@ -366,13 +387,44 @@ func (s *Service) DeleteRecipe(ctx context.Context, tenantID, id uuid.UUID) erro
 	return err
 }
 
+// itemNamesForRecipes batch-fetches item names/SKUs for recipes that have a non-nil item_id.
+// Returns a map of item UUID → (name, sku).
+func (s *Service) itemNamesForRecipes(ctx context.Context, recs []*ent.Recipe) map[uuid.UUID][2]string {
+	ids := make([]uuid.UUID, 0, len(recs))
+	for _, r := range recs {
+		if r.ItemID != nil {
+			ids = append(ids, *r.ItemID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	items, err := s.client.Item.Query().Where(entitem.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil
+	}
+	m := make(map[uuid.UUID][2]string, len(items))
+	for _, it := range items {
+		m[it.ID] = [2]string{it.Name, it.Sku}
+	}
+	return m
+}
+
 func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
+	return s.toDTOWithItemName(r, "")
+}
+
+func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) RecipeDTO {
+	itemName := linkedItemName
+	if itemName == "" {
+		itemName = r.Name
+	}
 	dto := RecipeDTO{
 		ID:            r.ID,
 		TenantID:      r.TenantID,
 		SKU:           r.Sku,
 		Name:          r.Name,
-		ItemName:      r.Name,
+		ItemName:      itemName,
 		ItemID:        r.ItemID,
 		OutputQty:     r.OutputQty,
 		Servings:      r.OutputQty,

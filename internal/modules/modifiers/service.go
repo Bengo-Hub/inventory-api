@@ -11,6 +11,7 @@ import (
 
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 )
@@ -20,6 +21,8 @@ type ModifierGroupDTO struct {
 	ID            uuid.UUID           `json:"id"`
 	TenantID      uuid.UUID           `json:"tenant_id"`
 	ItemID        uuid.UUID           `json:"item_id"`
+	ItemName      string              `json:"item_name,omitempty"`
+	ItemSKU       string              `json:"item_sku,omitempty"`
 	Name          string              `json:"name"`
 	IsRequired    bool                `json:"is_required"`
 	MinSelections int                 `json:"min_selections"`
@@ -116,9 +119,28 @@ func (s *Service) ListAllModifierGroups(ctx context.Context, tenantID uuid.UUID,
 		return nil, 0, fmt.Errorf("modifiers: list all groups: %w", err)
 	}
 
+	// Batch-resolve item names/SKUs for linked items.
+	itemIDs := make([]uuid.UUID, 0, len(groups))
+	for _, g := range groups {
+		itemIDs = append(itemIDs, g.ItemID)
+	}
+	type itemInfo struct{ name, sku string }
+	itemMap := make(map[uuid.UUID]itemInfo, len(itemIDs))
+	if len(itemIDs) > 0 {
+		items, _ := s.client.Item.Query().Where(entitem.IDIn(itemIDs...)).All(ctx)
+		for _, it := range items {
+			itemMap[it.ID] = itemInfo{it.Name, it.Sku}
+		}
+	}
+
 	dtos := make([]ModifierGroupDTO, len(groups))
 	for i, g := range groups {
-		dtos[i] = s.mapGroupToDTO(g)
+		dto := s.mapGroupToDTO(g)
+		if info, ok := itemMap[g.ItemID]; ok {
+			dto.ItemName = info.name
+			dto.ItemSKU = info.sku
+		}
+		dtos[i] = dto
 	}
 	return dtos, total, nil
 }
