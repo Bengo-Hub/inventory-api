@@ -151,6 +151,20 @@ func (_c *ItemCategoryCreate) SetNillableSortOrder(v *int) *ItemCategoryCreate {
 	return _c
 }
 
+// SetIsGlobal sets the "is_global" field.
+func (_c *ItemCategoryCreate) SetIsGlobal(v bool) *ItemCategoryCreate {
+	_c.mutation.SetIsGlobal(v)
+	return _c
+}
+
+// SetNillableIsGlobal sets the "is_global" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableIsGlobal(v *bool) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetIsGlobal(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *ItemCategoryCreate) SetIsActive(v bool) *ItemCategoryCreate {
 	_c.mutation.SetIsActive(v)
@@ -305,6 +319,10 @@ func (_c *ItemCategoryCreate) defaults() {
 		v := itemcategory.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
 	}
+	if _, ok := _c.mutation.IsGlobal(); !ok {
+		v := itemcategory.DefaultIsGlobal
+		_c.mutation.SetIsGlobal(v)
+	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := itemcategory.DefaultIsActive
 		_c.mutation.SetIsActive(v)
@@ -346,6 +364,9 @@ func (_c *ItemCategoryCreate) check() error {
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "ItemCategory.sort_order"`)}
+	}
+	if _, ok := _c.mutation.IsGlobal(); !ok {
+		return &ValidationError{Name: "is_global", err: errors.New(`ent: missing required field "ItemCategory.is_global"`)}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "ItemCategory.is_active"`)}
@@ -426,6 +447,10 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(itemcategory.FieldSortOrder, field.TypeInt, value)
 		_node.SortOrder = value
+	}
+	if value, ok := _c.mutation.IsGlobal(); ok {
+		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
+		_node.IsGlobal = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -741,6 +766,18 @@ func (u *ItemCategoryUpsert) AddSortOrder(v int) *ItemCategoryUpsert {
 	return u
 }
 
+// SetIsGlobal sets the "is_global" field.
+func (u *ItemCategoryUpsert) SetIsGlobal(v bool) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldIsGlobal, v)
+	return u
+}
+
+// UpdateIsGlobal sets the "is_global" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateIsGlobal() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldIsGlobal)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *ItemCategoryUpsert) SetIsActive(v bool) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldIsActive, v)
@@ -1009,6 +1046,20 @@ func (u *ItemCategoryUpsertOne) AddSortOrder(v int) *ItemCategoryUpsertOne {
 func (u *ItemCategoryUpsertOne) UpdateSortOrder() *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateSortOrder()
+	})
+}
+
+// SetIsGlobal sets the "is_global" field.
+func (u *ItemCategoryUpsertOne) SetIsGlobal(v bool) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetIsGlobal(v)
+	})
+}
+
+// UpdateIsGlobal sets the "is_global" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateIsGlobal() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateIsGlobal()
 	})
 }
 
@@ -1451,6 +1502,20 @@ func (u *ItemCategoryUpsertBulk) AddSortOrder(v int) *ItemCategoryUpsertBulk {
 func (u *ItemCategoryUpsertBulk) UpdateSortOrder() *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateSortOrder()
+	})
+}
+
+// SetIsGlobal sets the "is_global" field.
+func (u *ItemCategoryUpsertBulk) SetIsGlobal(v bool) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetIsGlobal(v)
+	})
+}
+
+// UpdateIsGlobal sets the "is_global" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateIsGlobal() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateIsGlobal()
 	})
 }
 

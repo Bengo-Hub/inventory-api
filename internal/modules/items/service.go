@@ -90,6 +90,7 @@ type CategoryDTO struct {
 	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
 	ParentName  string     `json:"parent_name,omitempty"`
 	IsActive    bool       `json:"is_active"`
+	IsGlobal    bool       `json:"is_global,omitempty"`
 }
 
 // StockAvailability matches the DTO expected by the ordering-backend client.
@@ -728,11 +729,13 @@ func (s *Service) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) er
 }
 
 // CreateCategory creates a new item category for the tenant.
+// When dto.IsGlobal is true, the category is visible to all tenants.
 func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
 	q := s.client.ItemCategory.Create().
 		SetTenantID(tenantID).
 		SetName(dto.Name).
-		SetIsActive(true)
+		SetIsActive(true).
+		SetIsGlobal(dto.IsGlobal)
 	if dto.Code != "" {
 		q = q.SetCode(dto.Code)
 	}
@@ -750,6 +753,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		return nil, fmt.Errorf("items: create category: %w", err)
 	}
 	if s.cache != nil {
+		// Invalidate both the tenant-specific key and force a global refresh.
 		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
 	}
 	return &CategoryDTO{
@@ -760,6 +764,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		Icon:        c.Icon,
 		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
+		IsGlobal:    c.IsGlobal,
 	}, nil
 }
 
@@ -814,7 +819,13 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 	key := sharedcache.Key("inv", "categories", tenantID.String())
 	fetch := func(ctx context.Context) ([]CategoryDTO, error) {
 		cats, err := s.client.ItemCategory.Query().
-			Where(itemcategory.TenantID(tenantID), itemcategory.IsActive(true)).
+			Where(
+				itemcategory.IsActive(true),
+				itemcategory.Or(
+					itemcategory.TenantID(tenantID),
+					itemcategory.IsGlobal(true),
+				),
+			).
 			All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("items: list categories: %w", err)

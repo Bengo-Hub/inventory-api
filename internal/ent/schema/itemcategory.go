@@ -52,6 +52,9 @@ func (ItemCategory) Fields() []ent.Field {
 		field.Int("sort_order").
 			Default(0).
 			Comment("Display ordering within the same parent"),
+		field.Bool("is_global").
+			Default(false).
+			Comment("If true, visible to all tenants (platform-level data created via bulk import)"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

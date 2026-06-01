@@ -15116,6 +15116,7 @@ type ItemCategoryMutation struct {
 	_path                           *string
 	sort_order                      *int
 	addsort_order                   *int
+	is_global                       *bool
 	is_active                       *bool
 	created_at                      *time.Time
 	updated_at                      *time.Time
@@ -15720,6 +15721,42 @@ func (m *ItemCategoryMutation) ResetSortOrder() {
 	m.addsort_order = nil
 }
 
+// SetIsGlobal sets the "is_global" field.
+func (m *ItemCategoryMutation) SetIsGlobal(b bool) {
+	m.is_global = &b
+}
+
+// IsGlobal returns the value of the "is_global" field in the mutation.
+func (m *ItemCategoryMutation) IsGlobal() (r bool, exists bool) {
+	v := m.is_global
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsGlobal returns the old "is_global" field's value of the ItemCategory entity.
+// If the ItemCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemCategoryMutation) OldIsGlobal(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsGlobal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsGlobal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsGlobal: %w", err)
+	}
+	return oldValue.IsGlobal, nil
+}
+
+// ResetIsGlobal resets all changes to the "is_global" field.
+func (m *ItemCategoryMutation) ResetIsGlobal() {
+	m.is_global = nil
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *ItemCategoryMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -16078,7 +16115,7 @@ func (m *ItemCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.tenant != nil {
 		fields = append(fields, itemcategory.FieldTenantID)
 	}
@@ -16108,6 +16145,9 @@ func (m *ItemCategoryMutation) Fields() []string {
 	}
 	if m.sort_order != nil {
 		fields = append(fields, itemcategory.FieldSortOrder)
+	}
+	if m.is_global != nil {
+		fields = append(fields, itemcategory.FieldIsGlobal)
 	}
 	if m.is_active != nil {
 		fields = append(fields, itemcategory.FieldIsActive)
@@ -16146,6 +16186,8 @@ func (m *ItemCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.Path()
 	case itemcategory.FieldSortOrder:
 		return m.SortOrder()
+	case itemcategory.FieldIsGlobal:
+		return m.IsGlobal()
 	case itemcategory.FieldIsActive:
 		return m.IsActive()
 	case itemcategory.FieldCreatedAt:
@@ -16181,6 +16223,8 @@ func (m *ItemCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldPath(ctx)
 	case itemcategory.FieldSortOrder:
 		return m.OldSortOrder(ctx)
+	case itemcategory.FieldIsGlobal:
+		return m.OldIsGlobal(ctx)
 	case itemcategory.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case itemcategory.FieldCreatedAt:
@@ -16265,6 +16309,13 @@ func (m *ItemCategoryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSortOrder(v)
+		return nil
+	case itemcategory.FieldIsGlobal:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsGlobal(v)
 		return nil
 	case itemcategory.FieldIsActive:
 		v, ok := value.(bool)
@@ -16431,6 +16482,9 @@ func (m *ItemCategoryMutation) ResetField(name string) error {
 		return nil
 	case itemcategory.FieldSortOrder:
 		m.ResetSortOrder()
+		return nil
+	case itemcategory.FieldIsGlobal:
+		m.ResetIsGlobal()
 		return nil
 	case itemcategory.FieldIsActive:
 		m.ResetIsActive()

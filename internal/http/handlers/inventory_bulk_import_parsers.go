@@ -11,6 +11,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // resolveOrCreateModifierGroup returns the group UUID for (itemID, groupName),
@@ -179,7 +180,9 @@ func (h *InventoryHandler) parseXLSXRecipeIngredients(
 		recipeItemID, ok := skuToID[recipeSKU]
 		if !ok {
 			res.Failed++
-			res.Errors = append(res.Errors, fmt.Sprintf("recipe_sku=%s: item not found in Items sheet", recipeSKU))
+			msg := fmt.Sprintf("recipe_sku=%s: item not found in Items sheet", recipeSKU)
+			res.Errors = append(res.Errors, msg)
+			h.log.Warn("bulk import recipe: item not found", zap.String("sku", recipeSKU))
 			continue
 		}
 
@@ -188,7 +191,10 @@ func (h *InventoryHandler) parseXLSXRecipeIngredients(
 		for i, ln := range lines {
 			ingrItemID, ingrOK := skuToID[ln.ingredientSKU]
 			if !ingrOK {
-				res.Errors = append(res.Errors, fmt.Sprintf("recipe_sku=%s: ingredient_sku=%s not found", recipeSKU, ln.ingredientSKU))
+				msg := fmt.Sprintf("recipe_sku=%s: ingredient_sku=%s not found", recipeSKU, ln.ingredientSKU)
+				res.Errors = append(res.Errors, msg)
+				h.log.Warn("bulk import recipe: ingredient not found",
+					zap.String("recipe_sku", recipeSKU), zap.String("ingredient_sku", ln.ingredientSKU))
 				continue
 			}
 			ord := ln.displayOrder
@@ -207,6 +213,7 @@ func (h *InventoryHandler) parseXLSXRecipeIngredients(
 		}
 		if len(ingrDTOs) == 0 {
 			res.Failed++
+			h.log.Warn("bulk import recipe: no valid ingredients resolved", zap.String("recipe_sku", recipeSKU))
 			continue
 		}
 
@@ -226,6 +233,7 @@ func (h *InventoryHandler) parseXLSXRecipeIngredients(
 			}); uErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("recipe_sku=%s: update: %s", recipeSKU, uErr.Error()))
+				h.log.Error("bulk import recipe: update failed", zap.String("sku", recipeSKU), zap.Error(uErr))
 			} else {
 				res.Updated++
 			}
@@ -242,12 +250,14 @@ func (h *InventoryHandler) parseXLSXRecipeIngredients(
 			}); cErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("recipe_sku=%s: create: %s", recipeSKU, cErr.Error()))
+				h.log.Error("bulk import recipe: create failed", zap.String("sku", recipeSKU), zap.Error(cErr))
 			} else {
 				res.Created++
 			}
 		} else {
 			res.Failed++
 			res.Errors = append(res.Errors, fmt.Sprintf("recipe_sku=%s: lookup: %s", recipeSKU, err.Error()))
+			h.log.Error("bulk import recipe: lookup failed", zap.String("sku", recipeSKU), zap.Error(err))
 		}
 	}
 	return res
@@ -282,7 +292,9 @@ func (h *InventoryHandler) parseXLSXModifiers(
 			}
 			itemID, ok := skuToID[itemSKU]
 			if !ok {
-				res.Errors = append(res.Errors, fmt.Sprintf("modifier_group item_sku=%s: item not found", itemSKU))
+				msg := fmt.Sprintf("modifier_group item_sku=%s: item not found", itemSKU)
+				res.Errors = append(res.Errors, msg)
+				h.log.Warn("bulk import modifier: item not found", zap.String("item_sku", itemSKU))
 				continue
 			}
 
@@ -302,6 +314,8 @@ func (h *InventoryHandler) parseXLSXModifiers(
 			if gErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("modifier_group item=%s group=%s: %s", itemSKU, groupName, gErr.Error()))
+				h.log.Error("bulk import modifier: create group failed",
+					zap.String("item_sku", itemSKU), zap.String("group", groupName), zap.Error(gErr))
 				continue
 			}
 			groupIDMap[modifierGroupKey{itemSKU, groupName}] = gID
@@ -381,10 +395,12 @@ func (h *InventoryHandler) parseXLSXModifiers(
 
 // parseXLSXInitialStock processes the "InitialStock" sheet.
 // Rows: item_sku | warehouse_name | quantity | lot_number | expiry_date
+// defaultWarehouse is used when a row's warehouse_name cell is empty.
 func (h *InventoryHandler) parseXLSXInitialStock(
 	r *http.Request,
 	tenantID uuid.UUID,
 	rows [][]string,
+	defaultWarehouse string,
 ) importResult {
 	colMap := xlsxColMap(rows)
 	var res importResult
@@ -397,6 +413,10 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 
 		itemSKU := col(nil, "item_sku")
 		qtyStr  := col(nil, "quantity")
+		whName  := col(nil, "warehouse_name")
+		if whName == "" {
+			whName = defaultWarehouse
+		}
 		if itemSKU == "" || qtyStr == "" {
 			continue
 		}

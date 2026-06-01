@@ -106,6 +106,11 @@ func SortOrder(v int) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldSortOrder, v))
 }
 
+// IsGlobal applies equality check predicate on the "is_global" field. It's identical to IsGlobalEQ.
+func IsGlobal(v bool) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldIsGlobal, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldIsActive, v))
@@ -689,6 +694,16 @@ func SortOrderLT(v int) predicate.ItemCategory {
 // SortOrderLTE applies the LTE predicate on the "sort_order" field.
 func SortOrderLTE(v int) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldLTE(FieldSortOrder, v))
+}
+
+// IsGlobalEQ applies the EQ predicate on the "is_global" field.
+func IsGlobalEQ(v bool) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldIsGlobal, v))
+}
+
+// IsGlobalNEQ applies the NEQ predicate on the "is_global" field.
+func IsGlobalNEQ(v bool) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldIsGlobal, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

@@ -16,6 +16,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	"github.com/google/uuid"
 	excelize "github.com/xuri/excelize/v2"
+	"go.uber.org/zap"
 )
 
 // BulkImportResult summarises per-entity import counts returned by /bulk-import.
@@ -55,13 +56,17 @@ func (h *InventoryHandler) BulkImport(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Optional warehouse_name form field — used as fallback for InitialStock rows
+	// that have no warehouse_name cell, and to set outlet context for stock creation.
+	defaultWarehouse := strings.TrimSpace(r.FormValue("warehouse_name"))
+
 	ext := strings.ToLower(filepath.Ext(fh.Filename))
 	switch ext {
 	case ".csv":
 		result := h.bulkImportCSV(r, tenantID, file)
 		writeJSON(w, http.StatusOK, BulkImportResult{Items: result})
 	case ".xlsx", ".xlsm":
-		result := h.bulkImportXLSX(r, tenantID, file)
+		result := h.bulkImportXLSX(r, tenantID, file, defaultWarehouse)
 		writeJSON(w, http.StatusOK, result)
 	default:
 		writeError(w, http.StatusBadRequest, "UNSUPPORTED_FORMAT",
@@ -131,7 +136,8 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 }
 
 // bulkImportXLSX orchestrates the 5-sheet XLSX import.
-func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, file multipart.File) BulkImportResult {
+// defaultWarehouse is used as a fallback warehouse_name for InitialStock rows that have no warehouse cell.
+func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, file multipart.File, defaultWarehouse string) BulkImportResult {
 	xl, err := excelize.OpenReader(file)
 	if err != nil {
 		return BulkImportResult{Items: importResult{Failed: 1, Errors: []string{"cannot open XLSX: " + err.Error()}}}
@@ -160,7 +166,9 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 	}
 
 	// ── Sheets 3+4: ModifierGroups / ModifierOptions ──────────────────────────
-	if h.modifiersSvc != nil {
+	if h.modifiersSvc == nil {
+		h.log.Warn("bulk import: modifiersSvc is nil — ModifierGroups and ModifierOptions sheets skipped")
+	} else {
 		groupRows, _ := xl.GetRows("ModifierGroups")
 		optRows, _   := xl.GetRows("ModifierOptions")
 		result.Modifiers = h.parseXLSXModifiers(r, tenantID, groupRows, optRows, skuToID)
@@ -168,8 +176,23 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 5: InitialStock ─────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("InitialStock"); sheetErr == nil && len(rows) > 1 {
-		result.Stock = h.parseXLSXInitialStock(r, tenantID, rows)
+		result.Stock = h.parseXLSXInitialStock(r, tenantID, rows, defaultWarehouse)
 	}
+
+	h.log.Info("bulk import complete",
+		zap.String("tenant_id", tenantID.String()),
+		zap.Int("items_created", result.Items.Created),
+		zap.Int("items_updated", result.Items.Updated),
+		zap.Int("items_failed", result.Items.Failed),
+		zap.Int("recipes_created", result.Recipes.Created),
+		zap.Int("recipes_failed", result.Recipes.Failed),
+		zap.Int("modifiers_created", result.Modifiers.Created),
+		zap.Int("modifiers_failed", result.Modifiers.Failed),
+		zap.Int("stock_created", result.Stock.Created),
+		zap.Strings("item_errors", result.Items.Errors),
+		zap.Strings("recipe_errors", result.Recipes.Errors),
+		zap.Strings("modifier_errors", result.Modifiers.Errors),
+	)
 
 	return result
 }
@@ -200,7 +223,9 @@ func (h *InventoryHandler) loadUnitMap(r *http.Request, tenantID uuid.UUID) map[
 	return m
 }
 
-// ensureCategory returns an existing category ID or creates a new one.
+// ensureCategory returns an existing category ID or creates a new global one.
+// Categories created via bulk import are marked is_global=true so they are
+// visible to all tenants, avoiding per-tenant duplication.
 func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, name string, m map[string]uuid.UUID) *uuid.UUID {
 	if name == "" {
 		return nil
@@ -209,15 +234,24 @@ func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, n
 	if id, ok := m[key]; ok {
 		return &id
 	}
-	c, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, items.CategoryDTO{Name: name, IsActive: true})
+	c, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, items.CategoryDTO{
+		Name:     name,
+		IsActive: true,
+		IsGlobal: true,
+	})
 	if err != nil {
+		h.log.Error("bulk import: failed to create global category",
+			zap.String("name", name),
+			zap.String("tenant_id", tenantID.String()),
+			zap.Error(err))
 		return nil
 	}
 	m[key] = c.ID
 	return &c.ID
 }
 
-// ensureUnit returns an existing unit ID or creates a new one.
+// ensureUnit returns an existing unit ID or creates a new global one.
+// Units have no tenant_id (already globally shared); this creates if missing.
 func (h *InventoryHandler) ensureUnit(r *http.Request, tenantID uuid.UUID, name string, m map[string]uuid.UUID) *uuid.UUID {
 	if name == "" {
 		return nil
@@ -226,8 +260,11 @@ func (h *InventoryHandler) ensureUnit(r *http.Request, tenantID uuid.UUID, name 
 	if id, ok := m[key]; ok {
 		return &id
 	}
-	u, err := h.unitSvc.CreateUnit(r.Context(), tenantID, units.UnitDTO{Name: name, Abbreviation: name, IsActive: true})
+	u, err := h.unitSvc.CreateUnit(r.Context(), tenantID, units.UnitDTO{Name: strings.ToUpper(name), Abbreviation: name, IsActive: true})
 	if err != nil {
+		h.log.Error("bulk import: failed to create unit",
+			zap.String("name", name),
+			zap.Error(err))
 		return nil
 	}
 	m[key] = u.ID
@@ -263,7 +300,7 @@ func buildItemDTOFromRow(
 		ReorderLevel:    parseInt(col(row, "reorder_level"), 0),
 		ReorderQuantity: parseInt(col(row, "reorder_quantity"), 0),
 		InitialQuantity: parseInt(col(row, "initial_quantity"), 0),
-		AddToAllOutlets: true,
+		AddToAllOutlets: false, // bulk import targets only the user-selected warehouse
 	}
 
 	if tagsStr := col(row, "tags"); tagsStr != "" {

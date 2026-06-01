@@ -35,6 +35,8 @@ const (
 	FieldPath = "path"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
+	// FieldIsGlobal holds the string denoting the is_global field in the database.
+	FieldIsGlobal = "is_global"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -97,6 +99,7 @@ var Columns = []string{
 	FieldDepth,
 	FieldPath,
 	FieldSortOrder,
+	FieldIsGlobal,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -121,6 +124,8 @@ var (
 	DefaultDepth int
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
+	// DefaultIsGlobal holds the default value on creation for the "is_global" field.
+	DefaultIsGlobal bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -189,6 +194,11 @@ func ByPath(opts ...sql.OrderTermOption) OrderOption {
 // BySortOrder orders the results by the sort_order field.
 func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSortOrder, opts...).ToFunc()
+}
+
+// ByIsGlobal orders the results by the is_global field.
+func ByIsGlobal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsGlobal, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.
