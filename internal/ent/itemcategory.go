@@ -39,6 +39,8 @@ type ItemCategory struct {
 	Path string `json:"path,omitempty"`
 	// Display ordering within the same parent
 	SortOrder int `json:"sort_order,omitempty"`
+	// If true, visible to all tenants (platform-level data created via bulk import)
+	IsGlobal bool `json:"is_global,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -124,7 +126,7 @@ func (*ItemCategory) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case itemcategory.FieldParentID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case itemcategory.FieldIsActive:
+		case itemcategory.FieldIsGlobal, itemcategory.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case itemcategory.FieldDepth, itemcategory.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
@@ -215,6 +217,12 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sort_order", values[i])
 			} else if value.Valid {
 				_m.SortOrder = int(value.Int64)
+			}
+		case itemcategory.FieldIsGlobal:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_global", values[i])
+			} else if value.Valid {
+				_m.IsGlobal = value.Bool
 			}
 		case itemcategory.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -326,6 +334,9 @@ func (_m *ItemCategory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
+	builder.WriteString(", ")
+	builder.WriteString("is_global=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsGlobal))
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

@@ -455,16 +455,20 @@ func init() {
 	itemcategoryDescSortOrder := itemcategoryFields[10].Descriptor()
 	// itemcategory.DefaultSortOrder holds the default value on creation for the sort_order field.
 	itemcategory.DefaultSortOrder = itemcategoryDescSortOrder.Default.(int)
+	// itemcategoryDescIsGlobal is the schema descriptor for is_global field.
+	itemcategoryDescIsGlobal := itemcategoryFields[11].Descriptor()
+	// itemcategory.DefaultIsGlobal holds the default value on creation for the is_global field.
+	itemcategory.DefaultIsGlobal = itemcategoryDescIsGlobal.Default.(bool)
 	// itemcategoryDescIsActive is the schema descriptor for is_active field.
-	itemcategoryDescIsActive := itemcategoryFields[11].Descriptor()
+	itemcategoryDescIsActive := itemcategoryFields[12].Descriptor()
 	// itemcategory.DefaultIsActive holds the default value on creation for the is_active field.
 	itemcategory.DefaultIsActive = itemcategoryDescIsActive.Default.(bool)
 	// itemcategoryDescCreatedAt is the schema descriptor for created_at field.
-	itemcategoryDescCreatedAt := itemcategoryFields[12].Descriptor()
+	itemcategoryDescCreatedAt := itemcategoryFields[13].Descriptor()
 	// itemcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
 	itemcategory.DefaultCreatedAt = itemcategoryDescCreatedAt.Default.(func() time.Time)
 	// itemcategoryDescUpdatedAt is the schema descriptor for updated_at field.
-	itemcategoryDescUpdatedAt := itemcategoryFields[13].Descriptor()
+	itemcategoryDescUpdatedAt := itemcategoryFields[14].Descriptor()
 	// itemcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	itemcategory.DefaultUpdatedAt = itemcategoryDescUpdatedAt.Default.(func() time.Time)
 	// itemcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

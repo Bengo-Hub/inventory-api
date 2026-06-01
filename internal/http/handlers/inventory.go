@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Bengo-Hub/pagination"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -142,10 +143,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Post("/availability", h.BulkAvailability)
 		inv.Get("/availability/bom", h.GetBOMAvailability)
 
-		// Stock adjustments
-		inv.With(perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
-		inv.With(perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
-		inv.Get("/adjustments", h.ListAdjustments)
+		// Stock adjustments — requires stock_tracking feature
+		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
+		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
+		inv.With(authclient.RequireFeature("stock_tracking")).Get("/adjustments", h.ListAdjustments)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
@@ -185,11 +186,11 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermUnitsChange)).Put("/units/{unitID}", h.UpdateUnit)
 		inv.With(perm(rbac.PermUnitsDelete)).Delete("/units/{unitID}", h.DeleteUnit)
 
-		// CSV bulk import (legacy — items only)
-		inv.With(perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
-		// Multi-format bulk import (CSV/XLSX — items, recipes, modifiers, stock)
-		inv.With(perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
-		inv.Get("/import-template", h.ImportTemplate)
+		// CSV bulk import (legacy — items only) — requires bulk_import feature
+		inv.With(authclient.RequireFeature("bulk_import"), perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
+		// Multi-format bulk import (CSV/XLSX — items, recipes, modifiers, stock) — requires bulk_import feature
+		inv.With(authclient.RequireFeature("bulk_import"), perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
+		inv.With(authclient.RequireFeature("bulk_import")).Get("/import-template", h.ImportTemplate)
 		// Composite menu-item create: item + recipe + ingredients + modifiers in one call
 		inv.With(perm(rbac.PermItemsAdd)).Post("/items/menu-item", h.CreateMenuItemComposite)
 

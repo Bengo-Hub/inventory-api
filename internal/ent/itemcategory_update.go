@@ -222,6 +222,20 @@ func (_u *ItemCategoryUpdate) AddSortOrder(v int) *ItemCategoryUpdate {
 	return _u
 }
 
+// SetIsGlobal sets the "is_global" field.
+func (_u *ItemCategoryUpdate) SetIsGlobal(v bool) *ItemCategoryUpdate {
+	_u.mutation.SetIsGlobal(v)
+	return _u
+}
+
+// SetNillableIsGlobal sets the "is_global" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableIsGlobal(v *bool) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetIsGlobal(*v)
+	}
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemCategoryUpdate) SetIsActive(v bool) *ItemCategoryUpdate {
 	_u.mutation.SetIsActive(v)
@@ -487,6 +501,9 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(itemcategory.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsGlobal(); ok {
+		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -897,6 +914,20 @@ func (_u *ItemCategoryUpdateOne) AddSortOrder(v int) *ItemCategoryUpdateOne {
 	return _u
 }
 
+// SetIsGlobal sets the "is_global" field.
+func (_u *ItemCategoryUpdateOne) SetIsGlobal(v bool) *ItemCategoryUpdateOne {
+	_u.mutation.SetIsGlobal(v)
+	return _u
+}
+
+// SetNillableIsGlobal sets the "is_global" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableIsGlobal(v *bool) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetIsGlobal(*v)
+	}
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemCategoryUpdateOne) SetIsActive(v bool) *ItemCategoryUpdateOne {
 	_u.mutation.SetIsActive(v)
@@ -1192,6 +1223,9 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 	}
 	if value, ok := _u.mutation.AddedSortOrder(); ok {
 		_spec.AddField(itemcategory.FieldSortOrder, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsGlobal(); ok {
+		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)

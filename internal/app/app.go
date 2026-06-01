@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -215,6 +216,21 @@ func New(ctx context.Context) (*App, error) {
 	if err := branchSub.Start(natsConn); err != nil {
 		log.Warn("app: failed to start outlet event subscriptions", zap.Error(err))
 	}
+	warehouseHandler.SetOutletSyncer(branchSub)
+
+	// Startup reconciliation: catch any outlet events missed while the pod was down.
+	// Runs once 15 seconds after startup so NATS consumers are warm first.
+	authURLForSync := strings.TrimRight(cfg.Auth.ServiceURL, "/")
+	go func() {
+		select {
+		case <-time.After(15 * time.Second):
+		case <-ctx.Done():
+			return
+		}
+		if err := branchSub.ReconcileFromAuthAPI(ctx, authURLForSync, ""); err != nil {
+			log.Warn("app: outlet startup reconciliation failed", zap.Error(err))
+		}
+	}()
 
 	if natsConn != nil {
 		subCacheSub := subscriptions.NewCacheSubscriber(redisClient, log)

@@ -20,12 +20,20 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
 
+// OutletSyncer is implemented by tenant.BranchSubscriber and used by the admin
+// sync endpoint to reconcile outlet→warehouse mirrors without a circular import.
+type OutletSyncer interface {
+	ReconcileFromAuthAPI(ctx context.Context, authURL, authToken string) error
+	SyncTenantOutlets(ctx context.Context, authURL, authToken, slug string) error
+}
+
 // WarehouseHandler handles warehouse listing and outlet config endpoints.
 type WarehouseHandler struct {
-	log     *zap.Logger
-	orm     *ent.Client
-	rbacSvc *rbac.Service
-	authURL string // base URL of auth-api, e.g. "https://sso.codevertexitsolutions.com"
+	log        *zap.Logger
+	orm        *ent.Client
+	rbacSvc    *rbac.Service
+	authURL    string // base URL of auth-api, e.g. "https://sso.codevertexitsolutions.com"
+	outletSync OutletSyncer
 }
 
 // NewWarehouseHandler creates a warehouse handler.
@@ -40,6 +48,11 @@ func NewWarehouseHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service
 // SetAuthURL sets the auth-api base URL used for the outlet proxy endpoint.
 func (h *WarehouseHandler) SetAuthURL(url string) {
 	h.authURL = strings.TrimRight(url, "/")
+}
+
+// SetOutletSyncer wires the BranchSubscriber for the admin sync endpoint.
+func (h *WarehouseHandler) SetOutletSyncer(s OutletSyncer) {
+	h.outletSync = s
 }
 
 // RegisterRoutes wires warehouse routes onto the given chi.Router.
@@ -64,6 +77,36 @@ func (h *WarehouseHandler) RegisterRoutes(r chi.Router) {
 	// Outlet config: assign a default warehouse to an outlet + set use_case metadata.
 	r.With(perm(rbac.PermConfigChange)).Put("/inventory/outlets/{outletID}/config", h.UpdateOutletConfig)
 	r.Get("/inventory/outlets/{outletID}/config", h.GetOutletConfig)
+}
+
+// RegisterAdminRoutes wires platform-owner-only warehouse admin routes.
+func (h *WarehouseHandler) RegisterAdminRoutes(r chi.Router) {
+	r.Post("/inventory/sync-outlets", h.SyncOutlets)
+}
+
+// SyncOutlets handles POST /admin/inventory/sync-outlets.
+// Reconciles all outlet→warehouse mirrors by querying auth-api for each known tenant.
+// Accepts an optional `?slug=` query parameter to sync a single tenant only.
+func (h *WarehouseHandler) SyncOutlets(w http.ResponseWriter, r *http.Request) {
+	if h.outletSync == nil {
+		writeError(w, http.StatusServiceUnavailable, "NOT_CONFIGURED", "Outlet syncer not wired")
+		return
+	}
+	authToken := r.Header.Get("Authorization")
+	slug := r.URL.Query().Get("slug")
+
+	var err error
+	if slug != "" {
+		err = h.outletSync.SyncTenantOutlets(r.Context(), h.authURL, authToken, slug)
+	} else {
+		err = h.outletSync.ReconcileFromAuthAPI(r.Context(), h.authURL, authToken)
+	}
+	if err != nil {
+		h.log.Error("sync outlets failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "SYNC_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // outletConfigDTO is the request/response body for outlet warehouse config.

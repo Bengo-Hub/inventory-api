@@ -134,16 +134,19 @@ func New(
 
 		api.Get("/openapi.json", handlers.OpenAPIJSON)
 
-		// Platform admin config routes (platform owner only)
-		if serviceConfigHandler != nil {
-			api.Route("/admin", func(admin chi.Router) {
-				if authMiddleware != nil {
-					admin.Use(authMiddleware.RequireAuth)
-				}
-				admin.Use(authclient.RequirePlatformOwner())
+		// Platform admin routes (platform owner only)
+		api.Route("/admin", func(admin chi.Router) {
+			if authMiddleware != nil {
+				admin.Use(authMiddleware.RequireAuth)
+			}
+			admin.Use(authclient.RequirePlatformOwner())
+			if serviceConfigHandler != nil {
 				serviceConfigHandler.RegisterPlatformRoutes(admin)
-			})
-		}
+			}
+			if warehouseHandler != nil {
+				warehouseHandler.RegisterAdminRoutes(admin)
+			}
+		})
 
 		api.Route("/{tenant}", func(tenant chi.Router) {
 			tenant.Use(httpware.TenantV2(httpware.TenantConfig{
