@@ -77,6 +77,10 @@ type ItemDTO struct {
 	EventStartAt   *time.Time `json:"event_start_at,omitempty"`
 	EventEndAt     *time.Time `json:"event_end_at,omitempty"`
 	EventVenue     *string    `json:"event_venue,omitempty"`
+	// Current stock levels (aggregated across all warehouses).
+	// Populated by ListItems; nil when no balance row exists.
+	Available *int `json:"available,omitempty"`
+	OnHand    *int `json:"on_hand,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
@@ -617,17 +621,27 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				catNames[c.ID] = c.Name
 			}
 		}
-		// Load first balance per item to surface reorder_level and reorder_quantity.
-		type balSummary struct{ reorderLevel, reorderQuantity int }
+		// Load balances per item to surface reorder_level, reorder_quantity, and total available/on_hand.
+		type balSummary struct {
+			reorderLevel    int
+			reorderQuantity int
+			available       int
+			onHand          int
+		}
 		balMap := make(map[uuid.UUID]balSummary, len(itemIDs))
 		if len(itemIDs) > 0 {
 			bals, _ := s.client.InventoryBalance.Query().
 				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.ItemIDIn(itemIDs...)).
 				All(innerCtx)
 			for _, b := range bals {
-				if _, seen := balMap[b.ItemID]; !seen {
-					balMap[b.ItemID] = balSummary{b.ReorderLevel, b.ReorderQuantity}
+				prev := balMap[b.ItemID]
+				if prev.reorderLevel == 0 {
+					prev.reorderLevel = b.ReorderLevel
+					prev.reorderQuantity = b.ReorderQuantity
 				}
+				prev.available += b.Available
+				prev.onHand += b.OnHand
+				balMap[b.ItemID] = prev
 			}
 		}
 		// Load tenant config once for suggested price computation.
@@ -643,6 +657,8 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			if bs, ok := balMap[it.ID]; ok {
 				dto.ReorderLevel = bs.reorderLevel
 				dto.ReorderQuantity = bs.reorderQuantity
+				dto.Available = &bs.available
+				dto.OnHand = &bs.onHand
 			}
 			if cfg != nil && it.CostPrice != nil && *it.CostPrice > 0 && cfg.DefaultTargetMarginPercent != nil {
 				m := *cfg.DefaultTargetMarginPercent
