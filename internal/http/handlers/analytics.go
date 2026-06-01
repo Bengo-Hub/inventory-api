@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	entsql "entgo.io/ent/dialect/sql"
+
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
@@ -372,20 +374,36 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
 		Count(ctx)
 
-	lowStock, _ := h.orm.InventoryBalance.Query().
-		Where(
-			entinventorybalance.TenantID(tenantID),
-			entinventorybalance.AvailableLTE(10),
-			entinventorybalance.AvailableGT(0),
-		).
-		Count(ctx)
+	// Only count active items by cross-checking with items table.
+	activeItemIDs, _ := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
+		IDs(ctx)
 
-	outOfStock, _ := h.orm.InventoryBalance.Query().
-		Where(
-			entinventorybalance.TenantID(tenantID),
-			entinventorybalance.AvailableLTE(0),
-		).
-		Count(ctx)
+	var lowStock, outOfStock int
+	if len(activeItemIDs) > 0 {
+		// Low stock: available > 0 AND available <= reorder_level AND reorder_level > 0
+		// Uses a column-to-column comparison via raw predicate.
+		lowStock, _ = h.orm.InventoryBalance.Query().
+			Where(
+				entinventorybalance.TenantID(tenantID),
+				entinventorybalance.ItemIDIn(activeItemIDs...),
+				entinventorybalance.AvailableGT(0),
+				entinventorybalance.ReorderLevelGT(0),
+				// available <= reorder_level (column-to-column comparison)
+				func(s *entsql.Selector) {
+					s.Where(entsql.ColumnsLTE(s.C(entinventorybalance.FieldAvailable), s.C(entinventorybalance.FieldReorderLevel)))
+				},
+			).
+			Count(ctx)
+
+		outOfStock, _ = h.orm.InventoryBalance.Query().
+			Where(
+				entinventorybalance.TenantID(tenantID),
+				entinventorybalance.ItemIDIn(activeItemIDs...),
+				entinventorybalance.AvailableLTE(0),
+			).
+			Count(ctx)
+	}
 
 	// Pending POs: draft + sent + partially_received
 	pendingPOs, _ := h.orm.PurchaseOrder.Query().
