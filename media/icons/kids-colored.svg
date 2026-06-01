@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_kids" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_kids)"/>
+  <!-- head -->
+  <circle cx="200" cy="155" r="70" fill="#fff"/>
+  <!-- hair -->
+  <ellipse cx="200" cy="90" rx="58" ry="22" fill="#fde68a"/>
+  <ellipse cx="148" cy="108" rx="20" ry="32" fill="#fde68a"/>
+  <ellipse cx="252" cy="108" rx="20" ry="32" fill="#fde68a"/>
+  <!-- ears -->
+  <circle cx="130" cy="155" r="14" fill="#fff"/>
+  <circle cx="270" cy="155" r="14" fill="#fff"/>
+  <!-- eyes -->
+  <circle cx="175" cy="145" r="14" fill="#f97316"/>
+  <circle cx="225" cy="145" r="14" fill="#f97316"/>
+  <circle cx="175" cy="145" r="7" fill="#1e293b"/>
+  <circle cx="225" cy="145" r="7" fill="#1e293b"/>
+  <circle cx="178" cy="142" r="3" fill="#fff"/>
+  <circle cx="228" cy="142" r="3" fill="#fff"/>
+  <!-- smile -->
+  <path d="M170,178 Q200,200 230,178" stroke="#f97316" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- body -->
+  <path d="M140,225 Q140,300 200,305 Q260,300 260,225 L250,222 Q200,232 150,222 Z" fill="#fff" opacity="0.9"/>
+  <!-- star -->
+  <path d="M200,248 L206,262 L221,262 L210,271 L214,285 L200,277 L186,285 L190,271 L179,262 L194,262 Z" fill="#fde68a"/>
+</svg>
