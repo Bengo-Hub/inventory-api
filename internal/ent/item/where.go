@@ -156,6 +156,26 @@ func CostPrice(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCostPrice, v))
 }
 
+// PurchasePrice applies equality check predicate on the "purchase_price" field. It's identical to PurchasePriceEQ.
+func PurchasePrice(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchasePrice, v))
+}
+
+// PurchasePackSize applies equality check predicate on the "purchase_pack_size" field. It's identical to PurchasePackSizeEQ.
+func PurchasePackSize(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchasePackSize, v))
+}
+
+// PurchaseUnit applies equality check predicate on the "purchase_unit" field. It's identical to PurchaseUnitEQ.
+func PurchaseUnit(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchaseUnit, v))
+}
+
+// YieldPct applies equality check predicate on the "yield_pct" field. It's identical to YieldPctEQ.
+func YieldPct(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
+}
+
 // TotalCapacity applies equality check predicate on the "total_capacity" field. It's identical to TotalCapacityEQ.
 func TotalCapacity(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldTotalCapacity, v))
@@ -1024,6 +1044,231 @@ func CostPriceIsNil() predicate.Item {
 // CostPriceNotNil applies the NotNil predicate on the "cost_price" field.
 func CostPriceNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldCostPrice))
+}
+
+// PurchasePriceEQ applies the EQ predicate on the "purchase_price" field.
+func PurchasePriceEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchasePrice, v))
+}
+
+// PurchasePriceNEQ applies the NEQ predicate on the "purchase_price" field.
+func PurchasePriceNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldPurchasePrice, v))
+}
+
+// PurchasePriceIn applies the In predicate on the "purchase_price" field.
+func PurchasePriceIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldPurchasePrice, vs...))
+}
+
+// PurchasePriceNotIn applies the NotIn predicate on the "purchase_price" field.
+func PurchasePriceNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldPurchasePrice, vs...))
+}
+
+// PurchasePriceGT applies the GT predicate on the "purchase_price" field.
+func PurchasePriceGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldPurchasePrice, v))
+}
+
+// PurchasePriceGTE applies the GTE predicate on the "purchase_price" field.
+func PurchasePriceGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldPurchasePrice, v))
+}
+
+// PurchasePriceLT applies the LT predicate on the "purchase_price" field.
+func PurchasePriceLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldPurchasePrice, v))
+}
+
+// PurchasePriceLTE applies the LTE predicate on the "purchase_price" field.
+func PurchasePriceLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldPurchasePrice, v))
+}
+
+// PurchasePriceIsNil applies the IsNil predicate on the "purchase_price" field.
+func PurchasePriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldPurchasePrice))
+}
+
+// PurchasePriceNotNil applies the NotNil predicate on the "purchase_price" field.
+func PurchasePriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldPurchasePrice))
+}
+
+// PurchasePackSizeEQ applies the EQ predicate on the "purchase_pack_size" field.
+func PurchasePackSizeEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeNEQ applies the NEQ predicate on the "purchase_pack_size" field.
+func PurchasePackSizeNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeIn applies the In predicate on the "purchase_pack_size" field.
+func PurchasePackSizeIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldPurchasePackSize, vs...))
+}
+
+// PurchasePackSizeNotIn applies the NotIn predicate on the "purchase_pack_size" field.
+func PurchasePackSizeNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldPurchasePackSize, vs...))
+}
+
+// PurchasePackSizeGT applies the GT predicate on the "purchase_pack_size" field.
+func PurchasePackSizeGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeGTE applies the GTE predicate on the "purchase_pack_size" field.
+func PurchasePackSizeGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeLT applies the LT predicate on the "purchase_pack_size" field.
+func PurchasePackSizeLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeLTE applies the LTE predicate on the "purchase_pack_size" field.
+func PurchasePackSizeLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldPurchasePackSize, v))
+}
+
+// PurchasePackSizeIsNil applies the IsNil predicate on the "purchase_pack_size" field.
+func PurchasePackSizeIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldPurchasePackSize))
+}
+
+// PurchasePackSizeNotNil applies the NotNil predicate on the "purchase_pack_size" field.
+func PurchasePackSizeNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldPurchasePackSize))
+}
+
+// PurchaseUnitEQ applies the EQ predicate on the "purchase_unit" field.
+func PurchaseUnitEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitNEQ applies the NEQ predicate on the "purchase_unit" field.
+func PurchaseUnitNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitIn applies the In predicate on the "purchase_unit" field.
+func PurchaseUnitIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldPurchaseUnit, vs...))
+}
+
+// PurchaseUnitNotIn applies the NotIn predicate on the "purchase_unit" field.
+func PurchaseUnitNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldPurchaseUnit, vs...))
+}
+
+// PurchaseUnitGT applies the GT predicate on the "purchase_unit" field.
+func PurchaseUnitGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitGTE applies the GTE predicate on the "purchase_unit" field.
+func PurchaseUnitGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitLT applies the LT predicate on the "purchase_unit" field.
+func PurchaseUnitLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitLTE applies the LTE predicate on the "purchase_unit" field.
+func PurchaseUnitLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitContains applies the Contains predicate on the "purchase_unit" field.
+func PurchaseUnitContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitHasPrefix applies the HasPrefix predicate on the "purchase_unit" field.
+func PurchaseUnitHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitHasSuffix applies the HasSuffix predicate on the "purchase_unit" field.
+func PurchaseUnitHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitIsNil applies the IsNil predicate on the "purchase_unit" field.
+func PurchaseUnitIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldPurchaseUnit))
+}
+
+// PurchaseUnitNotNil applies the NotNil predicate on the "purchase_unit" field.
+func PurchaseUnitNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldPurchaseUnit))
+}
+
+// PurchaseUnitEqualFold applies the EqualFold predicate on the "purchase_unit" field.
+func PurchaseUnitEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldPurchaseUnit, v))
+}
+
+// PurchaseUnitContainsFold applies the ContainsFold predicate on the "purchase_unit" field.
+func PurchaseUnitContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldPurchaseUnit, v))
+}
+
+// YieldPctEQ applies the EQ predicate on the "yield_pct" field.
+func YieldPctEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
+}
+
+// YieldPctNEQ applies the NEQ predicate on the "yield_pct" field.
+func YieldPctNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldYieldPct, v))
+}
+
+// YieldPctIn applies the In predicate on the "yield_pct" field.
+func YieldPctIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldYieldPct, vs...))
+}
+
+// YieldPctNotIn applies the NotIn predicate on the "yield_pct" field.
+func YieldPctNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldYieldPct, vs...))
+}
+
+// YieldPctGT applies the GT predicate on the "yield_pct" field.
+func YieldPctGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldYieldPct, v))
+}
+
+// YieldPctGTE applies the GTE predicate on the "yield_pct" field.
+func YieldPctGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldYieldPct, v))
+}
+
+// YieldPctLT applies the LT predicate on the "yield_pct" field.
+func YieldPctLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldYieldPct, v))
+}
+
+// YieldPctLTE applies the LTE predicate on the "yield_pct" field.
+func YieldPctLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldYieldPct, v))
+}
+
+// YieldPctIsNil applies the IsNil predicate on the "yield_pct" field.
+func YieldPctIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldYieldPct))
+}
+
+// YieldPctNotNil applies the NotNil predicate on the "yield_pct" field.
+func YieldPctNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldYieldPct))
 }
 
 // TotalCapacityEQ applies the EQ predicate on the "total_capacity" field.

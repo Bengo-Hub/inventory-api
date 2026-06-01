@@ -62,6 +62,14 @@ const (
 	FieldTaxInclusive = "tax_inclusive"
 	// FieldCostPrice holds the string denoting the cost_price field in the database.
 	FieldCostPrice = "cost_price"
+	// FieldPurchasePrice holds the string denoting the purchase_price field in the database.
+	FieldPurchasePrice = "purchase_price"
+	// FieldPurchasePackSize holds the string denoting the purchase_pack_size field in the database.
+	FieldPurchasePackSize = "purchase_pack_size"
+	// FieldPurchaseUnit holds the string denoting the purchase_unit field in the database.
+	FieldPurchaseUnit = "purchase_unit"
+	// FieldYieldPct holds the string denoting the yield_pct field in the database.
+	FieldYieldPct = "yield_pct"
 	// FieldTotalCapacity holds the string denoting the total_capacity field in the database.
 	FieldTotalCapacity = "total_capacity"
 	// FieldBookedCapacity holds the string denoting the booked_capacity field in the database.
@@ -243,6 +251,10 @@ var Columns = []string{
 	FieldTaxCodeID,
 	FieldTaxInclusive,
 	FieldCostPrice,
+	FieldPurchasePrice,
+	FieldPurchasePackSize,
+	FieldPurchaseUnit,
+	FieldYieldPct,
 	FieldTotalCapacity,
 	FieldBookedCapacity,
 	FieldEventStartAt,
@@ -284,6 +296,10 @@ var (
 	DefaultTags []string
 	// DefaultTaxInclusive holds the default value on creation for the "tax_inclusive" field.
 	DefaultTaxInclusive bool
+	// PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
+	PurchaseUnitValidator func(string) error
+	// DefaultYieldPct holds the default value on creation for the "yield_pct" field.
+	DefaultYieldPct float64
 	// DefaultBookedCapacity holds the default value on creation for the "booked_capacity" field.
 	DefaultBookedCapacity int
 	// EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
@@ -441,6 +457,26 @@ func ByTaxInclusive(opts ...sql.OrderTermOption) OrderOption {
 // ByCostPrice orders the results by the cost_price field.
 func ByCostPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCostPrice, opts...).ToFunc()
+}
+
+// ByPurchasePrice orders the results by the purchase_price field.
+func ByPurchasePrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPurchasePrice, opts...).ToFunc()
+}
+
+// ByPurchasePackSize orders the results by the purchase_pack_size field.
+func ByPurchasePackSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPurchasePackSize, opts...).ToFunc()
+}
+
+// ByPurchaseUnit orders the results by the purchase_unit field.
+func ByPurchaseUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPurchaseUnit, opts...).ToFunc()
+}
+
+// ByYieldPct orders the results by the yield_pct field.
+func ByYieldPct(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldYieldPct, opts...).ToFunc()
 }
 
 // ByTotalCapacity orders the results by the total_capacity field.

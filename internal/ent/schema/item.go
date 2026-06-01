@@ -95,7 +95,25 @@ func (Item) Fields() []ent.Field {
 		field.Float("cost_price").
 			Optional().
 			Nillable().
-			Comment("Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations"),
+			Comment("Edible-portion cost per base unit (KES). Auto-computed when purchase fields are set; otherwise manually entered"),
+		// Purchase / supplier fields — enable auto EP-cost calculation
+		field.Float("purchase_price").
+			Optional().
+			Nillable().
+			Comment("Price paid per purchase_unit (KES) — e.g. 750 per kg"),
+		field.Float("purchase_pack_size").
+			Optional().
+			Nillable().
+			Comment("Base units per purchase_unit — e.g. 1 kg = 1000 g. cost_price = purchase_price / pack_size / yield_pct"),
+		field.String("purchase_unit").
+			Optional().
+			MaxLen(50).
+			Comment("How the ingredient is bought — e.g. 'kg', 'litre', 'crate'"),
+		field.Float("yield_pct").
+			Optional().
+			Nillable().
+			Default(1.0).
+			Comment("Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct"),
 		// Event capacity fields (Phase 2) — SERVICE-type items only
 		field.Int("total_capacity").
 			Optional().

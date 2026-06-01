@@ -321,6 +321,62 @@ func (_c *ItemCreate) SetNillableCostPrice(v *float64) *ItemCreate {
 	return _c
 }
 
+// SetPurchasePrice sets the "purchase_price" field.
+func (_c *ItemCreate) SetPurchasePrice(v float64) *ItemCreate {
+	_c.mutation.SetPurchasePrice(v)
+	return _c
+}
+
+// SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePurchasePrice(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetPurchasePrice(*v)
+	}
+	return _c
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (_c *ItemCreate) SetPurchasePackSize(v float64) *ItemCreate {
+	_c.mutation.SetPurchasePackSize(v)
+	return _c
+}
+
+// SetNillablePurchasePackSize sets the "purchase_pack_size" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePurchasePackSize(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetPurchasePackSize(*v)
+	}
+	return _c
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (_c *ItemCreate) SetPurchaseUnit(v string) *ItemCreate {
+	_c.mutation.SetPurchaseUnit(v)
+	return _c
+}
+
+// SetNillablePurchaseUnit sets the "purchase_unit" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePurchaseUnit(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetPurchaseUnit(*v)
+	}
+	return _c
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (_c *ItemCreate) SetYieldPct(v float64) *ItemCreate {
+	_c.mutation.SetYieldPct(v)
+	return _c
+}
+
+// SetNillableYieldPct sets the "yield_pct" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableYieldPct(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetYieldPct(*v)
+	}
+	return _c
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_c *ItemCreate) SetTotalCapacity(v int) *ItemCreate {
 	_c.mutation.SetTotalCapacity(v)
@@ -741,6 +797,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultTaxInclusive
 		_c.mutation.SetTaxInclusive(v)
 	}
+	if _, ok := _c.mutation.YieldPct(); !ok {
+		v := item.DefaultYieldPct
+		_c.mutation.SetYieldPct(v)
+	}
 	if _, ok := _c.mutation.BookedCapacity(); !ok {
 		v := item.DefaultBookedCapacity
 		_c.mutation.SetBookedCapacity(v)
@@ -815,6 +875,11 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.TaxInclusive(); !ok {
 		return &ValidationError{Name: "tax_inclusive", err: errors.New(`ent: missing required field "Item.tax_inclusive"`)}
+	}
+	if v, ok := _c.mutation.PurchaseUnit(); ok {
+		if err := item.PurchaseUnitValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
+		}
 	}
 	if v, ok := _c.mutation.EventVenue(); ok {
 		if err := item.EventVenueValidator(v); err != nil {
@@ -948,6 +1013,22 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CostPrice(); ok {
 		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
 		_node.CostPrice = &value
+	}
+	if value, ok := _c.mutation.PurchasePrice(); ok {
+		_spec.SetField(item.FieldPurchasePrice, field.TypeFloat64, value)
+		_node.PurchasePrice = &value
+	}
+	if value, ok := _c.mutation.PurchasePackSize(); ok {
+		_spec.SetField(item.FieldPurchasePackSize, field.TypeFloat64, value)
+		_node.PurchasePackSize = &value
+	}
+	if value, ok := _c.mutation.PurchaseUnit(); ok {
+		_spec.SetField(item.FieldPurchaseUnit, field.TypeString, value)
+		_node.PurchaseUnit = value
+	}
+	if value, ok := _c.mutation.YieldPct(); ok {
+		_spec.SetField(item.FieldYieldPct, field.TypeFloat64, value)
+		_node.YieldPct = &value
 	}
 	if value, ok := _c.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
@@ -1636,6 +1717,96 @@ func (u *ItemUpsert) ClearCostPrice() *ItemUpsert {
 	return u
 }
 
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsert) SetPurchasePrice(v float64) *ItemUpsert {
+	u.Set(item.FieldPurchasePrice, v)
+	return u
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchasePrice() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchasePrice)
+	return u
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsert) AddPurchasePrice(v float64) *ItemUpsert {
+	u.Add(item.FieldPurchasePrice, v)
+	return u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsert) ClearPurchasePrice() *ItemUpsert {
+	u.SetNull(item.FieldPurchasePrice)
+	return u
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsert) SetPurchasePackSize(v float64) *ItemUpsert {
+	u.Set(item.FieldPurchasePackSize, v)
+	return u
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchasePackSize() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchasePackSize)
+	return u
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsert) AddPurchasePackSize(v float64) *ItemUpsert {
+	u.Add(item.FieldPurchasePackSize, v)
+	return u
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsert) ClearPurchasePackSize() *ItemUpsert {
+	u.SetNull(item.FieldPurchasePackSize)
+	return u
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsert) SetPurchaseUnit(v string) *ItemUpsert {
+	u.Set(item.FieldPurchaseUnit, v)
+	return u
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchaseUnit() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchaseUnit)
+	return u
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsert) ClearPurchaseUnit() *ItemUpsert {
+	u.SetNull(item.FieldPurchaseUnit)
+	return u
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsert) SetYieldPct(v float64) *ItemUpsert {
+	u.Set(item.FieldYieldPct, v)
+	return u
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateYieldPct() *ItemUpsert {
+	u.SetExcluded(item.FieldYieldPct)
+	return u
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsert) AddYieldPct(v float64) *ItemUpsert {
+	u.Add(item.FieldYieldPct, v)
+	return u
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsert) ClearYieldPct() *ItemUpsert {
+	u.SetNull(item.FieldYieldPct)
+	return u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (u *ItemUpsert) SetTotalCapacity(v int) *ItemUpsert {
 	u.Set(item.FieldTotalCapacity, v)
@@ -2230,6 +2401,111 @@ func (u *ItemUpsertOne) UpdateCostPrice() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearCostPrice() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCostPrice()
+	})
+}
+
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsertOne) SetPurchasePrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertOne) AddPurchasePrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
+	})
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchasePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertOne) ClearPurchasePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
+	})
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsertOne) SetPurchasePackSize(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePackSize(v)
+	})
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsertOne) AddPurchasePackSize(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePackSize(v)
+	})
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchasePackSize() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePackSize()
+	})
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsertOne) ClearPurchasePackSize() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePackSize()
+	})
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsertOne) SetPurchaseUnit(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchaseUnit(v)
+	})
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchaseUnit() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchaseUnit()
+	})
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsertOne) ClearPurchaseUnit() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchaseUnit()
+	})
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsertOne) SetYieldPct(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetYieldPct(v)
+	})
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsertOne) AddYieldPct(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddYieldPct(v)
+	})
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateYieldPct() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateYieldPct()
+	})
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsertOne) ClearYieldPct() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearYieldPct()
 	})
 }
 
@@ -3015,6 +3291,111 @@ func (u *ItemUpsertBulk) UpdateCostPrice() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearCostPrice() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCostPrice()
+	})
+}
+
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsertBulk) SetPurchasePrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertBulk) AddPurchasePrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
+	})
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchasePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertBulk) ClearPurchasePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
+	})
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) SetPurchasePackSize(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePackSize(v)
+	})
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) AddPurchasePackSize(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePackSize(v)
+	})
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchasePackSize() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePackSize()
+	})
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) ClearPurchasePackSize() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePackSize()
+	})
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsertBulk) SetPurchaseUnit(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchaseUnit(v)
+	})
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchaseUnit() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchaseUnit()
+	})
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsertBulk) ClearPurchaseUnit() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchaseUnit()
+	})
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsertBulk) SetYieldPct(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetYieldPct(v)
+	})
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsertBulk) AddYieldPct(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddYieldPct(v)
+	})
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateYieldPct() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateYieldPct()
+	})
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsertBulk) ClearYieldPct() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearYieldPct()
 	})
 }
 

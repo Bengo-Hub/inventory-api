@@ -444,6 +444,107 @@ func (_u *ItemUpdate) ClearCostPrice() *ItemUpdate {
 	return _u
 }
 
+// SetPurchasePrice sets the "purchase_price" field.
+func (_u *ItemUpdate) SetPurchasePrice(v float64) *ItemUpdate {
+	_u.mutation.ResetPurchasePrice()
+	_u.mutation.SetPurchasePrice(v)
+	return _u
+}
+
+// SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillablePurchasePrice(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetPurchasePrice(*v)
+	}
+	return _u
+}
+
+// AddPurchasePrice adds value to the "purchase_price" field.
+func (_u *ItemUpdate) AddPurchasePrice(v float64) *ItemUpdate {
+	_u.mutation.AddPurchasePrice(v)
+	return _u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (_u *ItemUpdate) ClearPurchasePrice() *ItemUpdate {
+	_u.mutation.ClearPurchasePrice()
+	return _u
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (_u *ItemUpdate) SetPurchasePackSize(v float64) *ItemUpdate {
+	_u.mutation.ResetPurchasePackSize()
+	_u.mutation.SetPurchasePackSize(v)
+	return _u
+}
+
+// SetNillablePurchasePackSize sets the "purchase_pack_size" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillablePurchasePackSize(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetPurchasePackSize(*v)
+	}
+	return _u
+}
+
+// AddPurchasePackSize adds value to the "purchase_pack_size" field.
+func (_u *ItemUpdate) AddPurchasePackSize(v float64) *ItemUpdate {
+	_u.mutation.AddPurchasePackSize(v)
+	return _u
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (_u *ItemUpdate) ClearPurchasePackSize() *ItemUpdate {
+	_u.mutation.ClearPurchasePackSize()
+	return _u
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (_u *ItemUpdate) SetPurchaseUnit(v string) *ItemUpdate {
+	_u.mutation.SetPurchaseUnit(v)
+	return _u
+}
+
+// SetNillablePurchaseUnit sets the "purchase_unit" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillablePurchaseUnit(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetPurchaseUnit(*v)
+	}
+	return _u
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (_u *ItemUpdate) ClearPurchaseUnit() *ItemUpdate {
+	_u.mutation.ClearPurchaseUnit()
+	return _u
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (_u *ItemUpdate) SetYieldPct(v float64) *ItemUpdate {
+	_u.mutation.ResetYieldPct()
+	_u.mutation.SetYieldPct(v)
+	return _u
+}
+
+// SetNillableYieldPct sets the "yield_pct" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableYieldPct(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetYieldPct(*v)
+	}
+	return _u
+}
+
+// AddYieldPct adds value to the "yield_pct" field.
+func (_u *ItemUpdate) AddYieldPct(v float64) *ItemUpdate {
+	_u.mutation.AddYieldPct(v)
+	return _u
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (_u *ItemUpdate) ClearYieldPct() *ItemUpdate {
+	_u.mutation.ClearYieldPct()
+	return _u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_u *ItemUpdate) SetTotalCapacity(v int) *ItemUpdate {
 	_u.mutation.ResetTotalCapacity()
@@ -1099,6 +1200,11 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PurchaseUnit(); ok {
+		if err := item.PurchaseUnitValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventVenue(); ok {
 		if err := item.EventVenueValidator(v); err != nil {
 			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
@@ -1222,6 +1328,39 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CostPriceCleared() {
 		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchasePrice(); ok {
+		_spec.SetField(item.FieldPurchasePrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePrice(); ok {
+		_spec.AddField(item.FieldPurchasePrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.PurchasePriceCleared() {
+		_spec.ClearField(item.FieldPurchasePrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchasePackSize(); ok {
+		_spec.SetField(item.FieldPurchasePackSize, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePackSize(); ok {
+		_spec.AddField(item.FieldPurchasePackSize, field.TypeFloat64, value)
+	}
+	if _u.mutation.PurchasePackSizeCleared() {
+		_spec.ClearField(item.FieldPurchasePackSize, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchaseUnit(); ok {
+		_spec.SetField(item.FieldPurchaseUnit, field.TypeString, value)
+	}
+	if _u.mutation.PurchaseUnitCleared() {
+		_spec.ClearField(item.FieldPurchaseUnit, field.TypeString)
+	}
+	if value, ok := _u.mutation.YieldPct(); ok {
+		_spec.SetField(item.FieldYieldPct, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedYieldPct(); ok {
+		_spec.AddField(item.FieldYieldPct, field.TypeFloat64, value)
+	}
+	if _u.mutation.YieldPctCleared() {
+		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
@@ -2279,6 +2418,107 @@ func (_u *ItemUpdateOne) ClearCostPrice() *ItemUpdateOne {
 	return _u
 }
 
+// SetPurchasePrice sets the "purchase_price" field.
+func (_u *ItemUpdateOne) SetPurchasePrice(v float64) *ItemUpdateOne {
+	_u.mutation.ResetPurchasePrice()
+	_u.mutation.SetPurchasePrice(v)
+	return _u
+}
+
+// SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillablePurchasePrice(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetPurchasePrice(*v)
+	}
+	return _u
+}
+
+// AddPurchasePrice adds value to the "purchase_price" field.
+func (_u *ItemUpdateOne) AddPurchasePrice(v float64) *ItemUpdateOne {
+	_u.mutation.AddPurchasePrice(v)
+	return _u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (_u *ItemUpdateOne) ClearPurchasePrice() *ItemUpdateOne {
+	_u.mutation.ClearPurchasePrice()
+	return _u
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (_u *ItemUpdateOne) SetPurchasePackSize(v float64) *ItemUpdateOne {
+	_u.mutation.ResetPurchasePackSize()
+	_u.mutation.SetPurchasePackSize(v)
+	return _u
+}
+
+// SetNillablePurchasePackSize sets the "purchase_pack_size" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillablePurchasePackSize(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetPurchasePackSize(*v)
+	}
+	return _u
+}
+
+// AddPurchasePackSize adds value to the "purchase_pack_size" field.
+func (_u *ItemUpdateOne) AddPurchasePackSize(v float64) *ItemUpdateOne {
+	_u.mutation.AddPurchasePackSize(v)
+	return _u
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (_u *ItemUpdateOne) ClearPurchasePackSize() *ItemUpdateOne {
+	_u.mutation.ClearPurchasePackSize()
+	return _u
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (_u *ItemUpdateOne) SetPurchaseUnit(v string) *ItemUpdateOne {
+	_u.mutation.SetPurchaseUnit(v)
+	return _u
+}
+
+// SetNillablePurchaseUnit sets the "purchase_unit" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillablePurchaseUnit(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetPurchaseUnit(*v)
+	}
+	return _u
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (_u *ItemUpdateOne) ClearPurchaseUnit() *ItemUpdateOne {
+	_u.mutation.ClearPurchaseUnit()
+	return _u
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (_u *ItemUpdateOne) SetYieldPct(v float64) *ItemUpdateOne {
+	_u.mutation.ResetYieldPct()
+	_u.mutation.SetYieldPct(v)
+	return _u
+}
+
+// SetNillableYieldPct sets the "yield_pct" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableYieldPct(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetYieldPct(*v)
+	}
+	return _u
+}
+
+// AddYieldPct adds value to the "yield_pct" field.
+func (_u *ItemUpdateOne) AddYieldPct(v float64) *ItemUpdateOne {
+	_u.mutation.AddYieldPct(v)
+	return _u
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (_u *ItemUpdateOne) ClearYieldPct() *ItemUpdateOne {
+	_u.mutation.ClearYieldPct()
+	return _u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_u *ItemUpdateOne) SetTotalCapacity(v int) *ItemUpdateOne {
 	_u.mutation.ResetTotalCapacity()
@@ -2947,6 +3187,11 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PurchaseUnit(); ok {
+		if err := item.PurchaseUnitValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventVenue(); ok {
 		if err := item.EventVenueValidator(v); err != nil {
 			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
@@ -3087,6 +3332,39 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.CostPriceCleared() {
 		_spec.ClearField(item.FieldCostPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchasePrice(); ok {
+		_spec.SetField(item.FieldPurchasePrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePrice(); ok {
+		_spec.AddField(item.FieldPurchasePrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.PurchasePriceCleared() {
+		_spec.ClearField(item.FieldPurchasePrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchasePackSize(); ok {
+		_spec.SetField(item.FieldPurchasePackSize, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePackSize(); ok {
+		_spec.AddField(item.FieldPurchasePackSize, field.TypeFloat64, value)
+	}
+	if _u.mutation.PurchasePackSizeCleared() {
+		_spec.ClearField(item.FieldPurchasePackSize, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PurchaseUnit(); ok {
+		_spec.SetField(item.FieldPurchaseUnit, field.TypeString, value)
+	}
+	if _u.mutation.PurchaseUnitCleared() {
+		_spec.ClearField(item.FieldPurchaseUnit, field.TypeString)
+	}
+	if value, ok := _u.mutation.YieldPct(); ok {
+		_spec.SetField(item.FieldYieldPct, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedYieldPct(); ok {
+		_spec.AddField(item.FieldYieldPct, field.TypeFloat64, value)
+	}
+	if _u.mutation.YieldPctCleared() {
+		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)

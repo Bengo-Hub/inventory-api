@@ -12,6 +12,20 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 )
 
+// defaultFoodCostTarget is the maximum healthy food-cost percentage (35%).
+const defaultFoodCostTarget = 0.35
+
+// foodCostStatus returns a human-readable status for the computed food-cost %.
+func foodCostStatus(fcPct, target float64) string {
+	if fcPct >= 1.0 {
+		return "LOSS - cost >= price"
+	}
+	if fcPct > target {
+		return "OK - above target FC%"
+	}
+	return "OK - healthy"
+}
+
 // RecalculateRecipeCosts computes and persists total_cost, cost_per_portion, and suggested_price
 // for a recipe by summing ingredient cost_prices (and sub-recipe cost_per_portion) and applying
 // the target (or tenant-default) margin.
@@ -77,6 +91,12 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	if marginPct != nil && *marginPct > 0 && *marginPct < 100 {
 		suggestedPrice := costPerPortion / (1 - *marginPct/100)
 		update = update.SetSuggestedPrice(suggestedPrice)
+	}
+
+	// Compute food_cost_pct and status when selling_price is set.
+	if r.SellingPrice != nil && *r.SellingPrice > 0 {
+		fcPct := costPerPortion / *r.SellingPrice
+		update = update.SetFoodCostPct(fcPct).SetStatus(foodCostStatus(fcPct, defaultFoodCostTarget))
 	}
 
 	if _, err := update.Save(ctx); err != nil {

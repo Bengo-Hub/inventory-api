@@ -10125,6 +10125,13 @@ type ItemMutation struct {
 	tax_inclusive              *bool
 	cost_price                 *float64
 	addcost_price              *float64
+	purchase_price             *float64
+	addpurchase_price          *float64
+	purchase_pack_size         *float64
+	addpurchase_pack_size      *float64
+	purchase_unit              *string
+	yield_pct                  *float64
+	addyield_pct               *float64
 	total_capacity             *int
 	addtotal_capacity          *int
 	booked_capacity            *int
@@ -11334,6 +11341,265 @@ func (m *ItemMutation) ResetCostPrice() {
 	delete(m.clearedFields, item.FieldCostPrice)
 }
 
+// SetPurchasePrice sets the "purchase_price" field.
+func (m *ItemMutation) SetPurchasePrice(f float64) {
+	m.purchase_price = &f
+	m.addpurchase_price = nil
+}
+
+// PurchasePrice returns the value of the "purchase_price" field in the mutation.
+func (m *ItemMutation) PurchasePrice() (r float64, exists bool) {
+	v := m.purchase_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchasePrice returns the old "purchase_price" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldPurchasePrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchasePrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchasePrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchasePrice: %w", err)
+	}
+	return oldValue.PurchasePrice, nil
+}
+
+// AddPurchasePrice adds f to the "purchase_price" field.
+func (m *ItemMutation) AddPurchasePrice(f float64) {
+	if m.addpurchase_price != nil {
+		*m.addpurchase_price += f
+	} else {
+		m.addpurchase_price = &f
+	}
+}
+
+// AddedPurchasePrice returns the value that was added to the "purchase_price" field in this mutation.
+func (m *ItemMutation) AddedPurchasePrice() (r float64, exists bool) {
+	v := m.addpurchase_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (m *ItemMutation) ClearPurchasePrice() {
+	m.purchase_price = nil
+	m.addpurchase_price = nil
+	m.clearedFields[item.FieldPurchasePrice] = struct{}{}
+}
+
+// PurchasePriceCleared returns if the "purchase_price" field was cleared in this mutation.
+func (m *ItemMutation) PurchasePriceCleared() bool {
+	_, ok := m.clearedFields[item.FieldPurchasePrice]
+	return ok
+}
+
+// ResetPurchasePrice resets all changes to the "purchase_price" field.
+func (m *ItemMutation) ResetPurchasePrice() {
+	m.purchase_price = nil
+	m.addpurchase_price = nil
+	delete(m.clearedFields, item.FieldPurchasePrice)
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (m *ItemMutation) SetPurchasePackSize(f float64) {
+	m.purchase_pack_size = &f
+	m.addpurchase_pack_size = nil
+}
+
+// PurchasePackSize returns the value of the "purchase_pack_size" field in the mutation.
+func (m *ItemMutation) PurchasePackSize() (r float64, exists bool) {
+	v := m.purchase_pack_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchasePackSize returns the old "purchase_pack_size" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldPurchasePackSize(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchasePackSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchasePackSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchasePackSize: %w", err)
+	}
+	return oldValue.PurchasePackSize, nil
+}
+
+// AddPurchasePackSize adds f to the "purchase_pack_size" field.
+func (m *ItemMutation) AddPurchasePackSize(f float64) {
+	if m.addpurchase_pack_size != nil {
+		*m.addpurchase_pack_size += f
+	} else {
+		m.addpurchase_pack_size = &f
+	}
+}
+
+// AddedPurchasePackSize returns the value that was added to the "purchase_pack_size" field in this mutation.
+func (m *ItemMutation) AddedPurchasePackSize() (r float64, exists bool) {
+	v := m.addpurchase_pack_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (m *ItemMutation) ClearPurchasePackSize() {
+	m.purchase_pack_size = nil
+	m.addpurchase_pack_size = nil
+	m.clearedFields[item.FieldPurchasePackSize] = struct{}{}
+}
+
+// PurchasePackSizeCleared returns if the "purchase_pack_size" field was cleared in this mutation.
+func (m *ItemMutation) PurchasePackSizeCleared() bool {
+	_, ok := m.clearedFields[item.FieldPurchasePackSize]
+	return ok
+}
+
+// ResetPurchasePackSize resets all changes to the "purchase_pack_size" field.
+func (m *ItemMutation) ResetPurchasePackSize() {
+	m.purchase_pack_size = nil
+	m.addpurchase_pack_size = nil
+	delete(m.clearedFields, item.FieldPurchasePackSize)
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (m *ItemMutation) SetPurchaseUnit(s string) {
+	m.purchase_unit = &s
+}
+
+// PurchaseUnit returns the value of the "purchase_unit" field in the mutation.
+func (m *ItemMutation) PurchaseUnit() (r string, exists bool) {
+	v := m.purchase_unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchaseUnit returns the old "purchase_unit" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldPurchaseUnit(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchaseUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchaseUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchaseUnit: %w", err)
+	}
+	return oldValue.PurchaseUnit, nil
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (m *ItemMutation) ClearPurchaseUnit() {
+	m.purchase_unit = nil
+	m.clearedFields[item.FieldPurchaseUnit] = struct{}{}
+}
+
+// PurchaseUnitCleared returns if the "purchase_unit" field was cleared in this mutation.
+func (m *ItemMutation) PurchaseUnitCleared() bool {
+	_, ok := m.clearedFields[item.FieldPurchaseUnit]
+	return ok
+}
+
+// ResetPurchaseUnit resets all changes to the "purchase_unit" field.
+func (m *ItemMutation) ResetPurchaseUnit() {
+	m.purchase_unit = nil
+	delete(m.clearedFields, item.FieldPurchaseUnit)
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (m *ItemMutation) SetYieldPct(f float64) {
+	m.yield_pct = &f
+	m.addyield_pct = nil
+}
+
+// YieldPct returns the value of the "yield_pct" field in the mutation.
+func (m *ItemMutation) YieldPct() (r float64, exists bool) {
+	v := m.yield_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldYieldPct returns the old "yield_pct" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldYieldPct(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldYieldPct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldYieldPct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldYieldPct: %w", err)
+	}
+	return oldValue.YieldPct, nil
+}
+
+// AddYieldPct adds f to the "yield_pct" field.
+func (m *ItemMutation) AddYieldPct(f float64) {
+	if m.addyield_pct != nil {
+		*m.addyield_pct += f
+	} else {
+		m.addyield_pct = &f
+	}
+}
+
+// AddedYieldPct returns the value that was added to the "yield_pct" field in this mutation.
+func (m *ItemMutation) AddedYieldPct() (r float64, exists bool) {
+	v := m.addyield_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (m *ItemMutation) ClearYieldPct() {
+	m.yield_pct = nil
+	m.addyield_pct = nil
+	m.clearedFields[item.FieldYieldPct] = struct{}{}
+}
+
+// YieldPctCleared returns if the "yield_pct" field was cleared in this mutation.
+func (m *ItemMutation) YieldPctCleared() bool {
+	_, ok := m.clearedFields[item.FieldYieldPct]
+	return ok
+}
+
+// ResetYieldPct resets all changes to the "yield_pct" field.
+func (m *ItemMutation) ResetYieldPct() {
+	m.yield_pct = nil
+	m.addyield_pct = nil
+	delete(m.clearedFields, item.FieldYieldPct)
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (m *ItemMutation) SetTotalCapacity(i int) {
 	m.total_capacity = &i
@@ -12488,7 +12754,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 31)
+	fields := make([]string, 0, 35)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -12557,6 +12823,18 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.cost_price != nil {
 		fields = append(fields, item.FieldCostPrice)
+	}
+	if m.purchase_price != nil {
+		fields = append(fields, item.FieldPurchasePrice)
+	}
+	if m.purchase_pack_size != nil {
+		fields = append(fields, item.FieldPurchasePackSize)
+	}
+	if m.purchase_unit != nil {
+		fields = append(fields, item.FieldPurchaseUnit)
+	}
+	if m.yield_pct != nil {
+		fields = append(fields, item.FieldYieldPct)
 	}
 	if m.total_capacity != nil {
 		fields = append(fields, item.FieldTotalCapacity)
@@ -12636,6 +12914,14 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.TaxInclusive()
 	case item.FieldCostPrice:
 		return m.CostPrice()
+	case item.FieldPurchasePrice:
+		return m.PurchasePrice()
+	case item.FieldPurchasePackSize:
+		return m.PurchasePackSize()
+	case item.FieldPurchaseUnit:
+		return m.PurchaseUnit()
+	case item.FieldYieldPct:
+		return m.YieldPct()
 	case item.FieldTotalCapacity:
 		return m.TotalCapacity()
 	case item.FieldBookedCapacity:
@@ -12707,6 +12993,14 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTaxInclusive(ctx)
 	case item.FieldCostPrice:
 		return m.OldCostPrice(ctx)
+	case item.FieldPurchasePrice:
+		return m.OldPurchasePrice(ctx)
+	case item.FieldPurchasePackSize:
+		return m.OldPurchasePackSize(ctx)
+	case item.FieldPurchaseUnit:
+		return m.OldPurchaseUnit(ctx)
+	case item.FieldYieldPct:
+		return m.OldYieldPct(ctx)
 	case item.FieldTotalCapacity:
 		return m.OldTotalCapacity(ctx)
 	case item.FieldBookedCapacity:
@@ -12893,6 +13187,34 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCostPrice(v)
 		return nil
+	case item.FieldPurchasePrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchasePrice(v)
+		return nil
+	case item.FieldPurchasePackSize:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchasePackSize(v)
+		return nil
+	case item.FieldPurchaseUnit:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchaseUnit(v)
+		return nil
+	case item.FieldYieldPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetYieldPct(v)
+		return nil
 	case item.FieldTotalCapacity:
 		v, ok := value.(int)
 		if !ok {
@@ -12966,6 +13288,15 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addcost_price != nil {
 		fields = append(fields, item.FieldCostPrice)
 	}
+	if m.addpurchase_price != nil {
+		fields = append(fields, item.FieldPurchasePrice)
+	}
+	if m.addpurchase_pack_size != nil {
+		fields = append(fields, item.FieldPurchasePackSize)
+	}
+	if m.addyield_pct != nil {
+		fields = append(fields, item.FieldYieldPct)
+	}
 	if m.addtotal_capacity != nil {
 		fields = append(fields, item.FieldTotalCapacity)
 	}
@@ -12986,6 +13317,12 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedDurationMinutes()
 	case item.FieldCostPrice:
 		return m.AddedCostPrice()
+	case item.FieldPurchasePrice:
+		return m.AddedPurchasePrice()
+	case item.FieldPurchasePackSize:
+		return m.AddedPurchasePackSize()
+	case item.FieldYieldPct:
+		return m.AddedYieldPct()
 	case item.FieldTotalCapacity:
 		return m.AddedTotalCapacity()
 	case item.FieldBookedCapacity:
@@ -13019,6 +13356,27 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddCostPrice(v)
+		return nil
+	case item.FieldPurchasePrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPurchasePrice(v)
+		return nil
+	case item.FieldPurchasePackSize:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPurchasePackSize(v)
+		return nil
+	case item.FieldYieldPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddYieldPct(v)
 		return nil
 	case item.FieldTotalCapacity:
 		v, ok := value.(int)
@@ -13074,6 +13432,18 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldCostPrice) {
 		fields = append(fields, item.FieldCostPrice)
+	}
+	if m.FieldCleared(item.FieldPurchasePrice) {
+		fields = append(fields, item.FieldPurchasePrice)
+	}
+	if m.FieldCleared(item.FieldPurchasePackSize) {
+		fields = append(fields, item.FieldPurchasePackSize)
+	}
+	if m.FieldCleared(item.FieldPurchaseUnit) {
+		fields = append(fields, item.FieldPurchaseUnit)
+	}
+	if m.FieldCleared(item.FieldYieldPct) {
+		fields = append(fields, item.FieldYieldPct)
 	}
 	if m.FieldCleared(item.FieldTotalCapacity) {
 		fields = append(fields, item.FieldTotalCapacity)
@@ -13136,6 +13506,18 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldCostPrice:
 		m.ClearCostPrice()
+		return nil
+	case item.FieldPurchasePrice:
+		m.ClearPurchasePrice()
+		return nil
+	case item.FieldPurchasePackSize:
+		m.ClearPurchasePackSize()
+		return nil
+	case item.FieldPurchaseUnit:
+		m.ClearPurchaseUnit()
+		return nil
+	case item.FieldYieldPct:
+		m.ClearYieldPct()
 		return nil
 	case item.FieldTotalCapacity:
 		m.ClearTotalCapacity()
@@ -13228,6 +13610,18 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldCostPrice:
 		m.ResetCostPrice()
+		return nil
+	case item.FieldPurchasePrice:
+		m.ResetPurchasePrice()
+		return nil
+	case item.FieldPurchasePackSize:
+		m.ResetPurchasePackSize()
+		return nil
+	case item.FieldPurchaseUnit:
+		m.ResetPurchaseUnit()
+		return nil
+	case item.FieldYieldPct:
+		m.ResetYieldPct()
 		return nil
 	case item.FieldTotalCapacity:
 		m.ResetTotalCapacity()
@@ -25621,6 +26015,11 @@ type RecipeMutation struct {
 	addtarget_margin_percent  *float64
 	suggested_price           *float64
 	addsuggested_price        *float64
+	selling_price             *float64
+	addselling_price          *float64
+	food_cost_pct             *float64
+	addfood_cost_pct          *float64
+	status                    *string
 	prep_time_minutes         *int
 	addprep_time_minutes      *int
 	metadata                  *map[string]interface{}
@@ -26260,6 +26659,195 @@ func (m *RecipeMutation) ResetSuggestedPrice() {
 	delete(m.clearedFields, recipe.FieldSuggestedPrice)
 }
 
+// SetSellingPrice sets the "selling_price" field.
+func (m *RecipeMutation) SetSellingPrice(f float64) {
+	m.selling_price = &f
+	m.addselling_price = nil
+}
+
+// SellingPrice returns the value of the "selling_price" field in the mutation.
+func (m *RecipeMutation) SellingPrice() (r float64, exists bool) {
+	v := m.selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSellingPrice returns the old "selling_price" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldSellingPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSellingPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSellingPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSellingPrice: %w", err)
+	}
+	return oldValue.SellingPrice, nil
+}
+
+// AddSellingPrice adds f to the "selling_price" field.
+func (m *RecipeMutation) AddSellingPrice(f float64) {
+	if m.addselling_price != nil {
+		*m.addselling_price += f
+	} else {
+		m.addselling_price = &f
+	}
+}
+
+// AddedSellingPrice returns the value that was added to the "selling_price" field in this mutation.
+func (m *RecipeMutation) AddedSellingPrice() (r float64, exists bool) {
+	v := m.addselling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (m *RecipeMutation) ClearSellingPrice() {
+	m.selling_price = nil
+	m.addselling_price = nil
+	m.clearedFields[recipe.FieldSellingPrice] = struct{}{}
+}
+
+// SellingPriceCleared returns if the "selling_price" field was cleared in this mutation.
+func (m *RecipeMutation) SellingPriceCleared() bool {
+	_, ok := m.clearedFields[recipe.FieldSellingPrice]
+	return ok
+}
+
+// ResetSellingPrice resets all changes to the "selling_price" field.
+func (m *RecipeMutation) ResetSellingPrice() {
+	m.selling_price = nil
+	m.addselling_price = nil
+	delete(m.clearedFields, recipe.FieldSellingPrice)
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (m *RecipeMutation) SetFoodCostPct(f float64) {
+	m.food_cost_pct = &f
+	m.addfood_cost_pct = nil
+}
+
+// FoodCostPct returns the value of the "food_cost_pct" field in the mutation.
+func (m *RecipeMutation) FoodCostPct() (r float64, exists bool) {
+	v := m.food_cost_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFoodCostPct returns the old "food_cost_pct" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldFoodCostPct(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFoodCostPct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFoodCostPct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFoodCostPct: %w", err)
+	}
+	return oldValue.FoodCostPct, nil
+}
+
+// AddFoodCostPct adds f to the "food_cost_pct" field.
+func (m *RecipeMutation) AddFoodCostPct(f float64) {
+	if m.addfood_cost_pct != nil {
+		*m.addfood_cost_pct += f
+	} else {
+		m.addfood_cost_pct = &f
+	}
+}
+
+// AddedFoodCostPct returns the value that was added to the "food_cost_pct" field in this mutation.
+func (m *RecipeMutation) AddedFoodCostPct() (r float64, exists bool) {
+	v := m.addfood_cost_pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (m *RecipeMutation) ClearFoodCostPct() {
+	m.food_cost_pct = nil
+	m.addfood_cost_pct = nil
+	m.clearedFields[recipe.FieldFoodCostPct] = struct{}{}
+}
+
+// FoodCostPctCleared returns if the "food_cost_pct" field was cleared in this mutation.
+func (m *RecipeMutation) FoodCostPctCleared() bool {
+	_, ok := m.clearedFields[recipe.FieldFoodCostPct]
+	return ok
+}
+
+// ResetFoodCostPct resets all changes to the "food_cost_pct" field.
+func (m *RecipeMutation) ResetFoodCostPct() {
+	m.food_cost_pct = nil
+	m.addfood_cost_pct = nil
+	delete(m.clearedFields, recipe.FieldFoodCostPct)
+}
+
+// SetStatus sets the "status" field.
+func (m *RecipeMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *RecipeMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ClearStatus clears the value of the "status" field.
+func (m *RecipeMutation) ClearStatus() {
+	m.status = nil
+	m.clearedFields[recipe.FieldStatus] = struct{}{}
+}
+
+// StatusCleared returns if the "status" field was cleared in this mutation.
+func (m *RecipeMutation) StatusCleared() bool {
+	_, ok := m.clearedFields[recipe.FieldStatus]
+	return ok
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *RecipeMutation) ResetStatus() {
+	m.status = nil
+	delete(m.clearedFields, recipe.FieldStatus)
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (m *RecipeMutation) SetPrepTimeMinutes(i int) {
 	m.prep_time_minutes = &i
@@ -26669,7 +27257,7 @@ func (m *RecipeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 18)
 	if m.tenant_id != nil {
 		fields = append(fields, recipe.FieldTenantID)
 	}
@@ -26699,6 +27287,15 @@ func (m *RecipeMutation) Fields() []string {
 	}
 	if m.suggested_price != nil {
 		fields = append(fields, recipe.FieldSuggestedPrice)
+	}
+	if m.selling_price != nil {
+		fields = append(fields, recipe.FieldSellingPrice)
+	}
+	if m.food_cost_pct != nil {
+		fields = append(fields, recipe.FieldFoodCostPct)
+	}
+	if m.status != nil {
+		fields = append(fields, recipe.FieldStatus)
 	}
 	if m.prep_time_minutes != nil {
 		fields = append(fields, recipe.FieldPrepTimeMinutes)
@@ -26743,6 +27340,12 @@ func (m *RecipeMutation) Field(name string) (ent.Value, bool) {
 		return m.TargetMarginPercent()
 	case recipe.FieldSuggestedPrice:
 		return m.SuggestedPrice()
+	case recipe.FieldSellingPrice:
+		return m.SellingPrice()
+	case recipe.FieldFoodCostPct:
+		return m.FoodCostPct()
+	case recipe.FieldStatus:
+		return m.Status()
 	case recipe.FieldPrepTimeMinutes:
 		return m.PrepTimeMinutes()
 	case recipe.FieldItemID:
@@ -26782,6 +27385,12 @@ func (m *RecipeMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldTargetMarginPercent(ctx)
 	case recipe.FieldSuggestedPrice:
 		return m.OldSuggestedPrice(ctx)
+	case recipe.FieldSellingPrice:
+		return m.OldSellingPrice(ctx)
+	case recipe.FieldFoodCostPct:
+		return m.OldFoodCostPct(ctx)
+	case recipe.FieldStatus:
+		return m.OldStatus(ctx)
 	case recipe.FieldPrepTimeMinutes:
 		return m.OldPrepTimeMinutes(ctx)
 	case recipe.FieldItemID:
@@ -26871,6 +27480,27 @@ func (m *RecipeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSuggestedPrice(v)
 		return nil
+	case recipe.FieldSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSellingPrice(v)
+		return nil
+	case recipe.FieldFoodCostPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFoodCostPct(v)
+		return nil
+	case recipe.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
 	case recipe.FieldPrepTimeMinutes:
 		v, ok := value.(int)
 		if !ok {
@@ -26929,6 +27559,12 @@ func (m *RecipeMutation) AddedFields() []string {
 	if m.addsuggested_price != nil {
 		fields = append(fields, recipe.FieldSuggestedPrice)
 	}
+	if m.addselling_price != nil {
+		fields = append(fields, recipe.FieldSellingPrice)
+	}
+	if m.addfood_cost_pct != nil {
+		fields = append(fields, recipe.FieldFoodCostPct)
+	}
 	if m.addprep_time_minutes != nil {
 		fields = append(fields, recipe.FieldPrepTimeMinutes)
 	}
@@ -26950,6 +27586,10 @@ func (m *RecipeMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedTargetMarginPercent()
 	case recipe.FieldSuggestedPrice:
 		return m.AddedSuggestedPrice()
+	case recipe.FieldSellingPrice:
+		return m.AddedSellingPrice()
+	case recipe.FieldFoodCostPct:
+		return m.AddedFoodCostPct()
 	case recipe.FieldPrepTimeMinutes:
 		return m.AddedPrepTimeMinutes()
 	}
@@ -26996,6 +27636,20 @@ func (m *RecipeMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSuggestedPrice(v)
 		return nil
+	case recipe.FieldSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSellingPrice(v)
+		return nil
+	case recipe.FieldFoodCostPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFoodCostPct(v)
+		return nil
 	case recipe.FieldPrepTimeMinutes:
 		v, ok := value.(int)
 		if !ok {
@@ -27022,6 +27676,15 @@ func (m *RecipeMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(recipe.FieldSuggestedPrice) {
 		fields = append(fields, recipe.FieldSuggestedPrice)
+	}
+	if m.FieldCleared(recipe.FieldSellingPrice) {
+		fields = append(fields, recipe.FieldSellingPrice)
+	}
+	if m.FieldCleared(recipe.FieldFoodCostPct) {
+		fields = append(fields, recipe.FieldFoodCostPct)
+	}
+	if m.FieldCleared(recipe.FieldStatus) {
+		fields = append(fields, recipe.FieldStatus)
 	}
 	if m.FieldCleared(recipe.FieldPrepTimeMinutes) {
 		fields = append(fields, recipe.FieldPrepTimeMinutes)
@@ -27057,6 +27720,15 @@ func (m *RecipeMutation) ClearField(name string) error {
 		return nil
 	case recipe.FieldSuggestedPrice:
 		m.ClearSuggestedPrice()
+		return nil
+	case recipe.FieldSellingPrice:
+		m.ClearSellingPrice()
+		return nil
+	case recipe.FieldFoodCostPct:
+		m.ClearFoodCostPct()
+		return nil
+	case recipe.FieldStatus:
+		m.ClearStatus()
 		return nil
 	case recipe.FieldPrepTimeMinutes:
 		m.ClearPrepTimeMinutes()
@@ -27104,6 +27776,15 @@ func (m *RecipeMutation) ResetField(name string) error {
 		return nil
 	case recipe.FieldSuggestedPrice:
 		m.ResetSuggestedPrice()
+		return nil
+	case recipe.FieldSellingPrice:
+		m.ResetSellingPrice()
+		return nil
+	case recipe.FieldFoodCostPct:
+		m.ResetFoodCostPct()
+		return nil
+	case recipe.FieldStatus:
+		m.ResetStatus()
 		return nil
 	case recipe.FieldPrepTimeMinutes:
 		m.ResetPrepTimeMinutes()

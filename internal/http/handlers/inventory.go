@@ -59,6 +59,8 @@ type RecipesServicer interface {
 	UpdateRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID, dto recipes.RecipeDTO) (*recipes.RecipeDTO, error)
 	DeleteRecipe(ctx context.Context, tenantID uuid.UUID, recipeID uuid.UUID) error
 	GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*recipes.RecipeDTO, error)
+	// RecalculateCostsForIngredient cascades cost recalculation to all recipes using the given ingredient.
+	RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error
 }
 
 // UnitsServicer defines the contract for unit management.
@@ -188,6 +190,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Multi-format bulk import (CSV/XLSX — items, recipes, modifiers, stock)
 		inv.With(perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
 		inv.Get("/import-template", h.ImportTemplate)
+		// Composite menu-item create: item + recipe + ingredients + modifiers in one call
+		inv.With(perm(rbac.PermItemsAdd)).Post("/items/menu-item", h.CreateMenuItemComposite)
 
 		// Modifier Groups & Options
 		inv.Get("/modifier-groups", h.ListAllModifierGroups)
@@ -796,11 +800,24 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Capture cost_price before update for cascade detection.
+	prevCostPrice := avail // only used to check if cost changed
+	_ = prevCostPrice
+
 	result, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, req)
 	if err != nil {
 		h.log.Error("update item failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
+	}
+
+	// Cascade: if cost_price changed on an INGREDIENT, recalculate all recipe costs that use it.
+	if req.CostPrice != nil && h.recipeSvc != nil {
+		go func() {
+			if cErr := h.recipeSvc.RecalculateCostsForIngredient(r.Context(), tenantID, avail.ItemID); cErr != nil {
+				h.log.Warn("ingredient price cascade failed", zap.Error(cErr), zap.String("sku", sku))
+			}
+		}()
 	}
 
 	writeJSON(w, http.StatusOK, result)

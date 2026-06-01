@@ -106,6 +106,21 @@ func SuggestedPrice(v float64) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldSuggestedPrice, v))
 }
 
+// SellingPrice applies equality check predicate on the "selling_price" field. It's identical to SellingPriceEQ.
+func SellingPrice(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldSellingPrice, v))
+}
+
+// FoodCostPct applies equality check predicate on the "food_cost_pct" field. It's identical to FoodCostPctEQ.
+func FoodCostPct(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldFoodCostPct, v))
+}
+
+// Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
+func Status(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldStatus, v))
+}
+
 // PrepTimeMinutes applies equality check predicate on the "prep_time_minutes" field. It's identical to PrepTimeMinutesEQ.
 func PrepTimeMinutes(v int) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldPrepTimeMinutes, v))
@@ -609,6 +624,181 @@ func SuggestedPriceIsNil() predicate.Recipe {
 // SuggestedPriceNotNil applies the NotNil predicate on the "suggested_price" field.
 func SuggestedPriceNotNil() predicate.Recipe {
 	return predicate.Recipe(sql.FieldNotNull(FieldSuggestedPrice))
+}
+
+// SellingPriceEQ applies the EQ predicate on the "selling_price" field.
+func SellingPriceEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldSellingPrice, v))
+}
+
+// SellingPriceNEQ applies the NEQ predicate on the "selling_price" field.
+func SellingPriceNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldSellingPrice, v))
+}
+
+// SellingPriceIn applies the In predicate on the "selling_price" field.
+func SellingPriceIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldSellingPrice, vs...))
+}
+
+// SellingPriceNotIn applies the NotIn predicate on the "selling_price" field.
+func SellingPriceNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldSellingPrice, vs...))
+}
+
+// SellingPriceGT applies the GT predicate on the "selling_price" field.
+func SellingPriceGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldSellingPrice, v))
+}
+
+// SellingPriceGTE applies the GTE predicate on the "selling_price" field.
+func SellingPriceGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldSellingPrice, v))
+}
+
+// SellingPriceLT applies the LT predicate on the "selling_price" field.
+func SellingPriceLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldSellingPrice, v))
+}
+
+// SellingPriceLTE applies the LTE predicate on the "selling_price" field.
+func SellingPriceLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldSellingPrice, v))
+}
+
+// SellingPriceIsNil applies the IsNil predicate on the "selling_price" field.
+func SellingPriceIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldSellingPrice))
+}
+
+// SellingPriceNotNil applies the NotNil predicate on the "selling_price" field.
+func SellingPriceNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldSellingPrice))
+}
+
+// FoodCostPctEQ applies the EQ predicate on the "food_cost_pct" field.
+func FoodCostPctEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldFoodCostPct, v))
+}
+
+// FoodCostPctNEQ applies the NEQ predicate on the "food_cost_pct" field.
+func FoodCostPctNEQ(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldFoodCostPct, v))
+}
+
+// FoodCostPctIn applies the In predicate on the "food_cost_pct" field.
+func FoodCostPctIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldFoodCostPct, vs...))
+}
+
+// FoodCostPctNotIn applies the NotIn predicate on the "food_cost_pct" field.
+func FoodCostPctNotIn(vs ...float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldFoodCostPct, vs...))
+}
+
+// FoodCostPctGT applies the GT predicate on the "food_cost_pct" field.
+func FoodCostPctGT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldFoodCostPct, v))
+}
+
+// FoodCostPctGTE applies the GTE predicate on the "food_cost_pct" field.
+func FoodCostPctGTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldFoodCostPct, v))
+}
+
+// FoodCostPctLT applies the LT predicate on the "food_cost_pct" field.
+func FoodCostPctLT(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldFoodCostPct, v))
+}
+
+// FoodCostPctLTE applies the LTE predicate on the "food_cost_pct" field.
+func FoodCostPctLTE(v float64) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldFoodCostPct, v))
+}
+
+// FoodCostPctIsNil applies the IsNil predicate on the "food_cost_pct" field.
+func FoodCostPctIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldFoodCostPct))
+}
+
+// FoodCostPctNotNil applies the NotNil predicate on the "food_cost_pct" field.
+func FoodCostPctNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldFoodCostPct))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// StatusGT applies the GT predicate on the "status" field.
+func StatusGT(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGT(FieldStatus, v))
+}
+
+// StatusGTE applies the GTE predicate on the "status" field.
+func StatusGTE(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldGTE(FieldStatus, v))
+}
+
+// StatusLT applies the LT predicate on the "status" field.
+func StatusLT(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLT(FieldStatus, v))
+}
+
+// StatusLTE applies the LTE predicate on the "status" field.
+func StatusLTE(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldLTE(FieldStatus, v))
+}
+
+// StatusContains applies the Contains predicate on the "status" field.
+func StatusContains(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldContains(FieldStatus, v))
+}
+
+// StatusHasPrefix applies the HasPrefix predicate on the "status" field.
+func StatusHasPrefix(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldHasPrefix(FieldStatus, v))
+}
+
+// StatusHasSuffix applies the HasSuffix predicate on the "status" field.
+func StatusHasSuffix(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldHasSuffix(FieldStatus, v))
+}
+
+// StatusIsNil applies the IsNil predicate on the "status" field.
+func StatusIsNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldIsNull(FieldStatus))
+}
+
+// StatusNotNil applies the NotNil predicate on the "status" field.
+func StatusNotNil() predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotNull(FieldStatus))
+}
+
+// StatusEqualFold applies the EqualFold predicate on the "status" field.
+func StatusEqualFold(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEqualFold(FieldStatus, v))
+}
+
+// StatusContainsFold applies the ContainsFold predicate on the "status" field.
+func StatusContainsFold(v string) predicate.Recipe {
+	return predicate.Recipe(sql.FieldContainsFold(FieldStatus, v))
 }
 
 // PrepTimeMinutesEQ applies the EQ predicate on the "prep_time_minutes" field.

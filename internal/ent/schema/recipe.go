@@ -58,6 +58,18 @@ func (Recipe) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("cost_per_portion / (1 - margin) — auto-calculated"),
+		field.Float("selling_price").
+			Optional().
+			Nillable().
+			Comment("The price this menu item sells for — user input, never overwritten. Used to compute food_cost_pct"),
+		field.Float("food_cost_pct").
+			Optional().
+			Nillable().
+			Comment("cost_per_portion / selling_price — auto-calculated; target range 0.28-0.35"),
+		field.String("status").
+			Optional().
+			MaxLen(50).
+			Comment("OK - healthy | OK - above target FC% | LOSS - cost >= price"),
 		field.Int("prep_time_minutes").
 			Optional().
 			Nillable().

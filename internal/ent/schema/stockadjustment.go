@@ -26,7 +26,8 @@ func (StockAdjustment) Fields() []ent.Field {
 		field.Float("quantity_after").Comment("Stock level after adjustment"),
 		field.Enum("reason").
 			Values("damaged", "expired", "shrinkage", "found", "correction",
-				"transfer_in", "transfer_out", "return", "initial_count", "other").
+				"transfer_in", "transfer_out", "return", "initial_count",
+				"opening_balance", "other").
 			Comment("Reason for adjustment"),
 		field.String("reference").Optional().Comment("External reference (e.g. PO number, transfer ID)"),
 		field.Text("notes").Optional().Comment("Free-text notes"),

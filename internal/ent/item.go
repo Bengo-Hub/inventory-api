@@ -68,8 +68,16 @@ type Item struct {
 	TaxCodeID string `json:"tax_code_id,omitempty"`
 	// True if selling price already includes VAT; treasury back-calculates tax portion
 	TaxInclusive bool `json:"tax_inclusive,omitempty"`
-	// Purchase/cost price per unit (KES). Used for recipe BOM costing and margin calculations
+	// Edible-portion cost per base unit (KES). Auto-computed when purchase fields are set; otherwise manually entered
 	CostPrice *float64 `json:"cost_price,omitempty"`
+	// Price paid per purchase_unit (KES) — e.g. 750 per kg
+	PurchasePrice *float64 `json:"purchase_price,omitempty"`
+	// Base units per purchase_unit — e.g. 1 kg = 1000 g. cost_price = purchase_price / pack_size / yield_pct
+	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
+	// How the ingredient is bought — e.g. 'kg', 'litre', 'crate'
+	PurchaseUnit string `json:"purchase_unit,omitempty"`
+	// Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct
+	YieldPct *float64 `json:"yield_pct,omitempty"`
 	// Total seats/tickets for SERVICE-type event items
 	TotalCapacity *int `json:"total_capacity,omitempty"`
 	// Confirmed bookings against total_capacity
@@ -285,11 +293,11 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
-		case item.FieldWeightKg, item.FieldCostPrice:
+		case item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -462,6 +470,33 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CostPrice = new(float64)
 				*_m.CostPrice = value.Float64
+			}
+		case item.FieldPurchasePrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field purchase_price", values[i])
+			} else if value.Valid {
+				_m.PurchasePrice = new(float64)
+				*_m.PurchasePrice = value.Float64
+			}
+		case item.FieldPurchasePackSize:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field purchase_pack_size", values[i])
+			} else if value.Valid {
+				_m.PurchasePackSize = new(float64)
+				*_m.PurchasePackSize = value.Float64
+			}
+		case item.FieldPurchaseUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field purchase_unit", values[i])
+			} else if value.Valid {
+				_m.PurchaseUnit = value.String
+			}
+		case item.FieldYieldPct:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field yield_pct", values[i])
+			} else if value.Valid {
+				_m.YieldPct = new(float64)
+				*_m.YieldPct = value.Float64
 			}
 		case item.FieldTotalCapacity:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -705,6 +740,24 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	if v := _m.CostPrice; v != nil {
 		builder.WriteString("cost_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PurchasePrice; v != nil {
+		builder.WriteString("purchase_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PurchasePackSize; v != nil {
+		builder.WriteString("purchase_pack_size=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("purchase_unit=")
+	builder.WriteString(_m.PurchaseUnit)
+	builder.WriteString(", ")
+	if v := _m.YieldPct; v != nil {
+		builder.WriteString("yield_pct=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

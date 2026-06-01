@@ -142,6 +142,48 @@ func (_c *RecipeCreate) SetNillableSuggestedPrice(v *float64) *RecipeCreate {
 	return _c
 }
 
+// SetSellingPrice sets the "selling_price" field.
+func (_c *RecipeCreate) SetSellingPrice(v float64) *RecipeCreate {
+	_c.mutation.SetSellingPrice(v)
+	return _c
+}
+
+// SetNillableSellingPrice sets the "selling_price" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableSellingPrice(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetSellingPrice(*v)
+	}
+	return _c
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (_c *RecipeCreate) SetFoodCostPct(v float64) *RecipeCreate {
+	_c.mutation.SetFoodCostPct(v)
+	return _c
+}
+
+// SetNillableFoodCostPct sets the "food_cost_pct" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableFoodCostPct(v *float64) *RecipeCreate {
+	if v != nil {
+		_c.SetFoodCostPct(*v)
+	}
+	return _c
+}
+
+// SetStatus sets the "status" field.
+func (_c *RecipeCreate) SetStatus(v string) *RecipeCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableStatus(v *string) *RecipeCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (_c *RecipeCreate) SetPrepTimeMinutes(v int) *RecipeCreate {
 	_c.mutation.SetPrepTimeMinutes(v)
@@ -358,6 +400,11 @@ func (_c *RecipeCreate) check() error {
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Recipe.is_active"`)}
 	}
+	if v, ok := _c.mutation.Status(); ok {
+		if err := recipe.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Recipe.status": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Recipe.created_at"`)}
 	}
@@ -439,6 +486,18 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SuggestedPrice(); ok {
 		_spec.SetField(recipe.FieldSuggestedPrice, field.TypeFloat64, value)
 		_node.SuggestedPrice = &value
+	}
+	if value, ok := _c.mutation.SellingPrice(); ok {
+		_spec.SetField(recipe.FieldSellingPrice, field.TypeFloat64, value)
+		_node.SellingPrice = &value
+	}
+	if value, ok := _c.mutation.FoodCostPct(); ok {
+		_spec.SetField(recipe.FieldFoodCostPct, field.TypeFloat64, value)
+		_node.FoodCostPct = &value
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(recipe.FieldStatus, field.TypeString, value)
+		_node.Status = value
 	}
 	if value, ok := _c.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
@@ -728,6 +787,72 @@ func (u *RecipeUpsert) AddSuggestedPrice(v float64) *RecipeUpsert {
 // ClearSuggestedPrice clears the value of the "suggested_price" field.
 func (u *RecipeUpsert) ClearSuggestedPrice() *RecipeUpsert {
 	u.SetNull(recipe.FieldSuggestedPrice)
+	return u
+}
+
+// SetSellingPrice sets the "selling_price" field.
+func (u *RecipeUpsert) SetSellingPrice(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldSellingPrice, v)
+	return u
+}
+
+// UpdateSellingPrice sets the "selling_price" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateSellingPrice() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldSellingPrice)
+	return u
+}
+
+// AddSellingPrice adds v to the "selling_price" field.
+func (u *RecipeUpsert) AddSellingPrice(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldSellingPrice, v)
+	return u
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (u *RecipeUpsert) ClearSellingPrice() *RecipeUpsert {
+	u.SetNull(recipe.FieldSellingPrice)
+	return u
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (u *RecipeUpsert) SetFoodCostPct(v float64) *RecipeUpsert {
+	u.Set(recipe.FieldFoodCostPct, v)
+	return u
+}
+
+// UpdateFoodCostPct sets the "food_cost_pct" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateFoodCostPct() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldFoodCostPct)
+	return u
+}
+
+// AddFoodCostPct adds v to the "food_cost_pct" field.
+func (u *RecipeUpsert) AddFoodCostPct(v float64) *RecipeUpsert {
+	u.Add(recipe.FieldFoodCostPct, v)
+	return u
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (u *RecipeUpsert) ClearFoodCostPct() *RecipeUpsert {
+	u.SetNull(recipe.FieldFoodCostPct)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *RecipeUpsert) SetStatus(v string) *RecipeUpsert {
+	u.Set(recipe.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateStatus() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldStatus)
+	return u
+}
+
+// ClearStatus clears the value of the "status" field.
+func (u *RecipeUpsert) ClearStatus() *RecipeUpsert {
+	u.SetNull(recipe.FieldStatus)
 	return u
 }
 
@@ -1054,6 +1179,83 @@ func (u *RecipeUpsertOne) UpdateSuggestedPrice() *RecipeUpsertOne {
 func (u *RecipeUpsertOne) ClearSuggestedPrice() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.ClearSuggestedPrice()
+	})
+}
+
+// SetSellingPrice sets the "selling_price" field.
+func (u *RecipeUpsertOne) SetSellingPrice(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetSellingPrice(v)
+	})
+}
+
+// AddSellingPrice adds v to the "selling_price" field.
+func (u *RecipeUpsertOne) AddSellingPrice(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddSellingPrice(v)
+	})
+}
+
+// UpdateSellingPrice sets the "selling_price" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateSellingPrice() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateSellingPrice()
+	})
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (u *RecipeUpsertOne) ClearSellingPrice() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearSellingPrice()
+	})
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (u *RecipeUpsertOne) SetFoodCostPct(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetFoodCostPct(v)
+	})
+}
+
+// AddFoodCostPct adds v to the "food_cost_pct" field.
+func (u *RecipeUpsertOne) AddFoodCostPct(v float64) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddFoodCostPct(v)
+	})
+}
+
+// UpdateFoodCostPct sets the "food_cost_pct" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateFoodCostPct() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateFoodCostPct()
+	})
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (u *RecipeUpsertOne) ClearFoodCostPct() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearFoodCostPct()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *RecipeUpsertOne) SetStatus(v string) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateStatus() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// ClearStatus clears the value of the "status" field.
+func (u *RecipeUpsertOne) ClearStatus() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearStatus()
 	})
 }
 
@@ -1559,6 +1761,83 @@ func (u *RecipeUpsertBulk) UpdateSuggestedPrice() *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) ClearSuggestedPrice() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.ClearSuggestedPrice()
+	})
+}
+
+// SetSellingPrice sets the "selling_price" field.
+func (u *RecipeUpsertBulk) SetSellingPrice(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetSellingPrice(v)
+	})
+}
+
+// AddSellingPrice adds v to the "selling_price" field.
+func (u *RecipeUpsertBulk) AddSellingPrice(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddSellingPrice(v)
+	})
+}
+
+// UpdateSellingPrice sets the "selling_price" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateSellingPrice() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateSellingPrice()
+	})
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (u *RecipeUpsertBulk) ClearSellingPrice() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearSellingPrice()
+	})
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (u *RecipeUpsertBulk) SetFoodCostPct(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetFoodCostPct(v)
+	})
+}
+
+// AddFoodCostPct adds v to the "food_cost_pct" field.
+func (u *RecipeUpsertBulk) AddFoodCostPct(v float64) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.AddFoodCostPct(v)
+	})
+}
+
+// UpdateFoodCostPct sets the "food_cost_pct" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateFoodCostPct() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateFoodCostPct()
+	})
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (u *RecipeUpsertBulk) ClearFoodCostPct() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearFoodCostPct()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *RecipeUpsertBulk) SetStatus(v string) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateStatus() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// ClearStatus clears the value of the "status" field.
+func (u *RecipeUpsertBulk) ClearStatus() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.ClearStatus()
 	})
 }
 

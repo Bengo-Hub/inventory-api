@@ -230,6 +230,80 @@ func (_u *RecipeUpdate) ClearSuggestedPrice() *RecipeUpdate {
 	return _u
 }
 
+// SetSellingPrice sets the "selling_price" field.
+func (_u *RecipeUpdate) SetSellingPrice(v float64) *RecipeUpdate {
+	_u.mutation.ResetSellingPrice()
+	_u.mutation.SetSellingPrice(v)
+	return _u
+}
+
+// SetNillableSellingPrice sets the "selling_price" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableSellingPrice(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddSellingPrice adds value to the "selling_price" field.
+func (_u *RecipeUpdate) AddSellingPrice(v float64) *RecipeUpdate {
+	_u.mutation.AddSellingPrice(v)
+	return _u
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (_u *RecipeUpdate) ClearSellingPrice() *RecipeUpdate {
+	_u.mutation.ClearSellingPrice()
+	return _u
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (_u *RecipeUpdate) SetFoodCostPct(v float64) *RecipeUpdate {
+	_u.mutation.ResetFoodCostPct()
+	_u.mutation.SetFoodCostPct(v)
+	return _u
+}
+
+// SetNillableFoodCostPct sets the "food_cost_pct" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableFoodCostPct(v *float64) *RecipeUpdate {
+	if v != nil {
+		_u.SetFoodCostPct(*v)
+	}
+	return _u
+}
+
+// AddFoodCostPct adds value to the "food_cost_pct" field.
+func (_u *RecipeUpdate) AddFoodCostPct(v float64) *RecipeUpdate {
+	_u.mutation.AddFoodCostPct(v)
+	return _u
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (_u *RecipeUpdate) ClearFoodCostPct() *RecipeUpdate {
+	_u.mutation.ClearFoodCostPct()
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *RecipeUpdate) SetStatus(v string) *RecipeUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableStatus(v *string) *RecipeUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// ClearStatus clears the value of the "status" field.
+func (_u *RecipeUpdate) ClearStatus() *RecipeUpdate {
+	_u.mutation.ClearStatus()
+	return _u
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (_u *RecipeUpdate) SetPrepTimeMinutes(v int) *RecipeUpdate {
 	_u.mutation.ResetPrepTimeMinutes()
@@ -441,6 +515,11 @@ func (_u *RecipeUpdate) check() error {
 			return &ValidationError{Name: "unit_of_measure", err: fmt.Errorf(`ent: validator failed for field "Recipe.unit_of_measure": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := recipe.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Recipe.status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -512,6 +591,30 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SuggestedPriceCleared() {
 		_spec.ClearField(recipe.FieldSuggestedPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SellingPrice(); ok {
+		_spec.SetField(recipe.FieldSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSellingPrice(); ok {
+		_spec.AddField(recipe.FieldSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SellingPriceCleared() {
+		_spec.ClearField(recipe.FieldSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.FoodCostPct(); ok {
+		_spec.SetField(recipe.FieldFoodCostPct, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedFoodCostPct(); ok {
+		_spec.AddField(recipe.FieldFoodCostPct, field.TypeFloat64, value)
+	}
+	if _u.mutation.FoodCostPctCleared() {
+		_spec.ClearField(recipe.FieldFoodCostPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(recipe.FieldStatus, field.TypeString, value)
+	}
+	if _u.mutation.StatusCleared() {
+		_spec.ClearField(recipe.FieldStatus, field.TypeString)
 	}
 	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)
@@ -869,6 +972,80 @@ func (_u *RecipeUpdateOne) ClearSuggestedPrice() *RecipeUpdateOne {
 	return _u
 }
 
+// SetSellingPrice sets the "selling_price" field.
+func (_u *RecipeUpdateOne) SetSellingPrice(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetSellingPrice()
+	_u.mutation.SetSellingPrice(v)
+	return _u
+}
+
+// SetNillableSellingPrice sets the "selling_price" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableSellingPrice(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddSellingPrice adds value to the "selling_price" field.
+func (_u *RecipeUpdateOne) AddSellingPrice(v float64) *RecipeUpdateOne {
+	_u.mutation.AddSellingPrice(v)
+	return _u
+}
+
+// ClearSellingPrice clears the value of the "selling_price" field.
+func (_u *RecipeUpdateOne) ClearSellingPrice() *RecipeUpdateOne {
+	_u.mutation.ClearSellingPrice()
+	return _u
+}
+
+// SetFoodCostPct sets the "food_cost_pct" field.
+func (_u *RecipeUpdateOne) SetFoodCostPct(v float64) *RecipeUpdateOne {
+	_u.mutation.ResetFoodCostPct()
+	_u.mutation.SetFoodCostPct(v)
+	return _u
+}
+
+// SetNillableFoodCostPct sets the "food_cost_pct" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableFoodCostPct(v *float64) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetFoodCostPct(*v)
+	}
+	return _u
+}
+
+// AddFoodCostPct adds value to the "food_cost_pct" field.
+func (_u *RecipeUpdateOne) AddFoodCostPct(v float64) *RecipeUpdateOne {
+	_u.mutation.AddFoodCostPct(v)
+	return _u
+}
+
+// ClearFoodCostPct clears the value of the "food_cost_pct" field.
+func (_u *RecipeUpdateOne) ClearFoodCostPct() *RecipeUpdateOne {
+	_u.mutation.ClearFoodCostPct()
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *RecipeUpdateOne) SetStatus(v string) *RecipeUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableStatus(v *string) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// ClearStatus clears the value of the "status" field.
+func (_u *RecipeUpdateOne) ClearStatus() *RecipeUpdateOne {
+	_u.mutation.ClearStatus()
+	return _u
+}
+
 // SetPrepTimeMinutes sets the "prep_time_minutes" field.
 func (_u *RecipeUpdateOne) SetPrepTimeMinutes(v int) *RecipeUpdateOne {
 	_u.mutation.ResetPrepTimeMinutes()
@@ -1093,6 +1270,11 @@ func (_u *RecipeUpdateOne) check() error {
 			return &ValidationError{Name: "unit_of_measure", err: fmt.Errorf(`ent: validator failed for field "Recipe.unit_of_measure": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Status(); ok {
+		if err := recipe.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Recipe.status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1181,6 +1363,30 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 	}
 	if _u.mutation.SuggestedPriceCleared() {
 		_spec.ClearField(recipe.FieldSuggestedPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.SellingPrice(); ok {
+		_spec.SetField(recipe.FieldSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSellingPrice(); ok {
+		_spec.AddField(recipe.FieldSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.SellingPriceCleared() {
+		_spec.ClearField(recipe.FieldSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.FoodCostPct(); ok {
+		_spec.SetField(recipe.FieldFoodCostPct, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedFoodCostPct(); ok {
+		_spec.AddField(recipe.FieldFoodCostPct, field.TypeFloat64, value)
+	}
+	if _u.mutation.FoodCostPctCleared() {
+		_spec.ClearField(recipe.FieldFoodCostPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(recipe.FieldStatus, field.TypeString, value)
+	}
+	if _u.mutation.StatusCleared() {
+		_spec.ClearField(recipe.FieldStatus, field.TypeString)
 	}
 	if value, ok := _u.mutation.PrepTimeMinutes(); ok {
 		_spec.SetField(recipe.FieldPrepTimeMinutes, field.TypeInt, value)

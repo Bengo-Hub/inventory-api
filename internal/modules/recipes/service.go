@@ -2,10 +2,12 @@ package recipes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -33,23 +35,27 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 
 // RecipeDTO represents a recipe with its ingredients.
 type RecipeDTO struct {
-	ID                  uuid.UUID              `json:"id"`
-	TenantID            uuid.UUID              `json:"tenant_id"`
-	SKU                 string                 `json:"sku"`
-	Name                string                 `json:"name"`
-	ItemName            string                 `json:"item_name"`
-	ItemID              *uuid.UUID             `json:"item_id,omitempty"`
-	OutputQty           float64                `json:"output_qty"`
-	Servings            float64                `json:"servings"`
-	UnitOfMeasure       string                 `json:"unit_of_measure"`
-	IsActive            bool                   `json:"is_active"`
-	TotalCost           *float64               `json:"total_cost"`
-	CostPerPortion      *float64               `json:"cost_per_portion"`
-	TargetMarginPercent *float64               `json:"target_margin_percent"`
-	SuggestedPrice      *float64               `json:"suggested_price"`
-	PrepTimeMinutes     *int                   `json:"prep_time_minutes,omitempty"`
-	Allergens           []string               `json:"allergens"`
-	Ingredients         []RecipeIngredientDTO  `json:"ingredients"`
+	ID                  uuid.UUID             `json:"id"`
+	TenantID            uuid.UUID             `json:"tenant_id"`
+	SKU                 string                `json:"sku"`
+	Name                string                `json:"name"`
+	ItemName            string                `json:"item_name"`
+	ItemID              *uuid.UUID            `json:"item_id,omitempty"`
+	OutputQty           float64               `json:"output_qty"`
+	Servings            float64               `json:"servings"`
+	UnitOfMeasure       string                `json:"unit_of_measure"`
+	IsActive            bool                  `json:"is_active"`
+	TotalCost           *float64              `json:"total_cost"`
+	CostPerPortion      *float64              `json:"cost_per_portion"`
+	TargetMarginPercent *float64              `json:"target_margin_percent"`
+	SuggestedPrice      *float64              `json:"suggested_price"`
+	// Selling-price based costing (user-provided; never overwritten by system)
+	SellingPrice    *float64 `json:"selling_price,omitempty"`
+	FoodCostPct     *float64 `json:"food_cost_pct,omitempty"`
+	Status          string   `json:"status,omitempty"` // OK - healthy | OK - above target FC% | LOSS - cost >= price
+	PrepTimeMinutes *int     `json:"prep_time_minutes,omitempty"`
+	Allergens       []string `json:"allergens"`
+	Ingredients     []RecipeIngredientDTO `json:"ingredients"`
 }
 
 // RecipeIngredientDTO represents a single ingredient in a recipe.
@@ -193,7 +199,8 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
 		SetNillableItemID(dto.ItemID).
-		SetNillableTargetMarginPercent(dto.TargetMarginPercent)
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
+		SetNillableSellingPrice(dto.SellingPrice)
 
 	r, err := create.Save(ctx)
 	if err != nil {
@@ -235,6 +242,18 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 		}
 	}
 
+	// Emit recipe.created event in the same transaction.
+	itemIDStr := ""
+	if dto.ItemID != nil {
+		itemIDStr = dto.ItemID.String()
+	}
+	s.writeOutboxEvent(ctx, tx, tenantID, r.ID, "recipe", "recipe.changed", map[string]any{
+		"recipe_id": r.ID.String(),
+		"sku":       dto.SKU,
+		"item_id":   itemIDStr,
+		"action":    "created",
+	})
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -261,7 +280,8 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 		SetOutputQty(dto.OutputQty).
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
-		SetNillableTargetMarginPercent(dto.TargetMarginPercent)
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
+		SetNillableSellingPrice(dto.SellingPrice)
 
 	if dto.ItemID != nil {
 		update = update.SetNillableItemID(dto.ItemID)
@@ -314,6 +334,18 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 		}
 	}
 
+	// Emit recipe.changed event before committing.
+	updItemIDStr := ""
+	if dto.ItemID != nil {
+		updItemIDStr = dto.ItemID.String()
+	}
+	s.writeOutboxEvent(ctx, tx, tenantID, id, "recipe", "recipe.changed", map[string]any{
+		"recipe_id": id.String(),
+		"sku":       dto.SKU,
+		"item_id":   updItemIDStr,
+		"action":    "updated",
+	})
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -350,6 +382,9 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 		CostPerPortion:      r.CostPerPortion,
 		TargetMarginPercent: r.TargetMarginPercent,
 		SuggestedPrice:      r.SuggestedPrice,
+		SellingPrice:        r.SellingPrice,
+		FoodCostPct:         r.FoodCostPct,
+		Status:              r.Status,
 		PrepTimeMinutes:     r.PrepTimeMinutes,
 		Allergens:     []string{},
 		Ingredients:   make([]RecipeIngredientDTO, len(r.Edges.Ingredients)),
@@ -395,4 +430,60 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 	sort.Strings(dto.Allergens)
 
 	return dto
+}
+
+// writeOutboxEvent stores a domain event in the outbox within an Ent transaction.
+// Non-fatal — logs on failure so the business operation still succeeds.
+func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, aggregateID uuid.UUID, aggregateType, eventType string, payload map[string]any) {
+	evt := events.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
+	data, err := evt.ToJSON()
+	if err != nil {
+		s.log.Warn("recipes outbox: marshal event", zap.Error(err), zap.String("event_type", eventType))
+		return
+	}
+	_, err = tx.OutboxEvent.Create().
+		SetTenantID(tenantID).
+		SetAggregateType(aggregateType).
+		SetAggregateID(aggregateID.String()).
+		SetEventType(eventType).
+		SetPayload(json.RawMessage(data)).
+		Save(ctx)
+	if err != nil {
+		s.log.Warn("recipes outbox: write event", zap.Error(err), zap.String("event_type", eventType))
+	}
+}
+
+// RecalculateCostsForIngredient recalculates costs for all recipes that use the given
+// ingredient item ID. Called when an ingredient's cost_price changes.
+func (s *Service) RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error {
+	// Find all recipes that reference this ingredient.
+	rIngredients, err := s.client.RecipeIngredient.Query().
+		Where(recipeingredient.ItemID(ingredientItemID)).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("recipes: find affected recipes for ingredient %s: %w", ingredientItemID, err)
+	}
+
+	seen := make(map[uuid.UUID]struct{}, len(rIngredients))
+	for _, ri := range rIngredients {
+		recipeID := ri.RecipeID
+		if _, ok := seen[recipeID]; ok {
+			continue
+		}
+		seen[recipeID] = struct{}{}
+
+		// Verify the recipe belongs to the same tenant.
+		r, rErr := s.client.Recipe.Get(ctx, recipeID)
+		if rErr != nil || r.TenantID != tenantID {
+			continue
+		}
+
+		if calcErr := s.RecalculateRecipeCosts(ctx, tenantID, recipeID); calcErr != nil {
+			s.log.Warn("recipes: cascade recalc failed",
+				zap.String("recipe_id", recipeID.String()),
+				zap.Error(calcErr),
+			)
+		}
+	}
+	return nil
 }
