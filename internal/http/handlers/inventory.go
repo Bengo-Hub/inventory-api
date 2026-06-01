@@ -183,8 +183,11 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermUnitsChange)).Put("/units/{unitID}", h.UpdateUnit)
 		inv.With(perm(rbac.PermUnitsDelete)).Delete("/units/{unitID}", h.DeleteUnit)
 
-		// CSV bulk import
+		// CSV bulk import (legacy — items only)
 		inv.With(perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
+		// Multi-format bulk import (CSV/XLSX — items, recipes, modifiers, stock)
+		inv.With(perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
+		inv.Get("/import-template", h.ImportTemplate)
 
 		// Modifier Groups & Options
 		inv.Get("/modifier-groups", h.ListAllModifierGroups)
