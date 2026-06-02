@@ -55,6 +55,12 @@ type TenantInventoryConfig struct {
 	PurchaseOrdersEnabled bool `json:"purchase_orders_enabled,omitempty"`
 	// Supplier directory and contract management
 	SupplierManagementEnabled bool `json:"supplier_management_enabled,omitempty"`
+	// Enable hotel room-type SERVICE items and nightly rate plans
+	EnableRoomPricing bool `json:"enable_room_pricing,omitempty"`
+	// Enable facility/conference-hall SERVICE items and session rates
+	EnableFacilityBooking bool `json:"enable_facility_booking,omitempty"`
+	// Enable conference/event Bundle packages (DDR/RDR, meals included)
+	EnableConferencePackages bool `json:"enable_conference_packages,omitempty"`
 	// Default profit margin % for recipe costing when no per-recipe margin is set
 	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -71,7 +77,7 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenantinventoryconfig.FieldUnitReorderDefaults:
 			values[i] = new([]byte)
-		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled:
+		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages:
 			values[i] = new(sql.NullBool)
 		case tenantinventoryconfig.FieldLowStockThresholdPct, tenantinventoryconfig.FieldCriticalStockThresholdPct, tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
@@ -216,6 +222,24 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				_m.SupplierManagementEnabled = value.Bool
 			}
+		case tenantinventoryconfig.FieldEnableRoomPricing:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enable_room_pricing", values[i])
+			} else if value.Valid {
+				_m.EnableRoomPricing = value.Bool
+			}
+		case tenantinventoryconfig.FieldEnableFacilityBooking:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enable_facility_booking", values[i])
+			} else if value.Valid {
+				_m.EnableFacilityBooking = value.Bool
+			}
+		case tenantinventoryconfig.FieldEnableConferencePackages:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enable_conference_packages", values[i])
+			} else if value.Valid {
+				_m.EnableConferencePackages = value.Bool
+			}
 		case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field default_target_margin_percent", values[i])
@@ -328,6 +352,15 @@ func (_m *TenantInventoryConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("supplier_management_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SupplierManagementEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("enable_room_pricing=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EnableRoomPricing))
+	builder.WriteString(", ")
+	builder.WriteString("enable_facility_booking=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EnableFacilityBooking))
+	builder.WriteString(", ")
+	builder.WriteString("enable_conference_packages=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EnableConferencePackages))
 	builder.WriteString(", ")
 	if v := _m.DefaultTargetMarginPercent; v != nil {
 		builder.WriteString("default_target_margin_percent=")

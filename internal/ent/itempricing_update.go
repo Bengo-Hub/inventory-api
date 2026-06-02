@@ -71,6 +71,40 @@ func (_u *ItemPricingUpdate) SetNillablePricingTierID(v *uuid.UUID) *ItemPricing
 	return _u
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (_u *ItemPricingUpdate) SetOutletID(v uuid.UUID) *ItemPricingUpdate {
+	_u.mutation.SetOutletID(v)
+	return _u
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_u *ItemPricingUpdate) SetNillableOutletID(v *uuid.UUID) *ItemPricingUpdate {
+	if v != nil {
+		_u.SetOutletID(*v)
+	}
+	return _u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (_u *ItemPricingUpdate) ClearOutletID() *ItemPricingUpdate {
+	_u.mutation.ClearOutletID()
+	return _u
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (_u *ItemPricingUpdate) SetTierBasis(v itempricing.TierBasis) *ItemPricingUpdate {
+	_u.mutation.SetTierBasis(v)
+	return _u
+}
+
+// SetNillableTierBasis sets the "tier_basis" field if the given value is not nil.
+func (_u *ItemPricingUpdate) SetNillableTierBasis(v *itempricing.TierBasis) *ItemPricingUpdate {
+	if v != nil {
+		_u.SetTierBasis(*v)
+	}
+	return _u
+}
+
 // SetPrice sets the "price" field.
 func (_u *ItemPricingUpdate) SetPrice(v float64) *ItemPricingUpdate {
 	_u.mutation.ResetPrice()
@@ -201,7 +235,20 @@ func (_u *ItemPricingUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *ItemPricingUpdate) check() error {
+	if v, ok := _u.mutation.TierBasis(); ok {
+		if err := itempricing.TierBasisValidator(v); err != nil {
+			return &ValidationError{Name: "tier_basis", err: fmt.Errorf(`ent: validator failed for field "ItemPricing.tier_basis": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *ItemPricingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(itempricing.Table, itempricing.Columns, sqlgraph.NewFieldSpec(itempricing.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -218,6 +265,15 @@ func (_u *ItemPricingUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.PricingTierID(); ok {
 		_spec.SetField(itempricing.FieldPricingTierID, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.OutletID(); ok {
+		_spec.SetField(itempricing.FieldOutletID, field.TypeUUID, value)
+	}
+	if _u.mutation.OutletIDCleared() {
+		_spec.ClearField(itempricing.FieldOutletID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.TierBasis(); ok {
+		_spec.SetField(itempricing.FieldTierBasis, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(itempricing.FieldPrice, field.TypeFloat64, value)
@@ -301,6 +357,40 @@ func (_u *ItemPricingUpdateOne) SetPricingTierID(v uuid.UUID) *ItemPricingUpdate
 func (_u *ItemPricingUpdateOne) SetNillablePricingTierID(v *uuid.UUID) *ItemPricingUpdateOne {
 	if v != nil {
 		_u.SetPricingTierID(*v)
+	}
+	return _u
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (_u *ItemPricingUpdateOne) SetOutletID(v uuid.UUID) *ItemPricingUpdateOne {
+	_u.mutation.SetOutletID(v)
+	return _u
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_u *ItemPricingUpdateOne) SetNillableOutletID(v *uuid.UUID) *ItemPricingUpdateOne {
+	if v != nil {
+		_u.SetOutletID(*v)
+	}
+	return _u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (_u *ItemPricingUpdateOne) ClearOutletID() *ItemPricingUpdateOne {
+	_u.mutation.ClearOutletID()
+	return _u
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (_u *ItemPricingUpdateOne) SetTierBasis(v itempricing.TierBasis) *ItemPricingUpdateOne {
+	_u.mutation.SetTierBasis(v)
+	return _u
+}
+
+// SetNillableTierBasis sets the "tier_basis" field if the given value is not nil.
+func (_u *ItemPricingUpdateOne) SetNillableTierBasis(v *itempricing.TierBasis) *ItemPricingUpdateOne {
+	if v != nil {
+		_u.SetTierBasis(*v)
 	}
 	return _u
 }
@@ -448,7 +538,20 @@ func (_u *ItemPricingUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *ItemPricingUpdateOne) check() error {
+	if v, ok := _u.mutation.TierBasis(); ok {
+		if err := itempricing.TierBasisValidator(v); err != nil {
+			return &ValidationError{Name: "tier_basis", err: fmt.Errorf(`ent: validator failed for field "ItemPricing.tier_basis": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *ItemPricingUpdateOne) sqlSave(ctx context.Context) (_node *ItemPricing, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(itempricing.Table, itempricing.Columns, sqlgraph.NewFieldSpec(itempricing.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -482,6 +585,15 @@ func (_u *ItemPricingUpdateOne) sqlSave(ctx context.Context) (_node *ItemPricing
 	}
 	if value, ok := _u.mutation.PricingTierID(); ok {
 		_spec.SetField(itempricing.FieldPricingTierID, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.OutletID(); ok {
+		_spec.SetField(itempricing.FieldOutletID, field.TypeUUID, value)
+	}
+	if _u.mutation.OutletIDCleared() {
+		_spec.ClearField(itempricing.FieldOutletID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.TierBasis(); ok {
+		_spec.SetField(itempricing.FieldTierBasis, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(itempricing.FieldPrice, field.TypeFloat64, value)

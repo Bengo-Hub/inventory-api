@@ -12,9 +12,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	events "github.com/Bengo-Hub/shared-events"
 	entdialect "entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
+	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -53,14 +53,14 @@ type ItemDTO struct {
 	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
 	CategoryName    string         `json:"category_name,omitempty"`
 	// Extended fields for POS, logistics, compliance
-	Barcode                string             `json:"barcode,omitempty"`
-	BarcodeType            string             `json:"barcode_type,omitempty"`
-	RequiresAgeVerification bool              `json:"requires_age_verification"`
-	IsPerishable           bool               `json:"is_perishable"`
-	TrackLots              bool               `json:"track_lots"`
-	TrackSerialNumbers     bool               `json:"track_serial_numbers"`
-	WeightKg               *float64           `json:"weight_kg,omitempty"`
-	DimensionsCm           map[string]float64 `json:"dimensions_cm,omitempty"`
+	Barcode                 string             `json:"barcode,omitempty"`
+	BarcodeType             string             `json:"barcode_type,omitempty"`
+	RequiresAgeVerification bool               `json:"requires_age_verification"`
+	IsPerishable            bool               `json:"is_perishable"`
+	TrackLots               bool               `json:"track_lots"`
+	TrackSerialNumbers      bool               `json:"track_serial_numbers"`
+	WeightKg                *float64           `json:"weight_kg,omitempty"`
+	DimensionsCm            map[string]float64 `json:"dimensions_cm,omitempty"`
 	// Cost / pricing fields
 	CostPrice *float64 `json:"cost_price,omitempty"`
 	// Purchase / supplier fields — enable auto EP-cost calculation
@@ -77,12 +77,20 @@ type ItemDTO struct {
 	EventStartAt   *time.Time `json:"event_start_at,omitempty"`
 	EventEndAt     *time.Time `json:"event_end_at,omitempty"`
 	EventVenue     *string    `json:"event_venue,omitempty"`
+	// Hospitality fields — room-type / facility / amenity SERVICE items
+	UseCase          string   `json:"use_case,omitempty"`  // RETAIL | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY
+	MealPlan         *string  `json:"meal_plan,omitempty"` // RO | BB | HB | FB | AI
+	OccupancyBasis   *string  `json:"occupancy_basis,omitempty"`
+	MaxAdults        *int     `json:"max_adults,omitempty"`
+	MaxChildren      *int     `json:"max_children,omitempty"`
+	ExtraBedAllowed  bool     `json:"extra_bed_allowed"`
+	SingleSupplement *float64 `json:"single_supplement,omitempty"`
 	// Current stock levels (aggregated across all warehouses).
 	// Populated by ListItems; nil when no balance row exists.
-	Available *int `json:"available,omitempty"`
-	OnHand    *int `json:"on_hand,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	Available *int      `json:"available,omitempty"`
+	OnHand    *int      `json:"on_hand,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type CategoryDTO struct {
@@ -422,6 +430,7 @@ func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus
 
 	return result, nil
 }
+
 // InventorySummary represents high-level stock metrics.
 type InventorySummary struct {
 	TotalItems          int `json:"total_items"`
@@ -518,9 +527,25 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		EventStartAt:            i.EventStartAt,
 		EventEndAt:              i.EventEndAt,
 		EventVenue:              i.EventVenue,
+		UseCase:                 string(i.UseCase),
+		MealPlan:                enumPtrToStr(i.MealPlan),
+		OccupancyBasis:          enumPtrToStr(i.OccupancyBasis),
+		MaxAdults:               i.MaxAdults,
+		MaxChildren:             i.MaxChildren,
+		ExtraBedAllowed:         i.ExtraBedAllowed,
+		SingleSupplement:        i.SingleSupplement,
 		CreatedAt:               i.CreatedAt,
 		UpdatedAt:               i.UpdatedAt,
 	}
+}
+
+// enumPtrToStr converts a nillable Ent enum pointer to a *string for DTO output.
+func enumPtrToStr[T ~string](v *T) *string {
+	if v == nil {
+		return nil
+	}
+	s := string(*v)
+	return &s
 }
 
 // ListItems returns a paginated list of items for a tenant with DB-level filtering.
@@ -1040,6 +1065,25 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.EventVenue != nil {
 		createBuilder = createBuilder.SetEventVenue(*dto.EventVenue)
 	}
+	if dto.UseCase != "" {
+		createBuilder = createBuilder.SetUseCase(item.UseCase(dto.UseCase))
+	}
+	if dto.MealPlan != nil {
+		createBuilder = createBuilder.SetMealPlan(item.MealPlan(*dto.MealPlan))
+	}
+	if dto.OccupancyBasis != nil {
+		createBuilder = createBuilder.SetOccupancyBasis(item.OccupancyBasis(*dto.OccupancyBasis))
+	}
+	if dto.MaxAdults != nil {
+		createBuilder = createBuilder.SetMaxAdults(*dto.MaxAdults)
+	}
+	if dto.MaxChildren != nil {
+		createBuilder = createBuilder.SetMaxChildren(*dto.MaxChildren)
+	}
+	createBuilder = createBuilder.SetExtraBedAllowed(dto.ExtraBedAllowed)
+	if dto.SingleSupplement != nil {
+		createBuilder = createBuilder.SetSingleSupplement(*dto.SingleSupplement)
+	}
 	i, err := createBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("items: create item: %w", err)
@@ -1170,6 +1214,14 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			"weight_kg":                 i.WeightKg,
 			"dimensions_cm":             i.DimensionsCm,
 			"duration_minutes":          i.DurationMinutes,
+			"use_case":                  i.UseCase,
+			"meal_plan":                 i.MealPlan,
+			"occupancy_basis":           i.OccupancyBasis,
+			"max_adults":                i.MaxAdults,
+			"max_children":              i.MaxChildren,
+			"tax_code_id":               i.TaxCodeID,
+			"tax_inclusive":             i.TaxInclusive,
+			"cost_price":                i.CostPrice,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -1264,6 +1316,25 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	if dto.EventVenue != nil {
 		updateBuilder = updateBuilder.SetEventVenue(*dto.EventVenue)
 	}
+	if dto.UseCase != "" {
+		updateBuilder = updateBuilder.SetUseCase(item.UseCase(dto.UseCase))
+	}
+	if dto.MealPlan != nil {
+		updateBuilder = updateBuilder.SetMealPlan(item.MealPlan(*dto.MealPlan))
+	}
+	if dto.OccupancyBasis != nil {
+		updateBuilder = updateBuilder.SetOccupancyBasis(item.OccupancyBasis(*dto.OccupancyBasis))
+	}
+	if dto.MaxAdults != nil {
+		updateBuilder = updateBuilder.SetMaxAdults(*dto.MaxAdults)
+	}
+	if dto.MaxChildren != nil {
+		updateBuilder = updateBuilder.SetMaxChildren(*dto.MaxChildren)
+	}
+	updateBuilder = updateBuilder.SetExtraBedAllowed(dto.ExtraBedAllowed)
+	if dto.SingleSupplement != nil {
+		updateBuilder = updateBuilder.SetSingleSupplement(*dto.SingleSupplement)
+	}
 
 	i, err := updateBuilder.Save(ctx)
 	if err != nil {
@@ -1337,6 +1408,14 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 			"weight_kg":                 i.WeightKg,
 			"dimensions_cm":             i.DimensionsCm,
 			"duration_minutes":          i.DurationMinutes,
+			"use_case":                  i.UseCase,
+			"meal_plan":                 i.MealPlan,
+			"occupancy_basis":           i.OccupancyBasis,
+			"max_adults":                i.MaxAdults,
+			"max_children":              i.MaxChildren,
+			"tax_code_id":               i.TaxCodeID,
+			"tax_inclusive":             i.TaxInclusive,
+			"cost_price":                i.CostPrice,
 		},
 		Timestamp: time.Now().UTC(),
 	}

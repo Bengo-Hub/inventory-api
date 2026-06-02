@@ -13,6 +13,12 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
+		{Name: "package_type", Type: field.TypeEnum, Enums: []string{"RETAIL_KIT", "ROOM_RATE_PLAN", "DDR", "RDR", "HALF_BOARD", "FULL_BOARD", "HALL_HIRE_ONLY", "SERVICE_SESSIONS"}, Default: "RETAIL_KIT"},
+		{Name: "price_basis", Type: field.TypeEnum, Enums: []string{"flat", "per_delegate_per_day", "per_person_sharing", "per_session"}, Default: "flat"},
+		{Name: "min_delegates", Type: field.TypeInt, Nullable: true},
+		{Name: "accommodation_included", Type: field.TypeBool, Default: false},
+		{Name: "sessions_total", Type: field.TypeInt, Nullable: true},
+		{Name: "validity_days", Type: field.TypeInt, Nullable: true},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -26,7 +32,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "bundles_items_bundle",
-				Columns:    []*schema.Column{BundlesColumns[6]},
+				Columns:    []*schema.Column{BundlesColumns[12]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -35,12 +41,12 @@ var (
 			{
 				Name:    "bundle_tenant_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{BundlesColumns[1], BundlesColumns[6]},
+				Columns: []*schema.Column{BundlesColumns[1], BundlesColumns[12]},
 			},
 			{
 				Name:    "bundle_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{BundlesColumns[1], BundlesColumns[3]},
+				Columns: []*schema.Column{BundlesColumns[1], BundlesColumns[9]},
 			},
 		},
 	}
@@ -48,6 +54,10 @@ var (
 	BundleComponentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "component_kind", Type: field.TypeEnum, Enums: []string{"ITEM", "MEAL_PERIOD", "AV_EQUIPMENT", "STATIONERY", "CONSUMABLE", "FACILITY", "SERVICE_SESSION"}, Default: "ITEM"},
+		{Name: "meal_period", Type: field.TypeEnum, Nullable: true, Enums: []string{"breakfast", "am_break", "lunch", "pm_break", "dinner"}},
+		{Name: "is_metered", Type: field.TypeBool, Default: false},
+		{Name: "unit", Type: field.TypeString, Nullable: true},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "bundle_id", Type: field.TypeUUID},
 		{Name: "component_item_id", Type: field.TypeUUID},
@@ -60,13 +70,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "bundle_components_bundles_components",
-				Columns:    []*schema.Column{BundleComponentsColumns[3]},
+				Columns:    []*schema.Column{BundleComponentsColumns[7]},
 				RefColumns: []*schema.Column{BundlesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "bundle_components_items_bundle_components",
-				Columns:    []*schema.Column{BundleComponentsColumns[4]},
+				Columns:    []*schema.Column{BundleComponentsColumns[8]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -75,7 +85,7 @@ var (
 			{
 				Name:    "bundlecomponent_bundle_id_component_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{BundleComponentsColumns[3], BundleComponentsColumns[4]},
+				Columns: []*schema.Column{BundleComponentsColumns[7], BundleComponentsColumns[8]},
 			},
 		},
 	}
@@ -467,6 +477,13 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT"}, Default: "GOODS"},
+		{Name: "use_case", Type: field.TypeEnum, Enums: []string{"RETAIL", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY"}, Default: "RETAIL"},
+		{Name: "meal_plan", Type: field.TypeEnum, Nullable: true, Enums: []string{"RO", "BB", "HB", "FB", "AI"}},
+		{Name: "occupancy_basis", Type: field.TypeEnum, Nullable: true, Enums: []string{"per_person_sharing", "per_room"}},
+		{Name: "max_adults", Type: field.TypeInt, Nullable: true},
+		{Name: "max_children", Type: field.TypeInt, Nullable: true},
+		{Name: "extra_bed_allowed", Type: field.TypeBool, Default: false},
+		{Name: "single_supplement", Type: field.TypeFloat64, Nullable: true},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "image_url", Type: field.TypeString, Nullable: true},
 		{Name: "barcode", Type: field.TypeString, Nullable: true},
@@ -507,19 +524,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[33]},
+				Columns:    []*schema.Column{ItemsColumns[40]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[34]},
+				Columns:    []*schema.Column{ItemsColumns[41]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[35]},
+				Columns:    []*schema.Column{ItemsColumns[42]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -528,32 +545,32 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[34]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[41]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[5]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[12]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[7]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[14]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[31]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[38]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[35], ItemsColumns[33]},
+				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[40]},
 			},
 		},
 	}
@@ -669,6 +686,8 @@ var (
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "pricing_tier_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "tier_basis", Type: field.TypeEnum, Enums: []string{"default", "nightly", "per_session", "per_delegate_per_day", "peak", "off_peak"}, Default: "default"},
 		{Name: "price", Type: field.TypeFloat64, Default: 0},
 		{Name: "currency", Type: field.TypeString, Default: "KES"},
 		{Name: "effective_from", Type: field.TypeTime},
@@ -684,14 +703,19 @@ var (
 		PrimaryKey: []*schema.Column{ItemPricingsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "itempricing_tenant_id_item_id_pricing_tier_id",
+				Name:    "itempricing_tenant_id_item_id_pricing_tier_id_outlet_id",
 				Unique:  true,
-				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3]},
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4]},
 			},
 			{
 				Name:    "itempricing_item_id",
 				Unique:  false,
 				Columns: []*schema.Column{ItemPricingsColumns[2]},
+			},
+			{
+				Name:    "itempricing_outlet_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemPricingsColumns[4]},
 			},
 			{
 				Name:    "itempricing_pricing_tier_id",
@@ -701,7 +725,7 @@ var (
 			{
 				Name:    "itempricing_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemPricingsColumns[8]},
+				Columns: []*schema.Column{ItemPricingsColumns[10]},
 			},
 		},
 	}
@@ -1483,6 +1507,9 @@ var (
 		{Name: "recipes_module_enabled", Type: field.TypeBool, Default: false},
 		{Name: "purchase_orders_enabled", Type: field.TypeBool, Default: true},
 		{Name: "supplier_management_enabled", Type: field.TypeBool, Default: true},
+		{Name: "enable_room_pricing", Type: field.TypeBool, Default: false},
+		{Name: "enable_facility_booking", Type: field.TypeBool, Default: false},
+		{Name: "enable_conference_packages", Type: field.TypeBool, Default: false},
 		{Name: "default_target_margin_percent", Type: field.TypeFloat64, Nullable: true, Default: 30},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

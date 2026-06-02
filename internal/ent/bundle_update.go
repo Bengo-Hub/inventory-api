@@ -73,6 +73,129 @@ func (_u *BundleUpdate) SetNillableName(v *string) *BundleUpdate {
 	return _u
 }
 
+// SetPackageType sets the "package_type" field.
+func (_u *BundleUpdate) SetPackageType(v bundle.PackageType) *BundleUpdate {
+	_u.mutation.SetPackageType(v)
+	return _u
+}
+
+// SetNillablePackageType sets the "package_type" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillablePackageType(v *bundle.PackageType) *BundleUpdate {
+	if v != nil {
+		_u.SetPackageType(*v)
+	}
+	return _u
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (_u *BundleUpdate) SetPriceBasis(v bundle.PriceBasis) *BundleUpdate {
+	_u.mutation.SetPriceBasis(v)
+	return _u
+}
+
+// SetNillablePriceBasis sets the "price_basis" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillablePriceBasis(v *bundle.PriceBasis) *BundleUpdate {
+	if v != nil {
+		_u.SetPriceBasis(*v)
+	}
+	return _u
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (_u *BundleUpdate) SetMinDelegates(v int) *BundleUpdate {
+	_u.mutation.ResetMinDelegates()
+	_u.mutation.SetMinDelegates(v)
+	return _u
+}
+
+// SetNillableMinDelegates sets the "min_delegates" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillableMinDelegates(v *int) *BundleUpdate {
+	if v != nil {
+		_u.SetMinDelegates(*v)
+	}
+	return _u
+}
+
+// AddMinDelegates adds value to the "min_delegates" field.
+func (_u *BundleUpdate) AddMinDelegates(v int) *BundleUpdate {
+	_u.mutation.AddMinDelegates(v)
+	return _u
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (_u *BundleUpdate) ClearMinDelegates() *BundleUpdate {
+	_u.mutation.ClearMinDelegates()
+	return _u
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (_u *BundleUpdate) SetAccommodationIncluded(v bool) *BundleUpdate {
+	_u.mutation.SetAccommodationIncluded(v)
+	return _u
+}
+
+// SetNillableAccommodationIncluded sets the "accommodation_included" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillableAccommodationIncluded(v *bool) *BundleUpdate {
+	if v != nil {
+		_u.SetAccommodationIncluded(*v)
+	}
+	return _u
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (_u *BundleUpdate) SetSessionsTotal(v int) *BundleUpdate {
+	_u.mutation.ResetSessionsTotal()
+	_u.mutation.SetSessionsTotal(v)
+	return _u
+}
+
+// SetNillableSessionsTotal sets the "sessions_total" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillableSessionsTotal(v *int) *BundleUpdate {
+	if v != nil {
+		_u.SetSessionsTotal(*v)
+	}
+	return _u
+}
+
+// AddSessionsTotal adds value to the "sessions_total" field.
+func (_u *BundleUpdate) AddSessionsTotal(v int) *BundleUpdate {
+	_u.mutation.AddSessionsTotal(v)
+	return _u
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (_u *BundleUpdate) ClearSessionsTotal() *BundleUpdate {
+	_u.mutation.ClearSessionsTotal()
+	return _u
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (_u *BundleUpdate) SetValidityDays(v int) *BundleUpdate {
+	_u.mutation.ResetValidityDays()
+	_u.mutation.SetValidityDays(v)
+	return _u
+}
+
+// SetNillableValidityDays sets the "validity_days" field if the given value is not nil.
+func (_u *BundleUpdate) SetNillableValidityDays(v *int) *BundleUpdate {
+	if v != nil {
+		_u.SetValidityDays(*v)
+	}
+	return _u
+}
+
+// AddValidityDays adds value to the "validity_days" field.
+func (_u *BundleUpdate) AddValidityDays(v int) *BundleUpdate {
+	_u.mutation.AddValidityDays(v)
+	return _u
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (_u *BundleUpdate) ClearValidityDays() *BundleUpdate {
+	_u.mutation.ClearValidityDays()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *BundleUpdate) SetIsActive(v bool) *BundleUpdate {
 	_u.mutation.SetIsActive(v)
@@ -188,6 +311,16 @@ func (_u *BundleUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Bundle.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PackageType(); ok {
+		if err := bundle.PackageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "package_type", err: fmt.Errorf(`ent: validator failed for field "Bundle.package_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PriceBasis(); ok {
+		if err := bundle.PriceBasisValidator(v); err != nil {
+			return &ValidationError{Name: "price_basis", err: fmt.Errorf(`ent: validator failed for field "Bundle.price_basis": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Bundle.item"`)
 	}
@@ -211,6 +344,42 @@ func (_u *BundleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(bundle.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PackageType(); ok {
+		_spec.SetField(bundle.FieldPackageType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.PriceBasis(); ok {
+		_spec.SetField(bundle.FieldPriceBasis, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MinDelegates(); ok {
+		_spec.SetField(bundle.FieldMinDelegates, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMinDelegates(); ok {
+		_spec.AddField(bundle.FieldMinDelegates, field.TypeInt, value)
+	}
+	if _u.mutation.MinDelegatesCleared() {
+		_spec.ClearField(bundle.FieldMinDelegates, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AccommodationIncluded(); ok {
+		_spec.SetField(bundle.FieldAccommodationIncluded, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SessionsTotal(); ok {
+		_spec.SetField(bundle.FieldSessionsTotal, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSessionsTotal(); ok {
+		_spec.AddField(bundle.FieldSessionsTotal, field.TypeInt, value)
+	}
+	if _u.mutation.SessionsTotalCleared() {
+		_spec.ClearField(bundle.FieldSessionsTotal, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ValidityDays(); ok {
+		_spec.SetField(bundle.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedValidityDays(); ok {
+		_spec.AddField(bundle.FieldValidityDays, field.TypeInt, value)
+	}
+	if _u.mutation.ValidityDaysCleared() {
+		_spec.ClearField(bundle.FieldValidityDays, field.TypeInt)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(bundle.FieldIsActive, field.TypeBool, value)
@@ -354,6 +523,129 @@ func (_u *BundleUpdateOne) SetNillableName(v *string) *BundleUpdateOne {
 	return _u
 }
 
+// SetPackageType sets the "package_type" field.
+func (_u *BundleUpdateOne) SetPackageType(v bundle.PackageType) *BundleUpdateOne {
+	_u.mutation.SetPackageType(v)
+	return _u
+}
+
+// SetNillablePackageType sets the "package_type" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillablePackageType(v *bundle.PackageType) *BundleUpdateOne {
+	if v != nil {
+		_u.SetPackageType(*v)
+	}
+	return _u
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (_u *BundleUpdateOne) SetPriceBasis(v bundle.PriceBasis) *BundleUpdateOne {
+	_u.mutation.SetPriceBasis(v)
+	return _u
+}
+
+// SetNillablePriceBasis sets the "price_basis" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillablePriceBasis(v *bundle.PriceBasis) *BundleUpdateOne {
+	if v != nil {
+		_u.SetPriceBasis(*v)
+	}
+	return _u
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (_u *BundleUpdateOne) SetMinDelegates(v int) *BundleUpdateOne {
+	_u.mutation.ResetMinDelegates()
+	_u.mutation.SetMinDelegates(v)
+	return _u
+}
+
+// SetNillableMinDelegates sets the "min_delegates" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillableMinDelegates(v *int) *BundleUpdateOne {
+	if v != nil {
+		_u.SetMinDelegates(*v)
+	}
+	return _u
+}
+
+// AddMinDelegates adds value to the "min_delegates" field.
+func (_u *BundleUpdateOne) AddMinDelegates(v int) *BundleUpdateOne {
+	_u.mutation.AddMinDelegates(v)
+	return _u
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (_u *BundleUpdateOne) ClearMinDelegates() *BundleUpdateOne {
+	_u.mutation.ClearMinDelegates()
+	return _u
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (_u *BundleUpdateOne) SetAccommodationIncluded(v bool) *BundleUpdateOne {
+	_u.mutation.SetAccommodationIncluded(v)
+	return _u
+}
+
+// SetNillableAccommodationIncluded sets the "accommodation_included" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillableAccommodationIncluded(v *bool) *BundleUpdateOne {
+	if v != nil {
+		_u.SetAccommodationIncluded(*v)
+	}
+	return _u
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (_u *BundleUpdateOne) SetSessionsTotal(v int) *BundleUpdateOne {
+	_u.mutation.ResetSessionsTotal()
+	_u.mutation.SetSessionsTotal(v)
+	return _u
+}
+
+// SetNillableSessionsTotal sets the "sessions_total" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillableSessionsTotal(v *int) *BundleUpdateOne {
+	if v != nil {
+		_u.SetSessionsTotal(*v)
+	}
+	return _u
+}
+
+// AddSessionsTotal adds value to the "sessions_total" field.
+func (_u *BundleUpdateOne) AddSessionsTotal(v int) *BundleUpdateOne {
+	_u.mutation.AddSessionsTotal(v)
+	return _u
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (_u *BundleUpdateOne) ClearSessionsTotal() *BundleUpdateOne {
+	_u.mutation.ClearSessionsTotal()
+	return _u
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (_u *BundleUpdateOne) SetValidityDays(v int) *BundleUpdateOne {
+	_u.mutation.ResetValidityDays()
+	_u.mutation.SetValidityDays(v)
+	return _u
+}
+
+// SetNillableValidityDays sets the "validity_days" field if the given value is not nil.
+func (_u *BundleUpdateOne) SetNillableValidityDays(v *int) *BundleUpdateOne {
+	if v != nil {
+		_u.SetValidityDays(*v)
+	}
+	return _u
+}
+
+// AddValidityDays adds value to the "validity_days" field.
+func (_u *BundleUpdateOne) AddValidityDays(v int) *BundleUpdateOne {
+	_u.mutation.AddValidityDays(v)
+	return _u
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (_u *BundleUpdateOne) ClearValidityDays() *BundleUpdateOne {
+	_u.mutation.ClearValidityDays()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *BundleUpdateOne) SetIsActive(v bool) *BundleUpdateOne {
 	_u.mutation.SetIsActive(v)
@@ -482,6 +774,16 @@ func (_u *BundleUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Bundle.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PackageType(); ok {
+		if err := bundle.PackageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "package_type", err: fmt.Errorf(`ent: validator failed for field "Bundle.package_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PriceBasis(); ok {
+		if err := bundle.PriceBasisValidator(v); err != nil {
+			return &ValidationError{Name: "price_basis", err: fmt.Errorf(`ent: validator failed for field "Bundle.price_basis": %w`, err)}
+		}
+	}
 	if _u.mutation.ItemCleared() && len(_u.mutation.ItemIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Bundle.item"`)
 	}
@@ -522,6 +824,42 @@ func (_u *BundleUpdateOne) sqlSave(ctx context.Context) (_node *Bundle, err erro
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(bundle.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PackageType(); ok {
+		_spec.SetField(bundle.FieldPackageType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.PriceBasis(); ok {
+		_spec.SetField(bundle.FieldPriceBasis, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MinDelegates(); ok {
+		_spec.SetField(bundle.FieldMinDelegates, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMinDelegates(); ok {
+		_spec.AddField(bundle.FieldMinDelegates, field.TypeInt, value)
+	}
+	if _u.mutation.MinDelegatesCleared() {
+		_spec.ClearField(bundle.FieldMinDelegates, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AccommodationIncluded(); ok {
+		_spec.SetField(bundle.FieldAccommodationIncluded, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SessionsTotal(); ok {
+		_spec.SetField(bundle.FieldSessionsTotal, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSessionsTotal(); ok {
+		_spec.AddField(bundle.FieldSessionsTotal, field.TypeInt, value)
+	}
+	if _u.mutation.SessionsTotalCleared() {
+		_spec.ClearField(bundle.FieldSessionsTotal, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ValidityDays(); ok {
+		_spec.SetField(bundle.FieldValidityDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedValidityDays(); ok {
+		_spec.AddField(bundle.FieldValidityDays, field.TypeInt, value)
+	}
+	if _u.mutation.ValidityDaysCleared() {
+		_spec.ClearField(bundle.FieldValidityDays, field.TypeInt)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(bundle.FieldIsActive, field.TypeBool, value)

@@ -29,6 +29,31 @@ func (Bundle) Fields() []ent.Field {
 			Comment("The bundle item SKU (type=GOODS with is_bundle=true)"),
 		field.String("name").
 			NotEmpty(),
+		// Hospitality package attributes — conference/event/room rate plans.
+		// A plain retail kit leaves these at their defaults.
+		field.Enum("package_type").
+			Values("RETAIL_KIT", "ROOM_RATE_PLAN", "DDR", "RDR", "HALF_BOARD", "FULL_BOARD", "HALL_HIRE_ONLY", "SERVICE_SESSIONS").
+			Default("RETAIL_KIT").
+			Comment("Package classification: DDR=day delegate rate, RDR=residential delegate rate, SERVICE_SESSIONS=prepaid session bundle"),
+		field.Enum("price_basis").
+			Values("flat", "per_delegate_per_day", "per_person_sharing", "per_session").
+			Default("flat").
+			Comment("How the bundle price is interpreted at point of sale"),
+		field.Int("min_delegates").
+			Optional().
+			Nillable().
+			Comment("Minimum chargeable delegates for DDR/RDR packages"),
+		field.Bool("accommodation_included").
+			Default(false).
+			Comment("True for residential (RDR) packages that bundle a room stay"),
+		field.Int("sessions_total").
+			Optional().
+			Nillable().
+			Comment("Total prepaid sessions for SERVICE_SESSIONS packages (replaces pos-api ServicePackage.sessions_total)"),
+		field.Int("validity_days").
+			Optional().
+			Nillable().
+			Comment("Days from purchase before a SERVICE_SESSIONS package expires"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

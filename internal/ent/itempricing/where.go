@@ -70,6 +70,11 @@ func PricingTierID(v uuid.UUID) predicate.ItemPricing {
 	return predicate.ItemPricing(sql.FieldEQ(FieldPricingTierID, v))
 }
 
+// OutletID applies equality check predicate on the "outlet_id" field. It's identical to OutletIDEQ.
+func OutletID(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldEQ(FieldOutletID, v))
+}
+
 // Price applies equality check predicate on the "price" field. It's identical to PriceEQ.
 func Price(v float64) predicate.ItemPricing {
 	return predicate.ItemPricing(sql.FieldEQ(FieldPrice, v))
@@ -223,6 +228,76 @@ func PricingTierIDLT(v uuid.UUID) predicate.ItemPricing {
 // PricingTierIDLTE applies the LTE predicate on the "pricing_tier_id" field.
 func PricingTierIDLTE(v uuid.UUID) predicate.ItemPricing {
 	return predicate.ItemPricing(sql.FieldLTE(FieldPricingTierID, v))
+}
+
+// OutletIDEQ applies the EQ predicate on the "outlet_id" field.
+func OutletIDEQ(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldEQ(FieldOutletID, v))
+}
+
+// OutletIDNEQ applies the NEQ predicate on the "outlet_id" field.
+func OutletIDNEQ(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldNEQ(FieldOutletID, v))
+}
+
+// OutletIDIn applies the In predicate on the "outlet_id" field.
+func OutletIDIn(vs ...uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldIn(FieldOutletID, vs...))
+}
+
+// OutletIDNotIn applies the NotIn predicate on the "outlet_id" field.
+func OutletIDNotIn(vs ...uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldNotIn(FieldOutletID, vs...))
+}
+
+// OutletIDGT applies the GT predicate on the "outlet_id" field.
+func OutletIDGT(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldGT(FieldOutletID, v))
+}
+
+// OutletIDGTE applies the GTE predicate on the "outlet_id" field.
+func OutletIDGTE(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldGTE(FieldOutletID, v))
+}
+
+// OutletIDLT applies the LT predicate on the "outlet_id" field.
+func OutletIDLT(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldLT(FieldOutletID, v))
+}
+
+// OutletIDLTE applies the LTE predicate on the "outlet_id" field.
+func OutletIDLTE(v uuid.UUID) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldLTE(FieldOutletID, v))
+}
+
+// OutletIDIsNil applies the IsNil predicate on the "outlet_id" field.
+func OutletIDIsNil() predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldIsNull(FieldOutletID))
+}
+
+// OutletIDNotNil applies the NotNil predicate on the "outlet_id" field.
+func OutletIDNotNil() predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldNotNull(FieldOutletID))
+}
+
+// TierBasisEQ applies the EQ predicate on the "tier_basis" field.
+func TierBasisEQ(v TierBasis) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldEQ(FieldTierBasis, v))
+}
+
+// TierBasisNEQ applies the NEQ predicate on the "tier_basis" field.
+func TierBasisNEQ(v TierBasis) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldNEQ(FieldTierBasis, v))
+}
+
+// TierBasisIn applies the In predicate on the "tier_basis" field.
+func TierBasisIn(vs ...TierBasis) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldIn(FieldTierBasis, vs...))
+}
+
+// TierBasisNotIn applies the NotIn predicate on the "tier_basis" field.
+func TierBasisNotIn(vs ...TierBasis) predicate.ItemPricing {
+	return predicate.ItemPricing(sql.FieldNotIn(FieldTierBasis, vs...))
 }
 
 // PriceEQ applies the EQ predicate on the "price" field.

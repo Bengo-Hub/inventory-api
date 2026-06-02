@@ -24,6 +24,10 @@ type ItemPricing struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// PricingTierID holds the value of the "pricing_tier_id" field.
 	PricingTierID uuid.UUID `json:"pricing_tier_id,omitempty"`
+	// Outlet-level rate override (nil = applies to all outlets). Used for hospitality per-outlet room/facility rates
+	OutletID *uuid.UUID `json:"outlet_id,omitempty"`
+	// Pricing basis/season for hospitality rate tiers
+	TierBasis itempricing.TierBasis `json:"tier_basis,omitempty"`
 	// Price for this tier
 	Price float64 `json:"price,omitempty"`
 	// Currency holds the value of the "currency" field.
@@ -46,11 +50,13 @@ func (*ItemPricing) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case itempricing.FieldOutletID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case itempricing.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case itempricing.FieldPrice:
 			values[i] = new(sql.NullFloat64)
-		case itempricing.FieldCurrency:
+		case itempricing.FieldTierBasis, itempricing.FieldCurrency:
 			values[i] = new(sql.NullString)
 		case itempricing.FieldEffectiveFrom, itempricing.FieldEffectiveTo, itempricing.FieldCreatedAt, itempricing.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -94,6 +100,19 @@ func (_m *ItemPricing) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field pricing_tier_id", values[i])
 			} else if value != nil {
 				_m.PricingTierID = *value
+			}
+		case itempricing.FieldOutletID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field outlet_id", values[i])
+			} else if value.Valid {
+				_m.OutletID = new(uuid.UUID)
+				*_m.OutletID = *value.S.(*uuid.UUID)
+			}
+		case itempricing.FieldTierBasis:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tier_basis", values[i])
+			} else if value.Valid {
+				_m.TierBasis = itempricing.TierBasis(value.String)
 			}
 		case itempricing.FieldPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -182,6 +201,14 @@ func (_m *ItemPricing) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("pricing_tier_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PricingTierID))
+	builder.WriteString(", ")
+	if v := _m.OutletID; v != nil {
+		builder.WriteString("outlet_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("tier_basis=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TierBasis))
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Price))
