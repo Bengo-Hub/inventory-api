@@ -26,16 +26,21 @@ const (
 
 // posSaleItem is a line item from the POS sale event.
 type posSaleItem struct {
-	SKU             string              `json:"sku"`
-	Quantity        float64             `json:"quantity"`
-	UOMCode         string              `json:"uom_code"`
+	SKU      string  `json:"sku"`
+	Quantity float64 `json:"quantity"`
+	UOMCode  string  `json:"uom_code"`
+	// Modifiers is the field pos-api currently emits (pos.sale.finalized items[].modifiers).
+	Modifiers []posModifierOption `json:"modifiers,omitempty"`
+	// ModifierOptions is a legacy alias kept for backward compatibility.
 	ModifierOptions []posModifierOption `json:"modifier_options,omitempty"`
 }
 
-// posModifierOption is a selected modifier option on a sale line.
+// posModifierOption is a selected modifier on a sale line. pos-api sends the inventory
+// modifier-option id (preferred); some older payloads carry a direct sku.
 type posModifierOption struct {
-	SKU      string  `json:"sku"`       // inventory SKU of the modifier ingredient (may be empty)
-	Quantity float64 `json:"quantity"`  // per-unit quantity to deduct (e.g. 40g of cheese)
+	SKU                       string  `json:"sku"`
+	InventoryModifierOptionID string  `json:"inventory_modifier_option_id"`
+	Quantity                  float64 `json:"quantity"`
 }
 
 // POSSaleEventsConsumer consumes pos.sale.finalized events to record stock consumption.
@@ -191,15 +196,23 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 			})
 		}
 
-		// Add stock draw for any selected modifier options that are linked to inventory SKUs.
-		for _, mod := range si.ModifierOptions {
-			if mod.SKU == "" || mod.Quantity <= 0 {
+		// Add stock draw for selected modifiers. pos-api sends the inventory modifier-option
+		// id; resolve it to the option's consumable SKU, then explode/deduct like any item
+		// (one modifier application per sold unit → scale by line quantity).
+		mods := append(append([]posModifierOption{}, si.Modifiers...), si.ModifierOptions...)
+		for _, mod := range mods {
+			sku := mod.SKU
+			if sku == "" && mod.InventoryModifierOptionID != "" {
+				if oid, perr := uuid.Parse(mod.InventoryModifierOptionID); perr == nil {
+					if opt, oerr := c.orm.ModifierOption.Get(ctx, oid); oerr == nil {
+						sku = opt.Sku
+					}
+				}
+			}
+			if sku == "" {
 				continue
 			}
-			consumptionItems = append(consumptionItems, stock.ConsumptionItem{
-				SKU:      mod.SKU,
-				Quantity: mod.Quantity * si.Quantity, // scale by sale qty
-			})
+			consumptionItems = append(consumptionItems, c.resolveConsumption(ctx, tenantID, sku, si.Quantity)...)
 		}
 	}
 
@@ -228,6 +241,21 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		zap.Int("consumption_items", len(consumptionItems)),
 	)
 	return nil
+}
+
+// resolveConsumption returns the stock-consumption items for a single SKU and quantity:
+// a RECIPE explodes into its ingredient BOM; anything else (or unknown) consumes directly.
+// Used for modifier-option draws so modifier ingredients are no longer leaked.
+func (c *POSSaleEventsConsumer) resolveConsumption(ctx context.Context, tenantID uuid.UUID, sku string, qty float64) []stock.ConsumptionItem {
+	itm, err := c.orm.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(sku), item.IsActive(true)).
+		Only(ctx)
+	if err == nil && itm.Type == item.TypeRECIPE {
+		if ings, e := c.explodeBOM(ctx, tenantID, sku, qty); e == nil {
+			return ings
+		}
+	}
+	return []stock.ConsumptionItem{{SKU: sku, Quantity: qty}}
 }
 
 // explodeBOM looks up a recipe by SKU and returns the ingredient consumption items
