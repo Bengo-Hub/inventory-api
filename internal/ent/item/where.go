@@ -86,6 +86,26 @@ func UnitID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
 }
 
+// MaxAdults applies equality check predicate on the "max_adults" field. It's identical to MaxAdultsEQ.
+func MaxAdults(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxAdults, v))
+}
+
+// MaxChildren applies equality check predicate on the "max_children" field. It's identical to MaxChildrenEQ.
+func MaxChildren(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxChildren, v))
+}
+
+// ExtraBedAllowed applies equality check predicate on the "extra_bed_allowed" field. It's identical to ExtraBedAllowedEQ.
+func ExtraBedAllowed(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldExtraBedAllowed, v))
+}
+
+// SingleSupplement applies equality check predicate on the "single_supplement" field. It's identical to SingleSupplementEQ.
+func SingleSupplement(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldSingleSupplement, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldIsActive, v))
@@ -514,6 +534,246 @@ func TypeIn(vs ...Type) predicate.Item {
 // TypeNotIn applies the NotIn predicate on the "type" field.
 func TypeNotIn(vs ...Type) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldType, vs...))
+}
+
+// UseCaseEQ applies the EQ predicate on the "use_case" field.
+func UseCaseEQ(v UseCase) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUseCase, v))
+}
+
+// UseCaseNEQ applies the NEQ predicate on the "use_case" field.
+func UseCaseNEQ(v UseCase) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldUseCase, v))
+}
+
+// UseCaseIn applies the In predicate on the "use_case" field.
+func UseCaseIn(vs ...UseCase) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldUseCase, vs...))
+}
+
+// UseCaseNotIn applies the NotIn predicate on the "use_case" field.
+func UseCaseNotIn(vs ...UseCase) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldUseCase, vs...))
+}
+
+// MealPlanEQ applies the EQ predicate on the "meal_plan" field.
+func MealPlanEQ(v MealPlan) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMealPlan, v))
+}
+
+// MealPlanNEQ applies the NEQ predicate on the "meal_plan" field.
+func MealPlanNEQ(v MealPlan) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMealPlan, v))
+}
+
+// MealPlanIn applies the In predicate on the "meal_plan" field.
+func MealPlanIn(vs ...MealPlan) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMealPlan, vs...))
+}
+
+// MealPlanNotIn applies the NotIn predicate on the "meal_plan" field.
+func MealPlanNotIn(vs ...MealPlan) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMealPlan, vs...))
+}
+
+// MealPlanIsNil applies the IsNil predicate on the "meal_plan" field.
+func MealPlanIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldMealPlan))
+}
+
+// MealPlanNotNil applies the NotNil predicate on the "meal_plan" field.
+func MealPlanNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldMealPlan))
+}
+
+// OccupancyBasisEQ applies the EQ predicate on the "occupancy_basis" field.
+func OccupancyBasisEQ(v OccupancyBasis) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldOccupancyBasis, v))
+}
+
+// OccupancyBasisNEQ applies the NEQ predicate on the "occupancy_basis" field.
+func OccupancyBasisNEQ(v OccupancyBasis) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldOccupancyBasis, v))
+}
+
+// OccupancyBasisIn applies the In predicate on the "occupancy_basis" field.
+func OccupancyBasisIn(vs ...OccupancyBasis) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldOccupancyBasis, vs...))
+}
+
+// OccupancyBasisNotIn applies the NotIn predicate on the "occupancy_basis" field.
+func OccupancyBasisNotIn(vs ...OccupancyBasis) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldOccupancyBasis, vs...))
+}
+
+// OccupancyBasisIsNil applies the IsNil predicate on the "occupancy_basis" field.
+func OccupancyBasisIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldOccupancyBasis))
+}
+
+// OccupancyBasisNotNil applies the NotNil predicate on the "occupancy_basis" field.
+func OccupancyBasisNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldOccupancyBasis))
+}
+
+// MaxAdultsEQ applies the EQ predicate on the "max_adults" field.
+func MaxAdultsEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxAdults, v))
+}
+
+// MaxAdultsNEQ applies the NEQ predicate on the "max_adults" field.
+func MaxAdultsNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMaxAdults, v))
+}
+
+// MaxAdultsIn applies the In predicate on the "max_adults" field.
+func MaxAdultsIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMaxAdults, vs...))
+}
+
+// MaxAdultsNotIn applies the NotIn predicate on the "max_adults" field.
+func MaxAdultsNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMaxAdults, vs...))
+}
+
+// MaxAdultsGT applies the GT predicate on the "max_adults" field.
+func MaxAdultsGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldMaxAdults, v))
+}
+
+// MaxAdultsGTE applies the GTE predicate on the "max_adults" field.
+func MaxAdultsGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldMaxAdults, v))
+}
+
+// MaxAdultsLT applies the LT predicate on the "max_adults" field.
+func MaxAdultsLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldMaxAdults, v))
+}
+
+// MaxAdultsLTE applies the LTE predicate on the "max_adults" field.
+func MaxAdultsLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldMaxAdults, v))
+}
+
+// MaxAdultsIsNil applies the IsNil predicate on the "max_adults" field.
+func MaxAdultsIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldMaxAdults))
+}
+
+// MaxAdultsNotNil applies the NotNil predicate on the "max_adults" field.
+func MaxAdultsNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldMaxAdults))
+}
+
+// MaxChildrenEQ applies the EQ predicate on the "max_children" field.
+func MaxChildrenEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxChildren, v))
+}
+
+// MaxChildrenNEQ applies the NEQ predicate on the "max_children" field.
+func MaxChildrenNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMaxChildren, v))
+}
+
+// MaxChildrenIn applies the In predicate on the "max_children" field.
+func MaxChildrenIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMaxChildren, vs...))
+}
+
+// MaxChildrenNotIn applies the NotIn predicate on the "max_children" field.
+func MaxChildrenNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMaxChildren, vs...))
+}
+
+// MaxChildrenGT applies the GT predicate on the "max_children" field.
+func MaxChildrenGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldMaxChildren, v))
+}
+
+// MaxChildrenGTE applies the GTE predicate on the "max_children" field.
+func MaxChildrenGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldMaxChildren, v))
+}
+
+// MaxChildrenLT applies the LT predicate on the "max_children" field.
+func MaxChildrenLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldMaxChildren, v))
+}
+
+// MaxChildrenLTE applies the LTE predicate on the "max_children" field.
+func MaxChildrenLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldMaxChildren, v))
+}
+
+// MaxChildrenIsNil applies the IsNil predicate on the "max_children" field.
+func MaxChildrenIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldMaxChildren))
+}
+
+// MaxChildrenNotNil applies the NotNil predicate on the "max_children" field.
+func MaxChildrenNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldMaxChildren))
+}
+
+// ExtraBedAllowedEQ applies the EQ predicate on the "extra_bed_allowed" field.
+func ExtraBedAllowedEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldExtraBedAllowed, v))
+}
+
+// ExtraBedAllowedNEQ applies the NEQ predicate on the "extra_bed_allowed" field.
+func ExtraBedAllowedNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldExtraBedAllowed, v))
+}
+
+// SingleSupplementEQ applies the EQ predicate on the "single_supplement" field.
+func SingleSupplementEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldSingleSupplement, v))
+}
+
+// SingleSupplementNEQ applies the NEQ predicate on the "single_supplement" field.
+func SingleSupplementNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldSingleSupplement, v))
+}
+
+// SingleSupplementIn applies the In predicate on the "single_supplement" field.
+func SingleSupplementIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldSingleSupplement, vs...))
+}
+
+// SingleSupplementNotIn applies the NotIn predicate on the "single_supplement" field.
+func SingleSupplementNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldSingleSupplement, vs...))
+}
+
+// SingleSupplementGT applies the GT predicate on the "single_supplement" field.
+func SingleSupplementGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldSingleSupplement, v))
+}
+
+// SingleSupplementGTE applies the GTE predicate on the "single_supplement" field.
+func SingleSupplementGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldSingleSupplement, v))
+}
+
+// SingleSupplementLT applies the LT predicate on the "single_supplement" field.
+func SingleSupplementLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldSingleSupplement, v))
+}
+
+// SingleSupplementLTE applies the LTE predicate on the "single_supplement" field.
+func SingleSupplementLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldSingleSupplement, v))
+}
+
+// SingleSupplementIsNil applies the IsNil predicate on the "single_supplement" field.
+func SingleSupplementIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldSingleSupplement))
+}
+
+// SingleSupplementNotNil applies the NotNil predicate on the "single_supplement" field.
+func SingleSupplementNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldSingleSupplement))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

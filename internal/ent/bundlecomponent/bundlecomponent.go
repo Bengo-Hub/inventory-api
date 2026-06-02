@@ -3,6 +3,8 @@
 package bundlecomponent
 
 import (
+	"fmt"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -19,6 +21,14 @@ const (
 	FieldComponentItemID = "component_item_id"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldComponentKind holds the string denoting the component_kind field in the database.
+	FieldComponentKind = "component_kind"
+	// FieldMealPeriod holds the string denoting the meal_period field in the database.
+	FieldMealPeriod = "meal_period"
+	// FieldIsMetered holds the string denoting the is_metered field in the database.
+	FieldIsMetered = "is_metered"
+	// FieldUnit holds the string denoting the unit field in the database.
+	FieldUnit = "unit"
 	// FieldSortOrder holds the string denoting the sort_order field in the database.
 	FieldSortOrder = "sort_order"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -49,6 +59,10 @@ var Columns = []string{
 	FieldBundleID,
 	FieldComponentItemID,
 	FieldQuantity,
+	FieldComponentKind,
+	FieldMealPeriod,
+	FieldIsMetered,
+	FieldUnit,
 	FieldSortOrder,
 }
 
@@ -65,11 +79,70 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity int
+	// DefaultIsMetered holds the default value on creation for the "is_metered" field.
+	DefaultIsMetered bool
 	// DefaultSortOrder holds the default value on creation for the "sort_order" field.
 	DefaultSortOrder int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// ComponentKind defines the type for the "component_kind" enum field.
+type ComponentKind string
+
+// ComponentKindITEM is the default value of the ComponentKind enum.
+const DefaultComponentKind = ComponentKindITEM
+
+// ComponentKind values.
+const (
+	ComponentKindITEM            ComponentKind = "ITEM"
+	ComponentKindMEAL_PERIOD     ComponentKind = "MEAL_PERIOD"
+	ComponentKindAV_EQUIPMENT    ComponentKind = "AV_EQUIPMENT"
+	ComponentKindSTATIONERY      ComponentKind = "STATIONERY"
+	ComponentKindCONSUMABLE      ComponentKind = "CONSUMABLE"
+	ComponentKindFACILITY        ComponentKind = "FACILITY"
+	ComponentKindSERVICE_SESSION ComponentKind = "SERVICE_SESSION"
+)
+
+func (ck ComponentKind) String() string {
+	return string(ck)
+}
+
+// ComponentKindValidator is a validator for the "component_kind" field enum values. It is called by the builders before save.
+func ComponentKindValidator(ck ComponentKind) error {
+	switch ck {
+	case ComponentKindITEM, ComponentKindMEAL_PERIOD, ComponentKindAV_EQUIPMENT, ComponentKindSTATIONERY, ComponentKindCONSUMABLE, ComponentKindFACILITY, ComponentKindSERVICE_SESSION:
+		return nil
+	default:
+		return fmt.Errorf("bundlecomponent: invalid enum value for component_kind field: %q", ck)
+	}
+}
+
+// MealPeriod defines the type for the "meal_period" enum field.
+type MealPeriod string
+
+// MealPeriod values.
+const (
+	MealPeriodBreakfast MealPeriod = "breakfast"
+	MealPeriodAmBreak   MealPeriod = "am_break"
+	MealPeriodLunch     MealPeriod = "lunch"
+	MealPeriodPmBreak   MealPeriod = "pm_break"
+	MealPeriodDinner    MealPeriod = "dinner"
+)
+
+func (mp MealPeriod) String() string {
+	return string(mp)
+}
+
+// MealPeriodValidator is a validator for the "meal_period" field enum values. It is called by the builders before save.
+func MealPeriodValidator(mp MealPeriod) error {
+	switch mp {
+	case MealPeriodBreakfast, MealPeriodAmBreak, MealPeriodLunch, MealPeriodPmBreak, MealPeriodDinner:
+		return nil
+	default:
+		return fmt.Errorf("bundlecomponent: invalid enum value for meal_period field: %q", mp)
+	}
+}
 
 // OrderOption defines the ordering options for the BundleComponent queries.
 type OrderOption func(*sql.Selector)
@@ -92,6 +165,26 @@ func ByComponentItemID(opts ...sql.OrderTermOption) OrderOption {
 // ByQuantity orders the results by the quantity field.
 func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByComponentKind orders the results by the component_kind field.
+func ByComponentKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComponentKind, opts...).ToFunc()
+}
+
+// ByMealPeriod orders the results by the meal_period field.
+func ByMealPeriod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMealPeriod, opts...).ToFunc()
+}
+
+// ByIsMetered orders the results by the is_metered field.
+func ByIsMetered(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsMetered, opts...).ToFunc()
+}
+
+// ByUnit orders the results by the unit field.
+func ByUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnit, opts...).ToFunc()
 }
 
 // BySortOrder orders the results by the sort_order field.

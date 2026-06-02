@@ -30,6 +30,20 @@ const (
 	FieldUnitID = "unit_id"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldUseCase holds the string denoting the use_case field in the database.
+	FieldUseCase = "use_case"
+	// FieldMealPlan holds the string denoting the meal_plan field in the database.
+	FieldMealPlan = "meal_plan"
+	// FieldOccupancyBasis holds the string denoting the occupancy_basis field in the database.
+	FieldOccupancyBasis = "occupancy_basis"
+	// FieldMaxAdults holds the string denoting the max_adults field in the database.
+	FieldMaxAdults = "max_adults"
+	// FieldMaxChildren holds the string denoting the max_children field in the database.
+	FieldMaxChildren = "max_children"
+	// FieldExtraBedAllowed holds the string denoting the extra_bed_allowed field in the database.
+	FieldExtraBedAllowed = "extra_bed_allowed"
+	// FieldSingleSupplement holds the string denoting the single_supplement field in the database.
+	FieldSingleSupplement = "single_supplement"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldImageURL holds the string denoting the image_url field in the database.
@@ -235,6 +249,13 @@ var Columns = []string{
 	FieldCategoryID,
 	FieldUnitID,
 	FieldType,
+	FieldUseCase,
+	FieldMealPlan,
+	FieldOccupancyBasis,
+	FieldMaxAdults,
+	FieldMaxChildren,
+	FieldExtraBedAllowed,
+	FieldSingleSupplement,
 	FieldIsActive,
 	FieldImageURL,
 	FieldBarcode,
@@ -280,6 +301,8 @@ var (
 	SkuValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultExtraBedAllowed holds the default value on creation for the "extra_bed_allowed" field.
+	DefaultExtraBedAllowed bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
 	// DefaultRequiresAgeVerification holds the default value on creation for the "requires_age_verification" field.
@@ -346,6 +369,86 @@ func TypeValidator(_type Type) error {
 	}
 }
 
+// UseCase defines the type for the "use_case" enum field.
+type UseCase string
+
+// UseCaseRETAIL is the default value of the UseCase enum.
+const DefaultUseCase = UseCaseRETAIL
+
+// UseCase values.
+const (
+	UseCaseRETAIL               UseCase = "RETAIL"
+	UseCaseFOOD_BEVERAGE        UseCase = "FOOD_BEVERAGE"
+	UseCaseHOSPITALITY_ROOM     UseCase = "HOSPITALITY_ROOM"
+	UseCaseHOSPITALITY_FACILITY UseCase = "HOSPITALITY_FACILITY"
+	UseCaseCONFERENCE           UseCase = "CONFERENCE"
+	UseCaseSALON_SERVICE        UseCase = "SALON_SERVICE"
+	UseCaseAMENITY              UseCase = "AMENITY"
+)
+
+func (uc UseCase) String() string {
+	return string(uc)
+}
+
+// UseCaseValidator is a validator for the "use_case" field enum values. It is called by the builders before save.
+func UseCaseValidator(uc UseCase) error {
+	switch uc {
+	case UseCaseRETAIL, UseCaseFOOD_BEVERAGE, UseCaseHOSPITALITY_ROOM, UseCaseHOSPITALITY_FACILITY, UseCaseCONFERENCE, UseCaseSALON_SERVICE, UseCaseAMENITY:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for use_case field: %q", uc)
+	}
+}
+
+// MealPlan defines the type for the "meal_plan" enum field.
+type MealPlan string
+
+// MealPlan values.
+const (
+	MealPlanRO MealPlan = "RO"
+	MealPlanBB MealPlan = "BB"
+	MealPlanHB MealPlan = "HB"
+	MealPlanFB MealPlan = "FB"
+	MealPlanAI MealPlan = "AI"
+)
+
+func (mp MealPlan) String() string {
+	return string(mp)
+}
+
+// MealPlanValidator is a validator for the "meal_plan" field enum values. It is called by the builders before save.
+func MealPlanValidator(mp MealPlan) error {
+	switch mp {
+	case MealPlanRO, MealPlanBB, MealPlanHB, MealPlanFB, MealPlanAI:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for meal_plan field: %q", mp)
+	}
+}
+
+// OccupancyBasis defines the type for the "occupancy_basis" enum field.
+type OccupancyBasis string
+
+// OccupancyBasis values.
+const (
+	OccupancyBasisPerPersonSharing OccupancyBasis = "per_person_sharing"
+	OccupancyBasisPerRoom          OccupancyBasis = "per_room"
+)
+
+func (ob OccupancyBasis) String() string {
+	return string(ob)
+}
+
+// OccupancyBasisValidator is a validator for the "occupancy_basis" field enum values. It is called by the builders before save.
+func OccupancyBasisValidator(ob OccupancyBasis) error {
+	switch ob {
+	case OccupancyBasisPerPersonSharing, OccupancyBasisPerRoom:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for occupancy_basis field: %q", ob)
+	}
+}
+
 // OrderOption defines the ordering options for the Item queries.
 type OrderOption func(*sql.Selector)
 
@@ -387,6 +490,41 @@ func ByUnitID(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByUseCase orders the results by the use_case field.
+func ByUseCase(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUseCase, opts...).ToFunc()
+}
+
+// ByMealPlan orders the results by the meal_plan field.
+func ByMealPlan(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMealPlan, opts...).ToFunc()
+}
+
+// ByOccupancyBasis orders the results by the occupancy_basis field.
+func ByOccupancyBasis(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOccupancyBasis, opts...).ToFunc()
+}
+
+// ByMaxAdults orders the results by the max_adults field.
+func ByMaxAdults(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxAdults, opts...).ToFunc()
+}
+
+// ByMaxChildren orders the results by the max_children field.
+func ByMaxChildren(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxChildren, opts...).ToFunc()
+}
+
+// ByExtraBedAllowed orders the results by the extra_bed_allowed field.
+func ByExtraBedAllowed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExtraBedAllowed, opts...).ToFunc()
+}
+
+// BySingleSupplement orders the results by the single_supplement field.
+func BySingleSupplement(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSingleSupplement, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

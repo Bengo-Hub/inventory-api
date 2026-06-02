@@ -50,6 +50,12 @@ const (
 	FieldPurchaseOrdersEnabled = "purchase_orders_enabled"
 	// FieldSupplierManagementEnabled holds the string denoting the supplier_management_enabled field in the database.
 	FieldSupplierManagementEnabled = "supplier_management_enabled"
+	// FieldEnableRoomPricing holds the string denoting the enable_room_pricing field in the database.
+	FieldEnableRoomPricing = "enable_room_pricing"
+	// FieldEnableFacilityBooking holds the string denoting the enable_facility_booking field in the database.
+	FieldEnableFacilityBooking = "enable_facility_booking"
+	// FieldEnableConferencePackages holds the string denoting the enable_conference_packages field in the database.
+	FieldEnableConferencePackages = "enable_conference_packages"
 	// FieldDefaultTargetMarginPercent holds the string denoting the default_target_margin_percent field in the database.
 	FieldDefaultTargetMarginPercent = "default_target_margin_percent"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -81,6 +87,9 @@ var Columns = []string{
 	FieldRecipesModuleEnabled,
 	FieldPurchaseOrdersEnabled,
 	FieldSupplierManagementEnabled,
+	FieldEnableRoomPricing,
+	FieldEnableFacilityBooking,
+	FieldEnableConferencePackages,
 	FieldDefaultTargetMarginPercent,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -125,6 +134,12 @@ var (
 	DefaultPurchaseOrdersEnabled bool
 	// DefaultSupplierManagementEnabled holds the default value on creation for the "supplier_management_enabled" field.
 	DefaultSupplierManagementEnabled bool
+	// DefaultEnableRoomPricing holds the default value on creation for the "enable_room_pricing" field.
+	DefaultEnableRoomPricing bool
+	// DefaultEnableFacilityBooking holds the default value on creation for the "enable_facility_booking" field.
+	DefaultEnableFacilityBooking bool
+	// DefaultEnableConferencePackages holds the default value on creation for the "enable_conference_packages" field.
+	DefaultEnableConferencePackages bool
 	// DefaultDefaultTargetMarginPercent holds the default value on creation for the "default_target_margin_percent" field.
 	DefaultDefaultTargetMarginPercent float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -228,6 +243,21 @@ func ByPurchaseOrdersEnabled(opts ...sql.OrderTermOption) OrderOption {
 // BySupplierManagementEnabled orders the results by the supplier_management_enabled field.
 func BySupplierManagementEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSupplierManagementEnabled, opts...).ToFunc()
+}
+
+// ByEnableRoomPricing orders the results by the enable_room_pricing field.
+func ByEnableRoomPricing(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnableRoomPricing, opts...).ToFunc()
+}
+
+// ByEnableFacilityBooking orders the results by the enable_facility_booking field.
+func ByEnableFacilityBooking(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnableFacilityBooking, opts...).ToFunc()
+}
+
+// ByEnableConferencePackages orders the results by the enable_conference_packages field.
+func ByEnableConferencePackages(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnableConferencePackages, opts...).ToFunc()
 }
 
 // ByDefaultTargetMarginPercent orders the results by the default_target_margin_percent field.

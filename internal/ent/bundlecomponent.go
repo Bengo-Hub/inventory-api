@@ -25,6 +25,14 @@ type BundleComponent struct {
 	ComponentItemID uuid.UUID `json:"component_item_id,omitempty"`
 	// Quantity of this component in the bundle
 	Quantity int `json:"quantity,omitempty"`
+	// Role of this component within a (conference/event) package
+	ComponentKind bundlecomponent.ComponentKind `json:"component_kind,omitempty"`
+	// Meal period for MEAL_PERIOD components — drives delegate meal-card generation in pos-api
+	MealPeriod *bundlecomponent.MealPeriod `json:"meal_period,omitempty"`
+	// True if consumption is metered/charged on actuals rather than included flat
+	IsMetered bool `json:"is_metered,omitempty"`
+	// Human-readable unit for the component, e.g. '2x500ml water'
+	Unit string `json:"unit,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
 	SortOrder int `json:"sort_order,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -71,8 +79,12 @@ func (*BundleComponent) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case bundlecomponent.FieldIsMetered:
+			values[i] = new(sql.NullBool)
 		case bundlecomponent.FieldQuantity, bundlecomponent.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
+		case bundlecomponent.FieldComponentKind, bundlecomponent.FieldMealPeriod, bundlecomponent.FieldUnit:
+			values[i] = new(sql.NullString)
 		case bundlecomponent.FieldID, bundlecomponent.FieldBundleID, bundlecomponent.FieldComponentItemID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -113,6 +125,31 @@ func (_m *BundleComponent) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
 				_m.Quantity = int(value.Int64)
+			}
+		case bundlecomponent.FieldComponentKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field component_kind", values[i])
+			} else if value.Valid {
+				_m.ComponentKind = bundlecomponent.ComponentKind(value.String)
+			}
+		case bundlecomponent.FieldMealPeriod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field meal_period", values[i])
+			} else if value.Valid {
+				_m.MealPeriod = new(bundlecomponent.MealPeriod)
+				*_m.MealPeriod = bundlecomponent.MealPeriod(value.String)
+			}
+		case bundlecomponent.FieldIsMetered:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_metered", values[i])
+			} else if value.Valid {
+				_m.IsMetered = value.Bool
+			}
+		case bundlecomponent.FieldUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unit", values[i])
+			} else if value.Valid {
+				_m.Unit = value.String
 			}
 		case bundlecomponent.FieldSortOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -174,6 +211,20 @@ func (_m *BundleComponent) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("quantity=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Quantity))
+	builder.WriteString(", ")
+	builder.WriteString("component_kind=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ComponentKind))
+	builder.WriteString(", ")
+	if v := _m.MealPeriod; v != nil {
+		builder.WriteString("meal_period=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("is_metered=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsMetered))
+	builder.WriteString(", ")
+	builder.WriteString("unit=")
+	builder.WriteString(_m.Unit)
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))

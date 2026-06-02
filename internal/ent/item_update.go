@@ -161,6 +161,155 @@ func (_u *ItemUpdate) SetNillableType(v *item.Type) *ItemUpdate {
 	return _u
 }
 
+// SetUseCase sets the "use_case" field.
+func (_u *ItemUpdate) SetUseCase(v item.UseCase) *ItemUpdate {
+	_u.mutation.SetUseCase(v)
+	return _u
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUseCase(v *item.UseCase) *ItemUpdate {
+	if v != nil {
+		_u.SetUseCase(*v)
+	}
+	return _u
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (_u *ItemUpdate) SetMealPlan(v item.MealPlan) *ItemUpdate {
+	_u.mutation.SetMealPlan(v)
+	return _u
+}
+
+// SetNillableMealPlan sets the "meal_plan" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMealPlan(v *item.MealPlan) *ItemUpdate {
+	if v != nil {
+		_u.SetMealPlan(*v)
+	}
+	return _u
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (_u *ItemUpdate) ClearMealPlan() *ItemUpdate {
+	_u.mutation.ClearMealPlan()
+	return _u
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (_u *ItemUpdate) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpdate {
+	_u.mutation.SetOccupancyBasis(v)
+	return _u
+}
+
+// SetNillableOccupancyBasis sets the "occupancy_basis" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableOccupancyBasis(v *item.OccupancyBasis) *ItemUpdate {
+	if v != nil {
+		_u.SetOccupancyBasis(*v)
+	}
+	return _u
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (_u *ItemUpdate) ClearOccupancyBasis() *ItemUpdate {
+	_u.mutation.ClearOccupancyBasis()
+	return _u
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (_u *ItemUpdate) SetMaxAdults(v int) *ItemUpdate {
+	_u.mutation.ResetMaxAdults()
+	_u.mutation.SetMaxAdults(v)
+	return _u
+}
+
+// SetNillableMaxAdults sets the "max_adults" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMaxAdults(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetMaxAdults(*v)
+	}
+	return _u
+}
+
+// AddMaxAdults adds value to the "max_adults" field.
+func (_u *ItemUpdate) AddMaxAdults(v int) *ItemUpdate {
+	_u.mutation.AddMaxAdults(v)
+	return _u
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (_u *ItemUpdate) ClearMaxAdults() *ItemUpdate {
+	_u.mutation.ClearMaxAdults()
+	return _u
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (_u *ItemUpdate) SetMaxChildren(v int) *ItemUpdate {
+	_u.mutation.ResetMaxChildren()
+	_u.mutation.SetMaxChildren(v)
+	return _u
+}
+
+// SetNillableMaxChildren sets the "max_children" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMaxChildren(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetMaxChildren(*v)
+	}
+	return _u
+}
+
+// AddMaxChildren adds value to the "max_children" field.
+func (_u *ItemUpdate) AddMaxChildren(v int) *ItemUpdate {
+	_u.mutation.AddMaxChildren(v)
+	return _u
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (_u *ItemUpdate) ClearMaxChildren() *ItemUpdate {
+	_u.mutation.ClearMaxChildren()
+	return _u
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (_u *ItemUpdate) SetExtraBedAllowed(v bool) *ItemUpdate {
+	_u.mutation.SetExtraBedAllowed(v)
+	return _u
+}
+
+// SetNillableExtraBedAllowed sets the "extra_bed_allowed" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableExtraBedAllowed(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetExtraBedAllowed(*v)
+	}
+	return _u
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (_u *ItemUpdate) SetSingleSupplement(v float64) *ItemUpdate {
+	_u.mutation.ResetSingleSupplement()
+	_u.mutation.SetSingleSupplement(v)
+	return _u
+}
+
+// SetNillableSingleSupplement sets the "single_supplement" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableSingleSupplement(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetSingleSupplement(*v)
+	}
+	return _u
+}
+
+// AddSingleSupplement adds value to the "single_supplement" field.
+func (_u *ItemUpdate) AddSingleSupplement(v float64) *ItemUpdate {
+	_u.mutation.AddSingleSupplement(v)
+	return _u
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (_u *ItemUpdate) ClearSingleSupplement() *ItemUpdate {
+	_u.mutation.ClearSingleSupplement()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemUpdate) SetIsActive(v bool) *ItemUpdate {
 	_u.mutation.SetIsActive(v)
@@ -1200,6 +1349,21 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.UseCase(); ok {
+		if err := item.UseCaseValidator(v); err != nil {
+			return &ValidationError{Name: "use_case", err: fmt.Errorf(`ent: validator failed for field "Item.use_case": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MealPlan(); ok {
+		if err := item.MealPlanValidator(v); err != nil {
+			return &ValidationError{Name: "meal_plan", err: fmt.Errorf(`ent: validator failed for field "Item.meal_plan": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.OccupancyBasis(); ok {
+		if err := item.OccupancyBasisValidator(v); err != nil {
+			return &ValidationError{Name: "occupancy_basis", err: fmt.Errorf(`ent: validator failed for field "Item.occupancy_basis": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PurchaseUnit(); ok {
 		if err := item.PurchaseUnitValidator(v); err != nil {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
@@ -1242,6 +1406,51 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.UseCase(); ok {
+		_spec.SetField(item.FieldUseCase, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MealPlan(); ok {
+		_spec.SetField(item.FieldMealPlan, field.TypeEnum, value)
+	}
+	if _u.mutation.MealPlanCleared() {
+		_spec.ClearField(item.FieldMealPlan, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.OccupancyBasis(); ok {
+		_spec.SetField(item.FieldOccupancyBasis, field.TypeEnum, value)
+	}
+	if _u.mutation.OccupancyBasisCleared() {
+		_spec.ClearField(item.FieldOccupancyBasis, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.MaxAdults(); ok {
+		_spec.SetField(item.FieldMaxAdults, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxAdults(); ok {
+		_spec.AddField(item.FieldMaxAdults, field.TypeInt, value)
+	}
+	if _u.mutation.MaxAdultsCleared() {
+		_spec.ClearField(item.FieldMaxAdults, field.TypeInt)
+	}
+	if value, ok := _u.mutation.MaxChildren(); ok {
+		_spec.SetField(item.FieldMaxChildren, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxChildren(); ok {
+		_spec.AddField(item.FieldMaxChildren, field.TypeInt, value)
+	}
+	if _u.mutation.MaxChildrenCleared() {
+		_spec.ClearField(item.FieldMaxChildren, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ExtraBedAllowed(); ok {
+		_spec.SetField(item.FieldExtraBedAllowed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SingleSupplement(); ok {
+		_spec.SetField(item.FieldSingleSupplement, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSingleSupplement(); ok {
+		_spec.AddField(item.FieldSingleSupplement, field.TypeFloat64, value)
+	}
+	if _u.mutation.SingleSupplementCleared() {
+		_spec.ClearField(item.FieldSingleSupplement, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)
@@ -2132,6 +2341,155 @@ func (_u *ItemUpdateOne) SetNillableType(v *item.Type) *ItemUpdateOne {
 	if v != nil {
 		_u.SetType(*v)
 	}
+	return _u
+}
+
+// SetUseCase sets the "use_case" field.
+func (_u *ItemUpdateOne) SetUseCase(v item.UseCase) *ItemUpdateOne {
+	_u.mutation.SetUseCase(v)
+	return _u
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUseCase(v *item.UseCase) *ItemUpdateOne {
+	if v != nil {
+		_u.SetUseCase(*v)
+	}
+	return _u
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (_u *ItemUpdateOne) SetMealPlan(v item.MealPlan) *ItemUpdateOne {
+	_u.mutation.SetMealPlan(v)
+	return _u
+}
+
+// SetNillableMealPlan sets the "meal_plan" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMealPlan(v *item.MealPlan) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMealPlan(*v)
+	}
+	return _u
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (_u *ItemUpdateOne) ClearMealPlan() *ItemUpdateOne {
+	_u.mutation.ClearMealPlan()
+	return _u
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (_u *ItemUpdateOne) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpdateOne {
+	_u.mutation.SetOccupancyBasis(v)
+	return _u
+}
+
+// SetNillableOccupancyBasis sets the "occupancy_basis" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableOccupancyBasis(v *item.OccupancyBasis) *ItemUpdateOne {
+	if v != nil {
+		_u.SetOccupancyBasis(*v)
+	}
+	return _u
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (_u *ItemUpdateOne) ClearOccupancyBasis() *ItemUpdateOne {
+	_u.mutation.ClearOccupancyBasis()
+	return _u
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (_u *ItemUpdateOne) SetMaxAdults(v int) *ItemUpdateOne {
+	_u.mutation.ResetMaxAdults()
+	_u.mutation.SetMaxAdults(v)
+	return _u
+}
+
+// SetNillableMaxAdults sets the "max_adults" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMaxAdults(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMaxAdults(*v)
+	}
+	return _u
+}
+
+// AddMaxAdults adds value to the "max_adults" field.
+func (_u *ItemUpdateOne) AddMaxAdults(v int) *ItemUpdateOne {
+	_u.mutation.AddMaxAdults(v)
+	return _u
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (_u *ItemUpdateOne) ClearMaxAdults() *ItemUpdateOne {
+	_u.mutation.ClearMaxAdults()
+	return _u
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (_u *ItemUpdateOne) SetMaxChildren(v int) *ItemUpdateOne {
+	_u.mutation.ResetMaxChildren()
+	_u.mutation.SetMaxChildren(v)
+	return _u
+}
+
+// SetNillableMaxChildren sets the "max_children" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMaxChildren(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMaxChildren(*v)
+	}
+	return _u
+}
+
+// AddMaxChildren adds value to the "max_children" field.
+func (_u *ItemUpdateOne) AddMaxChildren(v int) *ItemUpdateOne {
+	_u.mutation.AddMaxChildren(v)
+	return _u
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (_u *ItemUpdateOne) ClearMaxChildren() *ItemUpdateOne {
+	_u.mutation.ClearMaxChildren()
+	return _u
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (_u *ItemUpdateOne) SetExtraBedAllowed(v bool) *ItemUpdateOne {
+	_u.mutation.SetExtraBedAllowed(v)
+	return _u
+}
+
+// SetNillableExtraBedAllowed sets the "extra_bed_allowed" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableExtraBedAllowed(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetExtraBedAllowed(*v)
+	}
+	return _u
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (_u *ItemUpdateOne) SetSingleSupplement(v float64) *ItemUpdateOne {
+	_u.mutation.ResetSingleSupplement()
+	_u.mutation.SetSingleSupplement(v)
+	return _u
+}
+
+// SetNillableSingleSupplement sets the "single_supplement" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableSingleSupplement(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetSingleSupplement(*v)
+	}
+	return _u
+}
+
+// AddSingleSupplement adds value to the "single_supplement" field.
+func (_u *ItemUpdateOne) AddSingleSupplement(v float64) *ItemUpdateOne {
+	_u.mutation.AddSingleSupplement(v)
+	return _u
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (_u *ItemUpdateOne) ClearSingleSupplement() *ItemUpdateOne {
+	_u.mutation.ClearSingleSupplement()
 	return _u
 }
 
@@ -3187,6 +3545,21 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.UseCase(); ok {
+		if err := item.UseCaseValidator(v); err != nil {
+			return &ValidationError{Name: "use_case", err: fmt.Errorf(`ent: validator failed for field "Item.use_case": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MealPlan(); ok {
+		if err := item.MealPlanValidator(v); err != nil {
+			return &ValidationError{Name: "meal_plan", err: fmt.Errorf(`ent: validator failed for field "Item.meal_plan": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.OccupancyBasis(); ok {
+		if err := item.OccupancyBasisValidator(v); err != nil {
+			return &ValidationError{Name: "occupancy_basis", err: fmt.Errorf(`ent: validator failed for field "Item.occupancy_basis": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PurchaseUnit(); ok {
 		if err := item.PurchaseUnitValidator(v); err != nil {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
@@ -3246,6 +3619,51 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.UseCase(); ok {
+		_spec.SetField(item.FieldUseCase, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MealPlan(); ok {
+		_spec.SetField(item.FieldMealPlan, field.TypeEnum, value)
+	}
+	if _u.mutation.MealPlanCleared() {
+		_spec.ClearField(item.FieldMealPlan, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.OccupancyBasis(); ok {
+		_spec.SetField(item.FieldOccupancyBasis, field.TypeEnum, value)
+	}
+	if _u.mutation.OccupancyBasisCleared() {
+		_spec.ClearField(item.FieldOccupancyBasis, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.MaxAdults(); ok {
+		_spec.SetField(item.FieldMaxAdults, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxAdults(); ok {
+		_spec.AddField(item.FieldMaxAdults, field.TypeInt, value)
+	}
+	if _u.mutation.MaxAdultsCleared() {
+		_spec.ClearField(item.FieldMaxAdults, field.TypeInt)
+	}
+	if value, ok := _u.mutation.MaxChildren(); ok {
+		_spec.SetField(item.FieldMaxChildren, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMaxChildren(); ok {
+		_spec.AddField(item.FieldMaxChildren, field.TypeInt, value)
+	}
+	if _u.mutation.MaxChildrenCleared() {
+		_spec.ClearField(item.FieldMaxChildren, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ExtraBedAllowed(); ok {
+		_spec.SetField(item.FieldExtraBedAllowed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SingleSupplement(); ok {
+		_spec.SetField(item.FieldSingleSupplement, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSingleSupplement(); ok {
+		_spec.AddField(item.FieldSingleSupplement, field.TypeFloat64, value)
+	}
+	if _u.mutation.SingleSupplementCleared() {
+		_spec.ClearField(item.FieldSingleSupplement, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)

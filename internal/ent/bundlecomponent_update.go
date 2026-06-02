@@ -79,6 +79,74 @@ func (_u *BundleComponentUpdate) AddQuantity(v int) *BundleComponentUpdate {
 	return _u
 }
 
+// SetComponentKind sets the "component_kind" field.
+func (_u *BundleComponentUpdate) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpdate {
+	_u.mutation.SetComponentKind(v)
+	return _u
+}
+
+// SetNillableComponentKind sets the "component_kind" field if the given value is not nil.
+func (_u *BundleComponentUpdate) SetNillableComponentKind(v *bundlecomponent.ComponentKind) *BundleComponentUpdate {
+	if v != nil {
+		_u.SetComponentKind(*v)
+	}
+	return _u
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (_u *BundleComponentUpdate) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpdate {
+	_u.mutation.SetMealPeriod(v)
+	return _u
+}
+
+// SetNillableMealPeriod sets the "meal_period" field if the given value is not nil.
+func (_u *BundleComponentUpdate) SetNillableMealPeriod(v *bundlecomponent.MealPeriod) *BundleComponentUpdate {
+	if v != nil {
+		_u.SetMealPeriod(*v)
+	}
+	return _u
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (_u *BundleComponentUpdate) ClearMealPeriod() *BundleComponentUpdate {
+	_u.mutation.ClearMealPeriod()
+	return _u
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (_u *BundleComponentUpdate) SetIsMetered(v bool) *BundleComponentUpdate {
+	_u.mutation.SetIsMetered(v)
+	return _u
+}
+
+// SetNillableIsMetered sets the "is_metered" field if the given value is not nil.
+func (_u *BundleComponentUpdate) SetNillableIsMetered(v *bool) *BundleComponentUpdate {
+	if v != nil {
+		_u.SetIsMetered(*v)
+	}
+	return _u
+}
+
+// SetUnit sets the "unit" field.
+func (_u *BundleComponentUpdate) SetUnit(v string) *BundleComponentUpdate {
+	_u.mutation.SetUnit(v)
+	return _u
+}
+
+// SetNillableUnit sets the "unit" field if the given value is not nil.
+func (_u *BundleComponentUpdate) SetNillableUnit(v *string) *BundleComponentUpdate {
+	if v != nil {
+		_u.SetUnit(*v)
+	}
+	return _u
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (_u *BundleComponentUpdate) ClearUnit() *BundleComponentUpdate {
+	_u.mutation.ClearUnit()
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *BundleComponentUpdate) SetSortOrder(v int) *BundleComponentUpdate {
 	_u.mutation.ResetSortOrder()
@@ -156,6 +224,16 @@ func (_u *BundleComponentUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BundleComponentUpdate) check() error {
+	if v, ok := _u.mutation.ComponentKind(); ok {
+		if err := bundlecomponent.ComponentKindValidator(v); err != nil {
+			return &ValidationError{Name: "component_kind", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.component_kind": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MealPeriod(); ok {
+		if err := bundlecomponent.MealPeriodValidator(v); err != nil {
+			return &ValidationError{Name: "meal_period", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.meal_period": %w`, err)}
+		}
+	}
 	if _u.mutation.BundleCleared() && len(_u.mutation.BundleIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BundleComponent.bundle"`)
 	}
@@ -182,6 +260,24 @@ func (_u *BundleComponentUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(bundlecomponent.FieldQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ComponentKind(); ok {
+		_spec.SetField(bundlecomponent.FieldComponentKind, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MealPeriod(); ok {
+		_spec.SetField(bundlecomponent.FieldMealPeriod, field.TypeEnum, value)
+	}
+	if _u.mutation.MealPeriodCleared() {
+		_spec.ClearField(bundlecomponent.FieldMealPeriod, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.IsMetered(); ok {
+		_spec.SetField(bundlecomponent.FieldIsMetered, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Unit(); ok {
+		_spec.SetField(bundlecomponent.FieldUnit, field.TypeString, value)
+	}
+	if _u.mutation.UnitCleared() {
+		_spec.ClearField(bundlecomponent.FieldUnit, field.TypeString)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(bundlecomponent.FieldSortOrder, field.TypeInt, value)
@@ -316,6 +412,74 @@ func (_u *BundleComponentUpdateOne) AddQuantity(v int) *BundleComponentUpdateOne
 	return _u
 }
 
+// SetComponentKind sets the "component_kind" field.
+func (_u *BundleComponentUpdateOne) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpdateOne {
+	_u.mutation.SetComponentKind(v)
+	return _u
+}
+
+// SetNillableComponentKind sets the "component_kind" field if the given value is not nil.
+func (_u *BundleComponentUpdateOne) SetNillableComponentKind(v *bundlecomponent.ComponentKind) *BundleComponentUpdateOne {
+	if v != nil {
+		_u.SetComponentKind(*v)
+	}
+	return _u
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (_u *BundleComponentUpdateOne) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpdateOne {
+	_u.mutation.SetMealPeriod(v)
+	return _u
+}
+
+// SetNillableMealPeriod sets the "meal_period" field if the given value is not nil.
+func (_u *BundleComponentUpdateOne) SetNillableMealPeriod(v *bundlecomponent.MealPeriod) *BundleComponentUpdateOne {
+	if v != nil {
+		_u.SetMealPeriod(*v)
+	}
+	return _u
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (_u *BundleComponentUpdateOne) ClearMealPeriod() *BundleComponentUpdateOne {
+	_u.mutation.ClearMealPeriod()
+	return _u
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (_u *BundleComponentUpdateOne) SetIsMetered(v bool) *BundleComponentUpdateOne {
+	_u.mutation.SetIsMetered(v)
+	return _u
+}
+
+// SetNillableIsMetered sets the "is_metered" field if the given value is not nil.
+func (_u *BundleComponentUpdateOne) SetNillableIsMetered(v *bool) *BundleComponentUpdateOne {
+	if v != nil {
+		_u.SetIsMetered(*v)
+	}
+	return _u
+}
+
+// SetUnit sets the "unit" field.
+func (_u *BundleComponentUpdateOne) SetUnit(v string) *BundleComponentUpdateOne {
+	_u.mutation.SetUnit(v)
+	return _u
+}
+
+// SetNillableUnit sets the "unit" field if the given value is not nil.
+func (_u *BundleComponentUpdateOne) SetNillableUnit(v *string) *BundleComponentUpdateOne {
+	if v != nil {
+		_u.SetUnit(*v)
+	}
+	return _u
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (_u *BundleComponentUpdateOne) ClearUnit() *BundleComponentUpdateOne {
+	_u.mutation.ClearUnit()
+	return _u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_u *BundleComponentUpdateOne) SetSortOrder(v int) *BundleComponentUpdateOne {
 	_u.mutation.ResetSortOrder()
@@ -406,6 +570,16 @@ func (_u *BundleComponentUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BundleComponentUpdateOne) check() error {
+	if v, ok := _u.mutation.ComponentKind(); ok {
+		if err := bundlecomponent.ComponentKindValidator(v); err != nil {
+			return &ValidationError{Name: "component_kind", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.component_kind": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MealPeriod(); ok {
+		if err := bundlecomponent.MealPeriodValidator(v); err != nil {
+			return &ValidationError{Name: "meal_period", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.meal_period": %w`, err)}
+		}
+	}
 	if _u.mutation.BundleCleared() && len(_u.mutation.BundleIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BundleComponent.bundle"`)
 	}
@@ -449,6 +623,24 @@ func (_u *BundleComponentUpdateOne) sqlSave(ctx context.Context) (_node *BundleC
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(bundlecomponent.FieldQuantity, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ComponentKind(); ok {
+		_spec.SetField(bundlecomponent.FieldComponentKind, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.MealPeriod(); ok {
+		_spec.SetField(bundlecomponent.FieldMealPeriod, field.TypeEnum, value)
+	}
+	if _u.mutation.MealPeriodCleared() {
+		_spec.ClearField(bundlecomponent.FieldMealPeriod, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.IsMetered(); ok {
+		_spec.SetField(bundlecomponent.FieldIsMetered, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Unit(); ok {
+		_spec.SetField(bundlecomponent.FieldUnit, field.TypeString, value)
+	}
+	if _u.mutation.UnitCleared() {
+		_spec.ClearField(bundlecomponent.FieldUnit, field.TypeString)
 	}
 	if value, ok := _u.mutation.SortOrder(); ok {
 		_spec.SetField(bundlecomponent.FieldSortOrder, field.TypeInt, value)

@@ -78,6 +78,16 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Bool("supplier_management_enabled").
 			Default(true).
 			Comment("Supplier directory and contract management"),
+		// Hospitality module toggles
+		field.Bool("enable_room_pricing").
+			Default(false).
+			Comment("Enable hotel room-type SERVICE items and nightly rate plans"),
+		field.Bool("enable_facility_booking").
+			Default(false).
+			Comment("Enable facility/conference-hall SERVICE items and session rates"),
+		field.Bool("enable_conference_packages").
+			Default(false).
+			Comment("Enable conference/event Bundle packages (DDR/RDR, meals included)"),
 		field.Float("default_target_margin_percent").
 			Optional().
 			Nillable().
