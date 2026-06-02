@@ -180,6 +180,12 @@ func (s *Service) createComponents(ctx context.Context, tx *ent.Tx, bundleID uui
 
 // publishBundleEvent writes an inventory.bundle.* outbox event so POS can project packages.
 func (s *Service) publishBundleEvent(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, b *ent.Bundle, eventType string) error {
+	// Resolve the parent item's SKU/name so POS can join its catalog projection by sku
+	// (preferred join key) without waiting for the item event to arrive first.
+	sku, itemName := "", ""
+	if itm, ierr := tx.Item.Get(ctx, b.ItemID); ierr == nil {
+		sku, itemName = itm.Sku, itm.Name
+	}
 	evt := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
@@ -189,6 +195,8 @@ func (s *Service) publishBundleEvent(ctx context.Context, tx *ent.Tx, tenantID u
 		Payload: map[string]any{
 			"id":                     b.ID,
 			"item_id":                b.ItemID,
+			"sku":                    sku,
+			"item_name":              itemName,
 			"name":                   b.Name,
 			"is_active":              b.IsActive,
 			"package_type":           b.PackageType,
