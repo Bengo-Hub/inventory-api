@@ -25,6 +25,18 @@ type Bundle struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Package classification: DDR=day delegate rate, RDR=residential delegate rate, SERVICE_SESSIONS=prepaid session bundle
+	PackageType bundle.PackageType `json:"package_type,omitempty"`
+	// How the bundle price is interpreted at point of sale
+	PriceBasis bundle.PriceBasis `json:"price_basis,omitempty"`
+	// Minimum chargeable delegates for DDR/RDR packages
+	MinDelegates *int `json:"min_delegates,omitempty"`
+	// True for residential (RDR) packages that bundle a room stay
+	AccommodationIncluded bool `json:"accommodation_included,omitempty"`
+	// Total prepaid sessions for SERVICE_SESSIONS packages (replaces pos-api ServicePackage.sessions_total)
+	SessionsTotal *int `json:"sessions_total,omitempty"`
+	// Days from purchase before a SERVICE_SESSIONS package expires
+	ValidityDays *int `json:"validity_days,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -73,9 +85,11 @@ func (*Bundle) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case bundle.FieldIsActive:
+		case bundle.FieldAccommodationIncluded, bundle.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case bundle.FieldName:
+		case bundle.FieldMinDelegates, bundle.FieldSessionsTotal, bundle.FieldValidityDays:
+			values[i] = new(sql.NullInt64)
+		case bundle.FieldName, bundle.FieldPackageType, bundle.FieldPriceBasis:
 			values[i] = new(sql.NullString)
 		case bundle.FieldCreatedAt, bundle.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -119,6 +133,45 @@ func (_m *Bundle) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
+			}
+		case bundle.FieldPackageType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field package_type", values[i])
+			} else if value.Valid {
+				_m.PackageType = bundle.PackageType(value.String)
+			}
+		case bundle.FieldPriceBasis:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field price_basis", values[i])
+			} else if value.Valid {
+				_m.PriceBasis = bundle.PriceBasis(value.String)
+			}
+		case bundle.FieldMinDelegates:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field min_delegates", values[i])
+			} else if value.Valid {
+				_m.MinDelegates = new(int)
+				*_m.MinDelegates = int(value.Int64)
+			}
+		case bundle.FieldAccommodationIncluded:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field accommodation_included", values[i])
+			} else if value.Valid {
+				_m.AccommodationIncluded = value.Bool
+			}
+		case bundle.FieldSessionsTotal:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sessions_total", values[i])
+			} else if value.Valid {
+				_m.SessionsTotal = new(int)
+				*_m.SessionsTotal = int(value.Int64)
+			}
+		case bundle.FieldValidityDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field validity_days", values[i])
+			} else if value.Valid {
+				_m.ValidityDays = new(int)
+				*_m.ValidityDays = int(value.Int64)
 			}
 		case bundle.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -192,6 +245,30 @@ func (_m *Bundle) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("package_type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PackageType))
+	builder.WriteString(", ")
+	builder.WriteString("price_basis=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PriceBasis))
+	builder.WriteString(", ")
+	if v := _m.MinDelegates; v != nil {
+		builder.WriteString("min_delegates=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("accommodation_included=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AccommodationIncluded))
+	builder.WriteString(", ")
+	if v := _m.SessionsTotal; v != nil {
+		builder.WriteString("sessions_total=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ValidityDays; v != nil {
+		builder.WriteString("validity_days=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

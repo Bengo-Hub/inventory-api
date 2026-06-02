@@ -3,6 +3,7 @@
 package bundle
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -21,6 +22,18 @@ const (
 	FieldItemID = "item_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldPackageType holds the string denoting the package_type field in the database.
+	FieldPackageType = "package_type"
+	// FieldPriceBasis holds the string denoting the price_basis field in the database.
+	FieldPriceBasis = "price_basis"
+	// FieldMinDelegates holds the string denoting the min_delegates field in the database.
+	FieldMinDelegates = "min_delegates"
+	// FieldAccommodationIncluded holds the string denoting the accommodation_included field in the database.
+	FieldAccommodationIncluded = "accommodation_included"
+	// FieldSessionsTotal holds the string denoting the sessions_total field in the database.
+	FieldSessionsTotal = "sessions_total"
+	// FieldValidityDays holds the string denoting the validity_days field in the database.
+	FieldValidityDays = "validity_days"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -55,6 +68,12 @@ var Columns = []string{
 	FieldTenantID,
 	FieldItemID,
 	FieldName,
+	FieldPackageType,
+	FieldPriceBasis,
+	FieldMinDelegates,
+	FieldAccommodationIncluded,
+	FieldSessionsTotal,
+	FieldValidityDays,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -73,6 +92,8 @@ func ValidColumn(column string) bool {
 var (
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultAccommodationIncluded holds the default value on creation for the "accommodation_included" field.
+	DefaultAccommodationIncluded bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -84,6 +105,66 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// PackageType defines the type for the "package_type" enum field.
+type PackageType string
+
+// PackageTypeRETAIL_KIT is the default value of the PackageType enum.
+const DefaultPackageType = PackageTypeRETAIL_KIT
+
+// PackageType values.
+const (
+	PackageTypeRETAIL_KIT       PackageType = "RETAIL_KIT"
+	PackageTypeROOM_RATE_PLAN   PackageType = "ROOM_RATE_PLAN"
+	PackageTypeDDR              PackageType = "DDR"
+	PackageTypeRDR              PackageType = "RDR"
+	PackageTypeHALF_BOARD       PackageType = "HALF_BOARD"
+	PackageTypeFULL_BOARD       PackageType = "FULL_BOARD"
+	PackageTypeHALL_HIRE_ONLY   PackageType = "HALL_HIRE_ONLY"
+	PackageTypeSERVICE_SESSIONS PackageType = "SERVICE_SESSIONS"
+)
+
+func (pt PackageType) String() string {
+	return string(pt)
+}
+
+// PackageTypeValidator is a validator for the "package_type" field enum values. It is called by the builders before save.
+func PackageTypeValidator(pt PackageType) error {
+	switch pt {
+	case PackageTypeRETAIL_KIT, PackageTypeROOM_RATE_PLAN, PackageTypeDDR, PackageTypeRDR, PackageTypeHALF_BOARD, PackageTypeFULL_BOARD, PackageTypeHALL_HIRE_ONLY, PackageTypeSERVICE_SESSIONS:
+		return nil
+	default:
+		return fmt.Errorf("bundle: invalid enum value for package_type field: %q", pt)
+	}
+}
+
+// PriceBasis defines the type for the "price_basis" enum field.
+type PriceBasis string
+
+// PriceBasisFlat is the default value of the PriceBasis enum.
+const DefaultPriceBasis = PriceBasisFlat
+
+// PriceBasis values.
+const (
+	PriceBasisFlat              PriceBasis = "flat"
+	PriceBasisPerDelegatePerDay PriceBasis = "per_delegate_per_day"
+	PriceBasisPerPersonSharing  PriceBasis = "per_person_sharing"
+	PriceBasisPerSession        PriceBasis = "per_session"
+)
+
+func (pb PriceBasis) String() string {
+	return string(pb)
+}
+
+// PriceBasisValidator is a validator for the "price_basis" field enum values. It is called by the builders before save.
+func PriceBasisValidator(pb PriceBasis) error {
+	switch pb {
+	case PriceBasisFlat, PriceBasisPerDelegatePerDay, PriceBasisPerPersonSharing, PriceBasisPerSession:
+		return nil
+	default:
+		return fmt.Errorf("bundle: invalid enum value for price_basis field: %q", pb)
+	}
+}
 
 // OrderOption defines the ordering options for the Bundle queries.
 type OrderOption func(*sql.Selector)
@@ -106,6 +187,36 @@ func ByItemID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByPackageType orders the results by the package_type field.
+func ByPackageType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPackageType, opts...).ToFunc()
+}
+
+// ByPriceBasis orders the results by the price_basis field.
+func ByPriceBasis(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceBasis, opts...).ToFunc()
+}
+
+// ByMinDelegates orders the results by the min_delegates field.
+func ByMinDelegates(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMinDelegates, opts...).ToFunc()
+}
+
+// ByAccommodationIncluded orders the results by the accommodation_included field.
+func ByAccommodationIncluded(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccommodationIncluded, opts...).ToFunc()
+}
+
+// BySessionsTotal orders the results by the sessions_total field.
+func BySessionsTotal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSessionsTotal, opts...).ToFunc()
+}
+
+// ByValidityDays orders the results by the validity_days field.
+func ByValidityDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValidityDays, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

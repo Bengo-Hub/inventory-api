@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_us" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d97706;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#92400e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_us)"/>
+  <!-- star / award -->
+  <path d="M200,70 L222,138 L294,138 L236,178 L258,246 L200,206 L142,246 L164,178 L106,138 L178,138 Z" fill="#fde68a"/>
+  <!-- U L monogram on star -->
+  <text x="200" y="192" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="58" fill="#92400e">UL</text>
+  <!-- ribbon -->
+  <path d="M150,290 L200,270 L250,290 L240,340 L200,320 L160,340 Z" fill="#fde68a" opacity="0.9"/>
+  <!-- banner line -->
+  <line x1="120" y1="268" x2="280" y2="268" stroke="#fde68a" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+</svg>

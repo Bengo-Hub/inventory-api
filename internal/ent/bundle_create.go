@@ -44,6 +44,90 @@ func (_c *BundleCreate) SetName(v string) *BundleCreate {
 	return _c
 }
 
+// SetPackageType sets the "package_type" field.
+func (_c *BundleCreate) SetPackageType(v bundle.PackageType) *BundleCreate {
+	_c.mutation.SetPackageType(v)
+	return _c
+}
+
+// SetNillablePackageType sets the "package_type" field if the given value is not nil.
+func (_c *BundleCreate) SetNillablePackageType(v *bundle.PackageType) *BundleCreate {
+	if v != nil {
+		_c.SetPackageType(*v)
+	}
+	return _c
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (_c *BundleCreate) SetPriceBasis(v bundle.PriceBasis) *BundleCreate {
+	_c.mutation.SetPriceBasis(v)
+	return _c
+}
+
+// SetNillablePriceBasis sets the "price_basis" field if the given value is not nil.
+func (_c *BundleCreate) SetNillablePriceBasis(v *bundle.PriceBasis) *BundleCreate {
+	if v != nil {
+		_c.SetPriceBasis(*v)
+	}
+	return _c
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (_c *BundleCreate) SetMinDelegates(v int) *BundleCreate {
+	_c.mutation.SetMinDelegates(v)
+	return _c
+}
+
+// SetNillableMinDelegates sets the "min_delegates" field if the given value is not nil.
+func (_c *BundleCreate) SetNillableMinDelegates(v *int) *BundleCreate {
+	if v != nil {
+		_c.SetMinDelegates(*v)
+	}
+	return _c
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (_c *BundleCreate) SetAccommodationIncluded(v bool) *BundleCreate {
+	_c.mutation.SetAccommodationIncluded(v)
+	return _c
+}
+
+// SetNillableAccommodationIncluded sets the "accommodation_included" field if the given value is not nil.
+func (_c *BundleCreate) SetNillableAccommodationIncluded(v *bool) *BundleCreate {
+	if v != nil {
+		_c.SetAccommodationIncluded(*v)
+	}
+	return _c
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (_c *BundleCreate) SetSessionsTotal(v int) *BundleCreate {
+	_c.mutation.SetSessionsTotal(v)
+	return _c
+}
+
+// SetNillableSessionsTotal sets the "sessions_total" field if the given value is not nil.
+func (_c *BundleCreate) SetNillableSessionsTotal(v *int) *BundleCreate {
+	if v != nil {
+		_c.SetSessionsTotal(*v)
+	}
+	return _c
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (_c *BundleCreate) SetValidityDays(v int) *BundleCreate {
+	_c.mutation.SetValidityDays(v)
+	return _c
+}
+
+// SetNillableValidityDays sets the "validity_days" field if the given value is not nil.
+func (_c *BundleCreate) SetNillableValidityDays(v *int) *BundleCreate {
+	if v != nil {
+		_c.SetValidityDays(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *BundleCreate) SetIsActive(v bool) *BundleCreate {
 	_c.mutation.SetIsActive(v)
@@ -155,6 +239,18 @@ func (_c *BundleCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *BundleCreate) defaults() {
+	if _, ok := _c.mutation.PackageType(); !ok {
+		v := bundle.DefaultPackageType
+		_c.mutation.SetPackageType(v)
+	}
+	if _, ok := _c.mutation.PriceBasis(); !ok {
+		v := bundle.DefaultPriceBasis
+		_c.mutation.SetPriceBasis(v)
+	}
+	if _, ok := _c.mutation.AccommodationIncluded(); !ok {
+		v := bundle.DefaultAccommodationIncluded
+		_c.mutation.SetAccommodationIncluded(v)
+	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := bundle.DefaultIsActive
 		_c.mutation.SetIsActive(v)
@@ -188,6 +284,25 @@ func (_c *BundleCreate) check() error {
 		if err := bundle.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Bundle.name": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.PackageType(); !ok {
+		return &ValidationError{Name: "package_type", err: errors.New(`ent: missing required field "Bundle.package_type"`)}
+	}
+	if v, ok := _c.mutation.PackageType(); ok {
+		if err := bundle.PackageTypeValidator(v); err != nil {
+			return &ValidationError{Name: "package_type", err: fmt.Errorf(`ent: validator failed for field "Bundle.package_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PriceBasis(); !ok {
+		return &ValidationError{Name: "price_basis", err: errors.New(`ent: missing required field "Bundle.price_basis"`)}
+	}
+	if v, ok := _c.mutation.PriceBasis(); ok {
+		if err := bundle.PriceBasisValidator(v); err != nil {
+			return &ValidationError{Name: "price_basis", err: fmt.Errorf(`ent: validator failed for field "Bundle.price_basis": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AccommodationIncluded(); !ok {
+		return &ValidationError{Name: "accommodation_included", err: errors.New(`ent: missing required field "Bundle.accommodation_included"`)}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Bundle.is_active"`)}
@@ -244,6 +359,30 @@ func (_c *BundleCreate) createSpec() (*Bundle, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(bundle.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := _c.mutation.PackageType(); ok {
+		_spec.SetField(bundle.FieldPackageType, field.TypeEnum, value)
+		_node.PackageType = value
+	}
+	if value, ok := _c.mutation.PriceBasis(); ok {
+		_spec.SetField(bundle.FieldPriceBasis, field.TypeEnum, value)
+		_node.PriceBasis = value
+	}
+	if value, ok := _c.mutation.MinDelegates(); ok {
+		_spec.SetField(bundle.FieldMinDelegates, field.TypeInt, value)
+		_node.MinDelegates = &value
+	}
+	if value, ok := _c.mutation.AccommodationIncluded(); ok {
+		_spec.SetField(bundle.FieldAccommodationIncluded, field.TypeBool, value)
+		_node.AccommodationIncluded = value
+	}
+	if value, ok := _c.mutation.SessionsTotal(); ok {
+		_spec.SetField(bundle.FieldSessionsTotal, field.TypeInt, value)
+		_node.SessionsTotal = &value
+	}
+	if value, ok := _c.mutation.ValidityDays(); ok {
+		_spec.SetField(bundle.FieldValidityDays, field.TypeInt, value)
+		_node.ValidityDays = &value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(bundle.FieldIsActive, field.TypeBool, value)
@@ -378,6 +517,114 @@ func (u *BundleUpsert) UpdateName() *BundleUpsert {
 	return u
 }
 
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsert) SetPackageType(v bundle.PackageType) *BundleUpsert {
+	u.Set(bundle.FieldPackageType, v)
+	return u
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsert) UpdatePackageType() *BundleUpsert {
+	u.SetExcluded(bundle.FieldPackageType)
+	return u
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsert) SetPriceBasis(v bundle.PriceBasis) *BundleUpsert {
+	u.Set(bundle.FieldPriceBasis, v)
+	return u
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsert) UpdatePriceBasis() *BundleUpsert {
+	u.SetExcluded(bundle.FieldPriceBasis)
+	return u
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsert) SetMinDelegates(v int) *BundleUpsert {
+	u.Set(bundle.FieldMinDelegates, v)
+	return u
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateMinDelegates() *BundleUpsert {
+	u.SetExcluded(bundle.FieldMinDelegates)
+	return u
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsert) AddMinDelegates(v int) *BundleUpsert {
+	u.Add(bundle.FieldMinDelegates, v)
+	return u
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsert) ClearMinDelegates() *BundleUpsert {
+	u.SetNull(bundle.FieldMinDelegates)
+	return u
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsert) SetAccommodationIncluded(v bool) *BundleUpsert {
+	u.Set(bundle.FieldAccommodationIncluded, v)
+	return u
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateAccommodationIncluded() *BundleUpsert {
+	u.SetExcluded(bundle.FieldAccommodationIncluded)
+	return u
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsert) SetSessionsTotal(v int) *BundleUpsert {
+	u.Set(bundle.FieldSessionsTotal, v)
+	return u
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateSessionsTotal() *BundleUpsert {
+	u.SetExcluded(bundle.FieldSessionsTotal)
+	return u
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsert) AddSessionsTotal(v int) *BundleUpsert {
+	u.Add(bundle.FieldSessionsTotal, v)
+	return u
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsert) ClearSessionsTotal() *BundleUpsert {
+	u.SetNull(bundle.FieldSessionsTotal)
+	return u
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsert) SetValidityDays(v int) *BundleUpsert {
+	u.Set(bundle.FieldValidityDays, v)
+	return u
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateValidityDays() *BundleUpsert {
+	u.SetExcluded(bundle.FieldValidityDays)
+	return u
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsert) AddValidityDays(v int) *BundleUpsert {
+	u.Add(bundle.FieldValidityDays, v)
+	return u
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsert) ClearValidityDays() *BundleUpsert {
+	u.SetNull(bundle.FieldValidityDays)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *BundleUpsert) SetIsActive(v bool) *BundleUpsert {
 	u.Set(bundle.FieldIsActive, v)
@@ -492,6 +739,132 @@ func (u *BundleUpsertOne) SetName(v string) *BundleUpsertOne {
 func (u *BundleUpsertOne) UpdateName() *BundleUpsertOne {
 	return u.Update(func(s *BundleUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsertOne) SetPackageType(v bundle.PackageType) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPackageType(v)
+	})
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdatePackageType() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePackageType()
+	})
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsertOne) SetPriceBasis(v bundle.PriceBasis) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPriceBasis(v)
+	})
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdatePriceBasis() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePriceBasis()
+	})
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsertOne) SetMinDelegates(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetMinDelegates(v)
+	})
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsertOne) AddMinDelegates(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddMinDelegates(v)
+	})
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateMinDelegates() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateMinDelegates()
+	})
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsertOne) ClearMinDelegates() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearMinDelegates()
+	})
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsertOne) SetAccommodationIncluded(v bool) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetAccommodationIncluded(v)
+	})
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateAccommodationIncluded() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateAccommodationIncluded()
+	})
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsertOne) SetSessionsTotal(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetSessionsTotal(v)
+	})
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsertOne) AddSessionsTotal(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddSessionsTotal(v)
+	})
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateSessionsTotal() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateSessionsTotal()
+	})
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsertOne) ClearSessionsTotal() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearSessionsTotal()
+	})
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsertOne) SetValidityDays(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetValidityDays(v)
+	})
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsertOne) AddValidityDays(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddValidityDays(v)
+	})
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateValidityDays() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateValidityDays()
+	})
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsertOne) ClearValidityDays() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearValidityDays()
 	})
 }
 
@@ -780,6 +1153,132 @@ func (u *BundleUpsertBulk) SetName(v string) *BundleUpsertBulk {
 func (u *BundleUpsertBulk) UpdateName() *BundleUpsertBulk {
 	return u.Update(func(s *BundleUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsertBulk) SetPackageType(v bundle.PackageType) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPackageType(v)
+	})
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdatePackageType() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePackageType()
+	})
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsertBulk) SetPriceBasis(v bundle.PriceBasis) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPriceBasis(v)
+	})
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdatePriceBasis() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePriceBasis()
+	})
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsertBulk) SetMinDelegates(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetMinDelegates(v)
+	})
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsertBulk) AddMinDelegates(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddMinDelegates(v)
+	})
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateMinDelegates() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateMinDelegates()
+	})
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsertBulk) ClearMinDelegates() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearMinDelegates()
+	})
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsertBulk) SetAccommodationIncluded(v bool) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetAccommodationIncluded(v)
+	})
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateAccommodationIncluded() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateAccommodationIncluded()
+	})
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsertBulk) SetSessionsTotal(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetSessionsTotal(v)
+	})
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsertBulk) AddSessionsTotal(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddSessionsTotal(v)
+	})
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateSessionsTotal() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateSessionsTotal()
+	})
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsertBulk) ClearSessionsTotal() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearSessionsTotal()
+	})
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsertBulk) SetValidityDays(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetValidityDays(v)
+	})
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsertBulk) AddValidityDays(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddValidityDays(v)
+	})
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateValidityDays() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateValidityDays()
+	})
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsertBulk) ClearValidityDays() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearValidityDays()
 	})
 }
 

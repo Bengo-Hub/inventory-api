@@ -113,23 +113,32 @@ const (
 // BundleMutation represents an operation that mutates the Bundle nodes in the graph.
 type BundleMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uuid.UUID
-	tenant_id         *uuid.UUID
-	name              *string
-	is_active         *bool
-	created_at        *time.Time
-	updated_at        *time.Time
-	clearedFields     map[string]struct{}
-	item              *uuid.UUID
-	cleareditem       bool
-	components        map[uuid.UUID]struct{}
-	removedcomponents map[uuid.UUID]struct{}
-	clearedcomponents bool
-	done              bool
-	oldValue          func(context.Context) (*Bundle, error)
-	predicates        []predicate.Bundle
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	tenant_id              *uuid.UUID
+	name                   *string
+	package_type           *bundle.PackageType
+	price_basis            *bundle.PriceBasis
+	min_delegates          *int
+	addmin_delegates       *int
+	accommodation_included *bool
+	sessions_total         *int
+	addsessions_total      *int
+	validity_days          *int
+	addvalidity_days       *int
+	is_active              *bool
+	created_at             *time.Time
+	updated_at             *time.Time
+	clearedFields          map[string]struct{}
+	item                   *uuid.UUID
+	cleareditem            bool
+	components             map[uuid.UUID]struct{}
+	removedcomponents      map[uuid.UUID]struct{}
+	clearedcomponents      bool
+	done                   bool
+	oldValue               func(context.Context) (*Bundle, error)
+	predicates             []predicate.Bundle
 }
 
 var _ ent.Mutation = (*BundleMutation)(nil)
@@ -342,6 +351,324 @@ func (m *BundleMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *BundleMutation) ResetName() {
 	m.name = nil
+}
+
+// SetPackageType sets the "package_type" field.
+func (m *BundleMutation) SetPackageType(bt bundle.PackageType) {
+	m.package_type = &bt
+}
+
+// PackageType returns the value of the "package_type" field in the mutation.
+func (m *BundleMutation) PackageType() (r bundle.PackageType, exists bool) {
+	v := m.package_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPackageType returns the old "package_type" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldPackageType(ctx context.Context) (v bundle.PackageType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPackageType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPackageType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPackageType: %w", err)
+	}
+	return oldValue.PackageType, nil
+}
+
+// ResetPackageType resets all changes to the "package_type" field.
+func (m *BundleMutation) ResetPackageType() {
+	m.package_type = nil
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (m *BundleMutation) SetPriceBasis(bb bundle.PriceBasis) {
+	m.price_basis = &bb
+}
+
+// PriceBasis returns the value of the "price_basis" field in the mutation.
+func (m *BundleMutation) PriceBasis() (r bundle.PriceBasis, exists bool) {
+	v := m.price_basis
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriceBasis returns the old "price_basis" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldPriceBasis(ctx context.Context) (v bundle.PriceBasis, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriceBasis is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriceBasis requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriceBasis: %w", err)
+	}
+	return oldValue.PriceBasis, nil
+}
+
+// ResetPriceBasis resets all changes to the "price_basis" field.
+func (m *BundleMutation) ResetPriceBasis() {
+	m.price_basis = nil
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (m *BundleMutation) SetMinDelegates(i int) {
+	m.min_delegates = &i
+	m.addmin_delegates = nil
+}
+
+// MinDelegates returns the value of the "min_delegates" field in the mutation.
+func (m *BundleMutation) MinDelegates() (r int, exists bool) {
+	v := m.min_delegates
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinDelegates returns the old "min_delegates" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldMinDelegates(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinDelegates is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinDelegates requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinDelegates: %w", err)
+	}
+	return oldValue.MinDelegates, nil
+}
+
+// AddMinDelegates adds i to the "min_delegates" field.
+func (m *BundleMutation) AddMinDelegates(i int) {
+	if m.addmin_delegates != nil {
+		*m.addmin_delegates += i
+	} else {
+		m.addmin_delegates = &i
+	}
+}
+
+// AddedMinDelegates returns the value that was added to the "min_delegates" field in this mutation.
+func (m *BundleMutation) AddedMinDelegates() (r int, exists bool) {
+	v := m.addmin_delegates
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (m *BundleMutation) ClearMinDelegates() {
+	m.min_delegates = nil
+	m.addmin_delegates = nil
+	m.clearedFields[bundle.FieldMinDelegates] = struct{}{}
+}
+
+// MinDelegatesCleared returns if the "min_delegates" field was cleared in this mutation.
+func (m *BundleMutation) MinDelegatesCleared() bool {
+	_, ok := m.clearedFields[bundle.FieldMinDelegates]
+	return ok
+}
+
+// ResetMinDelegates resets all changes to the "min_delegates" field.
+func (m *BundleMutation) ResetMinDelegates() {
+	m.min_delegates = nil
+	m.addmin_delegates = nil
+	delete(m.clearedFields, bundle.FieldMinDelegates)
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (m *BundleMutation) SetAccommodationIncluded(b bool) {
+	m.accommodation_included = &b
+}
+
+// AccommodationIncluded returns the value of the "accommodation_included" field in the mutation.
+func (m *BundleMutation) AccommodationIncluded() (r bool, exists bool) {
+	v := m.accommodation_included
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccommodationIncluded returns the old "accommodation_included" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldAccommodationIncluded(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccommodationIncluded is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccommodationIncluded requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccommodationIncluded: %w", err)
+	}
+	return oldValue.AccommodationIncluded, nil
+}
+
+// ResetAccommodationIncluded resets all changes to the "accommodation_included" field.
+func (m *BundleMutation) ResetAccommodationIncluded() {
+	m.accommodation_included = nil
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (m *BundleMutation) SetSessionsTotal(i int) {
+	m.sessions_total = &i
+	m.addsessions_total = nil
+}
+
+// SessionsTotal returns the value of the "sessions_total" field in the mutation.
+func (m *BundleMutation) SessionsTotal() (r int, exists bool) {
+	v := m.sessions_total
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionsTotal returns the old "sessions_total" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldSessionsTotal(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionsTotal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionsTotal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionsTotal: %w", err)
+	}
+	return oldValue.SessionsTotal, nil
+}
+
+// AddSessionsTotal adds i to the "sessions_total" field.
+func (m *BundleMutation) AddSessionsTotal(i int) {
+	if m.addsessions_total != nil {
+		*m.addsessions_total += i
+	} else {
+		m.addsessions_total = &i
+	}
+}
+
+// AddedSessionsTotal returns the value that was added to the "sessions_total" field in this mutation.
+func (m *BundleMutation) AddedSessionsTotal() (r int, exists bool) {
+	v := m.addsessions_total
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (m *BundleMutation) ClearSessionsTotal() {
+	m.sessions_total = nil
+	m.addsessions_total = nil
+	m.clearedFields[bundle.FieldSessionsTotal] = struct{}{}
+}
+
+// SessionsTotalCleared returns if the "sessions_total" field was cleared in this mutation.
+func (m *BundleMutation) SessionsTotalCleared() bool {
+	_, ok := m.clearedFields[bundle.FieldSessionsTotal]
+	return ok
+}
+
+// ResetSessionsTotal resets all changes to the "sessions_total" field.
+func (m *BundleMutation) ResetSessionsTotal() {
+	m.sessions_total = nil
+	m.addsessions_total = nil
+	delete(m.clearedFields, bundle.FieldSessionsTotal)
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (m *BundleMutation) SetValidityDays(i int) {
+	m.validity_days = &i
+	m.addvalidity_days = nil
+}
+
+// ValidityDays returns the value of the "validity_days" field in the mutation.
+func (m *BundleMutation) ValidityDays() (r int, exists bool) {
+	v := m.validity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidityDays returns the old "validity_days" field's value of the Bundle entity.
+// If the Bundle object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleMutation) OldValidityDays(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidityDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidityDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidityDays: %w", err)
+	}
+	return oldValue.ValidityDays, nil
+}
+
+// AddValidityDays adds i to the "validity_days" field.
+func (m *BundleMutation) AddValidityDays(i int) {
+	if m.addvalidity_days != nil {
+		*m.addvalidity_days += i
+	} else {
+		m.addvalidity_days = &i
+	}
+}
+
+// AddedValidityDays returns the value that was added to the "validity_days" field in this mutation.
+func (m *BundleMutation) AddedValidityDays() (r int, exists bool) {
+	v := m.addvalidity_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (m *BundleMutation) ClearValidityDays() {
+	m.validity_days = nil
+	m.addvalidity_days = nil
+	m.clearedFields[bundle.FieldValidityDays] = struct{}{}
+}
+
+// ValidityDaysCleared returns if the "validity_days" field was cleared in this mutation.
+func (m *BundleMutation) ValidityDaysCleared() bool {
+	_, ok := m.clearedFields[bundle.FieldValidityDays]
+	return ok
+}
+
+// ResetValidityDays resets all changes to the "validity_days" field.
+func (m *BundleMutation) ResetValidityDays() {
+	m.validity_days = nil
+	m.addvalidity_days = nil
+	delete(m.clearedFields, bundle.FieldValidityDays)
 }
 
 // SetIsActive sets the "is_active" field.
@@ -567,7 +894,7 @@ func (m *BundleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundleMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, bundle.FieldTenantID)
 	}
@@ -576,6 +903,24 @@ func (m *BundleMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, bundle.FieldName)
+	}
+	if m.package_type != nil {
+		fields = append(fields, bundle.FieldPackageType)
+	}
+	if m.price_basis != nil {
+		fields = append(fields, bundle.FieldPriceBasis)
+	}
+	if m.min_delegates != nil {
+		fields = append(fields, bundle.FieldMinDelegates)
+	}
+	if m.accommodation_included != nil {
+		fields = append(fields, bundle.FieldAccommodationIncluded)
+	}
+	if m.sessions_total != nil {
+		fields = append(fields, bundle.FieldSessionsTotal)
+	}
+	if m.validity_days != nil {
+		fields = append(fields, bundle.FieldValidityDays)
 	}
 	if m.is_active != nil {
 		fields = append(fields, bundle.FieldIsActive)
@@ -600,6 +945,18 @@ func (m *BundleMutation) Field(name string) (ent.Value, bool) {
 		return m.ItemID()
 	case bundle.FieldName:
 		return m.Name()
+	case bundle.FieldPackageType:
+		return m.PackageType()
+	case bundle.FieldPriceBasis:
+		return m.PriceBasis()
+	case bundle.FieldMinDelegates:
+		return m.MinDelegates()
+	case bundle.FieldAccommodationIncluded:
+		return m.AccommodationIncluded()
+	case bundle.FieldSessionsTotal:
+		return m.SessionsTotal()
+	case bundle.FieldValidityDays:
+		return m.ValidityDays()
 	case bundle.FieldIsActive:
 		return m.IsActive()
 	case bundle.FieldCreatedAt:
@@ -621,6 +978,18 @@ func (m *BundleMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldItemID(ctx)
 	case bundle.FieldName:
 		return m.OldName(ctx)
+	case bundle.FieldPackageType:
+		return m.OldPackageType(ctx)
+	case bundle.FieldPriceBasis:
+		return m.OldPriceBasis(ctx)
+	case bundle.FieldMinDelegates:
+		return m.OldMinDelegates(ctx)
+	case bundle.FieldAccommodationIncluded:
+		return m.OldAccommodationIncluded(ctx)
+	case bundle.FieldSessionsTotal:
+		return m.OldSessionsTotal(ctx)
+	case bundle.FieldValidityDays:
+		return m.OldValidityDays(ctx)
 	case bundle.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case bundle.FieldCreatedAt:
@@ -657,6 +1026,48 @@ func (m *BundleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case bundle.FieldPackageType:
+		v, ok := value.(bundle.PackageType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPackageType(v)
+		return nil
+	case bundle.FieldPriceBasis:
+		v, ok := value.(bundle.PriceBasis)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriceBasis(v)
+		return nil
+	case bundle.FieldMinDelegates:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinDelegates(v)
+		return nil
+	case bundle.FieldAccommodationIncluded:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccommodationIncluded(v)
+		return nil
+	case bundle.FieldSessionsTotal:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionsTotal(v)
+		return nil
+	case bundle.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidityDays(v)
+		return nil
 	case bundle.FieldIsActive:
 		v, ok := value.(bool)
 		if !ok {
@@ -685,13 +1096,31 @@ func (m *BundleMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *BundleMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addmin_delegates != nil {
+		fields = append(fields, bundle.FieldMinDelegates)
+	}
+	if m.addsessions_total != nil {
+		fields = append(fields, bundle.FieldSessionsTotal)
+	}
+	if m.addvalidity_days != nil {
+		fields = append(fields, bundle.FieldValidityDays)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *BundleMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case bundle.FieldMinDelegates:
+		return m.AddedMinDelegates()
+	case bundle.FieldSessionsTotal:
+		return m.AddedSessionsTotal()
+	case bundle.FieldValidityDays:
+		return m.AddedValidityDays()
+	}
 	return nil, false
 }
 
@@ -700,6 +1129,27 @@ func (m *BundleMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BundleMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case bundle.FieldMinDelegates:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinDelegates(v)
+		return nil
+	case bundle.FieldSessionsTotal:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSessionsTotal(v)
+		return nil
+	case bundle.FieldValidityDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddValidityDays(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Bundle numeric field %s", name)
 }
@@ -707,7 +1157,17 @@ func (m *BundleMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *BundleMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(bundle.FieldMinDelegates) {
+		fields = append(fields, bundle.FieldMinDelegates)
+	}
+	if m.FieldCleared(bundle.FieldSessionsTotal) {
+		fields = append(fields, bundle.FieldSessionsTotal)
+	}
+	if m.FieldCleared(bundle.FieldValidityDays) {
+		fields = append(fields, bundle.FieldValidityDays)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -720,6 +1180,17 @@ func (m *BundleMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *BundleMutation) ClearField(name string) error {
+	switch name {
+	case bundle.FieldMinDelegates:
+		m.ClearMinDelegates()
+		return nil
+	case bundle.FieldSessionsTotal:
+		m.ClearSessionsTotal()
+		return nil
+	case bundle.FieldValidityDays:
+		m.ClearValidityDays()
+		return nil
+	}
 	return fmt.Errorf("unknown Bundle nullable field %s", name)
 }
 
@@ -735,6 +1206,24 @@ func (m *BundleMutation) ResetField(name string) error {
 		return nil
 	case bundle.FieldName:
 		m.ResetName()
+		return nil
+	case bundle.FieldPackageType:
+		m.ResetPackageType()
+		return nil
+	case bundle.FieldPriceBasis:
+		m.ResetPriceBasis()
+		return nil
+	case bundle.FieldMinDelegates:
+		m.ResetMinDelegates()
+		return nil
+	case bundle.FieldAccommodationIncluded:
+		m.ResetAccommodationIncluded()
+		return nil
+	case bundle.FieldSessionsTotal:
+		m.ResetSessionsTotal()
+		return nil
+	case bundle.FieldValidityDays:
+		m.ResetValidityDays()
 		return nil
 	case bundle.FieldIsActive:
 		m.ResetIsActive()
@@ -859,6 +1348,10 @@ type BundleComponentMutation struct {
 	id                    *uuid.UUID
 	quantity              *int
 	addquantity           *int
+	component_kind        *bundlecomponent.ComponentKind
+	meal_period           *bundlecomponent.MealPeriod
+	is_metered            *bool
+	unit                  *string
 	sort_order            *int
 	addsort_order         *int
 	clearedFields         map[string]struct{}
@@ -1103,6 +1596,176 @@ func (m *BundleComponentMutation) ResetQuantity() {
 	m.addquantity = nil
 }
 
+// SetComponentKind sets the "component_kind" field.
+func (m *BundleComponentMutation) SetComponentKind(bk bundlecomponent.ComponentKind) {
+	m.component_kind = &bk
+}
+
+// ComponentKind returns the value of the "component_kind" field in the mutation.
+func (m *BundleComponentMutation) ComponentKind() (r bundlecomponent.ComponentKind, exists bool) {
+	v := m.component_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComponentKind returns the old "component_kind" field's value of the BundleComponent entity.
+// If the BundleComponent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleComponentMutation) OldComponentKind(ctx context.Context) (v bundlecomponent.ComponentKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComponentKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComponentKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComponentKind: %w", err)
+	}
+	return oldValue.ComponentKind, nil
+}
+
+// ResetComponentKind resets all changes to the "component_kind" field.
+func (m *BundleComponentMutation) ResetComponentKind() {
+	m.component_kind = nil
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (m *BundleComponentMutation) SetMealPeriod(bp bundlecomponent.MealPeriod) {
+	m.meal_period = &bp
+}
+
+// MealPeriod returns the value of the "meal_period" field in the mutation.
+func (m *BundleComponentMutation) MealPeriod() (r bundlecomponent.MealPeriod, exists bool) {
+	v := m.meal_period
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMealPeriod returns the old "meal_period" field's value of the BundleComponent entity.
+// If the BundleComponent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleComponentMutation) OldMealPeriod(ctx context.Context) (v *bundlecomponent.MealPeriod, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMealPeriod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMealPeriod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMealPeriod: %w", err)
+	}
+	return oldValue.MealPeriod, nil
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (m *BundleComponentMutation) ClearMealPeriod() {
+	m.meal_period = nil
+	m.clearedFields[bundlecomponent.FieldMealPeriod] = struct{}{}
+}
+
+// MealPeriodCleared returns if the "meal_period" field was cleared in this mutation.
+func (m *BundleComponentMutation) MealPeriodCleared() bool {
+	_, ok := m.clearedFields[bundlecomponent.FieldMealPeriod]
+	return ok
+}
+
+// ResetMealPeriod resets all changes to the "meal_period" field.
+func (m *BundleComponentMutation) ResetMealPeriod() {
+	m.meal_period = nil
+	delete(m.clearedFields, bundlecomponent.FieldMealPeriod)
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (m *BundleComponentMutation) SetIsMetered(b bool) {
+	m.is_metered = &b
+}
+
+// IsMetered returns the value of the "is_metered" field in the mutation.
+func (m *BundleComponentMutation) IsMetered() (r bool, exists bool) {
+	v := m.is_metered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsMetered returns the old "is_metered" field's value of the BundleComponent entity.
+// If the BundleComponent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleComponentMutation) OldIsMetered(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsMetered is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsMetered requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsMetered: %w", err)
+	}
+	return oldValue.IsMetered, nil
+}
+
+// ResetIsMetered resets all changes to the "is_metered" field.
+func (m *BundleComponentMutation) ResetIsMetered() {
+	m.is_metered = nil
+}
+
+// SetUnit sets the "unit" field.
+func (m *BundleComponentMutation) SetUnit(s string) {
+	m.unit = &s
+}
+
+// Unit returns the value of the "unit" field in the mutation.
+func (m *BundleComponentMutation) Unit() (r string, exists bool) {
+	v := m.unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnit returns the old "unit" field's value of the BundleComponent entity.
+// If the BundleComponent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BundleComponentMutation) OldUnit(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnit: %w", err)
+	}
+	return oldValue.Unit, nil
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (m *BundleComponentMutation) ClearUnit() {
+	m.unit = nil
+	m.clearedFields[bundlecomponent.FieldUnit] = struct{}{}
+}
+
+// UnitCleared returns if the "unit" field was cleared in this mutation.
+func (m *BundleComponentMutation) UnitCleared() bool {
+	_, ok := m.clearedFields[bundlecomponent.FieldUnit]
+	return ok
+}
+
+// ResetUnit resets all changes to the "unit" field.
+func (m *BundleComponentMutation) ResetUnit() {
+	m.unit = nil
+	delete(m.clearedFields, bundlecomponent.FieldUnit)
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (m *BundleComponentMutation) SetSortOrder(i int) {
 	m.sort_order = &i
@@ -1247,7 +1910,7 @@ func (m *BundleComponentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BundleComponentMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 8)
 	if m.bundle != nil {
 		fields = append(fields, bundlecomponent.FieldBundleID)
 	}
@@ -1256,6 +1919,18 @@ func (m *BundleComponentMutation) Fields() []string {
 	}
 	if m.quantity != nil {
 		fields = append(fields, bundlecomponent.FieldQuantity)
+	}
+	if m.component_kind != nil {
+		fields = append(fields, bundlecomponent.FieldComponentKind)
+	}
+	if m.meal_period != nil {
+		fields = append(fields, bundlecomponent.FieldMealPeriod)
+	}
+	if m.is_metered != nil {
+		fields = append(fields, bundlecomponent.FieldIsMetered)
+	}
+	if m.unit != nil {
+		fields = append(fields, bundlecomponent.FieldUnit)
 	}
 	if m.sort_order != nil {
 		fields = append(fields, bundlecomponent.FieldSortOrder)
@@ -1274,6 +1949,14 @@ func (m *BundleComponentMutation) Field(name string) (ent.Value, bool) {
 		return m.ComponentItemID()
 	case bundlecomponent.FieldQuantity:
 		return m.Quantity()
+	case bundlecomponent.FieldComponentKind:
+		return m.ComponentKind()
+	case bundlecomponent.FieldMealPeriod:
+		return m.MealPeriod()
+	case bundlecomponent.FieldIsMetered:
+		return m.IsMetered()
+	case bundlecomponent.FieldUnit:
+		return m.Unit()
 	case bundlecomponent.FieldSortOrder:
 		return m.SortOrder()
 	}
@@ -1291,6 +1974,14 @@ func (m *BundleComponentMutation) OldField(ctx context.Context, name string) (en
 		return m.OldComponentItemID(ctx)
 	case bundlecomponent.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case bundlecomponent.FieldComponentKind:
+		return m.OldComponentKind(ctx)
+	case bundlecomponent.FieldMealPeriod:
+		return m.OldMealPeriod(ctx)
+	case bundlecomponent.FieldIsMetered:
+		return m.OldIsMetered(ctx)
+	case bundlecomponent.FieldUnit:
+		return m.OldUnit(ctx)
 	case bundlecomponent.FieldSortOrder:
 		return m.OldSortOrder(ctx)
 	}
@@ -1322,6 +2013,34 @@ func (m *BundleComponentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantity(v)
+		return nil
+	case bundlecomponent.FieldComponentKind:
+		v, ok := value.(bundlecomponent.ComponentKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComponentKind(v)
+		return nil
+	case bundlecomponent.FieldMealPeriod:
+		v, ok := value.(bundlecomponent.MealPeriod)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMealPeriod(v)
+		return nil
+	case bundlecomponent.FieldIsMetered:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsMetered(v)
+		return nil
+	case bundlecomponent.FieldUnit:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnit(v)
 		return nil
 	case bundlecomponent.FieldSortOrder:
 		v, ok := value.(int)
@@ -1386,7 +2105,14 @@ func (m *BundleComponentMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *BundleComponentMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(bundlecomponent.FieldMealPeriod) {
+		fields = append(fields, bundlecomponent.FieldMealPeriod)
+	}
+	if m.FieldCleared(bundlecomponent.FieldUnit) {
+		fields = append(fields, bundlecomponent.FieldUnit)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1399,6 +2125,14 @@ func (m *BundleComponentMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *BundleComponentMutation) ClearField(name string) error {
+	switch name {
+	case bundlecomponent.FieldMealPeriod:
+		m.ClearMealPeriod()
+		return nil
+	case bundlecomponent.FieldUnit:
+		m.ClearUnit()
+		return nil
+	}
 	return fmt.Errorf("unknown BundleComponent nullable field %s", name)
 }
 
@@ -1414,6 +2148,18 @@ func (m *BundleComponentMutation) ResetField(name string) error {
 		return nil
 	case bundlecomponent.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case bundlecomponent.FieldComponentKind:
+		m.ResetComponentKind()
+		return nil
+	case bundlecomponent.FieldMealPeriod:
+		m.ResetMealPeriod()
+		return nil
+	case bundlecomponent.FieldIsMetered:
+		m.ResetIsMetered()
+		return nil
+	case bundlecomponent.FieldUnit:
+		m.ResetUnit()
 		return nil
 	case bundlecomponent.FieldSortOrder:
 		m.ResetSortOrder()
@@ -10105,6 +10851,16 @@ type ItemMutation struct {
 	name                       *string
 	description                *string
 	_type                      *item.Type
+	use_case                   *item.UseCase
+	meal_plan                  *item.MealPlan
+	occupancy_basis            *item.OccupancyBasis
+	max_adults                 *int
+	addmax_adults              *int
+	max_children               *int
+	addmax_children            *int
+	extra_bed_allowed          *bool
+	single_supplement          *float64
+	addsingle_supplement       *float64
 	is_active                  *bool
 	image_url                  *string
 	barcode                    *string
@@ -10581,6 +11337,386 @@ func (m *ItemMutation) OldType(ctx context.Context) (v item.Type, err error) {
 // ResetType resets all changes to the "type" field.
 func (m *ItemMutation) ResetType() {
 	m._type = nil
+}
+
+// SetUseCase sets the "use_case" field.
+func (m *ItemMutation) SetUseCase(ic item.UseCase) {
+	m.use_case = &ic
+}
+
+// UseCase returns the value of the "use_case" field in the mutation.
+func (m *ItemMutation) UseCase() (r item.UseCase, exists bool) {
+	v := m.use_case
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUseCase returns the old "use_case" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldUseCase(ctx context.Context) (v item.UseCase, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUseCase is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUseCase requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUseCase: %w", err)
+	}
+	return oldValue.UseCase, nil
+}
+
+// ResetUseCase resets all changes to the "use_case" field.
+func (m *ItemMutation) ResetUseCase() {
+	m.use_case = nil
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (m *ItemMutation) SetMealPlan(ip item.MealPlan) {
+	m.meal_plan = &ip
+}
+
+// MealPlan returns the value of the "meal_plan" field in the mutation.
+func (m *ItemMutation) MealPlan() (r item.MealPlan, exists bool) {
+	v := m.meal_plan
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMealPlan returns the old "meal_plan" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMealPlan(ctx context.Context) (v *item.MealPlan, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMealPlan is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMealPlan requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMealPlan: %w", err)
+	}
+	return oldValue.MealPlan, nil
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (m *ItemMutation) ClearMealPlan() {
+	m.meal_plan = nil
+	m.clearedFields[item.FieldMealPlan] = struct{}{}
+}
+
+// MealPlanCleared returns if the "meal_plan" field was cleared in this mutation.
+func (m *ItemMutation) MealPlanCleared() bool {
+	_, ok := m.clearedFields[item.FieldMealPlan]
+	return ok
+}
+
+// ResetMealPlan resets all changes to the "meal_plan" field.
+func (m *ItemMutation) ResetMealPlan() {
+	m.meal_plan = nil
+	delete(m.clearedFields, item.FieldMealPlan)
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (m *ItemMutation) SetOccupancyBasis(ib item.OccupancyBasis) {
+	m.occupancy_basis = &ib
+}
+
+// OccupancyBasis returns the value of the "occupancy_basis" field in the mutation.
+func (m *ItemMutation) OccupancyBasis() (r item.OccupancyBasis, exists bool) {
+	v := m.occupancy_basis
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccupancyBasis returns the old "occupancy_basis" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldOccupancyBasis(ctx context.Context) (v *item.OccupancyBasis, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccupancyBasis is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccupancyBasis requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccupancyBasis: %w", err)
+	}
+	return oldValue.OccupancyBasis, nil
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (m *ItemMutation) ClearOccupancyBasis() {
+	m.occupancy_basis = nil
+	m.clearedFields[item.FieldOccupancyBasis] = struct{}{}
+}
+
+// OccupancyBasisCleared returns if the "occupancy_basis" field was cleared in this mutation.
+func (m *ItemMutation) OccupancyBasisCleared() bool {
+	_, ok := m.clearedFields[item.FieldOccupancyBasis]
+	return ok
+}
+
+// ResetOccupancyBasis resets all changes to the "occupancy_basis" field.
+func (m *ItemMutation) ResetOccupancyBasis() {
+	m.occupancy_basis = nil
+	delete(m.clearedFields, item.FieldOccupancyBasis)
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (m *ItemMutation) SetMaxAdults(i int) {
+	m.max_adults = &i
+	m.addmax_adults = nil
+}
+
+// MaxAdults returns the value of the "max_adults" field in the mutation.
+func (m *ItemMutation) MaxAdults() (r int, exists bool) {
+	v := m.max_adults
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxAdults returns the old "max_adults" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMaxAdults(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxAdults is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxAdults requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxAdults: %w", err)
+	}
+	return oldValue.MaxAdults, nil
+}
+
+// AddMaxAdults adds i to the "max_adults" field.
+func (m *ItemMutation) AddMaxAdults(i int) {
+	if m.addmax_adults != nil {
+		*m.addmax_adults += i
+	} else {
+		m.addmax_adults = &i
+	}
+}
+
+// AddedMaxAdults returns the value that was added to the "max_adults" field in this mutation.
+func (m *ItemMutation) AddedMaxAdults() (r int, exists bool) {
+	v := m.addmax_adults
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (m *ItemMutation) ClearMaxAdults() {
+	m.max_adults = nil
+	m.addmax_adults = nil
+	m.clearedFields[item.FieldMaxAdults] = struct{}{}
+}
+
+// MaxAdultsCleared returns if the "max_adults" field was cleared in this mutation.
+func (m *ItemMutation) MaxAdultsCleared() bool {
+	_, ok := m.clearedFields[item.FieldMaxAdults]
+	return ok
+}
+
+// ResetMaxAdults resets all changes to the "max_adults" field.
+func (m *ItemMutation) ResetMaxAdults() {
+	m.max_adults = nil
+	m.addmax_adults = nil
+	delete(m.clearedFields, item.FieldMaxAdults)
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (m *ItemMutation) SetMaxChildren(i int) {
+	m.max_children = &i
+	m.addmax_children = nil
+}
+
+// MaxChildren returns the value of the "max_children" field in the mutation.
+func (m *ItemMutation) MaxChildren() (r int, exists bool) {
+	v := m.max_children
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxChildren returns the old "max_children" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMaxChildren(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxChildren is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxChildren requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxChildren: %w", err)
+	}
+	return oldValue.MaxChildren, nil
+}
+
+// AddMaxChildren adds i to the "max_children" field.
+func (m *ItemMutation) AddMaxChildren(i int) {
+	if m.addmax_children != nil {
+		*m.addmax_children += i
+	} else {
+		m.addmax_children = &i
+	}
+}
+
+// AddedMaxChildren returns the value that was added to the "max_children" field in this mutation.
+func (m *ItemMutation) AddedMaxChildren() (r int, exists bool) {
+	v := m.addmax_children
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (m *ItemMutation) ClearMaxChildren() {
+	m.max_children = nil
+	m.addmax_children = nil
+	m.clearedFields[item.FieldMaxChildren] = struct{}{}
+}
+
+// MaxChildrenCleared returns if the "max_children" field was cleared in this mutation.
+func (m *ItemMutation) MaxChildrenCleared() bool {
+	_, ok := m.clearedFields[item.FieldMaxChildren]
+	return ok
+}
+
+// ResetMaxChildren resets all changes to the "max_children" field.
+func (m *ItemMutation) ResetMaxChildren() {
+	m.max_children = nil
+	m.addmax_children = nil
+	delete(m.clearedFields, item.FieldMaxChildren)
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (m *ItemMutation) SetExtraBedAllowed(b bool) {
+	m.extra_bed_allowed = &b
+}
+
+// ExtraBedAllowed returns the value of the "extra_bed_allowed" field in the mutation.
+func (m *ItemMutation) ExtraBedAllowed() (r bool, exists bool) {
+	v := m.extra_bed_allowed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtraBedAllowed returns the old "extra_bed_allowed" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldExtraBedAllowed(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtraBedAllowed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtraBedAllowed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtraBedAllowed: %w", err)
+	}
+	return oldValue.ExtraBedAllowed, nil
+}
+
+// ResetExtraBedAllowed resets all changes to the "extra_bed_allowed" field.
+func (m *ItemMutation) ResetExtraBedAllowed() {
+	m.extra_bed_allowed = nil
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (m *ItemMutation) SetSingleSupplement(f float64) {
+	m.single_supplement = &f
+	m.addsingle_supplement = nil
+}
+
+// SingleSupplement returns the value of the "single_supplement" field in the mutation.
+func (m *ItemMutation) SingleSupplement() (r float64, exists bool) {
+	v := m.single_supplement
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSingleSupplement returns the old "single_supplement" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldSingleSupplement(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSingleSupplement is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSingleSupplement requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSingleSupplement: %w", err)
+	}
+	return oldValue.SingleSupplement, nil
+}
+
+// AddSingleSupplement adds f to the "single_supplement" field.
+func (m *ItemMutation) AddSingleSupplement(f float64) {
+	if m.addsingle_supplement != nil {
+		*m.addsingle_supplement += f
+	} else {
+		m.addsingle_supplement = &f
+	}
+}
+
+// AddedSingleSupplement returns the value that was added to the "single_supplement" field in this mutation.
+func (m *ItemMutation) AddedSingleSupplement() (r float64, exists bool) {
+	v := m.addsingle_supplement
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (m *ItemMutation) ClearSingleSupplement() {
+	m.single_supplement = nil
+	m.addsingle_supplement = nil
+	m.clearedFields[item.FieldSingleSupplement] = struct{}{}
+}
+
+// SingleSupplementCleared returns if the "single_supplement" field was cleared in this mutation.
+func (m *ItemMutation) SingleSupplementCleared() bool {
+	_, ok := m.clearedFields[item.FieldSingleSupplement]
+	return ok
+}
+
+// ResetSingleSupplement resets all changes to the "single_supplement" field.
+func (m *ItemMutation) ResetSingleSupplement() {
+	m.single_supplement = nil
+	m.addsingle_supplement = nil
+	delete(m.clearedFields, item.FieldSingleSupplement)
 }
 
 // SetIsActive sets the "is_active" field.
@@ -12754,7 +13890,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 42)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -12775,6 +13911,27 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m._type != nil {
 		fields = append(fields, item.FieldType)
+	}
+	if m.use_case != nil {
+		fields = append(fields, item.FieldUseCase)
+	}
+	if m.meal_plan != nil {
+		fields = append(fields, item.FieldMealPlan)
+	}
+	if m.occupancy_basis != nil {
+		fields = append(fields, item.FieldOccupancyBasis)
+	}
+	if m.max_adults != nil {
+		fields = append(fields, item.FieldMaxAdults)
+	}
+	if m.max_children != nil {
+		fields = append(fields, item.FieldMaxChildren)
+	}
+	if m.extra_bed_allowed != nil {
+		fields = append(fields, item.FieldExtraBedAllowed)
+	}
+	if m.single_supplement != nil {
+		fields = append(fields, item.FieldSingleSupplement)
 	}
 	if m.is_active != nil {
 		fields = append(fields, item.FieldIsActive)
@@ -12882,6 +14039,20 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitID()
 	case item.FieldType:
 		return m.GetType()
+	case item.FieldUseCase:
+		return m.UseCase()
+	case item.FieldMealPlan:
+		return m.MealPlan()
+	case item.FieldOccupancyBasis:
+		return m.OccupancyBasis()
+	case item.FieldMaxAdults:
+		return m.MaxAdults()
+	case item.FieldMaxChildren:
+		return m.MaxChildren()
+	case item.FieldExtraBedAllowed:
+		return m.ExtraBedAllowed()
+	case item.FieldSingleSupplement:
+		return m.SingleSupplement()
 	case item.FieldIsActive:
 		return m.IsActive()
 	case item.FieldImageURL:
@@ -12961,6 +14132,20 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUnitID(ctx)
 	case item.FieldType:
 		return m.OldType(ctx)
+	case item.FieldUseCase:
+		return m.OldUseCase(ctx)
+	case item.FieldMealPlan:
+		return m.OldMealPlan(ctx)
+	case item.FieldOccupancyBasis:
+		return m.OldOccupancyBasis(ctx)
+	case item.FieldMaxAdults:
+		return m.OldMaxAdults(ctx)
+	case item.FieldMaxChildren:
+		return m.OldMaxChildren(ctx)
+	case item.FieldExtraBedAllowed:
+		return m.OldExtraBedAllowed(ctx)
+	case item.FieldSingleSupplement:
+		return m.OldSingleSupplement(ctx)
 	case item.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case item.FieldImageURL:
@@ -13074,6 +14259,55 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetType(v)
+		return nil
+	case item.FieldUseCase:
+		v, ok := value.(item.UseCase)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUseCase(v)
+		return nil
+	case item.FieldMealPlan:
+		v, ok := value.(item.MealPlan)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMealPlan(v)
+		return nil
+	case item.FieldOccupancyBasis:
+		v, ok := value.(item.OccupancyBasis)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccupancyBasis(v)
+		return nil
+	case item.FieldMaxAdults:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxAdults(v)
+		return nil
+	case item.FieldMaxChildren:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxChildren(v)
+		return nil
+	case item.FieldExtraBedAllowed:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtraBedAllowed(v)
+		return nil
+	case item.FieldSingleSupplement:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSingleSupplement(v)
 		return nil
 	case item.FieldIsActive:
 		v, ok := value.(bool)
@@ -13279,6 +14513,15 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ItemMutation) AddedFields() []string {
 	var fields []string
+	if m.addmax_adults != nil {
+		fields = append(fields, item.FieldMaxAdults)
+	}
+	if m.addmax_children != nil {
+		fields = append(fields, item.FieldMaxChildren)
+	}
+	if m.addsingle_supplement != nil {
+		fields = append(fields, item.FieldSingleSupplement)
+	}
 	if m.addweight_kg != nil {
 		fields = append(fields, item.FieldWeightKg)
 	}
@@ -13311,6 +14554,12 @@ func (m *ItemMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case item.FieldMaxAdults:
+		return m.AddedMaxAdults()
+	case item.FieldMaxChildren:
+		return m.AddedMaxChildren()
+	case item.FieldSingleSupplement:
+		return m.AddedSingleSupplement()
 	case item.FieldWeightKg:
 		return m.AddedWeightKg()
 	case item.FieldDurationMinutes:
@@ -13336,6 +14585,27 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ItemMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case item.FieldMaxAdults:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxAdults(v)
+		return nil
+	case item.FieldMaxChildren:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxChildren(v)
+		return nil
+	case item.FieldSingleSupplement:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSingleSupplement(v)
+		return nil
 	case item.FieldWeightKg:
 		v, ok := value.(float64)
 		if !ok {
@@ -13408,6 +14678,21 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldUnitID) {
 		fields = append(fields, item.FieldUnitID)
+	}
+	if m.FieldCleared(item.FieldMealPlan) {
+		fields = append(fields, item.FieldMealPlan)
+	}
+	if m.FieldCleared(item.FieldOccupancyBasis) {
+		fields = append(fields, item.FieldOccupancyBasis)
+	}
+	if m.FieldCleared(item.FieldMaxAdults) {
+		fields = append(fields, item.FieldMaxAdults)
+	}
+	if m.FieldCleared(item.FieldMaxChildren) {
+		fields = append(fields, item.FieldMaxChildren)
+	}
+	if m.FieldCleared(item.FieldSingleSupplement) {
+		fields = append(fields, item.FieldSingleSupplement)
 	}
 	if m.FieldCleared(item.FieldImageURL) {
 		fields = append(fields, item.FieldImageURL)
@@ -13482,6 +14767,21 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldUnitID:
 		m.ClearUnitID()
+		return nil
+	case item.FieldMealPlan:
+		m.ClearMealPlan()
+		return nil
+	case item.FieldOccupancyBasis:
+		m.ClearOccupancyBasis()
+		return nil
+	case item.FieldMaxAdults:
+		m.ClearMaxAdults()
+		return nil
+	case item.FieldMaxChildren:
+		m.ClearMaxChildren()
+		return nil
+	case item.FieldSingleSupplement:
+		m.ClearSingleSupplement()
 		return nil
 	case item.FieldImageURL:
 		m.ClearImageURL()
@@ -13562,6 +14862,27 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldType:
 		m.ResetType()
+		return nil
+	case item.FieldUseCase:
+		m.ResetUseCase()
+		return nil
+	case item.FieldMealPlan:
+		m.ResetMealPlan()
+		return nil
+	case item.FieldOccupancyBasis:
+		m.ResetOccupancyBasis()
+		return nil
+	case item.FieldMaxAdults:
+		m.ResetMaxAdults()
+		return nil
+	case item.FieldMaxChildren:
+		m.ResetMaxChildren()
+		return nil
+	case item.FieldExtraBedAllowed:
+		m.ResetExtraBedAllowed()
+		return nil
+	case item.FieldSingleSupplement:
+		m.ResetSingleSupplement()
 		return nil
 	case item.FieldIsActive:
 		m.ResetIsActive()
@@ -16680,6 +18001,8 @@ type ItemPricingMutation struct {
 	tenant_id       *uuid.UUID
 	item_id         *uuid.UUID
 	pricing_tier_id *uuid.UUID
+	outlet_id       *uuid.UUID
+	tier_basis      *itempricing.TierBasis
 	price           *float64
 	addprice        *float64
 	currency        *string
@@ -16904,6 +18227,91 @@ func (m *ItemPricingMutation) OldPricingTierID(ctx context.Context) (v uuid.UUID
 // ResetPricingTierID resets all changes to the "pricing_tier_id" field.
 func (m *ItemPricingMutation) ResetPricingTierID() {
 	m.pricing_tier_id = nil
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (m *ItemPricingMutation) SetOutletID(u uuid.UUID) {
+	m.outlet_id = &u
+}
+
+// OutletID returns the value of the "outlet_id" field in the mutation.
+func (m *ItemPricingMutation) OutletID() (r uuid.UUID, exists bool) {
+	v := m.outlet_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutletID returns the old "outlet_id" field's value of the ItemPricing entity.
+// If the ItemPricing object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemPricingMutation) OldOutletID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutletID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutletID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutletID: %w", err)
+	}
+	return oldValue.OutletID, nil
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (m *ItemPricingMutation) ClearOutletID() {
+	m.outlet_id = nil
+	m.clearedFields[itempricing.FieldOutletID] = struct{}{}
+}
+
+// OutletIDCleared returns if the "outlet_id" field was cleared in this mutation.
+func (m *ItemPricingMutation) OutletIDCleared() bool {
+	_, ok := m.clearedFields[itempricing.FieldOutletID]
+	return ok
+}
+
+// ResetOutletID resets all changes to the "outlet_id" field.
+func (m *ItemPricingMutation) ResetOutletID() {
+	m.outlet_id = nil
+	delete(m.clearedFields, itempricing.FieldOutletID)
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (m *ItemPricingMutation) SetTierBasis(ib itempricing.TierBasis) {
+	m.tier_basis = &ib
+}
+
+// TierBasis returns the value of the "tier_basis" field in the mutation.
+func (m *ItemPricingMutation) TierBasis() (r itempricing.TierBasis, exists bool) {
+	v := m.tier_basis
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTierBasis returns the old "tier_basis" field's value of the ItemPricing entity.
+// If the ItemPricing object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemPricingMutation) OldTierBasis(ctx context.Context) (v itempricing.TierBasis, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTierBasis is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTierBasis requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTierBasis: %w", err)
+	}
+	return oldValue.TierBasis, nil
+}
+
+// ResetTierBasis resets all changes to the "tier_basis" field.
+func (m *ItemPricingMutation) ResetTierBasis() {
+	m.tier_basis = nil
 }
 
 // SetPrice sets the "price" field.
@@ -17225,7 +18633,7 @@ func (m *ItemPricingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemPricingMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, itempricing.FieldTenantID)
 	}
@@ -17234,6 +18642,12 @@ func (m *ItemPricingMutation) Fields() []string {
 	}
 	if m.pricing_tier_id != nil {
 		fields = append(fields, itempricing.FieldPricingTierID)
+	}
+	if m.outlet_id != nil {
+		fields = append(fields, itempricing.FieldOutletID)
+	}
+	if m.tier_basis != nil {
+		fields = append(fields, itempricing.FieldTierBasis)
 	}
 	if m.price != nil {
 		fields = append(fields, itempricing.FieldPrice)
@@ -17270,6 +18684,10 @@ func (m *ItemPricingMutation) Field(name string) (ent.Value, bool) {
 		return m.ItemID()
 	case itempricing.FieldPricingTierID:
 		return m.PricingTierID()
+	case itempricing.FieldOutletID:
+		return m.OutletID()
+	case itempricing.FieldTierBasis:
+		return m.TierBasis()
 	case itempricing.FieldPrice:
 		return m.Price()
 	case itempricing.FieldCurrency:
@@ -17299,6 +18717,10 @@ func (m *ItemPricingMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldItemID(ctx)
 	case itempricing.FieldPricingTierID:
 		return m.OldPricingTierID(ctx)
+	case itempricing.FieldOutletID:
+		return m.OldOutletID(ctx)
+	case itempricing.FieldTierBasis:
+		return m.OldTierBasis(ctx)
 	case itempricing.FieldPrice:
 		return m.OldPrice(ctx)
 	case itempricing.FieldCurrency:
@@ -17342,6 +18764,20 @@ func (m *ItemPricingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPricingTierID(v)
+		return nil
+	case itempricing.FieldOutletID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutletID(v)
+		return nil
+	case itempricing.FieldTierBasis:
+		v, ok := value.(itempricing.TierBasis)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTierBasis(v)
 		return nil
 	case itempricing.FieldPrice:
 		v, ok := value.(float64)
@@ -17437,6 +18873,9 @@ func (m *ItemPricingMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ItemPricingMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(itempricing.FieldOutletID) {
+		fields = append(fields, itempricing.FieldOutletID)
+	}
 	if m.FieldCleared(itempricing.FieldEffectiveTo) {
 		fields = append(fields, itempricing.FieldEffectiveTo)
 	}
@@ -17454,6 +18893,9 @@ func (m *ItemPricingMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ItemPricingMutation) ClearField(name string) error {
 	switch name {
+	case itempricing.FieldOutletID:
+		m.ClearOutletID()
+		return nil
 	case itempricing.FieldEffectiveTo:
 		m.ClearEffectiveTo()
 		return nil
@@ -17473,6 +18915,12 @@ func (m *ItemPricingMutation) ResetField(name string) error {
 		return nil
 	case itempricing.FieldPricingTierID:
 		m.ResetPricingTierID()
+		return nil
+	case itempricing.FieldOutletID:
+		m.ResetOutletID()
+		return nil
+	case itempricing.FieldTierBasis:
+		m.ResetTierBasis()
 		return nil
 	case itempricing.FieldPrice:
 		m.ResetPrice()
@@ -37213,6 +38661,9 @@ type TenantInventoryConfigMutation struct {
 	recipes_module_enabled           *bool
 	purchase_orders_enabled          *bool
 	supplier_management_enabled      *bool
+	enable_room_pricing              *bool
+	enable_facility_booking          *bool
+	enable_conference_packages       *bool
 	default_target_margin_percent    *float64
 	adddefault_target_margin_percent *float64
 	created_at                       *time.Time
@@ -38094,6 +39545,114 @@ func (m *TenantInventoryConfigMutation) ResetSupplierManagementEnabled() {
 	m.supplier_management_enabled = nil
 }
 
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (m *TenantInventoryConfigMutation) SetEnableRoomPricing(b bool) {
+	m.enable_room_pricing = &b
+}
+
+// EnableRoomPricing returns the value of the "enable_room_pricing" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableRoomPricing() (r bool, exists bool) {
+	v := m.enable_room_pricing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableRoomPricing returns the old "enable_room_pricing" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableRoomPricing(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableRoomPricing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableRoomPricing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableRoomPricing: %w", err)
+	}
+	return oldValue.EnableRoomPricing, nil
+}
+
+// ResetEnableRoomPricing resets all changes to the "enable_room_pricing" field.
+func (m *TenantInventoryConfigMutation) ResetEnableRoomPricing() {
+	m.enable_room_pricing = nil
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (m *TenantInventoryConfigMutation) SetEnableFacilityBooking(b bool) {
+	m.enable_facility_booking = &b
+}
+
+// EnableFacilityBooking returns the value of the "enable_facility_booking" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableFacilityBooking() (r bool, exists bool) {
+	v := m.enable_facility_booking
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableFacilityBooking returns the old "enable_facility_booking" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableFacilityBooking(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableFacilityBooking is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableFacilityBooking requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableFacilityBooking: %w", err)
+	}
+	return oldValue.EnableFacilityBooking, nil
+}
+
+// ResetEnableFacilityBooking resets all changes to the "enable_facility_booking" field.
+func (m *TenantInventoryConfigMutation) ResetEnableFacilityBooking() {
+	m.enable_facility_booking = nil
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (m *TenantInventoryConfigMutation) SetEnableConferencePackages(b bool) {
+	m.enable_conference_packages = &b
+}
+
+// EnableConferencePackages returns the value of the "enable_conference_packages" field in the mutation.
+func (m *TenantInventoryConfigMutation) EnableConferencePackages() (r bool, exists bool) {
+	v := m.enable_conference_packages
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnableConferencePackages returns the old "enable_conference_packages" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldEnableConferencePackages(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnableConferencePackages is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnableConferencePackages requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnableConferencePackages: %w", err)
+	}
+	return oldValue.EnableConferencePackages, nil
+}
+
+// ResetEnableConferencePackages resets all changes to the "enable_conference_packages" field.
+func (m *TenantInventoryConfigMutation) ResetEnableConferencePackages() {
+	m.enable_conference_packages = nil
+}
+
 // SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
 func (m *TenantInventoryConfigMutation) SetDefaultTargetMarginPercent(f float64) {
 	m.default_target_margin_percent = &f
@@ -38270,7 +39829,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 24)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -38325,6 +39884,15 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	if m.supplier_management_enabled != nil {
 		fields = append(fields, tenantinventoryconfig.FieldSupplierManagementEnabled)
 	}
+	if m.enable_room_pricing != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableRoomPricing)
+	}
+	if m.enable_facility_booking != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableFacilityBooking)
+	}
+	if m.enable_conference_packages != nil {
+		fields = append(fields, tenantinventoryconfig.FieldEnableConferencePackages)
+	}
 	if m.default_target_margin_percent != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	}
@@ -38378,6 +39946,12 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchaseOrdersEnabled()
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.SupplierManagementEnabled()
+	case tenantinventoryconfig.FieldEnableRoomPricing:
+		return m.EnableRoomPricing()
+	case tenantinventoryconfig.FieldEnableFacilityBooking:
+		return m.EnableFacilityBooking()
+	case tenantinventoryconfig.FieldEnableConferencePackages:
+		return m.EnableConferencePackages()
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		return m.DefaultTargetMarginPercent()
 	case tenantinventoryconfig.FieldCreatedAt:
@@ -38429,6 +40003,12 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldPurchaseOrdersEnabled(ctx)
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.OldSupplierManagementEnabled(ctx)
+	case tenantinventoryconfig.FieldEnableRoomPricing:
+		return m.OldEnableRoomPricing(ctx)
+	case tenantinventoryconfig.FieldEnableFacilityBooking:
+		return m.OldEnableFacilityBooking(ctx)
+	case tenantinventoryconfig.FieldEnableConferencePackages:
+		return m.OldEnableConferencePackages(ctx)
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		return m.OldDefaultTargetMarginPercent(ctx)
 	case tenantinventoryconfig.FieldCreatedAt:
@@ -38569,6 +40149,27 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSupplierManagementEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableRoomPricing:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableRoomPricing(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableFacilityBooking:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableFacilityBooking(v)
+		return nil
+	case tenantinventoryconfig.FieldEnableConferencePackages:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnableConferencePackages(v)
 		return nil
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		v, ok := value.(float64)
@@ -38783,6 +40384,15 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		m.ResetSupplierManagementEnabled()
+		return nil
+	case tenantinventoryconfig.FieldEnableRoomPricing:
+		m.ResetEnableRoomPricing()
+		return nil
+	case tenantinventoryconfig.FieldEnableFacilityBooking:
+		m.ResetEnableFacilityBooking()
+		return nil
+	case tenantinventoryconfig.FieldEnableConferencePackages:
+		m.ResetEnableConferencePackages()
 		return nil
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		m.ResetDefaultTargetMarginPercent()

@@ -3,6 +3,7 @@
 package itempricing
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -20,6 +21,10 @@ const (
 	FieldItemID = "item_id"
 	// FieldPricingTierID holds the string denoting the pricing_tier_id field in the database.
 	FieldPricingTierID = "pricing_tier_id"
+	// FieldOutletID holds the string denoting the outlet_id field in the database.
+	FieldOutletID = "outlet_id"
+	// FieldTierBasis holds the string denoting the tier_basis field in the database.
+	FieldTierBasis = "tier_basis"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
 	// FieldCurrency holds the string denoting the currency field in the database.
@@ -44,6 +49,8 @@ var Columns = []string{
 	FieldTenantID,
 	FieldItemID,
 	FieldPricingTierID,
+	FieldOutletID,
+	FieldTierBasis,
 	FieldPrice,
 	FieldCurrency,
 	FieldEffectiveFrom,
@@ -82,6 +89,36 @@ var (
 	DefaultID func() uuid.UUID
 )
 
+// TierBasis defines the type for the "tier_basis" enum field.
+type TierBasis string
+
+// TierBasisDefault is the default value of the TierBasis enum.
+const DefaultTierBasis = TierBasisDefault
+
+// TierBasis values.
+const (
+	TierBasisDefault           TierBasis = "default"
+	TierBasisNightly           TierBasis = "nightly"
+	TierBasisPerSession        TierBasis = "per_session"
+	TierBasisPerDelegatePerDay TierBasis = "per_delegate_per_day"
+	TierBasisPeak              TierBasis = "peak"
+	TierBasisOffPeak           TierBasis = "off_peak"
+)
+
+func (tb TierBasis) String() string {
+	return string(tb)
+}
+
+// TierBasisValidator is a validator for the "tier_basis" field enum values. It is called by the builders before save.
+func TierBasisValidator(tb TierBasis) error {
+	switch tb {
+	case TierBasisDefault, TierBasisNightly, TierBasisPerSession, TierBasisPerDelegatePerDay, TierBasisPeak, TierBasisOffPeak:
+		return nil
+	default:
+		return fmt.Errorf("itempricing: invalid enum value for tier_basis field: %q", tb)
+	}
+}
+
 // OrderOption defines the ordering options for the ItemPricing queries.
 type OrderOption func(*sql.Selector)
 
@@ -103,6 +140,16 @@ func ByItemID(opts ...sql.OrderTermOption) OrderOption {
 // ByPricingTierID orders the results by the pricing_tier_id field.
 func ByPricingTierID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPricingTierID, opts...).ToFunc()
+}
+
+// ByOutletID orders the results by the outlet_id field.
+func ByOutletID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOutletID, opts...).ToFunc()
+}
+
+// ByTierBasis orders the results by the tier_basis field.
+func ByTierBasis(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTierBasis, opts...).ToFunc()
 }
 
 // ByPrice orders the results by the price field.

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_wg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7e22ce;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_wg)"/>
+  <!-- wine glass shape -->
+  <path d="M148,80 Q130,140 140,185 Q155,235 200,245 Q245,235 260,185 Q270,140 252,80 Z" fill="#fff" opacity="0.25"/>
+  <path d="M152,88 Q136,145 146,187 Q160,232 200,240 Q240,232 254,187 Q264,145 248,88 Z" fill="#e9d5ff" opacity="0.7"/>
+  <!-- wine fill -->
+  <path d="M149,185 Q162,232 200,240 Q238,232 251,185 Z" fill="#c4b5fd" opacity="0.9"/>
+  <!-- stem -->
+  <line x1="200" y1="245" x2="200" y2="315" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  <!-- base -->
+  <ellipse cx="200" cy="320" rx="60" ry="13" fill="#fff" opacity="0.9"/>
+  <!-- reflection line on glass -->
+  <path d="M163,100 Q155,135 158,170" stroke="#fff" stroke-width="5" opacity="0.3" stroke-linecap="round" fill="none"/>
+  <!-- bubbles -->
+  <circle cx="185" cy="210" r="4" fill="#fff" opacity="0.5"/>
+  <circle cx="205" cy="222" r="3" fill="#fff" opacity="0.4"/>
+  <circle cx="217" cy="205" r="3" fill="#fff" opacity="0.4"/>
+</svg>

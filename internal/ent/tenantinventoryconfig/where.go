@@ -140,6 +140,21 @@ func SupplierManagementEnabled(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldSupplierManagementEnabled, v))
 }
 
+// EnableRoomPricing applies equality check predicate on the "enable_room_pricing" field. It's identical to EnableRoomPricingEQ.
+func EnableRoomPricing(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableRoomPricing, v))
+}
+
+// EnableFacilityBooking applies equality check predicate on the "enable_facility_booking" field. It's identical to EnableFacilityBookingEQ.
+func EnableFacilityBooking(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableFacilityBooking, v))
+}
+
+// EnableConferencePackages applies equality check predicate on the "enable_conference_packages" field. It's identical to EnableConferencePackagesEQ.
+func EnableConferencePackages(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableConferencePackages, v))
+}
+
 // DefaultTargetMarginPercent applies equality check predicate on the "default_target_margin_percent" field. It's identical to DefaultTargetMarginPercentEQ.
 func DefaultTargetMarginPercent(v float64) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTargetMarginPercent, v))
@@ -613,6 +628,36 @@ func SupplierManagementEnabledEQ(v bool) predicate.TenantInventoryConfig {
 // SupplierManagementEnabledNEQ applies the NEQ predicate on the "supplier_management_enabled" field.
 func SupplierManagementEnabledNEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldSupplierManagementEnabled, v))
+}
+
+// EnableRoomPricingEQ applies the EQ predicate on the "enable_room_pricing" field.
+func EnableRoomPricingEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableRoomPricing, v))
+}
+
+// EnableRoomPricingNEQ applies the NEQ predicate on the "enable_room_pricing" field.
+func EnableRoomPricingNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldEnableRoomPricing, v))
+}
+
+// EnableFacilityBookingEQ applies the EQ predicate on the "enable_facility_booking" field.
+func EnableFacilityBookingEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableFacilityBooking, v))
+}
+
+// EnableFacilityBookingNEQ applies the NEQ predicate on the "enable_facility_booking" field.
+func EnableFacilityBookingNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldEnableFacilityBooking, v))
+}
+
+// EnableConferencePackagesEQ applies the EQ predicate on the "enable_conference_packages" field.
+func EnableConferencePackagesEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableConferencePackages, v))
+}
+
+// EnableConferencePackagesNEQ applies the NEQ predicate on the "enable_conference_packages" field.
+func EnableConferencePackagesNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldEnableConferencePackages, v))
 }
 
 // DefaultTargetMarginPercentEQ applies the EQ predicate on the "default_target_margin_percent" field.
