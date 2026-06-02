@@ -80,18 +80,18 @@ type MenuItemCompositeRequest struct {
 
 // MenuItemCompositeResponse is returned on success.
 type MenuItemCompositeResponse struct {
-	Item          *items.ItemDTO    `json:"item"`
-	Recipe        *recipes.RecipeDTO `json:"recipe"`
-	ReorderSeeds  []ReorderSeed      `json:"reorder_seeds,omitempty"`
-	Warnings      []string           `json:"warnings,omitempty"`
+	Item         *items.ItemDTO     `json:"item"`
+	Recipe       *recipes.RecipeDTO `json:"recipe"`
+	ReorderSeeds []ReorderSeed      `json:"reorder_seeds,omitempty"`
+	Warnings     []string           `json:"warnings,omitempty"`
 }
 
 // ReorderSeed describes the auto-seeded reorder policy for a new ingredient.
 type ReorderSeed struct {
-	SKU            string `json:"sku"`
-	ReorderLevel   int    `json:"reorder_level"`
-	ReorderQty     int    `json:"reorder_qty"`
-	Source         string `json:"source"` // "DEFAULT" or "UNIT_DEFAULT"
+	SKU          string `json:"sku"`
+	ReorderLevel int    `json:"reorder_level"`
+	ReorderQty   int    `json:"reorder_qty"`
+	Source       string `json:"source"` // "DEFAULT" or "UNIT_DEFAULT"
 }
 
 // CreateMenuItemComposite handles POST /inventory/items/menu-item.
@@ -175,16 +175,16 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 
 	for i, ing := range req.Ingredients {
 		ingDTO := items.ItemDTO{
-			SKU:             ing.IngredientSKU,
-			Name:            ing.IngredientName,
-			Type:            "INGREDIENT",
-			IsActive:        true,
-			CostPrice:       ing.CostPrice,
-			PurchasePrice:   ing.PurchasePrice,
+			SKU:              ing.IngredientSKU,
+			Name:             ing.IngredientName,
+			Type:             "INGREDIENT",
+			IsActive:         true,
+			CostPrice:        ing.CostPrice,
+			PurchasePrice:    ing.PurchasePrice,
 			PurchasePackSize: ing.PurchasePackSize,
-			PurchaseUnit:    ing.PurchaseUnit,
-			YieldPct:        ing.YieldPct,
-			AddToAllOutlets: true,
+			PurchaseUnit:     ing.PurchaseUnit,
+			YieldPct:         ing.YieldPct,
+			AddToAllOutlets:  true,
 		}
 		// Resolve unit for the ingredient's base unit.
 		h.ensureUnit(r, tenantID, ing.Unit, unitMap)
@@ -348,7 +348,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 			if dto.CostPrice != nil || dto.PurchasePrice != nil {
 				_, _ = h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, dto)
 			}
-			existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 1, 0, nil, nil, dto.SKU, nil)
+			existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 1, 0, nil, nil, dto.SKU, nil, "")
 			if len(existingList) > 0 {
 				itm := existingList[0]
 				return &itm, nil
@@ -358,7 +358,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 
 	// Try by name (case-insensitive search).
 	if dto.Name != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 5, 0, nil, nil, dto.Name, nil)
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 5, 0, nil, nil, dto.Name, nil, "")
 		for _, it := range existingList {
 			if strings.EqualFold(it.Name, dto.Name) {
 				if dto.CostPrice != nil {

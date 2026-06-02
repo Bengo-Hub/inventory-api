@@ -551,7 +551,7 @@ func enumPtrToStr[T ~string](v *T) *string {
 // ListItems returns a paginated list of items for a tenant with DB-level filtering.
 // statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
 // outletID: when set, restricts items to those with a balance in the outlet's warehouses or shared warehouses (outlet_id IS NULL).
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, tagsFilter ...string) ([]ItemDTO, int, error) {
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	// Pre-compute outlet-scoped item IDs when outlet context is active.
 	var outletItemIDs []uuid.UUID
 	if outletID != nil {
@@ -603,6 +603,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				}
 				q = q.Where(item.TypeIn(typeVals...))
 			}
+		}
+		if useCase != "" {
+			q = q.Where(item.UseCaseEQ(item.UseCase(useCase)))
 		}
 		if categoryID != nil {
 			q = q.Where(item.CategoryID(*categoryID))

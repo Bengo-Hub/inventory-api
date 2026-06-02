@@ -32,7 +32,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -679,6 +679,7 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	typeFilter := r.URL.Query().Get("type")
 	statusFilter := r.URL.Query().Get("status") // "active" | "inactive" | "all"; default = active
 	searchFilter := r.URL.Query().Get("search")
+	useCaseFilter := r.URL.Query().Get("use_case") // e.g. HOSPITALITY_ROOM, CONFERENCE, AMENITY
 
 	var categoryID *uuid.UUID
 	if catStr := r.URL.Query().Get("category_id"); catStr != "" {
@@ -713,7 +714,7 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := pagination.Parse(r)
-	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, tagsFilter...)
+	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
@@ -1190,7 +1191,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil)
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
