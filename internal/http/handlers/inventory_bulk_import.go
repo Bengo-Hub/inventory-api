@@ -98,7 +98,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
 
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil)
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
@@ -144,10 +144,10 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 	}
 	defer xl.Close()
 
-	catMap  := h.loadCategoryMap(r, tenantID)
+	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
 
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil)
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
@@ -170,7 +170,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 		h.log.Warn("bulk import: modifiersSvc is nil — ModifierGroups and ModifierOptions sheets skipped")
 	} else {
 		groupRows, _ := xl.GetRows("ModifierGroups")
-		optRows, _   := xl.GetRows("ModifierOptions")
+		optRows, _ := xl.GetRows("ModifierOptions")
 		result.Modifiers = h.parseXLSXModifiers(r, tenantID, groupRows, optRows, skuToID)
 	}
 
@@ -278,29 +278,29 @@ func buildItemDTOFromRow(
 	catMap map[string]uuid.UUID,
 	unitMap map[string]uuid.UUID,
 ) items.ItemDTO {
-	sku  := col(row, "sku")
+	sku := col(row, "sku")
 	name := col(row, "name")
-	tp   := strings.ToUpper(col(row, "type"))
+	tp := strings.ToUpper(col(row, "type"))
 	if tp == "" {
 		tp = "GOODS"
 	}
 
 	dto := items.ItemDTO{
-		SKU:             sku,
-		Name:            name,
-		Type:            tp,
-		Description:     col(row, "description"),
-		IsActive:        parseBool(col(row, "is_active"), true),
-		Barcode:         col(row, "barcode"),
-		BarcodeType:     col(row, "barcode_type"),
-		IsPerishable:    parseBool(col(row, "is_perishable"), false),
-		TrackLots:       parseBool(col(row, "track_lots"), false),
-		TrackSerialNumbers: parseBool(col(row, "track_serial_numbers"), false),
+		SKU:                     sku,
+		Name:                    name,
+		Type:                    tp,
+		Description:             col(row, "description"),
+		IsActive:                parseBool(col(row, "is_active"), true),
+		Barcode:                 col(row, "barcode"),
+		BarcodeType:             col(row, "barcode_type"),
+		IsPerishable:            parseBool(col(row, "is_perishable"), false),
+		TrackLots:               parseBool(col(row, "track_lots"), false),
+		TrackSerialNumbers:      parseBool(col(row, "track_serial_numbers"), false),
 		RequiresAgeVerification: parseBool(col(row, "requires_age_verification"), false),
-		ReorderLevel:    parseInt(col(row, "reorder_level"), 0),
-		ReorderQuantity: parseInt(col(row, "reorder_quantity"), 0),
-		InitialQuantity: parseInt(col(row, "initial_quantity"), 0),
-		AddToAllOutlets: false, // bulk import targets only the user-selected warehouse
+		ReorderLevel:            parseInt(col(row, "reorder_level"), 0),
+		ReorderQuantity:         parseInt(col(row, "reorder_quantity"), 0),
+		InitialQuantity:         parseInt(col(row, "initial_quantity"), 0),
+		AddToAllOutlets:         false, // bulk import targets only the user-selected warehouse
 	}
 
 	if tagsStr := col(row, "tags"); tagsStr != "" {

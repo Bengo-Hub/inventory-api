@@ -100,6 +100,8 @@ type itemPricingDTO struct {
 	TierCode      string     `json:"tier_code,omitempty"`
 	Price         float64    `json:"price"`
 	Currency      string     `json:"currency"`
+	OutletID      *uuid.UUID `json:"outlet_id,omitempty"`
+	TierBasis     string     `json:"tier_basis,omitempty"`
 	EffectiveFrom time.Time  `json:"effective_from"`
 	EffectiveTo   *time.Time `json:"effective_to,omitempty"`
 	IsActive      bool       `json:"is_active"`
@@ -109,6 +111,8 @@ type upsertItemPricingEntry struct {
 	PricingTierID uuid.UUID  `json:"pricing_tier_id"`
 	Price         float64    `json:"price"`
 	Currency      string     `json:"currency"`
+	OutletID      *uuid.UUID `json:"outlet_id"`
+	TierBasis     string     `json:"tier_basis"`
 	EffectiveFrom *time.Time `json:"effective_from"`
 	EffectiveTo   *time.Time `json:"effective_to"`
 }
@@ -302,9 +306,14 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 
 	results := make([]itemPricingDTO, 0, len(entries))
 	for _, entry := range entries {
-		existing, err := h.orm.ItemPricing.Query().
-			Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(entry.PricingTierID)).
-			First(r.Context())
+		q := h.orm.ItemPricing.Query().
+			Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(entry.PricingTierID))
+		if entry.OutletID != nil {
+			q = q.Where(entip.OutletID(*entry.OutletID))
+		} else {
+			q = q.Where(entip.OutletIDIsNil())
+		}
+		existing, err := q.First(r.Context())
 
 		effectiveFrom := time.Now()
 		if entry.EffectiveFrom != nil {
@@ -323,6 +332,9 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 				SetCurrency(currency).
 				SetEffectiveFrom(effectiveFrom).
 				SetIsActive(true)
+			if entry.TierBasis != "" {
+				upd = upd.SetTierBasis(entip.TierBasis(entry.TierBasis))
+			}
 			if entry.EffectiveTo != nil {
 				upd = upd.SetEffectiveTo(*entry.EffectiveTo)
 			} else {
@@ -338,6 +350,12 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 				SetPrice(entry.Price).
 				SetCurrency(currency).
 				SetEffectiveFrom(effectiveFrom)
+			if entry.OutletID != nil {
+				creator = creator.SetOutletID(*entry.OutletID)
+			}
+			if entry.TierBasis != "" {
+				creator = creator.SetTierBasis(entip.TierBasis(entry.TierBasis))
+			}
 			if entry.EffectiveTo != nil {
 				creator = creator.SetEffectiveTo(*entry.EffectiveTo)
 			}
@@ -423,9 +441,15 @@ func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusInternalServerError, "LIST_FAILED", "Failed to list pricing tiers")
 		return
 	}
-	tierMeta := make(map[uuid.UUID]struct{ code string; isDefault bool }, len(tiers))
+	tierMeta := make(map[uuid.UUID]struct {
+		code      string
+		isDefault bool
+	}, len(tiers))
 	for _, t := range tiers {
-		tierMeta[t.ID] = struct{ code string; isDefault bool }{t.Code, t.IsDefault}
+		tierMeta[t.ID] = struct {
+			code      string
+			isDefault bool
+		}{t.Code, t.IsDefault}
 	}
 
 	// Load all active pricing entries for the tenant in one query.
@@ -592,6 +616,8 @@ func toItemPricingDTO(p *ent.ItemPricing) itemPricingDTO {
 		PricingTierID: p.PricingTierID,
 		Price:         p.Price,
 		Currency:      p.Currency,
+		OutletID:      p.OutletID,
+		TierBasis:     string(p.TierBasis),
 		EffectiveFrom: p.EffectiveFrom,
 		IsActive:      p.IsActive,
 	}
