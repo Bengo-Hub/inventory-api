@@ -59,16 +59,20 @@ func init() {
 	bundleDescName := bundleFields[3].Descriptor()
 	// bundle.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	bundle.NameValidator = bundleDescName.Validators[0].(func(string) error)
+	// bundleDescAccommodationIncluded is the schema descriptor for accommodation_included field.
+	bundleDescAccommodationIncluded := bundleFields[7].Descriptor()
+	// bundle.DefaultAccommodationIncluded holds the default value on creation for the accommodation_included field.
+	bundle.DefaultAccommodationIncluded = bundleDescAccommodationIncluded.Default.(bool)
 	// bundleDescIsActive is the schema descriptor for is_active field.
-	bundleDescIsActive := bundleFields[4].Descriptor()
+	bundleDescIsActive := bundleFields[10].Descriptor()
 	// bundle.DefaultIsActive holds the default value on creation for the is_active field.
 	bundle.DefaultIsActive = bundleDescIsActive.Default.(bool)
 	// bundleDescCreatedAt is the schema descriptor for created_at field.
-	bundleDescCreatedAt := bundleFields[5].Descriptor()
+	bundleDescCreatedAt := bundleFields[11].Descriptor()
 	// bundle.DefaultCreatedAt holds the default value on creation for the created_at field.
 	bundle.DefaultCreatedAt = bundleDescCreatedAt.Default.(func() time.Time)
 	// bundleDescUpdatedAt is the schema descriptor for updated_at field.
-	bundleDescUpdatedAt := bundleFields[6].Descriptor()
+	bundleDescUpdatedAt := bundleFields[12].Descriptor()
 	// bundle.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	bundle.DefaultUpdatedAt = bundleDescUpdatedAt.Default.(func() time.Time)
 	// bundle.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -83,8 +87,12 @@ func init() {
 	bundlecomponentDescQuantity := bundlecomponentFields[3].Descriptor()
 	// bundlecomponent.DefaultQuantity holds the default value on creation for the quantity field.
 	bundlecomponent.DefaultQuantity = bundlecomponentDescQuantity.Default.(int)
+	// bundlecomponentDescIsMetered is the schema descriptor for is_metered field.
+	bundlecomponentDescIsMetered := bundlecomponentFields[6].Descriptor()
+	// bundlecomponent.DefaultIsMetered holds the default value on creation for the is_metered field.
+	bundlecomponent.DefaultIsMetered = bundlecomponentDescIsMetered.Default.(bool)
 	// bundlecomponentDescSortOrder is the schema descriptor for sort_order field.
-	bundlecomponentDescSortOrder := bundlecomponentFields[4].Descriptor()
+	bundlecomponentDescSortOrder := bundlecomponentFields[8].Descriptor()
 	// bundlecomponent.DefaultSortOrder holds the default value on creation for the sort_order field.
 	bundlecomponent.DefaultSortOrder = bundlecomponentDescSortOrder.Default.(int)
 	// bundlecomponentDescID is the schema descriptor for id field.
@@ -343,64 +351,68 @@ func init() {
 	itemDescName := itemFields[3].Descriptor()
 	// item.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	item.NameValidator = itemDescName.Validators[0].(func(string) error)
+	// itemDescExtraBedAllowed is the schema descriptor for extra_bed_allowed field.
+	itemDescExtraBedAllowed := itemFields[13].Descriptor()
+	// item.DefaultExtraBedAllowed holds the default value on creation for the extra_bed_allowed field.
+	item.DefaultExtraBedAllowed = itemDescExtraBedAllowed.Default.(bool)
 	// itemDescIsActive is the schema descriptor for is_active field.
-	itemDescIsActive := itemFields[8].Descriptor()
+	itemDescIsActive := itemFields[15].Descriptor()
 	// item.DefaultIsActive holds the default value on creation for the is_active field.
 	item.DefaultIsActive = itemDescIsActive.Default.(bool)
 	// itemDescRequiresAgeVerification is the schema descriptor for requires_age_verification field.
-	itemDescRequiresAgeVerification := itemFields[12].Descriptor()
+	itemDescRequiresAgeVerification := itemFields[19].Descriptor()
 	// item.DefaultRequiresAgeVerification holds the default value on creation for the requires_age_verification field.
 	item.DefaultRequiresAgeVerification = itemDescRequiresAgeVerification.Default.(bool)
 	// itemDescIsControlledSubstance is the schema descriptor for is_controlled_substance field.
-	itemDescIsControlledSubstance := itemFields[13].Descriptor()
+	itemDescIsControlledSubstance := itemFields[20].Descriptor()
 	// item.DefaultIsControlledSubstance holds the default value on creation for the is_controlled_substance field.
 	item.DefaultIsControlledSubstance = itemDescIsControlledSubstance.Default.(bool)
 	// itemDescIsPerishable is the schema descriptor for is_perishable field.
-	itemDescIsPerishable := itemFields[14].Descriptor()
+	itemDescIsPerishable := itemFields[21].Descriptor()
 	// item.DefaultIsPerishable holds the default value on creation for the is_perishable field.
 	item.DefaultIsPerishable = itemDescIsPerishable.Default.(bool)
 	// itemDescTrackSerialNumbers is the schema descriptor for track_serial_numbers field.
-	itemDescTrackSerialNumbers := itemFields[15].Descriptor()
+	itemDescTrackSerialNumbers := itemFields[22].Descriptor()
 	// item.DefaultTrackSerialNumbers holds the default value on creation for the track_serial_numbers field.
 	item.DefaultTrackSerialNumbers = itemDescTrackSerialNumbers.Default.(bool)
 	// itemDescTrackLots is the schema descriptor for track_lots field.
-	itemDescTrackLots := itemFields[16].Descriptor()
+	itemDescTrackLots := itemFields[23].Descriptor()
 	// item.DefaultTrackLots holds the default value on creation for the track_lots field.
 	item.DefaultTrackLots = itemDescTrackLots.Default.(bool)
 	// itemDescTags is the schema descriptor for tags field.
-	itemDescTags := itemFields[20].Descriptor()
+	itemDescTags := itemFields[27].Descriptor()
 	// item.DefaultTags holds the default value on creation for the tags field.
 	item.DefaultTags = itemDescTags.Default.([]string)
 	// itemDescTaxInclusive is the schema descriptor for tax_inclusive field.
-	itemDescTaxInclusive := itemFields[22].Descriptor()
+	itemDescTaxInclusive := itemFields[29].Descriptor()
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescPurchaseUnit is the schema descriptor for purchase_unit field.
-	itemDescPurchaseUnit := itemFields[26].Descriptor()
+	itemDescPurchaseUnit := itemFields[33].Descriptor()
 	// item.PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
 	item.PurchaseUnitValidator = itemDescPurchaseUnit.Validators[0].(func(string) error)
 	// itemDescYieldPct is the schema descriptor for yield_pct field.
-	itemDescYieldPct := itemFields[27].Descriptor()
+	itemDescYieldPct := itemFields[34].Descriptor()
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[29].Descriptor()
+	itemDescBookedCapacity := itemFields[36].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[32].Descriptor()
+	itemDescEventVenue := itemFields[39].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[33].Descriptor()
+	itemDescMetadata := itemFields[40].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[34].Descriptor()
+	itemDescCreatedAt := itemFields[41].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[35].Descriptor()
+	itemDescUpdatedAt := itemFields[42].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -480,27 +492,27 @@ func init() {
 	itempricingFields := schema.ItemPricing{}.Fields()
 	_ = itempricingFields
 	// itempricingDescPrice is the schema descriptor for price field.
-	itempricingDescPrice := itempricingFields[4].Descriptor()
+	itempricingDescPrice := itempricingFields[6].Descriptor()
 	// itempricing.DefaultPrice holds the default value on creation for the price field.
 	itempricing.DefaultPrice = itempricingDescPrice.Default.(float64)
 	// itempricingDescCurrency is the schema descriptor for currency field.
-	itempricingDescCurrency := itempricingFields[5].Descriptor()
+	itempricingDescCurrency := itempricingFields[7].Descriptor()
 	// itempricing.DefaultCurrency holds the default value on creation for the currency field.
 	itempricing.DefaultCurrency = itempricingDescCurrency.Default.(string)
 	// itempricingDescEffectiveFrom is the schema descriptor for effective_from field.
-	itempricingDescEffectiveFrom := itempricingFields[6].Descriptor()
+	itempricingDescEffectiveFrom := itempricingFields[8].Descriptor()
 	// itempricing.DefaultEffectiveFrom holds the default value on creation for the effective_from field.
 	itempricing.DefaultEffectiveFrom = itempricingDescEffectiveFrom.Default.(func() time.Time)
 	// itempricingDescIsActive is the schema descriptor for is_active field.
-	itempricingDescIsActive := itempricingFields[8].Descriptor()
+	itempricingDescIsActive := itempricingFields[10].Descriptor()
 	// itempricing.DefaultIsActive holds the default value on creation for the is_active field.
 	itempricing.DefaultIsActive = itempricingDescIsActive.Default.(bool)
 	// itempricingDescCreatedAt is the schema descriptor for created_at field.
-	itempricingDescCreatedAt := itempricingFields[9].Descriptor()
+	itempricingDescCreatedAt := itempricingFields[11].Descriptor()
 	// itempricing.DefaultCreatedAt holds the default value on creation for the created_at field.
 	itempricing.DefaultCreatedAt = itempricingDescCreatedAt.Default.(func() time.Time)
 	// itempricingDescUpdatedAt is the schema descriptor for updated_at field.
-	itempricingDescUpdatedAt := itempricingFields[10].Descriptor()
+	itempricingDescUpdatedAt := itempricingFields[12].Descriptor()
 	// itempricing.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	itempricing.DefaultUpdatedAt = itempricingDescUpdatedAt.Default.(func() time.Time)
 	// itempricing.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1133,16 +1145,28 @@ func init() {
 	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[18].Descriptor()
 	// tenantinventoryconfig.DefaultSupplierManagementEnabled holds the default value on creation for the supplier_management_enabled field.
 	tenantinventoryconfig.DefaultSupplierManagementEnabled = tenantinventoryconfigDescSupplierManagementEnabled.Default.(bool)
+	// tenantinventoryconfigDescEnableRoomPricing is the schema descriptor for enable_room_pricing field.
+	tenantinventoryconfigDescEnableRoomPricing := tenantinventoryconfigFields[19].Descriptor()
+	// tenantinventoryconfig.DefaultEnableRoomPricing holds the default value on creation for the enable_room_pricing field.
+	tenantinventoryconfig.DefaultEnableRoomPricing = tenantinventoryconfigDescEnableRoomPricing.Default.(bool)
+	// tenantinventoryconfigDescEnableFacilityBooking is the schema descriptor for enable_facility_booking field.
+	tenantinventoryconfigDescEnableFacilityBooking := tenantinventoryconfigFields[20].Descriptor()
+	// tenantinventoryconfig.DefaultEnableFacilityBooking holds the default value on creation for the enable_facility_booking field.
+	tenantinventoryconfig.DefaultEnableFacilityBooking = tenantinventoryconfigDescEnableFacilityBooking.Default.(bool)
+	// tenantinventoryconfigDescEnableConferencePackages is the schema descriptor for enable_conference_packages field.
+	tenantinventoryconfigDescEnableConferencePackages := tenantinventoryconfigFields[21].Descriptor()
+	// tenantinventoryconfig.DefaultEnableConferencePackages holds the default value on creation for the enable_conference_packages field.
+	tenantinventoryconfig.DefaultEnableConferencePackages = tenantinventoryconfigDescEnableConferencePackages.Default.(bool)
 	// tenantinventoryconfigDescDefaultTargetMarginPercent is the schema descriptor for default_target_margin_percent field.
-	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[19].Descriptor()
+	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[22].Descriptor()
 	// tenantinventoryconfig.DefaultDefaultTargetMarginPercent holds the default value on creation for the default_target_margin_percent field.
 	tenantinventoryconfig.DefaultDefaultTargetMarginPercent = tenantinventoryconfigDescDefaultTargetMarginPercent.Default.(float64)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[20].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[23].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[21].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[24].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -69,6 +69,16 @@ func Quantity(v int) predicate.BundleComponent {
 	return predicate.BundleComponent(sql.FieldEQ(FieldQuantity, v))
 }
 
+// IsMetered applies equality check predicate on the "is_metered" field. It's identical to IsMeteredEQ.
+func IsMetered(v bool) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldIsMetered, v))
+}
+
+// Unit applies equality check predicate on the "unit" field. It's identical to UnitEQ.
+func Unit(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldUnit, v))
+}
+
 // SortOrder applies equality check predicate on the "sort_order" field. It's identical to SortOrderEQ.
 func SortOrder(v int) predicate.BundleComponent {
 	return predicate.BundleComponent(sql.FieldEQ(FieldSortOrder, v))
@@ -152,6 +162,141 @@ func QuantityLT(v int) predicate.BundleComponent {
 // QuantityLTE applies the LTE predicate on the "quantity" field.
 func QuantityLTE(v int) predicate.BundleComponent {
 	return predicate.BundleComponent(sql.FieldLTE(FieldQuantity, v))
+}
+
+// ComponentKindEQ applies the EQ predicate on the "component_kind" field.
+func ComponentKindEQ(v ComponentKind) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldComponentKind, v))
+}
+
+// ComponentKindNEQ applies the NEQ predicate on the "component_kind" field.
+func ComponentKindNEQ(v ComponentKind) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNEQ(FieldComponentKind, v))
+}
+
+// ComponentKindIn applies the In predicate on the "component_kind" field.
+func ComponentKindIn(vs ...ComponentKind) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldIn(FieldComponentKind, vs...))
+}
+
+// ComponentKindNotIn applies the NotIn predicate on the "component_kind" field.
+func ComponentKindNotIn(vs ...ComponentKind) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNotIn(FieldComponentKind, vs...))
+}
+
+// MealPeriodEQ applies the EQ predicate on the "meal_period" field.
+func MealPeriodEQ(v MealPeriod) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldMealPeriod, v))
+}
+
+// MealPeriodNEQ applies the NEQ predicate on the "meal_period" field.
+func MealPeriodNEQ(v MealPeriod) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNEQ(FieldMealPeriod, v))
+}
+
+// MealPeriodIn applies the In predicate on the "meal_period" field.
+func MealPeriodIn(vs ...MealPeriod) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldIn(FieldMealPeriod, vs...))
+}
+
+// MealPeriodNotIn applies the NotIn predicate on the "meal_period" field.
+func MealPeriodNotIn(vs ...MealPeriod) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNotIn(FieldMealPeriod, vs...))
+}
+
+// MealPeriodIsNil applies the IsNil predicate on the "meal_period" field.
+func MealPeriodIsNil() predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldIsNull(FieldMealPeriod))
+}
+
+// MealPeriodNotNil applies the NotNil predicate on the "meal_period" field.
+func MealPeriodNotNil() predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNotNull(FieldMealPeriod))
+}
+
+// IsMeteredEQ applies the EQ predicate on the "is_metered" field.
+func IsMeteredEQ(v bool) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldIsMetered, v))
+}
+
+// IsMeteredNEQ applies the NEQ predicate on the "is_metered" field.
+func IsMeteredNEQ(v bool) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNEQ(FieldIsMetered, v))
+}
+
+// UnitEQ applies the EQ predicate on the "unit" field.
+func UnitEQ(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEQ(FieldUnit, v))
+}
+
+// UnitNEQ applies the NEQ predicate on the "unit" field.
+func UnitNEQ(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNEQ(FieldUnit, v))
+}
+
+// UnitIn applies the In predicate on the "unit" field.
+func UnitIn(vs ...string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldIn(FieldUnit, vs...))
+}
+
+// UnitNotIn applies the NotIn predicate on the "unit" field.
+func UnitNotIn(vs ...string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNotIn(FieldUnit, vs...))
+}
+
+// UnitGT applies the GT predicate on the "unit" field.
+func UnitGT(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldGT(FieldUnit, v))
+}
+
+// UnitGTE applies the GTE predicate on the "unit" field.
+func UnitGTE(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldGTE(FieldUnit, v))
+}
+
+// UnitLT applies the LT predicate on the "unit" field.
+func UnitLT(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldLT(FieldUnit, v))
+}
+
+// UnitLTE applies the LTE predicate on the "unit" field.
+func UnitLTE(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldLTE(FieldUnit, v))
+}
+
+// UnitContains applies the Contains predicate on the "unit" field.
+func UnitContains(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldContains(FieldUnit, v))
+}
+
+// UnitHasPrefix applies the HasPrefix predicate on the "unit" field.
+func UnitHasPrefix(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldHasPrefix(FieldUnit, v))
+}
+
+// UnitHasSuffix applies the HasSuffix predicate on the "unit" field.
+func UnitHasSuffix(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldHasSuffix(FieldUnit, v))
+}
+
+// UnitIsNil applies the IsNil predicate on the "unit" field.
+func UnitIsNil() predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldIsNull(FieldUnit))
+}
+
+// UnitNotNil applies the NotNil predicate on the "unit" field.
+func UnitNotNil() predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldNotNull(FieldUnit))
+}
+
+// UnitEqualFold applies the EqualFold predicate on the "unit" field.
+func UnitEqualFold(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldEqualFold(FieldUnit, v))
+}
+
+// UnitContainsFold applies the ContainsFold predicate on the "unit" field.
+func UnitContainsFold(v string) predicate.BundleComponent {
+	return predicate.BundleComponent(sql.FieldContainsFold(FieldUnit, v))
 }
 
 // SortOrderEQ applies the EQ predicate on the "sort_order" field.

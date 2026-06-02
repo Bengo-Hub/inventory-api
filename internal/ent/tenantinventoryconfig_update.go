@@ -319,6 +319,48 @@ func (_u *TenantInventoryConfigUpdate) SetNillableSupplierManagementEnabled(v *b
 	return _u
 }
 
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (_u *TenantInventoryConfigUpdate) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetEnableRoomPricing(v)
+	return _u
+}
+
+// SetNillableEnableRoomPricing sets the "enable_room_pricing" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableEnableRoomPricing(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetEnableRoomPricing(*v)
+	}
+	return _u
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (_u *TenantInventoryConfigUpdate) SetEnableFacilityBooking(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetEnableFacilityBooking(v)
+	return _u
+}
+
+// SetNillableEnableFacilityBooking sets the "enable_facility_booking" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableEnableFacilityBooking(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetEnableFacilityBooking(*v)
+	}
+	return _u
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (_u *TenantInventoryConfigUpdate) SetEnableConferencePackages(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetEnableConferencePackages(v)
+	return _u
+}
+
+// SetNillableEnableConferencePackages sets the "enable_conference_packages" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableEnableConferencePackages(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetEnableConferencePackages(*v)
+	}
+	return _u
+}
+
 // SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
 func (_u *TenantInventoryConfigUpdate) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdate {
 	_u.mutation.ResetDefaultTargetMarginPercent()
@@ -476,6 +518,15 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableRoomPricing(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableFacilityBooking(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableFacilityBooking, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableConferencePackages(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableConferencePackages, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DefaultTargetMarginPercent(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
@@ -799,6 +850,48 @@ func (_u *TenantInventoryConfigUpdateOne) SetNillableSupplierManagementEnabled(v
 	return _u
 }
 
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (_u *TenantInventoryConfigUpdateOne) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetEnableRoomPricing(v)
+	return _u
+}
+
+// SetNillableEnableRoomPricing sets the "enable_room_pricing" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableEnableRoomPricing(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetEnableRoomPricing(*v)
+	}
+	return _u
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (_u *TenantInventoryConfigUpdateOne) SetEnableFacilityBooking(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetEnableFacilityBooking(v)
+	return _u
+}
+
+// SetNillableEnableFacilityBooking sets the "enable_facility_booking" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableEnableFacilityBooking(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetEnableFacilityBooking(*v)
+	}
+	return _u
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (_u *TenantInventoryConfigUpdateOne) SetEnableConferencePackages(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetEnableConferencePackages(v)
+	return _u
+}
+
+// SetNillableEnableConferencePackages sets the "enable_conference_packages" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableEnableConferencePackages(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetEnableConferencePackages(*v)
+	}
+	return _u
+}
+
 // SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
 func (_u *TenantInventoryConfigUpdateOne) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigUpdateOne {
 	_u.mutation.ResetDefaultTargetMarginPercent()
@@ -986,6 +1079,15 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableRoomPricing(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableFacilityBooking(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableFacilityBooking, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EnableConferencePackages(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableConferencePackages, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DefaultTargetMarginPercent(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)

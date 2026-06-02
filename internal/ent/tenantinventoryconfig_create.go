@@ -260,6 +260,48 @@ func (_c *TenantInventoryConfigCreate) SetNillableSupplierManagementEnabled(v *b
 	return _c
 }
 
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (_c *TenantInventoryConfigCreate) SetEnableRoomPricing(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetEnableRoomPricing(v)
+	return _c
+}
+
+// SetNillableEnableRoomPricing sets the "enable_room_pricing" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableEnableRoomPricing(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetEnableRoomPricing(*v)
+	}
+	return _c
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (_c *TenantInventoryConfigCreate) SetEnableFacilityBooking(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetEnableFacilityBooking(v)
+	return _c
+}
+
+// SetNillableEnableFacilityBooking sets the "enable_facility_booking" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableEnableFacilityBooking(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetEnableFacilityBooking(*v)
+	}
+	return _c
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (_c *TenantInventoryConfigCreate) SetEnableConferencePackages(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetEnableConferencePackages(v)
+	return _c
+}
+
+// SetNillableEnableConferencePackages sets the "enable_conference_packages" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableEnableConferencePackages(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetEnableConferencePackages(*v)
+	}
+	return _c
+}
+
 // SetDefaultTargetMarginPercent sets the "default_target_margin_percent" field.
 func (_c *TenantInventoryConfigCreate) SetDefaultTargetMarginPercent(v float64) *TenantInventoryConfigCreate {
 	_c.mutation.SetDefaultTargetMarginPercent(v)
@@ -407,6 +449,18 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultSupplierManagementEnabled
 		_c.mutation.SetSupplierManagementEnabled(v)
 	}
+	if _, ok := _c.mutation.EnableRoomPricing(); !ok {
+		v := tenantinventoryconfig.DefaultEnableRoomPricing
+		_c.mutation.SetEnableRoomPricing(v)
+	}
+	if _, ok := _c.mutation.EnableFacilityBooking(); !ok {
+		v := tenantinventoryconfig.DefaultEnableFacilityBooking
+		_c.mutation.SetEnableFacilityBooking(v)
+	}
+	if _, ok := _c.mutation.EnableConferencePackages(); !ok {
+		v := tenantinventoryconfig.DefaultEnableConferencePackages
+		_c.mutation.SetEnableConferencePackages(v)
+	}
 	if _, ok := _c.mutation.DefaultTargetMarginPercent(); !ok {
 		v := tenantinventoryconfig.DefaultDefaultTargetMarginPercent
 		_c.mutation.SetDefaultTargetMarginPercent(v)
@@ -471,6 +525,15 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.SupplierManagementEnabled(); !ok {
 		return &ValidationError{Name: "supplier_management_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.supplier_management_enabled"`)}
+	}
+	if _, ok := _c.mutation.EnableRoomPricing(); !ok {
+		return &ValidationError{Name: "enable_room_pricing", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_room_pricing"`)}
+	}
+	if _, ok := _c.mutation.EnableFacilityBooking(); !ok {
+		return &ValidationError{Name: "enable_facility_booking", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_facility_booking"`)}
+	}
+	if _, ok := _c.mutation.EnableConferencePackages(); !ok {
+		return &ValidationError{Name: "enable_conference_packages", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_conference_packages"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TenantInventoryConfig.created_at"`)}
@@ -585,6 +648,18 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
 		_node.SupplierManagementEnabled = value
+	}
+	if value, ok := _c.mutation.EnableRoomPricing(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)
+		_node.EnableRoomPricing = value
+	}
+	if value, ok := _c.mutation.EnableFacilityBooking(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableFacilityBooking, field.TypeBool, value)
+		_node.EnableFacilityBooking = value
+	}
+	if value, ok := _c.mutation.EnableConferencePackages(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldEnableConferencePackages, field.TypeBool, value)
+		_node.EnableConferencePackages = value
 	}
 	if value, ok := _c.mutation.DefaultTargetMarginPercent(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
@@ -905,6 +980,42 @@ func (u *TenantInventoryConfigUpsert) SetSupplierManagementEnabled(v bool) *Tena
 // UpdateSupplierManagementEnabled sets the "supplier_management_enabled" field to the value that was provided on create.
 func (u *TenantInventoryConfigUpsert) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsert {
 	u.SetExcluded(tenantinventoryconfig.FieldSupplierManagementEnabled)
+	return u
+}
+
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (u *TenantInventoryConfigUpsert) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldEnableRoomPricing, v)
+	return u
+}
+
+// UpdateEnableRoomPricing sets the "enable_room_pricing" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateEnableRoomPricing() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldEnableRoomPricing)
+	return u
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (u *TenantInventoryConfigUpsert) SetEnableFacilityBooking(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldEnableFacilityBooking, v)
+	return u
+}
+
+// UpdateEnableFacilityBooking sets the "enable_facility_booking" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateEnableFacilityBooking() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldEnableFacilityBooking)
+	return u
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (u *TenantInventoryConfigUpsert) SetEnableConferencePackages(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldEnableConferencePackages, v)
+	return u
+}
+
+// UpdateEnableConferencePackages sets the "enable_conference_packages" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateEnableConferencePackages() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldEnableConferencePackages)
 	return u
 }
 
@@ -1293,6 +1404,48 @@ func (u *TenantInventoryConfigUpsertOne) SetSupplierManagementEnabled(v bool) *T
 func (u *TenantInventoryConfigUpsertOne) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (u *TenantInventoryConfigUpsertOne) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableRoomPricing(v)
+	})
+}
+
+// UpdateEnableRoomPricing sets the "enable_room_pricing" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateEnableRoomPricing() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableRoomPricing()
+	})
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (u *TenantInventoryConfigUpsertOne) SetEnableFacilityBooking(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableFacilityBooking(v)
+	})
+}
+
+// UpdateEnableFacilityBooking sets the "enable_facility_booking" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateEnableFacilityBooking() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableFacilityBooking()
+	})
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (u *TenantInventoryConfigUpsertOne) SetEnableConferencePackages(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableConferencePackages(v)
+	})
+}
+
+// UpdateEnableConferencePackages sets the "enable_conference_packages" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateEnableConferencePackages() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableConferencePackages()
 	})
 }
 
@@ -1854,6 +2007,48 @@ func (u *TenantInventoryConfigUpsertBulk) SetSupplierManagementEnabled(v bool) *
 func (u *TenantInventoryConfigUpsertBulk) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetEnableRoomPricing sets the "enable_room_pricing" field.
+func (u *TenantInventoryConfigUpsertBulk) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableRoomPricing(v)
+	})
+}
+
+// UpdateEnableRoomPricing sets the "enable_room_pricing" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateEnableRoomPricing() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableRoomPricing()
+	})
+}
+
+// SetEnableFacilityBooking sets the "enable_facility_booking" field.
+func (u *TenantInventoryConfigUpsertBulk) SetEnableFacilityBooking(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableFacilityBooking(v)
+	})
+}
+
+// UpdateEnableFacilityBooking sets the "enable_facility_booking" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateEnableFacilityBooking() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableFacilityBooking()
+	})
+}
+
+// SetEnableConferencePackages sets the "enable_conference_packages" field.
+func (u *TenantInventoryConfigUpsertBulk) SetEnableConferencePackages(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetEnableConferencePackages(v)
+	})
+}
+
+// UpdateEnableConferencePackages sets the "enable_conference_packages" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateEnableConferencePackages() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateEnableConferencePackages()
 	})
 }
 

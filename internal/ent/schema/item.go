@@ -42,6 +42,38 @@ func (Item) Fields() []ent.Field {
 			Values("GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT").
 			Default("GOODS").
 			Comment("Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)"),
+		// Use-case classification (Phase: hospitality) — refines how a sellable item is presented/priced.
+		// Orthogonal to `type`; hotel room-types/facilities/amenities are SERVICE items with a hospitality use_case.
+		field.Enum("use_case").
+			Values("RETAIL", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY").
+			Default("RETAIL").
+			Comment("Sellable use-case: drives hospitality pricing/booking semantics. pos-api references these masters via inventory_item_id"),
+		// Room rate-plan attributes (HOSPITALITY_ROOM use_case)
+		field.Enum("meal_plan").
+			Values("RO", "BB", "HB", "FB", "AI").
+			Optional().
+			Nillable().
+			Comment("Rate-plan inclusion: RO=room only, BB=bed&breakfast, HB=half board, FB=full board, AI=all inclusive"),
+		field.Enum("occupancy_basis").
+			Values("per_person_sharing", "per_room").
+			Optional().
+			Nillable().
+			Comment("Pricing basis for room-type items"),
+		field.Int("max_adults").
+			Optional().
+			Nillable().
+			Comment("Max adult occupancy for a room-type item"),
+		field.Int("max_children").
+			Optional().
+			Nillable().
+			Comment("Max child occupancy for a room-type item"),
+		field.Bool("extra_bed_allowed").
+			Default(false).
+			Comment("Whether an extra bed can be added to this room-type"),
+		field.Float("single_supplement").
+			Optional().
+			Nillable().
+			Comment("Surcharge (KES) for single occupancy on a per_person_sharing rate"),
 		field.Bool("is_active").
 			Default(true),
 		field.String("image_url").

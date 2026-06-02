@@ -51,6 +51,62 @@ func (_c *BundleComponentCreate) SetNillableQuantity(v *int) *BundleComponentCre
 	return _c
 }
 
+// SetComponentKind sets the "component_kind" field.
+func (_c *BundleComponentCreate) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentCreate {
+	_c.mutation.SetComponentKind(v)
+	return _c
+}
+
+// SetNillableComponentKind sets the "component_kind" field if the given value is not nil.
+func (_c *BundleComponentCreate) SetNillableComponentKind(v *bundlecomponent.ComponentKind) *BundleComponentCreate {
+	if v != nil {
+		_c.SetComponentKind(*v)
+	}
+	return _c
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (_c *BundleComponentCreate) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentCreate {
+	_c.mutation.SetMealPeriod(v)
+	return _c
+}
+
+// SetNillableMealPeriod sets the "meal_period" field if the given value is not nil.
+func (_c *BundleComponentCreate) SetNillableMealPeriod(v *bundlecomponent.MealPeriod) *BundleComponentCreate {
+	if v != nil {
+		_c.SetMealPeriod(*v)
+	}
+	return _c
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (_c *BundleComponentCreate) SetIsMetered(v bool) *BundleComponentCreate {
+	_c.mutation.SetIsMetered(v)
+	return _c
+}
+
+// SetNillableIsMetered sets the "is_metered" field if the given value is not nil.
+func (_c *BundleComponentCreate) SetNillableIsMetered(v *bool) *BundleComponentCreate {
+	if v != nil {
+		_c.SetIsMetered(*v)
+	}
+	return _c
+}
+
+// SetUnit sets the "unit" field.
+func (_c *BundleComponentCreate) SetUnit(v string) *BundleComponentCreate {
+	_c.mutation.SetUnit(v)
+	return _c
+}
+
+// SetNillableUnit sets the "unit" field if the given value is not nil.
+func (_c *BundleComponentCreate) SetNillableUnit(v *string) *BundleComponentCreate {
+	if v != nil {
+		_c.SetUnit(*v)
+	}
+	return _c
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (_c *BundleComponentCreate) SetSortOrder(v int) *BundleComponentCreate {
 	_c.mutation.SetSortOrder(v)
@@ -128,6 +184,14 @@ func (_c *BundleComponentCreate) defaults() {
 		v := bundlecomponent.DefaultQuantity
 		_c.mutation.SetQuantity(v)
 	}
+	if _, ok := _c.mutation.ComponentKind(); !ok {
+		v := bundlecomponent.DefaultComponentKind
+		_c.mutation.SetComponentKind(v)
+	}
+	if _, ok := _c.mutation.IsMetered(); !ok {
+		v := bundlecomponent.DefaultIsMetered
+		_c.mutation.SetIsMetered(v)
+	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		v := bundlecomponent.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
@@ -148,6 +212,22 @@ func (_c *BundleComponentCreate) check() error {
 	}
 	if _, ok := _c.mutation.Quantity(); !ok {
 		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "BundleComponent.quantity"`)}
+	}
+	if _, ok := _c.mutation.ComponentKind(); !ok {
+		return &ValidationError{Name: "component_kind", err: errors.New(`ent: missing required field "BundleComponent.component_kind"`)}
+	}
+	if v, ok := _c.mutation.ComponentKind(); ok {
+		if err := bundlecomponent.ComponentKindValidator(v); err != nil {
+			return &ValidationError{Name: "component_kind", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.component_kind": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.MealPeriod(); ok {
+		if err := bundlecomponent.MealPeriodValidator(v); err != nil {
+			return &ValidationError{Name: "meal_period", err: fmt.Errorf(`ent: validator failed for field "BundleComponent.meal_period": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.IsMetered(); !ok {
+		return &ValidationError{Name: "is_metered", err: errors.New(`ent: missing required field "BundleComponent.is_metered"`)}
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "BundleComponent.sort_order"`)}
@@ -197,6 +277,22 @@ func (_c *BundleComponentCreate) createSpec() (*BundleComponent, *sqlgraph.Creat
 	if value, ok := _c.mutation.Quantity(); ok {
 		_spec.SetField(bundlecomponent.FieldQuantity, field.TypeInt, value)
 		_node.Quantity = value
+	}
+	if value, ok := _c.mutation.ComponentKind(); ok {
+		_spec.SetField(bundlecomponent.FieldComponentKind, field.TypeEnum, value)
+		_node.ComponentKind = value
+	}
+	if value, ok := _c.mutation.MealPeriod(); ok {
+		_spec.SetField(bundlecomponent.FieldMealPeriod, field.TypeEnum, value)
+		_node.MealPeriod = &value
+	}
+	if value, ok := _c.mutation.IsMetered(); ok {
+		_spec.SetField(bundlecomponent.FieldIsMetered, field.TypeBool, value)
+		_node.IsMetered = value
+	}
+	if value, ok := _c.mutation.Unit(); ok {
+		_spec.SetField(bundlecomponent.FieldUnit, field.TypeString, value)
+		_node.Unit = value
 	}
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(bundlecomponent.FieldSortOrder, field.TypeInt, value)
@@ -330,6 +426,66 @@ func (u *BundleComponentUpsert) AddQuantity(v int) *BundleComponentUpsert {
 	return u
 }
 
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsert) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldComponentKind, v)
+	return u
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateComponentKind() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldComponentKind)
+	return u
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsert) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldMealPeriod, v)
+	return u
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateMealPeriod() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldMealPeriod)
+	return u
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsert) ClearMealPeriod() *BundleComponentUpsert {
+	u.SetNull(bundlecomponent.FieldMealPeriod)
+	return u
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsert) SetIsMetered(v bool) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldIsMetered, v)
+	return u
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateIsMetered() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldIsMetered)
+	return u
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsert) SetUnit(v string) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldUnit, v)
+	return u
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateUnit() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldUnit)
+	return u
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsert) ClearUnit() *BundleComponentUpsert {
+	u.SetNull(bundlecomponent.FieldUnit)
+	return u
+}
+
 // SetSortOrder sets the "sort_order" field.
 func (u *BundleComponentUpsert) SetSortOrder(v int) *BundleComponentUpsert {
 	u.Set(bundlecomponent.FieldSortOrder, v)
@@ -442,6 +598,76 @@ func (u *BundleComponentUpsertOne) AddQuantity(v int) *BundleComponentUpsertOne 
 func (u *BundleComponentUpsertOne) UpdateQuantity() *BundleComponentUpsertOne {
 	return u.Update(func(s *BundleComponentUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsertOne) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentKind(v)
+	})
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateComponentKind() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentKind()
+	})
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsertOne) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetMealPeriod(v)
+	})
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateMealPeriod() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateMealPeriod()
+	})
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsertOne) ClearMealPeriod() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearMealPeriod()
+	})
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsertOne) SetIsMetered(v bool) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetIsMetered(v)
+	})
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateIsMetered() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateIsMetered()
+	})
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsertOne) SetUnit(v string) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetUnit(v)
+	})
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateUnit() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateUnit()
+	})
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsertOne) ClearUnit() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearUnit()
 	})
 }
 
@@ -727,6 +953,76 @@ func (u *BundleComponentUpsertBulk) AddQuantity(v int) *BundleComponentUpsertBul
 func (u *BundleComponentUpsertBulk) UpdateQuantity() *BundleComponentUpsertBulk {
 	return u.Update(func(s *BundleComponentUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsertBulk) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentKind(v)
+	})
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateComponentKind() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentKind()
+	})
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsertBulk) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetMealPeriod(v)
+	})
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateMealPeriod() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateMealPeriod()
+	})
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsertBulk) ClearMealPeriod() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearMealPeriod()
+	})
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsertBulk) SetIsMetered(v bool) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetIsMetered(v)
+	})
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateIsMetered() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateIsMetered()
+	})
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsertBulk) SetUnit(v string) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetUnit(v)
+	})
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateUnit() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateUnit()
+	})
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsertBulk) ClearUnit() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearUnit()
 	})
 }
 

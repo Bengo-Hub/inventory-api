@@ -42,6 +42,34 @@ func (_c *ItemPricingCreate) SetPricingTierID(v uuid.UUID) *ItemPricingCreate {
 	return _c
 }
 
+// SetOutletID sets the "outlet_id" field.
+func (_c *ItemPricingCreate) SetOutletID(v uuid.UUID) *ItemPricingCreate {
+	_c.mutation.SetOutletID(v)
+	return _c
+}
+
+// SetNillableOutletID sets the "outlet_id" field if the given value is not nil.
+func (_c *ItemPricingCreate) SetNillableOutletID(v *uuid.UUID) *ItemPricingCreate {
+	if v != nil {
+		_c.SetOutletID(*v)
+	}
+	return _c
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (_c *ItemPricingCreate) SetTierBasis(v itempricing.TierBasis) *ItemPricingCreate {
+	_c.mutation.SetTierBasis(v)
+	return _c
+}
+
+// SetNillableTierBasis sets the "tier_basis" field if the given value is not nil.
+func (_c *ItemPricingCreate) SetNillableTierBasis(v *itempricing.TierBasis) *ItemPricingCreate {
+	if v != nil {
+		_c.SetTierBasis(*v)
+	}
+	return _c
+}
+
 // SetPrice sets the "price" field.
 func (_c *ItemPricingCreate) SetPrice(v float64) *ItemPricingCreate {
 	_c.mutation.SetPrice(v)
@@ -189,6 +217,10 @@ func (_c *ItemPricingCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ItemPricingCreate) defaults() {
+	if _, ok := _c.mutation.TierBasis(); !ok {
+		v := itempricing.DefaultTierBasis
+		_c.mutation.SetTierBasis(v)
+	}
 	if _, ok := _c.mutation.Price(); !ok {
 		v := itempricing.DefaultPrice
 		_c.mutation.SetPrice(v)
@@ -229,6 +261,14 @@ func (_c *ItemPricingCreate) check() error {
 	}
 	if _, ok := _c.mutation.PricingTierID(); !ok {
 		return &ValidationError{Name: "pricing_tier_id", err: errors.New(`ent: missing required field "ItemPricing.pricing_tier_id"`)}
+	}
+	if _, ok := _c.mutation.TierBasis(); !ok {
+		return &ValidationError{Name: "tier_basis", err: errors.New(`ent: missing required field "ItemPricing.tier_basis"`)}
+	}
+	if v, ok := _c.mutation.TierBasis(); ok {
+		if err := itempricing.TierBasisValidator(v); err != nil {
+			return &ValidationError{Name: "tier_basis", err: fmt.Errorf(`ent: validator failed for field "ItemPricing.tier_basis": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "ItemPricing.price"`)}
@@ -295,6 +335,14 @@ func (_c *ItemPricingCreate) createSpec() (*ItemPricing, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PricingTierID(); ok {
 		_spec.SetField(itempricing.FieldPricingTierID, field.TypeUUID, value)
 		_node.PricingTierID = value
+	}
+	if value, ok := _c.mutation.OutletID(); ok {
+		_spec.SetField(itempricing.FieldOutletID, field.TypeUUID, value)
+		_node.OutletID = &value
+	}
+	if value, ok := _c.mutation.TierBasis(); ok {
+		_spec.SetField(itempricing.FieldTierBasis, field.TypeEnum, value)
+		_node.TierBasis = value
 	}
 	if value, ok := _c.mutation.Price(); ok {
 		_spec.SetField(itempricing.FieldPrice, field.TypeFloat64, value)
@@ -409,6 +457,36 @@ func (u *ItemPricingUpsert) SetPricingTierID(v uuid.UUID) *ItemPricingUpsert {
 // UpdatePricingTierID sets the "pricing_tier_id" field to the value that was provided on create.
 func (u *ItemPricingUpsert) UpdatePricingTierID() *ItemPricingUpsert {
 	u.SetExcluded(itempricing.FieldPricingTierID)
+	return u
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ItemPricingUpsert) SetOutletID(v uuid.UUID) *ItemPricingUpsert {
+	u.Set(itempricing.FieldOutletID, v)
+	return u
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ItemPricingUpsert) UpdateOutletID() *ItemPricingUpsert {
+	u.SetExcluded(itempricing.FieldOutletID)
+	return u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ItemPricingUpsert) ClearOutletID() *ItemPricingUpsert {
+	u.SetNull(itempricing.FieldOutletID)
+	return u
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (u *ItemPricingUpsert) SetTierBasis(v itempricing.TierBasis) *ItemPricingUpsert {
+	u.Set(itempricing.FieldTierBasis, v)
+	return u
+}
+
+// UpdateTierBasis sets the "tier_basis" field to the value that was provided on create.
+func (u *ItemPricingUpsert) UpdateTierBasis() *ItemPricingUpsert {
+	u.SetExcluded(itempricing.FieldTierBasis)
 	return u
 }
 
@@ -586,6 +664,41 @@ func (u *ItemPricingUpsertOne) SetPricingTierID(v uuid.UUID) *ItemPricingUpsertO
 func (u *ItemPricingUpsertOne) UpdatePricingTierID() *ItemPricingUpsertOne {
 	return u.Update(func(s *ItemPricingUpsert) {
 		s.UpdatePricingTierID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ItemPricingUpsertOne) SetOutletID(v uuid.UUID) *ItemPricingUpsertOne {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ItemPricingUpsertOne) UpdateOutletID() *ItemPricingUpsertOne {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ItemPricingUpsertOne) ClearOutletID() *ItemPricingUpsertOne {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (u *ItemPricingUpsertOne) SetTierBasis(v itempricing.TierBasis) *ItemPricingUpsertOne {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.SetTierBasis(v)
+	})
+}
+
+// UpdateTierBasis sets the "tier_basis" field to the value that was provided on create.
+func (u *ItemPricingUpsertOne) UpdateTierBasis() *ItemPricingUpsertOne {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.UpdateTierBasis()
 	})
 }
 
@@ -944,6 +1057,41 @@ func (u *ItemPricingUpsertBulk) SetPricingTierID(v uuid.UUID) *ItemPricingUpsert
 func (u *ItemPricingUpsertBulk) UpdatePricingTierID() *ItemPricingUpsertBulk {
 	return u.Update(func(s *ItemPricingUpsert) {
 		s.UpdatePricingTierID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ItemPricingUpsertBulk) SetOutletID(v uuid.UUID) *ItemPricingUpsertBulk {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ItemPricingUpsertBulk) UpdateOutletID() *ItemPricingUpsertBulk {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ItemPricingUpsertBulk) ClearOutletID() *ItemPricingUpsertBulk {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetTierBasis sets the "tier_basis" field.
+func (u *ItemPricingUpsertBulk) SetTierBasis(v itempricing.TierBasis) *ItemPricingUpsertBulk {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.SetTierBasis(v)
+	})
+}
+
+// UpdateTierBasis sets the "tier_basis" field to the value that was provided on create.
+func (u *ItemPricingUpsertBulk) UpdateTierBasis() *ItemPricingUpsertBulk {
+	return u.Update(func(s *ItemPricingUpsert) {
+		s.UpdateTierBasis()
 	})
 }
 

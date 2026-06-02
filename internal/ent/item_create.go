@@ -113,6 +113,104 @@ func (_c *ItemCreate) SetNillableType(v *item.Type) *ItemCreate {
 	return _c
 }
 
+// SetUseCase sets the "use_case" field.
+func (_c *ItemCreate) SetUseCase(v item.UseCase) *ItemCreate {
+	_c.mutation.SetUseCase(v)
+	return _c
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableUseCase(v *item.UseCase) *ItemCreate {
+	if v != nil {
+		_c.SetUseCase(*v)
+	}
+	return _c
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (_c *ItemCreate) SetMealPlan(v item.MealPlan) *ItemCreate {
+	_c.mutation.SetMealPlan(v)
+	return _c
+}
+
+// SetNillableMealPlan sets the "meal_plan" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMealPlan(v *item.MealPlan) *ItemCreate {
+	if v != nil {
+		_c.SetMealPlan(*v)
+	}
+	return _c
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (_c *ItemCreate) SetOccupancyBasis(v item.OccupancyBasis) *ItemCreate {
+	_c.mutation.SetOccupancyBasis(v)
+	return _c
+}
+
+// SetNillableOccupancyBasis sets the "occupancy_basis" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableOccupancyBasis(v *item.OccupancyBasis) *ItemCreate {
+	if v != nil {
+		_c.SetOccupancyBasis(*v)
+	}
+	return _c
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (_c *ItemCreate) SetMaxAdults(v int) *ItemCreate {
+	_c.mutation.SetMaxAdults(v)
+	return _c
+}
+
+// SetNillableMaxAdults sets the "max_adults" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMaxAdults(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetMaxAdults(*v)
+	}
+	return _c
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (_c *ItemCreate) SetMaxChildren(v int) *ItemCreate {
+	_c.mutation.SetMaxChildren(v)
+	return _c
+}
+
+// SetNillableMaxChildren sets the "max_children" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMaxChildren(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetMaxChildren(*v)
+	}
+	return _c
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (_c *ItemCreate) SetExtraBedAllowed(v bool) *ItemCreate {
+	_c.mutation.SetExtraBedAllowed(v)
+	return _c
+}
+
+// SetNillableExtraBedAllowed sets the "extra_bed_allowed" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableExtraBedAllowed(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetExtraBedAllowed(*v)
+	}
+	return _c
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (_c *ItemCreate) SetSingleSupplement(v float64) *ItemCreate {
+	_c.mutation.SetSingleSupplement(v)
+	return _c
+}
+
+// SetNillableSingleSupplement sets the "single_supplement" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableSingleSupplement(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetSingleSupplement(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *ItemCreate) SetIsActive(v bool) *ItemCreate {
 	_c.mutation.SetIsActive(v)
@@ -765,6 +863,14 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultType
 		_c.mutation.SetType(v)
 	}
+	if _, ok := _c.mutation.UseCase(); !ok {
+		v := item.DefaultUseCase
+		_c.mutation.SetUseCase(v)
+	}
+	if _, ok := _c.mutation.ExtraBedAllowed(); !ok {
+		v := item.DefaultExtraBedAllowed
+		_c.mutation.SetExtraBedAllowed(v)
+	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		v := item.DefaultIsActive
 		_c.mutation.SetIsActive(v)
@@ -851,6 +957,27 @@ func (_c *ItemCreate) check() error {
 		if err := item.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.UseCase(); !ok {
+		return &ValidationError{Name: "use_case", err: errors.New(`ent: missing required field "Item.use_case"`)}
+	}
+	if v, ok := _c.mutation.UseCase(); ok {
+		if err := item.UseCaseValidator(v); err != nil {
+			return &ValidationError{Name: "use_case", err: fmt.Errorf(`ent: validator failed for field "Item.use_case": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.MealPlan(); ok {
+		if err := item.MealPlanValidator(v); err != nil {
+			return &ValidationError{Name: "meal_plan", err: fmt.Errorf(`ent: validator failed for field "Item.meal_plan": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.OccupancyBasis(); ok {
+		if err := item.OccupancyBasisValidator(v); err != nil {
+			return &ValidationError{Name: "occupancy_basis", err: fmt.Errorf(`ent: validator failed for field "Item.occupancy_basis": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ExtraBedAllowed(); !ok {
+		return &ValidationError{Name: "extra_bed_allowed", err: errors.New(`ent: missing required field "Item.extra_bed_allowed"`)}
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Item.is_active"`)}
@@ -949,6 +1076,34 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
 		_node.Type = value
+	}
+	if value, ok := _c.mutation.UseCase(); ok {
+		_spec.SetField(item.FieldUseCase, field.TypeEnum, value)
+		_node.UseCase = value
+	}
+	if value, ok := _c.mutation.MealPlan(); ok {
+		_spec.SetField(item.FieldMealPlan, field.TypeEnum, value)
+		_node.MealPlan = &value
+	}
+	if value, ok := _c.mutation.OccupancyBasis(); ok {
+		_spec.SetField(item.FieldOccupancyBasis, field.TypeEnum, value)
+		_node.OccupancyBasis = &value
+	}
+	if value, ok := _c.mutation.MaxAdults(); ok {
+		_spec.SetField(item.FieldMaxAdults, field.TypeInt, value)
+		_node.MaxAdults = &value
+	}
+	if value, ok := _c.mutation.MaxChildren(); ok {
+		_spec.SetField(item.FieldMaxChildren, field.TypeInt, value)
+		_node.MaxChildren = &value
+	}
+	if value, ok := _c.mutation.ExtraBedAllowed(); ok {
+		_spec.SetField(item.FieldExtraBedAllowed, field.TypeBool, value)
+		_node.ExtraBedAllowed = value
+	}
+	if value, ok := _c.mutation.SingleSupplement(); ok {
+		_spec.SetField(item.FieldSingleSupplement, field.TypeFloat64, value)
+		_node.SingleSupplement = &value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(item.FieldIsActive, field.TypeBool, value)
@@ -1456,6 +1611,138 @@ func (u *ItemUpsert) SetType(v item.Type) *ItemUpsert {
 // UpdateType sets the "type" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateType() *ItemUpsert {
 	u.SetExcluded(item.FieldType)
+	return u
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsert) SetUseCase(v item.UseCase) *ItemUpsert {
+	u.Set(item.FieldUseCase, v)
+	return u
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUseCase() *ItemUpsert {
+	u.SetExcluded(item.FieldUseCase)
+	return u
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsert) SetMealPlan(v item.MealPlan) *ItemUpsert {
+	u.Set(item.FieldMealPlan, v)
+	return u
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMealPlan() *ItemUpsert {
+	u.SetExcluded(item.FieldMealPlan)
+	return u
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsert) ClearMealPlan() *ItemUpsert {
+	u.SetNull(item.FieldMealPlan)
+	return u
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsert) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsert {
+	u.Set(item.FieldOccupancyBasis, v)
+	return u
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateOccupancyBasis() *ItemUpsert {
+	u.SetExcluded(item.FieldOccupancyBasis)
+	return u
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsert) ClearOccupancyBasis() *ItemUpsert {
+	u.SetNull(item.FieldOccupancyBasis)
+	return u
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsert) SetMaxAdults(v int) *ItemUpsert {
+	u.Set(item.FieldMaxAdults, v)
+	return u
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxAdults() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxAdults)
+	return u
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsert) AddMaxAdults(v int) *ItemUpsert {
+	u.Add(item.FieldMaxAdults, v)
+	return u
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsert) ClearMaxAdults() *ItemUpsert {
+	u.SetNull(item.FieldMaxAdults)
+	return u
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsert) SetMaxChildren(v int) *ItemUpsert {
+	u.Set(item.FieldMaxChildren, v)
+	return u
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxChildren() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxChildren)
+	return u
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsert) AddMaxChildren(v int) *ItemUpsert {
+	u.Add(item.FieldMaxChildren, v)
+	return u
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsert) ClearMaxChildren() *ItemUpsert {
+	u.SetNull(item.FieldMaxChildren)
+	return u
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsert) SetExtraBedAllowed(v bool) *ItemUpsert {
+	u.Set(item.FieldExtraBedAllowed, v)
+	return u
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateExtraBedAllowed() *ItemUpsert {
+	u.SetExcluded(item.FieldExtraBedAllowed)
+	return u
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsert) SetSingleSupplement(v float64) *ItemUpsert {
+	u.Set(item.FieldSingleSupplement, v)
+	return u
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateSingleSupplement() *ItemUpsert {
+	u.SetExcluded(item.FieldSingleSupplement)
+	return u
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsert) AddSingleSupplement(v float64) *ItemUpsert {
+	u.Add(item.FieldSingleSupplement, v)
+	return u
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsert) ClearSingleSupplement() *ItemUpsert {
+	u.SetNull(item.FieldSingleSupplement)
 	return u
 }
 
@@ -2100,6 +2387,160 @@ func (u *ItemUpsertOne) SetType(v item.Type) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateType() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsertOne) SetUseCase(v item.UseCase) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUseCase() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsertOne) SetMealPlan(v item.MealPlan) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMealPlan(v)
+	})
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMealPlan() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMealPlan()
+	})
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsertOne) ClearMealPlan() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMealPlan()
+	})
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsertOne) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetOccupancyBasis(v)
+	})
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateOccupancyBasis() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateOccupancyBasis()
+	})
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsertOne) ClearOccupancyBasis() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearOccupancyBasis()
+	})
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsertOne) SetMaxAdults(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxAdults(v)
+	})
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsertOne) AddMaxAdults(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxAdults(v)
+	})
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxAdults() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxAdults()
+	})
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsertOne) ClearMaxAdults() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxAdults()
+	})
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsertOne) SetMaxChildren(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxChildren(v)
+	})
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsertOne) AddMaxChildren(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxChildren(v)
+	})
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxChildren() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxChildren()
+	})
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsertOne) ClearMaxChildren() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxChildren()
+	})
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsertOne) SetExtraBedAllowed(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraBedAllowed(v)
+	})
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateExtraBedAllowed() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraBedAllowed()
+	})
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsertOne) SetSingleSupplement(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSingleSupplement(v)
+	})
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsertOne) AddSingleSupplement(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSingleSupplement(v)
+	})
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateSingleSupplement() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSingleSupplement()
+	})
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsertOne) ClearSingleSupplement() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSingleSupplement()
 	})
 }
 
@@ -2990,6 +3431,160 @@ func (u *ItemUpsertBulk) SetType(v item.Type) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateType() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsertBulk) SetUseCase(v item.UseCase) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUseCase() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsertBulk) SetMealPlan(v item.MealPlan) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMealPlan(v)
+	})
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMealPlan() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMealPlan()
+	})
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsertBulk) ClearMealPlan() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMealPlan()
+	})
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsertBulk) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetOccupancyBasis(v)
+	})
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateOccupancyBasis() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateOccupancyBasis()
+	})
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsertBulk) ClearOccupancyBasis() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearOccupancyBasis()
+	})
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsertBulk) SetMaxAdults(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxAdults(v)
+	})
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsertBulk) AddMaxAdults(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxAdults(v)
+	})
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxAdults() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxAdults()
+	})
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsertBulk) ClearMaxAdults() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxAdults()
+	})
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsertBulk) SetMaxChildren(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxChildren(v)
+	})
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsertBulk) AddMaxChildren(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxChildren(v)
+	})
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxChildren() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxChildren()
+	})
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsertBulk) ClearMaxChildren() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxChildren()
+	})
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsertBulk) SetExtraBedAllowed(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraBedAllowed(v)
+	})
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateExtraBedAllowed() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraBedAllowed()
+	})
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsertBulk) SetSingleSupplement(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSingleSupplement(v)
+	})
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsertBulk) AddSingleSupplement(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSingleSupplement(v)
+	})
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateSingleSupplement() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSingleSupplement()
+	})
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsertBulk) ClearSingleSupplement() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSingleSupplement()
 	})
 }
 

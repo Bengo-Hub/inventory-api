@@ -71,6 +71,26 @@ func Name(v string) predicate.Bundle {
 	return predicate.Bundle(sql.FieldEQ(FieldName, v))
 }
 
+// MinDelegates applies equality check predicate on the "min_delegates" field. It's identical to MinDelegatesEQ.
+func MinDelegates(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldMinDelegates, v))
+}
+
+// AccommodationIncluded applies equality check predicate on the "accommodation_included" field. It's identical to AccommodationIncludedEQ.
+func AccommodationIncluded(v bool) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldAccommodationIncluded, v))
+}
+
+// SessionsTotal applies equality check predicate on the "sessions_total" field. It's identical to SessionsTotalEQ.
+func SessionsTotal(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldSessionsTotal, v))
+}
+
+// ValidityDays applies equality check predicate on the "validity_days" field. It's identical to ValidityDaysEQ.
+func ValidityDays(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldValidityDays, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.Bundle {
 	return predicate.Bundle(sql.FieldEQ(FieldIsActive, v))
@@ -209,6 +229,206 @@ func NameEqualFold(v string) predicate.Bundle {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Bundle {
 	return predicate.Bundle(sql.FieldContainsFold(FieldName, v))
+}
+
+// PackageTypeEQ applies the EQ predicate on the "package_type" field.
+func PackageTypeEQ(v PackageType) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldPackageType, v))
+}
+
+// PackageTypeNEQ applies the NEQ predicate on the "package_type" field.
+func PackageTypeNEQ(v PackageType) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldPackageType, v))
+}
+
+// PackageTypeIn applies the In predicate on the "package_type" field.
+func PackageTypeIn(vs ...PackageType) predicate.Bundle {
+	return predicate.Bundle(sql.FieldIn(FieldPackageType, vs...))
+}
+
+// PackageTypeNotIn applies the NotIn predicate on the "package_type" field.
+func PackageTypeNotIn(vs ...PackageType) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotIn(FieldPackageType, vs...))
+}
+
+// PriceBasisEQ applies the EQ predicate on the "price_basis" field.
+func PriceBasisEQ(v PriceBasis) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldPriceBasis, v))
+}
+
+// PriceBasisNEQ applies the NEQ predicate on the "price_basis" field.
+func PriceBasisNEQ(v PriceBasis) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldPriceBasis, v))
+}
+
+// PriceBasisIn applies the In predicate on the "price_basis" field.
+func PriceBasisIn(vs ...PriceBasis) predicate.Bundle {
+	return predicate.Bundle(sql.FieldIn(FieldPriceBasis, vs...))
+}
+
+// PriceBasisNotIn applies the NotIn predicate on the "price_basis" field.
+func PriceBasisNotIn(vs ...PriceBasis) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotIn(FieldPriceBasis, vs...))
+}
+
+// MinDelegatesEQ applies the EQ predicate on the "min_delegates" field.
+func MinDelegatesEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldMinDelegates, v))
+}
+
+// MinDelegatesNEQ applies the NEQ predicate on the "min_delegates" field.
+func MinDelegatesNEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldMinDelegates, v))
+}
+
+// MinDelegatesIn applies the In predicate on the "min_delegates" field.
+func MinDelegatesIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldIn(FieldMinDelegates, vs...))
+}
+
+// MinDelegatesNotIn applies the NotIn predicate on the "min_delegates" field.
+func MinDelegatesNotIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotIn(FieldMinDelegates, vs...))
+}
+
+// MinDelegatesGT applies the GT predicate on the "min_delegates" field.
+func MinDelegatesGT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGT(FieldMinDelegates, v))
+}
+
+// MinDelegatesGTE applies the GTE predicate on the "min_delegates" field.
+func MinDelegatesGTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGTE(FieldMinDelegates, v))
+}
+
+// MinDelegatesLT applies the LT predicate on the "min_delegates" field.
+func MinDelegatesLT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLT(FieldMinDelegates, v))
+}
+
+// MinDelegatesLTE applies the LTE predicate on the "min_delegates" field.
+func MinDelegatesLTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLTE(FieldMinDelegates, v))
+}
+
+// MinDelegatesIsNil applies the IsNil predicate on the "min_delegates" field.
+func MinDelegatesIsNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldIsNull(FieldMinDelegates))
+}
+
+// MinDelegatesNotNil applies the NotNil predicate on the "min_delegates" field.
+func MinDelegatesNotNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotNull(FieldMinDelegates))
+}
+
+// AccommodationIncludedEQ applies the EQ predicate on the "accommodation_included" field.
+func AccommodationIncludedEQ(v bool) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldAccommodationIncluded, v))
+}
+
+// AccommodationIncludedNEQ applies the NEQ predicate on the "accommodation_included" field.
+func AccommodationIncludedNEQ(v bool) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldAccommodationIncluded, v))
+}
+
+// SessionsTotalEQ applies the EQ predicate on the "sessions_total" field.
+func SessionsTotalEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldSessionsTotal, v))
+}
+
+// SessionsTotalNEQ applies the NEQ predicate on the "sessions_total" field.
+func SessionsTotalNEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldSessionsTotal, v))
+}
+
+// SessionsTotalIn applies the In predicate on the "sessions_total" field.
+func SessionsTotalIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldIn(FieldSessionsTotal, vs...))
+}
+
+// SessionsTotalNotIn applies the NotIn predicate on the "sessions_total" field.
+func SessionsTotalNotIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotIn(FieldSessionsTotal, vs...))
+}
+
+// SessionsTotalGT applies the GT predicate on the "sessions_total" field.
+func SessionsTotalGT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGT(FieldSessionsTotal, v))
+}
+
+// SessionsTotalGTE applies the GTE predicate on the "sessions_total" field.
+func SessionsTotalGTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGTE(FieldSessionsTotal, v))
+}
+
+// SessionsTotalLT applies the LT predicate on the "sessions_total" field.
+func SessionsTotalLT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLT(FieldSessionsTotal, v))
+}
+
+// SessionsTotalLTE applies the LTE predicate on the "sessions_total" field.
+func SessionsTotalLTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLTE(FieldSessionsTotal, v))
+}
+
+// SessionsTotalIsNil applies the IsNil predicate on the "sessions_total" field.
+func SessionsTotalIsNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldIsNull(FieldSessionsTotal))
+}
+
+// SessionsTotalNotNil applies the NotNil predicate on the "sessions_total" field.
+func SessionsTotalNotNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotNull(FieldSessionsTotal))
+}
+
+// ValidityDaysEQ applies the EQ predicate on the "validity_days" field.
+func ValidityDaysEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldEQ(FieldValidityDays, v))
+}
+
+// ValidityDaysNEQ applies the NEQ predicate on the "validity_days" field.
+func ValidityDaysNEQ(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNEQ(FieldValidityDays, v))
+}
+
+// ValidityDaysIn applies the In predicate on the "validity_days" field.
+func ValidityDaysIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldIn(FieldValidityDays, vs...))
+}
+
+// ValidityDaysNotIn applies the NotIn predicate on the "validity_days" field.
+func ValidityDaysNotIn(vs ...int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotIn(FieldValidityDays, vs...))
+}
+
+// ValidityDaysGT applies the GT predicate on the "validity_days" field.
+func ValidityDaysGT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGT(FieldValidityDays, v))
+}
+
+// ValidityDaysGTE applies the GTE predicate on the "validity_days" field.
+func ValidityDaysGTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldGTE(FieldValidityDays, v))
+}
+
+// ValidityDaysLT applies the LT predicate on the "validity_days" field.
+func ValidityDaysLT(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLT(FieldValidityDays, v))
+}
+
+// ValidityDaysLTE applies the LTE predicate on the "validity_days" field.
+func ValidityDaysLTE(v int) predicate.Bundle {
+	return predicate.Bundle(sql.FieldLTE(FieldValidityDays, v))
+}
+
+// ValidityDaysIsNil applies the IsNil predicate on the "validity_days" field.
+func ValidityDaysIsNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldIsNull(FieldValidityDays))
+}
+
+// ValidityDaysNotNil applies the NotNil predicate on the "validity_days" field.
+func ValidityDaysNotNil() predicate.Bundle {
+	return predicate.Bundle(sql.FieldNotNull(FieldValidityDays))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

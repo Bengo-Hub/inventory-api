@@ -38,6 +38,20 @@ type Item struct {
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
 	Type item.Type `json:"type,omitempty"`
+	// Sellable use-case: drives hospitality pricing/booking semantics. pos-api references these masters via inventory_item_id
+	UseCase item.UseCase `json:"use_case,omitempty"`
+	// Rate-plan inclusion: RO=room only, BB=bed&breakfast, HB=half board, FB=full board, AI=all inclusive
+	MealPlan *item.MealPlan `json:"meal_plan,omitempty"`
+	// Pricing basis for room-type items
+	OccupancyBasis *item.OccupancyBasis `json:"occupancy_basis,omitempty"`
+	// Max adult occupancy for a room-type item
+	MaxAdults *int `json:"max_adults,omitempty"`
+	// Max child occupancy for a room-type item
+	MaxChildren *int `json:"max_children,omitempty"`
+	// Whether an extra bed can be added to this room-type
+	ExtraBedAllowed bool `json:"extra_bed_allowed,omitempty"`
+	// Surcharge (KES) for single occupancy on a per_person_sharing rate
+	SingleSupplement *float64 `json:"single_supplement,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// ImageURL holds the value of the "image_url" field.
@@ -291,13 +305,13 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
+		case item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
-		case item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct:
+		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
+		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -367,6 +381,53 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
 				_m.Type = item.Type(value.String)
+			}
+		case item.FieldUseCase:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field use_case", values[i])
+			} else if value.Valid {
+				_m.UseCase = item.UseCase(value.String)
+			}
+		case item.FieldMealPlan:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field meal_plan", values[i])
+			} else if value.Valid {
+				_m.MealPlan = new(item.MealPlan)
+				*_m.MealPlan = item.MealPlan(value.String)
+			}
+		case item.FieldOccupancyBasis:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field occupancy_basis", values[i])
+			} else if value.Valid {
+				_m.OccupancyBasis = new(item.OccupancyBasis)
+				*_m.OccupancyBasis = item.OccupancyBasis(value.String)
+			}
+		case item.FieldMaxAdults:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_adults", values[i])
+			} else if value.Valid {
+				_m.MaxAdults = new(int)
+				*_m.MaxAdults = int(value.Int64)
+			}
+		case item.FieldMaxChildren:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_children", values[i])
+			} else if value.Valid {
+				_m.MaxChildren = new(int)
+				*_m.MaxChildren = int(value.Int64)
+			}
+		case item.FieldExtraBedAllowed:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field extra_bed_allowed", values[i])
+			} else if value.Valid {
+				_m.ExtraBedAllowed = value.Bool
+			}
+		case item.FieldSingleSupplement:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field single_supplement", values[i])
+			} else if value.Valid {
+				_m.SingleSupplement = new(float64)
+				*_m.SingleSupplement = value.Float64
 			}
 		case item.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -688,6 +749,37 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Type))
+	builder.WriteString(", ")
+	builder.WriteString("use_case=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UseCase))
+	builder.WriteString(", ")
+	if v := _m.MealPlan; v != nil {
+		builder.WriteString("meal_plan=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.OccupancyBasis; v != nil {
+		builder.WriteString("occupancy_basis=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.MaxAdults; v != nil {
+		builder.WriteString("max_adults=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.MaxChildren; v != nil {
+		builder.WriteString("max_children=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("extra_bed_allowed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ExtraBedAllowed))
+	builder.WriteString(", ")
+	if v := _m.SingleSupplement; v != nil {
+		builder.WriteString("single_supplement=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
