@@ -46,19 +46,20 @@ import (
 )
 
 type App struct {
-	cfg              *config.Config
-	log              *zap.Logger
-	httpServer       *http.Server
-	db               *pgxpool.Pool
-	cache            *redis.Client
-	events           *nats.Conn
-	orm              *ent.Client
-	outboxPublisher  *eventslib.OutboxPoller
-	orderConsumer    *consumers.OrderEventsConsumer
-	posSaleConsumer  *consumers.POSSaleEventsConsumer
-	authConsumer     *consumers.AuthEventsConsumer
-	returnConsumer   *consumers.ReturnEventsConsumer
-	stockConsumer    *consumers.StockEventsConsumer
+	cfg                *config.Config
+	log                *zap.Logger
+	httpServer         *http.Server
+	db                 *pgxpool.Pool
+	cache              *redis.Client
+	events             *nats.Conn
+	orm                *ent.Client
+	outboxPublisher    *eventslib.OutboxPoller
+	orderConsumer      *consumers.OrderEventsConsumer
+	posSaleConsumer    *consumers.POSSaleEventsConsumer
+	conferenceConsumer *consumers.ConferenceEventsConsumer
+	authConsumer       *consumers.AuthEventsConsumer
+	returnConsumer     *consumers.ReturnEventsConsumer
+	stockConsumer      *consumers.StockEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -171,14 +172,15 @@ func New(ctx context.Context) (*App, error) {
 	menuEngSvc := recipes.NewMenuEngineeringService(ormClient, log, cfg.Services.OrderingURL, cfg.Auth.APIKey)
 	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
-	handlers.SetTenantDB(ormClient)           // Enable local slug-to-UUID lookups
-	handlers.SetTenantSyncer(tenantSyncer)    // Enable slug-to-UUID resolution via auth-api
+	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
+	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api
 
 	// Order events consumer — auto-consume/release reservations on order lifecycle
 	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
 
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
+	conferenceConsumer := consumers.NewConferenceEventsConsumer(log, stockSvc, ormClient)
 
 	// Auth events consumer — proactive user sync from auth-service
 	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService)
@@ -263,19 +265,20 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:             cfg,
-		log:             log,
-		httpServer:      httpServer,
-		db:              dbPool,
-		cache:           redisClient,
-		events:          natsConn,
-		orm:             ormClient,
-		outboxPublisher:  outboxPublisher,
-		orderConsumer:    orderConsumer,
-		posSaleConsumer:  posSaleConsumer,
-		authConsumer:     authConsumer,
-		returnConsumer:   returnConsumer,
-		stockConsumer:    stockConsumer,
+		cfg:                cfg,
+		log:                log,
+		httpServer:         httpServer,
+		db:                 dbPool,
+		cache:              redisClient,
+		events:             natsConn,
+		orm:                ormClient,
+		outboxPublisher:    outboxPublisher,
+		orderConsumer:      orderConsumer,
+		posSaleConsumer:    posSaleConsumer,
+		conferenceConsumer: conferenceConsumer,
+		authConsumer:       authConsumer,
+		returnConsumer:     returnConsumer,
+		stockConsumer:      stockConsumer,
 	}, nil
 }
 
@@ -310,6 +313,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("pos sale events consumer started")
+			}
+
+			// Start conference meal-card redemption consumer (backflush meal BOM)
+			if a.conferenceConsumer != nil {
+				go func() {
+					if err := a.conferenceConsumer.Start(ctx, js); err != nil {
+						a.log.Error("conference events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("conference meal-card events consumer started")
 			}
 
 			// Start return events consumers (pos.return.completed + ordering.return.approved)
