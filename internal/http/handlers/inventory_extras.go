@@ -146,4 +146,8 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	h.registerPurchaseReturnRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementMiscRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementAnalyticsRoutes(r)
+
+	// Manufacturing (migrated from ERP manufacturing/*)
+	h.registerManufacturingRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
+	h.registerManufacturingAnalyticsRoutes(r)
 }
