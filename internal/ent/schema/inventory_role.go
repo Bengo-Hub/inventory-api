@@ -22,7 +22,9 @@ func (InventoryRole) Fields() []ent.Field {
 			Default(uuid.New).
 			Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}).
-			Comment("Tenant identifier"),
+			Optional().
+			Nillable().
+			Comment("NULL = global/system role shared platform-wide across all tenants; non-NULL = tenant-specific custom role"),
 		field.String("role_code").
 			NotEmpty().
 			Comment("Role code: inventory_admin, warehouse_manager, stock_clerk, viewer"),
@@ -56,6 +58,8 @@ func (InventoryRole) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id"),
 		index.Fields("tenant_id", "role_code").Unique(),
+		// Fast lookup of a role by code regardless of tenant (global resolution path).
+		index.Fields("role_code"),
 		index.Fields("is_system_role"),
 	}
 }

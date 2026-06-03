@@ -33,6 +33,14 @@ func (_c *InventoryRoleCreate) SetTenantID(v uuid.UUID) *InventoryRoleCreate {
 	return _c
 }
 
+// SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
+func (_c *InventoryRoleCreate) SetNillableTenantID(v *uuid.UUID) *InventoryRoleCreate {
+	if v != nil {
+		_c.SetTenantID(*v)
+	}
+	return _c
+}
+
 // SetRoleCode sets the "role_code" field.
 func (_c *InventoryRoleCreate) SetRoleCode(v string) *InventoryRoleCreate {
 	_c.mutation.SetRoleCode(v)
@@ -215,9 +223,6 @@ func (_c *InventoryRoleCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *InventoryRoleCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
-		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "InventoryRole.tenant_id"`)}
-	}
 	if _, ok := _c.mutation.RoleCode(); !ok {
 		return &ValidationError{Name: "role_code", err: errors.New(`ent: missing required field "InventoryRole.role_code"`)}
 	}
@@ -281,7 +286,7 @@ func (_c *InventoryRoleCreate) createSpec() (*InventoryRole, *sqlgraph.CreateSpe
 	}
 	if value, ok := _c.mutation.TenantID(); ok {
 		_spec.SetField(inventoryrole.FieldTenantID, field.TypeUUID, value)
-		_node.TenantID = value
+		_node.TenantID = &value
 	}
 	if value, ok := _c.mutation.RoleCode(); ok {
 		_spec.SetField(inventoryrole.FieldRoleCode, field.TypeString, value)
@@ -419,6 +424,12 @@ func (u *InventoryRoleUpsert) UpdateTenantID() *InventoryRoleUpsert {
 	return u
 }
 
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *InventoryRoleUpsert) ClearTenantID() *InventoryRoleUpsert {
+	u.SetNull(inventoryrole.FieldTenantID)
+	return u
+}
+
 // SetRoleCode sets the "role_code" field.
 func (u *InventoryRoleUpsert) SetRoleCode(v string) *InventoryRoleUpsert {
 	u.Set(inventoryrole.FieldRoleCode, v)
@@ -547,6 +558,13 @@ func (u *InventoryRoleUpsertOne) SetTenantID(v uuid.UUID) *InventoryRoleUpsertOn
 func (u *InventoryRoleUpsertOne) UpdateTenantID() *InventoryRoleUpsertOne {
 	return u.Update(func(s *InventoryRoleUpsert) {
 		s.UpdateTenantID()
+	})
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *InventoryRoleUpsertOne) ClearTenantID() *InventoryRoleUpsertOne {
+	return u.Update(func(s *InventoryRoleUpsert) {
+		s.ClearTenantID()
 	})
 }
 
@@ -856,6 +874,13 @@ func (u *InventoryRoleUpsertBulk) SetTenantID(v uuid.UUID) *InventoryRoleUpsertB
 func (u *InventoryRoleUpsertBulk) UpdateTenantID() *InventoryRoleUpsertBulk {
 	return u.Update(func(s *InventoryRoleUpsert) {
 		s.UpdateTenantID()
+	})
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *InventoryRoleUpsertBulk) ClearTenantID() *InventoryRoleUpsertBulk {
+	return u.Update(func(s *InventoryRoleUpsert) {
+		s.ClearTenantID()
 	})
 }
 

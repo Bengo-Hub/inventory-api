@@ -65,6 +65,17 @@ func main() {
 		log.Fatalf("seed service configs: %v", err)
 	}
 
+	// Platform-wide RBAC: roles + permissions are SHARED across all tenants (same role => same
+	// permissions everywhere). Seeded once, not per tenant. seedRolePermissions reconciles perms onto
+	// every role bearing a system code (global or tenant) so none is under-permissioned; seedRoles also
+	// consolidates redundant legacy per-tenant duplicates. See feedback_shared_core_reference_data.
+	if err := seedRoles(ctx, client); err != nil {
+		log.Fatalf("seed roles: %v", err)
+	}
+	if err := seedRolePermissions(ctx, client); err != nil {
+		log.Fatalf("seed role-permissions: %v", err)
+	}
+
 	for _, slug := range []string{"codevertex-demo"} {
 		tenantID, resolveErr := syncer.SyncTenant(ctx, slug)
 		if resolveErr != nil {
@@ -127,13 +138,6 @@ func main() {
 					log.Printf("[WARN] seed reorder config for %s: %v", slug, err)
 				}
 			}
-		}
-
-		if err := seedRoles(ctx, client, tenantID); err != nil {
-			log.Fatalf("seed roles for %s: %v", slug, err)
-		}
-		if err := seedRolePermissions(ctx, client, tenantID); err != nil {
-			log.Fatalf("seed role-permissions for %s: %v", slug, err)
 		}
 
 		log.Printf("✅ inventory tenant %s seeded", slug)

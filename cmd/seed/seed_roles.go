@@ -10,6 +10,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinvrole "github.com/bengobox/inventory-service/internal/ent/inventoryrole"
 	entrp "github.com/bengobox/inventory-service/internal/ent/rolepermission"
+	entura "github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 )
 
 type roleDef struct {
@@ -19,8 +20,9 @@ type roleDef struct {
 	IsSystem    bool
 }
 
-func roleUUID(tenantID uuid.UUID, code string) uuid.UUID {
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:role:%s:%s", tenantID, code)))
+// globalRoleUUID returns the deterministic ID for a shared, platform-wide (global) inventory role.
+func globalRoleUUID(code string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(fmt.Sprintf("bengobox:inventory:role:global:%s", code)))
 }
 
 var roleDefs = []roleDef{
@@ -67,34 +69,74 @@ var rolePermMap = map[string][]string{
 	},
 }
 
-func seedRoles(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+// seedRoles creates the platform-wide system roles (shared across all tenants, tenant_id NULL) and
+// consolidates redundant legacy per-tenant system-role duplicates that have no user assignments.
+func seedRoles(ctx context.Context, client *ent.Client) error {
+	systemCodes := make(map[string]bool, len(roleDefs))
 	for _, d := range roleDefs {
-		id := roleUUID(tenantID, d.Code)
-		exists, err := client.InventoryRole.Query().
-			Where(entinvrole.TenantID(tenantID), entinvrole.RoleCode(d.Code)).
-			Exist(ctx)
+		systemCodes[d.Code] = true
+	}
+
+	for _, d := range roleDefs {
+		id := globalRoleUUID(d.Code)
+		exists, err := client.InventoryRole.Query().Where(entinvrole.ID(id)).Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("check role %s: %w", d.Code, err)
 		}
 		if exists {
 			continue
 		}
+		// Do NOT set tenant_id — leaving it NULL marks this as a global/system role.
 		if _, err := client.InventoryRole.Create().
 			SetID(id).
-			SetTenantID(tenantID).
 			SetRoleCode(d.Code).
 			SetName(d.Name).
 			SetDescription(d.Description).
 			SetIsSystemRole(d.IsSystem).
 			Save(ctx); err != nil {
-			return fmt.Errorf("create role %s: %w", d.Code, err)
+			return fmt.Errorf("create global role %s: %w", d.Code, err)
 		}
-		log.Printf("role created: %s", d.Code)
+		log.Printf("global role created: %s", d.Code)
 	}
+
+	// Consolidate legacy per-tenant system roles now served by the shared global role: delete those
+	// with a known system code and zero user assignments (delete their role-permission rows first).
+	legacy, err := client.InventoryRole.Query().
+		Where(entinvrole.IsSystemRole(true), entinvrole.TenantIDNotNil()).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("list legacy tenant system roles: %w", err)
+	}
+	consolidated := 0
+	for _, lr := range legacy {
+		if !systemCodes[lr.RoleCode] {
+			continue // genuine custom role — keep it
+		}
+		cnt, err := client.UserRoleAssignment.Query().
+			Where(entura.RoleID(lr.ID)).
+			Count(ctx)
+		if err != nil {
+			return fmt.Errorf("count assignments for legacy role %s: %w", lr.ID, err)
+		}
+		if cnt > 0 {
+			continue // still referenced — keep it (perms reconciled in seedRolePermissions)
+		}
+		if _, err := client.RolePermission.Delete().Where(entrp.RoleID(lr.ID)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete perms for legacy role %s: %w", lr.ID, err)
+		}
+		if err := client.InventoryRole.DeleteOneID(lr.ID).Exec(ctx); err != nil {
+			return fmt.Errorf("delete legacy role %s: %w", lr.ID, err)
+		}
+		consolidated++
+	}
+	log.Printf("legacy per-tenant system roles consolidated: %d", consolidated)
 	return nil
 }
 
-func seedRolePermissions(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
+// seedRolePermissions reconciles permissions onto EVERY role bearing each system code — the shared
+// global role AND any tenant-scoped copy/override — so no role (global or tenant) is ever left without
+// its required permissions. Idempotent.
+func seedRolePermissions(ctx context.Context, client *ent.Client) error {
 	allPerms := buildPermDefs()
 	adminCodes := make([]string, 0, len(allPerms))
 	for _, p := range allPerms {
@@ -103,30 +145,37 @@ func seedRolePermissions(ctx context.Context, client *ent.Client, tenantID uuid.
 	rolePermMap["inventory_admin"] = adminCodes
 
 	for _, rd := range roleDefs {
-		roleID := roleUUID(tenantID, rd.Code)
 		permCodes, ok := rolePermMap[rd.Code]
 		if !ok {
 			continue
 		}
-		for _, code := range permCodes {
-			permID := permUUID(code)
-			exists, err := client.RolePermission.Query().
-				Where(entrp.RoleID(roleID), entrp.PermissionID(permID)).
-				Exist(ctx)
-			if err != nil {
-				return fmt.Errorf("check role-perm %s/%s: %w", rd.Code, code, err)
-			}
-			if exists {
-				continue
-			}
-			if _, err := client.RolePermission.Create().
-				SetRoleID(roleID).
-				SetPermissionID(permID).
-				Save(ctx); err != nil {
-				return fmt.Errorf("assign perm %s to role %s: %w", code, rd.Code, err)
+		roles, err := client.InventoryRole.Query().
+			Where(entinvrole.RoleCode(rd.Code)).
+			All(ctx)
+		if err != nil {
+			return fmt.Errorf("list roles for code %s: %w", rd.Code, err)
+		}
+		for _, role := range roles {
+			for _, code := range permCodes {
+				permID := permUUID(code)
+				exists, err := client.RolePermission.Query().
+					Where(entrp.RoleID(role.ID), entrp.PermissionID(permID)).
+					Exist(ctx)
+				if err != nil {
+					return fmt.Errorf("check role-perm %s/%s: %w", rd.Code, code, err)
+				}
+				if exists {
+					continue
+				}
+				if _, err := client.RolePermission.Create().
+					SetRoleID(role.ID).
+					SetPermissionID(permID).
+					Save(ctx); err != nil {
+					return fmt.Errorf("assign perm %s to role %s: %w", code, rd.Code, err)
+				}
 			}
 		}
-		log.Printf("role-permissions assigned: %s (%d perms)", rd.Code, len(permCodes))
+		log.Printf("role-permissions reconciled: %s (%d perms across all matching roles)", rd.Code, len(permCodes))
 	}
 	return nil
 }

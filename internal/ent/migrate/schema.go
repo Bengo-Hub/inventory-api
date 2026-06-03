@@ -394,7 +394,7 @@ var (
 	// InventoryRolesColumns holds the columns for the "inventory_roles" table.
 	InventoryRolesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "role_code", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -417,6 +417,11 @@ var (
 				Name:    "inventoryrole_tenant_id_role_code",
 				Unique:  true,
 				Columns: []*schema.Column{InventoryRolesColumns[1], InventoryRolesColumns[2]},
+			},
+			{
+				Name:    "inventoryrole_role_code",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryRolesColumns[2]},
 			},
 			{
 				Name:    "inventoryrole_is_system_role",

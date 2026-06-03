@@ -131,6 +131,16 @@ func TenantIDLTE(v uuid.UUID) predicate.InventoryRole {
 	return predicate.InventoryRole(sql.FieldLTE(FieldTenantID, v))
 }
 
+// TenantIDIsNil applies the IsNil predicate on the "tenant_id" field.
+func TenantIDIsNil() predicate.InventoryRole {
+	return predicate.InventoryRole(sql.FieldIsNull(FieldTenantID))
+}
+
+// TenantIDNotNil applies the NotNil predicate on the "tenant_id" field.
+func TenantIDNotNil() predicate.InventoryRole {
+	return predicate.InventoryRole(sql.FieldNotNull(FieldTenantID))
+}
+
 // RoleCodeEQ applies the EQ predicate on the "role_code" field.
 func RoleCodeEQ(v string) predicate.InventoryRole {
 	return predicate.InventoryRole(sql.FieldEQ(FieldRoleCode, v))
