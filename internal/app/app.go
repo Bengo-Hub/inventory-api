@@ -62,6 +62,7 @@ type App struct {
 	authConsumer       *consumers.AuthEventsConsumer
 	returnConsumer     *consumers.ReturnEventsConsumer
 	stockConsumer      *consumers.StockEventsConsumer
+	ticketConsumer     *consumers.TicketIssuanceConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -188,6 +189,7 @@ func New(ctx context.Context) (*App, error) {
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
 	conferenceConsumer := consumers.NewConferenceEventsConsumer(log, stockSvc, ormClient)
+	ticketConsumer := consumers.NewTicketIssuanceConsumer(log, ticketsSvc, ormClient)
 
 	// Auth events consumer — proactive user sync from auth-service
 	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService)
@@ -286,6 +288,7 @@ func New(ctx context.Context) (*App, error) {
 		authConsumer:       authConsumer,
 		returnConsumer:     returnConsumer,
 		stockConsumer:      stockConsumer,
+		ticketConsumer:     ticketConsumer,
 	}, nil
 }
 
@@ -330,6 +333,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("conference meal-card events consumer started")
+			}
+
+			// Start ticket issuance consumer (ordering.order.payment_confirmed -> issue event tickets)
+			if a.ticketConsumer != nil {
+				go func() {
+					if err := a.ticketConsumer.Start(ctx, js); err != nil {
+						a.log.Error("ticket issuance consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("ticket issuance consumer started")
 			}
 
 			// Start return events consumers (pos.return.completed + ordering.return.approved)
