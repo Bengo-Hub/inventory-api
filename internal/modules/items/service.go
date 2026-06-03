@@ -1310,6 +1310,19 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	if dto.TotalCapacity != nil {
 		updateBuilder = updateBuilder.SetTotalCapacity(*dto.TotalCapacity)
 	}
+	// Persist booked_capacity (previously ignored) and prevent overselling an event:
+	// booked seats can never exceed total capacity.
+	if dto.BookedCapacity != nil {
+		if dto.TotalCapacity != nil && *dto.BookedCapacity > *dto.TotalCapacity {
+			err = fmt.Errorf("booked_capacity (%d) cannot exceed total_capacity (%d)", *dto.BookedCapacity, *dto.TotalCapacity)
+			return nil, err
+		}
+		if *dto.BookedCapacity < 0 {
+			err = fmt.Errorf("booked_capacity cannot be negative")
+			return nil, err
+		}
+		updateBuilder = updateBuilder.SetBookedCapacity(*dto.BookedCapacity)
+	}
 	if dto.EventStartAt != nil {
 		updateBuilder = updateBuilder.SetEventStartAt(*dto.EventStartAt)
 	}
