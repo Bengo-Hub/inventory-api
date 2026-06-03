@@ -1,83 +1,484 @@
-openapi: 3.0.0
+basePath: /api/v1
+definitions:
+  github_com_bengobox_inventory-service_internal_modules_items.ItemDTO:
+    properties:
+      add_to_all_outlets:
+        type: boolean
+      available:
+        description: |-
+          Current stock levels (aggregated across all warehouses).
+          Populated by ListItems; nil when no balance row exists.
+        type: integer
+      barcode:
+        description: Extended fields for POS, logistics, compliance
+        type: string
+      barcode_type:
+        type: string
+      booked_capacity:
+        type: integer
+      category_id:
+        type: string
+      category_name:
+        type: string
+      cost_price:
+        description: Cost / pricing fields
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      dimensions_cm:
+        additionalProperties:
+          format: float64
+          type: number
+        type: object
+      event_end_at:
+        type: string
+      event_start_at:
+        type: string
+      event_venue:
+        type: string
+      extra_bed_allowed:
+        type: boolean
+      id:
+        type: string
+      image_url:
+        type: string
+      initial_quantity:
+        type: integer
+      is_active:
+        type: boolean
+      is_perishable:
+        type: boolean
+      max_adults:
+        type: integer
+      max_children:
+        type: integer
+      meal_plan:
+        description: RO | BB | HB | FB | AI
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
+      name:
+        type: string
+      occupancy_basis:
+        type: string
+      on_hand:
+        type: integer
+      purchase_pack_size:
+        type: number
+      purchase_price:
+        description: Purchase / supplier fields — enable auto EP-cost calculation
+        type: number
+      purchase_unit:
+        type: string
+      reorder_level:
+        type: integer
+      reorder_quantity:
+        type: integer
+      requires_age_verification:
+        type: boolean
+      single_supplement:
+        type: number
+      sku:
+        type: string
+      suggested_price:
+        type: number
+      tags:
+        items:
+          type: string
+        type: array
+      tax_code_id:
+        description: KRA eTIMS tax fields
+        type: string
+      tax_inclusive:
+        type: boolean
+      total_capacity:
+        description: Event capacity fields — SERVICE type only
+        type: integer
+      track_lots:
+        type: boolean
+      track_serial_numbers:
+        type: boolean
+      type:
+        description: GOODS | SERVICE | RECIPE | INGREDIENT
+        type: string
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+      use_case:
+        description: Hospitality fields — room-type / facility / amenity SERVICE items
+        type: string
+      weight_kg:
+        type: number
+      yield_pct:
+        description: 0 < y <= 1; default 1.0
+        type: number
+    type: object
+  github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO:
+    properties:
+      allergens:
+        items:
+          type: string
+        type: array
+      cost_per_portion:
+        type: number
+      food_cost_pct:
+        type: number
+      id:
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO'
+        type: array
+      is_active:
+        type: boolean
+      item_id:
+        type: string
+      item_name:
+        type: string
+      name:
+        type: string
+      output_qty:
+        type: number
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        description: Selling-price based costing (user-provided; never overwritten
+          by system)
+        type: number
+      servings:
+        type: number
+      sku:
+        type: string
+      status:
+        description: OK - healthy | OK - above target FC% | LOSS - cost >= price
+        type: string
+      suggested_price:
+        type: number
+      target_margin_percent:
+        type: number
+      tenant_id:
+        type: string
+      total_cost:
+        type: number
+      unit_of_measure:
+        type: string
+    type: object
+  github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO:
+    properties:
+      display_order:
+        type: integer
+      id:
+        type: string
+      item_cost_price:
+        type: number
+      item_id:
+        type: string
+      item_name:
+        type: string
+      item_sku:
+        type: string
+      notes:
+        type: string
+      quantity:
+        type: number
+      sub_recipe_id:
+        type: string
+      sub_recipe_name:
+        type: string
+      unit_id:
+        type: string
+      unit_of_measure:
+        type: string
+      waste_percent:
+        type: number
+    type: object
+  internal_http_handlers.BulkImportResult:
+    properties:
+      items:
+        $ref: '#/definitions/internal_http_handlers.importResult'
+      modifiers:
+        $ref: '#/definitions/internal_http_handlers.importResult'
+      recipes:
+        $ref: '#/definitions/internal_http_handlers.importResult'
+      stock:
+        $ref: '#/definitions/internal_http_handlers.importResult'
+    type: object
+  internal_http_handlers.MenuItemCompositeRequest:
+    properties:
+      category_name:
+        type: string
+      description:
+        type: string
+      image_url:
+        type: string
+      ingredients:
+        description: ── Ingredient lines ──────────────────────────────────────────────────────
+        items:
+          $ref: '#/definitions/internal_http_handlers.MenuItemIngredientInput'
+        type: array
+      is_perishable:
+        type: boolean
+      modifiers:
+        description: ── Modifiers (optional) ──────────────────────────────────────────────────
+        items:
+          $ref: '#/definitions/internal_http_handlers.MenuItemModifierInput'
+        type: array
+      name:
+        type: string
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        description: user-provided final price
+        type: number
+      servings:
+        description: ── Recipe fields ─────────────────────────────────────────────────────────
+        type: number
+      sku:
+        description: ── Item fields ───────────────────────────────────────────────────────────
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      target_margin_percent:
+        description: fallback to tenant default
+        type: number
+    type: object
+  internal_http_handlers.MenuItemCompositeResponse:
+    properties:
+      item:
+        $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemDTO'
+      recipe:
+        $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO'
+      reorder_seeds:
+        items:
+          $ref: '#/definitions/internal_http_handlers.ReorderSeed'
+        type: array
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_http_handlers.MenuItemIngredientInput:
+    properties:
+      cost_price:
+        description: If EP cost is known directly, set cost_price (bypasses purchase
+          field calculation).
+        type: number
+      ingredient_name:
+        description: Reference — one of these two must be set.
+        type: string
+      ingredient_sku:
+        description: matched by SKU (takes priority)
+        type: string
+      notes:
+        type: string
+      purchase_pack_size:
+        type: number
+      purchase_price:
+        description: Optional purchase/supplier fields — only needed when creating
+          a NEW ingredient.
+        type: number
+      purchase_unit:
+        type: string
+      qty:
+        description: Quantity and unit for this recipe line.
+        type: number
+      unit:
+        description: e.g. "g", "ml", "tsp", "clove"
+        type: string
+      waste_percent:
+        description: Optional waste factor (0-99, default 0).
+        type: number
+      yield_pct:
+        type: number
+    type: object
+  internal_http_handlers.MenuItemModifierInput:
+    properties:
+      group_name:
+        type: string
+      is_required:
+        type: boolean
+      max_selections:
+        type: integer
+      min_selections:
+        type: integer
+      options:
+        items:
+          $ref: '#/definitions/internal_http_handlers.MenuItemModifierOptionInput'
+        type: array
+    type: object
+  internal_http_handlers.MenuItemModifierOptionInput:
+    properties:
+      is_default:
+        type: boolean
+      name:
+        type: string
+      price_adjustment:
+        type: number
+      stock_sku:
+        description: inventory item SKU for stock deduction
+        type: string
+    type: object
+  internal_http_handlers.ReorderSeed:
+    properties:
+      reorder_level:
+        type: integer
+      reorder_qty:
+        type: integer
+      sku:
+        type: string
+      source:
+        description: '"DEFAULT" or "UNIT_DEFAULT"'
+        type: string
+    type: object
+  internal_http_handlers.importResult:
+    properties:
+      created:
+        type: integer
+      errors:
+        items:
+          type: string
+        type: array
+      failed:
+        type: integer
+      updated:
+        type: integer
+    type: object
+  internal_http_handlers.livenessResponse:
+    properties:
+      service:
+        example: inventory-api
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  internal_http_handlers.readinessResponse:
+    properties:
+      dependencies:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        example: OK
+        type: string
+    type: object
 info:
+  contact: {}
+  description: HTTP API for the BengoBox inventory service. Provides catalog, warehouse,
+    and inventory management capabilities.
   title: Inventory Service API
-  description: HTTP API for the BengoBox inventory service. Provides catalog, warehouse, and inventory management capabilities.
   version: 0.1.0
-  contact:
-    name: BengoBox Support
-servers:
-  - url: https://inventory.codevertex.local
-    description: Local development server (HTTPS)
-  - url: https://inventory.codevrtexitsolutions.com
-    description: Production server
 paths:
+  /{tenant}/inventory/bulk-import:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: CSV or XLSX file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.BulkImportResult'
+      summary: Bulk import inventory items, recipes, modifiers and opening stock
+      tags:
+      - inventory
+  /{tenant}/inventory/import-template:
+    get:
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Download inventory import template
+      tags:
+      - inventory
+  /{tenant}/inventory/items/menu-item:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Menu item + recipe + ingredients
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.MenuItemCompositeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.MenuItemCompositeResponse'
+      summary: Define a complete menu item with recipe, ingredients, and modifiers
+        in one call
+      tags:
+      - inventory
   /healthz:
     get:
-      tags:
-        - Health
-      summary: Service liveness probe
       description: Returns OK when the inventory API process is running.
+      produces:
+      - application/json
       responses:
-        '200':
-          description: Service is alive
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  service:
-                    type: string
-                    example: inventory-service
-  /readyz:
-    get:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.livenessResponse'
+      summary: Service liveness probe
       tags:
-        - Health
-      summary: Readiness probe
-      description: Validates connectivity to Postgres, Redis, and NATS backends.
-      responses:
-        '200':
-          description: Service is ready
-        '503':
-          description: Service dependencies unavailable
+      - Health
   /metrics:
     get:
-      tags:
-        - Health
-      summary: Prometheus metrics
       description: Exposes Prometheus metrics for scraping.
+      produces:
+      - text/plain
       responses:
-        '200':
+        "200":
           description: Prometheus metrics payload
-  /v1/{tenantID}/inventory/items:
-    get:
-      tags:
-        - Inventory
-      summary: List inventory items
-      description: Returns a list of inventory items for the specified tenant.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: tenantID
-          in: path
-          required: true
           schema:
             type: string
-          description: Tenant identifier
+      summary: Prometheus metrics
+      tags:
+      - Health
+  /readyz:
+    get:
+      description: Validates connectivity to Postgres, Redis, and NATS backends.
+      produces:
+      - application/json
       responses:
-        '200':
-          description: List of inventory items
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal server error
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT token from auth-service. Format: Bearer {token}
-
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.readinessResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/internal_http_handlers.readinessResponse'
+      summary: Readiness probe
+      tags:
+      - Health
+schemes:
+- http
+- https
+securityDefinitions:
+  bearerAuth:
+    description: 'JWT token from auth-service. Format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,710 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "HTTP API for the BengoBox inventory service. Provides catalog, warehouse, and inventory management capabilities.",
+        "title": "Inventory Service API",
+        "contact": {},
+        "version": "0.1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/healthz": {
+            "get": {
+                "description": "Returns OK when the inventory API process is running.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Service liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.livenessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics": {
+            "get": {
+                "description": "Exposes Prometheus metrics for scraping.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Prometheus metrics",
+                "responses": {
+                    "200": {
+                        "description": "Prometheus metrics payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/readyz": {
+            "get": {
+                "description": "Validates connectivity to Postgres, Redis, and NATS backends.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/bulk-import": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Bulk import inventory items, recipes, modifiers and opening stock",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "CSV or XLSX file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.BulkImportResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/import-template": {
+            "get": {
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Download inventory import template",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/items/menu-item": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inventory"
+                ],
+                "summary": "Define a complete menu item with recipe, ingredients, and modifiers in one call",
+                "parameters": [
+                    {
+                        "description": "Menu item + recipe + ingredients",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_bengobox_inventory-service_internal_modules_items.ItemDTO": {
+            "type": "object",
+            "properties": {
+                "add_to_all_outlets": {
+                    "type": "boolean"
+                },
+                "available": {
+                    "description": "Current stock levels (aggregated across all warehouses).\nPopulated by ListItems; nil when no balance row exists.",
+                    "type": "integer"
+                },
+                "barcode": {
+                    "description": "Extended fields for POS, logistics, compliance",
+                    "type": "string"
+                },
+                "barcode_type": {
+                    "type": "string"
+                },
+                "booked_capacity": {
+                    "type": "integer"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "cost_price": {
+                    "description": "Cost / pricing fields",
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "dimensions_cm": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "event_end_at": {
+                    "type": "string"
+                },
+                "event_start_at": {
+                    "type": "string"
+                },
+                "event_venue": {
+                    "type": "string"
+                },
+                "extra_bed_allowed": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "initial_quantity": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_perishable": {
+                    "type": "boolean"
+                },
+                "max_adults": {
+                    "type": "integer"
+                },
+                "max_children": {
+                    "type": "integer"
+                },
+                "meal_plan": {
+                    "description": "RO | BB | HB | FB | AI",
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "name": {
+                    "type": "string"
+                },
+                "occupancy_basis": {
+                    "type": "string"
+                },
+                "on_hand": {
+                    "type": "integer"
+                },
+                "purchase_pack_size": {
+                    "type": "number"
+                },
+                "purchase_price": {
+                    "description": "Purchase / supplier fields — enable auto EP-cost calculation",
+                    "type": "number"
+                },
+                "purchase_unit": {
+                    "type": "string"
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "reorder_quantity": {
+                    "type": "integer"
+                },
+                "requires_age_verification": {
+                    "type": "boolean"
+                },
+                "single_supplement": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tax_code_id": {
+                    "description": "KRA eTIMS tax fields",
+                    "type": "string"
+                },
+                "tax_inclusive": {
+                    "type": "boolean"
+                },
+                "total_capacity": {
+                    "description": "Event capacity fields — SERVICE type only",
+                    "type": "integer"
+                },
+                "track_lots": {
+                    "type": "boolean"
+                },
+                "track_serial_numbers": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "GOODS | SERVICE | RECIPE | INGREDIENT",
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "use_case": {
+                    "description": "Hospitality fields — room-type / facility / amenity SERVICE items",
+                    "type": "string"
+                },
+                "weight_kg": {
+                    "type": "number"
+                },
+                "yield_pct": {
+                    "description": "0 \u003c y \u003c= 1; default 1.0",
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO": {
+            "type": "object",
+            "properties": {
+                "allergens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cost_per_portion": {
+                    "type": "number"
+                },
+                "food_cost_pct": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "output_qty": {
+                    "type": "number"
+                },
+                "prep_time_minutes": {
+                    "type": "integer"
+                },
+                "selling_price": {
+                    "description": "Selling-price based costing (user-provided; never overwritten by system)",
+                    "type": "number"
+                },
+                "servings": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "OK - healthy | OK - above target FC% | LOSS - cost \u003e= price",
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "target_margin_percent": {
+                    "type": "number"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "total_cost": {
+                    "type": "number"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO": {
+            "type": "object",
+            "properties": {
+                "display_order": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_cost_price": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "sub_recipe_id": {
+                    "type": "string"
+                },
+                "sub_recipe_name": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                },
+                "waste_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_http_handlers.BulkImportResult": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                },
+                "modifiers": {
+                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                },
+                "recipes": {
+                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                },
+                "stock": {
+                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                }
+            }
+        },
+        "internal_http_handlers.MenuItemCompositeRequest": {
+            "type": "object",
+            "properties": {
+                "category_name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "ingredients": {
+                    "description": "── Ingredient lines ──────────────────────────────────────────────────────",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_http_handlers.MenuItemIngredientInput"
+                    }
+                },
+                "is_perishable": {
+                    "type": "boolean"
+                },
+                "modifiers": {
+                    "description": "── Modifiers (optional) ──────────────────────────────────────────────────",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierInput"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prep_time_minutes": {
+                    "type": "integer"
+                },
+                "selling_price": {
+                    "description": "user-provided final price",
+                    "type": "number"
+                },
+                "servings": {
+                    "description": "── Recipe fields ─────────────────────────────────────────────────────────",
+                    "type": "number"
+                },
+                "sku": {
+                    "description": "── Item fields ───────────────────────────────────────────────────────────",
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "target_margin_percent": {
+                    "description": "fallback to tenant default",
+                    "type": "number"
+                }
+            }
+        },
+        "internal_http_handlers.MenuItemCompositeResponse": {
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemDTO"
+                },
+                "recipe": {
+                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO"
+                },
+                "reorder_seeds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_http_handlers.ReorderSeed"
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_http_handlers.MenuItemIngredientInput": {
+            "type": "object",
+            "properties": {
+                "cost_price": {
+                    "description": "If EP cost is known directly, set cost_price (bypasses purchase field calculation).",
+                    "type": "number"
+                },
+                "ingredient_name": {
+                    "description": "Reference — one of these two must be set.",
+                    "type": "string"
+                },
+                "ingredient_sku": {
+                    "description": "matched by SKU (takes priority)",
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "purchase_pack_size": {
+                    "type": "number"
+                },
+                "purchase_price": {
+                    "description": "Optional purchase/supplier fields — only needed when creating a NEW ingredient.",
+                    "type": "number"
+                },
+                "purchase_unit": {
+                    "type": "string"
+                },
+                "qty": {
+                    "description": "Quantity and unit for this recipe line.",
+                    "type": "number"
+                },
+                "unit": {
+                    "description": "e.g. \"g\", \"ml\", \"tsp\", \"clove\"",
+                    "type": "string"
+                },
+                "waste_percent": {
+                    "description": "Optional waste factor (0-99, default 0).",
+                    "type": "number"
+                },
+                "yield_pct": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_http_handlers.MenuItemModifierInput": {
+            "type": "object",
+            "properties": {
+                "group_name": {
+                    "type": "string"
+                },
+                "is_required": {
+                    "type": "boolean"
+                },
+                "max_selections": {
+                    "type": "integer"
+                },
+                "min_selections": {
+                    "type": "integer"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierOptionInput"
+                    }
+                }
+            }
+        },
+        "internal_http_handlers.MenuItemModifierOptionInput": {
+            "type": "object",
+            "properties": {
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_adjustment": {
+                    "type": "number"
+                },
+                "stock_sku": {
+                    "description": "inventory item SKU for stock deduction",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_http_handlers.ReorderSeed": {
+            "type": "object",
+            "properties": {
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "reorder_qty": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "\"DEFAULT\" or \"UNIT_DEFAULT\"",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_http_handlers.importResult": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_http_handlers.livenessResponse": {
+            "type": "object",
+            "properties": {
+                "service": {
+                    "type": "string",
+                    "example": "inventory-api"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "internal_http_handlers.readinessResponse": {
+            "type": "object",
+            "properties": {
+                "dependencies": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OK"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "bearerAuth": {
+            "description": "JWT token from auth-service. Format: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

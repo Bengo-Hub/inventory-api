@@ -177,6 +177,7 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
 	inventoryExtrasHandler.SetDocService(docSvc)
+	inventoryExtrasHandler.SetStockService(stockSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api

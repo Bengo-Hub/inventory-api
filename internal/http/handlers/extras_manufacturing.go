@@ -17,6 +17,7 @@ import (
 	entqc "github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	entrecipe "github.com/bengobox/inventory-service/internal/ent/recipe"
 	entri "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // ─── Manufacturing: production batches + QC (migrated from ERP manufacturing) ──
@@ -206,6 +207,7 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 	}
 	ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(r.Context())
 	consumed := make([]map[string]any, 0, len(ings))
+	consumeItems := make([]stock.ConsumptionItem, 0, len(ings))
 	for _, ing := range ings {
 		qty := ing.Quantity * ratio
 		mc := h.orm.BatchRawMaterial.Create().
@@ -218,11 +220,26 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 			continue
 		}
 		consumed = append(consumed, map[string]any{"item_id": ing.ItemID, "quantity": qty, "unit_id": ing.UnitID})
+		if ing.ItemSku != "" {
+			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: ing.ItemSku, Quantity: qty})
+		}
 	}
 	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusInProgress).SetStartDate(time.Now().UTC()).Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to start batch")
 		return
+	}
+	// Apply real raw-material consumption (stock-out) in-process.
+	if h.stockSvc != nil && len(consumeItems) > 0 {
+		if _, err := h.stockSvc.RecordConsumption(r.Context(), tenantID, stock.ConsumptionRequest{
+			TenantID:       tenantID,
+			OrderID:        b.ID,
+			Items:          consumeItems,
+			Reason:         "production",
+			IdempotencyKey: "production-start-" + b.ID.String(),
+		}); err != nil {
+			h.log.Warn("production start: stock consumption failed", zap.Error(err))
+		}
 	}
 	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.started", map[string]any{
 		"id": updated.ID, "batch_number": updated.BatchNumber, "consumed_materials": consumed,
@@ -268,6 +285,22 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 	}
 	if recipe != nil && recipe.ItemID != nil {
 		payload["finished_item_id"] = *recipe.ItemID
+	}
+	// Receive finished goods into stock (stock-in) in-process.
+	if h.stockSvc != nil && recipe != nil {
+		fgSKU := recipe.Sku
+		if recipe.ItemID != nil {
+			if s := h.skuForItem(r.Context(), tenantID, *recipe.ItemID); s != "" {
+				fgSKU = s
+			}
+		}
+		if fgSKU != "" {
+			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{},
+				[]stock.RestockItem{{SKU: fgSKU, Quantity: body.ActualQuantity}},
+				"production-complete-"+updated.ID.String()); err != nil {
+				h.log.Warn("production complete: finished-goods restock failed", zap.Error(err))
+			}
+		}
 	}
 	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.completed", payload)
 	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, nil, nil))

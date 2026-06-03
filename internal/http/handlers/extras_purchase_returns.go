@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entpr "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
 	entprline "github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // ─── Purchase Returns / supplier RMA (procurement) ──────────────────────────
@@ -152,8 +153,24 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	}
 	lines, _ := h.orm.PurchaseReturnLine.Query().Where(entprline.PurchaseReturnID(pr.ID)).All(r.Context())
 	items := make([]map[string]any, 0, len(lines))
+	consumeItems := make([]stock.ConsumptionItem, 0, len(lines))
 	for _, l := range lines {
 		items = append(items, map[string]any{"item_id": l.ItemID, "quantity": l.Quantity})
+		if sku := h.skuForItem(r.Context(), tenantID, l.ItemID); sku != "" {
+			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: sku, Quantity: float64(l.Quantity)})
+		}
+	}
+	// Goods returned to the supplier leave our stock (stock-out), in-process.
+	if h.stockSvc != nil && len(consumeItems) > 0 {
+		if _, err := h.stockSvc.RecordConsumption(r.Context(), tenantID, stock.ConsumptionRequest{
+			TenantID:       tenantID,
+			OrderID:        updated.ID,
+			Items:          consumeItems,
+			Reason:         "purchase_return",
+			IdempotencyKey: "purchase-return-" + updated.ID.String(),
+		}); err != nil {
+			h.log.Warn("purchase return: stock-out failed", zap.Error(err))
+		}
 	}
 	h.publishOutbox(r.Context(), tenantID, "purchase_return", updated.ID, "inventory.purchase_return.approved", map[string]any{
 		"id": updated.ID, "return_number": updated.ReturnNumber, "items": items,
