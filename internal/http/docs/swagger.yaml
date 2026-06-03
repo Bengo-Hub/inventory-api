@@ -336,6 +336,132 @@ definitions:
         description: '"DEFAULT" or "UNIT_DEFAULT"'
         type: string
     type: object
+  internal_http_handlers.assetCategoryPayload:
+    properties:
+      depreciation_rate:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      useful_life_years:
+        type: integer
+    type: object
+  internal_http_handlers.assetPayload:
+    properties:
+      asset_tag:
+        type: string
+      barcode:
+        type: string
+      category_id:
+        type: string
+      condition:
+        type: string
+      created_by:
+        type: string
+      custodian_id:
+        type: string
+      depreciation_method:
+        type: string
+      depreciation_rate:
+        type: number
+      description:
+        type: string
+      location:
+        type: string
+      manufacturer:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      purchase_cost:
+        type: number
+      purchase_date:
+        type: string
+      salvage_value:
+        type: number
+      serial_number:
+        type: string
+    type: object
+  internal_http_handlers.batchRawMaterialDTO:
+    properties:
+      id:
+        type: string
+      item_id:
+        type: string
+      quantity:
+        type: number
+      unit_id:
+        type: string
+    type: object
+  internal_http_handlers.contractDTO:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      supplier_id:
+        type: string
+      terms:
+        type: string
+      title:
+        type: string
+      value:
+        type: number
+    type: object
+  internal_http_handlers.contractPayload:
+    properties:
+      end_date:
+        type: string
+      start_date:
+        type: string
+      supplier_id:
+        type: string
+      terms:
+        type: string
+      title:
+        type: string
+      value:
+        type: number
+    type: object
+  internal_http_handlers.createPOInput:
+    properties:
+      expected_date:
+        description: accepts "YYYY-MM-DD" or RFC3339
+        type: string
+      line_items:
+        items:
+          $ref: '#/definitions/internal_http_handlers.createPOLineInput'
+        type: array
+      notes:
+        type: string
+      supplier_id:
+        type: string
+      warehouse_id:
+        type: string
+    type: object
+  internal_http_handlers.createPOLineInput:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+      unit_cost:
+        type: number
+    type: object
   internal_http_handlers.importResult:
     properties:
       created:
@@ -358,6 +484,145 @@ definitions:
         example: ok
         type: string
     type: object
+  internal_http_handlers.productionBatchDTO:
+    properties:
+      actual_quantity:
+        type: number
+      batch_number:
+        type: string
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      labor_cost:
+        type: number
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      overhead_cost:
+        type: number
+      planned_quantity:
+        type: number
+      quality_checks:
+        items:
+          $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
+        type: array
+      raw_materials:
+        items:
+          $ref: '#/definitions/internal_http_handlers.batchRawMaterialDTO'
+        type: array
+      recipe_id:
+        type: string
+      scheduled_date:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_http_handlers.productionBatchPayload:
+    properties:
+      created_by:
+        type: string
+      labor_cost:
+        type: number
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      overhead_cost:
+        type: number
+      planned_quantity:
+        type: number
+      recipe_id:
+        type: string
+      scheduled_date:
+        type: string
+      supervisor_id:
+        type: string
+    type: object
+  internal_http_handlers.purchaseOrderDTO:
+    properties:
+      created_at:
+        type: string
+      expected_date:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      po_number:
+        type: string
+      status:
+        type: string
+      supplier_id:
+        type: string
+      supplier_name:
+        type: string
+      total_amount:
+        type: number
+      warehouse_id:
+        type: string
+      warehouse_name:
+        type: string
+    type: object
+  internal_http_handlers.purchaseReturnDTO:
+    properties:
+      date_returned:
+        type: string
+      id:
+        type: string
+      payment_status:
+        type: string
+      purchase_order_id:
+        type: string
+      reason:
+        type: string
+      return_amount:
+        type: number
+      return_number:
+        type: string
+      supplier_id:
+        type: string
+    type: object
+  internal_http_handlers.purchaseReturnLinePayload:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+      sub_total:
+        type: number
+    type: object
+  internal_http_handlers.purchaseReturnPayload:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/internal_http_handlers.purchaseReturnLinePayload'
+        type: array
+      purchase_order_id:
+        type: string
+      reason:
+        type: string
+      supplier_id:
+        type: string
+    type: object
+  internal_http_handlers.qualityCheckDTO:
+    properties:
+      check_date:
+        type: string
+      id:
+        type: string
+      inspector_id:
+        type: string
+      notes:
+        type: string
+      result:
+        type: string
+    type: object
   internal_http_handlers.readinessResponse:
     properties:
       dependencies:
@@ -368,6 +633,158 @@ definitions:
         example: OK
         type: string
     type: object
+  internal_http_handlers.requisitionDTO:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      lines:
+        items:
+          $ref: '#/definitions/internal_http_handlers.requisitionLineDTO'
+        type: array
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      priority:
+        type: string
+      purpose:
+        type: string
+      reference_number:
+        type: string
+      request_type:
+        type: string
+      required_by_date:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_http_handlers.requisitionLineDTO:
+    properties:
+      description:
+        type: string
+      estimated_price:
+        type: number
+      id:
+        type: string
+      item_id:
+        type: string
+      item_type:
+        type: string
+      quantity:
+        type: integer
+      supplier_id:
+        type: string
+      urgent:
+        type: boolean
+    type: object
+  internal_http_handlers.requisitionLinePayload:
+    properties:
+      description:
+        type: string
+      estimated_price:
+        type: number
+      item_id:
+        type: string
+      item_type:
+        description: inventory | external | service
+        type: string
+      quantity:
+        type: integer
+      supplier_id:
+        type: string
+      urgent:
+        type: boolean
+    type: object
+  internal_http_handlers.requisitionPayload:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/internal_http_handlers.requisitionLinePayload'
+        type: array
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      priority:
+        type: string
+      purpose:
+        type: string
+      request_type:
+        description: inventory | external_item | service
+        type: string
+      requester_id:
+        type: string
+      required_by_date:
+        type: string
+    type: object
+  internal_http_handlers.serviceDeliveryDTO:
+    properties:
+      deliverables:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      provider_id:
+        type: string
+      requisition_line_id:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_http_handlers.serviceDeliveryPayload:
+    properties:
+      deliverables:
+        type: string
+      end_date:
+        type: string
+      provider_id:
+        type: string
+      requisition_line_id:
+        type: string
+      start_date:
+        type: string
+    type: object
+  internal_http_handlers.supplierPerfDTO:
+    properties:
+      average_lead_time_days:
+        type: number
+      defect_rate:
+        type: number
+      id:
+        type: string
+      on_time_delivery_rate:
+        type: number
+      period_end:
+        type: string
+      period_start:
+        type: string
+      supplier_id:
+        type: string
+      total_spend:
+        type: number
+    type: object
+  internal_http_handlers.supplierPerfPayload:
+    properties:
+      average_lead_time_days:
+        type: number
+      defect_rate:
+        type: number
+      on_time_delivery_rate:
+        type: number
+      period_end:
+        type: string
+      period_start:
+        type: string
+      supplier_id:
+        type: string
+      total_spend:
+        type: number
+    type: object
 info:
   contact: {}
   description: HTTP API for the BengoBox inventory service. Provides catalog, warehouse,
@@ -375,6 +792,871 @@ info:
   title: Inventory Service API
   version: 0.1.0
 paths:
+  /{tenant}/inventory/asset-categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Asset categories
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List asset categories
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset category payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.assetCategoryPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create an asset category
+      tags:
+      - Assets
+  /{tenant}/inventory/asset-categories/{catID}:
+    delete:
+      parameters:
+      - description: Asset category ID
+        in: path
+        name: catID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Delete (deactivate) an asset category
+      tags:
+      - Assets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset category ID
+        in: path
+        name: catID
+        required: true
+        type: string
+      - description: Asset category payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.assetCategoryPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Update an asset category
+      tags:
+      - Assets
+  /{tenant}/inventory/asset-disposals/{recID}/complete:
+    post:
+      parameters:
+      - description: Disposal record ID
+        in: path
+        name: recID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Complete an asset disposal
+      tags:
+      - Assets
+  /{tenant}/inventory/asset-maintenance/{recID}/complete:
+    post:
+      parameters:
+      - description: Maintenance record ID
+        in: path
+        name: recID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Complete a maintenance record
+      tags:
+      - Assets
+  /{tenant}/inventory/asset-transfers/{recID}/complete:
+    post:
+      parameters:
+      - description: Transfer record ID
+        in: path
+        name: recID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Complete an asset transfer
+      tags:
+      - Assets
+  /{tenant}/inventory/assets:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Search by name, tag or serial number
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of assets
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List fixed assets
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.assetPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a fixed asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}:
+    delete:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Delete (retire) a fixed asset
+      tags:
+      - Assets
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a fixed asset
+      tags:
+      - Assets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Asset payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.assetPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Update a fixed asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/audits:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List audits for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Audit payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Record an audit for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/depreciation-run:
+    post:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Trigger a depreciation run for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/disposals:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List disposals for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Disposal payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a disposal for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/insurance:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List insurance policies for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Insurance payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create an insurance policy for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/maintenance:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List maintenance records for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Maintenance payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Schedule a maintenance record for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/reservations:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List reservations for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Reservation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a reservation for an asset
+      tags:
+      - Assets
+  /{tenant}/inventory/assets/{assetID}/transfers:
+    get:
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List transfers for an asset
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetID
+        required: true
+        type: string
+      - description: Transfer payload
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a transfer for an asset
+      tags:
+      - Assets
   /{tenant}/inventory/bulk-import:
     post:
       consumes:
@@ -395,6 +1677,258 @@ paths:
       summary: Bulk import inventory items, recipes, modifiers and opening stock
       tags:
       - inventory
+  /{tenant}/inventory/contracts:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by supplier ID
+        in: query
+        name: supplier_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of contractDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List supplier contracts
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Contract payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.contractPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.contractDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a supplier contract
+      tags:
+      - Procurement
+  /{tenant}/inventory/contracts/{contractID}:
+    get:
+      parameters:
+      - description: Contract ID
+        in: path
+        name: contractID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.contractDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a supplier contract
+      tags:
+      - Procurement
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Contract ID
+        in: path
+        name: contractID
+        required: true
+        type: string
+      - description: Contract payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.contractPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.contractDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Update a supplier contract
+      tags:
+      - Procurement
+  /{tenant}/inventory/contracts/{contractID}/activate:
+    post:
+      parameters:
+      - description: Contract ID
+        in: path
+        name: contractID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.contractDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Activate a supplier contract
+      tags:
+      - Procurement
+  /{tenant}/inventory/contracts/{contractID}/link-order:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Contract ID
+        in: path
+        name: contractID
+        required: true
+        type: string
+      - description: purchase_order_id
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Link a purchase order to a contract
+      tags:
+      - Procurement
+  /{tenant}/inventory/contracts/{contractID}/terminate:
+    post:
+      parameters:
+      - description: Contract ID
+        in: path
+        name: contractID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.contractDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Terminate a supplier contract
+      tags:
+      - Procurement
   /{tenant}/inventory/import-template:
     get:
       produces:
@@ -429,6 +1963,1217 @@ paths:
         in one call
       tags:
       - inventory
+  /{tenant}/inventory/manufacturing/dashboard:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Manufacturing KPI dashboard
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/procurement/dashboard:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Procurement KPI dashboard
+      tags:
+      - Procurement
+  /{tenant}/inventory/production-batches:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by recipe ID
+        in: query
+        name: recipe_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of productionBatchDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List production batches
+      tags:
+      - Manufacturing
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Production batch payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.productionBatchPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a production batch
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}:
+    get:
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a production batch with materials and QC
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}/cancel:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      - description: reason
+        in: body
+        name: body
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Cancel a production batch
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}/complete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      - description: actual_quantity
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Complete a production batch (receive finished goods)
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}/materials:
+    get:
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_http_handlers.batchRawMaterialDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List raw materials consumed by a production batch
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}/quality-checks:
+    get:
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List quality checks for a production batch
+      tags:
+      - Manufacturing
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      - description: Quality check result, notes and inspector
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Record a quality check for a production batch
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/production-batches/{batchID}/start:
+    post:
+      parameters:
+      - description: Production batch ID
+        in: path
+        name: batchID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Start a production batch (consume raw materials)
+      tags:
+      - Manufacturing
+  /{tenant}/inventory/purchase-orders:
+    get:
+      parameters:
+      - description: Filter by PO number or supplier name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_http_handlers.purchaseOrderDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List purchase orders
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Purchase order payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.createPOInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a purchase order with line items
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-orders/{poID}:
+    get:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.purchaseOrderDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a purchase order with its line items
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-orders/{poID}/cancel:
+    put:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Cancel a purchase order
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-orders/{poID}/pdf:
+    get:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Generate a branded purchase order PDF
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-orders/{poID}/receive:
+    put:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Receive a purchase order into stock
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-orders/{poID}/send:
+    put:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Send a draft purchase order
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-returns:
+    get:
+      parameters:
+      - description: Filter by payment status
+        in: query
+        name: payment_status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of purchaseReturnDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List purchase returns
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Purchase return payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.purchaseReturnPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a purchase return (supplier RMA)
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-returns/{returnID}:
+    get:
+      parameters:
+      - description: Purchase return ID
+        in: path
+        name: returnID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a purchase return
+      tags:
+      - Procurement
+  /{tenant}/inventory/purchase-returns/{returnID}/approve:
+    post:
+      parameters:
+      - description: Purchase return ID
+        in: path
+        name: returnID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Approve a purchase return and remove goods from stock
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by request type
+        in: query
+        name: request_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of requisitionDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List requisitions
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Requisition payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.requisitionPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a requisition with lines
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}:
+    get:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Get a requisition with its lines
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}/approve:
+    post:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Approve a requisition
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}/convert-to-po:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      - description: Supplier, warehouse and currency
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Convert a requisition into a purchase order
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}/reject:
+    post:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Reject a requisition
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}/review:
+    post:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Move a requisition into procurement review
+      tags:
+      - Procurement
+  /{tenant}/inventory/requisitions/{reqID}/submit:
+    post:
+      parameters:
+      - description: Requisition ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Submit a requisition for review
+      tags:
+      - Procurement
+  /{tenant}/inventory/service-deliveries:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of serviceDeliveryDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List service deliveries
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Service delivery payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.serviceDeliveryPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.serviceDeliveryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Create a service delivery record
+      tags:
+      - Procurement
+  /{tenant}/inventory/service-deliveries/{sdID}/status:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Service delivery ID
+        in: path
+        name: sdID
+        required: true
+        type: string
+      - description: status
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.serviceDeliveryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Update a service delivery status
+      tags:
+      - Procurement
+  /{tenant}/inventory/supplier-performance:
+    get:
+      parameters:
+      - description: Filter by supplier ID
+        in: query
+        name: supplier_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of supplierPerfDTO
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List supplier performance records
+      tags:
+      - Procurement
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Supplier performance payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.supplierPerfPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_http_handlers.supplierPerfDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Record a supplier performance evaluation
+      tags:
+      - Procurement
   /healthz:
     get:
       description: Returns OK when the inventory API process is running.
