@@ -9,6 +9,102 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 )
 
+// The AssetFunc type is an adapter to allow the use of ordinary
+// function as Asset mutator.
+type AssetFunc func(context.Context, *ent.AssetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetMutation", m)
+}
+
+// The AssetAuditFunc type is an adapter to allow the use of ordinary
+// function as AssetAudit mutator.
+type AssetAuditFunc func(context.Context, *ent.AssetAuditMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetAuditFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetAuditMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetAuditMutation", m)
+}
+
+// The AssetCategoryFunc type is an adapter to allow the use of ordinary
+// function as AssetCategory mutator.
+type AssetCategoryFunc func(context.Context, *ent.AssetCategoryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetCategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetCategoryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetCategoryMutation", m)
+}
+
+// The AssetDisposalFunc type is an adapter to allow the use of ordinary
+// function as AssetDisposal mutator.
+type AssetDisposalFunc func(context.Context, *ent.AssetDisposalMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetDisposalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetDisposalMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetDisposalMutation", m)
+}
+
+// The AssetInsuranceFunc type is an adapter to allow the use of ordinary
+// function as AssetInsurance mutator.
+type AssetInsuranceFunc func(context.Context, *ent.AssetInsuranceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetInsuranceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetInsuranceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetInsuranceMutation", m)
+}
+
+// The AssetMaintenanceFunc type is an adapter to allow the use of ordinary
+// function as AssetMaintenance mutator.
+type AssetMaintenanceFunc func(context.Context, *ent.AssetMaintenanceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetMaintenanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetMaintenanceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetMaintenanceMutation", m)
+}
+
+// The AssetReservationFunc type is an adapter to allow the use of ordinary
+// function as AssetReservation mutator.
+type AssetReservationFunc func(context.Context, *ent.AssetReservationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetReservationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetReservationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetReservationMutation", m)
+}
+
+// The AssetTransferFunc type is an adapter to allow the use of ordinary
+// function as AssetTransfer mutator.
+type AssetTransferFunc func(context.Context, *ent.AssetTransferMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetTransferFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetTransferMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetTransferMutation", m)
+}
+
 // The BatchRawMaterialFunc type is an adapter to allow the use of ordinary
 // function as BatchRawMaterial mutator.
 type BatchRawMaterialFunc func(context.Context, *ent.BatchRawMaterialMutation) (ent.Value, error)

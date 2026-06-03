@@ -16,6 +16,14 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/asset"
+	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
+	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
+	"github.com/bengobox/inventory-service/internal/ent/assetdisposal"
+	"github.com/bengobox/inventory-service/internal/ent/assetinsurance"
+	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
+	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
+	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -77,6 +85,22 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Asset is the client for interacting with the Asset builders.
+	Asset *AssetClient
+	// AssetAudit is the client for interacting with the AssetAudit builders.
+	AssetAudit *AssetAuditClient
+	// AssetCategory is the client for interacting with the AssetCategory builders.
+	AssetCategory *AssetCategoryClient
+	// AssetDisposal is the client for interacting with the AssetDisposal builders.
+	AssetDisposal *AssetDisposalClient
+	// AssetInsurance is the client for interacting with the AssetInsurance builders.
+	AssetInsurance *AssetInsuranceClient
+	// AssetMaintenance is the client for interacting with the AssetMaintenance builders.
+	AssetMaintenance *AssetMaintenanceClient
+	// AssetReservation is the client for interacting with the AssetReservation builders.
+	AssetReservation *AssetReservationClient
+	// AssetTransfer is the client for interacting with the AssetTransfer builders.
+	AssetTransfer *AssetTransferClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
 	// Bundle is the client for interacting with the Bundle builders.
@@ -196,6 +220,14 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Asset = NewAssetClient(c.config)
+	c.AssetAudit = NewAssetAuditClient(c.config)
+	c.AssetCategory = NewAssetCategoryClient(c.config)
+	c.AssetDisposal = NewAssetDisposalClient(c.config)
+	c.AssetInsurance = NewAssetInsuranceClient(c.config)
+	c.AssetMaintenance = NewAssetMaintenanceClient(c.config)
+	c.AssetReservation = NewAssetReservationClient(c.config)
+	c.AssetTransfer = NewAssetTransferClient(c.config)
 	c.BatchRawMaterial = NewBatchRawMaterialClient(c.config)
 	c.Bundle = NewBundleClient(c.config)
 	c.BundleComponent = NewBundleComponentClient(c.config)
@@ -342,6 +374,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		Asset:                 NewAssetClient(cfg),
+		AssetAudit:            NewAssetAuditClient(cfg),
+		AssetCategory:         NewAssetCategoryClient(cfg),
+		AssetDisposal:         NewAssetDisposalClient(cfg),
+		AssetInsurance:        NewAssetInsuranceClient(cfg),
+		AssetMaintenance:      NewAssetMaintenanceClient(cfg),
+		AssetReservation:      NewAssetReservationClient(cfg),
+		AssetTransfer:         NewAssetTransferClient(cfg),
 		BatchRawMaterial:      NewBatchRawMaterialClient(cfg),
 		Bundle:                NewBundleClient(cfg),
 		BundleComponent:       NewBundleComponentClient(cfg),
@@ -415,6 +455,14 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		Asset:                 NewAssetClient(cfg),
+		AssetAudit:            NewAssetAuditClient(cfg),
+		AssetCategory:         NewAssetCategoryClient(cfg),
+		AssetDisposal:         NewAssetDisposalClient(cfg),
+		AssetInsurance:        NewAssetInsuranceClient(cfg),
+		AssetMaintenance:      NewAssetMaintenanceClient(cfg),
+		AssetReservation:      NewAssetReservationClient(cfg),
+		AssetTransfer:         NewAssetTransferClient(cfg),
 		BatchRawMaterial:      NewBatchRawMaterialClient(cfg),
 		Bundle:                NewBundleClient(cfg),
 		BundleComponent:       NewBundleComponentClient(cfg),
@@ -475,7 +523,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		BatchRawMaterial.
+//		Asset.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -498,19 +546,21 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.BatchRawMaterial, c.Bundle, c.BundleComponent, c.Consumption, c.Contract,
-		c.ContractOrderLink, c.CustomFieldDefinition, c.CustomFieldValue,
-		c.DocumentSequence, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
-		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
-		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
-		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.Asset, c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
+		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
+		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
+		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
+		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
+		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Ticket,
+		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -520,19 +570,21 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.BatchRawMaterial, c.Bundle, c.BundleComponent, c.Consumption, c.Contract,
-		c.ContractOrderLink, c.CustomFieldDefinition, c.CustomFieldValue,
-		c.DocumentSequence, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
-		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
-		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
-		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.Asset, c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
+		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
+		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
+		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
+		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
+		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Ticket,
+		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -541,6 +593,22 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AssetMutation:
+		return c.Asset.mutate(ctx, m)
+	case *AssetAuditMutation:
+		return c.AssetAudit.mutate(ctx, m)
+	case *AssetCategoryMutation:
+		return c.AssetCategory.mutate(ctx, m)
+	case *AssetDisposalMutation:
+		return c.AssetDisposal.mutate(ctx, m)
+	case *AssetInsuranceMutation:
+		return c.AssetInsurance.mutate(ctx, m)
+	case *AssetMaintenanceMutation:
+		return c.AssetMaintenance.mutate(ctx, m)
+	case *AssetReservationMutation:
+		return c.AssetReservation.mutate(ctx, m)
+	case *AssetTransferMutation:
+		return c.AssetTransfer.mutate(ctx, m)
 	case *BatchRawMaterialMutation:
 		return c.BatchRawMaterial.mutate(ctx, m)
 	case *BundleMutation:
@@ -651,6 +719,1070 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Warranty.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AssetClient is a client for the Asset schema.
+type AssetClient struct {
+	config
+}
+
+// NewAssetClient returns a client for the Asset from the given config.
+func NewAssetClient(c config) *AssetClient {
+	return &AssetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `asset.Hooks(f(g(h())))`.
+func (c *AssetClient) Use(hooks ...Hook) {
+	c.hooks.Asset = append(c.hooks.Asset, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `asset.Intercept(f(g(h())))`.
+func (c *AssetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Asset = append(c.inters.Asset, interceptors...)
+}
+
+// Create returns a builder for creating a Asset entity.
+func (c *AssetClient) Create() *AssetCreate {
+	mutation := newAssetMutation(c.config, OpCreate)
+	return &AssetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Asset entities.
+func (c *AssetClient) CreateBulk(builders ...*AssetCreate) *AssetCreateBulk {
+	return &AssetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetClient) MapCreateBulk(slice any, setFunc func(*AssetCreate, int)) *AssetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetCreateBulk{err: fmt.Errorf("calling to AssetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Asset.
+func (c *AssetClient) Update() *AssetUpdate {
+	mutation := newAssetMutation(c.config, OpUpdate)
+	return &AssetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetClient) UpdateOne(_m *Asset) *AssetUpdateOne {
+	mutation := newAssetMutation(c.config, OpUpdateOne, withAsset(_m))
+	return &AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetClient) UpdateOneID(id uuid.UUID) *AssetUpdateOne {
+	mutation := newAssetMutation(c.config, OpUpdateOne, withAssetID(id))
+	return &AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Asset.
+func (c *AssetClient) Delete() *AssetDelete {
+	mutation := newAssetMutation(c.config, OpDelete)
+	return &AssetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetClient) DeleteOne(_m *Asset) *AssetDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetClient) DeleteOneID(id uuid.UUID) *AssetDeleteOne {
+	builder := c.Delete().Where(asset.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetDeleteOne{builder}
+}
+
+// Query returns a query builder for Asset.
+func (c *AssetClient) Query() *AssetQuery {
+	return &AssetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAsset},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Asset entity by its id.
+func (c *AssetClient) Get(ctx context.Context, id uuid.UUID) (*Asset, error) {
+	return c.Query().Where(asset.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetClient) GetX(ctx context.Context, id uuid.UUID) *Asset {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetClient) Hooks() []Hook {
+	return c.hooks.Asset
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetClient) Interceptors() []Interceptor {
+	return c.inters.Asset
+}
+
+func (c *AssetClient) mutate(ctx context.Context, m *AssetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Asset mutation op: %q", m.Op())
+	}
+}
+
+// AssetAuditClient is a client for the AssetAudit schema.
+type AssetAuditClient struct {
+	config
+}
+
+// NewAssetAuditClient returns a client for the AssetAudit from the given config.
+func NewAssetAuditClient(c config) *AssetAuditClient {
+	return &AssetAuditClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetaudit.Hooks(f(g(h())))`.
+func (c *AssetAuditClient) Use(hooks ...Hook) {
+	c.hooks.AssetAudit = append(c.hooks.AssetAudit, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetaudit.Intercept(f(g(h())))`.
+func (c *AssetAuditClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetAudit = append(c.inters.AssetAudit, interceptors...)
+}
+
+// Create returns a builder for creating a AssetAudit entity.
+func (c *AssetAuditClient) Create() *AssetAuditCreate {
+	mutation := newAssetAuditMutation(c.config, OpCreate)
+	return &AssetAuditCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetAudit entities.
+func (c *AssetAuditClient) CreateBulk(builders ...*AssetAuditCreate) *AssetAuditCreateBulk {
+	return &AssetAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetAuditClient) MapCreateBulk(slice any, setFunc func(*AssetAuditCreate, int)) *AssetAuditCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetAuditCreateBulk{err: fmt.Errorf("calling to AssetAuditClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetAuditCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetAudit.
+func (c *AssetAuditClient) Update() *AssetAuditUpdate {
+	mutation := newAssetAuditMutation(c.config, OpUpdate)
+	return &AssetAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetAuditClient) UpdateOne(_m *AssetAudit) *AssetAuditUpdateOne {
+	mutation := newAssetAuditMutation(c.config, OpUpdateOne, withAssetAudit(_m))
+	return &AssetAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetAuditClient) UpdateOneID(id uuid.UUID) *AssetAuditUpdateOne {
+	mutation := newAssetAuditMutation(c.config, OpUpdateOne, withAssetAuditID(id))
+	return &AssetAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetAudit.
+func (c *AssetAuditClient) Delete() *AssetAuditDelete {
+	mutation := newAssetAuditMutation(c.config, OpDelete)
+	return &AssetAuditDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetAuditClient) DeleteOne(_m *AssetAudit) *AssetAuditDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetAuditClient) DeleteOneID(id uuid.UUID) *AssetAuditDeleteOne {
+	builder := c.Delete().Where(assetaudit.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetAuditDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetAudit.
+func (c *AssetAuditClient) Query() *AssetAuditQuery {
+	return &AssetAuditQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetAudit},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetAudit entity by its id.
+func (c *AssetAuditClient) Get(ctx context.Context, id uuid.UUID) (*AssetAudit, error) {
+	return c.Query().Where(assetaudit.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetAuditClient) GetX(ctx context.Context, id uuid.UUID) *AssetAudit {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetAuditClient) Hooks() []Hook {
+	return c.hooks.AssetAudit
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetAuditClient) Interceptors() []Interceptor {
+	return c.inters.AssetAudit
+}
+
+func (c *AssetAuditClient) mutate(ctx context.Context, m *AssetAuditMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetAuditCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetAuditDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetAudit mutation op: %q", m.Op())
+	}
+}
+
+// AssetCategoryClient is a client for the AssetCategory schema.
+type AssetCategoryClient struct {
+	config
+}
+
+// NewAssetCategoryClient returns a client for the AssetCategory from the given config.
+func NewAssetCategoryClient(c config) *AssetCategoryClient {
+	return &AssetCategoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetcategory.Hooks(f(g(h())))`.
+func (c *AssetCategoryClient) Use(hooks ...Hook) {
+	c.hooks.AssetCategory = append(c.hooks.AssetCategory, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetcategory.Intercept(f(g(h())))`.
+func (c *AssetCategoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetCategory = append(c.inters.AssetCategory, interceptors...)
+}
+
+// Create returns a builder for creating a AssetCategory entity.
+func (c *AssetCategoryClient) Create() *AssetCategoryCreate {
+	mutation := newAssetCategoryMutation(c.config, OpCreate)
+	return &AssetCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetCategory entities.
+func (c *AssetCategoryClient) CreateBulk(builders ...*AssetCategoryCreate) *AssetCategoryCreateBulk {
+	return &AssetCategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetCategoryClient) MapCreateBulk(slice any, setFunc func(*AssetCategoryCreate, int)) *AssetCategoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetCategoryCreateBulk{err: fmt.Errorf("calling to AssetCategoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetCategoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetCategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetCategory.
+func (c *AssetCategoryClient) Update() *AssetCategoryUpdate {
+	mutation := newAssetCategoryMutation(c.config, OpUpdate)
+	return &AssetCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetCategoryClient) UpdateOne(_m *AssetCategory) *AssetCategoryUpdateOne {
+	mutation := newAssetCategoryMutation(c.config, OpUpdateOne, withAssetCategory(_m))
+	return &AssetCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetCategoryClient) UpdateOneID(id uuid.UUID) *AssetCategoryUpdateOne {
+	mutation := newAssetCategoryMutation(c.config, OpUpdateOne, withAssetCategoryID(id))
+	return &AssetCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetCategory.
+func (c *AssetCategoryClient) Delete() *AssetCategoryDelete {
+	mutation := newAssetCategoryMutation(c.config, OpDelete)
+	return &AssetCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetCategoryClient) DeleteOne(_m *AssetCategory) *AssetCategoryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetCategoryClient) DeleteOneID(id uuid.UUID) *AssetCategoryDeleteOne {
+	builder := c.Delete().Where(assetcategory.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetCategoryDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetCategory.
+func (c *AssetCategoryClient) Query() *AssetCategoryQuery {
+	return &AssetCategoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetCategory},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetCategory entity by its id.
+func (c *AssetCategoryClient) Get(ctx context.Context, id uuid.UUID) (*AssetCategory, error) {
+	return c.Query().Where(assetcategory.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetCategoryClient) GetX(ctx context.Context, id uuid.UUID) *AssetCategory {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetCategoryClient) Hooks() []Hook {
+	return c.hooks.AssetCategory
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetCategoryClient) Interceptors() []Interceptor {
+	return c.inters.AssetCategory
+}
+
+func (c *AssetCategoryClient) mutate(ctx context.Context, m *AssetCategoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetCategory mutation op: %q", m.Op())
+	}
+}
+
+// AssetDisposalClient is a client for the AssetDisposal schema.
+type AssetDisposalClient struct {
+	config
+}
+
+// NewAssetDisposalClient returns a client for the AssetDisposal from the given config.
+func NewAssetDisposalClient(c config) *AssetDisposalClient {
+	return &AssetDisposalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetdisposal.Hooks(f(g(h())))`.
+func (c *AssetDisposalClient) Use(hooks ...Hook) {
+	c.hooks.AssetDisposal = append(c.hooks.AssetDisposal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetdisposal.Intercept(f(g(h())))`.
+func (c *AssetDisposalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetDisposal = append(c.inters.AssetDisposal, interceptors...)
+}
+
+// Create returns a builder for creating a AssetDisposal entity.
+func (c *AssetDisposalClient) Create() *AssetDisposalCreate {
+	mutation := newAssetDisposalMutation(c.config, OpCreate)
+	return &AssetDisposalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetDisposal entities.
+func (c *AssetDisposalClient) CreateBulk(builders ...*AssetDisposalCreate) *AssetDisposalCreateBulk {
+	return &AssetDisposalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetDisposalClient) MapCreateBulk(slice any, setFunc func(*AssetDisposalCreate, int)) *AssetDisposalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetDisposalCreateBulk{err: fmt.Errorf("calling to AssetDisposalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetDisposalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetDisposalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetDisposal.
+func (c *AssetDisposalClient) Update() *AssetDisposalUpdate {
+	mutation := newAssetDisposalMutation(c.config, OpUpdate)
+	return &AssetDisposalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetDisposalClient) UpdateOne(_m *AssetDisposal) *AssetDisposalUpdateOne {
+	mutation := newAssetDisposalMutation(c.config, OpUpdateOne, withAssetDisposal(_m))
+	return &AssetDisposalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetDisposalClient) UpdateOneID(id uuid.UUID) *AssetDisposalUpdateOne {
+	mutation := newAssetDisposalMutation(c.config, OpUpdateOne, withAssetDisposalID(id))
+	return &AssetDisposalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetDisposal.
+func (c *AssetDisposalClient) Delete() *AssetDisposalDelete {
+	mutation := newAssetDisposalMutation(c.config, OpDelete)
+	return &AssetDisposalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetDisposalClient) DeleteOne(_m *AssetDisposal) *AssetDisposalDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetDisposalClient) DeleteOneID(id uuid.UUID) *AssetDisposalDeleteOne {
+	builder := c.Delete().Where(assetdisposal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetDisposalDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetDisposal.
+func (c *AssetDisposalClient) Query() *AssetDisposalQuery {
+	return &AssetDisposalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetDisposal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetDisposal entity by its id.
+func (c *AssetDisposalClient) Get(ctx context.Context, id uuid.UUID) (*AssetDisposal, error) {
+	return c.Query().Where(assetdisposal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetDisposalClient) GetX(ctx context.Context, id uuid.UUID) *AssetDisposal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetDisposalClient) Hooks() []Hook {
+	return c.hooks.AssetDisposal
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetDisposalClient) Interceptors() []Interceptor {
+	return c.inters.AssetDisposal
+}
+
+func (c *AssetDisposalClient) mutate(ctx context.Context, m *AssetDisposalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetDisposalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetDisposalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetDisposalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetDisposalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetDisposal mutation op: %q", m.Op())
+	}
+}
+
+// AssetInsuranceClient is a client for the AssetInsurance schema.
+type AssetInsuranceClient struct {
+	config
+}
+
+// NewAssetInsuranceClient returns a client for the AssetInsurance from the given config.
+func NewAssetInsuranceClient(c config) *AssetInsuranceClient {
+	return &AssetInsuranceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetinsurance.Hooks(f(g(h())))`.
+func (c *AssetInsuranceClient) Use(hooks ...Hook) {
+	c.hooks.AssetInsurance = append(c.hooks.AssetInsurance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetinsurance.Intercept(f(g(h())))`.
+func (c *AssetInsuranceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetInsurance = append(c.inters.AssetInsurance, interceptors...)
+}
+
+// Create returns a builder for creating a AssetInsurance entity.
+func (c *AssetInsuranceClient) Create() *AssetInsuranceCreate {
+	mutation := newAssetInsuranceMutation(c.config, OpCreate)
+	return &AssetInsuranceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetInsurance entities.
+func (c *AssetInsuranceClient) CreateBulk(builders ...*AssetInsuranceCreate) *AssetInsuranceCreateBulk {
+	return &AssetInsuranceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetInsuranceClient) MapCreateBulk(slice any, setFunc func(*AssetInsuranceCreate, int)) *AssetInsuranceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetInsuranceCreateBulk{err: fmt.Errorf("calling to AssetInsuranceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetInsuranceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetInsuranceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetInsurance.
+func (c *AssetInsuranceClient) Update() *AssetInsuranceUpdate {
+	mutation := newAssetInsuranceMutation(c.config, OpUpdate)
+	return &AssetInsuranceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetInsuranceClient) UpdateOne(_m *AssetInsurance) *AssetInsuranceUpdateOne {
+	mutation := newAssetInsuranceMutation(c.config, OpUpdateOne, withAssetInsurance(_m))
+	return &AssetInsuranceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetInsuranceClient) UpdateOneID(id uuid.UUID) *AssetInsuranceUpdateOne {
+	mutation := newAssetInsuranceMutation(c.config, OpUpdateOne, withAssetInsuranceID(id))
+	return &AssetInsuranceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetInsurance.
+func (c *AssetInsuranceClient) Delete() *AssetInsuranceDelete {
+	mutation := newAssetInsuranceMutation(c.config, OpDelete)
+	return &AssetInsuranceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetInsuranceClient) DeleteOne(_m *AssetInsurance) *AssetInsuranceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetInsuranceClient) DeleteOneID(id uuid.UUID) *AssetInsuranceDeleteOne {
+	builder := c.Delete().Where(assetinsurance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetInsuranceDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetInsurance.
+func (c *AssetInsuranceClient) Query() *AssetInsuranceQuery {
+	return &AssetInsuranceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetInsurance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetInsurance entity by its id.
+func (c *AssetInsuranceClient) Get(ctx context.Context, id uuid.UUID) (*AssetInsurance, error) {
+	return c.Query().Where(assetinsurance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetInsuranceClient) GetX(ctx context.Context, id uuid.UUID) *AssetInsurance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetInsuranceClient) Hooks() []Hook {
+	return c.hooks.AssetInsurance
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetInsuranceClient) Interceptors() []Interceptor {
+	return c.inters.AssetInsurance
+}
+
+func (c *AssetInsuranceClient) mutate(ctx context.Context, m *AssetInsuranceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetInsuranceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetInsuranceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetInsuranceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetInsuranceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetInsurance mutation op: %q", m.Op())
+	}
+}
+
+// AssetMaintenanceClient is a client for the AssetMaintenance schema.
+type AssetMaintenanceClient struct {
+	config
+}
+
+// NewAssetMaintenanceClient returns a client for the AssetMaintenance from the given config.
+func NewAssetMaintenanceClient(c config) *AssetMaintenanceClient {
+	return &AssetMaintenanceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetmaintenance.Hooks(f(g(h())))`.
+func (c *AssetMaintenanceClient) Use(hooks ...Hook) {
+	c.hooks.AssetMaintenance = append(c.hooks.AssetMaintenance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetmaintenance.Intercept(f(g(h())))`.
+func (c *AssetMaintenanceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetMaintenance = append(c.inters.AssetMaintenance, interceptors...)
+}
+
+// Create returns a builder for creating a AssetMaintenance entity.
+func (c *AssetMaintenanceClient) Create() *AssetMaintenanceCreate {
+	mutation := newAssetMaintenanceMutation(c.config, OpCreate)
+	return &AssetMaintenanceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetMaintenance entities.
+func (c *AssetMaintenanceClient) CreateBulk(builders ...*AssetMaintenanceCreate) *AssetMaintenanceCreateBulk {
+	return &AssetMaintenanceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetMaintenanceClient) MapCreateBulk(slice any, setFunc func(*AssetMaintenanceCreate, int)) *AssetMaintenanceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetMaintenanceCreateBulk{err: fmt.Errorf("calling to AssetMaintenanceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetMaintenanceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetMaintenanceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetMaintenance.
+func (c *AssetMaintenanceClient) Update() *AssetMaintenanceUpdate {
+	mutation := newAssetMaintenanceMutation(c.config, OpUpdate)
+	return &AssetMaintenanceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetMaintenanceClient) UpdateOne(_m *AssetMaintenance) *AssetMaintenanceUpdateOne {
+	mutation := newAssetMaintenanceMutation(c.config, OpUpdateOne, withAssetMaintenance(_m))
+	return &AssetMaintenanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetMaintenanceClient) UpdateOneID(id uuid.UUID) *AssetMaintenanceUpdateOne {
+	mutation := newAssetMaintenanceMutation(c.config, OpUpdateOne, withAssetMaintenanceID(id))
+	return &AssetMaintenanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetMaintenance.
+func (c *AssetMaintenanceClient) Delete() *AssetMaintenanceDelete {
+	mutation := newAssetMaintenanceMutation(c.config, OpDelete)
+	return &AssetMaintenanceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetMaintenanceClient) DeleteOne(_m *AssetMaintenance) *AssetMaintenanceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetMaintenanceClient) DeleteOneID(id uuid.UUID) *AssetMaintenanceDeleteOne {
+	builder := c.Delete().Where(assetmaintenance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetMaintenanceDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetMaintenance.
+func (c *AssetMaintenanceClient) Query() *AssetMaintenanceQuery {
+	return &AssetMaintenanceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetMaintenance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetMaintenance entity by its id.
+func (c *AssetMaintenanceClient) Get(ctx context.Context, id uuid.UUID) (*AssetMaintenance, error) {
+	return c.Query().Where(assetmaintenance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetMaintenanceClient) GetX(ctx context.Context, id uuid.UUID) *AssetMaintenance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetMaintenanceClient) Hooks() []Hook {
+	return c.hooks.AssetMaintenance
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetMaintenanceClient) Interceptors() []Interceptor {
+	return c.inters.AssetMaintenance
+}
+
+func (c *AssetMaintenanceClient) mutate(ctx context.Context, m *AssetMaintenanceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetMaintenanceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetMaintenanceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetMaintenanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetMaintenanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetMaintenance mutation op: %q", m.Op())
+	}
+}
+
+// AssetReservationClient is a client for the AssetReservation schema.
+type AssetReservationClient struct {
+	config
+}
+
+// NewAssetReservationClient returns a client for the AssetReservation from the given config.
+func NewAssetReservationClient(c config) *AssetReservationClient {
+	return &AssetReservationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assetreservation.Hooks(f(g(h())))`.
+func (c *AssetReservationClient) Use(hooks ...Hook) {
+	c.hooks.AssetReservation = append(c.hooks.AssetReservation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assetreservation.Intercept(f(g(h())))`.
+func (c *AssetReservationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetReservation = append(c.inters.AssetReservation, interceptors...)
+}
+
+// Create returns a builder for creating a AssetReservation entity.
+func (c *AssetReservationClient) Create() *AssetReservationCreate {
+	mutation := newAssetReservationMutation(c.config, OpCreate)
+	return &AssetReservationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetReservation entities.
+func (c *AssetReservationClient) CreateBulk(builders ...*AssetReservationCreate) *AssetReservationCreateBulk {
+	return &AssetReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetReservationClient) MapCreateBulk(slice any, setFunc func(*AssetReservationCreate, int)) *AssetReservationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetReservationCreateBulk{err: fmt.Errorf("calling to AssetReservationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetReservationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetReservation.
+func (c *AssetReservationClient) Update() *AssetReservationUpdate {
+	mutation := newAssetReservationMutation(c.config, OpUpdate)
+	return &AssetReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetReservationClient) UpdateOne(_m *AssetReservation) *AssetReservationUpdateOne {
+	mutation := newAssetReservationMutation(c.config, OpUpdateOne, withAssetReservation(_m))
+	return &AssetReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetReservationClient) UpdateOneID(id uuid.UUID) *AssetReservationUpdateOne {
+	mutation := newAssetReservationMutation(c.config, OpUpdateOne, withAssetReservationID(id))
+	return &AssetReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetReservation.
+func (c *AssetReservationClient) Delete() *AssetReservationDelete {
+	mutation := newAssetReservationMutation(c.config, OpDelete)
+	return &AssetReservationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetReservationClient) DeleteOne(_m *AssetReservation) *AssetReservationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetReservationClient) DeleteOneID(id uuid.UUID) *AssetReservationDeleteOne {
+	builder := c.Delete().Where(assetreservation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetReservationDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetReservation.
+func (c *AssetReservationClient) Query() *AssetReservationQuery {
+	return &AssetReservationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetReservation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetReservation entity by its id.
+func (c *AssetReservationClient) Get(ctx context.Context, id uuid.UUID) (*AssetReservation, error) {
+	return c.Query().Where(assetreservation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetReservationClient) GetX(ctx context.Context, id uuid.UUID) *AssetReservation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetReservationClient) Hooks() []Hook {
+	return c.hooks.AssetReservation
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetReservationClient) Interceptors() []Interceptor {
+	return c.inters.AssetReservation
+}
+
+func (c *AssetReservationClient) mutate(ctx context.Context, m *AssetReservationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetReservationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetReservationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetReservation mutation op: %q", m.Op())
+	}
+}
+
+// AssetTransferClient is a client for the AssetTransfer schema.
+type AssetTransferClient struct {
+	config
+}
+
+// NewAssetTransferClient returns a client for the AssetTransfer from the given config.
+func NewAssetTransferClient(c config) *AssetTransferClient {
+	return &AssetTransferClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `assettransfer.Hooks(f(g(h())))`.
+func (c *AssetTransferClient) Use(hooks ...Hook) {
+	c.hooks.AssetTransfer = append(c.hooks.AssetTransfer, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `assettransfer.Intercept(f(g(h())))`.
+func (c *AssetTransferClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AssetTransfer = append(c.inters.AssetTransfer, interceptors...)
+}
+
+// Create returns a builder for creating a AssetTransfer entity.
+func (c *AssetTransferClient) Create() *AssetTransferCreate {
+	mutation := newAssetTransferMutation(c.config, OpCreate)
+	return &AssetTransferCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AssetTransfer entities.
+func (c *AssetTransferClient) CreateBulk(builders ...*AssetTransferCreate) *AssetTransferCreateBulk {
+	return &AssetTransferCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetTransferClient) MapCreateBulk(slice any, setFunc func(*AssetTransferCreate, int)) *AssetTransferCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetTransferCreateBulk{err: fmt.Errorf("calling to AssetTransferClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetTransferCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetTransferCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AssetTransfer.
+func (c *AssetTransferClient) Update() *AssetTransferUpdate {
+	mutation := newAssetTransferMutation(c.config, OpUpdate)
+	return &AssetTransferUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetTransferClient) UpdateOne(_m *AssetTransfer) *AssetTransferUpdateOne {
+	mutation := newAssetTransferMutation(c.config, OpUpdateOne, withAssetTransfer(_m))
+	return &AssetTransferUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetTransferClient) UpdateOneID(id uuid.UUID) *AssetTransferUpdateOne {
+	mutation := newAssetTransferMutation(c.config, OpUpdateOne, withAssetTransferID(id))
+	return &AssetTransferUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AssetTransfer.
+func (c *AssetTransferClient) Delete() *AssetTransferDelete {
+	mutation := newAssetTransferMutation(c.config, OpDelete)
+	return &AssetTransferDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetTransferClient) DeleteOne(_m *AssetTransfer) *AssetTransferDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetTransferClient) DeleteOneID(id uuid.UUID) *AssetTransferDeleteOne {
+	builder := c.Delete().Where(assettransfer.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetTransferDeleteOne{builder}
+}
+
+// Query returns a query builder for AssetTransfer.
+func (c *AssetTransferClient) Query() *AssetTransferQuery {
+	return &AssetTransferQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAssetTransfer},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AssetTransfer entity by its id.
+func (c *AssetTransferClient) Get(ctx context.Context, id uuid.UUID) (*AssetTransfer, error) {
+	return c.Query().Where(assettransfer.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetTransferClient) GetX(ctx context.Context, id uuid.UUID) *AssetTransfer {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AssetTransferClient) Hooks() []Hook {
+	return c.hooks.AssetTransfer
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetTransferClient) Interceptors() []Interceptor {
+	return c.inters.AssetTransfer
+}
+
+func (c *AssetTransferClient) mutate(ctx context.Context, m *AssetTransferMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetTransferCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetTransferUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetTransferUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetTransferDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AssetTransfer mutation op: %q", m.Op())
 	}
 }
 
@@ -9183,12 +10315,14 @@ func (c *WarrantyClient) mutate(ctx context.Context, m *WarrantyMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
-		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
-		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		Asset, AssetAudit, AssetCategory, AssetDisposal, AssetInsurance,
+		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
+		BundleComponent, Consumption, Contract, ContractOrderLink,
+		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
+		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
+		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
 		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
 		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
@@ -9197,12 +10331,14 @@ type (
 		Warranty []ent.Hook
 	}
 	inters struct {
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
-		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
-		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		Asset, AssetAudit, AssetCategory, AssetDisposal, AssetInsurance,
+		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
+		BundleComponent, Consumption, Contract, ContractOrderLink,
+		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
+		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
+		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
 		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
 		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,

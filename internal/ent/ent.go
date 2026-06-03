@@ -12,6 +12,14 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/asset"
+	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
+	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
+	"github.com/bengobox/inventory-service/internal/ent/assetdisposal"
+	"github.com/bengobox/inventory-service/internal/ent/assetinsurance"
+	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
+	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
+	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -126,6 +134,14 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			asset.Table:                 asset.ValidColumn,
+			assetaudit.Table:            assetaudit.ValidColumn,
+			assetcategory.Table:         assetcategory.ValidColumn,
+			assetdisposal.Table:         assetdisposal.ValidColumn,
+			assetinsurance.Table:        assetinsurance.ValidColumn,
+			assetmaintenance.Table:      assetmaintenance.ValidColumn,
+			assetreservation.Table:      assetreservation.ValidColumn,
+			assettransfer.Table:         assettransfer.ValidColumn,
 			batchrawmaterial.Table:      batchrawmaterial.ValidColumn,
 			bundle.Table:                bundle.ValidColumn,
 			bundlecomponent.Table:       bundlecomponent.ValidColumn,

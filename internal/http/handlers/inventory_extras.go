@@ -158,4 +158,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	// Manufacturing (migrated from ERP manufacturing/*)
 	h.registerManufacturingRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerManufacturingAnalyticsRoutes(r)
+
+	// Fixed assets register (migrated from ERP assets/*)
+	h.registerAssetRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange, rbac.PermItemsDelete)
 }
