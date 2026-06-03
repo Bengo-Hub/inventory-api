@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
 
@@ -27,25 +29,34 @@ type TransferServicer interface {
 type TransferHandler struct {
 	log         *zap.Logger
 	transferSvc TransferServicer
+	rbacSvc     *rbac.Service
 }
 
 // NewTransferHandler creates a new transfer handler.
-func NewTransferHandler(log *zap.Logger, transferSvc TransferServicer) *TransferHandler {
+func NewTransferHandler(log *zap.Logger, transferSvc TransferServicer, rbacSvc *rbac.Service) *TransferHandler {
 	return &TransferHandler{
 		log:         log.Named("transfer.handler"),
 		transferSvc: transferSvc,
+		rbacSvc:     rbacSvc,
 	}
 }
 
 // RegisterRoutes wires transfer routes onto the given chi.Router.
+// Transfers move stock between warehouses, so mutations require the stock-change permission.
 func (h *TransferHandler) RegisterRoutes(r chi.Router) {
+	perm := func(code string) func(http.Handler) http.Handler {
+		if h.rbacSvc == nil {
+			return func(next http.Handler) http.Handler { return next }
+		}
+		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
+	}
 	r.Route("/inventory/transfers", func(tr chi.Router) {
-		tr.Post("/", h.CreateTransfer)
+		tr.With(perm(rbac.PermStockChange)).Post("/", h.CreateTransfer)
 		tr.Get("/", h.ListTransfers)
 		tr.Get("/{transferId}", h.GetTransfer)
-		tr.Post("/{transferId}/ship", h.ShipTransfer)
-		tr.Post("/{transferId}/receive", h.ReceiveTransfer)
-		tr.Post("/{transferId}/cancel", h.CancelTransfer)
+		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/ship", h.ShipTransfer)
+		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/receive", h.ReceiveTransfer)
+		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/cancel", h.CancelTransfer)
 	})
 }
 
