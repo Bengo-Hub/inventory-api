@@ -22,6 +22,7 @@ const (
 	DocTypePurchaseOrder  = "purchase_order"
 	DocTypeGRN            = "grn"
 	DocTypePurchaseReturn = "purchase_return"
+	DocTypeEventTicket    = "event_ticket"
 )
 
 type seqConfig struct {
@@ -36,6 +37,7 @@ var seqDefaults = map[string]seqConfig{
 	DocTypePurchaseOrder:  {Prefix: "PO", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
 	DocTypeGRN:            {Prefix: "GRN", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
 	DocTypePurchaseReturn: {Prefix: "PRET", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeEventTicket:    {Prefix: "TKT", Separator: "-", DateFormat: "YYMMDD", Padding: 8, ResetFreq: "never"},
 }
 
 // SequenceService generates per-tenant atomic document numbers using optimistic

@@ -178,6 +178,7 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
 	inventoryExtrasHandler.SetDocService(docSvc)
+	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
 	inventoryExtrasHandler.SetStockService(stockSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups

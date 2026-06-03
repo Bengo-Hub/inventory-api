@@ -199,6 +199,13 @@ func (s *Service) GetByCode(ctx context.Context, tenantID uuid.UUID, code string
 		Only(ctx)
 }
 
+// GetEventItem fetches the event Item backing a ticket (for the ticket PDF: name/venue/date).
+func (s *Service) GetEventItem(ctx context.Context, tenantID, eventItemID uuid.UUID) (*ent.Item, error) {
+	return s.client.Item.Query().
+		Where(entitem.ID(eventItemID), entitem.TenantID(tenantID)).
+		Only(ctx)
+}
+
 // List returns tickets for a tenant, optionally filtered by event/status/buyer.
 func (s *Service) List(ctx context.Context, tenantID uuid.UUID, eventItemID *uuid.UUID, status string, buyerID *uuid.UUID, limit, offset int) ([]*ent.Ticket, int, error) {
 	q := s.client.Ticket.Query().Where(entticket.TenantID(tenantID))
