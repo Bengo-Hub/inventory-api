@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
@@ -28,11 +29,27 @@ type InventoryExtrasHandler struct {
 	varianceSvc  *recipes.VarianceService
 	menuEngSvc   *recipes.MenuEngineeringService
 	docSvc       *documents.Service
+	stockSvc     *stock.Service
 }
 
 // SetDocService injects the document-generation service (PDF + numbering).
 func (h *InventoryExtrasHandler) SetDocService(svc *documents.Service) {
 	h.docSvc = svc
+}
+
+// SetStockService injects the stock service so procurement/manufacturing/return
+// flows can apply real stock movements in-process.
+func (h *InventoryExtrasHandler) SetStockService(svc *stock.Service) {
+	h.stockSvc = svc
+}
+
+// skuForItem resolves an item's SKU from its ID (stock ops are SKU-based). Empty on miss.
+func (h *InventoryExtrasHandler) skuForItem(ctx context.Context, tenantID, itemID uuid.UUID) string {
+	it, err := h.orm.Item.Get(ctx, itemID)
+	if err != nil || it.TenantID != tenantID {
+		return ""
+	}
+	return it.Sku
 }
 
 // NewInventoryExtrasHandler creates the handler.
