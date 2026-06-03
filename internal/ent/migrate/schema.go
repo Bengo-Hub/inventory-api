@@ -8,6 +8,42 @@ import (
 )
 
 var (
+	// BatchRawMaterialsColumns holds the columns for the "batch_raw_materials" table.
+	BatchRawMaterialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "production_batch_id", Type: field.TypeUUID},
+	}
+	// BatchRawMaterialsTable holds the schema information for the "batch_raw_materials" table.
+	BatchRawMaterialsTable = &schema.Table{
+		Name:       "batch_raw_materials",
+		Columns:    BatchRawMaterialsColumns,
+		PrimaryKey: []*schema.Column{BatchRawMaterialsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "batch_raw_materials_production_batches_raw_materials",
+				Columns:    []*schema.Column{BatchRawMaterialsColumns[6]},
+				RefColumns: []*schema.Column{ProductionBatchesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "batchrawmaterial_tenant_id_production_batch_id",
+				Unique:  false,
+				Columns: []*schema.Column{BatchRawMaterialsColumns[1], BatchRawMaterialsColumns[6]},
+			},
+			{
+				Name:    "batchrawmaterial_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{BatchRawMaterialsColumns[2]},
+			},
+		},
+	}
 	// BundlesColumns holds the columns for the "bundles" table.
 	BundlesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -117,6 +153,67 @@ var (
 				Name:    "consumption_idempotency_key",
 				Unique:  true,
 				Columns: []*schema.Column{ConsumptionsColumns[7]},
+			},
+		},
+	}
+	// ContractsColumns holds the columns for the "contracts" table.
+	ContractsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "value", Type: field.TypeFloat64, Default: 0},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "active", "expired", "terminated"}, Default: "draft"},
+		{Name: "terms", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ContractsTable holds the schema information for the "contracts" table.
+	ContractsTable = &schema.Table{
+		Name:       "contracts",
+		Columns:    ContractsColumns,
+		PrimaryKey: []*schema.Column{ContractsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contract_tenant_id_supplier_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[2]},
+			},
+			{
+				Name:    "contract_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[7]},
+			},
+		},
+	}
+	// ContractOrderLinksColumns holds the columns for the "contract_order_links" table.
+	ContractOrderLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "purchase_order_id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "contract_id", Type: field.TypeUUID},
+	}
+	// ContractOrderLinksTable holds the schema information for the "contract_order_links" table.
+	ContractOrderLinksTable = &schema.Table{
+		Name:       "contract_order_links",
+		Columns:    ContractOrderLinksColumns,
+		PrimaryKey: []*schema.Column{ContractOrderLinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contract_order_links_contracts_order_links",
+				Columns:    []*schema.Column{ContractOrderLinksColumns[4]},
+				RefColumns: []*schema.Column{ContractsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contractorderlink_contract_id_purchase_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{ContractOrderLinksColumns[4], ContractOrderLinksColumns[2]},
 			},
 		},
 	}
@@ -957,6 +1054,50 @@ var (
 			},
 		},
 	}
+	// ProductionBatchesColumns holds the columns for the "production_batches" table.
+	ProductionBatchesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "batch_number", Type: field.TypeString},
+		{Name: "recipe_id", Type: field.TypeUUID},
+		{Name: "scheduled_date", Type: field.TypeTime},
+		{Name: "start_date", Type: field.TypeTime, Nullable: true},
+		{Name: "end_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"planned", "in_progress", "completed", "cancelled", "failed"}, Default: "planned"},
+		{Name: "planned_quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "actual_quantity", Type: field.TypeFloat64, Nullable: true},
+		{Name: "labor_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "overhead_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "supervisor_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ProductionBatchesTable holds the schema information for the "production_batches" table.
+	ProductionBatchesTable = &schema.Table{
+		Name:       "production_batches",
+		Columns:    ProductionBatchesColumns,
+		PrimaryKey: []*schema.Column{ProductionBatchesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "productionbatch_tenant_id_batch_number",
+				Unique:  true,
+				Columns: []*schema.Column{ProductionBatchesColumns[1], ProductionBatchesColumns[3]},
+			},
+			{
+				Name:    "productionbatch_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ProductionBatchesColumns[1], ProductionBatchesColumns[8]},
+			},
+			{
+				Name:    "productionbatch_recipe_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProductionBatchesColumns[4]},
+			},
+		},
+	}
 	// PurchaseOrdersColumns holds the columns for the "purchase_orders" table.
 	PurchaseOrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1039,6 +1180,112 @@ var (
 				Name:    "purchaseorderline_po_id_item_id",
 				Unique:  true,
 				Columns: []*schema.Column{PurchaseOrderLinesColumns[7], PurchaseOrderLinesColumns[1]},
+			},
+		},
+	}
+	// PurchaseReturnsColumns holds the columns for the "purchase_returns" table.
+	PurchaseReturnsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "return_number", Type: field.TypeString, Nullable: true},
+		{Name: "purchase_order_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "supplier_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "added_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "return_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "return_amount_due", Type: field.TypeFloat64, Default: 0},
+		{Name: "payment_status", Type: field.TypeEnum, Enums: []string{"pending", "due", "partial", "paid"}, Default: "pending"},
+		{Name: "date_returned", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// PurchaseReturnsTable holds the schema information for the "purchase_returns" table.
+	PurchaseReturnsTable = &schema.Table{
+		Name:       "purchase_returns",
+		Columns:    PurchaseReturnsColumns,
+		PrimaryKey: []*schema.Column{PurchaseReturnsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "purchasereturn_tenant_id_purchase_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[3]},
+			},
+			{
+				Name:    "purchasereturn_tenant_id_payment_status",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[9]},
+			},
+		},
+	}
+	// PurchaseReturnLinesColumns holds the columns for the "purchase_return_lines" table.
+	PurchaseReturnLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "sub_total", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "purchase_return_id", Type: field.TypeUUID},
+	}
+	// PurchaseReturnLinesTable holds the schema information for the "purchase_return_lines" table.
+	PurchaseReturnLinesTable = &schema.Table{
+		Name:       "purchase_return_lines",
+		Columns:    PurchaseReturnLinesColumns,
+		PrimaryKey: []*schema.Column{PurchaseReturnLinesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "purchase_return_lines_purchase_returns_lines",
+				Columns:    []*schema.Column{PurchaseReturnLinesColumns[6]},
+				RefColumns: []*schema.Column{PurchaseReturnsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "purchasereturnline_tenant_id_purchase_return_id",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnLinesColumns[1], PurchaseReturnLinesColumns[6]},
+			},
+			{
+				Name:    "purchasereturnline_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnLinesColumns[2]},
+			},
+		},
+	}
+	// QualityChecksColumns holds the columns for the "quality_checks" table.
+	QualityChecksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "inspector_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "check_date", Type: field.TypeTime},
+		{Name: "result", Type: field.TypeEnum, Enums: []string{"pass", "fail", "pending"}, Default: "pending"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "production_batch_id", Type: field.TypeUUID},
+	}
+	// QualityChecksTable holds the schema information for the "quality_checks" table.
+	QualityChecksTable = &schema.Table{
+		Name:       "quality_checks",
+		Columns:    QualityChecksColumns,
+		PrimaryKey: []*schema.Column{QualityChecksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "quality_checks_production_batches_quality_checks",
+				Columns:    []*schema.Column{QualityChecksColumns[7]},
+				RefColumns: []*schema.Column{ProductionBatchesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qualitycheck_tenant_id_production_batch_id",
+				Unique:  false,
+				Columns: []*schema.Column{QualityChecksColumns[1], QualityChecksColumns[7]},
+			},
+			{
+				Name:    "qualitycheck_result",
+				Unique:  false,
+				Columns: []*schema.Column{QualityChecksColumns[4]},
 			},
 		},
 	}
@@ -1190,6 +1437,103 @@ var (
 			},
 		},
 	}
+	// RequisitionsColumns holds the columns for the "requisitions" table.
+	RequisitionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "reference_number", Type: field.TypeString},
+		{Name: "requester_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "request_type", Type: field.TypeEnum, Enums: []string{"inventory", "external_item", "service"}, Default: "inventory"},
+		{Name: "purpose", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "priority", Type: field.TypeEnum, Enums: []string{"low", "medium", "high", "critical"}, Default: "medium"},
+		{Name: "required_by_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "submitted", "procurement_review", "approved", "rejected", "ordered", "completed"}, Default: "draft"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// RequisitionsTable holds the schema information for the "requisitions" table.
+	RequisitionsTable = &schema.Table{
+		Name:       "requisitions",
+		Columns:    RequisitionsColumns,
+		PrimaryKey: []*schema.Column{RequisitionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "requisition_tenant_id_reference_number",
+				Unique:  true,
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[3]},
+			},
+			{
+				Name:    "requisition_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[9]},
+			},
+			{
+				Name:    "requisition_tenant_id_request_type",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[5]},
+			},
+			{
+				Name:    "requisition_tenant_id_priority",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[7]},
+			},
+		},
+	}
+	// RequisitionLinesColumns holds the columns for the "requisition_lines" table.
+	RequisitionLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_type", Type: field.TypeEnum, Enums: []string{"inventory", "external", "service"}, Default: "inventory"},
+		{Name: "item_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "approved_quantity", Type: field.TypeInt, Nullable: true},
+		{Name: "urgent", Type: field.TypeBool, Default: false},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "specifications", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "estimated_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "supplier_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "service_description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "expected_deliverables", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "duration", Type: field.TypeString, Nullable: true},
+		{Name: "start_date", Type: field.TypeTime, Nullable: true},
+		{Name: "end_date", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "requisition_id", Type: field.TypeUUID},
+	}
+	// RequisitionLinesTable holds the schema information for the "requisition_lines" table.
+	RequisitionLinesTable = &schema.Table{
+		Name:       "requisition_lines",
+		Columns:    RequisitionLinesColumns,
+		PrimaryKey: []*schema.Column{RequisitionLinesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "requisition_lines_requisitions_lines",
+				Columns:    []*schema.Column{RequisitionLinesColumns[18]},
+				RefColumns: []*schema.Column{RequisitionsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "requisitionline_tenant_id_requisition_id",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionLinesColumns[1], RequisitionLinesColumns[18]},
+			},
+			{
+				Name:    "requisitionline_item_type",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionLinesColumns[2]},
+			},
+			{
+				Name:    "requisitionline_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{RequisitionLinesColumns[3]},
+			},
+		},
+	}
 	// ReservationsColumns holds the columns for the "reservations" table.
 	ReservationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1305,6 +1649,37 @@ var (
 				Name:    "serviceconfig_config_key",
 				Unique:  false,
 				Columns: []*schema.Column{ServiceConfigsColumns[2]},
+			},
+		},
+	}
+	// ServiceDeliveriesColumns holds the columns for the "service_deliveries" table.
+	ServiceDeliveriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "requisition_line_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "provider_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "deliverables", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"scheduled", "in_progress", "completed", "delayed"}, Default: "scheduled"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ServiceDeliveriesTable holds the schema information for the "service_deliveries" table.
+	ServiceDeliveriesTable = &schema.Table{
+		Name:       "service_deliveries",
+		Columns:    ServiceDeliveriesColumns,
+		PrimaryKey: []*schema.Column{ServiceDeliveriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "servicedelivery_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ServiceDeliveriesColumns[1], ServiceDeliveriesColumns[7]},
+			},
+			{
+				Name:    "servicedelivery_requisition_line_id",
+				Unique:  false,
+				Columns: []*schema.Column{ServiceDeliveriesColumns[2]},
 			},
 		},
 	}
@@ -1458,6 +1833,37 @@ var (
 				Name:    "supplier_tenant_id_is_active",
 				Unique:  false,
 				Columns: []*schema.Column{SuppliersColumns[1], SuppliersColumns[9]},
+			},
+		},
+	}
+	// SupplierPerformancesColumns holds the columns for the "supplier_performances" table.
+	SupplierPerformancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID},
+		{Name: "period_start", Type: field.TypeTime},
+		{Name: "period_end", Type: field.TypeTime},
+		{Name: "on_time_delivery_rate", Type: field.TypeFloat64, Default: 0},
+		{Name: "defect_rate", Type: field.TypeFloat64, Default: 0},
+		{Name: "average_lead_time_days", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_spend", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// SupplierPerformancesTable holds the schema information for the "supplier_performances" table.
+	SupplierPerformancesTable = &schema.Table{
+		Name:       "supplier_performances",
+		Columns:    SupplierPerformancesColumns,
+		PrimaryKey: []*schema.Column{SupplierPerformancesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "supplierperformance_tenant_id_supplier_id",
+				Unique:  false,
+				Columns: []*schema.Column{SupplierPerformancesColumns[1], SupplierPerformancesColumns[2]},
+			},
+			{
+				Name:    "supplierperformance_supplier_id_period_start_period_end",
+				Unique:  false,
+				Columns: []*schema.Column{SupplierPerformancesColumns[2], SupplierPerformancesColumns[3], SupplierPerformancesColumns[4]},
 			},
 		},
 	}
@@ -1789,9 +2195,12 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		BatchRawMaterialsTable,
 		BundlesTable,
 		BundleComponentsTable,
 		ConsumptionsTable,
+		ContractsTable,
+		ContractOrderLinksTable,
 		CustomFieldDefinitionsTable,
 		CustomFieldValuesTable,
 		FoodCostVariancesTable,
@@ -1810,18 +2219,26 @@ var (
 		ModifierOptionsTable,
 		OutboxEventsTable,
 		PricingTiersTable,
+		ProductionBatchesTable,
 		PurchaseOrdersTable,
 		PurchaseOrderLinesTable,
+		PurchaseReturnsTable,
+		PurchaseReturnLinesTable,
+		QualityChecksTable,
 		RateLimitConfigsTable,
 		RecipesTable,
 		RecipeIngredientsTable,
+		RequisitionsTable,
+		RequisitionLinesTable,
 		ReservationsTable,
 		RolePermissionsTable,
 		ServiceConfigsTable,
+		ServiceDeliveriesTable,
 		StockAdjustmentsTable,
 		StockTransfersTable,
 		StockTransferLinesTable,
 		SuppliersTable,
+		SupplierPerformancesTable,
 		TenantsTable,
 		TenantInventoryConfigsTable,
 		UnitsTable,
@@ -1834,9 +2251,11 @@ var (
 )
 
 func init() {
+	BatchRawMaterialsTable.ForeignKeys[0].RefTable = ProductionBatchesTable
 	BundlesTable.ForeignKeys[0].RefTable = ItemsTable
 	BundleComponentsTable.ForeignKeys[0].RefTable = BundlesTable
 	BundleComponentsTable.ForeignKeys[1].RefTable = ItemsTable
+	ContractOrderLinksTable.ForeignKeys[0].RefTable = ContractsTable
 	CustomFieldDefinitionsTable.ForeignKeys[0].RefTable = ItemCategoriesTable
 	CustomFieldValuesTable.ForeignKeys[0].RefTable = CustomFieldDefinitionsTable
 	CustomFieldValuesTable.ForeignKeys[1].RefTable = ItemsTable
@@ -1858,11 +2277,14 @@ func init() {
 	PurchaseOrdersTable.ForeignKeys[0].RefTable = SuppliersTable
 	PurchaseOrdersTable.ForeignKeys[1].RefTable = WarehousesTable
 	PurchaseOrderLinesTable.ForeignKeys[0].RefTable = PurchaseOrdersTable
+	PurchaseReturnLinesTable.ForeignKeys[0].RefTable = PurchaseReturnsTable
+	QualityChecksTable.ForeignKeys[0].RefTable = ProductionBatchesTable
 	RecipesTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
 	RecipeIngredientsTable.ForeignKeys[2].RefTable = RecipesTable
 	RecipeIngredientsTable.ForeignKeys[3].RefTable = UnitsTable
+	RequisitionLinesTable.ForeignKeys[0].RefTable = RequisitionsTable
 	ReservationsTable.ForeignKeys[0].RefTable = WarehousesTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = InventoryRolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = InventoryPermissionsTable

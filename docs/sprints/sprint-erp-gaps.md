@@ -90,13 +90,29 @@ inventory-api has a `POST /consumption` endpoint and consumes `pos.sale.finalize
   - Auto-consumes/releases reservation; idempotent (skips if reservation already consumed)
 - [x] **INV-ERP-16:** `pos.sale.finalized` consumer exists: `internal/modules/consumers/pos_sale_events.go`
   - Full BOM explosion for RECIPE items; idempotent via `IdempotencyKey`
-- [ ] **INV-ERP-17:** Integration tests for consumers — pending
+- [ ] **INV-ERP-17:** Integration tests for consumers — pending (needs a DB-backed harness; only `internal/http/handlers/inventory_test.go` exists, no testcontainers/dockertest in go.mod)
 - [x] **INV-ERP-18:** `ordering.return.approved` consumer: `internal/modules/consumers/return_events.go`
   - Restocks returned items via `stock.RestockItems()`; idempotent key: `ordering-return-{return_id}`
 - [x] **INV-ERP-19:** `pos.return.completed` consumer: `internal/modules/consumers/return_events.go`
   - Restocks returned items via `stock.RestockItems()`; idempotent key: `pos-return-{return_id}`
 
 ---
+
+## Gap 5: ERP-side deletion prerequisite (reference-by-ID refactor)
+
+**Priority:** P0 (blocks ERP `ecommerce/product` + `stockinventory` + `vendor` deletion)
+**Status:** ⏳ Open — owner-side (inventory-api) is ready; ERP-side refactor required
+
+### Finding (2026-06-03 audit)
+
+The ERP `ecommerce.product` / `stockinventory` / `vendor` models are imported by **kept** ERP modules, not only by modules slated for removal. Importers include:
+`core` (models/tasks/views/analytics), `core_orders/utils`, `manufacturing` (models/serializers/signals), `procurement` (purchases + requisitions models/serializers/views), `hrm/employees/views`, plus the removed-later `finance`, `crm`.
+
+### Required before ERP product/stock deletion
+
+- [ ] **INV-ERP-20:** Refactor kept ERP modules (procurement, manufacturing, core, hrm, core_orders) to store `inventory_item_id` references and read product/stock data via the inventory-api S2S client instead of importing local `ecommerce.product`/`stockinventory` models.
+- [ ] **INV-ERP-21:** Provide/confirm the inventory-api read endpoints these modules need (item by id, batch availability, supplier lookup) — most already exist (`GET /inventory/items/{id}`, `/availability`, suppliers).
+- [ ] **INV-ERP-22:** Because `ecommerce.order`, `ecommerce.pos`, and `finance` also import product/stock, the physical Django app deletion of product/stock should be staged with (or after) the Ordering + POS + Finance removals to avoid broken FKs/imports. Consider removing the whole `ecommerce` package in one consolidated cutover once inventory + pos + ordering owners are all production-ready.
 
 ## References
 
