@@ -100,6 +100,18 @@ func (h *InventoryExtrasHandler) registerManufacturingRoutes(r chi.Router, perm 
 	r.With(perm(add)).Post("/inventory/production-batches/{batchID}/quality-checks", h.CreateQualityCheck)
 }
 
+// ListProductionBatches handles GET /inventory/production-batches.
+//
+//	@Summary      List production batches
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        status     query     string  false  "Filter by status"
+//	@Param        recipe_id  query     string  false  "Filter by recipe ID"
+//	@Success      200        {object}  map[string]interface{}  "Paginated list of productionBatchDTO"
+//	@Failure      400        {object}  map[string]string
+//	@Failure      500        {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches [get]
 func (h *InventoryExtrasHandler) ListProductionBatches(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -129,6 +141,17 @@ func (h *InventoryExtrasHandler) ListProductionBatches(w http.ResponseWriter, r 
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
 
+// GetProductionBatch handles GET /inventory/production-batches/{batchID}.
+//
+//	@Summary      Get a production batch with materials and QC
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Success      200      {object}  productionBatchDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID} [get]
 func (h *InventoryExtrasHandler) GetProductionBatch(w http.ResponseWriter, r *http.Request) {
 	_, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -139,6 +162,18 @@ func (h *InventoryExtrasHandler) GetProductionBatch(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, productionBatchToDTO(b, mats, qcs))
 }
 
+// CreateProductionBatch handles POST /inventory/production-batches.
+//
+//	@Summary      Create a production batch
+//	@Tags         Manufacturing
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      productionBatchPayload  true  "Production batch payload"
+//	@Success      201   {object}  productionBatchDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches [post]
 func (h *InventoryExtrasHandler) CreateProductionBatch(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -187,6 +222,17 @@ func (h *InventoryExtrasHandler) CreateProductionBatch(w http.ResponseWriter, r 
 
 // StartProductionBatch explodes the recipe BOM into BatchRawMaterial rows and
 // emits a consumption event for the stock module.
+//
+//	@Summary      Start a production batch (consume raw materials)
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Success      200      {object}  productionBatchDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/start [post]
 func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *http.Request) {
 	tenantID, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -250,6 +296,19 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 
 // CompleteProductionBatch finalizes the batch, computes cost, and emits a
 // finished-goods receipt event for the stock module.
+//
+//	@Summary      Complete a production batch (receive finished goods)
+//	@Tags         Manufacturing
+//	@Accept       json
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Param        body     body      object  true  "actual_quantity"
+//	@Success      200      {object}  productionBatchDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/complete [post]
 func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, r *http.Request) {
 	tenantID, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -306,6 +365,19 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, nil, nil))
 }
 
+// CancelProductionBatch handles POST /inventory/production-batches/{batchID}/cancel.
+//
+//	@Summary      Cancel a production batch
+//	@Tags         Manufacturing
+//	@Accept       json
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Param        body     body      object  false  "reason"
+//	@Success      200      {object}  productionBatchDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/cancel [post]
 func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r *http.Request) {
 	tenantID, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -328,6 +400,17 @@ func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r 
 	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, nil, nil))
 }
 
+// ListBatchMaterials handles GET /inventory/production-batches/{batchID}/materials.
+//
+//	@Summary      List raw materials consumed by a production batch
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Success      200      {array}   batchRawMaterialDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/materials [get]
 func (h *InventoryExtrasHandler) ListBatchMaterials(w http.ResponseWriter, r *http.Request) {
 	_, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -341,6 +424,17 @@ func (h *InventoryExtrasHandler) ListBatchMaterials(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, out)
 }
 
+// ListQualityChecks handles GET /inventory/production-batches/{batchID}/quality-checks.
+//
+//	@Summary      List quality checks for a production batch
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Success      200      {array}   qualityCheckDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/quality-checks [get]
 func (h *InventoryExtrasHandler) ListQualityChecks(w http.ResponseWriter, r *http.Request) {
 	_, b, ok := h.loadBatch(w, r)
 	if !ok {
@@ -354,6 +448,20 @@ func (h *InventoryExtrasHandler) ListQualityChecks(w http.ResponseWriter, r *htt
 	writeJSON(w, http.StatusOK, out)
 }
 
+// CreateQualityCheck handles POST /inventory/production-batches/{batchID}/quality-checks.
+//
+//	@Summary      Record a quality check for a production batch
+//	@Tags         Manufacturing
+//	@Accept       json
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Param        body     body      object  true  "Quality check result, notes and inspector"
+//	@Success      201      {object}  qualityCheckDTO
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/quality-checks [post]
 func (h *InventoryExtrasHandler) CreateQualityCheck(w http.ResponseWriter, r *http.Request) {
 	tenantID, b, ok := h.loadBatch(w, r)
 	if !ok {

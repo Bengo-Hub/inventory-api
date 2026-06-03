@@ -59,6 +59,17 @@ func (h *InventoryExtrasHandler) assetCtx(w http.ResponseWriter, r *http.Request
 }
 
 // --- Maintenance ---
+
+// ListAssetMaintenance handles GET /inventory/assets/{assetID}/maintenance.
+//
+//	@Summary      List maintenance records for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/maintenance [get]
 func (h *InventoryExtrasHandler) ListAssetMaintenance(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -68,6 +79,19 @@ func (h *InventoryExtrasHandler) ListAssetMaintenance(w http.ResponseWriter, r *
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetMaintenance handles POST /inventory/assets/{assetID}/maintenance.
+//
+//	@Summary      Schedule a maintenance record for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Maintenance payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/maintenance [post]
 func (h *InventoryExtrasHandler) CreateAssetMaintenance(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -110,6 +134,17 @@ func (h *InventoryExtrasHandler) CreateAssetMaintenance(w http.ResponseWriter, r
 	writeJSON(w, http.StatusCreated, row)
 }
 
+// CompleteAssetMaintenance handles POST /inventory/asset-maintenance/{recID}/complete.
+//
+//	@Summary      Complete a maintenance record
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        recID  path      string  true  "Maintenance record ID"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-maintenance/{recID}/complete [post]
 func (h *InventoryExtrasHandler) CompleteAssetMaintenance(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -141,6 +176,17 @@ func (h *InventoryExtrasHandler) CompleteAssetMaintenance(w http.ResponseWriter,
 }
 
 // --- Transfers ---
+
+// ListAssetTransfers handles GET /inventory/assets/{assetID}/transfers.
+//
+//	@Summary      List transfers for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/transfers [get]
 func (h *InventoryExtrasHandler) ListAssetTransfers(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -150,6 +196,19 @@ func (h *InventoryExtrasHandler) ListAssetTransfers(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetTransfer handles POST /inventory/assets/{assetID}/transfers.
+//
+//	@Summary      Create a transfer for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Transfer payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/transfers [post]
 func (h *InventoryExtrasHandler) CreateAssetTransfer(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -178,6 +237,17 @@ func (h *InventoryExtrasHandler) CreateAssetTransfer(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusCreated, row)
 }
 
+// CompleteAssetTransfer handles POST /inventory/asset-transfers/{recID}/complete.
+//
+//	@Summary      Complete an asset transfer
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        recID  path      string  true  "Transfer record ID"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-transfers/{recID}/complete [post]
 func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -211,6 +281,17 @@ func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r 
 }
 
 // --- Disposals ---
+
+// ListAssetDisposals handles GET /inventory/assets/{assetID}/disposals.
+//
+//	@Summary      List disposals for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/disposals [get]
 func (h *InventoryExtrasHandler) ListAssetDisposals(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -220,6 +301,19 @@ func (h *InventoryExtrasHandler) ListAssetDisposals(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetDisposal handles POST /inventory/assets/{assetID}/disposals.
+//
+//	@Summary      Create a disposal for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Disposal payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/disposals [post]
 func (h *InventoryExtrasHandler) CreateAssetDisposal(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -247,6 +341,17 @@ func (h *InventoryExtrasHandler) CreateAssetDisposal(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusCreated, row)
 }
 
+// CompleteAssetDisposal handles POST /inventory/asset-disposals/{recID}/complete.
+//
+//	@Summary      Complete an asset disposal
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        recID  path      string  true  "Disposal record ID"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-disposals/{recID}/complete [post]
 func (h *InventoryExtrasHandler) CompleteAssetDisposal(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -274,6 +379,17 @@ func (h *InventoryExtrasHandler) CompleteAssetDisposal(w http.ResponseWriter, r 
 }
 
 // --- Insurance ---
+
+// ListAssetInsurance handles GET /inventory/assets/{assetID}/insurance.
+//
+//	@Summary      List insurance policies for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/insurance [get]
 func (h *InventoryExtrasHandler) ListAssetInsurance(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -283,6 +399,19 @@ func (h *InventoryExtrasHandler) ListAssetInsurance(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetInsurance handles POST /inventory/assets/{assetID}/insurance.
+//
+//	@Summary      Create an insurance policy for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Insurance payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/insurance [post]
 func (h *InventoryExtrasHandler) CreateAssetInsurance(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -324,6 +453,17 @@ func (h *InventoryExtrasHandler) CreateAssetInsurance(w http.ResponseWriter, r *
 }
 
 // --- Audits ---
+
+// ListAssetAudits handles GET /inventory/assets/{assetID}/audits.
+//
+//	@Summary      List audits for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/audits [get]
 func (h *InventoryExtrasHandler) ListAssetAudits(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -333,6 +473,19 @@ func (h *InventoryExtrasHandler) ListAssetAudits(w http.ResponseWriter, r *http.
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetAudit handles POST /inventory/assets/{assetID}/audits.
+//
+//	@Summary      Record an audit for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Audit payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/audits [post]
 func (h *InventoryExtrasHandler) CreateAssetAudit(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -364,6 +517,17 @@ func (h *InventoryExtrasHandler) CreateAssetAudit(w http.ResponseWriter, r *http
 }
 
 // --- Reservations ---
+
+// ListAssetReservations handles GET /inventory/assets/{assetID}/reservations.
+//
+//	@Summary      List reservations for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {array}   map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/reservations [get]
 func (h *InventoryExtrasHandler) ListAssetReservations(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {
@@ -373,6 +537,19 @@ func (h *InventoryExtrasHandler) ListAssetReservations(w http.ResponseWriter, r 
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetReservation handles POST /inventory/assets/{assetID}/reservations.
+//
+//	@Summary      Create a reservation for an asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Param        body     body      object  true  "Reservation payload"
+//	@Success      201      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      500      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/reservations [post]
 func (h *InventoryExtrasHandler) CreateAssetReservation(w http.ResponseWriter, r *http.Request) {
 	tenantID, assetID, ok := h.assetCtx(w, r)
 	if !ok {

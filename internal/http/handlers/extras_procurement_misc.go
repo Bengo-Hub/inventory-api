@@ -57,6 +57,17 @@ func supplierPerfToDTO(s *ent.SupplierPerformance) supplierPerfDTO {
 	}
 }
 
+// ListSupplierPerformance handles GET /inventory/supplier-performance.
+//
+//	@Summary      List supplier performance records
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        supplier_id  query     string  false  "Filter by supplier ID"
+//	@Success      200          {object}  map[string]interface{}  "Paginated list of supplierPerfDTO"
+//	@Failure      400          {object}  map[string]string
+//	@Failure      500          {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/supplier-performance [get]
 func (h *InventoryExtrasHandler) ListSupplierPerformance(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -83,6 +94,18 @@ func (h *InventoryExtrasHandler) ListSupplierPerformance(w http.ResponseWriter, 
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
 
+// RecordSupplierPerformance handles POST /inventory/supplier-performance.
+//
+//	@Summary      Record a supplier performance evaluation
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      supplierPerfPayload  true  "Supplier performance payload"
+//	@Success      201   {object}  supplierPerfDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/supplier-performance [post]
 func (h *InventoryExtrasHandler) RecordSupplierPerformance(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -148,6 +171,17 @@ func serviceDeliveryToDTO(s *ent.ServiceDelivery) serviceDeliveryDTO {
 	}
 }
 
+// ListServiceDeliveries handles GET /inventory/service-deliveries.
+//
+//	@Summary      List service deliveries
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        status  query     string  false  "Filter by status"
+//	@Success      200     {object}  map[string]interface{}  "Paginated list of serviceDeliveryDTO"
+//	@Failure      400     {object}  map[string]string
+//	@Failure      500     {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/service-deliveries [get]
 func (h *InventoryExtrasHandler) ListServiceDeliveries(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -172,6 +206,18 @@ func (h *InventoryExtrasHandler) ListServiceDeliveries(w http.ResponseWriter, r 
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
 
+// CreateServiceDelivery handles POST /inventory/service-deliveries.
+//
+//	@Summary      Create a service delivery record
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      serviceDeliveryPayload  true  "Service delivery payload"
+//	@Success      201   {object}  serviceDeliveryDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/service-deliveries [post]
 func (h *InventoryExtrasHandler) CreateServiceDelivery(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -209,6 +255,19 @@ func (h *InventoryExtrasHandler) CreateServiceDelivery(w http.ResponseWriter, r 
 	writeJSON(w, http.StatusCreated, serviceDeliveryToDTO(s))
 }
 
+// UpdateServiceDeliveryStatus handles PUT /inventory/service-deliveries/{sdID}/status.
+//
+//	@Summary      Update a service delivery status
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        sdID  path      string  true  "Service delivery ID"
+//	@Param        body  body      object  true  "status"
+//	@Success      200   {object}  serviceDeliveryDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/service-deliveries/{sdID}/status [put]
 func (h *InventoryExtrasHandler) UpdateServiceDeliveryStatus(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
