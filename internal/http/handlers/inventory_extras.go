@@ -145,4 +145,5 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	h.registerContractRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerPurchaseReturnRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementMiscRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
+	h.registerProcurementAnalyticsRoutes(r)
 }
