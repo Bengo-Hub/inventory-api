@@ -12,12 +12,18 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
+	BatchRawMaterial *BatchRawMaterialClient
 	// Bundle is the client for interacting with the Bundle builders.
 	Bundle *BundleClient
 	// BundleComponent is the client for interacting with the BundleComponent builders.
 	BundleComponent *BundleComponentClient
 	// Consumption is the client for interacting with the Consumption builders.
 	Consumption *ConsumptionClient
+	// Contract is the client for interacting with the Contract builders.
+	Contract *ContractClient
+	// ContractOrderLink is the client for interacting with the ContractOrderLink builders.
+	ContractOrderLink *ContractOrderLinkClient
 	// CustomFieldDefinition is the client for interacting with the CustomFieldDefinition builders.
 	CustomFieldDefinition *CustomFieldDefinitionClient
 	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
@@ -54,22 +60,36 @@ type Tx struct {
 	OutboxEvent *OutboxEventClient
 	// PricingTier is the client for interacting with the PricingTier builders.
 	PricingTier *PricingTierClient
+	// ProductionBatch is the client for interacting with the ProductionBatch builders.
+	ProductionBatch *ProductionBatchClient
 	// PurchaseOrder is the client for interacting with the PurchaseOrder builders.
 	PurchaseOrder *PurchaseOrderClient
 	// PurchaseOrderLine is the client for interacting with the PurchaseOrderLine builders.
 	PurchaseOrderLine *PurchaseOrderLineClient
+	// PurchaseReturn is the client for interacting with the PurchaseReturn builders.
+	PurchaseReturn *PurchaseReturnClient
+	// PurchaseReturnLine is the client for interacting with the PurchaseReturnLine builders.
+	PurchaseReturnLine *PurchaseReturnLineClient
+	// QualityCheck is the client for interacting with the QualityCheck builders.
+	QualityCheck *QualityCheckClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
 	RecipeIngredient *RecipeIngredientClient
+	// Requisition is the client for interacting with the Requisition builders.
+	Requisition *RequisitionClient
+	// RequisitionLine is the client for interacting with the RequisitionLine builders.
+	RequisitionLine *RequisitionLineClient
 	// Reservation is the client for interacting with the Reservation builders.
 	Reservation *ReservationClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
 	// ServiceConfig is the client for interacting with the ServiceConfig builders.
 	ServiceConfig *ServiceConfigClient
+	// ServiceDelivery is the client for interacting with the ServiceDelivery builders.
+	ServiceDelivery *ServiceDeliveryClient
 	// StockAdjustment is the client for interacting with the StockAdjustment builders.
 	StockAdjustment *StockAdjustmentClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
@@ -78,6 +98,8 @@ type Tx struct {
 	StockTransferLine *StockTransferLineClient
 	// Supplier is the client for interacting with the Supplier builders.
 	Supplier *SupplierClient
+	// SupplierPerformance is the client for interacting with the SupplierPerformance builders.
+	SupplierPerformance *SupplierPerformanceClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
@@ -225,9 +247,12 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.BatchRawMaterial = NewBatchRawMaterialClient(tx.config)
 	tx.Bundle = NewBundleClient(tx.config)
 	tx.BundleComponent = NewBundleComponentClient(tx.config)
 	tx.Consumption = NewConsumptionClient(tx.config)
+	tx.Contract = NewContractClient(tx.config)
+	tx.ContractOrderLink = NewContractOrderLinkClient(tx.config)
 	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
 	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
 	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
@@ -246,18 +271,26 @@ func (tx *Tx) init() {
 	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.PricingTier = NewPricingTierClient(tx.config)
+	tx.ProductionBatch = NewProductionBatchClient(tx.config)
 	tx.PurchaseOrder = NewPurchaseOrderClient(tx.config)
 	tx.PurchaseOrderLine = NewPurchaseOrderLineClient(tx.config)
+	tx.PurchaseReturn = NewPurchaseReturnClient(tx.config)
+	tx.PurchaseReturnLine = NewPurchaseReturnLineClient(tx.config)
+	tx.QualityCheck = NewQualityCheckClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
+	tx.Requisition = NewRequisitionClient(tx.config)
+	tx.RequisitionLine = NewRequisitionLineClient(tx.config)
 	tx.Reservation = NewReservationClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.ServiceConfig = NewServiceConfigClient(tx.config)
+	tx.ServiceDelivery = NewServiceDeliveryClient(tx.config)
 	tx.StockAdjustment = NewStockAdjustmentClient(tx.config)
 	tx.StockTransfer = NewStockTransferClient(tx.config)
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
 	tx.Supplier = NewSupplierClient(tx.config)
+	tx.SupplierPerformance = NewSupplierPerformanceClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.TenantInventoryConfig = NewTenantInventoryConfigClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
@@ -275,7 +308,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Bundle.QueryXXX(), the query will be executed
+// applies a query, for example: BatchRawMaterial.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

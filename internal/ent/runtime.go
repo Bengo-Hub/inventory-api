@@ -5,9 +5,12 @@ package ent
 import (
 	"time"
 
+	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/contract"
+	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
@@ -26,18 +29,26 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
+	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	"github.com/bengobox/inventory-service/internal/ent/purchasereturn"
+	"github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
+	"github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/requisition"
+	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
+	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
+	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -53,6 +64,20 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	batchrawmaterialFields := schema.BatchRawMaterial{}.Fields()
+	_ = batchrawmaterialFields
+	// batchrawmaterialDescQuantity is the schema descriptor for quantity field.
+	batchrawmaterialDescQuantity := batchrawmaterialFields[5].Descriptor()
+	// batchrawmaterial.DefaultQuantity holds the default value on creation for the quantity field.
+	batchrawmaterial.DefaultQuantity = batchrawmaterialDescQuantity.Default.(float64)
+	// batchrawmaterialDescCreatedAt is the schema descriptor for created_at field.
+	batchrawmaterialDescCreatedAt := batchrawmaterialFields[6].Descriptor()
+	// batchrawmaterial.DefaultCreatedAt holds the default value on creation for the created_at field.
+	batchrawmaterial.DefaultCreatedAt = batchrawmaterialDescCreatedAt.Default.(func() time.Time)
+	// batchrawmaterialDescID is the schema descriptor for id field.
+	batchrawmaterialDescID := batchrawmaterialFields[0].Descriptor()
+	// batchrawmaterial.DefaultID holds the default value on creation for the id field.
+	batchrawmaterial.DefaultID = batchrawmaterialDescID.Default.(func() uuid.UUID)
 	bundleFields := schema.Bundle{}.Fields()
 	_ = bundleFields
 	// bundleDescName is the schema descriptor for name field.
@@ -125,6 +150,40 @@ func init() {
 	consumptionDescID := consumptionFields[0].Descriptor()
 	// consumption.DefaultID holds the default value on creation for the id field.
 	consumption.DefaultID = consumptionDescID.Default.(func() uuid.UUID)
+	contractFields := schema.Contract{}.Fields()
+	_ = contractFields
+	// contractDescTitle is the schema descriptor for title field.
+	contractDescTitle := contractFields[3].Descriptor()
+	// contract.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	contract.TitleValidator = contractDescTitle.Validators[0].(func(string) error)
+	// contractDescValue is the schema descriptor for value field.
+	contractDescValue := contractFields[6].Descriptor()
+	// contract.DefaultValue holds the default value on creation for the value field.
+	contract.DefaultValue = contractDescValue.Default.(float64)
+	// contractDescCreatedAt is the schema descriptor for created_at field.
+	contractDescCreatedAt := contractFields[9].Descriptor()
+	// contract.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contract.DefaultCreatedAt = contractDescCreatedAt.Default.(func() time.Time)
+	// contractDescUpdatedAt is the schema descriptor for updated_at field.
+	contractDescUpdatedAt := contractFields[10].Descriptor()
+	// contract.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	contract.DefaultUpdatedAt = contractDescUpdatedAt.Default.(func() time.Time)
+	// contract.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	contract.UpdateDefaultUpdatedAt = contractDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// contractDescID is the schema descriptor for id field.
+	contractDescID := contractFields[0].Descriptor()
+	// contract.DefaultID holds the default value on creation for the id field.
+	contract.DefaultID = contractDescID.Default.(func() uuid.UUID)
+	contractorderlinkFields := schema.ContractOrderLink{}.Fields()
+	_ = contractorderlinkFields
+	// contractorderlinkDescCreatedAt is the schema descriptor for created_at field.
+	contractorderlinkDescCreatedAt := contractorderlinkFields[4].Descriptor()
+	// contractorderlink.DefaultCreatedAt holds the default value on creation for the created_at field.
+	contractorderlink.DefaultCreatedAt = contractorderlinkDescCreatedAt.Default.(func() time.Time)
+	// contractorderlinkDescID is the schema descriptor for id field.
+	contractorderlinkDescID := contractorderlinkFields[0].Descriptor()
+	// contractorderlink.DefaultID holds the default value on creation for the id field.
+	contractorderlink.DefaultID = contractorderlinkDescID.Default.(func() uuid.UUID)
 	customfielddefinitionFields := schema.CustomFieldDefinition{}.Fields()
 	_ = customfielddefinitionFields
 	// customfielddefinitionDescFieldKey is the schema descriptor for field_key field.
@@ -705,6 +764,38 @@ func init() {
 	pricingtierDescID := pricingtierFields[0].Descriptor()
 	// pricingtier.DefaultID holds the default value on creation for the id field.
 	pricingtier.DefaultID = pricingtierDescID.Default.(func() uuid.UUID)
+	productionbatchFields := schema.ProductionBatch{}.Fields()
+	_ = productionbatchFields
+	// productionbatchDescBatchNumber is the schema descriptor for batch_number field.
+	productionbatchDescBatchNumber := productionbatchFields[3].Descriptor()
+	// productionbatch.BatchNumberValidator is a validator for the "batch_number" field. It is called by the builders before save.
+	productionbatch.BatchNumberValidator = productionbatchDescBatchNumber.Validators[0].(func(string) error)
+	// productionbatchDescPlannedQuantity is the schema descriptor for planned_quantity field.
+	productionbatchDescPlannedQuantity := productionbatchFields[9].Descriptor()
+	// productionbatch.DefaultPlannedQuantity holds the default value on creation for the planned_quantity field.
+	productionbatch.DefaultPlannedQuantity = productionbatchDescPlannedQuantity.Default.(float64)
+	// productionbatchDescLaborCost is the schema descriptor for labor_cost field.
+	productionbatchDescLaborCost := productionbatchFields[11].Descriptor()
+	// productionbatch.DefaultLaborCost holds the default value on creation for the labor_cost field.
+	productionbatch.DefaultLaborCost = productionbatchDescLaborCost.Default.(float64)
+	// productionbatchDescOverheadCost is the schema descriptor for overhead_cost field.
+	productionbatchDescOverheadCost := productionbatchFields[12].Descriptor()
+	// productionbatch.DefaultOverheadCost holds the default value on creation for the overhead_cost field.
+	productionbatch.DefaultOverheadCost = productionbatchDescOverheadCost.Default.(float64)
+	// productionbatchDescCreatedAt is the schema descriptor for created_at field.
+	productionbatchDescCreatedAt := productionbatchFields[16].Descriptor()
+	// productionbatch.DefaultCreatedAt holds the default value on creation for the created_at field.
+	productionbatch.DefaultCreatedAt = productionbatchDescCreatedAt.Default.(func() time.Time)
+	// productionbatchDescUpdatedAt is the schema descriptor for updated_at field.
+	productionbatchDescUpdatedAt := productionbatchFields[17].Descriptor()
+	// productionbatch.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	productionbatch.DefaultUpdatedAt = productionbatchDescUpdatedAt.Default.(func() time.Time)
+	// productionbatch.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	productionbatch.UpdateDefaultUpdatedAt = productionbatchDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productionbatchDescID is the schema descriptor for id field.
+	productionbatchDescID := productionbatchFields[0].Descriptor()
+	// productionbatch.DefaultID holds the default value on creation for the id field.
+	productionbatch.DefaultID = productionbatchDescID.Default.(func() uuid.UUID)
 	purchaseorderFields := schema.PurchaseOrder{}.Fields()
 	_ = purchaseorderFields
 	// purchaseorderDescPoNumber is the schema descriptor for po_number field.
@@ -755,6 +846,62 @@ func init() {
 	purchaseorderlineDescID := purchaseorderlineFields[0].Descriptor()
 	// purchaseorderline.DefaultID holds the default value on creation for the id field.
 	purchaseorderline.DefaultID = purchaseorderlineDescID.Default.(func() uuid.UUID)
+	purchasereturnFields := schema.PurchaseReturn{}.Fields()
+	_ = purchasereturnFields
+	// purchasereturnDescReturnAmount is the schema descriptor for return_amount field.
+	purchasereturnDescReturnAmount := purchasereturnFields[7].Descriptor()
+	// purchasereturn.DefaultReturnAmount holds the default value on creation for the return_amount field.
+	purchasereturn.DefaultReturnAmount = purchasereturnDescReturnAmount.Default.(float64)
+	// purchasereturnDescReturnAmountDue is the schema descriptor for return_amount_due field.
+	purchasereturnDescReturnAmountDue := purchasereturnFields[8].Descriptor()
+	// purchasereturn.DefaultReturnAmountDue holds the default value on creation for the return_amount_due field.
+	purchasereturn.DefaultReturnAmountDue = purchasereturnDescReturnAmountDue.Default.(float64)
+	// purchasereturnDescDateReturned is the schema descriptor for date_returned field.
+	purchasereturnDescDateReturned := purchasereturnFields[10].Descriptor()
+	// purchasereturn.DefaultDateReturned holds the default value on creation for the date_returned field.
+	purchasereturn.DefaultDateReturned = purchasereturnDescDateReturned.Default.(func() time.Time)
+	// purchasereturnDescUpdatedAt is the schema descriptor for updated_at field.
+	purchasereturnDescUpdatedAt := purchasereturnFields[11].Descriptor()
+	// purchasereturn.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	purchasereturn.DefaultUpdatedAt = purchasereturnDescUpdatedAt.Default.(func() time.Time)
+	// purchasereturn.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	purchasereturn.UpdateDefaultUpdatedAt = purchasereturnDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// purchasereturnDescID is the schema descriptor for id field.
+	purchasereturnDescID := purchasereturnFields[0].Descriptor()
+	// purchasereturn.DefaultID holds the default value on creation for the id field.
+	purchasereturn.DefaultID = purchasereturnDescID.Default.(func() uuid.UUID)
+	purchasereturnlineFields := schema.PurchaseReturnLine{}.Fields()
+	_ = purchasereturnlineFields
+	// purchasereturnlineDescQuantity is the schema descriptor for quantity field.
+	purchasereturnlineDescQuantity := purchasereturnlineFields[4].Descriptor()
+	// purchasereturnline.DefaultQuantity holds the default value on creation for the quantity field.
+	purchasereturnline.DefaultQuantity = purchasereturnlineDescQuantity.Default.(int)
+	// purchasereturnlineDescSubTotal is the schema descriptor for sub_total field.
+	purchasereturnlineDescSubTotal := purchasereturnlineFields[5].Descriptor()
+	// purchasereturnline.DefaultSubTotal holds the default value on creation for the sub_total field.
+	purchasereturnline.DefaultSubTotal = purchasereturnlineDescSubTotal.Default.(float64)
+	// purchasereturnlineDescCreatedAt is the schema descriptor for created_at field.
+	purchasereturnlineDescCreatedAt := purchasereturnlineFields[6].Descriptor()
+	// purchasereturnline.DefaultCreatedAt holds the default value on creation for the created_at field.
+	purchasereturnline.DefaultCreatedAt = purchasereturnlineDescCreatedAt.Default.(func() time.Time)
+	// purchasereturnlineDescID is the schema descriptor for id field.
+	purchasereturnlineDescID := purchasereturnlineFields[0].Descriptor()
+	// purchasereturnline.DefaultID holds the default value on creation for the id field.
+	purchasereturnline.DefaultID = purchasereturnlineDescID.Default.(func() uuid.UUID)
+	qualitycheckFields := schema.QualityCheck{}.Fields()
+	_ = qualitycheckFields
+	// qualitycheckDescCheckDate is the schema descriptor for check_date field.
+	qualitycheckDescCheckDate := qualitycheckFields[4].Descriptor()
+	// qualitycheck.DefaultCheckDate holds the default value on creation for the check_date field.
+	qualitycheck.DefaultCheckDate = qualitycheckDescCheckDate.Default.(func() time.Time)
+	// qualitycheckDescCreatedAt is the schema descriptor for created_at field.
+	qualitycheckDescCreatedAt := qualitycheckFields[7].Descriptor()
+	// qualitycheck.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qualitycheck.DefaultCreatedAt = qualitycheckDescCreatedAt.Default.(func() time.Time)
+	// qualitycheckDescID is the schema descriptor for id field.
+	qualitycheckDescID := qualitycheckFields[0].Descriptor()
+	// qualitycheck.DefaultID holds the default value on creation for the id field.
+	qualitycheck.DefaultID = qualitycheckDescID.Default.(func() uuid.UUID)
 	ratelimitconfigFields := schema.RateLimitConfig{}.Fields()
 	_ = ratelimitconfigFields
 	// ratelimitconfigDescServiceName is the schema descriptor for service_name field.
@@ -911,6 +1058,50 @@ func init() {
 	recipeingredientDescID := recipeingredientFields[0].Descriptor()
 	// recipeingredient.DefaultID holds the default value on creation for the id field.
 	recipeingredient.DefaultID = recipeingredientDescID.Default.(func() uuid.UUID)
+	requisitionFields := schema.Requisition{}.Fields()
+	_ = requisitionFields
+	// requisitionDescReferenceNumber is the schema descriptor for reference_number field.
+	requisitionDescReferenceNumber := requisitionFields[3].Descriptor()
+	// requisition.ReferenceNumberValidator is a validator for the "reference_number" field. It is called by the builders before save.
+	requisition.ReferenceNumberValidator = requisitionDescReferenceNumber.Validators[0].(func(string) error)
+	// requisitionDescCreatedAt is the schema descriptor for created_at field.
+	requisitionDescCreatedAt := requisitionFields[11].Descriptor()
+	// requisition.DefaultCreatedAt holds the default value on creation for the created_at field.
+	requisition.DefaultCreatedAt = requisitionDescCreatedAt.Default.(func() time.Time)
+	// requisitionDescUpdatedAt is the schema descriptor for updated_at field.
+	requisitionDescUpdatedAt := requisitionFields[12].Descriptor()
+	// requisition.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	requisition.DefaultUpdatedAt = requisitionDescUpdatedAt.Default.(func() time.Time)
+	// requisition.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	requisition.UpdateDefaultUpdatedAt = requisitionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// requisitionDescID is the schema descriptor for id field.
+	requisitionDescID := requisitionFields[0].Descriptor()
+	// requisition.DefaultID holds the default value on creation for the id field.
+	requisition.DefaultID = requisitionDescID.Default.(func() uuid.UUID)
+	requisitionlineFields := schema.RequisitionLine{}.Fields()
+	_ = requisitionlineFields
+	// requisitionlineDescQuantity is the schema descriptor for quantity field.
+	requisitionlineDescQuantity := requisitionlineFields[5].Descriptor()
+	// requisitionline.DefaultQuantity holds the default value on creation for the quantity field.
+	requisitionline.DefaultQuantity = requisitionlineDescQuantity.Default.(int)
+	// requisitionlineDescUrgent is the schema descriptor for urgent field.
+	requisitionlineDescUrgent := requisitionlineFields[7].Descriptor()
+	// requisitionline.DefaultUrgent holds the default value on creation for the urgent field.
+	requisitionline.DefaultUrgent = requisitionlineDescUrgent.Default.(bool)
+	// requisitionlineDescCreatedAt is the schema descriptor for created_at field.
+	requisitionlineDescCreatedAt := requisitionlineFields[17].Descriptor()
+	// requisitionline.DefaultCreatedAt holds the default value on creation for the created_at field.
+	requisitionline.DefaultCreatedAt = requisitionlineDescCreatedAt.Default.(func() time.Time)
+	// requisitionlineDescUpdatedAt is the schema descriptor for updated_at field.
+	requisitionlineDescUpdatedAt := requisitionlineFields[18].Descriptor()
+	// requisitionline.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	requisitionline.DefaultUpdatedAt = requisitionlineDescUpdatedAt.Default.(func() time.Time)
+	// requisitionline.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	requisitionline.UpdateDefaultUpdatedAt = requisitionlineDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// requisitionlineDescID is the schema descriptor for id field.
+	requisitionlineDescID := requisitionlineFields[0].Descriptor()
+	// requisitionline.DefaultID holds the default value on creation for the id field.
+	requisitionline.DefaultID = requisitionlineDescID.Default.(func() uuid.UUID)
 	reservationFields := schema.Reservation{}.Fields()
 	_ = reservationFields
 	// reservationDescStatus is the schema descriptor for status field.
@@ -967,6 +1158,22 @@ func init() {
 	serviceconfigDescID := serviceconfigFields[0].Descriptor()
 	// serviceconfig.DefaultID holds the default value on creation for the id field.
 	serviceconfig.DefaultID = serviceconfigDescID.Default.(func() uuid.UUID)
+	servicedeliveryFields := schema.ServiceDelivery{}.Fields()
+	_ = servicedeliveryFields
+	// servicedeliveryDescCreatedAt is the schema descriptor for created_at field.
+	servicedeliveryDescCreatedAt := servicedeliveryFields[8].Descriptor()
+	// servicedelivery.DefaultCreatedAt holds the default value on creation for the created_at field.
+	servicedelivery.DefaultCreatedAt = servicedeliveryDescCreatedAt.Default.(func() time.Time)
+	// servicedeliveryDescUpdatedAt is the schema descriptor for updated_at field.
+	servicedeliveryDescUpdatedAt := servicedeliveryFields[9].Descriptor()
+	// servicedelivery.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	servicedelivery.DefaultUpdatedAt = servicedeliveryDescUpdatedAt.Default.(func() time.Time)
+	// servicedelivery.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	servicedelivery.UpdateDefaultUpdatedAt = servicedeliveryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// servicedeliveryDescID is the schema descriptor for id field.
+	servicedeliveryDescID := servicedeliveryFields[0].Descriptor()
+	// servicedelivery.DefaultID holds the default value on creation for the id field.
+	servicedelivery.DefaultID = servicedeliveryDescID.Default.(func() uuid.UUID)
 	stockadjustmentFields := schema.StockAdjustment{}.Fields()
 	_ = stockadjustmentFields
 	// stockadjustmentDescAdjustedAt is the schema descriptor for adjusted_at field.
@@ -1055,6 +1262,32 @@ func init() {
 	supplierDescID := supplierFields[0].Descriptor()
 	// supplier.DefaultID holds the default value on creation for the id field.
 	supplier.DefaultID = supplierDescID.Default.(func() uuid.UUID)
+	supplierperformanceFields := schema.SupplierPerformance{}.Fields()
+	_ = supplierperformanceFields
+	// supplierperformanceDescOnTimeDeliveryRate is the schema descriptor for on_time_delivery_rate field.
+	supplierperformanceDescOnTimeDeliveryRate := supplierperformanceFields[5].Descriptor()
+	// supplierperformance.DefaultOnTimeDeliveryRate holds the default value on creation for the on_time_delivery_rate field.
+	supplierperformance.DefaultOnTimeDeliveryRate = supplierperformanceDescOnTimeDeliveryRate.Default.(float64)
+	// supplierperformanceDescDefectRate is the schema descriptor for defect_rate field.
+	supplierperformanceDescDefectRate := supplierperformanceFields[6].Descriptor()
+	// supplierperformance.DefaultDefectRate holds the default value on creation for the defect_rate field.
+	supplierperformance.DefaultDefectRate = supplierperformanceDescDefectRate.Default.(float64)
+	// supplierperformanceDescAverageLeadTimeDays is the schema descriptor for average_lead_time_days field.
+	supplierperformanceDescAverageLeadTimeDays := supplierperformanceFields[7].Descriptor()
+	// supplierperformance.DefaultAverageLeadTimeDays holds the default value on creation for the average_lead_time_days field.
+	supplierperformance.DefaultAverageLeadTimeDays = supplierperformanceDescAverageLeadTimeDays.Default.(float64)
+	// supplierperformanceDescTotalSpend is the schema descriptor for total_spend field.
+	supplierperformanceDescTotalSpend := supplierperformanceFields[8].Descriptor()
+	// supplierperformance.DefaultTotalSpend holds the default value on creation for the total_spend field.
+	supplierperformance.DefaultTotalSpend = supplierperformanceDescTotalSpend.Default.(float64)
+	// supplierperformanceDescCreatedAt is the schema descriptor for created_at field.
+	supplierperformanceDescCreatedAt := supplierperformanceFields[9].Descriptor()
+	// supplierperformance.DefaultCreatedAt holds the default value on creation for the created_at field.
+	supplierperformance.DefaultCreatedAt = supplierperformanceDescCreatedAt.Default.(func() time.Time)
+	// supplierperformanceDescID is the schema descriptor for id field.
+	supplierperformanceDescID := supplierperformanceFields[0].Descriptor()
+	// supplierperformance.DefaultID holds the default value on creation for the id field.
+	supplierperformance.DefaultID = supplierperformanceDescID.Default.(func() uuid.UUID)
 	tenantFields := schema.Tenant{}.Fields()
 	_ = tenantFields
 	// tenantDescName is the schema descriptor for name field.

@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// BatchRawMaterial is the predicate function for batchrawmaterial builders.
+type BatchRawMaterial func(*sql.Selector)
+
 // Bundle is the predicate function for bundle builders.
 type Bundle func(*sql.Selector)
 
@@ -14,6 +17,12 @@ type BundleComponent func(*sql.Selector)
 
 // Consumption is the predicate function for consumption builders.
 type Consumption func(*sql.Selector)
+
+// Contract is the predicate function for contract builders.
+type Contract func(*sql.Selector)
+
+// ContractOrderLink is the predicate function for contractorderlink builders.
+type ContractOrderLink func(*sql.Selector)
 
 // CustomFieldDefinition is the predicate function for customfielddefinition builders.
 type CustomFieldDefinition func(*sql.Selector)
@@ -69,11 +78,23 @@ type OutboxEvent func(*sql.Selector)
 // PricingTier is the predicate function for pricingtier builders.
 type PricingTier func(*sql.Selector)
 
+// ProductionBatch is the predicate function for productionbatch builders.
+type ProductionBatch func(*sql.Selector)
+
 // PurchaseOrder is the predicate function for purchaseorder builders.
 type PurchaseOrder func(*sql.Selector)
 
 // PurchaseOrderLine is the predicate function for purchaseorderline builders.
 type PurchaseOrderLine func(*sql.Selector)
+
+// PurchaseReturn is the predicate function for purchasereturn builders.
+type PurchaseReturn func(*sql.Selector)
+
+// PurchaseReturnLine is the predicate function for purchasereturnline builders.
+type PurchaseReturnLine func(*sql.Selector)
+
+// QualityCheck is the predicate function for qualitycheck builders.
+type QualityCheck func(*sql.Selector)
 
 // RateLimitConfig is the predicate function for ratelimitconfig builders.
 type RateLimitConfig func(*sql.Selector)
@@ -84,6 +105,12 @@ type Recipe func(*sql.Selector)
 // RecipeIngredient is the predicate function for recipeingredient builders.
 type RecipeIngredient func(*sql.Selector)
 
+// Requisition is the predicate function for requisition builders.
+type Requisition func(*sql.Selector)
+
+// RequisitionLine is the predicate function for requisitionline builders.
+type RequisitionLine func(*sql.Selector)
+
 // Reservation is the predicate function for reservation builders.
 type Reservation func(*sql.Selector)
 
@@ -92,6 +119,9 @@ type RolePermission func(*sql.Selector)
 
 // ServiceConfig is the predicate function for serviceconfig builders.
 type ServiceConfig func(*sql.Selector)
+
+// ServiceDelivery is the predicate function for servicedelivery builders.
+type ServiceDelivery func(*sql.Selector)
 
 // StockAdjustment is the predicate function for stockadjustment builders.
 type StockAdjustment func(*sql.Selector)
@@ -104,6 +134,9 @@ type StockTransferLine func(*sql.Selector)
 
 // Supplier is the predicate function for supplier builders.
 type Supplier func(*sql.Selector)
+
+// SupplierPerformance is the predicate function for supplierperformance builders.
+type SupplierPerformance func(*sql.Selector)
 
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)

@@ -12,9 +12,12 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/contract"
+	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
@@ -33,18 +36,26 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
+	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	"github.com/bengobox/inventory-service/internal/ent/purchasereturn"
+	"github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
+	"github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/requisition"
+	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
+	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
+	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
@@ -113,9 +124,12 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			batchrawmaterial.Table:      batchrawmaterial.ValidColumn,
 			bundle.Table:                bundle.ValidColumn,
 			bundlecomponent.Table:       bundlecomponent.ValidColumn,
 			consumption.Table:           consumption.ValidColumn,
+			contract.Table:              contract.ValidColumn,
+			contractorderlink.Table:     contractorderlink.ValidColumn,
 			customfielddefinition.Table: customfielddefinition.ValidColumn,
 			customfieldvalue.Table:      customfieldvalue.ValidColumn,
 			foodcostvariance.Table:      foodcostvariance.ValidColumn,
@@ -134,18 +148,26 @@ func checkColumn(t, c string) error {
 			modifieroption.Table:        modifieroption.ValidColumn,
 			outboxevent.Table:           outboxevent.ValidColumn,
 			pricingtier.Table:           pricingtier.ValidColumn,
+			productionbatch.Table:       productionbatch.ValidColumn,
 			purchaseorder.Table:         purchaseorder.ValidColumn,
 			purchaseorderline.Table:     purchaseorderline.ValidColumn,
+			purchasereturn.Table:        purchasereturn.ValidColumn,
+			purchasereturnline.Table:    purchasereturnline.ValidColumn,
+			qualitycheck.Table:          qualitycheck.ValidColumn,
 			ratelimitconfig.Table:       ratelimitconfig.ValidColumn,
 			recipe.Table:                recipe.ValidColumn,
 			recipeingredient.Table:      recipeingredient.ValidColumn,
+			requisition.Table:           requisition.ValidColumn,
+			requisitionline.Table:       requisitionline.ValidColumn,
 			reservation.Table:           reservation.ValidColumn,
 			rolepermission.Table:        rolepermission.ValidColumn,
 			serviceconfig.Table:         serviceconfig.ValidColumn,
+			servicedelivery.Table:       servicedelivery.ValidColumn,
 			stockadjustment.Table:       stockadjustment.ValidColumn,
 			stocktransfer.Table:         stocktransfer.ValidColumn,
 			stocktransferline.Table:     stocktransferline.ValidColumn,
 			supplier.Table:              supplier.ValidColumn,
+			supplierperformance.Table:   supplierperformance.ValidColumn,
 			tenant.Table:                tenant.ValidColumn,
 			tenantinventoryconfig.Table: tenantinventoryconfig.ValidColumn,
 			unit.Table:                  unit.ValidColumn,
