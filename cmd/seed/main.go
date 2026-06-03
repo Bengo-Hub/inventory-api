@@ -113,6 +113,12 @@ func main() {
 		}
 
 		if slug == "codevertex-demo" {
+			if err := seedConferenceBundle(ctx, client, tenantID); err != nil {
+				log.Printf("[WARN] seed conference bundle for %s: %v", slug, err)
+			}
+		}
+
+		if slug == "codevertex-demo" {
 			supplierID, err := seedSuppliers(ctx, client, tenantID)
 			if err != nil {
 				log.Printf("[WARN] seed suppliers for %s: %v", slug, err)
