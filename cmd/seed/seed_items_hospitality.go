@@ -72,6 +72,11 @@ func hospitalityItems() []itemDef {
 		{"PIZ-MAR-001", "Margherita Pizza", "Fresh mozzarella, tomato sauce, and basil", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30, nil, nil},
 		{"PIZ-PEP-001", "Pepperoni Pizza", "Classic pepperoni with mozzarella and tomato sauce", "pizza", entitem.TypeRECIPE, "PIECE", imgPizza, 30, nil, nil},
 
+		// ── Conference package (bundle item — DDR) ─────────────────────────────
+		// The sellable item the conference DDR Bundle points to; priced per-delegate-per-day.
+		// seedConferenceBundle builds the Bundle + MEAL_PERIOD components + ItemPricing for it.
+		{"CONF-DDR-001", "Day Delegate Package", "Full-day conference package: hall + breakfast, lunch & PM tea per delegate", "main-courses", entitem.TypeGOODS, "PIECE", "", 0, []string{"package", "conference", "ddr"}, nil},
+
 		// ── Raw Ingredients (INGREDIENT with cost_price) ───────────────────────
 		{"RAW-ESP-001", "Espresso Beans", "Premium roasted espresso beans", "hot-beverages", entitem.TypeINGREDIENT, "KG", "", 50, nil, ptr(2200.0)},
 		{"RAW-MLK-001", "Fresh Milk", "Full-cream fresh milk", "hot-beverages", entitem.TypeINGREDIENT, "LITRE", "", 100, nil, ptr(85.0)},
