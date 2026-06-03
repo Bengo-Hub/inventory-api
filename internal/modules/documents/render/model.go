@@ -1,0 +1,67 @@
+// Package render is the tenant-branding-aware, premium fpdf renderer for
+// inventory-api documents. The visual language (gradient banner, brand-derived
+// palette, styled item table, totals block with amount-in-words, signatures and
+// footer) mirrors treasury-api's docs renderer and is fully driven by the
+// document model + tenant branding.
+package render
+
+// Branding is the tenant-branding-aware header/footer data sourced from the auth
+// cache (logo, company identity, contacts). Colors fall back to the house palette.
+type Branding struct {
+	CompanyName string
+	Tagline     string
+	Address     []string
+	KRAPIN      string
+	LogoURL     string
+	Email       string
+	Phone       string
+	Website     string
+	// PrimaryColor is an optional hex (e.g. "#1F6FB2"); empty uses the default palette.
+	PrimaryColor string
+}
+
+// DocLine is a single line item rendered in a document table.
+type DocLine struct {
+	Desc    string
+	SubDesc string
+	Unit    string
+	Qty     string
+	Rate    string
+	Amount  string
+}
+
+// PurchaseOrderDoc is the canonical input for rendering a Purchase Order PDF.
+// All optional fields degrade gracefully — an empty value is simply not rendered.
+type PurchaseOrderDoc struct {
+	Branding Branding
+
+	PONumber  string
+	Date      string
+	Currency  string
+	Status    string
+	Reference string // optional secondary reference shown in the meta box
+
+	SupplierName string
+	SupplierAddr []string
+
+	WarehouseName string
+	ExpectedDate  string
+
+	Items     []DocLine
+	Subtotal  string
+	TaxLabel  string
+	TaxAmount string
+	Grand     string
+
+	// AmountLabel overrides the banner caption (default "Total Order Value").
+	AmountLabel string
+	// Badge overrides the status badge text in the banner (default derived from Status).
+	Badge string
+	// AmountInWords, when set, is rendered in the amount-in-words band beneath the
+	// totals. Empty means the band is omitted.
+	AmountInWords string
+
+	Notes      []string
+	PreparedBy string
+	ApprovedBy string
+}
