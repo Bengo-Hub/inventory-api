@@ -1,7 +1,29 @@
 # Sprint: Absorb ERP Procurement + Manufacturing — inventory-api
 
 **Created:** 2026-06-03
-**Status:** 🚧 Planned — scoping complete; implementation pending
+**Status:** 🚧 In progress — **data model + Atlas migration complete (2026-06-03)**; handlers/routes/events/RBAC/swagger + inventory-ui pending before ERP-side deletion.
+
+### Implementation status 2026-06-03 (local commits, unpushed)
+**Backends implemented + `go build`/`vet` clean:**
+- Procurement (PROC-MIG ✅ entities): requisitions (CRUD + submit/review/approve/reject + convert-to-PO), contracts (+activate/terminate/link), purchase-returns (+approve → stock-out), supplier-performance (list/record), service-delivery, procurement dashboard. Commits `0bade62`,`ded94c7`,`8169771`.
+- Manufacturing (MFG-MIG ✅): production batch lifecycle (create/start/complete/cancel), recipe BOM explosion, QC (+auto-fail), dashboard. Stock effects applied in-process (start→consume raw materials, complete→finished-goods receipt). Commit `79d8910`,`0b9d02d`.
+- Documents: `internal/modules/documents` — DocumentSequence (per-tenant atomic numbering) + branded PO PDF (go-pdf/fpdf, branding from auth cache) + `GET /inventory/purchase-orders/{id}/pdf`. Commit `b3fe809`.
+- Fixed-asset register (inventory owns; depreciation→treasury): 8 schemas + handlers (assets/categories CRUD, maintenance/transfer/disposal/insurance/audit/reservation, `depreciation-run`→`inventory.asset.depreciation_due`). Commit `073267e`.
+- Atlas migrations generated for all (procurement/manufacturing, document_sequence, asset_register). swagger regenerated (`0b9d02d`).
+
+**Still pending (not production-complete):**
+- [ ] Domain-specific RBAC permissions (currently reuse generic `items.*`).
+- [ ] GRN (distinct goods-receipt + 3-way match) and RFQ/sourcing.
+- [ ] OpenAPI annotations for the new endpoints (swag regen runs but new routes are undocumented until annotated).
+- [ ] Handler/integration tests (INV-ERP-17).
+- [ ] erd.md/integrations.md/architecture.md detail for the new entities.
+- [ ] inventory-ui pages (procurement/manufacturing/assets).
+- [ ] treasury: consume `inventory.asset.depreciation_due` → FixedAssetDepreciation + GL; emit back a snapshot event for inventory to update accumulated_depreciation/book_value.
+
+### Progress 2026-06-03 (commit af925ac, local)
+- ✅ Ent schemas added (compile + `go build` clean): `requisition`(+line), `contract`(+order_link), `purchase_return`(+line), `supplier_performance`, `service_delivery` (Procurement); `production_batch`, `batch_raw_material`, `quality_check` (Manufacturing).
+- ✅ Atlas migration `internal/ent/migrate/migrations/20260603162054_add_procurement_manufacturing.sql` (11 tables + indexes/FKs), generated via the documented PG17 diff workflow.
+- ⏳ Next: module services + HTTP handlers + route registration (app.go/router), RBAC perms, NATS events (PROC-MIG-08 / MFG-MIG-05), `swag init`, inventory-ui screens; then ERP-side removal.
 **Goal:** Make inventory-service the single owner of Procurement and Manufacturing so the ERP `procurement/*` and `manufacturing/*` Django apps (and `ecommerce/product`+`stockinventory`+`vendor`) can be fully deleted with no inventory/procurement/manufacturing data left in the ERP.
 
 ## Context & decision (2026-06-03)
