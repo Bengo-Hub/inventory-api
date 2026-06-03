@@ -13,6 +13,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -51,6 +52,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/ent/ticket"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -236,6 +238,42 @@ func init() {
 	customfieldvalueDescID := customfieldvalueFields[0].Descriptor()
 	// customfieldvalue.DefaultID holds the default value on creation for the id field.
 	customfieldvalue.DefaultID = customfieldvalueDescID.Default.(func() uuid.UUID)
+	documentsequenceFields := schema.DocumentSequence{}.Fields()
+	_ = documentsequenceFields
+	// documentsequenceDescDocType is the schema descriptor for doc_type field.
+	documentsequenceDescDocType := documentsequenceFields[2].Descriptor()
+	// documentsequence.DocTypeValidator is a validator for the "doc_type" field. It is called by the builders before save.
+	documentsequence.DocTypeValidator = documentsequenceDescDocType.Validators[0].(func(string) error)
+	// documentsequenceDescSeparator is the schema descriptor for separator field.
+	documentsequenceDescSeparator := documentsequenceFields[4].Descriptor()
+	// documentsequence.DefaultSeparator holds the default value on creation for the separator field.
+	documentsequence.DefaultSeparator = documentsequenceDescSeparator.Default.(string)
+	// documentsequenceDescPadding is the schema descriptor for padding field.
+	documentsequenceDescPadding := documentsequenceFields[6].Descriptor()
+	// documentsequence.DefaultPadding holds the default value on creation for the padding field.
+	documentsequence.DefaultPadding = documentsequenceDescPadding.Default.(int)
+	// documentsequenceDescResetFreq is the schema descriptor for reset_freq field.
+	documentsequenceDescResetFreq := documentsequenceFields[7].Descriptor()
+	// documentsequence.DefaultResetFreq holds the default value on creation for the reset_freq field.
+	documentsequence.DefaultResetFreq = documentsequenceDescResetFreq.Default.(string)
+	// documentsequenceDescCurrentVal is the schema descriptor for current_val field.
+	documentsequenceDescCurrentVal := documentsequenceFields[8].Descriptor()
+	// documentsequence.DefaultCurrentVal holds the default value on creation for the current_val field.
+	documentsequence.DefaultCurrentVal = documentsequenceDescCurrentVal.Default.(int64)
+	// documentsequenceDescCreatedAt is the schema descriptor for created_at field.
+	documentsequenceDescCreatedAt := documentsequenceFields[10].Descriptor()
+	// documentsequence.DefaultCreatedAt holds the default value on creation for the created_at field.
+	documentsequence.DefaultCreatedAt = documentsequenceDescCreatedAt.Default.(func() time.Time)
+	// documentsequenceDescUpdatedAt is the schema descriptor for updated_at field.
+	documentsequenceDescUpdatedAt := documentsequenceFields[11].Descriptor()
+	// documentsequence.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	documentsequence.DefaultUpdatedAt = documentsequenceDescUpdatedAt.Default.(func() time.Time)
+	// documentsequence.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	documentsequence.UpdateDefaultUpdatedAt = documentsequenceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// documentsequenceDescID is the schema descriptor for id field.
+	documentsequenceDescID := documentsequenceFields[0].Descriptor()
+	// documentsequence.DefaultID holds the default value on creation for the id field.
+	documentsequence.DefaultID = documentsequenceDescID.Default.(func() uuid.UUID)
 	foodcostvarianceFields := schema.FoodCostVariance{}.Fields()
 	_ = foodcostvarianceFields
 	// foodcostvarianceDescRecipeSku is the schema descriptor for recipe_sku field.
@@ -1408,6 +1446,46 @@ func init() {
 	tenantinventoryconfigDescID := tenantinventoryconfigFields[0].Descriptor()
 	// tenantinventoryconfig.DefaultID holds the default value on creation for the id field.
 	tenantinventoryconfig.DefaultID = tenantinventoryconfigDescID.Default.(func() uuid.UUID)
+	ticketFields := schema.Ticket{}.Fields()
+	_ = ticketFields
+	// ticketDescQuantity is the schema descriptor for quantity field.
+	ticketDescQuantity := ticketFields[9].Descriptor()
+	// ticket.DefaultQuantity holds the default value on creation for the quantity field.
+	ticket.DefaultQuantity = ticketDescQuantity.Default.(int)
+	// ticketDescUnitPrice is the schema descriptor for unit_price field.
+	ticketDescUnitPrice := ticketFields[10].Descriptor()
+	// ticket.DefaultUnitPrice holds the default value on creation for the unit_price field.
+	ticket.DefaultUnitPrice = ticketDescUnitPrice.Default.(float64)
+	// ticketDescTotalPrice is the schema descriptor for total_price field.
+	ticketDescTotalPrice := ticketFields[11].Descriptor()
+	// ticket.DefaultTotalPrice holds the default value on creation for the total_price field.
+	ticket.DefaultTotalPrice = ticketDescTotalPrice.Default.(float64)
+	// ticketDescCurrency is the schema descriptor for currency field.
+	ticketDescCurrency := ticketFields[12].Descriptor()
+	// ticket.DefaultCurrency holds the default value on creation for the currency field.
+	ticket.DefaultCurrency = ticketDescCurrency.Default.(string)
+	// ticketDescCode is the schema descriptor for code field.
+	ticketDescCode := ticketFields[13].Descriptor()
+	// ticket.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	ticket.CodeValidator = ticketDescCode.Validators[0].(func(string) error)
+	// ticketDescMetadata is the schema descriptor for metadata field.
+	ticketDescMetadata := ticketFields[20].Descriptor()
+	// ticket.DefaultMetadata holds the default value on creation for the metadata field.
+	ticket.DefaultMetadata = ticketDescMetadata.Default.(map[string]interface{})
+	// ticketDescCreatedAt is the schema descriptor for created_at field.
+	ticketDescCreatedAt := ticketFields[21].Descriptor()
+	// ticket.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ticket.DefaultCreatedAt = ticketDescCreatedAt.Default.(func() time.Time)
+	// ticketDescUpdatedAt is the schema descriptor for updated_at field.
+	ticketDescUpdatedAt := ticketFields[22].Descriptor()
+	// ticket.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ticket.DefaultUpdatedAt = ticketDescUpdatedAt.Default.(func() time.Time)
+	// ticket.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ticket.UpdateDefaultUpdatedAt = ticketDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ticketDescID is the schema descriptor for id field.
+	ticketDescID := ticketFields[0].Descriptor()
+	// ticket.DefaultID holds the default value on creation for the id field.
+	ticket.DefaultID = ticketDescID.Default.(func() uuid.UUID)
 	unitFields := schema.Unit{}.Fields()
 	_ = unitFields
 	// unitDescName is the schema descriptor for name field.

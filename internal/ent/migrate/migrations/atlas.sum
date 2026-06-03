@@ -1,4 +1,4 @@
-h1:30B13pKOx267+UE3HSYc3oHuNtDMg9tpjKm9eTE99sE=
+h1:jBYwQmA5mt39iCBPp3EjQR3adZ+vEN1iydZXNj9/SmU=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -21,3 +21,4 @@ h1:30B13pKOx267+UE3HSYc3oHuNtDMg9tpjKm9eTE99sE=
 20260602105641_inventory_hospitality_masters.sql h1:rXFj/7nLR2vGU2Mz36gHudO1h1aun90FGmpXlVlAnr8=
 20260603124729_inventory_roles_global_nullable_tenant.sql h1:YYpMfDjPCkVGQATjuyszN3AYAMpsRPCA9FNiUldKFx8=
 20260603162054_add_procurement_manufacturing.sql h1:iBTOwEvzrbvu+lwhahpLjSrt8sk/8kK/vjkbeCths00=
+20260603181612_add_document_sequence.sql h1:MEWIqBo1BFjCf7DYNJ9/raedOk606UgcdN2to3H+u+c=

@@ -105,6 +105,18 @@ func (f CustomFieldValueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CustomFieldValueMutation", m)
 }
 
+// The DocumentSequenceFunc type is an adapter to allow the use of ordinary
+// function as DocumentSequence mutator.
+type DocumentSequenceFunc func(context.Context, *ent.DocumentSequenceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DocumentSequenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DocumentSequenceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DocumentSequenceMutation", m)
+}
+
 // The FoodCostVarianceFunc type is an adapter to allow the use of ordinary
 // function as FoodCostVariance mutator.
 type FoodCostVarianceFunc func(context.Context, *ent.FoodCostVarianceMutation) (ent.Value, error)
@@ -559,6 +571,18 @@ func (f TenantInventoryConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantInventoryConfigMutation", m)
+}
+
+// The TicketFunc type is an adapter to allow the use of ordinary
+// function as Ticket mutator.
+type TicketFunc func(context.Context, *ent.TicketMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TicketFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TicketMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TicketMutation", m)
 }
 
 // The UnitFunc type is an adapter to allow the use of ordinary

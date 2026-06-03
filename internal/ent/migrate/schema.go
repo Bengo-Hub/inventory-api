@@ -304,6 +304,34 @@ var (
 			},
 		},
 	}
+	// DocumentSequencesColumns holds the columns for the "document_sequences" table.
+	DocumentSequencesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "doc_type", Type: field.TypeString},
+		{Name: "prefix", Type: field.TypeString, Nullable: true},
+		{Name: "separator", Type: field.TypeString, Default: "-"},
+		{Name: "date_format", Type: field.TypeString, Nullable: true},
+		{Name: "padding", Type: field.TypeInt, Default: 6},
+		{Name: "reset_freq", Type: field.TypeString, Default: "never"},
+		{Name: "current_val", Type: field.TypeInt64, Default: 0},
+		{Name: "last_reset", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// DocumentSequencesTable holds the schema information for the "document_sequences" table.
+	DocumentSequencesTable = &schema.Table{
+		Name:       "document_sequences",
+		Columns:    DocumentSequencesColumns,
+		PrimaryKey: []*schema.Column{DocumentSequencesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "documentsequence_tenant_id_doc_type",
+				Unique:  true,
+				Columns: []*schema.Column{DocumentSequencesColumns[1], DocumentSequencesColumns[2]},
+			},
+		},
+	}
 	// FoodCostVariancesColumns holds the columns for the "food_cost_variances" table.
 	FoodCostVariancesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1938,6 +1966,60 @@ var (
 			},
 		},
 	}
+	// TicketsColumns holds the columns for the "tickets" table.
+	TicketsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "event_item_id", Type: field.TypeUUID},
+		{Name: "order_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "tier_id", Type: field.TypeString, Nullable: true},
+		{Name: "tier_name", Type: field.TypeString, Nullable: true},
+		{Name: "buyer_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "buyer_name", Type: field.TypeString, Nullable: true},
+		{Name: "buyer_email", Type: field.TypeString, Nullable: true},
+		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "unit_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "code", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"issued", "redeemed", "cancelled", "refunded", "void"}, Default: "issued"},
+		{Name: "valid_from", Type: field.TypeTime, Nullable: true},
+		{Name: "valid_until", Type: field.TypeTime, Nullable: true},
+		{Name: "redeemed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "redeemed_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "check_in_location", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TicketsTable holds the schema information for the "tickets" table.
+	TicketsTable = &schema.Table{
+		Name:       "tickets",
+		Columns:    TicketsColumns,
+		PrimaryKey: []*schema.Column{TicketsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ticket_tenant_id_code",
+				Unique:  true,
+				Columns: []*schema.Column{TicketsColumns[1], TicketsColumns[13]},
+			},
+			{
+				Name:    "ticket_tenant_id_event_item_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{TicketsColumns[1], TicketsColumns[2], TicketsColumns[14]},
+			},
+			{
+				Name:    "ticket_tenant_id_buyer_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{TicketsColumns[1], TicketsColumns[6], TicketsColumns[14]},
+			},
+			{
+				Name:    "ticket_tenant_id_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{TicketsColumns[1], TicketsColumns[3]},
+			},
+		},
+	}
 	// UnitsColumns holds the columns for the "units" table.
 	UnitsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2203,6 +2285,7 @@ var (
 		ContractOrderLinksTable,
 		CustomFieldDefinitionsTable,
 		CustomFieldValuesTable,
+		DocumentSequencesTable,
 		FoodCostVariancesTable,
 		InventoryBalancesTable,
 		InventoryLotsTable,
@@ -2241,6 +2324,7 @@ var (
 		SupplierPerformancesTable,
 		TenantsTable,
 		TenantInventoryConfigsTable,
+		TicketsTable,
 		UnitsTable,
 		UserRoleAssignmentsTable,
 		VariantAttributesTable,

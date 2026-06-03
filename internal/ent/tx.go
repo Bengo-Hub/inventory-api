@@ -28,6 +28,8 @@ type Tx struct {
 	CustomFieldDefinition *CustomFieldDefinitionClient
 	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
 	CustomFieldValue *CustomFieldValueClient
+	// DocumentSequence is the client for interacting with the DocumentSequence builders.
+	DocumentSequence *DocumentSequenceClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
@@ -104,6 +106,8 @@ type Tx struct {
 	Tenant *TenantClient
 	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
 	TenantInventoryConfig *TenantInventoryConfigClient
+	// Ticket is the client for interacting with the Ticket builders.
+	Ticket *TicketClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
@@ -255,6 +259,7 @@ func (tx *Tx) init() {
 	tx.ContractOrderLink = NewContractOrderLinkClient(tx.config)
 	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
 	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
+	tx.DocumentSequence = NewDocumentSequenceClient(tx.config)
 	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.InventoryLot = NewInventoryLotClient(tx.config)
@@ -293,6 +298,7 @@ func (tx *Tx) init() {
 	tx.SupplierPerformance = NewSupplierPerformanceClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.TenantInventoryConfig = NewTenantInventoryConfigClient(tx.config)
+	tx.Ticket = NewTicketClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.VariantAttribute = NewVariantAttributeClient(tx.config)

@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -62,6 +63,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/ent/ticket"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -91,6 +93,8 @@ type Client struct {
 	CustomFieldDefinition *CustomFieldDefinitionClient
 	// CustomFieldValue is the client for interacting with the CustomFieldValue builders.
 	CustomFieldValue *CustomFieldValueClient
+	// DocumentSequence is the client for interacting with the DocumentSequence builders.
+	DocumentSequence *DocumentSequenceClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
@@ -167,6 +171,8 @@ type Client struct {
 	Tenant *TenantClient
 	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
 	TenantInventoryConfig *TenantInventoryConfigClient
+	// Ticket is the client for interacting with the Ticket builders.
+	Ticket *TicketClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
@@ -198,6 +204,7 @@ func (c *Client) init() {
 	c.ContractOrderLink = NewContractOrderLinkClient(c.config)
 	c.CustomFieldDefinition = NewCustomFieldDefinitionClient(c.config)
 	c.CustomFieldValue = NewCustomFieldValueClient(c.config)
+	c.DocumentSequence = NewDocumentSequenceClient(c.config)
 	c.FoodCostVariance = NewFoodCostVarianceClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
 	c.InventoryLot = NewInventoryLotClient(c.config)
@@ -236,6 +243,7 @@ func (c *Client) init() {
 	c.SupplierPerformance = NewSupplierPerformanceClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.TenantInventoryConfig = NewTenantInventoryConfigClient(c.config)
+	c.Ticket = NewTicketClient(c.config)
 	c.Unit = NewUnitClient(c.config)
 	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
 	c.VariantAttribute = NewVariantAttributeClient(c.config)
@@ -342,6 +350,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ContractOrderLink:     NewContractOrderLinkClient(cfg),
 		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
+		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
@@ -380,6 +389,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
 		Tenant:                NewTenantClient(cfg),
 		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
+		Ticket:                NewTicketClient(cfg),
 		Unit:                  NewUnitClient(cfg),
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
@@ -413,6 +423,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ContractOrderLink:     NewContractOrderLinkClient(cfg),
 		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
+		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
@@ -451,6 +462,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
 		Tenant:                NewTenantClient(cfg),
 		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
+		Ticket:                NewTicketClient(cfg),
 		Unit:                  NewUnitClient(cfg),
 		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 		VariantAttribute:      NewVariantAttributeClient(cfg),
@@ -488,17 +500,17 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.BatchRawMaterial, c.Bundle, c.BundleComponent, c.Consumption, c.Contract,
 		c.ContractOrderLink, c.CustomFieldDefinition, c.CustomFieldValue,
-		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.DocumentSequence, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -510,17 +522,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.BatchRawMaterial, c.Bundle, c.BundleComponent, c.Consumption, c.Contract,
 		c.ContractOrderLink, c.CustomFieldDefinition, c.CustomFieldValue,
-		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.DocumentSequence, c.FoodCostVariance, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -545,6 +557,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CustomFieldDefinition.mutate(ctx, m)
 	case *CustomFieldValueMutation:
 		return c.CustomFieldValue.mutate(ctx, m)
+	case *DocumentSequenceMutation:
+		return c.DocumentSequence.mutate(ctx, m)
 	case *FoodCostVarianceMutation:
 		return c.FoodCostVariance.mutate(ctx, m)
 	case *InventoryBalanceMutation:
@@ -621,6 +635,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Tenant.mutate(ctx, m)
 	case *TenantInventoryConfigMutation:
 		return c.TenantInventoryConfig.mutate(ctx, m)
+	case *TicketMutation:
+		return c.Ticket.mutate(ctx, m)
 	case *UnitMutation:
 		return c.Unit.mutate(ctx, m)
 	case *UserRoleAssignmentMutation:
@@ -1875,6 +1891,139 @@ func (c *CustomFieldValueClient) mutate(ctx context.Context, m *CustomFieldValue
 		return (&CustomFieldValueDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CustomFieldValue mutation op: %q", m.Op())
+	}
+}
+
+// DocumentSequenceClient is a client for the DocumentSequence schema.
+type DocumentSequenceClient struct {
+	config
+}
+
+// NewDocumentSequenceClient returns a client for the DocumentSequence from the given config.
+func NewDocumentSequenceClient(c config) *DocumentSequenceClient {
+	return &DocumentSequenceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `documentsequence.Hooks(f(g(h())))`.
+func (c *DocumentSequenceClient) Use(hooks ...Hook) {
+	c.hooks.DocumentSequence = append(c.hooks.DocumentSequence, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `documentsequence.Intercept(f(g(h())))`.
+func (c *DocumentSequenceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DocumentSequence = append(c.inters.DocumentSequence, interceptors...)
+}
+
+// Create returns a builder for creating a DocumentSequence entity.
+func (c *DocumentSequenceClient) Create() *DocumentSequenceCreate {
+	mutation := newDocumentSequenceMutation(c.config, OpCreate)
+	return &DocumentSequenceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DocumentSequence entities.
+func (c *DocumentSequenceClient) CreateBulk(builders ...*DocumentSequenceCreate) *DocumentSequenceCreateBulk {
+	return &DocumentSequenceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DocumentSequenceClient) MapCreateBulk(slice any, setFunc func(*DocumentSequenceCreate, int)) *DocumentSequenceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DocumentSequenceCreateBulk{err: fmt.Errorf("calling to DocumentSequenceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DocumentSequenceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DocumentSequenceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DocumentSequence.
+func (c *DocumentSequenceClient) Update() *DocumentSequenceUpdate {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdate)
+	return &DocumentSequenceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DocumentSequenceClient) UpdateOne(_m *DocumentSequence) *DocumentSequenceUpdateOne {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdateOne, withDocumentSequence(_m))
+	return &DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DocumentSequenceClient) UpdateOneID(id uuid.UUID) *DocumentSequenceUpdateOne {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdateOne, withDocumentSequenceID(id))
+	return &DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DocumentSequence.
+func (c *DocumentSequenceClient) Delete() *DocumentSequenceDelete {
+	mutation := newDocumentSequenceMutation(c.config, OpDelete)
+	return &DocumentSequenceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DocumentSequenceClient) DeleteOne(_m *DocumentSequence) *DocumentSequenceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DocumentSequenceClient) DeleteOneID(id uuid.UUID) *DocumentSequenceDeleteOne {
+	builder := c.Delete().Where(documentsequence.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DocumentSequenceDeleteOne{builder}
+}
+
+// Query returns a query builder for DocumentSequence.
+func (c *DocumentSequenceClient) Query() *DocumentSequenceQuery {
+	return &DocumentSequenceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDocumentSequence},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DocumentSequence entity by its id.
+func (c *DocumentSequenceClient) Get(ctx context.Context, id uuid.UUID) (*DocumentSequence, error) {
+	return c.Query().Where(documentsequence.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DocumentSequenceClient) GetX(ctx context.Context, id uuid.UUID) *DocumentSequence {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DocumentSequenceClient) Hooks() []Hook {
+	return c.hooks.DocumentSequence
+}
+
+// Interceptors returns the client interceptors.
+func (c *DocumentSequenceClient) Interceptors() []Interceptor {
+	return c.inters.DocumentSequence
+}
+
+func (c *DocumentSequenceClient) mutate(ctx context.Context, m *DocumentSequenceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DocumentSequenceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DocumentSequenceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DocumentSequenceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DocumentSequence mutation op: %q", m.Op())
 	}
 }
 
@@ -7940,6 +8089,139 @@ func (c *TenantInventoryConfigClient) mutate(ctx context.Context, m *TenantInven
 	}
 }
 
+// TicketClient is a client for the Ticket schema.
+type TicketClient struct {
+	config
+}
+
+// NewTicketClient returns a client for the Ticket from the given config.
+func NewTicketClient(c config) *TicketClient {
+	return &TicketClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ticket.Hooks(f(g(h())))`.
+func (c *TicketClient) Use(hooks ...Hook) {
+	c.hooks.Ticket = append(c.hooks.Ticket, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ticket.Intercept(f(g(h())))`.
+func (c *TicketClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Ticket = append(c.inters.Ticket, interceptors...)
+}
+
+// Create returns a builder for creating a Ticket entity.
+func (c *TicketClient) Create() *TicketCreate {
+	mutation := newTicketMutation(c.config, OpCreate)
+	return &TicketCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Ticket entities.
+func (c *TicketClient) CreateBulk(builders ...*TicketCreate) *TicketCreateBulk {
+	return &TicketCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TicketClient) MapCreateBulk(slice any, setFunc func(*TicketCreate, int)) *TicketCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TicketCreateBulk{err: fmt.Errorf("calling to TicketClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TicketCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TicketCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Ticket.
+func (c *TicketClient) Update() *TicketUpdate {
+	mutation := newTicketMutation(c.config, OpUpdate)
+	return &TicketUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TicketClient) UpdateOne(_m *Ticket) *TicketUpdateOne {
+	mutation := newTicketMutation(c.config, OpUpdateOne, withTicket(_m))
+	return &TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TicketClient) UpdateOneID(id uuid.UUID) *TicketUpdateOne {
+	mutation := newTicketMutation(c.config, OpUpdateOne, withTicketID(id))
+	return &TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Ticket.
+func (c *TicketClient) Delete() *TicketDelete {
+	mutation := newTicketMutation(c.config, OpDelete)
+	return &TicketDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TicketClient) DeleteOne(_m *Ticket) *TicketDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TicketClient) DeleteOneID(id uuid.UUID) *TicketDeleteOne {
+	builder := c.Delete().Where(ticket.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TicketDeleteOne{builder}
+}
+
+// Query returns a query builder for Ticket.
+func (c *TicketClient) Query() *TicketQuery {
+	return &TicketQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTicket},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Ticket entity by its id.
+func (c *TicketClient) Get(ctx context.Context, id uuid.UUID) (*Ticket, error) {
+	return c.Query().Where(ticket.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TicketClient) GetX(ctx context.Context, id uuid.UUID) *Ticket {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TicketClient) Hooks() []Hook {
+	return c.hooks.Ticket
+}
+
+// Interceptors returns the client interceptors.
+func (c *TicketClient) Interceptors() []Interceptor {
+	return c.inters.Ticket
+}
+
+func (c *TicketClient) mutate(ctx context.Context, m *TicketMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TicketCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TicketUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TicketDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Ticket mutation op: %q", m.Op())
+	}
+}
+
 // UnitClient is a client for the Unit schema.
 type UnitClient struct {
 	config
@@ -8902,28 +9184,30 @@ func (c *WarrantyClient) mutate(ctx context.Context, m *WarrantyMutation) (Value
 type (
 	hooks struct {
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, FoodCostVariance,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
+		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
 		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
 		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Unit, UserRoleAssignment,
-		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Hook
+		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, FoodCostVariance,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
+		FoodCostVariance, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
 		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
 		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Unit, UserRoleAssignment,
-		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )
