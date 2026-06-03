@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entreq "github.com/bengobox/inventory-service/internal/ent/requisition"
 	entreqline "github.com/bengobox/inventory-service/internal/ent/requisitionline"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
 // ─── Requisitions (procurement) ─────────────────────────────────────────────
@@ -302,6 +303,11 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 		return
 	}
 	poNumber := "PO-" + strings.ToUpper(uuid.New().String()[:8])
+	if h.docSvc != nil {
+		if n, e := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypePurchaseOrder); e == nil && n != "" {
+			poNumber = n
+		}
+	}
 	currency := body.Currency
 	if currency == "" {
 		currency = "KES"

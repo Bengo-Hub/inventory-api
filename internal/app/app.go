@@ -29,12 +29,14 @@ import (
 	router "github.com/bengobox/inventory-service/internal/http/router"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
+	"github.com/bengobox/inventory-service/internal/modules/tickets"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
@@ -156,8 +158,10 @@ func New(ctx context.Context) (*App, error) {
 	unitSvc := units.NewService(ormClient, log)
 	modifiersSvc := modifiers.NewService(ormClient, log)
 	transferSvc := transfers.NewService(ormClient, log)
+	ticketsSvc := tickets.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 	inventoryHandler.SetModifiersService(modifiersSvc)
+	inventoryHandler.SetTicketsService(ticketsSvc)
 	inventoryHandler.SetRBACService(rbacService)
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
@@ -171,6 +175,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetVarianceService(varianceSvc)
 	menuEngSvc := recipes.NewMenuEngineeringService(ormClient, log, cfg.Services.OrderingURL, cfg.Auth.APIKey)
 	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
+	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
+	inventoryExtrasHandler.SetDocService(docSvc)
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api

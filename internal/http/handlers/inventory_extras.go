@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 )
@@ -26,6 +27,12 @@ type InventoryExtrasHandler struct {
 	bundleSvc    *bundles.Service
 	varianceSvc  *recipes.VarianceService
 	menuEngSvc   *recipes.MenuEngineeringService
+	docSvc       *documents.Service
+}
+
+// SetDocService injects the document-generation service (PDF + numbering).
+func (h *InventoryExtrasHandler) SetDocService(svc *documents.Service) {
+	h.docSvc = svc
 }
 
 // NewInventoryExtrasHandler creates the handler.
@@ -146,6 +153,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	h.registerPurchaseReturnRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementMiscRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementAnalyticsRoutes(r)
+	r.Get("/inventory/purchase-orders/{poID}/pdf", h.GeneratePurchaseOrderPDF)
 
 	// Manufacturing (migrated from ERP manufacturing/*)
 	h.registerManufacturingRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)

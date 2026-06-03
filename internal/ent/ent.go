@@ -20,6 +20,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
+	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -58,6 +59,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/ent/ticket"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -132,6 +134,7 @@ func checkColumn(t, c string) error {
 			contractorderlink.Table:     contractorderlink.ValidColumn,
 			customfielddefinition.Table: customfielddefinition.ValidColumn,
 			customfieldvalue.Table:      customfieldvalue.ValidColumn,
+			documentsequence.Table:      documentsequence.ValidColumn,
 			foodcostvariance.Table:      foodcostvariance.ValidColumn,
 			inventorybalance.Table:      inventorybalance.ValidColumn,
 			inventorylot.Table:          inventorylot.ValidColumn,
@@ -170,6 +173,7 @@ func checkColumn(t, c string) error {
 			supplierperformance.Table:   supplierperformance.ValidColumn,
 			tenant.Table:                tenant.ValidColumn,
 			tenantinventoryconfig.Table: tenantinventoryconfig.ValidColumn,
+			ticket.Table:                ticket.ValidColumn,
 			unit.Table:                  unit.ValidColumn,
 			userroleassignment.Table:    userroleassignment.ValidColumn,
 			variantattribute.Table:      variantattribute.ValidColumn,

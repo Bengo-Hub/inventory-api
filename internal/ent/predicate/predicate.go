@@ -30,6 +30,9 @@ type CustomFieldDefinition func(*sql.Selector)
 // CustomFieldValue is the predicate function for customfieldvalue builders.
 type CustomFieldValue func(*sql.Selector)
 
+// DocumentSequence is the predicate function for documentsequence builders.
+type DocumentSequence func(*sql.Selector)
+
 // FoodCostVariance is the predicate function for foodcostvariance builders.
 type FoodCostVariance func(*sql.Selector)
 
@@ -143,6 +146,9 @@ type Tenant func(*sql.Selector)
 
 // TenantInventoryConfig is the predicate function for tenantinventoryconfig builders.
 type TenantInventoryConfig func(*sql.Selector)
+
+// Ticket is the predicate function for ticket builders.
+type Ticket func(*sql.Selector)
 
 // Unit is the predicate function for unit builders.
 type Unit func(*sql.Selector)
