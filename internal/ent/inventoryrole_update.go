@@ -46,6 +46,12 @@ func (_u *InventoryRoleUpdate) SetNillableTenantID(v *uuid.UUID) *InventoryRoleU
 	return _u
 }
 
+// ClearTenantID clears the value of the "tenant_id" field.
+func (_u *InventoryRoleUpdate) ClearTenantID() *InventoryRoleUpdate {
+	_u.mutation.ClearTenantID()
+	return _u
+}
+
 // SetRoleCode sets the "role_code" field.
 func (_u *InventoryRoleUpdate) SetRoleCode(v string) *InventoryRoleUpdate {
 	_u.mutation.SetRoleCode(v)
@@ -293,6 +299,9 @@ func (_u *InventoryRoleUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.TenantID(); ok {
 		_spec.SetField(inventoryrole.FieldTenantID, field.TypeUUID, value)
 	}
+	if _u.mutation.TenantIDCleared() {
+		_spec.ClearField(inventoryrole.FieldTenantID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.RoleCode(); ok {
 		_spec.SetField(inventoryrole.FieldRoleCode, field.TypeString, value)
 	}
@@ -477,6 +486,12 @@ func (_u *InventoryRoleUpdateOne) SetNillableTenantID(v *uuid.UUID) *InventoryRo
 	if v != nil {
 		_u.SetTenantID(*v)
 	}
+	return _u
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (_u *InventoryRoleUpdateOne) ClearTenantID() *InventoryRoleUpdateOne {
+	_u.mutation.ClearTenantID()
 	return _u
 }
 
@@ -756,6 +771,9 @@ func (_u *InventoryRoleUpdateOne) sqlSave(ctx context.Context) (_node *Inventory
 	}
 	if value, ok := _u.mutation.TenantID(); ok {
 		_spec.SetField(inventoryrole.FieldTenantID, field.TypeUUID, value)
+	}
+	if _u.mutation.TenantIDCleared() {
+		_spec.ClearField(inventoryrole.FieldTenantID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.RoleCode(); ok {
 		_spec.SetField(inventoryrole.FieldRoleCode, field.TypeString, value)
