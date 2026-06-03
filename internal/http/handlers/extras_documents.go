@@ -18,6 +18,17 @@ import (
 )
 
 // GeneratePurchaseOrderPDF renders a branded PO PDF (GET /inventory/purchase-orders/{poID}/pdf).
+//
+//	@Summary      Generate a branded purchase order PDF
+//	@Tags         Procurement
+//	@Produce      application/pdf
+//	@Param        poID  path      string  true  "Purchase order ID"
+//	@Success      200   {file}    binary
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID}/pdf [get]
 func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter, r *http.Request) {
 	if h.docSvc == nil {
 		writeError(w, http.StatusServiceUnavailable, "DOC_SVC_UNAVAILABLE", "Document service not configured")

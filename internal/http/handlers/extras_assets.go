@@ -47,6 +47,16 @@ type assetCategoryPayload struct {
 	UsefulLifeYears  int        `json:"useful_life_years"`
 }
 
+// ListAssetCategories handles GET /inventory/asset-categories.
+//
+//	@Summary      List asset categories
+//	@Tags         Assets
+//	@Produce      json
+//	@Success      200  {array}   map[string]interface{}  "Asset categories"
+//	@Failure      400  {object}  map[string]string
+//	@Failure      500  {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-categories [get]
 func (h *InventoryExtrasHandler) ListAssetCategories(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -63,6 +73,18 @@ func (h *InventoryExtrasHandler) ListAssetCategories(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusOK, rows)
 }
 
+// CreateAssetCategory handles POST /inventory/asset-categories.
+//
+//	@Summary      Create an asset category
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      assetCategoryPayload  true  "Asset category payload"
+//	@Success      201   {object}  map[string]interface{}
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-categories [post]
 func (h *InventoryExtrasHandler) CreateAssetCategory(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -92,6 +114,19 @@ func (h *InventoryExtrasHandler) CreateAssetCategory(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusCreated, row)
 }
 
+// UpdateAssetCategory handles PUT /inventory/asset-categories/{catID}.
+//
+//	@Summary      Update an asset category
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        catID  path      string                true  "Asset category ID"
+//	@Param        body   body      assetCategoryPayload  true  "Asset category payload"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-categories/{catID} [put]
 func (h *InventoryExtrasHandler) UpdateAssetCategory(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -128,6 +163,17 @@ func (h *InventoryExtrasHandler) UpdateAssetCategory(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusOK, row)
 }
 
+// DeleteAssetCategory handles DELETE /inventory/asset-categories/{catID}.
+//
+//	@Summary      Delete (deactivate) an asset category
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        catID  path      string  true  "Asset category ID"
+//	@Success      200    {object}  map[string]string
+//	@Failure      400    {object}  map[string]string
+//	@Failure      500    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-categories/{catID} [delete]
 func (h *InventoryExtrasHandler) DeleteAssetCategory(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -170,6 +216,19 @@ type assetPayload struct {
 	CreatedBy          *uuid.UUID `json:"created_by"`
 }
 
+// ListAssets handles GET /inventory/assets.
+//
+//	@Summary      List fixed assets
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        status       query     string  false  "Filter by status"
+//	@Param        category_id  query     string  false  "Filter by category ID"
+//	@Param        search       query     string  false  "Search by name, tag or serial number"
+//	@Success      200          {object}  map[string]interface{}  "Paginated list of assets"
+//	@Failure      400          {object}  map[string]string
+//	@Failure      500          {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets [get]
 func (h *InventoryExtrasHandler) ListAssets(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -198,6 +257,17 @@ func (h *InventoryExtrasHandler) ListAssets(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, pagination.NewResponse(rows, total, p))
 }
 
+// GetAsset handles GET /inventory/assets/{assetID}.
+//
+//	@Summary      Get a fixed asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID} [get]
 func (h *InventoryExtrasHandler) GetAsset(w http.ResponseWriter, r *http.Request) {
 	_, a, ok := h.loadAsset(w, r)
 	if !ok {
@@ -206,6 +276,18 @@ func (h *InventoryExtrasHandler) GetAsset(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, a)
 }
 
+// CreateAsset handles POST /inventory/assets.
+//
+//	@Summary      Create a fixed asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      assetPayload  true  "Asset payload"
+//	@Success      201   {object}  map[string]interface{}
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets [post]
 func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -257,6 +339,19 @@ func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusCreated, a)
 }
 
+// UpdateAsset handles PUT /inventory/assets/{assetID}.
+//
+//	@Summary      Update a fixed asset
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        assetID  path      string        true  "Asset ID"
+//	@Param        body     body      assetPayload  true  "Asset payload"
+//	@Success      200      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID} [put]
 func (h *InventoryExtrasHandler) UpdateAsset(w http.ResponseWriter, r *http.Request) {
 	tenantID, a, ok := h.loadAsset(w, r)
 	if !ok {
@@ -292,6 +387,17 @@ func (h *InventoryExtrasHandler) UpdateAsset(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusOK, updated)
 }
 
+// DeleteAsset handles DELETE /inventory/assets/{assetID}.
+//
+//	@Summary      Delete (retire) a fixed asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      200      {object}  map[string]string
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID} [delete]
 func (h *InventoryExtrasHandler) DeleteAsset(w http.ResponseWriter, r *http.Request) {
 	tenantID, a, ok := h.loadAsset(w, r)
 	if !ok {
@@ -307,6 +413,16 @@ func (h *InventoryExtrasHandler) DeleteAsset(w http.ResponseWriter, r *http.Requ
 
 // RunAssetDepreciation emits a depreciation-due event for treasury to compute +
 // post the depreciation journal (treasury owns the financial side).
+//
+//	@Summary      Trigger a depreciation run for an asset
+//	@Tags         Assets
+//	@Produce      json
+//	@Param        assetID  path      string  true  "Asset ID"
+//	@Success      202      {object}  map[string]interface{}
+//	@Failure      400      {object}  map[string]string
+//	@Failure      404      {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/assets/{assetID}/depreciation-run [post]
 func (h *InventoryExtrasHandler) RunAssetDepreciation(w http.ResponseWriter, r *http.Request) {
 	tenantID, a, ok := h.loadAsset(w, r)
 	if !ok {

@@ -56,6 +56,18 @@ func (h *InventoryExtrasHandler) registerContractRoutes(r chi.Router, perm func(
 	r.With(perm(change)).Post("/inventory/contracts/{contractID}/link-order", h.LinkContractOrder)
 }
 
+// ListContracts handles GET /inventory/contracts.
+//
+//	@Summary      List supplier contracts
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        status       query     string  false  "Filter by status"
+//	@Param        supplier_id  query     string  false  "Filter by supplier ID"
+//	@Success      200          {object}  map[string]interface{}  "Paginated list of contractDTO"
+//	@Failure      400          {object}  map[string]string
+//	@Failure      500          {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts [get]
 func (h *InventoryExtrasHandler) ListContracts(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -85,6 +97,18 @@ func (h *InventoryExtrasHandler) ListContracts(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
 
+// CreateContract handles POST /inventory/contracts.
+//
+//	@Summary      Create a supplier contract
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      contractPayload  true  "Contract payload"
+//	@Success      201   {object}  contractDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts [post]
 func (h *InventoryExtrasHandler) CreateContract(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -125,6 +149,17 @@ func (h *InventoryExtrasHandler) CreateContract(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusCreated, contractToDTO(c))
 }
 
+// GetContract handles GET /inventory/contracts/{contractID}.
+//
+//	@Summary      Get a supplier contract
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        contractID  path      string  true  "Contract ID"
+//	@Success      200         {object}  contractDTO
+//	@Failure      400         {object}  map[string]string
+//	@Failure      404         {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts/{contractID} [get]
 func (h *InventoryExtrasHandler) GetContract(w http.ResponseWriter, r *http.Request) {
 	_, c, ok := h.loadContract(w, r)
 	if !ok {
@@ -133,6 +168,19 @@ func (h *InventoryExtrasHandler) GetContract(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusOK, contractToDTO(c))
 }
 
+// UpdateContract handles PUT /inventory/contracts/{contractID}.
+//
+//	@Summary      Update a supplier contract
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        contractID  path      string           true  "Contract ID"
+//	@Param        body        body      contractPayload  true  "Contract payload"
+//	@Success      200         {object}  contractDTO
+//	@Failure      400         {object}  map[string]string
+//	@Failure      404         {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts/{contractID} [put]
 func (h *InventoryExtrasHandler) UpdateContract(w http.ResponseWriter, r *http.Request) {
 	_, c, ok := h.loadContract(w, r)
 	if !ok {
@@ -161,10 +209,32 @@ func (h *InventoryExtrasHandler) UpdateContract(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, contractToDTO(updated))
 }
 
+// ActivateContract handles POST /inventory/contracts/{contractID}/activate.
+//
+//	@Summary      Activate a supplier contract
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        contractID  path      string  true  "Contract ID"
+//	@Success      200         {object}  contractDTO
+//	@Failure      400         {object}  map[string]string
+//	@Failure      404         {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts/{contractID}/activate [post]
 func (h *InventoryExtrasHandler) ActivateContract(w http.ResponseWriter, r *http.Request) {
 	h.setContractStatus(w, r, entcontract.StatusActive, "inventory.contract.activated")
 }
 
+// TerminateContract handles POST /inventory/contracts/{contractID}/terminate.
+//
+//	@Summary      Terminate a supplier contract
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        contractID  path      string  true  "Contract ID"
+//	@Success      200         {object}  contractDTO
+//	@Failure      400         {object}  map[string]string
+//	@Failure      404         {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts/{contractID}/terminate [post]
 func (h *InventoryExtrasHandler) TerminateContract(w http.ResponseWriter, r *http.Request) {
 	h.setContractStatus(w, r, entcontract.StatusTerminated, "inventory.contract.terminated")
 }
@@ -184,6 +254,19 @@ func (h *InventoryExtrasHandler) setContractStatus(w http.ResponseWriter, r *htt
 }
 
 // LinkContractOrder links a PurchaseOrder to a contract.
+//
+//	@Summary      Link a purchase order to a contract
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        contractID  path      string  true  "Contract ID"
+//	@Param        body        body      object  true  "purchase_order_id"
+//	@Success      201         {object}  map[string]interface{}
+//	@Failure      400         {object}  map[string]string
+//	@Failure      404         {object}  map[string]string
+//	@Failure      500         {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/contracts/{contractID}/link-order [post]
 func (h *InventoryExtrasHandler) LinkContractOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, c, ok := h.loadContract(w, r)
 	if !ok {

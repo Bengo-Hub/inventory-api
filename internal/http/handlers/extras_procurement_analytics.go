@@ -18,6 +18,14 @@ func (h *InventoryExtrasHandler) registerProcurementAnalyticsRoutes(r chi.Router
 }
 
 // ProcurementDashboard returns headline procurement KPIs for the tenant.
+//
+//	@Summary      Procurement KPI dashboard
+//	@Tags         Procurement
+//	@Produce      json
+//	@Success      200  {object}  map[string]interface{}
+//	@Failure      400  {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/procurement/dashboard [get]
 func (h *InventoryExtrasHandler) ProcurementDashboard(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {

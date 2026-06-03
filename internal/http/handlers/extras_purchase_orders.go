@@ -34,6 +34,17 @@ type purchaseOrderDTO struct {
 	CreatedAt     time.Time  `json:"created_at"`
 }
 
+// ListPurchaseOrders handles GET /inventory/purchase-orders.
+//
+//	@Summary      List purchase orders
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        search  query     string  false  "Filter by PO number or supplier name"
+//	@Success      200     {array}   purchaseOrderDTO
+//	@Failure      400     {object}  map[string]string
+//	@Failure      500     {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders [get]
 func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -91,6 +102,16 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 }
 
 // GetPurchaseOrder handles GET /inventory/purchase-orders/{poID}.
+//
+//	@Summary      Get a purchase order with its line items
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        poID  path      string  true  "Purchase order ID"
+//	@Success      200   {object}  purchaseOrderDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID} [get]
 func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -204,6 +225,17 @@ type createPOInput struct {
 }
 
 // CreatePurchaseOrder handles POST /inventory/purchase-orders.
+//
+//	@Summary      Create a purchase order with line items
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      createPOInput  true  "Purchase order payload"
+//	@Success      201   {object}  map[string]interface{}
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders [post]
 func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -302,6 +334,16 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 
 // SendPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/send.
 // Transitions a draft PO to sent status.
+//
+//	@Summary      Send a draft purchase order
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        poID  path      string  true  "Purchase order ID"
+//	@Success      200   {object}  map[string]string
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID}/send [put]
 func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -372,6 +414,17 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 
 // ReceivePurchaseOrder handles PUT /inventory/purchase-orders/{poID}/receive.
 // Marks the PO as received and increments on_hand stock for each line.
+//
+//	@Summary      Receive a purchase order into stock
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        poID  path      string  true  "Purchase order ID"
+//	@Success      200   {object}  map[string]string
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID}/receive [put]
 func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -514,6 +567,16 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 }
 
 // CancelPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/cancel.
+//
+//	@Summary      Cancel a purchase order
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        poID  path      string  true  "Purchase order ID"
+//	@Success      200   {object}  map[string]string
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID}/cancel [put]
 func (h *InventoryExtrasHandler) CancelPurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {

@@ -59,6 +59,17 @@ func (h *InventoryExtrasHandler) registerPurchaseReturnRoutes(r chi.Router, perm
 	r.With(perm(change)).Post("/inventory/purchase-returns/{returnID}/approve", h.ApprovePurchaseReturn)
 }
 
+// ListPurchaseReturns handles GET /inventory/purchase-returns.
+//
+//	@Summary      List purchase returns
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        payment_status  query     string  false  "Filter by payment status"
+//	@Success      200             {object}  map[string]interface{}  "Paginated list of purchaseReturnDTO"
+//	@Failure      400             {object}  map[string]string
+//	@Failure      500             {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-returns [get]
 func (h *InventoryExtrasHandler) ListPurchaseReturns(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -83,6 +94,17 @@ func (h *InventoryExtrasHandler) ListPurchaseReturns(w http.ResponseWriter, r *h
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
 
+// GetPurchaseReturn handles GET /inventory/purchase-returns/{returnID}.
+//
+//	@Summary      Get a purchase return
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        returnID  path      string  true  "Purchase return ID"
+//	@Success      200       {object}  purchaseReturnDTO
+//	@Failure      400       {object}  map[string]string
+//	@Failure      404       {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-returns/{returnID} [get]
 func (h *InventoryExtrasHandler) GetPurchaseReturn(w http.ResponseWriter, r *http.Request) {
 	_, pr, ok := h.loadPurchaseReturn(w, r)
 	if !ok {
@@ -91,6 +113,18 @@ func (h *InventoryExtrasHandler) GetPurchaseReturn(w http.ResponseWriter, r *htt
 	writeJSON(w, http.StatusOK, purchaseReturnToDTO(pr))
 }
 
+// CreatePurchaseReturn handles POST /inventory/purchase-returns.
+//
+//	@Summary      Create a purchase return (supplier RMA)
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      purchaseReturnPayload  true  "Purchase return payload"
+//	@Success      201   {object}  purchaseReturnDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-returns [post]
 func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -141,6 +175,17 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 
 // ApprovePurchaseReturn marks the return paid and emits an event so stock is
 // decremented (restock-out) by the stock module consumer.
+//
+//	@Summary      Approve a purchase return and remove goods from stock
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        returnID  path      string  true  "Purchase return ID"
+//	@Success      200       {object}  purchaseReturnDTO
+//	@Failure      400       {object}  map[string]string
+//	@Failure      404       {object}  map[string]string
+//	@Failure      500       {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-returns/{returnID}/approve [post]
 func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r *http.Request) {
 	tenantID, pr, ok := h.loadPurchaseReturn(w, r)
 	if !ok {

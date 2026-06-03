@@ -16,6 +16,14 @@ func (h *InventoryExtrasHandler) registerManufacturingAnalyticsRoutes(r chi.Rout
 }
 
 // ManufacturingDashboard returns headline production KPIs for the tenant.
+//
+//	@Summary      Manufacturing KPI dashboard
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Success      200  {object}  map[string]interface{}
+//	@Failure      400  {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/manufacturing/dashboard [get]
 func (h *InventoryExtrasHandler) ManufacturingDashboard(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {

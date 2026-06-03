@@ -138,6 +138,18 @@ func (h *InventoryExtrasHandler) registerRequisitionRoutes(r chi.Router, perm fu
 	r.With(perm(add)).Post("/inventory/requisitions/{reqID}/convert-to-po", h.ConvertRequisitionToPO)
 }
 
+// ListRequisitions handles GET /inventory/requisitions.
+//
+//	@Summary      List requisitions
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        status        query     string  false  "Filter by status"
+//	@Param        request_type  query     string  false  "Filter by request type"
+//	@Success      200           {object}  map[string]interface{}  "Paginated list of requisitionDTO"
+//	@Failure      400           {object}  map[string]string
+//	@Failure      500           {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions [get]
 func (h *InventoryExtrasHandler) ListRequisitions(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -165,6 +177,17 @@ func (h *InventoryExtrasHandler) ListRequisitions(w http.ResponseWriter, r *http
 	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
 }
 
+// GetRequisition handles GET /inventory/requisitions/{reqID}.
+//
+//	@Summary      Get a requisition with its lines
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Success      200    {object}  requisitionDTO
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID} [get]
 func (h *InventoryExtrasHandler) GetRequisition(w http.ResponseWriter, r *http.Request) {
 	tenantID, rq, ok := h.loadRequisition(w, r)
 	if !ok {
@@ -176,6 +199,18 @@ func (h *InventoryExtrasHandler) GetRequisition(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, requisitionToDTO(rq, lines))
 }
 
+// CreateRequisition handles POST /inventory/requisitions.
+//
+//	@Summary      Create a requisition with lines
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        body  body      requisitionPayload  true  "Requisition payload"
+//	@Success      201   {object}  requisitionDTO
+//	@Failure      400   {object}  map[string]string
+//	@Failure      500   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions [post]
 func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -244,18 +279,62 @@ func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *htt
 	writeJSON(w, http.StatusCreated, requisitionToDTO(rq, lines))
 }
 
+// SubmitRequisition handles POST /inventory/requisitions/{reqID}/submit.
+//
+//	@Summary      Submit a requisition for review
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Success      200    {object}  requisitionDTO
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID}/submit [post]
 func (h *InventoryExtrasHandler) SubmitRequisition(w http.ResponseWriter, r *http.Request) {
 	h.transitionRequisition(w, r, entreq.StatusSubmitted, "inventory.requisition.submitted")
 }
 
+// ReviewRequisition handles POST /inventory/requisitions/{reqID}/review.
+//
+//	@Summary      Move a requisition into procurement review
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Success      200    {object}  requisitionDTO
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID}/review [post]
 func (h *InventoryExtrasHandler) ReviewRequisition(w http.ResponseWriter, r *http.Request) {
 	h.transitionRequisition(w, r, entreq.StatusProcurementReview, "inventory.requisition.reviewing")
 }
 
+// ApproveRequisition handles POST /inventory/requisitions/{reqID}/approve.
+//
+//	@Summary      Approve a requisition
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Success      200    {object}  requisitionDTO
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID}/approve [post]
 func (h *InventoryExtrasHandler) ApproveRequisition(w http.ResponseWriter, r *http.Request) {
 	h.transitionRequisition(w, r, entreq.StatusApproved, "inventory.requisition.approved")
 }
 
+// RejectRequisition handles POST /inventory/requisitions/{reqID}/reject.
+//
+//	@Summary      Reject a requisition
+//	@Tags         Procurement
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Success      200    {object}  requisitionDTO
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID}/reject [post]
 func (h *InventoryExtrasHandler) RejectRequisition(w http.ResponseWriter, r *http.Request) {
 	h.transitionRequisition(w, r, entreq.StatusRejected, "inventory.requisition.rejected")
 }
@@ -277,6 +356,19 @@ func (h *InventoryExtrasHandler) transitionRequisition(w http.ResponseWriter, r 
 }
 
 // ConvertRequisitionToPO creates a PurchaseOrder (+ lines) from an approved requisition's inventory lines.
+//
+//	@Summary      Convert a requisition into a purchase order
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        reqID  path      string  true  "Requisition ID"
+//	@Param        body   body      object  true  "Supplier, warehouse and currency"
+//	@Success      201    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Failure      500    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/requisitions/{reqID}/convert-to-po [post]
 func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r *http.Request) {
 	tenantID, rq, ok := h.loadRequisition(w, r)
 	if !ok {
