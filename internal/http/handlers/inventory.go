@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
@@ -95,6 +96,7 @@ type InventoryHandler struct {
 	unitSvc      UnitsServicer
 	modifiersSvc ModifiersServicer
 	ticketsSvc   *tickets.Service
+	docSvc       *documents.Service
 	rbacSvc      *rbac.Service
 }
 
@@ -123,6 +125,11 @@ func (h *InventoryHandler) SetModifiersService(svc ModifiersServicer) {
 // SetTicketsService injects the tickets service (optional; ticket endpoints are skipped if nil).
 func (h *InventoryHandler) SetTicketsService(svc *tickets.Service) {
 	h.ticketsSvc = svc
+}
+
+// SetDocService injects the documents service (tenant branding + numbering) for ticket PDFs.
+func (h *InventoryHandler) SetDocService(svc *documents.Service) {
+	h.docSvc = svc
 }
 
 // parseTenantID is now defined in tenant.go with platform-owner override support.
@@ -190,6 +197,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Event ticketing (sell seats with capacity enforcement + check-in)
 		if h.ticketsSvc != nil {
 			inv.Get("/events/{id}/availability", h.GetEventAvailability)
+			// Public branded ticket PDF (with QR) by code — GET, no perm (the code is the secret).
+			inv.Get("/tickets/{code}/pdf", h.GetPublicTicketPDF)
 			inv.With(perm(rbac.PermTicketsView)).Get("/tickets", h.ListTickets)
 			inv.With(perm(rbac.PermTicketsView)).Get("/tickets/{code}", h.GetTicket)
 			inv.With(perm(rbac.PermTicketsAdd)).Post("/tickets", h.CreateTicket)

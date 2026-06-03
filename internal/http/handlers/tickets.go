@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/Bengo-Hub/pagination"
@@ -83,6 +84,55 @@ func (h *InventoryHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, pagination.NewResponse(rows, total, p))
+}
+
+// GetPublicTicketPDF handles GET /inventory/tickets/{code}/pdf — a public (no-auth) branded ticket
+// PDF with an embedded QR of the code. The code itself is the secret/proof of ownership.
+func (h *InventoryHandler) GetPublicTicketPDF(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	code := chi.URLParam(r, "code")
+	t, err := h.ticketsSvc.GetByCode(r.Context(), tenantID, code)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Ticket not found")
+		return
+	}
+	in := tickets.TicketPDFInput{
+		Code:       t.Code,
+		TierName:   t.TierName,
+		Quantity:   t.Quantity,
+		BuyerName:  t.BuyerName,
+		BuyerEmail: t.BuyerEmail,
+		Currency:   t.Currency,
+		TotalPrice: t.TotalPrice,
+	}
+	if ev, eerr := h.ticketsSvc.GetEventItem(r.Context(), tenantID, t.EventItemID); eerr == nil {
+		in.EventName = ev.Name
+		if ev.EventVenue != nil {
+			in.Venue = *ev.EventVenue
+		}
+		if ev.EventStartAt != nil {
+			in.EventDate = ev.EventStartAt.Format("Mon, 2 Jan 2006 3:04 PM")
+		}
+	}
+	if h.docSvc != nil {
+		b := h.docSvc.GetBranding(r.Context(), tenantID)
+		in.CompanyName = b.CompanyName
+		in.LogoURL = b.LogoURL
+		in.PrimaryColor = b.PrimaryColor
+	}
+	pdf, err := tickets.RenderTicketPDF(in)
+	if err != nil {
+		h.log.Error("render ticket pdf failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render ticket")
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="ticket-%s.pdf"`, t.Code))
+	_, _ = w.Write(pdf)
 }
 
 // GetTicket handles GET /inventory/tickets/{code}.
