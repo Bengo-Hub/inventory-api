@@ -88,6 +88,13 @@ const (
 	PermUsersChange = "inventory.users.change"
 	PermUsersDelete = "inventory.users.delete"
 	PermUsersManage = "inventory.users.manage"
+
+	// tickets (event seat selling + check-in)
+	PermTicketsView   = "inventory.tickets.view"
+	PermTicketsAdd    = "inventory.tickets.add"
+	PermTicketsChange = "inventory.tickets.change"
+	PermTicketsDelete = "inventory.tickets.delete"
+	PermTicketsManage = "inventory.tickets.manage"
 )
 
 // Role codes seeded per tenant.

@@ -44,6 +44,7 @@ var rolePermMap = map[string][]string{
 		"inventory.consumptions.add", "inventory.consumptions.view", "inventory.consumptions.change", "inventory.consumptions.delete", "inventory.consumptions.manage",
 		"inventory.reservations.add", "inventory.reservations.view", "inventory.reservations.change", "inventory.reservations.delete", "inventory.reservations.manage",
 		"inventory.units.view",
+		"inventory.tickets.add", "inventory.tickets.view", "inventory.tickets.change", "inventory.tickets.delete", "inventory.tickets.manage",
 	},
 	"stock_clerk": {
 		"inventory.stock.view", "inventory.stock.change", "inventory.stock.add",
@@ -55,6 +56,7 @@ var rolePermMap = map[string][]string{
 		"inventory.reservations.view",
 		"inventory.units.view",
 		"inventory.recipes.view",
+		"inventory.tickets.view", "inventory.tickets.add", "inventory.tickets.change",
 	},
 	"viewer": {
 		"inventory.items.view",
@@ -66,6 +68,7 @@ var rolePermMap = map[string][]string{
 		"inventory.consumptions.view",
 		"inventory.reservations.view",
 		"inventory.units.view",
+		"inventory.tickets.view",
 	},
 }
 
