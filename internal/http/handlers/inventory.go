@@ -21,6 +21,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
+	"github.com/bengobox/inventory-service/internal/modules/tickets"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -93,6 +94,7 @@ type InventoryHandler struct {
 	recipeSvc    RecipesServicer
 	unitSvc      UnitsServicer
 	modifiersSvc ModifiersServicer
+	ticketsSvc   *tickets.Service
 	rbacSvc      *rbac.Service
 }
 
@@ -116,6 +118,11 @@ func (h *InventoryHandler) SetRBACService(svc *rbac.Service) {
 // SetModifiersService injects the modifiers service (optional; modifier endpoints are skipped if nil).
 func (h *InventoryHandler) SetModifiersService(svc ModifiersServicer) {
 	h.modifiersSvc = svc
+}
+
+// SetTicketsService injects the tickets service (optional; ticket endpoints are skipped if nil).
+func (h *InventoryHandler) SetTicketsService(svc *tickets.Service) {
+	h.ticketsSvc = svc
 }
 
 // parseTenantID is now defined in tenant.go with platform-owner override support.
@@ -179,6 +186,16 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Events — SERVICE-type items with event_start_at set
 		inv.Get("/events", h.ListEventItems)
+
+		// Event ticketing (sell seats with capacity enforcement + check-in)
+		if h.ticketsSvc != nil {
+			inv.Get("/events/{id}/availability", h.GetEventAvailability)
+			inv.With(perm(rbac.PermTicketsView)).Get("/tickets", h.ListTickets)
+			inv.With(perm(rbac.PermTicketsView)).Get("/tickets/{code}", h.GetTicket)
+			inv.With(perm(rbac.PermTicketsAdd)).Post("/tickets", h.CreateTicket)
+			inv.With(perm(rbac.PermTicketsChange)).Post("/tickets/{code}/redeem", h.RedeemTicket)
+			inv.With(perm(rbac.PermTicketsChange)).Post("/tickets/{id}/cancel", h.CancelTicket)
+		}
 
 		// Units (manage is platform-only; view is open)
 		inv.Get("/units", h.ListUnits)

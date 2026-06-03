@@ -40,6 +40,7 @@ func buildPermDefs() []permDef {
 		{"units", "Units", "unit of measure management (platform-only for manage operations)"},
 		{"config", "Config", "service configuration management"},
 		{"users", "Users", "user management"},
+		{"tickets", "Tickets", "event ticket selling, issuance and check-in"},
 	}
 
 	actions := []struct {
