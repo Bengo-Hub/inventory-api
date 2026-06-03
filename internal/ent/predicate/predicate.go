@@ -6,6 +6,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Asset is the predicate function for asset builders.
+type Asset func(*sql.Selector)
+
+// AssetAudit is the predicate function for assetaudit builders.
+type AssetAudit func(*sql.Selector)
+
+// AssetCategory is the predicate function for assetcategory builders.
+type AssetCategory func(*sql.Selector)
+
+// AssetDisposal is the predicate function for assetdisposal builders.
+type AssetDisposal func(*sql.Selector)
+
+// AssetInsurance is the predicate function for assetinsurance builders.
+type AssetInsurance func(*sql.Selector)
+
+// AssetMaintenance is the predicate function for assetmaintenance builders.
+type AssetMaintenance func(*sql.Selector)
+
+// AssetReservation is the predicate function for assetreservation builders.
+type AssetReservation func(*sql.Selector)
+
+// AssetTransfer is the predicate function for assettransfer builders.
+type AssetTransfer func(*sql.Selector)
+
 // BatchRawMaterial is the predicate function for batchrawmaterial builders.
 type BatchRawMaterial func(*sql.Selector)
 

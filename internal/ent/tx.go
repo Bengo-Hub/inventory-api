@@ -12,6 +12,22 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Asset is the client for interacting with the Asset builders.
+	Asset *AssetClient
+	// AssetAudit is the client for interacting with the AssetAudit builders.
+	AssetAudit *AssetAuditClient
+	// AssetCategory is the client for interacting with the AssetCategory builders.
+	AssetCategory *AssetCategoryClient
+	// AssetDisposal is the client for interacting with the AssetDisposal builders.
+	AssetDisposal *AssetDisposalClient
+	// AssetInsurance is the client for interacting with the AssetInsurance builders.
+	AssetInsurance *AssetInsuranceClient
+	// AssetMaintenance is the client for interacting with the AssetMaintenance builders.
+	AssetMaintenance *AssetMaintenanceClient
+	// AssetReservation is the client for interacting with the AssetReservation builders.
+	AssetReservation *AssetReservationClient
+	// AssetTransfer is the client for interacting with the AssetTransfer builders.
+	AssetTransfer *AssetTransferClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
 	// Bundle is the client for interacting with the Bundle builders.
@@ -251,6 +267,14 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Asset = NewAssetClient(tx.config)
+	tx.AssetAudit = NewAssetAuditClient(tx.config)
+	tx.AssetCategory = NewAssetCategoryClient(tx.config)
+	tx.AssetDisposal = NewAssetDisposalClient(tx.config)
+	tx.AssetInsurance = NewAssetInsuranceClient(tx.config)
+	tx.AssetMaintenance = NewAssetMaintenanceClient(tx.config)
+	tx.AssetReservation = NewAssetReservationClient(tx.config)
+	tx.AssetTransfer = NewAssetTransferClient(tx.config)
 	tx.BatchRawMaterial = NewBatchRawMaterialClient(tx.config)
 	tx.Bundle = NewBundleClient(tx.config)
 	tx.BundleComponent = NewBundleComponentClient(tx.config)
@@ -314,7 +338,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: BatchRawMaterial.QueryXXX(), the query will be executed
+// applies a query, for example: Asset.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

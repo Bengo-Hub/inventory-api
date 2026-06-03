@@ -5,6 +5,14 @@ package ent
 import (
 	"time"
 
+	"github.com/bengobox/inventory-service/internal/ent/asset"
+	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
+	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
+	"github.com/bengobox/inventory-service/internal/ent/assetdisposal"
+	"github.com/bengobox/inventory-service/internal/ent/assetinsurance"
+	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
+	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
+	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -66,6 +74,186 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	assetFields := schema.Asset{}.Fields()
+	_ = assetFields
+	// assetDescAssetTag is the schema descriptor for asset_tag field.
+	assetDescAssetTag := assetFields[2].Descriptor()
+	// asset.AssetTagValidator is a validator for the "asset_tag" field. It is called by the builders before save.
+	asset.AssetTagValidator = assetDescAssetTag.Validators[0].(func(string) error)
+	// assetDescName is the schema descriptor for name field.
+	assetDescName := assetFields[3].Descriptor()
+	// asset.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	asset.NameValidator = assetDescName.Validators[0].(func(string) error)
+	// assetDescPurchaseCost is the schema descriptor for purchase_cost field.
+	assetDescPurchaseCost := assetFields[11].Descriptor()
+	// asset.DefaultPurchaseCost holds the default value on creation for the purchase_cost field.
+	asset.DefaultPurchaseCost = assetDescPurchaseCost.Default.(float64)
+	// assetDescCurrentValue is the schema descriptor for current_value field.
+	assetDescCurrentValue := assetFields[12].Descriptor()
+	// asset.DefaultCurrentValue holds the default value on creation for the current_value field.
+	asset.DefaultCurrentValue = assetDescCurrentValue.Default.(float64)
+	// assetDescSalvageValue is the schema descriptor for salvage_value field.
+	assetDescSalvageValue := assetFields[13].Descriptor()
+	// asset.DefaultSalvageValue holds the default value on creation for the salvage_value field.
+	asset.DefaultSalvageValue = assetDescSalvageValue.Default.(float64)
+	// assetDescDepreciationRate is the schema descriptor for depreciation_rate field.
+	assetDescDepreciationRate := assetFields[14].Descriptor()
+	// asset.DefaultDepreciationRate holds the default value on creation for the depreciation_rate field.
+	asset.DefaultDepreciationRate = assetDescDepreciationRate.Default.(float64)
+	// assetDescAccumulatedDepreciation is the schema descriptor for accumulated_depreciation field.
+	assetDescAccumulatedDepreciation := assetFields[16].Descriptor()
+	// asset.DefaultAccumulatedDepreciation holds the default value on creation for the accumulated_depreciation field.
+	asset.DefaultAccumulatedDepreciation = assetDescAccumulatedDepreciation.Default.(float64)
+	// assetDescBookValue is the schema descriptor for book_value field.
+	assetDescBookValue := assetFields[17].Descriptor()
+	// asset.DefaultBookValue holds the default value on creation for the book_value field.
+	asset.DefaultBookValue = assetDescBookValue.Default.(float64)
+	// assetDescIsActive is the schema descriptor for is_active field.
+	assetDescIsActive := assetFields[29].Descriptor()
+	// asset.DefaultIsActive holds the default value on creation for the is_active field.
+	asset.DefaultIsActive = assetDescIsActive.Default.(bool)
+	// assetDescCreatedAt is the schema descriptor for created_at field.
+	assetDescCreatedAt := assetFields[31].Descriptor()
+	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
+	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
+	// assetDescUpdatedAt is the schema descriptor for updated_at field.
+	assetDescUpdatedAt := assetFields[32].Descriptor()
+	// asset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	asset.DefaultUpdatedAt = assetDescUpdatedAt.Default.(func() time.Time)
+	// asset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	asset.UpdateDefaultUpdatedAt = assetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// assetDescID is the schema descriptor for id field.
+	assetDescID := assetFields[0].Descriptor()
+	// asset.DefaultID holds the default value on creation for the id field.
+	asset.DefaultID = assetDescID.Default.(func() uuid.UUID)
+	assetauditFields := schema.AssetAudit{}.Fields()
+	_ = assetauditFields
+	// assetauditDescCreatedAt is the schema descriptor for created_at field.
+	assetauditDescCreatedAt := assetauditFields[12].Descriptor()
+	// assetaudit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetaudit.DefaultCreatedAt = assetauditDescCreatedAt.Default.(func() time.Time)
+	// assetauditDescID is the schema descriptor for id field.
+	assetauditDescID := assetauditFields[0].Descriptor()
+	// assetaudit.DefaultID holds the default value on creation for the id field.
+	assetaudit.DefaultID = assetauditDescID.Default.(func() uuid.UUID)
+	assetcategoryFields := schema.AssetCategory{}.Fields()
+	_ = assetcategoryFields
+	// assetcategoryDescName is the schema descriptor for name field.
+	assetcategoryDescName := assetcategoryFields[2].Descriptor()
+	// assetcategory.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	assetcategory.NameValidator = assetcategoryDescName.Validators[0].(func(string) error)
+	// assetcategoryDescDepreciationRate is the schema descriptor for depreciation_rate field.
+	assetcategoryDescDepreciationRate := assetcategoryFields[5].Descriptor()
+	// assetcategory.DefaultDepreciationRate holds the default value on creation for the depreciation_rate field.
+	assetcategory.DefaultDepreciationRate = assetcategoryDescDepreciationRate.Default.(float64)
+	// assetcategoryDescUsefulLifeYears is the schema descriptor for useful_life_years field.
+	assetcategoryDescUsefulLifeYears := assetcategoryFields[6].Descriptor()
+	// assetcategory.DefaultUsefulLifeYears holds the default value on creation for the useful_life_years field.
+	assetcategory.DefaultUsefulLifeYears = assetcategoryDescUsefulLifeYears.Default.(int)
+	// assetcategoryDescIsActive is the schema descriptor for is_active field.
+	assetcategoryDescIsActive := assetcategoryFields[7].Descriptor()
+	// assetcategory.DefaultIsActive holds the default value on creation for the is_active field.
+	assetcategory.DefaultIsActive = assetcategoryDescIsActive.Default.(bool)
+	// assetcategoryDescCreatedAt is the schema descriptor for created_at field.
+	assetcategoryDescCreatedAt := assetcategoryFields[8].Descriptor()
+	// assetcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetcategory.DefaultCreatedAt = assetcategoryDescCreatedAt.Default.(func() time.Time)
+	// assetcategoryDescUpdatedAt is the schema descriptor for updated_at field.
+	assetcategoryDescUpdatedAt := assetcategoryFields[9].Descriptor()
+	// assetcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	assetcategory.DefaultUpdatedAt = assetcategoryDescUpdatedAt.Default.(func() time.Time)
+	// assetcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	assetcategory.UpdateDefaultUpdatedAt = assetcategoryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// assetcategoryDescID is the schema descriptor for id field.
+	assetcategoryDescID := assetcategoryFields[0].Descriptor()
+	// assetcategory.DefaultID holds the default value on creation for the id field.
+	assetcategory.DefaultID = assetcategoryDescID.Default.(func() uuid.UUID)
+	assetdisposalFields := schema.AssetDisposal{}.Fields()
+	_ = assetdisposalFields
+	// assetdisposalDescDisposalValue is the schema descriptor for disposal_value field.
+	assetdisposalDescDisposalValue := assetdisposalFields[5].Descriptor()
+	// assetdisposal.DefaultDisposalValue holds the default value on creation for the disposal_value field.
+	assetdisposal.DefaultDisposalValue = assetdisposalDescDisposalValue.Default.(float64)
+	// assetdisposalDescCreatedAt is the schema descriptor for created_at field.
+	assetdisposalDescCreatedAt := assetdisposalFields[11].Descriptor()
+	// assetdisposal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetdisposal.DefaultCreatedAt = assetdisposalDescCreatedAt.Default.(func() time.Time)
+	// assetdisposalDescID is the schema descriptor for id field.
+	assetdisposalDescID := assetdisposalFields[0].Descriptor()
+	// assetdisposal.DefaultID holds the default value on creation for the id field.
+	assetdisposal.DefaultID = assetdisposalDescID.Default.(func() uuid.UUID)
+	assetinsuranceFields := schema.AssetInsurance{}.Fields()
+	_ = assetinsuranceFields
+	// assetinsuranceDescPolicyNumber is the schema descriptor for policy_number field.
+	assetinsuranceDescPolicyNumber := assetinsuranceFields[3].Descriptor()
+	// assetinsurance.PolicyNumberValidator is a validator for the "policy_number" field. It is called by the builders before save.
+	assetinsurance.PolicyNumberValidator = assetinsuranceDescPolicyNumber.Validators[0].(func(string) error)
+	// assetinsuranceDescCoverageAmount is the schema descriptor for coverage_amount field.
+	assetinsuranceDescCoverageAmount := assetinsuranceFields[6].Descriptor()
+	// assetinsurance.DefaultCoverageAmount holds the default value on creation for the coverage_amount field.
+	assetinsurance.DefaultCoverageAmount = assetinsuranceDescCoverageAmount.Default.(float64)
+	// assetinsuranceDescPremiumAmount is the schema descriptor for premium_amount field.
+	assetinsuranceDescPremiumAmount := assetinsuranceFields[7].Descriptor()
+	// assetinsurance.DefaultPremiumAmount holds the default value on creation for the premium_amount field.
+	assetinsurance.DefaultPremiumAmount = assetinsuranceDescPremiumAmount.Default.(float64)
+	// assetinsuranceDescDeductible is the schema descriptor for deductible field.
+	assetinsuranceDescDeductible := assetinsuranceFields[10].Descriptor()
+	// assetinsurance.DefaultDeductible holds the default value on creation for the deductible field.
+	assetinsurance.DefaultDeductible = assetinsuranceDescDeductible.Default.(float64)
+	// assetinsuranceDescIsActive is the schema descriptor for is_active field.
+	assetinsuranceDescIsActive := assetinsuranceFields[11].Descriptor()
+	// assetinsurance.DefaultIsActive holds the default value on creation for the is_active field.
+	assetinsurance.DefaultIsActive = assetinsuranceDescIsActive.Default.(bool)
+	// assetinsuranceDescCreatedAt is the schema descriptor for created_at field.
+	assetinsuranceDescCreatedAt := assetinsuranceFields[13].Descriptor()
+	// assetinsurance.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetinsurance.DefaultCreatedAt = assetinsuranceDescCreatedAt.Default.(func() time.Time)
+	// assetinsuranceDescID is the schema descriptor for id field.
+	assetinsuranceDescID := assetinsuranceFields[0].Descriptor()
+	// assetinsurance.DefaultID holds the default value on creation for the id field.
+	assetinsurance.DefaultID = assetinsuranceDescID.Default.(func() uuid.UUID)
+	assetmaintenanceFields := schema.AssetMaintenance{}.Fields()
+	_ = assetmaintenanceFields
+	// assetmaintenanceDescCost is the schema descriptor for cost field.
+	assetmaintenanceDescCost := assetmaintenanceFields[7].Descriptor()
+	// assetmaintenance.DefaultCost holds the default value on creation for the cost field.
+	assetmaintenance.DefaultCost = assetmaintenanceDescCost.Default.(float64)
+	// assetmaintenanceDescDowntimeHours is the schema descriptor for downtime_hours field.
+	assetmaintenanceDescDowntimeHours := assetmaintenanceFields[14].Descriptor()
+	// assetmaintenance.DefaultDowntimeHours holds the default value on creation for the downtime_hours field.
+	assetmaintenance.DefaultDowntimeHours = assetmaintenanceDescDowntimeHours.Default.(float64)
+	// assetmaintenanceDescCreatedAt is the schema descriptor for created_at field.
+	assetmaintenanceDescCreatedAt := assetmaintenanceFields[15].Descriptor()
+	// assetmaintenance.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetmaintenance.DefaultCreatedAt = assetmaintenanceDescCreatedAt.Default.(func() time.Time)
+	// assetmaintenanceDescID is the schema descriptor for id field.
+	assetmaintenanceDescID := assetmaintenanceFields[0].Descriptor()
+	// assetmaintenance.DefaultID holds the default value on creation for the id field.
+	assetmaintenance.DefaultID = assetmaintenanceDescID.Default.(func() uuid.UUID)
+	assetreservationFields := schema.AssetReservation{}.Fields()
+	_ = assetreservationFields
+	// assetreservationDescCreatedAt is the schema descriptor for created_at field.
+	assetreservationDescCreatedAt := assetreservationFields[10].Descriptor()
+	// assetreservation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assetreservation.DefaultCreatedAt = assetreservationDescCreatedAt.Default.(func() time.Time)
+	// assetreservationDescID is the schema descriptor for id field.
+	assetreservationDescID := assetreservationFields[0].Descriptor()
+	// assetreservation.DefaultID holds the default value on creation for the id field.
+	assetreservation.DefaultID = assetreservationDescID.Default.(func() uuid.UUID)
+	assettransferFields := schema.AssetTransfer{}.Fields()
+	_ = assettransferFields
+	// assettransferDescTransferDate is the schema descriptor for transfer_date field.
+	assettransferDescTransferDate := assettransferFields[7].Descriptor()
+	// assettransfer.DefaultTransferDate holds the default value on creation for the transfer_date field.
+	assettransfer.DefaultTransferDate = assettransferDescTransferDate.Default.(func() time.Time)
+	// assettransferDescCreatedAt is the schema descriptor for created_at field.
+	assettransferDescCreatedAt := assettransferFields[15].Descriptor()
+	// assettransfer.DefaultCreatedAt holds the default value on creation for the created_at field.
+	assettransfer.DefaultCreatedAt = assettransferDescCreatedAt.Default.(func() time.Time)
+	// assettransferDescID is the schema descriptor for id field.
+	assettransferDescID := assettransferFields[0].Descriptor()
+	// assettransfer.DefaultID holds the default value on creation for the id field.
+	assettransfer.DefaultID = assettransferDescID.Default.(func() uuid.UUID)
 	batchrawmaterialFields := schema.BatchRawMaterial{}.Fields()
 	_ = batchrawmaterialFields
 	// batchrawmaterialDescQuantity is the schema descriptor for quantity field.

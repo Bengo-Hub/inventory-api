@@ -8,6 +8,314 @@ import (
 )
 
 var (
+	// AssetsColumns holds the columns for the "assets" table.
+	AssetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_tag", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "category_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "serial_number", Type: field.TypeString, Nullable: true},
+		{Name: "model", Type: field.TypeString, Nullable: true},
+		{Name: "manufacturer", Type: field.TypeString, Nullable: true},
+		{Name: "barcode", Type: field.TypeString, Nullable: true},
+		{Name: "purchase_date", Type: field.TypeTime, Nullable: true},
+		{Name: "purchase_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "current_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "salvage_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "depreciation_rate", Type: field.TypeFloat64, Default: 0},
+		{Name: "depreciation_method", Type: field.TypeEnum, Enums: []string{"straight_line", "declining_balance"}, Default: "straight_line"},
+		{Name: "accumulated_depreciation", Type: field.TypeFloat64, Default: 0},
+		{Name: "book_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "location", Type: field.TypeString, Nullable: true},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "assigned_to", Type: field.TypeUUID, Nullable: true},
+		{Name: "custodian_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive", "maintenance", "disposed", "lost", "damaged", "retired"}, Default: "active"},
+		{Name: "condition", Type: field.TypeString, Nullable: true},
+		{Name: "warranty_expiry", Type: field.TypeTime, Nullable: true},
+		{Name: "last_maintenance", Type: field.TypeTime, Nullable: true},
+		{Name: "next_maintenance", Type: field.TypeTime, Nullable: true},
+		{Name: "maintenance_schedule", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// AssetsTable holds the schema information for the "assets" table.
+	AssetsTable = &schema.Table{
+		Name:       "assets",
+		Columns:    AssetsColumns,
+		PrimaryKey: []*schema.Column{AssetsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "asset_tenant_id_asset_tag",
+				Unique:  true,
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[2]},
+			},
+			{
+				Name:    "asset_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[22]},
+			},
+			{
+				Name:    "asset_tenant_id_category_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[5]},
+			},
+			{
+				Name:    "asset_serial_number",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[6]},
+			},
+			{
+				Name:    "asset_barcode",
+				Unique:  false,
+				Columns: []*schema.Column{AssetsColumns[9]},
+			},
+		},
+	}
+	// AssetAuditsColumns holds the columns for the "asset_audits" table.
+	AssetAuditsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "audit_date", Type: field.TypeTime},
+		{Name: "auditor_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"planned", "in_progress", "completed", "cancelled"}, Default: "planned"},
+		{Name: "location_verified", Type: field.TypeString, Nullable: true},
+		{Name: "condition_verified", Type: field.TypeString, Nullable: true},
+		{Name: "custodian_verified", Type: field.TypeUUID, Nullable: true},
+		{Name: "discrepancies", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "recommendations", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "next_audit_date", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetAuditsTable holds the schema information for the "asset_audits" table.
+	AssetAuditsTable = &schema.Table{
+		Name:       "asset_audits",
+		Columns:    AssetAuditsColumns,
+		PrimaryKey: []*schema.Column{AssetAuditsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetaudit_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetAuditsColumns[1], AssetAuditsColumns[2]},
+			},
+			{
+				Name:    "assetaudit_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetAuditsColumns[1], AssetAuditsColumns[5]},
+			},
+		},
+	}
+	// AssetCategoriesColumns holds the columns for the "asset_categories" table.
+	AssetCategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "depreciation_rate", Type: field.TypeFloat64, Default: 0},
+		{Name: "useful_life_years", Type: field.TypeInt, Default: 5},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// AssetCategoriesTable holds the schema information for the "asset_categories" table.
+	AssetCategoriesTable = &schema.Table{
+		Name:       "asset_categories",
+		Columns:    AssetCategoriesColumns,
+		PrimaryKey: []*schema.Column{AssetCategoriesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetcategory_tenant_id_name",
+				Unique:  true,
+				Columns: []*schema.Column{AssetCategoriesColumns[1], AssetCategoriesColumns[2]},
+			},
+			{
+				Name:    "assetcategory_tenant_id_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{AssetCategoriesColumns[1], AssetCategoriesColumns[7]},
+			},
+		},
+	}
+	// AssetDisposalsColumns holds the columns for the "asset_disposals" table.
+	AssetDisposalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "disposal_date", Type: field.TypeTime},
+		{Name: "disposal_method", Type: field.TypeEnum, Enums: []string{"sold", "scrapped", "donated", "stolen", "returned", "recycled", "destroyed"}, Default: "sold"},
+		{Name: "disposal_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "approved_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "rejected", "completed", "cancelled"}, Default: "pending"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "disposal_certificate", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetDisposalsTable holds the schema information for the "asset_disposals" table.
+	AssetDisposalsTable = &schema.Table{
+		Name:       "asset_disposals",
+		Columns:    AssetDisposalsColumns,
+		PrimaryKey: []*schema.Column{AssetDisposalsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetdisposal_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetDisposalsColumns[1], AssetDisposalsColumns[2]},
+			},
+			{
+				Name:    "assetdisposal_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetDisposalsColumns[1], AssetDisposalsColumns[8]},
+			},
+		},
+	}
+	// AssetInsurancesColumns holds the columns for the "asset_insurances" table.
+	AssetInsurancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "policy_number", Type: field.TypeString},
+		{Name: "provider", Type: field.TypeString, Nullable: true},
+		{Name: "policy_type", Type: field.TypeString, Nullable: true},
+		{Name: "coverage_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "premium_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "deductible", Type: field.TypeFloat64, Default: 0},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetInsurancesTable holds the schema information for the "asset_insurances" table.
+	AssetInsurancesTable = &schema.Table{
+		Name:       "asset_insurances",
+		Columns:    AssetInsurancesColumns,
+		PrimaryKey: []*schema.Column{AssetInsurancesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetinsurance_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetInsurancesColumns[1], AssetInsurancesColumns[2]},
+			},
+			{
+				Name:    "assetinsurance_tenant_id_policy_number",
+				Unique:  true,
+				Columns: []*schema.Column{AssetInsurancesColumns[1], AssetInsurancesColumns[3]},
+			},
+		},
+	}
+	// AssetMaintenancesColumns holds the columns for the "asset_maintenances" table.
+	AssetMaintenancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "maintenance_type", Type: field.TypeEnum, Enums: []string{"preventive", "corrective", "emergency", "predictive", "condition_based"}, Default: "preventive"},
+		{Name: "scheduled_date", Type: field.TypeTime},
+		{Name: "completed_date", Type: field.TypeTime, Nullable: true},
+		{Name: "performed_by", Type: field.TypeString, Nullable: true},
+		{Name: "cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "findings", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "recommendations", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "next_maintenance_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"scheduled", "in_progress", "completed", "cancelled", "deferred"}, Default: "scheduled"},
+		{Name: "priority", Type: field.TypeEnum, Enums: []string{"low", "medium", "high", "critical"}, Default: "medium"},
+		{Name: "downtime_hours", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetMaintenancesTable holds the schema information for the "asset_maintenances" table.
+	AssetMaintenancesTable = &schema.Table{
+		Name:       "asset_maintenances",
+		Columns:    AssetMaintenancesColumns,
+		PrimaryKey: []*schema.Column{AssetMaintenancesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetmaintenance_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetMaintenancesColumns[1], AssetMaintenancesColumns[2]},
+			},
+			{
+				Name:    "assetmaintenance_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetMaintenancesColumns[1], AssetMaintenancesColumns[12]},
+			},
+		},
+	}
+	// AssetReservationsColumns holds the columns for the "asset_reservations" table.
+	AssetReservationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "reserved_by", Type: field.TypeUUID},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "purpose", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "active", "completed", "cancelled"}, Default: "pending"},
+		{Name: "approved_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetReservationsTable holds the schema information for the "asset_reservations" table.
+	AssetReservationsTable = &schema.Table{
+		Name:       "asset_reservations",
+		Columns:    AssetReservationsColumns,
+		PrimaryKey: []*schema.Column{AssetReservationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assetreservation_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetReservationsColumns[1], AssetReservationsColumns[2]},
+			},
+			{
+				Name:    "assetreservation_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetReservationsColumns[1], AssetReservationsColumns[7]},
+			},
+		},
+	}
+	// AssetTransfersColumns holds the columns for the "asset_transfers" table.
+	AssetTransfersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "asset_id", Type: field.TypeUUID},
+		{Name: "from_location", Type: field.TypeString, Nullable: true},
+		{Name: "to_location", Type: field.TypeString, Nullable: true},
+		{Name: "from_user", Type: field.TypeUUID, Nullable: true},
+		{Name: "to_user", Type: field.TypeUUID, Nullable: true},
+		{Name: "transfer_date", Type: field.TypeTime},
+		{Name: "scheduled_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "in_transit", "completed", "cancelled"}, Default: "pending"},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "transferred_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "approved_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "tracking_number", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AssetTransfersTable holds the schema information for the "asset_transfers" table.
+	AssetTransfersTable = &schema.Table{
+		Name:       "asset_transfers",
+		Columns:    AssetTransfersColumns,
+		PrimaryKey: []*schema.Column{AssetTransfersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "assettransfer_tenant_id_asset_id",
+				Unique:  false,
+				Columns: []*schema.Column{AssetTransfersColumns[1], AssetTransfersColumns[2]},
+			},
+			{
+				Name:    "assettransfer_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{AssetTransfersColumns[1], AssetTransfersColumns[9]},
+			},
+		},
+	}
 	// BatchRawMaterialsColumns holds the columns for the "batch_raw_materials" table.
 	BatchRawMaterialsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2277,6 +2585,14 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AssetsTable,
+		AssetAuditsTable,
+		AssetCategoriesTable,
+		AssetDisposalsTable,
+		AssetInsurancesTable,
+		AssetMaintenancesTable,
+		AssetReservationsTable,
+		AssetTransfersTable,
 		BatchRawMaterialsTable,
 		BundlesTable,
 		BundleComponentsTable,
