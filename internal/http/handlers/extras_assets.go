@@ -211,6 +211,7 @@ type assetPayload struct {
 	Location           string     `json:"location"`
 	OutletID           *uuid.UUID `json:"outlet_id"`
 	CustodianID        *uuid.UUID `json:"custodian_id"`
+	ItemID             *uuid.UUID `json:"item_id"`
 	Condition          string     `json:"condition"`
 	Notes              string     `json:"notes"`
 	CreatedBy          *uuid.UUID `json:"created_by"`
@@ -324,6 +325,9 @@ func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Requ
 	if req.CustodianID != nil {
 		c = c.SetCustodianID(*req.CustodianID)
 	}
+	if req.ItemID != nil {
+		c = c.SetItemID(*req.ItemID)
+	}
 	if req.CreatedBy != nil {
 		c = c.SetCreatedBy(*req.CreatedBy)
 	}
@@ -374,6 +378,9 @@ func (h *InventoryExtrasHandler) UpdateAsset(w http.ResponseWriter, r *http.Requ
 	}
 	if req.CustodianID != nil {
 		upd = upd.SetCustodianID(*req.CustodianID)
+	}
+	if req.ItemID != nil {
+		upd = upd.SetItemID(*req.ItemID)
 	}
 	if req.DepreciationMethod != "" {
 		upd = upd.SetDepreciationMethod(entasset.DepreciationMethod(req.DepreciationMethod))

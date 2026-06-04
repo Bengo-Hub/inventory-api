@@ -27,6 +27,7 @@ func (h *InventoryExtrasHandler) registerAssetOpsRoutes(r chi.Router, perm func(
 
 	r.Get("/inventory/assets/{assetID}/transfers", h.ListAssetTransfers)
 	r.With(perm(add)).Post("/inventory/assets/{assetID}/transfers", h.CreateAssetTransfer)
+	r.With(perm(change)).Post("/inventory/asset-transfers/{recID}/approve", h.ApproveAssetTransfer)
 	r.With(perm(change)).Post("/inventory/asset-transfers/{recID}/complete", h.CompleteAssetTransfer)
 
 	r.Get("/inventory/assets/{assetID}/disposals", h.ListAssetDisposals)
@@ -265,6 +266,11 @@ func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r 
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Transfer not found")
 		return
 	}
+	// A transfer must be approved (or in transit) before it can be completed.
+	if rec.Status != enttrf.StatusApproved && rec.Status != enttrf.StatusInTransit {
+		writeError(w, http.StatusBadRequest, "NOT_APPROVED", "Transfer must be approved before it can be completed")
+		return
+	}
 	updated, err := h.orm.AssetTransfer.UpdateOneID(rec.ID).SetStatus(enttrf.StatusCompleted).Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete transfer")
@@ -278,6 +284,56 @@ func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r 
 		upd = upd.SetCustodianID(*rec.ToUser)
 	}
 	_, _ = upd.Save(r.Context())
+	writeJSON(w, http.StatusOK, updated)
+}
+
+// ApproveAssetTransfer handles POST /inventory/asset-transfers/{recID}/approve.
+//
+//	@Summary      Approve a pending asset transfer
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        recID  path      string  true   "Transfer record ID"
+//	@Param        body   body      object  false  "approved_by"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-transfers/{recID}/approve [post]
+func (h *InventoryExtrasHandler) ApproveAssetTransfer(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "recID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid record ID")
+		return
+	}
+	rec, err := h.orm.AssetTransfer.Query().Where(enttrf.ID(id), enttrf.TenantID(tenantID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Transfer not found")
+		return
+	}
+	if rec.Status != enttrf.StatusPending {
+		writeError(w, http.StatusBadRequest, "INVALID_STATE", "Only pending transfers can be approved")
+		return
+	}
+	var b struct {
+		ApprovedBy *uuid.UUID `json:"approved_by"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&b)
+	upd := h.orm.AssetTransfer.UpdateOneID(rec.ID).SetStatus(enttrf.StatusApproved)
+	if b.ApprovedBy != nil {
+		upd = upd.SetApprovedBy(*b.ApprovedBy)
+	}
+	updated, err := upd.Save(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to approve transfer")
+		return
+	}
+	h.publishOutbox(r.Context(), tenantID, "asset", rec.AssetID, "inventory.asset.transfer_approved", map[string]any{"asset_id": rec.AssetID, "transfer_id": rec.ID})
 	writeJSON(w, http.StatusOK, updated)
 }
 
