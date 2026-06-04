@@ -137,18 +137,18 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Suppliers
 	r.Get("/inventory/suppliers", h.ListSuppliers)
-	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/suppliers", h.CreateSupplier)
+	r.With(perm(rbac.PermProcurementAdd)).Post("/inventory/suppliers", h.CreateSupplier)
 	r.Get("/inventory/suppliers/{supplierID}", h.GetSupplier)
-	r.With(perm(rbac.PermItemsChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
-	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
+	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
+	r.With(perm(rbac.PermProcurementDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
 
 	// Purchase Orders
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
 	r.Get("/inventory/purchase-orders/{poID}", h.GetPurchaseOrder)
-	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
-	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
-	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
-	r.With(perm(rbac.PermItemsChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
+	r.With(perm(rbac.PermProcurementAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
+	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
+	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
+	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
 
 	// Activity
 	r.Get("/inventory/activity", h.ListActivity)
@@ -165,18 +165,18 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/reports/menu-engineering", h.MenuEngineeringReport)
 
 	// Procurement (migrated from ERP procurement/*)
-	h.registerRequisitionRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
-	h.registerContractRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
-	h.registerPurchaseReturnRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
-	h.registerGoodsReceiptRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
-	h.registerProcurementMiscRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
+	h.registerRequisitionRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
+	h.registerContractRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
+	h.registerPurchaseReturnRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
+	h.registerGoodsReceiptRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
+	h.registerProcurementMiscRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
 	h.registerProcurementAnalyticsRoutes(r)
 	r.Get("/inventory/purchase-orders/{poID}/pdf", h.GeneratePurchaseOrderPDF)
 
 	// Manufacturing (migrated from ERP manufacturing/*)
-	h.registerManufacturingRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
+	h.registerManufacturingRoutes(r, perm, rbac.PermManufacturingAdd, rbac.PermManufacturingChange)
 	h.registerManufacturingAnalyticsRoutes(r)
 
 	// Fixed assets register (migrated from ERP assets/*)
-	h.registerAssetRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange, rbac.PermItemsDelete)
+	h.registerAssetRoutes(r, perm, rbac.PermAssetsAdd, rbac.PermAssetsChange, rbac.PermAssetsDelete)
 }
