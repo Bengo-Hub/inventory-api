@@ -49,13 +49,40 @@ func (h *InventoryExtrasHandler) ManufacturingDashboard(w http.ResponseWriter, r
 		producedQty = qtyAgg[0].Sum
 	}
 
+	completed := statusCount(entpb.StatusCompleted)
+	completionRate := 0.0
+	if total > 0 {
+		completionRate = float64(completed) / float64(total)
+	}
+
+	var scrapAgg []struct {
+		Sum float64 `json:"sum"`
+	}
+	_ = base().Aggregate(ent.Sum(entpb.FieldScrapQuantity)).Scan(ctx, &scrapAgg)
+	var scrapTotal float64
+	if len(scrapAgg) > 0 {
+		scrapTotal = scrapAgg[0].Sum
+	}
+
+	recent, _ := base().Order(ent.Desc(entpb.FieldCreatedAt)).Limit(5).All(ctx)
+	recentOut := make([]map[string]any, 0, len(recent))
+	for _, b := range recent {
+		recentOut = append(recentOut, map[string]any{
+			"id": b.ID, "batch_number": b.BatchNumber, "status": b.Status,
+			"planned_quantity": b.PlannedQuantity, "actual_quantity": b.ActualQuantity,
+		})
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"total_batches":           total,
 		"total_produced_quantity": producedQty,
+		"completion_rate":         completionRate,
+		"scrap_total":             scrapTotal,
+		"recent_batches":          recentOut,
 		"batches_by_status": map[string]int{
 			"planned":     statusCount(entpb.StatusPlanned),
 			"in_progress": statusCount(entpb.StatusInProgress),
-			"completed":   statusCount(entpb.StatusCompleted),
+			"completed":   completed,
 			"cancelled":   statusCount(entpb.StatusCancelled),
 			"failed":      statusCount(entpb.StatusFailed),
 		},

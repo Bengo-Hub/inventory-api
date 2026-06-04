@@ -27,6 +27,7 @@ func (h *InventoryExtrasHandler) registerAssetRoutes(r chi.Router, perm func(str
 	r.With(perm(change)).Put("/inventory/asset-categories/{catID}", h.UpdateAssetCategory)
 	r.With(perm(del)).Delete("/inventory/asset-categories/{catID}", h.DeleteAssetCategory)
 	// Assets
+	r.Get("/inventory/asset-dashboard", h.AssetDashboard)
 	r.Get("/inventory/assets", h.ListAssets)
 	r.Get("/inventory/assets/{assetID}", h.GetAsset)
 	r.With(perm(add)).Post("/inventory/assets", h.CreateAsset)
@@ -35,6 +36,55 @@ func (h *InventoryExtrasHandler) registerAssetRoutes(r chi.Router, perm func(str
 	r.With(perm(change)).Post("/inventory/assets/{assetID}/depreciation-run", h.RunAssetDepreciation)
 	// Asset operations (maintenance/transfer/disposal/insurance/audit/reservation)
 	h.registerAssetOpsRoutes(r, perm, add, change)
+}
+
+// AssetDashboard handles GET /inventory/asset-dashboard.
+//
+//	@Summary      Fixed-asset KPI dashboard
+//	@Tags         Assets
+//	@Produce      json
+//	@Success      200  {object}  map[string]interface{}
+//	@Failure      400  {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-dashboard [get]
+func (h *InventoryExtrasHandler) AssetDashboard(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	ctx := r.Context()
+	base := func() *ent.AssetQuery { return h.orm.Asset.Query().Where(entasset.TenantID(tenantID)) }
+	statusCount := func(s entasset.Status) int {
+		n, _ := base().Where(entasset.StatusEQ(s)).Count(ctx)
+		return n
+	}
+	sumF := func(field string) float64 {
+		var agg []struct {
+			Sum float64 `json:"sum"`
+		}
+		_ = base().Aggregate(ent.Sum(field)).Scan(ctx, &agg)
+		if len(agg) > 0 {
+			return agg[0].Sum
+		}
+		return 0
+	}
+	total, _ := base().Count(ctx)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"total_assets":                   total,
+		"total_purchase_cost":            sumF(entasset.FieldPurchaseCost),
+		"total_current_value":            sumF(entasset.FieldCurrentValue),
+		"total_accumulated_depreciation": sumF(entasset.FieldAccumulatedDepreciation),
+		"assets_by_status": map[string]int{
+			"active":      statusCount(entasset.StatusActive),
+			"inactive":    statusCount(entasset.StatusInactive),
+			"maintenance": statusCount(entasset.StatusMaintenance),
+			"disposed":    statusCount(entasset.StatusDisposed),
+			"lost":        statusCount(entasset.StatusLost),
+			"damaged":     statusCount(entasset.StatusDamaged),
+			"retired":     statusCount(entasset.StatusRetired),
+		},
+	})
 }
 
 // --- Asset categories ---
