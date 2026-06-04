@@ -135,6 +135,11 @@ func BookValue(v float64) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldBookValue, v))
 }
 
+// LastDepreciationPeriod applies equality check predicate on the "last_depreciation_period" field. It's identical to LastDepreciationPeriodEQ.
+func LastDepreciationPeriod(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldLastDepreciationPeriod, v))
+}
+
 // Location applies equality check predicate on the "location" field. It's identical to LocationEQ.
 func Location(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldLocation, v))
@@ -1113,6 +1118,81 @@ func BookValueLT(v float64) predicate.Asset {
 // BookValueLTE applies the LTE predicate on the "book_value" field.
 func BookValueLTE(v float64) predicate.Asset {
 	return predicate.Asset(sql.FieldLTE(FieldBookValue, v))
+}
+
+// LastDepreciationPeriodEQ applies the EQ predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodNEQ applies the NEQ predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodIn applies the In predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldLastDepreciationPeriod, vs...))
+}
+
+// LastDepreciationPeriodNotIn applies the NotIn predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldLastDepreciationPeriod, vs...))
+}
+
+// LastDepreciationPeriodGT applies the GT predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodGTE applies the GTE predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodLT applies the LT predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodLTE applies the LTE predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodContains applies the Contains predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodHasPrefix applies the HasPrefix predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodHasSuffix applies the HasSuffix predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodIsNil applies the IsNil predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldLastDepreciationPeriod))
+}
+
+// LastDepreciationPeriodNotNil applies the NotNil predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldLastDepreciationPeriod))
+}
+
+// LastDepreciationPeriodEqualFold applies the EqualFold predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldLastDepreciationPeriod, v))
+}
+
+// LastDepreciationPeriodContainsFold applies the ContainsFold predicate on the "last_depreciation_period" field.
+func LastDepreciationPeriodContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldLastDepreciationPeriod, v))
 }
 
 // LocationEQ applies the EQ predicate on the "location" field.

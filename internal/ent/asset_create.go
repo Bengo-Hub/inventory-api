@@ -238,6 +238,20 @@ func (_c *AssetCreate) SetNillableBookValue(v *float64) *AssetCreate {
 	return _c
 }
 
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (_c *AssetCreate) SetLastDepreciationPeriod(v string) *AssetCreate {
+	_c.mutation.SetLastDepreciationPeriod(v)
+	return _c
+}
+
+// SetNillableLastDepreciationPeriod sets the "last_depreciation_period" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableLastDepreciationPeriod(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetLastDepreciationPeriod(*v)
+	}
+	return _c
+}
+
 // SetLocation sets the "location" field.
 func (_c *AssetCreate) SetLocation(v string) *AssetCreate {
 	_c.mutation.SetLocation(v)
@@ -729,6 +743,10 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 		_spec.SetField(asset.FieldBookValue, field.TypeFloat64, value)
 		_node.BookValue = value
 	}
+	if value, ok := _c.mutation.LastDepreciationPeriod(); ok {
+		_spec.SetField(asset.FieldLastDepreciationPeriod, field.TypeString, value)
+		_node.LastDepreciationPeriod = value
+	}
 	if value, ok := _c.mutation.Location(); ok {
 		_spec.SetField(asset.FieldLocation, field.TypeString, value)
 		_node.Location = value
@@ -1124,6 +1142,24 @@ func (u *AssetUpsert) UpdateBookValue() *AssetUpsert {
 // AddBookValue adds v to the "book_value" field.
 func (u *AssetUpsert) AddBookValue(v float64) *AssetUpsert {
 	u.Add(asset.FieldBookValue, v)
+	return u
+}
+
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (u *AssetUpsert) SetLastDepreciationPeriod(v string) *AssetUpsert {
+	u.Set(asset.FieldLastDepreciationPeriod, v)
+	return u
+}
+
+// UpdateLastDepreciationPeriod sets the "last_depreciation_period" field to the value that was provided on create.
+func (u *AssetUpsert) UpdateLastDepreciationPeriod() *AssetUpsert {
+	u.SetExcluded(asset.FieldLastDepreciationPeriod)
+	return u
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (u *AssetUpsert) ClearLastDepreciationPeriod() *AssetUpsert {
+	u.SetNull(asset.FieldLastDepreciationPeriod)
 	return u
 }
 
@@ -1756,6 +1792,27 @@ func (u *AssetUpsertOne) AddBookValue(v float64) *AssetUpsertOne {
 func (u *AssetUpsertOne) UpdateBookValue() *AssetUpsertOne {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateBookValue()
+	})
+}
+
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (u *AssetUpsertOne) SetLastDepreciationPeriod(v string) *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetLastDepreciationPeriod(v)
+	})
+}
+
+// UpdateLastDepreciationPeriod sets the "last_depreciation_period" field to the value that was provided on create.
+func (u *AssetUpsertOne) UpdateLastDepreciationPeriod() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateLastDepreciationPeriod()
+	})
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (u *AssetUpsertOne) ClearLastDepreciationPeriod() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearLastDepreciationPeriod()
 	})
 }
 
@@ -2597,6 +2654,27 @@ func (u *AssetUpsertBulk) AddBookValue(v float64) *AssetUpsertBulk {
 func (u *AssetUpsertBulk) UpdateBookValue() *AssetUpsertBulk {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateBookValue()
+	})
+}
+
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (u *AssetUpsertBulk) SetLastDepreciationPeriod(v string) *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetLastDepreciationPeriod(v)
+	})
+}
+
+// UpdateLastDepreciationPeriod sets the "last_depreciation_period" field to the value that was provided on create.
+func (u *AssetUpsertBulk) UpdateLastDepreciationPeriod() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateLastDepreciationPeriod()
+	})
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (u *AssetUpsertBulk) ClearLastDepreciationPeriod() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearLastDepreciationPeriod()
 	})
 }
 

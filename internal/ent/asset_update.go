@@ -351,6 +351,26 @@ func (_u *AssetUpdate) AddBookValue(v float64) *AssetUpdate {
 	return _u
 }
 
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (_u *AssetUpdate) SetLastDepreciationPeriod(v string) *AssetUpdate {
+	_u.mutation.SetLastDepreciationPeriod(v)
+	return _u
+}
+
+// SetNillableLastDepreciationPeriod sets the "last_depreciation_period" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableLastDepreciationPeriod(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetLastDepreciationPeriod(*v)
+	}
+	return _u
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (_u *AssetUpdate) ClearLastDepreciationPeriod() *AssetUpdate {
+	_u.mutation.ClearLastDepreciationPeriod()
+	return _u
+}
+
 // SetLocation sets the "location" field.
 func (_u *AssetUpdate) SetLocation(v string) *AssetUpdate {
 	_u.mutation.SetLocation(v)
@@ -793,6 +813,12 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedBookValue(); ok {
 		_spec.AddField(asset.FieldBookValue, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.LastDepreciationPeriod(); ok {
+		_spec.SetField(asset.FieldLastDepreciationPeriod, field.TypeString, value)
+	}
+	if _u.mutation.LastDepreciationPeriodCleared() {
+		_spec.ClearField(asset.FieldLastDepreciationPeriod, field.TypeString)
+	}
 	if value, ok := _u.mutation.Location(); ok {
 		_spec.SetField(asset.FieldLocation, field.TypeString, value)
 	}
@@ -1213,6 +1239,26 @@ func (_u *AssetUpdateOne) SetNillableBookValue(v *float64) *AssetUpdateOne {
 // AddBookValue adds value to the "book_value" field.
 func (_u *AssetUpdateOne) AddBookValue(v float64) *AssetUpdateOne {
 	_u.mutation.AddBookValue(v)
+	return _u
+}
+
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (_u *AssetUpdateOne) SetLastDepreciationPeriod(v string) *AssetUpdateOne {
+	_u.mutation.SetLastDepreciationPeriod(v)
+	return _u
+}
+
+// SetNillableLastDepreciationPeriod sets the "last_depreciation_period" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableLastDepreciationPeriod(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetLastDepreciationPeriod(*v)
+	}
+	return _u
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (_u *AssetUpdateOne) ClearLastDepreciationPeriod() *AssetUpdateOne {
+	_u.mutation.ClearLastDepreciationPeriod()
 	return _u
 }
 
@@ -1687,6 +1733,12 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 	}
 	if value, ok := _u.mutation.AddedBookValue(); ok {
 		_spec.AddField(asset.FieldBookValue, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.LastDepreciationPeriod(); ok {
+		_spec.SetField(asset.FieldLastDepreciationPeriod, field.TypeString, value)
+	}
+	if _u.mutation.LastDepreciationPeriodCleared() {
+		_spec.ClearField(asset.FieldLastDepreciationPeriod, field.TypeString)
 	}
 	if value, ok := _u.mutation.Location(); ok {
 		_spec.SetField(asset.FieldLocation, field.TypeString, value)

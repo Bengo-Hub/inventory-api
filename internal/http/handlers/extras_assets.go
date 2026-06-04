@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -485,19 +486,125 @@ func (h *InventoryExtrasHandler) RunAssetDepreciation(w http.ResponseWriter, r *
 	if !ok {
 		return
 	}
-	// period + currency are required by the treasury depreciation consumer: it keys
-	// idempotency on (tenant_id, asset_id, period) and stamps the journal currency.
 	period := r.URL.Query().Get("period")
 	if period == "" {
 		period = time.Now().UTC().Format("2006-01")
 	}
-	h.publishOutbox(r.Context(), tenantID, "asset", a.ID, "inventory.asset.depreciation_due", map[string]any{
+	amount, applied, err := h.applyAssetDepreciation(r.Context(), tenantID, a, period)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to apply depreciation")
+		return
+	}
+	if !applied {
+		writeJSON(w, http.StatusOK, map[string]any{"status": "already_depreciated_this_period", "asset_id": a.ID, "period": period})
+		return
+	}
+	writeJSON(w, http.StatusAccepted, map[string]any{"status": "depreciation_applied", "asset_id": a.ID, "period": period, "amount": amount})
+}
+
+// applyAssetDepreciation computes one period's depreciation using the SAME formula
+// as the treasury GL consumer (rate is a fraction; the amount is the full period),
+// updates the inventory register (accumulated_depreciation/book_value/current_value
+// + last_depreciation_period for idempotency), and emits inventory.asset.depreciation_due
+// with the OPENING balances so treasury computes the identical amount for the GL
+// journal — keeping the register and the ledger in lockstep without a cross-service
+// round-trip. Idempotent per period. Returns (amount, applied).
+func (h *InventoryExtrasHandler) applyAssetDepreciation(ctx context.Context, tenantID uuid.UUID, a *ent.Asset, period string) (float64, bool, error) {
+	if a.LastDepreciationPeriod == period {
+		return 0, false, nil
+	}
+	openingAccum := a.AccumulatedDepreciation
+	openingBook := a.BookValue
+	if openingBook == 0 {
+		openingBook = a.PurchaseCost
+	}
+	var amount float64
+	if a.DepreciationMethod == entasset.DepreciationMethodDecliningBalance {
+		amount = openingBook * a.DepreciationRate
+	} else {
+		base := a.PurchaseCost - a.SalvageValue
+		if base < 0 {
+			base = 0
+		}
+		amount = base * a.DepreciationRate
+	}
+	if amount < 0 {
+		amount = 0
+	}
+	if remaining := openingBook - a.SalvageValue; remaining <= 0 {
+		amount = 0
+	} else if amount > remaining {
+		amount = remaining
+	}
+
+	upd := h.orm.Asset.UpdateOneID(a.ID).SetLastDepreciationPeriod(period)
+	if amount > 0 {
+		closingAccum := openingAccum + amount
+		closingBook := a.PurchaseCost - closingAccum
+		if closingBook < 0 {
+			closingBook = 0
+		}
+		upd = upd.SetAccumulatedDepreciation(closingAccum).SetBookValue(closingBook).SetCurrentValue(closingBook)
+	}
+	if _, err := upd.Save(ctx); err != nil {
+		return 0, false, err
+	}
+
+	h.publishOutbox(ctx, tenantID, "asset", a.ID, "inventory.asset.depreciation_due", map[string]any{
 		"id": a.ID, "asset_id": a.ID, "asset_tag": a.AssetTag, "purchase_cost": a.PurchaseCost, "salvage_value": a.SalvageValue,
 		"depreciation_rate": a.DepreciationRate, "depreciation_method": a.DepreciationMethod,
-		"accumulated_depreciation": a.AccumulatedDepreciation, "book_value": a.BookValue,
+		"accumulated_depreciation": openingAccum, "book_value": openingBook,
 		"period": period, "currency": "KES",
 	})
-	writeJSON(w, http.StatusAccepted, map[string]any{"status": "depreciation_event_emitted", "asset_id": a.ID})
+	return amount, true, nil
+}
+
+// StartDepreciationScheduler applies the current calendar month's depreciation to
+// every active depreciable asset (idempotent per month via last_depreciation_period),
+// then repeats daily — so each asset is depreciated at most once per month. It is
+// OPT-IN (wired only when ASSET_DEPRECIATION_SCHEDULER=true) because the period rate
+// is applied in full per run: depreciation_rate must be a PER-MONTH fraction here, not
+// an annual one. Blocks until ctx is done. Most tenants run depreciation manually at
+// month-end (the "Run Depreciation" action) instead.
+func (h *InventoryExtrasHandler) StartDepreciationScheduler(ctx context.Context) {
+	run := func() {
+		period := time.Now().UTC().Format("2006-01")
+		assets, err := h.orm.Asset.Query().
+			Where(entasset.IsActive(true), entasset.StatusEQ(entasset.StatusActive), entasset.DepreciationRateGT(0)).
+			All(ctx)
+		if err != nil {
+			h.log.Warn("depreciation scheduler: query assets failed", zap.Error(err))
+			return
+		}
+		applied := 0
+		for _, a := range assets {
+			if a.LastDepreciationPeriod == period {
+				continue
+			}
+			if _, ok, e := h.applyAssetDepreciation(ctx, a.TenantID, a, period); e != nil {
+				h.log.Warn("depreciation scheduler: apply failed", zap.String("asset", a.ID.String()), zap.Error(e))
+			} else if ok {
+				applied++
+			}
+		}
+		if applied > 0 {
+			h.log.Info("depreciation scheduler run complete", zap.Int("applied", applied), zap.String("period", period))
+		}
+	}
+	startup := time.NewTimer(2 * time.Minute)
+	defer startup.Stop()
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-startup.C:
+			run()
+		case <-ticker.C:
+			run()
+		}
+	}
 }
 
 func (h *InventoryExtrasHandler) loadAsset(w http.ResponseWriter, r *http.Request) (uuid.UUID, *ent.Asset, bool) {

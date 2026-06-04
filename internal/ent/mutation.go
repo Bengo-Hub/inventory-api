@@ -185,6 +185,7 @@ type AssetMutation struct {
 	addaccumulated_depreciation *float64
 	book_value                  *float64
 	addbook_value               *float64
+	last_depreciation_period    *string
 	location                    *string
 	outlet_id                   *uuid.UUID
 	assigned_to                 *uuid.UUID
@@ -1134,6 +1135,55 @@ func (m *AssetMutation) ResetBookValue() {
 	m.addbook_value = nil
 }
 
+// SetLastDepreciationPeriod sets the "last_depreciation_period" field.
+func (m *AssetMutation) SetLastDepreciationPeriod(s string) {
+	m.last_depreciation_period = &s
+}
+
+// LastDepreciationPeriod returns the value of the "last_depreciation_period" field in the mutation.
+func (m *AssetMutation) LastDepreciationPeriod() (r string, exists bool) {
+	v := m.last_depreciation_period
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastDepreciationPeriod returns the old "last_depreciation_period" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldLastDepreciationPeriod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastDepreciationPeriod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastDepreciationPeriod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastDepreciationPeriod: %w", err)
+	}
+	return oldValue.LastDepreciationPeriod, nil
+}
+
+// ClearLastDepreciationPeriod clears the value of the "last_depreciation_period" field.
+func (m *AssetMutation) ClearLastDepreciationPeriod() {
+	m.last_depreciation_period = nil
+	m.clearedFields[asset.FieldLastDepreciationPeriod] = struct{}{}
+}
+
+// LastDepreciationPeriodCleared returns if the "last_depreciation_period" field was cleared in this mutation.
+func (m *AssetMutation) LastDepreciationPeriodCleared() bool {
+	_, ok := m.clearedFields[asset.FieldLastDepreciationPeriod]
+	return ok
+}
+
+// ResetLastDepreciationPeriod resets all changes to the "last_depreciation_period" field.
+func (m *AssetMutation) ResetLastDepreciationPeriod() {
+	m.last_depreciation_period = nil
+	delete(m.clearedFields, asset.FieldLastDepreciationPeriod)
+}
+
 // SetLocation sets the "location" field.
 func (m *AssetMutation) SetLocation(s string) {
 	m.location = &s
@@ -1900,7 +1950,7 @@ func (m *AssetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AssetMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.tenant_id != nil {
 		fields = append(fields, asset.FieldTenantID)
 	}
@@ -1951,6 +2001,9 @@ func (m *AssetMutation) Fields() []string {
 	}
 	if m.book_value != nil {
 		fields = append(fields, asset.FieldBookValue)
+	}
+	if m.last_depreciation_period != nil {
+		fields = append(fields, asset.FieldLastDepreciationPeriod)
 	}
 	if m.location != nil {
 		fields = append(fields, asset.FieldLocation)
@@ -2042,6 +2095,8 @@ func (m *AssetMutation) Field(name string) (ent.Value, bool) {
 		return m.AccumulatedDepreciation()
 	case asset.FieldBookValue:
 		return m.BookValue()
+	case asset.FieldLastDepreciationPeriod:
+		return m.LastDepreciationPeriod()
 	case asset.FieldLocation:
 		return m.Location()
 	case asset.FieldOutletID:
@@ -2117,6 +2172,8 @@ func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldAccumulatedDepreciation(ctx)
 	case asset.FieldBookValue:
 		return m.OldBookValue(ctx)
+	case asset.FieldLastDepreciationPeriod:
+		return m.OldLastDepreciationPeriod(ctx)
 	case asset.FieldLocation:
 		return m.OldLocation(ctx)
 	case asset.FieldOutletID:
@@ -2276,6 +2333,13 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBookValue(v)
+		return nil
+	case asset.FieldLastDepreciationPeriod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastDepreciationPeriod(v)
 		return nil
 	case asset.FieldLocation:
 		v, ok := value.(string)
@@ -2515,6 +2579,9 @@ func (m *AssetMutation) ClearedFields() []string {
 	if m.FieldCleared(asset.FieldPurchaseDate) {
 		fields = append(fields, asset.FieldPurchaseDate)
 	}
+	if m.FieldCleared(asset.FieldLastDepreciationPeriod) {
+		fields = append(fields, asset.FieldLastDepreciationPeriod)
+	}
 	if m.FieldCleared(asset.FieldLocation) {
 		fields = append(fields, asset.FieldLocation)
 	}
@@ -2585,6 +2652,9 @@ func (m *AssetMutation) ClearField(name string) error {
 		return nil
 	case asset.FieldPurchaseDate:
 		m.ClearPurchaseDate()
+		return nil
+	case asset.FieldLastDepreciationPeriod:
+		m.ClearLastDepreciationPeriod()
 		return nil
 	case asset.FieldLocation:
 		m.ClearLocation()
@@ -2680,6 +2750,9 @@ func (m *AssetMutation) ResetField(name string) error {
 		return nil
 	case asset.FieldBookValue:
 		m.ResetBookValue()
+		return nil
+	case asset.FieldLastDepreciationPeriod:
+		m.ResetLastDepreciationPeriod()
 		return nil
 	case asset.FieldLocation:
 		m.ResetLocation()

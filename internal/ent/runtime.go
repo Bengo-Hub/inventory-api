@@ -111,15 +111,15 @@ func init() {
 	// asset.DefaultBookValue holds the default value on creation for the book_value field.
 	asset.DefaultBookValue = assetDescBookValue.Default.(float64)
 	// assetDescIsActive is the schema descriptor for is_active field.
-	assetDescIsActive := assetFields[30].Descriptor()
+	assetDescIsActive := assetFields[31].Descriptor()
 	// asset.DefaultIsActive holds the default value on creation for the is_active field.
 	asset.DefaultIsActive = assetDescIsActive.Default.(bool)
 	// assetDescCreatedAt is the schema descriptor for created_at field.
-	assetDescCreatedAt := assetFields[32].Descriptor()
+	assetDescCreatedAt := assetFields[33].Descriptor()
 	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
 	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
 	// assetDescUpdatedAt is the schema descriptor for updated_at field.
-	assetDescUpdatedAt := assetFields[33].Descriptor()
+	assetDescUpdatedAt := assetFields[34].Descriptor()
 	// asset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	asset.DefaultUpdatedAt = assetDescUpdatedAt.Default.(func() time.Time)
 	// asset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

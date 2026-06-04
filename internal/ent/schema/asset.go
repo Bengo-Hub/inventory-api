@@ -37,6 +37,7 @@ func (Asset) Fields() []ent.Field {
 		field.Enum("depreciation_method").Values("straight_line", "declining_balance").Default("straight_line"),
 		field.Float("accumulated_depreciation").Default(0),
 		field.Float("book_value").Default(0),
+		field.String("last_depreciation_period").Optional().Comment("YYYY-MM of the last applied depreciation (idempotency guard)"),
 		// Location & assignment
 		field.String("location").Optional(),
 		field.UUID("outlet_id", uuid.UUID{}).Optional().Nillable().Comment("Branch/outlet"),

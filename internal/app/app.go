@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -183,6 +184,13 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetDocService(docSvc)
 	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
 	inventoryExtrasHandler.SetStockService(stockSvc)
+	// Optional automated month-end depreciation (opt-in; depreciation_rate must be a
+	// per-month fraction when enabled — see StartDepreciationScheduler). Off by default;
+	// most tenants run depreciation manually at period close.
+	if os.Getenv("ASSET_DEPRECIATION_SCHEDULER") == "true" {
+		go inventoryExtrasHandler.StartDepreciationScheduler(ctx)
+		log.Info("asset depreciation scheduler enabled")
+	}
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api
