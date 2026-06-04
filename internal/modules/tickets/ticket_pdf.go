@@ -24,7 +24,8 @@ type TicketPDFInput struct {
 
 	// Document
 	TicketNumber string // sequenced, e.g. TKT-260604-00000042
-	Code         string // unique redemption code (QR target)
+	Code         string // unique redemption code (manual-entry fallback + QR target if no VerifyURL)
+	VerifyURL    string // check-in deep link encoded in the QR so a phone camera opens it directly
 
 	// Event
 	EventName string
@@ -153,8 +154,13 @@ func RenderTicketPDF(in TicketPDFInput) ([]byte, error) {
 	pdf.Line(12, y, pageW-12, y)
 	pdf.Ln(4)
 
-	// QR (centered)
-	if qrBytes, err := qrPNG(in.Code, 480); err == nil {
+	// QR (centered) — encode the check-in deep link when available so a phone camera opens the
+	// verification page directly; otherwise the raw code (still scannable + manually enterable).
+	qrContent := in.Code
+	if in.VerifyURL != "" {
+		qrContent = in.VerifyURL
+	}
+	if qrBytes, err := qrPNG(qrContent, 480); err == nil {
 		pdf.RegisterImageOptionsReader("qr", fpdf.ImageOptions{ImageType: "PNG"}, bytes.NewReader(qrBytes))
 		const qrW = 55.0
 		pdf.ImageOptions("qr", (pageW-qrW)/2, pdf.GetY(), qrW, qrW, false, fpdf.ImageOptions{ImageType: "PNG"}, 0, "")
