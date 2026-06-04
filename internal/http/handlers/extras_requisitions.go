@@ -32,6 +32,12 @@ type requisitionLinePayload struct {
 	Description    string     `json:"description"`
 	SupplierID     *uuid.UUID `json:"supplier_id"`
 	Urgent         bool       `json:"urgent"`
+	// External-item details (item_type=external)
+	Specifications string `json:"specifications"`
+	// Service details (item_type=service)
+	ServiceDescription   string `json:"service_description"`
+	ExpectedDeliverables string `json:"expected_deliverables"`
+	Duration             string `json:"duration"`
 }
 
 type requisitionPayload struct {
@@ -46,14 +52,18 @@ type requisitionPayload struct {
 }
 
 type requisitionLineDTO struct {
-	ID             uuid.UUID  `json:"id"`
-	ItemType       string     `json:"item_type"`
-	ItemID         *uuid.UUID `json:"item_id"`
-	Quantity       int        `json:"quantity"`
-	EstimatedPrice *float64   `json:"estimated_price"`
-	Description    string     `json:"description"`
-	SupplierID     *uuid.UUID `json:"supplier_id"`
-	Urgent         bool       `json:"urgent"`
+	ID                   uuid.UUID  `json:"id"`
+	ItemType             string     `json:"item_type"`
+	ItemID               *uuid.UUID `json:"item_id"`
+	Quantity             int        `json:"quantity"`
+	EstimatedPrice       *float64   `json:"estimated_price"`
+	Description          string     `json:"description"`
+	SupplierID           *uuid.UUID `json:"supplier_id"`
+	Urgent               bool       `json:"urgent"`
+	Specifications       string     `json:"specifications,omitempty"`
+	ServiceDescription   string     `json:"service_description,omitempty"`
+	ExpectedDeliverables string     `json:"expected_deliverables,omitempty"`
+	Duration             string     `json:"duration,omitempty"`
 }
 
 type requisitionDTO struct {
@@ -85,13 +95,17 @@ func requisitionToDTO(rq *ent.Requisition, lines []*ent.RequisitionLine) requisi
 	}
 	for _, l := range lines {
 		ld := requisitionLineDTO{
-			ID:          l.ID,
-			ItemType:    string(l.ItemType),
-			ItemID:      l.ItemID,
-			Quantity:    l.Quantity,
-			Description: l.Description,
-			SupplierID:  l.SupplierID,
-			Urgent:      l.Urgent,
+			ID:                   l.ID,
+			ItemType:             string(l.ItemType),
+			ItemID:               l.ItemID,
+			Quantity:             l.Quantity,
+			Description:          l.Description,
+			SupplierID:           l.SupplierID,
+			Urgent:               l.Urgent,
+			Specifications:       l.Specifications,
+			ServiceDescription:   l.ServiceDescription,
+			ExpectedDeliverables: l.ExpectedDeliverables,
+			Duration:             l.Duration,
 		}
 		if l.EstimatedPrice != nil {
 			ld.EstimatedPrice = l.EstimatedPrice
@@ -267,6 +281,21 @@ func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *htt
 		}
 		if l.EstimatedPrice > 0 {
 			lc = lc.SetEstimatedPrice(l.EstimatedPrice)
+		}
+		// Type-specific detail fields (external item specs / service description etc.).
+		// The schema already carries these columns, so persisting them is what makes the
+		// type-gated requisition form round-trip correctly.
+		if l.Specifications != "" {
+			lc = lc.SetSpecifications(l.Specifications)
+		}
+		if l.ServiceDescription != "" {
+			lc = lc.SetServiceDescription(l.ServiceDescription)
+		}
+		if l.ExpectedDeliverables != "" {
+			lc = lc.SetExpectedDeliverables(l.ExpectedDeliverables)
+		}
+		if l.Duration != "" {
+			lc = lc.SetDuration(l.Duration)
 		}
 		if _, err := lc.Save(r.Context()); err != nil {
 			h.log.Warn("create requisition line failed", zap.Error(err))
