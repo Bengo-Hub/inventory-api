@@ -149,6 +149,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
+	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
 
 	// Activity
 	r.Get("/inventory/activity", h.ListActivity)

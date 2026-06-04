@@ -16,6 +16,7 @@ import (
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
+	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 )
 
 // ─── Purchase Orders ──────────────────────────────────────────────────────────
@@ -330,6 +331,98 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		"status":       po.Status.String(),
 		"total_amount": po.TotalAmount,
 	})
+}
+
+// AmendPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/amend.
+// Replaces the line items + notes/expected date of a draft or sent PO (before any
+// goods are received) and recomputes the total. Received/partially-received/
+// cancelled POs cannot be amended.
+//
+//	@Summary      Amend a draft/sent purchase order's lines
+//	@Tags         Procurement
+//	@Accept       json
+//	@Produce      json
+//	@Param        poID  path      string        true  "Purchase order ID"
+//	@Param        body  body      createPOInput  true  "Amended lines + notes/expected_date"
+//	@Success      200   {object}  map[string]interface{}
+//	@Failure      400   {object}  map[string]string
+//	@Failure      404   {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/purchase-orders/{poID}/amend [put]
+func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	poID, err := uuid.Parse(chi.URLParam(r, "poID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
+		return
+	}
+	po, err := h.orm.PurchaseOrder.Query().Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
+		return
+	}
+	st := po.Status.String()
+	if st != "draft" && st != "sent" {
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft or sent purchase orders can be amended")
+		return
+	}
+	var req createPOInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.LineItems) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_LINES", "at least one line item is required")
+		return
+	}
+
+	tx, err := h.orm.Tx(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
+		return
+	}
+	if _, err = tx.PurchaseOrderLine.Delete().Where(entpoline.PoID(po.ID)).Exec(r.Context()); err != nil {
+		_ = tx.Rollback()
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to clear existing lines")
+		return
+	}
+	var total float64
+	for _, l := range req.LineItems {
+		lineTotal := float64(l.Quantity) * l.UnitCost
+		total += lineTotal
+		if _, err = tx.PurchaseOrderLine.Create().
+			SetPoID(po.ID).SetItemID(l.ItemID).SetQuantityOrdered(l.Quantity).
+			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).Save(r.Context()); err != nil {
+			_ = tx.Rollback()
+			writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to write amended line")
+			return
+		}
+	}
+	upd := tx.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(total).SetNotes(req.Notes)
+	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
+		if t, e := time.Parse("2006-01-02", *req.ExpectedDate); e == nil {
+			upd = upd.SetExpectedDate(t)
+		} else if t, e := time.Parse(time.RFC3339, *req.ExpectedDate); e == nil {
+			upd = upd.SetExpectedDate(t)
+		}
+	}
+	if _, err = upd.Save(r.Context()); err != nil {
+		_ = tx.Rollback()
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update purchase order")
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit amendment")
+		return
+	}
+	h.publishOutbox(r.Context(), tenantID, "purchase_order", po.ID, "inventory.purchase_order.amended", map[string]any{
+		"id": po.ID, "po_number": po.PoNumber, "total_amount": total,
+	})
+	writeJSON(w, http.StatusOK, map[string]any{"id": po.ID, "po_number": po.PoNumber, "total_amount": total, "status": st})
 }
 
 // SendPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/send.
