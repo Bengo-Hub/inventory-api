@@ -388,6 +388,40 @@ func (_u *TenantInventoryConfigUpdate) ClearDefaultTargetMarginPercent() *Tenant
 	return _u
 }
 
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (_u *TenantInventoryConfigUpdate) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetPricesInclusiveOfTax(v)
+	return _u
+}
+
+// SetNillablePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillablePricesInclusiveOfTax(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetPricesInclusiveOfTax(*v)
+	}
+	return _u
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (_u *TenantInventoryConfigUpdate) SetDefaultTaxCode(v string) *TenantInventoryConfigUpdate {
+	_u.mutation.SetDefaultTaxCode(v)
+	return _u
+}
+
+// SetNillableDefaultTaxCode sets the "default_tax_code" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableDefaultTaxCode(v *string) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetDefaultTaxCode(*v)
+	}
+	return _u
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (_u *TenantInventoryConfigUpdate) ClearDefaultTaxCode() *TenantInventoryConfigUpdate {
+	_u.mutation.ClearDefaultTaxCode()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdate) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -536,6 +570,15 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if _u.mutation.DefaultTargetMarginPercentCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PricesInclusiveOfTax(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPricesInclusiveOfTax, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DefaultTaxCode(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString, value)
+	}
+	if _u.mutation.DefaultTaxCodeCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)
@@ -919,6 +962,40 @@ func (_u *TenantInventoryConfigUpdateOne) ClearDefaultTargetMarginPercent() *Ten
 	return _u
 }
 
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (_u *TenantInventoryConfigUpdateOne) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetPricesInclusiveOfTax(v)
+	return _u
+}
+
+// SetNillablePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillablePricesInclusiveOfTax(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetPricesInclusiveOfTax(*v)
+	}
+	return _u
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (_u *TenantInventoryConfigUpdateOne) SetDefaultTaxCode(v string) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetDefaultTaxCode(v)
+	return _u
+}
+
+// SetNillableDefaultTaxCode sets the "default_tax_code" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableDefaultTaxCode(v *string) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetDefaultTaxCode(*v)
+	}
+	return _u
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (_u *TenantInventoryConfigUpdateOne) ClearDefaultTaxCode() *TenantInventoryConfigUpdateOne {
+	_u.mutation.ClearDefaultTaxCode()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdateOne) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -1097,6 +1174,15 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if _u.mutation.DefaultTargetMarginPercentCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PricesInclusiveOfTax(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPricesInclusiveOfTax, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DefaultTaxCode(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString, value)
+	}
+	if _u.mutation.DefaultTaxCodeCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)

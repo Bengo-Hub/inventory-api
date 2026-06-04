@@ -68,7 +68,15 @@ type inventorySettingsResponse struct {
 	RecipesModuleEnabled       bool `json:"recipes_module_enabled"`
 	PurchaseOrdersEnabled      bool `json:"purchase_orders_enabled"`
 	SupplierManagementEnabled  bool `json:"supplier_management_enabled"`
-	UpdatedAt                  string `json:"updated_at"`
+	// Hospitality modules
+	EnableRoomPricing        bool `json:"enable_room_pricing"`
+	EnableFacilityBooking    bool `json:"enable_facility_booking"`
+	EnableConferencePackages bool `json:"enable_conference_packages"`
+	// Costing & tax / compliance
+	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent"`
+	PricesInclusiveOfTax       bool     `json:"prices_inclusive_of_tax"`
+	DefaultTaxCode             string   `json:"default_tax_code"`
+	UpdatedAt                  string   `json:"updated_at"`
 }
 
 func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettingsResponse {
@@ -95,6 +103,12 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		RecipesModuleEnabled:          c.RecipesModuleEnabled,
 		PurchaseOrdersEnabled:         c.PurchaseOrdersEnabled,
 		SupplierManagementEnabled:     c.SupplierManagementEnabled,
+		EnableRoomPricing:             c.EnableRoomPricing,
+		EnableFacilityBooking:         c.EnableFacilityBooking,
+		EnableConferencePackages:      c.EnableConferencePackages,
+		DefaultTargetMarginPercent:    c.DefaultTargetMarginPercent,
+		PricesInclusiveOfTax:          c.PricesInclusiveOfTax,
+		DefaultTaxCode:                c.DefaultTaxCode,
 		UpdatedAt:                     c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
@@ -145,6 +159,12 @@ type updateInventorySettingsInput struct {
 	EnableExpiryTracking          *bool           `json:"enable_expiry_tracking"`
 	PurchaseOrderApprovalRequired *bool           `json:"purchase_order_approval_required"`
 	AutoAdjustOnTransfer          *bool           `json:"auto_adjust_on_transfer"`
+	EnableRoomPricing             *bool           `json:"enable_room_pricing"`
+	EnableFacilityBooking         *bool           `json:"enable_facility_booking"`
+	EnableConferencePackages      *bool           `json:"enable_conference_packages"`
+	DefaultTargetMarginPercent    *float64        `json:"default_target_margin_percent"`
+	PricesInclusiveOfTax          *bool           `json:"prices_inclusive_of_tax"`
+	DefaultTaxCode                *string         `json:"default_tax_code"`
 }
 
 // PutSettings handles PUT /{tenant}/inventory/settings
@@ -207,6 +227,24 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.AutoAdjustOnTransfer != nil {
 		upd = upd.SetAutoAdjustOnTransfer(*input.AutoAdjustOnTransfer)
+	}
+	if input.EnableRoomPricing != nil {
+		upd = upd.SetEnableRoomPricing(*input.EnableRoomPricing)
+	}
+	if input.EnableFacilityBooking != nil {
+		upd = upd.SetEnableFacilityBooking(*input.EnableFacilityBooking)
+	}
+	if input.EnableConferencePackages != nil {
+		upd = upd.SetEnableConferencePackages(*input.EnableConferencePackages)
+	}
+	if input.DefaultTargetMarginPercent != nil {
+		upd = upd.SetDefaultTargetMarginPercent(*input.DefaultTargetMarginPercent)
+	}
+	if input.PricesInclusiveOfTax != nil {
+		upd = upd.SetPricesInclusiveOfTax(*input.PricesInclusiveOfTax)
+	}
+	if input.DefaultTaxCode != nil {
+		upd = upd.SetDefaultTaxCode(*input.DefaultTaxCode)
 	}
 
 	updated, err := upd.Save(r.Context())

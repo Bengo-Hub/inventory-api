@@ -351,7 +351,7 @@ func (s *Service) EventAvailability(ctx context.Context, tenantID, eventItemID u
 
 	// Tier definitions from Item.metadata.ticket_tiers.
 	if tiers, ok := event.Metadata["ticket_tiers"].([]any); ok {
-		for _, raw := range tiers {
+		for idx, raw := range tiers {
 			m, ok := raw.(map[string]any)
 			if !ok {
 				continue
@@ -363,6 +363,15 @@ func (s *Service) EventAvailability(ctx context.Context, tenantID, eventItemID u
 			name, _ := m["name"].(string)
 			if name == "" {
 				name, _ = m["label"].(string)
+			}
+			// UI-defined tiers carry only {name, price, capacity}; derive a stable id from the name
+			// (fallback to index) so each tier is uniquely addressable for selection, cart lines,
+			// and per-tier availability/issuance — otherwise every tier collapses to a single id.
+			if id == "" {
+				id = slugifyTierID(name)
+			}
+			if id == "" {
+				id = fmt.Sprintf("tier-%d", idx)
 			}
 			capF, _ := m["capacity"].(float64)
 			priceF, _ := m["price"].(float64)
@@ -460,4 +469,24 @@ func max0(v int) int {
 		return 0
 	}
 	return v
+}
+
+// slugifyTierID derives a stable, URL-safe tier id from a tier name
+// (e.g. "VIP Lounge" → "vip-lounge"). Returns "" for an empty/symbol-only name.
+func slugifyTierID(name string) string {
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(strings.TrimSpace(name)) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+			lastDash = false
+		default:
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+	return strings.TrimRight(b.String(), "-")
 }

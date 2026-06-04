@@ -63,6 +63,10 @@ type TenantInventoryConfig struct {
 	EnableConferencePackages bool `json:"enable_conference_packages,omitempty"`
 	// Default profit margin % for recipe costing when no per-recipe margin is set
 	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent,omitempty"`
+	// When true, item selling prices are treated as VAT-inclusive; tax is back-computed from the price using the rate resolved from treasury-api
+	PricesInclusiveOfTax bool `json:"prices_inclusive_of_tax,omitempty"`
+	// Default KRA/eTIMS tax code (e.g. VAT-16) applied to items missing one; resolved against treasury-api tax codes
+	DefaultTaxCode string `json:"default_tax_code,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -77,13 +81,13 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenantinventoryconfig.FieldUnitReorderDefaults:
 			values[i] = new([]byte)
-		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages:
+		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
 			values[i] = new(sql.NullBool)
 		case tenantinventoryconfig.FieldLowStockThresholdPct, tenantinventoryconfig.FieldCriticalStockThresholdPct, tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
 		case tenantinventoryconfig.FieldDefaultReorderLevel, tenantinventoryconfig.FieldExpiryWarningDays:
 			values[i] = new(sql.NullInt64)
-		case tenantinventoryconfig.FieldNotificationEmail, tenantinventoryconfig.FieldDefaultWarehouseID:
+		case tenantinventoryconfig.FieldNotificationEmail, tenantinventoryconfig.FieldDefaultWarehouseID, tenantinventoryconfig.FieldDefaultTaxCode:
 			values[i] = new(sql.NullString)
 		case tenantinventoryconfig.FieldCreatedAt, tenantinventoryconfig.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -247,6 +251,18 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 				_m.DefaultTargetMarginPercent = new(float64)
 				*_m.DefaultTargetMarginPercent = value.Float64
 			}
+		case tenantinventoryconfig.FieldPricesInclusiveOfTax:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field prices_inclusive_of_tax", values[i])
+			} else if value.Valid {
+				_m.PricesInclusiveOfTax = value.Bool
+			}
+		case tenantinventoryconfig.FieldDefaultTaxCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field default_tax_code", values[i])
+			} else if value.Valid {
+				_m.DefaultTaxCode = value.String
+			}
 		case tenantinventoryconfig.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -366,6 +382,12 @@ func (_m *TenantInventoryConfig) String() string {
 		builder.WriteString("default_target_margin_percent=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("prices_inclusive_of_tax=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PricesInclusiveOfTax))
+	builder.WriteString(", ")
+	builder.WriteString("default_tax_code=")
+	builder.WriteString(_m.DefaultTaxCode)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

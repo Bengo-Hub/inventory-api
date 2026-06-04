@@ -63,6 +63,12 @@ type ItemDTO struct {
 	DimensionsCm            map[string]float64 `json:"dimensions_cm,omitempty"`
 	// Cost / pricing fields
 	CostPrice *float64 `json:"cost_price,omitempty"`
+	// Effective customer-facing price + tax split — enriched at read time for the POS/ordering
+	// proxies (recipe selling price → default pricing tier → cost+margin suggestion).
+	SellingPrice *float64 `json:"selling_price,omitempty"` // what the customer pays (gross when tax-inclusive)
+	NetPrice     *float64 `json:"net_price,omitempty"`     // selling price excluding tax
+	TaxAmount    *float64 `json:"tax_amount,omitempty"`    // tax portion of the selling price
+	TaxRate      *float64 `json:"tax_rate,omitempty"`      // VAT rate % applied (resolved from treasury-api)
 	// Purchase / supplier fields — enable auto EP-cost calculation
 	PurchasePrice    *float64 `json:"purchase_price,omitempty"`
 	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
@@ -126,6 +132,7 @@ type Service struct {
 	cache        *sharedcache.Aside
 	log          *zap.Logger
 	mediaURLBase string // public base URL for resolving relative /media/ paths
+	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
 }
 
 // NewService creates a new items service.
@@ -154,6 +161,11 @@ func (s *Service) resolveMediaURL(path string) string {
 // SetCache injects the cache helper (optional; caching is skipped if nil).
 func (s *Service) SetCache(c *sharedcache.Aside) {
 	s.cache = c
+}
+
+// SetTaxResolver injects the treasury-api tax-rate resolver (optional).
+func (s *Service) SetTaxResolver(r TaxResolver) {
+	s.taxResolver = r
 }
 
 // GetStockAvailability returns stock availability for a single item by SKU.
@@ -697,6 +709,8 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			}
 			dtos[i] = *dto
 		}
+		// Enrich with effective selling price + tax split for POS/ordering proxies.
+		s.enrichPrices(innerCtx, tenantID, cfg, dtos)
 		return dtos, nil
 	}
 
@@ -748,6 +762,10 @@ func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit,
 	for i, it := range itms {
 		dtos[i] = *s.mapToDTO(it)
 	}
+	cfg, _ := s.client.TenantInventoryConfig.Query().
+		Where(tenantinventoryconfig.TenantID(tenantID)).
+		Only(ctx)
+	s.enrichPrices(ctx, tenantID, cfg, dtos)
 	return dtos, total, nil
 }
 
@@ -1007,6 +1025,16 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	}
 	// Auto-compute EP cost from purchase fields when not explicitly set.
 	resolveEPCost(&dto)
+
+	// Default the tax code from the tenant compliance config when unset — treasury/eTIMS reads
+	// this off the item on POS/ordering sales. The inclusive-vs-exclusive behaviour itself is
+	// resolved at read time from the tenant setting, so it always follows the current setting.
+	if dto.TaxCodeID == "" {
+		if cfg, cErr := s.client.TenantInventoryConfig.Query().
+			Where(tenantinventoryconfig.TenantID(tenantID)).Only(ctx); cErr == nil && cfg.DefaultTaxCode != "" {
+			dto.TaxCodeID = cfg.DefaultTaxCode
+		}
+	}
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {

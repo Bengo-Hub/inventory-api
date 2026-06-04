@@ -2258,6 +2258,8 @@ var (
 		{Name: "enable_facility_booking", Type: field.TypeBool, Default: false},
 		{Name: "enable_conference_packages", Type: field.TypeBool, Default: false},
 		{Name: "default_target_margin_percent", Type: field.TypeFloat64, Nullable: true, Default: 30},
+		{Name: "prices_inclusive_of_tax", Type: field.TypeBool, Default: false},
+		{Name: "default_tax_code", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}

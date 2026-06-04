@@ -160,6 +160,16 @@ func DefaultTargetMarginPercent(v float64) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTargetMarginPercent, v))
 }
 
+// PricesInclusiveOfTax applies equality check predicate on the "prices_inclusive_of_tax" field. It's identical to PricesInclusiveOfTaxEQ.
+func PricesInclusiveOfTax(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldPricesInclusiveOfTax, v))
+}
+
+// DefaultTaxCode applies equality check predicate on the "default_tax_code" field. It's identical to DefaultTaxCodeEQ.
+func DefaultTaxCode(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTaxCode, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldCreatedAt, v))
@@ -708,6 +718,91 @@ func DefaultTargetMarginPercentIsNil() predicate.TenantInventoryConfig {
 // DefaultTargetMarginPercentNotNil applies the NotNil predicate on the "default_target_margin_percent" field.
 func DefaultTargetMarginPercentNotNil() predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNotNull(FieldDefaultTargetMarginPercent))
+}
+
+// PricesInclusiveOfTaxEQ applies the EQ predicate on the "prices_inclusive_of_tax" field.
+func PricesInclusiveOfTaxEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldPricesInclusiveOfTax, v))
+}
+
+// PricesInclusiveOfTaxNEQ applies the NEQ predicate on the "prices_inclusive_of_tax" field.
+func PricesInclusiveOfTaxNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldPricesInclusiveOfTax, v))
+}
+
+// DefaultTaxCodeEQ applies the EQ predicate on the "default_tax_code" field.
+func DefaultTaxCodeEQ(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeNEQ applies the NEQ predicate on the "default_tax_code" field.
+func DefaultTaxCodeNEQ(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeIn applies the In predicate on the "default_tax_code" field.
+func DefaultTaxCodeIn(vs ...string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIn(FieldDefaultTaxCode, vs...))
+}
+
+// DefaultTaxCodeNotIn applies the NotIn predicate on the "default_tax_code" field.
+func DefaultTaxCodeNotIn(vs ...string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotIn(FieldDefaultTaxCode, vs...))
+}
+
+// DefaultTaxCodeGT applies the GT predicate on the "default_tax_code" field.
+func DefaultTaxCodeGT(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGT(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeGTE applies the GTE predicate on the "default_tax_code" field.
+func DefaultTaxCodeGTE(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGTE(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeLT applies the LT predicate on the "default_tax_code" field.
+func DefaultTaxCodeLT(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLT(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeLTE applies the LTE predicate on the "default_tax_code" field.
+func DefaultTaxCodeLTE(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLTE(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeContains applies the Contains predicate on the "default_tax_code" field.
+func DefaultTaxCodeContains(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldContains(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeHasPrefix applies the HasPrefix predicate on the "default_tax_code" field.
+func DefaultTaxCodeHasPrefix(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldHasPrefix(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeHasSuffix applies the HasSuffix predicate on the "default_tax_code" field.
+func DefaultTaxCodeHasSuffix(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldHasSuffix(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeIsNil applies the IsNil predicate on the "default_tax_code" field.
+func DefaultTaxCodeIsNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIsNull(FieldDefaultTaxCode))
+}
+
+// DefaultTaxCodeNotNil applies the NotNil predicate on the "default_tax_code" field.
+func DefaultTaxCodeNotNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotNull(FieldDefaultTaxCode))
+}
+
+// DefaultTaxCodeEqualFold applies the EqualFold predicate on the "default_tax_code" field.
+func DefaultTaxCodeEqualFold(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEqualFold(FieldDefaultTaxCode, v))
+}
+
+// DefaultTaxCodeContainsFold applies the ContainsFold predicate on the "default_tax_code" field.
+func DefaultTaxCodeContainsFold(v string) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldContainsFold(FieldDefaultTaxCode, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

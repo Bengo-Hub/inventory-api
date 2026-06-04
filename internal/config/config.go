@@ -84,6 +84,8 @@ type TelemetryConfig struct {
 
 type ServicesConfig struct {
 	OrderingURL string `envconfig:"ORDERING_SERVICE_URL" default:"https://orderingapi.codevertexitsolutions.com"`
+	// TreasuryURL is the treasury-api base URL — source of truth for tax codes/rates (S2S).
+	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexitsolutions.com"`
 }
 
 type AuthConfig struct {
