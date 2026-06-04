@@ -316,6 +316,34 @@ func (_c *TenantInventoryConfigCreate) SetNillableDefaultTargetMarginPercent(v *
 	return _c
 }
 
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (_c *TenantInventoryConfigCreate) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetPricesInclusiveOfTax(v)
+	return _c
+}
+
+// SetNillablePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillablePricesInclusiveOfTax(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetPricesInclusiveOfTax(*v)
+	}
+	return _c
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (_c *TenantInventoryConfigCreate) SetDefaultTaxCode(v string) *TenantInventoryConfigCreate {
+	_c.mutation.SetDefaultTaxCode(v)
+	return _c
+}
+
+// SetNillableDefaultTaxCode sets the "default_tax_code" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableDefaultTaxCode(v *string) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetDefaultTaxCode(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *TenantInventoryConfigCreate) SetCreatedAt(v time.Time) *TenantInventoryConfigCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -465,6 +493,10 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultDefaultTargetMarginPercent
 		_c.mutation.SetDefaultTargetMarginPercent(v)
 	}
+	if _, ok := _c.mutation.PricesInclusiveOfTax(); !ok {
+		v := tenantinventoryconfig.DefaultPricesInclusiveOfTax
+		_c.mutation.SetPricesInclusiveOfTax(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := tenantinventoryconfig.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -534,6 +566,9 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.EnableConferencePackages(); !ok {
 		return &ValidationError{Name: "enable_conference_packages", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_conference_packages"`)}
+	}
+	if _, ok := _c.mutation.PricesInclusiveOfTax(); !ok {
+		return &ValidationError{Name: "prices_inclusive_of_tax", err: errors.New(`ent: missing required field "TenantInventoryConfig.prices_inclusive_of_tax"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TenantInventoryConfig.created_at"`)}
@@ -664,6 +699,14 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.DefaultTargetMarginPercent(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultTargetMarginPercent, field.TypeFloat64, value)
 		_node.DefaultTargetMarginPercent = &value
+	}
+	if value, ok := _c.mutation.PricesInclusiveOfTax(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPricesInclusiveOfTax, field.TypeBool, value)
+		_node.PricesInclusiveOfTax = value
+	}
+	if value, ok := _c.mutation.DefaultTaxCode(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString, value)
+		_node.DefaultTaxCode = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldCreatedAt, field.TypeTime, value)
@@ -1040,6 +1083,36 @@ func (u *TenantInventoryConfigUpsert) AddDefaultTargetMarginPercent(v float64) *
 // ClearDefaultTargetMarginPercent clears the value of the "default_target_margin_percent" field.
 func (u *TenantInventoryConfigUpsert) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsert {
 	u.SetNull(tenantinventoryconfig.FieldDefaultTargetMarginPercent)
+	return u
+}
+
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (u *TenantInventoryConfigUpsert) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldPricesInclusiveOfTax, v)
+	return u
+}
+
+// UpdatePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdatePricesInclusiveOfTax() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldPricesInclusiveOfTax)
+	return u
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsert) SetDefaultTaxCode(v string) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldDefaultTaxCode, v)
+	return u
+}
+
+// UpdateDefaultTaxCode sets the "default_tax_code" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateDefaultTaxCode() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldDefaultTaxCode)
+	return u
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsert) ClearDefaultTaxCode() *TenantInventoryConfigUpsert {
+	u.SetNull(tenantinventoryconfig.FieldDefaultTaxCode)
 	return u
 }
 
@@ -1474,6 +1547,41 @@ func (u *TenantInventoryConfigUpsertOne) UpdateDefaultTargetMarginPercent() *Ten
 func (u *TenantInventoryConfigUpsertOne) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultTargetMarginPercent()
+	})
+}
+
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (u *TenantInventoryConfigUpsertOne) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetPricesInclusiveOfTax(v)
+	})
+}
+
+// UpdatePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdatePricesInclusiveOfTax() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdatePricesInclusiveOfTax()
+	})
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsertOne) SetDefaultTaxCode(v string) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetDefaultTaxCode(v)
+	})
+}
+
+// UpdateDefaultTaxCode sets the "default_tax_code" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateDefaultTaxCode() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateDefaultTaxCode()
+	})
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsertOne) ClearDefaultTaxCode() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearDefaultTaxCode()
 	})
 }
 
@@ -2077,6 +2185,41 @@ func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultTargetMarginPercent() *Te
 func (u *TenantInventoryConfigUpsertBulk) ClearDefaultTargetMarginPercent() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultTargetMarginPercent()
+	})
+}
+
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (u *TenantInventoryConfigUpsertBulk) SetPricesInclusiveOfTax(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetPricesInclusiveOfTax(v)
+	})
+}
+
+// UpdatePricesInclusiveOfTax sets the "prices_inclusive_of_tax" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdatePricesInclusiveOfTax() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdatePricesInclusiveOfTax()
+	})
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsertBulk) SetDefaultTaxCode(v string) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetDefaultTaxCode(v)
+	})
+}
+
+// UpdateDefaultTaxCode sets the "default_tax_code" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultTaxCode() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateDefaultTaxCode()
+	})
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (u *TenantInventoryConfigUpsertBulk) ClearDefaultTaxCode() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearDefaultTaxCode()
 	})
 }
 

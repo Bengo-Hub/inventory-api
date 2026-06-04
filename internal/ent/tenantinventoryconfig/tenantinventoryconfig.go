@@ -58,6 +58,10 @@ const (
 	FieldEnableConferencePackages = "enable_conference_packages"
 	// FieldDefaultTargetMarginPercent holds the string denoting the default_target_margin_percent field in the database.
 	FieldDefaultTargetMarginPercent = "default_target_margin_percent"
+	// FieldPricesInclusiveOfTax holds the string denoting the prices_inclusive_of_tax field in the database.
+	FieldPricesInclusiveOfTax = "prices_inclusive_of_tax"
+	// FieldDefaultTaxCode holds the string denoting the default_tax_code field in the database.
+	FieldDefaultTaxCode = "default_tax_code"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -91,6 +95,8 @@ var Columns = []string{
 	FieldEnableFacilityBooking,
 	FieldEnableConferencePackages,
 	FieldDefaultTargetMarginPercent,
+	FieldPricesInclusiveOfTax,
+	FieldDefaultTaxCode,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -142,6 +148,8 @@ var (
 	DefaultEnableConferencePackages bool
 	// DefaultDefaultTargetMarginPercent holds the default value on creation for the "default_target_margin_percent" field.
 	DefaultDefaultTargetMarginPercent float64
+	// DefaultPricesInclusiveOfTax holds the default value on creation for the "prices_inclusive_of_tax" field.
+	DefaultPricesInclusiveOfTax bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -263,6 +271,16 @@ func ByEnableConferencePackages(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultTargetMarginPercent orders the results by the default_target_margin_percent field.
 func ByDefaultTargetMarginPercent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultTargetMarginPercent, opts...).ToFunc()
+}
+
+// ByPricesInclusiveOfTax orders the results by the prices_inclusive_of_tax field.
+func ByPricesInclusiveOfTax(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPricesInclusiveOfTax, opts...).ToFunc()
+}
+
+// ByDefaultTaxCode orders the results by the default_tax_code field.
+func ByDefaultTaxCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultTaxCode, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

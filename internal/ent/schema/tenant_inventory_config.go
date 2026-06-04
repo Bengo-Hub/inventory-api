@@ -93,6 +93,15 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 			Nillable().
 			Default(30.0).
 			Comment("Default profit margin % for recipe costing when no per-recipe margin is set"),
+		// Tax & compliance — treasury-api owns tax rates/codes (source of truth). Inventory stores
+		// only the tenant's pricing convention + the default code reference; the rate is resolved
+		// from treasury-api at read time and cached.
+		field.Bool("prices_inclusive_of_tax").
+			Default(false).
+			Comment("When true, item selling prices are treated as VAT-inclusive; tax is back-computed from the price using the rate resolved from treasury-api"),
+		field.String("default_tax_code").
+			Optional().
+			Comment("Default KRA/eTIMS tax code (e.g. VAT-16) applied to items missing one; resolved against treasury-api tax codes"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),

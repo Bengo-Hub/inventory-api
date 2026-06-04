@@ -1620,12 +1620,16 @@ func init() {
 	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[22].Descriptor()
 	// tenantinventoryconfig.DefaultDefaultTargetMarginPercent holds the default value on creation for the default_target_margin_percent field.
 	tenantinventoryconfig.DefaultDefaultTargetMarginPercent = tenantinventoryconfigDescDefaultTargetMarginPercent.Default.(float64)
+	// tenantinventoryconfigDescPricesInclusiveOfTax is the schema descriptor for prices_inclusive_of_tax field.
+	tenantinventoryconfigDescPricesInclusiveOfTax := tenantinventoryconfigFields[23].Descriptor()
+	// tenantinventoryconfig.DefaultPricesInclusiveOfTax holds the default value on creation for the prices_inclusive_of_tax field.
+	tenantinventoryconfig.DefaultPricesInclusiveOfTax = tenantinventoryconfigDescPricesInclusiveOfTax.Default.(bool)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[23].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[25].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[24].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[26].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -43,6 +43,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
 	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
+	"github.com/bengobox/inventory-service/internal/platform/treasury"
 	"github.com/bengobox/inventory-service/internal/services/usersync"
 	"github.com/bengobox/inventory-service/internal/shared/logger"
 )
@@ -154,6 +155,8 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
 	itemsSvc.SetCache(cacheAside)
+	// Treasury is the source of truth for tax rates; resolve + cache VAT rates for item enrichment.
+	itemsSvc.SetTaxResolver(treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log))
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)

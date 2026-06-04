@@ -60721,6 +60721,8 @@ type TenantInventoryConfigMutation struct {
 	enable_conference_packages       *bool
 	default_target_margin_percent    *float64
 	adddefault_target_margin_percent *float64
+	prices_inclusive_of_tax          *bool
+	default_tax_code                 *string
 	created_at                       *time.Time
 	updated_at                       *time.Time
 	clearedFields                    map[string]struct{}
@@ -61778,6 +61780,91 @@ func (m *TenantInventoryConfigMutation) ResetDefaultTargetMarginPercent() {
 	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 }
 
+// SetPricesInclusiveOfTax sets the "prices_inclusive_of_tax" field.
+func (m *TenantInventoryConfigMutation) SetPricesInclusiveOfTax(b bool) {
+	m.prices_inclusive_of_tax = &b
+}
+
+// PricesInclusiveOfTax returns the value of the "prices_inclusive_of_tax" field in the mutation.
+func (m *TenantInventoryConfigMutation) PricesInclusiveOfTax() (r bool, exists bool) {
+	v := m.prices_inclusive_of_tax
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricesInclusiveOfTax returns the old "prices_inclusive_of_tax" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldPricesInclusiveOfTax(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricesInclusiveOfTax is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricesInclusiveOfTax requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricesInclusiveOfTax: %w", err)
+	}
+	return oldValue.PricesInclusiveOfTax, nil
+}
+
+// ResetPricesInclusiveOfTax resets all changes to the "prices_inclusive_of_tax" field.
+func (m *TenantInventoryConfigMutation) ResetPricesInclusiveOfTax() {
+	m.prices_inclusive_of_tax = nil
+}
+
+// SetDefaultTaxCode sets the "default_tax_code" field.
+func (m *TenantInventoryConfigMutation) SetDefaultTaxCode(s string) {
+	m.default_tax_code = &s
+}
+
+// DefaultTaxCode returns the value of the "default_tax_code" field in the mutation.
+func (m *TenantInventoryConfigMutation) DefaultTaxCode() (r string, exists bool) {
+	v := m.default_tax_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultTaxCode returns the old "default_tax_code" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldDefaultTaxCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultTaxCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultTaxCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultTaxCode: %w", err)
+	}
+	return oldValue.DefaultTaxCode, nil
+}
+
+// ClearDefaultTaxCode clears the value of the "default_tax_code" field.
+func (m *TenantInventoryConfigMutation) ClearDefaultTaxCode() {
+	m.default_tax_code = nil
+	m.clearedFields[tenantinventoryconfig.FieldDefaultTaxCode] = struct{}{}
+}
+
+// DefaultTaxCodeCleared returns if the "default_tax_code" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) DefaultTaxCodeCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldDefaultTaxCode]
+	return ok
+}
+
+// ResetDefaultTaxCode resets all changes to the "default_tax_code" field.
+func (m *TenantInventoryConfigMutation) ResetDefaultTaxCode() {
+	m.default_tax_code = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultTaxCode)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *TenantInventoryConfigMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -61884,7 +61971,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 26)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -61951,6 +62038,12 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	if m.default_target_margin_percent != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	}
+	if m.prices_inclusive_of_tax != nil {
+		fields = append(fields, tenantinventoryconfig.FieldPricesInclusiveOfTax)
+	}
+	if m.default_tax_code != nil {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultTaxCode)
+	}
 	if m.created_at != nil {
 		fields = append(fields, tenantinventoryconfig.FieldCreatedAt)
 	}
@@ -62009,6 +62102,10 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.EnableConferencePackages()
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		return m.DefaultTargetMarginPercent()
+	case tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		return m.PricesInclusiveOfTax()
+	case tenantinventoryconfig.FieldDefaultTaxCode:
+		return m.DefaultTaxCode()
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.CreatedAt()
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -62066,6 +62163,10 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldEnableConferencePackages(ctx)
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		return m.OldDefaultTargetMarginPercent(ctx)
+	case tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		return m.OldPricesInclusiveOfTax(ctx)
+	case tenantinventoryconfig.FieldDefaultTaxCode:
+		return m.OldDefaultTaxCode(ctx)
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -62233,6 +62334,20 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 		}
 		m.SetDefaultTargetMarginPercent(v)
 		return nil
+	case tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricesInclusiveOfTax(v)
+		return nil
+	case tenantinventoryconfig.FieldDefaultTaxCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultTaxCode(v)
+		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -62352,6 +62467,9 @@ func (m *TenantInventoryConfigMutation) ClearedFields() []string {
 	if m.FieldCleared(tenantinventoryconfig.FieldDefaultTargetMarginPercent) {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	}
+	if m.FieldCleared(tenantinventoryconfig.FieldDefaultTaxCode) {
+		fields = append(fields, tenantinventoryconfig.FieldDefaultTaxCode)
+	}
 	return fields
 }
 
@@ -62377,6 +62495,9 @@ func (m *TenantInventoryConfigMutation) ClearField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		m.ClearDefaultTargetMarginPercent()
+		return nil
+	case tenantinventoryconfig.FieldDefaultTaxCode:
+		m.ClearDefaultTaxCode()
 		return nil
 	}
 	return fmt.Errorf("unknown TenantInventoryConfig nullable field %s", name)
@@ -62451,6 +62572,12 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		m.ResetDefaultTargetMarginPercent()
+		return nil
+	case tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		m.ResetPricesInclusiveOfTax()
+		return nil
+	case tenantinventoryconfig.FieldDefaultTaxCode:
+		m.ResetDefaultTaxCode()
 		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		m.ResetCreatedAt()

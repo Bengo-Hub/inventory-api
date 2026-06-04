@@ -792,6 +792,11 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 	req.IsActive = true
 
+	if err := items.ValidateTicketTiers(&req); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "TIER_CAPACITY", err.Error())
+		return
+	}
+
 	result, err := h.itemsSvc.CreateItem(r.Context(), tenantID, req)
 	if err != nil {
 		h.log.Error("create item failed", zap.Error(err))
@@ -825,6 +830,11 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	var req items.ItemDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+
+	if err := items.ValidateTicketTiers(&req); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "TIER_CAPACITY", err.Error())
 		return
 	}
 
