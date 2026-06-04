@@ -42,6 +42,10 @@ type ProductionBatch struct {
 	LaborCost float64 `json:"labor_cost,omitempty"`
 	// OverheadCost holds the value of the "overhead_cost" field.
 	OverheadCost float64 `json:"overhead_cost,omitempty"`
+	// Output units lost to scrap/rework
+	ScrapQuantity float64 `json:"scrap_quantity,omitempty"`
+	// Computed cost per output unit at completion (material+labor+overhead)/actual
+	UnitCost *float64 `json:"unit_cost,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes string `json:"notes,omitempty"`
 	// CreatedBy holds the value of the "created_by" field.
@@ -94,7 +98,7 @@ func (*ProductionBatch) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case productionbatch.FieldOutletID, productionbatch.FieldCreatedBy, productionbatch.FieldSupervisorID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case productionbatch.FieldPlannedQuantity, productionbatch.FieldActualQuantity, productionbatch.FieldLaborCost, productionbatch.FieldOverheadCost:
+		case productionbatch.FieldPlannedQuantity, productionbatch.FieldActualQuantity, productionbatch.FieldLaborCost, productionbatch.FieldOverheadCost, productionbatch.FieldScrapQuantity, productionbatch.FieldUnitCost:
 			values[i] = new(sql.NullFloat64)
 		case productionbatch.FieldBatchNumber, productionbatch.FieldStatus, productionbatch.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -198,6 +202,19 @@ func (_m *ProductionBatch) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field overhead_cost", values[i])
 			} else if value.Valid {
 				_m.OverheadCost = value.Float64
+			}
+		case productionbatch.FieldScrapQuantity:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field scrap_quantity", values[i])
+			} else if value.Valid {
+				_m.ScrapQuantity = value.Float64
+			}
+		case productionbatch.FieldUnitCost:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_cost", values[i])
+			} else if value.Valid {
+				_m.UnitCost = new(float64)
+				*_m.UnitCost = value.Float64
 			}
 		case productionbatch.FieldNotes:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -320,6 +337,14 @@ func (_m *ProductionBatch) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("overhead_cost=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OverheadCost))
+	builder.WriteString(", ")
+	builder.WriteString("scrap_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ScrapQuantity))
+	builder.WriteString(", ")
+	if v := _m.UnitCost; v != nil {
+		builder.WriteString("unit_cost=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("notes=")
 	builder.WriteString(_m.Notes)

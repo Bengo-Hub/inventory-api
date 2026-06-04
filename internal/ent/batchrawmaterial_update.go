@@ -112,6 +112,27 @@ func (_u *BatchRawMaterialUpdate) AddQuantity(v float64) *BatchRawMaterialUpdate
 	return _u
 }
 
+// SetCost sets the "cost" field.
+func (_u *BatchRawMaterialUpdate) SetCost(v float64) *BatchRawMaterialUpdate {
+	_u.mutation.ResetCost()
+	_u.mutation.SetCost(v)
+	return _u
+}
+
+// SetNillableCost sets the "cost" field if the given value is not nil.
+func (_u *BatchRawMaterialUpdate) SetNillableCost(v *float64) *BatchRawMaterialUpdate {
+	if v != nil {
+		_u.SetCost(*v)
+	}
+	return _u
+}
+
+// AddCost adds value to the "cost" field.
+func (_u *BatchRawMaterialUpdate) AddCost(v float64) *BatchRawMaterialUpdate {
+	_u.mutation.AddCost(v)
+	return _u
+}
+
 // SetProductionBatch sets the "production_batch" edge to the ProductionBatch entity.
 func (_u *BatchRawMaterialUpdate) SetProductionBatch(v *ProductionBatch) *BatchRawMaterialUpdate {
 	return _u.SetProductionBatchID(v.ID)
@@ -192,6 +213,12 @@ func (_u *BatchRawMaterialUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(batchrawmaterial.FieldQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Cost(); ok {
+		_spec.SetField(batchrawmaterial.FieldCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCost(); ok {
+		_spec.AddField(batchrawmaterial.FieldCost, field.TypeFloat64, value)
 	}
 	if _u.mutation.ProductionBatchCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -325,6 +352,27 @@ func (_u *BatchRawMaterialUpdateOne) AddQuantity(v float64) *BatchRawMaterialUpd
 	return _u
 }
 
+// SetCost sets the "cost" field.
+func (_u *BatchRawMaterialUpdateOne) SetCost(v float64) *BatchRawMaterialUpdateOne {
+	_u.mutation.ResetCost()
+	_u.mutation.SetCost(v)
+	return _u
+}
+
+// SetNillableCost sets the "cost" field if the given value is not nil.
+func (_u *BatchRawMaterialUpdateOne) SetNillableCost(v *float64) *BatchRawMaterialUpdateOne {
+	if v != nil {
+		_u.SetCost(*v)
+	}
+	return _u
+}
+
+// AddCost adds value to the "cost" field.
+func (_u *BatchRawMaterialUpdateOne) AddCost(v float64) *BatchRawMaterialUpdateOne {
+	_u.mutation.AddCost(v)
+	return _u
+}
+
 // SetProductionBatch sets the "production_batch" edge to the ProductionBatch entity.
 func (_u *BatchRawMaterialUpdateOne) SetProductionBatch(v *ProductionBatch) *BatchRawMaterialUpdateOne {
 	return _u.SetProductionBatchID(v.ID)
@@ -435,6 +483,12 @@ func (_u *BatchRawMaterialUpdateOne) sqlSave(ctx context.Context) (_node *BatchR
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(batchrawmaterial.FieldQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Cost(); ok {
+		_spec.SetField(batchrawmaterial.FieldCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCost(); ok {
+		_spec.AddField(batchrawmaterial.FieldCost, field.TypeFloat64, value)
 	}
 	if _u.mutation.ProductionBatchCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -251,6 +251,54 @@ func (_u *ProductionBatchUpdate) AddOverheadCost(v float64) *ProductionBatchUpda
 	return _u
 }
 
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (_u *ProductionBatchUpdate) SetScrapQuantity(v float64) *ProductionBatchUpdate {
+	_u.mutation.ResetScrapQuantity()
+	_u.mutation.SetScrapQuantity(v)
+	return _u
+}
+
+// SetNillableScrapQuantity sets the "scrap_quantity" field if the given value is not nil.
+func (_u *ProductionBatchUpdate) SetNillableScrapQuantity(v *float64) *ProductionBatchUpdate {
+	if v != nil {
+		_u.SetScrapQuantity(*v)
+	}
+	return _u
+}
+
+// AddScrapQuantity adds value to the "scrap_quantity" field.
+func (_u *ProductionBatchUpdate) AddScrapQuantity(v float64) *ProductionBatchUpdate {
+	_u.mutation.AddScrapQuantity(v)
+	return _u
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (_u *ProductionBatchUpdate) SetUnitCost(v float64) *ProductionBatchUpdate {
+	_u.mutation.ResetUnitCost()
+	_u.mutation.SetUnitCost(v)
+	return _u
+}
+
+// SetNillableUnitCost sets the "unit_cost" field if the given value is not nil.
+func (_u *ProductionBatchUpdate) SetNillableUnitCost(v *float64) *ProductionBatchUpdate {
+	if v != nil {
+		_u.SetUnitCost(*v)
+	}
+	return _u
+}
+
+// AddUnitCost adds value to the "unit_cost" field.
+func (_u *ProductionBatchUpdate) AddUnitCost(v float64) *ProductionBatchUpdate {
+	_u.mutation.AddUnitCost(v)
+	return _u
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (_u *ProductionBatchUpdate) ClearUnitCost() *ProductionBatchUpdate {
+	_u.mutation.ClearUnitCost()
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *ProductionBatchUpdate) SetNotes(v string) *ProductionBatchUpdate {
 	_u.mutation.SetNotes(v)
@@ -516,6 +564,21 @@ func (_u *ProductionBatchUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.AddedOverheadCost(); ok {
 		_spec.AddField(productionbatch.FieldOverheadCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ScrapQuantity(); ok {
+		_spec.SetField(productionbatch.FieldScrapQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedScrapQuantity(); ok {
+		_spec.AddField(productionbatch.FieldScrapQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.UnitCost(); ok {
+		_spec.SetField(productionbatch.FieldUnitCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnitCost(); ok {
+		_spec.AddField(productionbatch.FieldUnitCost, field.TypeFloat64, value)
+	}
+	if _u.mutation.UnitCostCleared() {
+		_spec.ClearField(productionbatch.FieldUnitCost, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(productionbatch.FieldNotes, field.TypeString, value)
@@ -868,6 +931,54 @@ func (_u *ProductionBatchUpdateOne) AddOverheadCost(v float64) *ProductionBatchU
 	return _u
 }
 
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (_u *ProductionBatchUpdateOne) SetScrapQuantity(v float64) *ProductionBatchUpdateOne {
+	_u.mutation.ResetScrapQuantity()
+	_u.mutation.SetScrapQuantity(v)
+	return _u
+}
+
+// SetNillableScrapQuantity sets the "scrap_quantity" field if the given value is not nil.
+func (_u *ProductionBatchUpdateOne) SetNillableScrapQuantity(v *float64) *ProductionBatchUpdateOne {
+	if v != nil {
+		_u.SetScrapQuantity(*v)
+	}
+	return _u
+}
+
+// AddScrapQuantity adds value to the "scrap_quantity" field.
+func (_u *ProductionBatchUpdateOne) AddScrapQuantity(v float64) *ProductionBatchUpdateOne {
+	_u.mutation.AddScrapQuantity(v)
+	return _u
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (_u *ProductionBatchUpdateOne) SetUnitCost(v float64) *ProductionBatchUpdateOne {
+	_u.mutation.ResetUnitCost()
+	_u.mutation.SetUnitCost(v)
+	return _u
+}
+
+// SetNillableUnitCost sets the "unit_cost" field if the given value is not nil.
+func (_u *ProductionBatchUpdateOne) SetNillableUnitCost(v *float64) *ProductionBatchUpdateOne {
+	if v != nil {
+		_u.SetUnitCost(*v)
+	}
+	return _u
+}
+
+// AddUnitCost adds value to the "unit_cost" field.
+func (_u *ProductionBatchUpdateOne) AddUnitCost(v float64) *ProductionBatchUpdateOne {
+	_u.mutation.AddUnitCost(v)
+	return _u
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (_u *ProductionBatchUpdateOne) ClearUnitCost() *ProductionBatchUpdateOne {
+	_u.mutation.ClearUnitCost()
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *ProductionBatchUpdateOne) SetNotes(v string) *ProductionBatchUpdateOne {
 	_u.mutation.SetNotes(v)
@@ -1163,6 +1274,21 @@ func (_u *ProductionBatchUpdateOne) sqlSave(ctx context.Context) (_node *Product
 	}
 	if value, ok := _u.mutation.AddedOverheadCost(); ok {
 		_spec.AddField(productionbatch.FieldOverheadCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ScrapQuantity(); ok {
+		_spec.SetField(productionbatch.FieldScrapQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedScrapQuantity(); ok {
+		_spec.AddField(productionbatch.FieldScrapQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.UnitCost(); ok {
+		_spec.SetField(productionbatch.FieldUnitCost, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnitCost(); ok {
+		_spec.AddField(productionbatch.FieldUnitCost, field.TypeFloat64, value)
+	}
+	if _u.mutation.UnitCostCleared() {
+		_spec.ClearField(productionbatch.FieldUnitCost, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(productionbatch.FieldNotes, field.TypeString, value)

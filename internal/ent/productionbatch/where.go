@@ -111,6 +111,16 @@ func OverheadCost(v float64) predicate.ProductionBatch {
 	return predicate.ProductionBatch(sql.FieldEQ(FieldOverheadCost, v))
 }
 
+// ScrapQuantity applies equality check predicate on the "scrap_quantity" field. It's identical to ScrapQuantityEQ.
+func ScrapQuantity(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldEQ(FieldScrapQuantity, v))
+}
+
+// UnitCost applies equality check predicate on the "unit_cost" field. It's identical to UnitCostEQ.
+func UnitCost(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldEQ(FieldUnitCost, v))
+}
+
 // Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
 func Notes(v string) predicate.ProductionBatch {
 	return predicate.ProductionBatch(sql.FieldEQ(FieldNotes, v))
@@ -659,6 +669,96 @@ func OverheadCostLT(v float64) predicate.ProductionBatch {
 // OverheadCostLTE applies the LTE predicate on the "overhead_cost" field.
 func OverheadCostLTE(v float64) predicate.ProductionBatch {
 	return predicate.ProductionBatch(sql.FieldLTE(FieldOverheadCost, v))
+}
+
+// ScrapQuantityEQ applies the EQ predicate on the "scrap_quantity" field.
+func ScrapQuantityEQ(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldEQ(FieldScrapQuantity, v))
+}
+
+// ScrapQuantityNEQ applies the NEQ predicate on the "scrap_quantity" field.
+func ScrapQuantityNEQ(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldNEQ(FieldScrapQuantity, v))
+}
+
+// ScrapQuantityIn applies the In predicate on the "scrap_quantity" field.
+func ScrapQuantityIn(vs ...float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldIn(FieldScrapQuantity, vs...))
+}
+
+// ScrapQuantityNotIn applies the NotIn predicate on the "scrap_quantity" field.
+func ScrapQuantityNotIn(vs ...float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldNotIn(FieldScrapQuantity, vs...))
+}
+
+// ScrapQuantityGT applies the GT predicate on the "scrap_quantity" field.
+func ScrapQuantityGT(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldGT(FieldScrapQuantity, v))
+}
+
+// ScrapQuantityGTE applies the GTE predicate on the "scrap_quantity" field.
+func ScrapQuantityGTE(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldGTE(FieldScrapQuantity, v))
+}
+
+// ScrapQuantityLT applies the LT predicate on the "scrap_quantity" field.
+func ScrapQuantityLT(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldLT(FieldScrapQuantity, v))
+}
+
+// ScrapQuantityLTE applies the LTE predicate on the "scrap_quantity" field.
+func ScrapQuantityLTE(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldLTE(FieldScrapQuantity, v))
+}
+
+// UnitCostEQ applies the EQ predicate on the "unit_cost" field.
+func UnitCostEQ(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldEQ(FieldUnitCost, v))
+}
+
+// UnitCostNEQ applies the NEQ predicate on the "unit_cost" field.
+func UnitCostNEQ(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldNEQ(FieldUnitCost, v))
+}
+
+// UnitCostIn applies the In predicate on the "unit_cost" field.
+func UnitCostIn(vs ...float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldIn(FieldUnitCost, vs...))
+}
+
+// UnitCostNotIn applies the NotIn predicate on the "unit_cost" field.
+func UnitCostNotIn(vs ...float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldNotIn(FieldUnitCost, vs...))
+}
+
+// UnitCostGT applies the GT predicate on the "unit_cost" field.
+func UnitCostGT(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldGT(FieldUnitCost, v))
+}
+
+// UnitCostGTE applies the GTE predicate on the "unit_cost" field.
+func UnitCostGTE(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldGTE(FieldUnitCost, v))
+}
+
+// UnitCostLT applies the LT predicate on the "unit_cost" field.
+func UnitCostLT(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldLT(FieldUnitCost, v))
+}
+
+// UnitCostLTE applies the LTE predicate on the "unit_cost" field.
+func UnitCostLTE(v float64) predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldLTE(FieldUnitCost, v))
+}
+
+// UnitCostIsNil applies the IsNil predicate on the "unit_cost" field.
+func UnitCostIsNil() predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldIsNull(FieldUnitCost))
+}
+
+// UnitCostNotNil applies the NotNil predicate on the "unit_cost" field.
+func UnitCostNotNil() predicate.ProductionBatch {
+	return predicate.ProductionBatch(sql.FieldNotNull(FieldUnitCost))
 }
 
 // NotesEQ applies the EQ predicate on the "notes" field.

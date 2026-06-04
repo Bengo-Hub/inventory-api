@@ -71,6 +71,20 @@ func (_c *BatchRawMaterialCreate) SetNillableQuantity(v *float64) *BatchRawMater
 	return _c
 }
 
+// SetCost sets the "cost" field.
+func (_c *BatchRawMaterialCreate) SetCost(v float64) *BatchRawMaterialCreate {
+	_c.mutation.SetCost(v)
+	return _c
+}
+
+// SetNillableCost sets the "cost" field if the given value is not nil.
+func (_c *BatchRawMaterialCreate) SetNillableCost(v *float64) *BatchRawMaterialCreate {
+	if v != nil {
+		_c.SetCost(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *BatchRawMaterialCreate) SetCreatedAt(v time.Time) *BatchRawMaterialCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -143,6 +157,10 @@ func (_c *BatchRawMaterialCreate) defaults() {
 		v := batchrawmaterial.DefaultQuantity
 		_c.mutation.SetQuantity(v)
 	}
+	if _, ok := _c.mutation.Cost(); !ok {
+		v := batchrawmaterial.DefaultCost
+		_c.mutation.SetCost(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := batchrawmaterial.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -166,6 +184,9 @@ func (_c *BatchRawMaterialCreate) check() error {
 	}
 	if _, ok := _c.mutation.Quantity(); !ok {
 		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "BatchRawMaterial.quantity"`)}
+	}
+	if _, ok := _c.mutation.Cost(); !ok {
+		return &ValidationError{Name: "cost", err: errors.New(`ent: missing required field "BatchRawMaterial.cost"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "BatchRawMaterial.created_at"`)}
@@ -224,6 +245,10 @@ func (_c *BatchRawMaterialCreate) createSpec() (*BatchRawMaterial, *sqlgraph.Cre
 	if value, ok := _c.mutation.Quantity(); ok {
 		_spec.SetField(batchrawmaterial.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
+	}
+	if value, ok := _c.mutation.Cost(); ok {
+		_spec.SetField(batchrawmaterial.FieldCost, field.TypeFloat64, value)
+		_node.Cost = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(batchrawmaterial.FieldCreatedAt, field.TypeTime, value)
@@ -370,6 +395,24 @@ func (u *BatchRawMaterialUpsert) AddQuantity(v float64) *BatchRawMaterialUpsert 
 	return u
 }
 
+// SetCost sets the "cost" field.
+func (u *BatchRawMaterialUpsert) SetCost(v float64) *BatchRawMaterialUpsert {
+	u.Set(batchrawmaterial.FieldCost, v)
+	return u
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *BatchRawMaterialUpsert) UpdateCost() *BatchRawMaterialUpsert {
+	u.SetExcluded(batchrawmaterial.FieldCost)
+	return u
+}
+
+// AddCost adds v to the "cost" field.
+func (u *BatchRawMaterialUpsert) AddCost(v float64) *BatchRawMaterialUpsert {
+	u.Add(batchrawmaterial.FieldCost, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -502,6 +545,27 @@ func (u *BatchRawMaterialUpsertOne) AddQuantity(v float64) *BatchRawMaterialUpse
 func (u *BatchRawMaterialUpsertOne) UpdateQuantity() *BatchRawMaterialUpsertOne {
 	return u.Update(func(s *BatchRawMaterialUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetCost sets the "cost" field.
+func (u *BatchRawMaterialUpsertOne) SetCost(v float64) *BatchRawMaterialUpsertOne {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.SetCost(v)
+	})
+}
+
+// AddCost adds v to the "cost" field.
+func (u *BatchRawMaterialUpsertOne) AddCost(v float64) *BatchRawMaterialUpsertOne {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.AddCost(v)
+	})
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *BatchRawMaterialUpsertOne) UpdateCost() *BatchRawMaterialUpsertOne {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.UpdateCost()
 	})
 }
 
@@ -804,6 +868,27 @@ func (u *BatchRawMaterialUpsertBulk) AddQuantity(v float64) *BatchRawMaterialUps
 func (u *BatchRawMaterialUpsertBulk) UpdateQuantity() *BatchRawMaterialUpsertBulk {
 	return u.Update(func(s *BatchRawMaterialUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetCost sets the "cost" field.
+func (u *BatchRawMaterialUpsertBulk) SetCost(v float64) *BatchRawMaterialUpsertBulk {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.SetCost(v)
+	})
+}
+
+// AddCost adds v to the "cost" field.
+func (u *BatchRawMaterialUpsertBulk) AddCost(v float64) *BatchRawMaterialUpsertBulk {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.AddCost(v)
+	})
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *BatchRawMaterialUpsertBulk) UpdateCost() *BatchRawMaterialUpsertBulk {
+	return u.Update(func(s *BatchRawMaterialUpsert) {
+		s.UpdateCost()
 	})
 }
 

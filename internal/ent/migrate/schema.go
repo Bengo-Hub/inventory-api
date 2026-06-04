@@ -323,6 +323,7 @@ var (
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "cost", Type: field.TypeFloat64, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "production_batch_id", Type: field.TypeUUID},
 	}
@@ -334,7 +335,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "batch_raw_materials_production_batches_raw_materials",
-				Columns:    []*schema.Column{BatchRawMaterialsColumns[6]},
+				Columns:    []*schema.Column{BatchRawMaterialsColumns[7]},
 				RefColumns: []*schema.Column{ProductionBatchesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -343,7 +344,7 @@ var (
 			{
 				Name:    "batchrawmaterial_tenant_id_production_batch_id",
 				Unique:  false,
-				Columns: []*schema.Column{BatchRawMaterialsColumns[1], BatchRawMaterialsColumns[6]},
+				Columns: []*schema.Column{BatchRawMaterialsColumns[1], BatchRawMaterialsColumns[7]},
 			},
 			{
 				Name:    "batchrawmaterial_item_id",
@@ -1405,6 +1406,8 @@ var (
 		{Name: "actual_quantity", Type: field.TypeFloat64, Nullable: true},
 		{Name: "labor_cost", Type: field.TypeFloat64, Default: 0},
 		{Name: "overhead_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "scrap_quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "unit_cost", Type: field.TypeFloat64, Nullable: true},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "supervisor_id", Type: field.TypeUUID, Nullable: true},
@@ -1671,6 +1674,7 @@ var (
 		{Name: "output_qty", Type: field.TypeFloat64, Default: 1},
 		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PORTION"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "requires_qc", Type: field.TypeBool, Default: false},
 		{Name: "total_cost", Type: field.TypeFloat64, Nullable: true},
 		{Name: "cost_per_portion", Type: field.TypeFloat64, Nullable: true},
 		{Name: "target_margin_percent", Type: field.TypeFloat64, Nullable: true},
@@ -1692,7 +1696,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "recipes_items_produced_by_recipe",
-				Columns:    []*schema.Column{RecipesColumns[18]},
+				Columns:    []*schema.Column{RecipesColumns[19]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

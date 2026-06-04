@@ -29,6 +29,8 @@ func (ProductionBatch) Fields() []ent.Field {
 		field.Float("actual_quantity").Optional().Nillable(),
 		field.Float("labor_cost").Default(0),
 		field.Float("overhead_cost").Default(0),
+		field.Float("scrap_quantity").Default(0).Comment("Output units lost to scrap/rework"),
+		field.Float("unit_cost").Optional().Nillable().Comment("Computed cost per output unit at completion (material+labor+overhead)/actual"),
 		field.Text("notes").Optional(),
 		field.UUID("created_by", uuid.UUID{}).Optional().Nillable(),
 		field.UUID("supervisor_id", uuid.UUID{}).Optional().Nillable(),

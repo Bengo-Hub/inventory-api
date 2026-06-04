@@ -27,6 +27,8 @@ const (
 	FieldUnitOfMeasure = "unit_of_measure"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldRequiresQc holds the string denoting the requires_qc field in the database.
+	FieldRequiresQc = "requires_qc"
 	// FieldTotalCost holds the string denoting the total_cost field in the database.
 	FieldTotalCost = "total_cost"
 	// FieldCostPerPortion holds the string denoting the cost_per_portion field in the database.
@@ -91,6 +93,7 @@ var Columns = []string{
 	FieldOutputQty,
 	FieldUnitOfMeasure,
 	FieldIsActive,
+	FieldRequiresQc,
 	FieldTotalCost,
 	FieldCostPerPortion,
 	FieldTargetMarginPercent,
@@ -130,6 +133,8 @@ var (
 	UnitOfMeasureValidator func(string) error
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
 	DefaultIsActive bool
+	// DefaultRequiresQc holds the default value on creation for the "requires_qc" field.
+	DefaultRequiresQc bool
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
@@ -180,6 +185,11 @@ func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByRequiresQc orders the results by the requires_qc field.
+func ByRequiresQc(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequiresQc, opts...).ToFunc()
 }
 
 // ByTotalCost orders the results by the total_cost field.

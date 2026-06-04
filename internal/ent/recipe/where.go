@@ -86,6 +86,11 @@ func IsActive(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldIsActive, v))
 }
 
+// RequiresQc applies equality check predicate on the "requires_qc" field. It's identical to RequiresQcEQ.
+func RequiresQc(v bool) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldRequiresQc, v))
+}
+
 // TotalCost applies equality check predicate on the "total_cost" field. It's identical to TotalCostEQ.
 func TotalCost(v float64) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldTotalCost, v))
@@ -424,6 +429,16 @@ func IsActiveEQ(v bool) predicate.Recipe {
 // IsActiveNEQ applies the NEQ predicate on the "is_active" field.
 func IsActiveNEQ(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldNEQ(FieldIsActive, v))
+}
+
+// RequiresQcEQ applies the EQ predicate on the "requires_qc" field.
+func RequiresQcEQ(v bool) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldRequiresQc, v))
+}
+
+// RequiresQcNEQ applies the NEQ predicate on the "requires_qc" field.
+func RequiresQcNEQ(v bool) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldRequiresQc, v))
 }
 
 // TotalCostEQ applies the EQ predicate on the "total_cost" field.

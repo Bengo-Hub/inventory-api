@@ -122,6 +122,20 @@ func (_u *RecipeUpdate) SetNillableIsActive(v *bool) *RecipeUpdate {
 	return _u
 }
 
+// SetRequiresQc sets the "requires_qc" field.
+func (_u *RecipeUpdate) SetRequiresQc(v bool) *RecipeUpdate {
+	_u.mutation.SetRequiresQc(v)
+	return _u
+}
+
+// SetNillableRequiresQc sets the "requires_qc" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableRequiresQc(v *bool) *RecipeUpdate {
+	if v != nil {
+		_u.SetRequiresQc(*v)
+	}
+	return _u
+}
+
 // SetTotalCost sets the "total_cost" field.
 func (_u *RecipeUpdate) SetTotalCost(v float64) *RecipeUpdate {
 	_u.mutation.ResetTotalCost()
@@ -556,6 +570,9 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.RequiresQc(); ok {
+		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.TotalCost(); ok {
 		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
 	}
@@ -860,6 +877,20 @@ func (_u *RecipeUpdateOne) SetIsActive(v bool) *RecipeUpdateOne {
 func (_u *RecipeUpdateOne) SetNillableIsActive(v *bool) *RecipeUpdateOne {
 	if v != nil {
 		_u.SetIsActive(*v)
+	}
+	return _u
+}
+
+// SetRequiresQc sets the "requires_qc" field.
+func (_u *RecipeUpdateOne) SetRequiresQc(v bool) *RecipeUpdateOne {
+	_u.mutation.SetRequiresQc(v)
+	return _u
+}
+
+// SetNillableRequiresQc sets the "requires_qc" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableRequiresQc(v *bool) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetRequiresQc(*v)
 	}
 	return _u
 }
@@ -1327,6 +1358,9 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequiresQc(); ok {
+		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.TotalCost(); ok {
 		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
