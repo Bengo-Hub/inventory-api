@@ -403,6 +403,35 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 	if !ok {
 		return
 	}
+
+	// Service requisitions never become purchase orders — they spawn a
+	// ServiceDelivery record per service line (the procurement counterpart for
+	// consultancy/labour). No supplier/warehouse body is required.
+	if rq.RequestType == entreq.RequestTypeService {
+		svcLines, _ := h.orm.RequisitionLine.Query().
+			Where(entreqline.RequisitionID(rq.ID), entreqline.ItemTypeEQ(entreqline.ItemTypeService)).
+			All(r.Context())
+		created := 0
+		for _, l := range svcLines {
+			c := h.orm.ServiceDelivery.Create().SetTenantID(tenantID).
+				SetRequisitionLineID(l.ID).SetDeliverables(l.ExpectedDeliverables)
+			if l.SupplierID != nil {
+				c = c.SetProviderID(*l.SupplierID)
+			}
+			if _, err := c.Save(r.Context()); err != nil {
+				h.log.Warn("convert requisition: create service delivery failed", zap.Error(err))
+			} else {
+				created++
+			}
+		}
+		_, _ = h.orm.Requisition.UpdateOneID(rq.ID).SetStatus(entreq.StatusOrdered).Save(r.Context())
+		h.publishOutbox(r.Context(), tenantID, "requisition", rq.ID, "inventory.requisition.ordered", map[string]any{
+			"id": rq.ID, "reference_number": rq.ReferenceNumber, "service_deliveries": created,
+		})
+		writeJSON(w, http.StatusCreated, map[string]any{"requisition_id": rq.ID, "service_deliveries_created": created})
+		return
+	}
+
 	var body struct {
 		SupplierID  uuid.UUID `json:"supplier_id"`
 		WarehouseID uuid.UUID `json:"warehouse_id"`
