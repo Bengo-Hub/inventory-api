@@ -130,6 +130,34 @@ func (s *Service) IssueTicket(ctx context.Context, tenantID uuid.UUID, in IssueI
 		return nil, err
 	}
 
+	// Per-tier guard: when the line targets a specific tier, that tier's own capacity must not be
+	// exceeded even if the event total still has room — otherwise a sold-out tier (e.g. VIP) keeps
+	// issuing against the shared total. Mirrors the per-tier remaining shown by EventAvailability.
+	if in.TierID != "" {
+		if tierCap, ok := resolveTierCapacity(event, in.TierID); ok && tierCap > 0 {
+			tierRows, terr := tx.Ticket.Query().
+				Where(
+					entticket.TenantID(tenantID),
+					entticket.EventItemID(in.EventItemID),
+					entticket.TierID(in.TierID),
+					entticket.StatusEQ(entticket.StatusIssued),
+				).
+				All(ctx)
+			if terr != nil {
+				err = fmt.Errorf("tickets: count tier issuance: %w", terr)
+				return nil, err
+			}
+			tierIssued := 0
+			for _, t := range tierRows {
+				tierIssued += t.Quantity
+			}
+			if tierIssued+qty > tierCap {
+				err = fmt.Errorf("tickets: tier oversell — tier %q requested %d, remaining %d", in.TierID, qty, tierCap-tierIssued)
+				return nil, err
+			}
+		}
+	}
+
 	code, cerr := generateTicketCode()
 	if cerr != nil {
 		err = fmt.Errorf("tickets: generate code: %w", cerr)
@@ -316,6 +344,41 @@ func (s *Service) CancelTicket(ctx context.Context, tenantID, ticketID uuid.UUID
 		return nil, fmt.Errorf("tickets: commit: %w", err)
 	}
 	return cancelled, nil
+}
+
+// resolveTierCapacity returns the configured capacity for a tier id from the event's
+// metadata.ticket_tiers, using the SAME id derivation as EventAvailability so the issuance guard
+// and the displayed availability agree. Returns (0,false) when the tier id is not defined.
+func resolveTierCapacity(event *ent.Item, tierID string) (int, bool) {
+	tiers, ok := event.Metadata["ticket_tiers"].([]any)
+	if !ok {
+		return 0, false
+	}
+	for idx, raw := range tiers {
+		m, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		id, _ := m["id"].(string)
+		if id == "" {
+			id, _ = m["tier"].(string)
+		}
+		name, _ := m["name"].(string)
+		if name == "" {
+			name, _ = m["label"].(string)
+		}
+		if id == "" {
+			id = slugifyTierID(name)
+		}
+		if id == "" {
+			id = fmt.Sprintf("tier-%d", idx)
+		}
+		if id == tierID {
+			capF, _ := m["capacity"].(float64)
+			return int(capF), true
+		}
+	}
+	return 0, false
 }
 
 // EventAvailability returns total/booked/remaining plus per-tier availability.
