@@ -50,6 +50,7 @@ var rolePermMap = map[string][]string{
 		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage",
 		"inventory.manufacturing.view", "inventory.manufacturing.add", "inventory.manufacturing.change", "inventory.manufacturing.manage",
 		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
+		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
 	},
 	"stock_clerk": {
 		"inventory.stock.view", "inventory.stock.change", "inventory.stock.add",
@@ -62,7 +63,7 @@ var rolePermMap = map[string][]string{
 		"inventory.units.view",
 		"inventory.recipes.view",
 		"inventory.tickets.view", "inventory.tickets.add", "inventory.tickets.change",
-		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view",
+		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view", "inventory.approvals.view",
 	},
 	"viewer": {
 		"inventory.items.view",
@@ -75,7 +76,7 @@ var rolePermMap = map[string][]string{
 		"inventory.reservations.view",
 		"inventory.units.view",
 		"inventory.tickets.view",
-		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view",
+		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view", "inventory.approvals.view",
 	},
 }
 

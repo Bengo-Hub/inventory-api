@@ -8,6 +8,141 @@ import (
 )
 
 var (
+	// ApprovalActionsColumns holds the columns for the "approval_actions" table.
+	ApprovalActionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "sequence", Type: field.TypeInt},
+		{Name: "name", Type: field.TypeString, Nullable: true},
+		{Name: "approver_role", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "rejected", "skipped"}, Default: "pending"},
+		{Name: "acted_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "acted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "comment", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "request_id", Type: field.TypeUUID},
+	}
+	// ApprovalActionsTable holds the schema information for the "approval_actions" table.
+	ApprovalActionsTable = &schema.Table{
+		Name:       "approval_actions",
+		Columns:    ApprovalActionsColumns,
+		PrimaryKey: []*schema.Column{ApprovalActionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "approval_actions_approval_requests_actions",
+				Columns:    []*schema.Column{ApprovalActionsColumns[10]},
+				RefColumns: []*schema.Column{ApprovalRequestsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "approvalaction_request_id_sequence",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalActionsColumns[10], ApprovalActionsColumns[2]},
+			},
+			{
+				Name:    "approvalaction_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalActionsColumns[1]},
+			},
+		},
+	}
+	// ApprovalRequestsColumns holds the columns for the "approval_requests" table.
+	ApprovalRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition"}},
+		{Name: "object_id", Type: field.TypeUUID},
+		{Name: "object_reference", Type: field.TypeString, Nullable: true},
+		{Name: "amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "rule_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "rejected", "cancelled"}, Default: "pending"},
+		{Name: "current_sequence", Type: field.TypeInt, Default: 1},
+		{Name: "submitted_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "decided_at", Type: field.TypeTime, Nullable: true},
+	}
+	// ApprovalRequestsTable holds the schema information for the "approval_requests" table.
+	ApprovalRequestsTable = &schema.Table{
+		Name:       "approval_requests",
+		Columns:    ApprovalRequestsColumns,
+		PrimaryKey: []*schema.Column{ApprovalRequestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "approvalrequest_tenant_id_module_object_id",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalRequestsColumns[1], ApprovalRequestsColumns[2], ApprovalRequestsColumns[3]},
+			},
+			{
+				Name:    "approvalrequest_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalRequestsColumns[1], ApprovalRequestsColumns[7]},
+			},
+		},
+	}
+	// ApprovalRulesColumns holds the columns for the "approval_rules" table.
+	ApprovalRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition"}},
+		{Name: "name", Type: field.TypeString},
+		{Name: "min_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "max_amount", Type: field.TypeFloat64, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ApprovalRulesTable holds the schema information for the "approval_rules" table.
+	ApprovalRulesTable = &schema.Table{
+		Name:       "approval_rules",
+		Columns:    ApprovalRulesColumns,
+		PrimaryKey: []*schema.Column{ApprovalRulesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "approvalrule_tenant_id_module_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalRulesColumns[1], ApprovalRulesColumns[2], ApprovalRulesColumns[6]},
+			},
+		},
+	}
+	// ApprovalStepsColumns holds the columns for the "approval_steps" table.
+	ApprovalStepsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "sequence", Type: field.TypeInt},
+		{Name: "name", Type: field.TypeString},
+		{Name: "approver_role", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "rule_id", Type: field.TypeUUID},
+	}
+	// ApprovalStepsTable holds the schema information for the "approval_steps" table.
+	ApprovalStepsTable = &schema.Table{
+		Name:       "approval_steps",
+		Columns:    ApprovalStepsColumns,
+		PrimaryKey: []*schema.Column{ApprovalStepsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "approval_steps_approval_rules_steps",
+				Columns:    []*schema.Column{ApprovalStepsColumns[6]},
+				RefColumns: []*schema.Column{ApprovalRulesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "approvalstep_rule_id_sequence",
+				Unique:  true,
+				Columns: []*schema.Column{ApprovalStepsColumns[6], ApprovalStepsColumns[2]},
+			},
+			{
+				Name:    "approvalstep_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{ApprovalStepsColumns[1]},
+			},
+		},
+	}
 	// AssetsColumns holds the columns for the "assets" table.
 	AssetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2671,6 +2806,10 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ApprovalActionsTable,
+		ApprovalRequestsTable,
+		ApprovalRulesTable,
+		ApprovalStepsTable,
 		AssetsTable,
 		AssetAuditsTable,
 		AssetCategoriesTable,
@@ -2739,6 +2878,8 @@ var (
 )
 
 func init() {
+	ApprovalActionsTable.ForeignKeys[0].RefTable = ApprovalRequestsTable
+	ApprovalStepsTable.ForeignKeys[0].RefTable = ApprovalRulesTable
 	BatchRawMaterialsTable.ForeignKeys[0].RefTable = ProductionBatchesTable
 	BundlesTable.ForeignKeys[0].RefTable = ItemsTable
 	BundleComponentsTable.ForeignKeys[0].RefTable = BundlesTable

@@ -9,6 +9,54 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 )
 
+// The ApprovalActionFunc type is an adapter to allow the use of ordinary
+// function as ApprovalAction mutator.
+type ApprovalActionFunc func(context.Context, *ent.ApprovalActionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ApprovalActionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ApprovalActionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApprovalActionMutation", m)
+}
+
+// The ApprovalRequestFunc type is an adapter to allow the use of ordinary
+// function as ApprovalRequest mutator.
+type ApprovalRequestFunc func(context.Context, *ent.ApprovalRequestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ApprovalRequestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ApprovalRequestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApprovalRequestMutation", m)
+}
+
+// The ApprovalRuleFunc type is an adapter to allow the use of ordinary
+// function as ApprovalRule mutator.
+type ApprovalRuleFunc func(context.Context, *ent.ApprovalRuleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ApprovalRuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ApprovalRuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApprovalRuleMutation", m)
+}
+
+// The ApprovalStepFunc type is an adapter to allow the use of ordinary
+// function as ApprovalStep mutator.
+type ApprovalStepFunc func(context.Context, *ent.ApprovalStepMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ApprovalStepFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ApprovalStepMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ApprovalStepMutation", m)
+}
+
 // The AssetFunc type is an adapter to allow the use of ordinary
 // function as Asset mutator.
 type AssetFunc func(context.Context, *ent.AssetMutation) (ent.Value, error)

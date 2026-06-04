@@ -12,6 +12,14 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// ApprovalAction is the client for interacting with the ApprovalAction builders.
+	ApprovalAction *ApprovalActionClient
+	// ApprovalRequest is the client for interacting with the ApprovalRequest builders.
+	ApprovalRequest *ApprovalRequestClient
+	// ApprovalRule is the client for interacting with the ApprovalRule builders.
+	ApprovalRule *ApprovalRuleClient
+	// ApprovalStep is the client for interacting with the ApprovalStep builders.
+	ApprovalStep *ApprovalStepClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
 	// AssetAudit is the client for interacting with the AssetAudit builders.
@@ -271,6 +279,10 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.ApprovalAction = NewApprovalActionClient(tx.config)
+	tx.ApprovalRequest = NewApprovalRequestClient(tx.config)
+	tx.ApprovalRule = NewApprovalRuleClient(tx.config)
+	tx.ApprovalStep = NewApprovalStepClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
 	tx.AssetAudit = NewAssetAuditClient(tx.config)
 	tx.AssetCategory = NewAssetCategoryClient(tx.config)
@@ -344,7 +356,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Asset.QueryXXX(), the query will be executed
+// applies a query, for example: ApprovalAction.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

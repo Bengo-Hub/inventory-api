@@ -150,6 +150,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
+	r.With(perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/submit-for-approval", h.SubmitPurchaseOrderForApproval)
 
 	// Activity
 	r.Get("/inventory/activity", h.ListActivity)
@@ -180,4 +181,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Fixed assets register (migrated from ERP assets/*)
 	h.registerAssetRoutes(r, perm, rbac.PermAssetsAdd, rbac.PermAssetsChange, rbac.PermAssetsDelete)
+
+	// Approval matrix (rules + requests) gating purchase orders and requisitions
+	h.registerApprovalRoutes(r, perm)
 }

@@ -15,8 +15,10 @@ import (
 	"github.com/Bengo-Hub/pagination"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entapproval "github.com/bengobox/inventory-service/internal/ent/approvalrequest"
 	entreq "github.com/bengobox/inventory-service/internal/ent/requisition"
 	entreqline "github.com/bengobox/inventory-service/internal/ent/requisitionline"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
@@ -320,7 +322,42 @@ func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *htt
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/requisitions/{reqID}/submit [post]
 func (h *InventoryExtrasHandler) SubmitRequisition(w http.ResponseWriter, r *http.Request) {
-	h.transitionRequisition(w, r, entreq.StatusSubmitted, "inventory.requisition.submitted")
+	tenantID, rq, ok := h.loadRequisition(w, r)
+	if !ok {
+		return
+	}
+	updated, err := h.orm.Requisition.UpdateOneID(rq.ID).SetStatus(entreq.StatusSubmitted).Save(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to submit requisition")
+		return
+	}
+	h.publishOutbox(r.Context(), tenantID, "requisition", updated.ID, "inventory.requisition.submitted", map[string]any{
+		"id": updated.ID, "reference_number": updated.ReferenceNumber, "status": updated.Status,
+	})
+	// Kick off the approval matrix if a rule matches the estimated total.
+	amount := h.requisitionAmount(r.Context(), rq.ID)
+	var submittedBy *uuid.UUID
+	if uid, ok := actingUserID(r); ok {
+		submittedBy = &uid
+	}
+	if req, required, aerr := h.approvals().Submit(r.Context(), tenantID, "requisition", rq.ID, rq.ReferenceNumber, amount, submittedBy); aerr == nil && required {
+		h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
+			"id": req.ID, "module": "requisition", "object_id": rq.ID, "amount": amount,
+		})
+	}
+	writeJSON(w, http.StatusOK, requisitionToDTO(updated, nil))
+}
+
+// requisitionAmount sums estimated_price * quantity across a requisition's lines.
+func (h *InventoryExtrasHandler) requisitionAmount(ctx context.Context, reqID uuid.UUID) float64 {
+	lines, _ := h.orm.RequisitionLine.Query().Where(entreqline.RequisitionID(reqID)).All(ctx)
+	var total float64
+	for _, l := range lines {
+		if l.EstimatedPrice != nil {
+			total += *l.EstimatedPrice * float64(l.Quantity)
+		}
+	}
+	return total
 }
 
 // ReviewRequisition handles POST /inventory/requisitions/{reqID}/review.
@@ -350,7 +387,7 @@ func (h *InventoryExtrasHandler) ReviewRequisition(w http.ResponseWriter, r *htt
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/requisitions/{reqID}/approve [post]
 func (h *InventoryExtrasHandler) ApproveRequisition(w http.ResponseWriter, r *http.Request) {
-	h.transitionRequisition(w, r, entreq.StatusApproved, "inventory.requisition.approved")
+	h.decideRequisition(w, r, approvals.DecisionApprove, entreq.StatusApproved, "inventory.requisition.approved")
 }
 
 // RejectRequisition handles POST /inventory/requisitions/{reqID}/reject.
@@ -365,7 +402,37 @@ func (h *InventoryExtrasHandler) ApproveRequisition(w http.ResponseWriter, r *ht
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/requisitions/{reqID}/reject [post]
 func (h *InventoryExtrasHandler) RejectRequisition(w http.ResponseWriter, r *http.Request) {
-	h.transitionRequisition(w, r, entreq.StatusRejected, "inventory.requisition.rejected")
+	h.decideRequisition(w, r, approvals.DecisionReject, entreq.StatusRejected, "inventory.requisition.rejected")
+}
+
+// decideRequisition resolves an approve/reject on a requisition. When a live
+// approval-matrix request exists it is driven through the engine (multi-step,
+// role-gated); the requisition status flips only when the request reaches a
+// terminal state. With no matrix configured it falls back to a direct transition.
+func (h *InventoryExtrasHandler) decideRequisition(w http.ResponseWriter, r *http.Request, decision approvals.Decision, directStatus entreq.Status, directEvent string) {
+	tenantID, rq, ok := h.loadRequisition(w, r)
+	if !ok {
+		return
+	}
+	latest, _ := h.approvals().Latest(r.Context(), tenantID, rq.ID)
+	if latest != nil && latest.Status == entapproval.StatusPending {
+		var body struct {
+			Comment string `json:"comment"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if _, ok := h.applyApprovalDecision(w, r, tenantID, latest.ID, decision, body.Comment); !ok {
+			return
+		}
+		fresh, err := h.orm.Requisition.Get(r.Context(), rq.ID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to reload requisition")
+			return
+		}
+		writeJSON(w, http.StatusOK, requisitionToDTO(fresh, nil))
+		return
+	}
+	// No approval matrix configured → direct transition (backward compatible).
+	h.transitionRequisition(w, r, directStatus, directEvent)
 }
 
 func (h *InventoryExtrasHandler) transitionRequisition(w http.ResponseWriter, r *http.Request, status entreq.Status, eventType string) {

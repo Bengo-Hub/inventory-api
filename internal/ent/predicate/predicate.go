@@ -6,6 +6,18 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// ApprovalAction is the predicate function for approvalaction builders.
+type ApprovalAction func(*sql.Selector)
+
+// ApprovalRequest is the predicate function for approvalrequest builders.
+type ApprovalRequest func(*sql.Selector)
+
+// ApprovalRule is the predicate function for approvalrule builders.
+type ApprovalRule func(*sql.Selector)
+
+// ApprovalStep is the predicate function for approvalstep builders.
+type ApprovalStep func(*sql.Selector)
+
 // Asset is the predicate function for asset builders.
 type Asset func(*sql.Selector)
 

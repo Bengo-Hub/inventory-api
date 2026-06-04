@@ -44,6 +44,7 @@ func buildPermDefs() []permDef {
 		{"procurement", "Procurement", "requisitions, purchase orders, goods receipts, returns, contracts, suppliers"},
 		{"manufacturing", "Manufacturing", "production batches, BOM, quality checks"},
 		{"assets", "Assets", "fixed-asset register and lifecycle"},
+		{"approvals", "Approvals", "approval-matrix rules and approval requests"},
 	}
 
 	actions := []struct {
