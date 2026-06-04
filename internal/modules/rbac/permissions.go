@@ -116,6 +116,13 @@ const (
 	PermAssetsChange = "inventory.assets.change"
 	PermAssetsDelete = "inventory.assets.delete"
 	PermAssetsManage = "inventory.assets.manage"
+
+	// approvals (approval-matrix rules; the approve/reject act itself is role-gated, not permission-gated)
+	PermApprovalsView   = "inventory.approvals.view"
+	PermApprovalsAdd    = "inventory.approvals.add"
+	PermApprovalsChange = "inventory.approvals.change"
+	PermApprovalsDelete = "inventory.approvals.delete"
+	PermApprovalsManage = "inventory.approvals.manage"
 )
 
 // Role codes seeded per tenant.

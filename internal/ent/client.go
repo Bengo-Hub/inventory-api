@@ -16,6 +16,10 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/approvalaction"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrequest"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrule"
+	"github.com/bengobox/inventory-service/internal/ent/approvalstep"
 	"github.com/bengobox/inventory-service/internal/ent/asset"
 	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
 	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
@@ -87,6 +91,14 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ApprovalAction is the client for interacting with the ApprovalAction builders.
+	ApprovalAction *ApprovalActionClient
+	// ApprovalRequest is the client for interacting with the ApprovalRequest builders.
+	ApprovalRequest *ApprovalRequestClient
+	// ApprovalRule is the client for interacting with the ApprovalRule builders.
+	ApprovalRule *ApprovalRuleClient
+	// ApprovalStep is the client for interacting with the ApprovalStep builders.
+	ApprovalStep *ApprovalStepClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
 	// AssetAudit is the client for interacting with the AssetAudit builders.
@@ -226,6 +238,10 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ApprovalAction = NewApprovalActionClient(c.config)
+	c.ApprovalRequest = NewApprovalRequestClient(c.config)
+	c.ApprovalRule = NewApprovalRuleClient(c.config)
+	c.ApprovalStep = NewApprovalStepClient(c.config)
 	c.Asset = NewAssetClient(c.config)
 	c.AssetAudit = NewAssetAuditClient(c.config)
 	c.AssetCategory = NewAssetCategoryClient(c.config)
@@ -382,6 +398,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		ApprovalAction:        NewApprovalActionClient(cfg),
+		ApprovalRequest:       NewApprovalRequestClient(cfg),
+		ApprovalRule:          NewApprovalRuleClient(cfg),
+		ApprovalStep:          NewApprovalStepClient(cfg),
 		Asset:                 NewAssetClient(cfg),
 		AssetAudit:            NewAssetAuditClient(cfg),
 		AssetCategory:         NewAssetCategoryClient(cfg),
@@ -465,6 +485,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		ApprovalAction:        NewApprovalActionClient(cfg),
+		ApprovalRequest:       NewApprovalRequestClient(cfg),
+		ApprovalRule:          NewApprovalRuleClient(cfg),
+		ApprovalStep:          NewApprovalStepClient(cfg),
 		Asset:                 NewAssetClient(cfg),
 		AssetAudit:            NewAssetAuditClient(cfg),
 		AssetCategory:         NewAssetCategoryClient(cfg),
@@ -535,7 +559,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Asset.
+//		ApprovalAction.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -558,7 +582,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Asset, c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
+		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
+		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
 		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
@@ -582,7 +607,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Asset, c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
+		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
+		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
 		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
@@ -605,6 +631,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ApprovalActionMutation:
+		return c.ApprovalAction.mutate(ctx, m)
+	case *ApprovalRequestMutation:
+		return c.ApprovalRequest.mutate(ctx, m)
+	case *ApprovalRuleMutation:
+		return c.ApprovalRule.mutate(ctx, m)
+	case *ApprovalStepMutation:
+		return c.ApprovalStep.mutate(ctx, m)
 	case *AssetMutation:
 		return c.Asset.mutate(ctx, m)
 	case *AssetAuditMutation:
@@ -735,6 +769,602 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Warranty.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// ApprovalActionClient is a client for the ApprovalAction schema.
+type ApprovalActionClient struct {
+	config
+}
+
+// NewApprovalActionClient returns a client for the ApprovalAction from the given config.
+func NewApprovalActionClient(c config) *ApprovalActionClient {
+	return &ApprovalActionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `approvalaction.Hooks(f(g(h())))`.
+func (c *ApprovalActionClient) Use(hooks ...Hook) {
+	c.hooks.ApprovalAction = append(c.hooks.ApprovalAction, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `approvalaction.Intercept(f(g(h())))`.
+func (c *ApprovalActionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ApprovalAction = append(c.inters.ApprovalAction, interceptors...)
+}
+
+// Create returns a builder for creating a ApprovalAction entity.
+func (c *ApprovalActionClient) Create() *ApprovalActionCreate {
+	mutation := newApprovalActionMutation(c.config, OpCreate)
+	return &ApprovalActionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ApprovalAction entities.
+func (c *ApprovalActionClient) CreateBulk(builders ...*ApprovalActionCreate) *ApprovalActionCreateBulk {
+	return &ApprovalActionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ApprovalActionClient) MapCreateBulk(slice any, setFunc func(*ApprovalActionCreate, int)) *ApprovalActionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ApprovalActionCreateBulk{err: fmt.Errorf("calling to ApprovalActionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ApprovalActionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ApprovalActionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ApprovalAction.
+func (c *ApprovalActionClient) Update() *ApprovalActionUpdate {
+	mutation := newApprovalActionMutation(c.config, OpUpdate)
+	return &ApprovalActionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ApprovalActionClient) UpdateOne(_m *ApprovalAction) *ApprovalActionUpdateOne {
+	mutation := newApprovalActionMutation(c.config, OpUpdateOne, withApprovalAction(_m))
+	return &ApprovalActionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ApprovalActionClient) UpdateOneID(id uuid.UUID) *ApprovalActionUpdateOne {
+	mutation := newApprovalActionMutation(c.config, OpUpdateOne, withApprovalActionID(id))
+	return &ApprovalActionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ApprovalAction.
+func (c *ApprovalActionClient) Delete() *ApprovalActionDelete {
+	mutation := newApprovalActionMutation(c.config, OpDelete)
+	return &ApprovalActionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ApprovalActionClient) DeleteOne(_m *ApprovalAction) *ApprovalActionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ApprovalActionClient) DeleteOneID(id uuid.UUID) *ApprovalActionDeleteOne {
+	builder := c.Delete().Where(approvalaction.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ApprovalActionDeleteOne{builder}
+}
+
+// Query returns a query builder for ApprovalAction.
+func (c *ApprovalActionClient) Query() *ApprovalActionQuery {
+	return &ApprovalActionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeApprovalAction},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ApprovalAction entity by its id.
+func (c *ApprovalActionClient) Get(ctx context.Context, id uuid.UUID) (*ApprovalAction, error) {
+	return c.Query().Where(approvalaction.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ApprovalActionClient) GetX(ctx context.Context, id uuid.UUID) *ApprovalAction {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRequest queries the request edge of a ApprovalAction.
+func (c *ApprovalActionClient) QueryRequest(_m *ApprovalAction) *ApprovalRequestQuery {
+	query := (&ApprovalRequestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(approvalaction.Table, approvalaction.FieldID, id),
+			sqlgraph.To(approvalrequest.Table, approvalrequest.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, approvalaction.RequestTable, approvalaction.RequestColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ApprovalActionClient) Hooks() []Hook {
+	return c.hooks.ApprovalAction
+}
+
+// Interceptors returns the client interceptors.
+func (c *ApprovalActionClient) Interceptors() []Interceptor {
+	return c.inters.ApprovalAction
+}
+
+func (c *ApprovalActionClient) mutate(ctx context.Context, m *ApprovalActionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ApprovalActionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ApprovalActionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ApprovalActionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ApprovalActionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ApprovalAction mutation op: %q", m.Op())
+	}
+}
+
+// ApprovalRequestClient is a client for the ApprovalRequest schema.
+type ApprovalRequestClient struct {
+	config
+}
+
+// NewApprovalRequestClient returns a client for the ApprovalRequest from the given config.
+func NewApprovalRequestClient(c config) *ApprovalRequestClient {
+	return &ApprovalRequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `approvalrequest.Hooks(f(g(h())))`.
+func (c *ApprovalRequestClient) Use(hooks ...Hook) {
+	c.hooks.ApprovalRequest = append(c.hooks.ApprovalRequest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `approvalrequest.Intercept(f(g(h())))`.
+func (c *ApprovalRequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ApprovalRequest = append(c.inters.ApprovalRequest, interceptors...)
+}
+
+// Create returns a builder for creating a ApprovalRequest entity.
+func (c *ApprovalRequestClient) Create() *ApprovalRequestCreate {
+	mutation := newApprovalRequestMutation(c.config, OpCreate)
+	return &ApprovalRequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ApprovalRequest entities.
+func (c *ApprovalRequestClient) CreateBulk(builders ...*ApprovalRequestCreate) *ApprovalRequestCreateBulk {
+	return &ApprovalRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ApprovalRequestClient) MapCreateBulk(slice any, setFunc func(*ApprovalRequestCreate, int)) *ApprovalRequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ApprovalRequestCreateBulk{err: fmt.Errorf("calling to ApprovalRequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ApprovalRequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ApprovalRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ApprovalRequest.
+func (c *ApprovalRequestClient) Update() *ApprovalRequestUpdate {
+	mutation := newApprovalRequestMutation(c.config, OpUpdate)
+	return &ApprovalRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ApprovalRequestClient) UpdateOne(_m *ApprovalRequest) *ApprovalRequestUpdateOne {
+	mutation := newApprovalRequestMutation(c.config, OpUpdateOne, withApprovalRequest(_m))
+	return &ApprovalRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ApprovalRequestClient) UpdateOneID(id uuid.UUID) *ApprovalRequestUpdateOne {
+	mutation := newApprovalRequestMutation(c.config, OpUpdateOne, withApprovalRequestID(id))
+	return &ApprovalRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ApprovalRequest.
+func (c *ApprovalRequestClient) Delete() *ApprovalRequestDelete {
+	mutation := newApprovalRequestMutation(c.config, OpDelete)
+	return &ApprovalRequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ApprovalRequestClient) DeleteOne(_m *ApprovalRequest) *ApprovalRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ApprovalRequestClient) DeleteOneID(id uuid.UUID) *ApprovalRequestDeleteOne {
+	builder := c.Delete().Where(approvalrequest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ApprovalRequestDeleteOne{builder}
+}
+
+// Query returns a query builder for ApprovalRequest.
+func (c *ApprovalRequestClient) Query() *ApprovalRequestQuery {
+	return &ApprovalRequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeApprovalRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ApprovalRequest entity by its id.
+func (c *ApprovalRequestClient) Get(ctx context.Context, id uuid.UUID) (*ApprovalRequest, error) {
+	return c.Query().Where(approvalrequest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ApprovalRequestClient) GetX(ctx context.Context, id uuid.UUID) *ApprovalRequest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryActions queries the actions edge of a ApprovalRequest.
+func (c *ApprovalRequestClient) QueryActions(_m *ApprovalRequest) *ApprovalActionQuery {
+	query := (&ApprovalActionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(approvalrequest.Table, approvalrequest.FieldID, id),
+			sqlgraph.To(approvalaction.Table, approvalaction.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, approvalrequest.ActionsTable, approvalrequest.ActionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ApprovalRequestClient) Hooks() []Hook {
+	return c.hooks.ApprovalRequest
+}
+
+// Interceptors returns the client interceptors.
+func (c *ApprovalRequestClient) Interceptors() []Interceptor {
+	return c.inters.ApprovalRequest
+}
+
+func (c *ApprovalRequestClient) mutate(ctx context.Context, m *ApprovalRequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ApprovalRequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ApprovalRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ApprovalRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ApprovalRequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ApprovalRequest mutation op: %q", m.Op())
+	}
+}
+
+// ApprovalRuleClient is a client for the ApprovalRule schema.
+type ApprovalRuleClient struct {
+	config
+}
+
+// NewApprovalRuleClient returns a client for the ApprovalRule from the given config.
+func NewApprovalRuleClient(c config) *ApprovalRuleClient {
+	return &ApprovalRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `approvalrule.Hooks(f(g(h())))`.
+func (c *ApprovalRuleClient) Use(hooks ...Hook) {
+	c.hooks.ApprovalRule = append(c.hooks.ApprovalRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `approvalrule.Intercept(f(g(h())))`.
+func (c *ApprovalRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ApprovalRule = append(c.inters.ApprovalRule, interceptors...)
+}
+
+// Create returns a builder for creating a ApprovalRule entity.
+func (c *ApprovalRuleClient) Create() *ApprovalRuleCreate {
+	mutation := newApprovalRuleMutation(c.config, OpCreate)
+	return &ApprovalRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ApprovalRule entities.
+func (c *ApprovalRuleClient) CreateBulk(builders ...*ApprovalRuleCreate) *ApprovalRuleCreateBulk {
+	return &ApprovalRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ApprovalRuleClient) MapCreateBulk(slice any, setFunc func(*ApprovalRuleCreate, int)) *ApprovalRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ApprovalRuleCreateBulk{err: fmt.Errorf("calling to ApprovalRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ApprovalRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ApprovalRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ApprovalRule.
+func (c *ApprovalRuleClient) Update() *ApprovalRuleUpdate {
+	mutation := newApprovalRuleMutation(c.config, OpUpdate)
+	return &ApprovalRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ApprovalRuleClient) UpdateOne(_m *ApprovalRule) *ApprovalRuleUpdateOne {
+	mutation := newApprovalRuleMutation(c.config, OpUpdateOne, withApprovalRule(_m))
+	return &ApprovalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ApprovalRuleClient) UpdateOneID(id uuid.UUID) *ApprovalRuleUpdateOne {
+	mutation := newApprovalRuleMutation(c.config, OpUpdateOne, withApprovalRuleID(id))
+	return &ApprovalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ApprovalRule.
+func (c *ApprovalRuleClient) Delete() *ApprovalRuleDelete {
+	mutation := newApprovalRuleMutation(c.config, OpDelete)
+	return &ApprovalRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ApprovalRuleClient) DeleteOne(_m *ApprovalRule) *ApprovalRuleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ApprovalRuleClient) DeleteOneID(id uuid.UUID) *ApprovalRuleDeleteOne {
+	builder := c.Delete().Where(approvalrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ApprovalRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for ApprovalRule.
+func (c *ApprovalRuleClient) Query() *ApprovalRuleQuery {
+	return &ApprovalRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeApprovalRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ApprovalRule entity by its id.
+func (c *ApprovalRuleClient) Get(ctx context.Context, id uuid.UUID) (*ApprovalRule, error) {
+	return c.Query().Where(approvalrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ApprovalRuleClient) GetX(ctx context.Context, id uuid.UUID) *ApprovalRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySteps queries the steps edge of a ApprovalRule.
+func (c *ApprovalRuleClient) QuerySteps(_m *ApprovalRule) *ApprovalStepQuery {
+	query := (&ApprovalStepClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(approvalrule.Table, approvalrule.FieldID, id),
+			sqlgraph.To(approvalstep.Table, approvalstep.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, approvalrule.StepsTable, approvalrule.StepsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ApprovalRuleClient) Hooks() []Hook {
+	return c.hooks.ApprovalRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *ApprovalRuleClient) Interceptors() []Interceptor {
+	return c.inters.ApprovalRule
+}
+
+func (c *ApprovalRuleClient) mutate(ctx context.Context, m *ApprovalRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ApprovalRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ApprovalRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ApprovalRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ApprovalRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ApprovalRule mutation op: %q", m.Op())
+	}
+}
+
+// ApprovalStepClient is a client for the ApprovalStep schema.
+type ApprovalStepClient struct {
+	config
+}
+
+// NewApprovalStepClient returns a client for the ApprovalStep from the given config.
+func NewApprovalStepClient(c config) *ApprovalStepClient {
+	return &ApprovalStepClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `approvalstep.Hooks(f(g(h())))`.
+func (c *ApprovalStepClient) Use(hooks ...Hook) {
+	c.hooks.ApprovalStep = append(c.hooks.ApprovalStep, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `approvalstep.Intercept(f(g(h())))`.
+func (c *ApprovalStepClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ApprovalStep = append(c.inters.ApprovalStep, interceptors...)
+}
+
+// Create returns a builder for creating a ApprovalStep entity.
+func (c *ApprovalStepClient) Create() *ApprovalStepCreate {
+	mutation := newApprovalStepMutation(c.config, OpCreate)
+	return &ApprovalStepCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ApprovalStep entities.
+func (c *ApprovalStepClient) CreateBulk(builders ...*ApprovalStepCreate) *ApprovalStepCreateBulk {
+	return &ApprovalStepCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ApprovalStepClient) MapCreateBulk(slice any, setFunc func(*ApprovalStepCreate, int)) *ApprovalStepCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ApprovalStepCreateBulk{err: fmt.Errorf("calling to ApprovalStepClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ApprovalStepCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ApprovalStepCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ApprovalStep.
+func (c *ApprovalStepClient) Update() *ApprovalStepUpdate {
+	mutation := newApprovalStepMutation(c.config, OpUpdate)
+	return &ApprovalStepUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ApprovalStepClient) UpdateOne(_m *ApprovalStep) *ApprovalStepUpdateOne {
+	mutation := newApprovalStepMutation(c.config, OpUpdateOne, withApprovalStep(_m))
+	return &ApprovalStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ApprovalStepClient) UpdateOneID(id uuid.UUID) *ApprovalStepUpdateOne {
+	mutation := newApprovalStepMutation(c.config, OpUpdateOne, withApprovalStepID(id))
+	return &ApprovalStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ApprovalStep.
+func (c *ApprovalStepClient) Delete() *ApprovalStepDelete {
+	mutation := newApprovalStepMutation(c.config, OpDelete)
+	return &ApprovalStepDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ApprovalStepClient) DeleteOne(_m *ApprovalStep) *ApprovalStepDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ApprovalStepClient) DeleteOneID(id uuid.UUID) *ApprovalStepDeleteOne {
+	builder := c.Delete().Where(approvalstep.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ApprovalStepDeleteOne{builder}
+}
+
+// Query returns a query builder for ApprovalStep.
+func (c *ApprovalStepClient) Query() *ApprovalStepQuery {
+	return &ApprovalStepQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeApprovalStep},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ApprovalStep entity by its id.
+func (c *ApprovalStepClient) Get(ctx context.Context, id uuid.UUID) (*ApprovalStep, error) {
+	return c.Query().Where(approvalstep.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ApprovalStepClient) GetX(ctx context.Context, id uuid.UUID) *ApprovalStep {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRule queries the rule edge of a ApprovalStep.
+func (c *ApprovalStepClient) QueryRule(_m *ApprovalStep) *ApprovalRuleQuery {
+	query := (&ApprovalRuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(approvalstep.Table, approvalstep.FieldID, id),
+			sqlgraph.To(approvalrule.Table, approvalrule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, approvalstep.RuleTable, approvalstep.RuleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ApprovalStepClient) Hooks() []Hook {
+	return c.hooks.ApprovalStep
+}
+
+// Interceptors returns the client interceptors.
+func (c *ApprovalStepClient) Interceptors() []Interceptor {
+	return c.inters.ApprovalStep
+}
+
+func (c *ApprovalStepClient) mutate(ctx context.Context, m *ApprovalStepMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ApprovalStepCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ApprovalStepUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ApprovalStepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ApprovalStepDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ApprovalStep mutation op: %q", m.Op())
 	}
 }
 
@@ -10629,35 +11259,37 @@ func (c *WarrantyClient) mutate(ctx context.Context, m *WarrantyMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset, AssetAudit, AssetCategory, AssetDisposal, AssetInsurance,
-		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
-		BundleComponent, Consumption, Contract, ContractOrderLink,
-		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
-		InventoryPermission, InventoryRole, InventoryUser, Item, ItemAsset,
-		ItemCategory, ItemPricing, ItemTranslation, ItemVariant, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck,
-		RateLimitConfig, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockTransfer, StockTransferLine, Supplier, SupplierPerformance, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Hook
+		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
+		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
+		AssetReservation, AssetTransfer, BatchRawMaterial, Bundle, BundleComponent,
+		Consumption, Contract, ContractOrderLink, CustomFieldDefinition,
+		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
+		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
-		Asset, AssetAudit, AssetCategory, AssetDisposal, AssetInsurance,
-		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
-		BundleComponent, Consumption, Contract, ContractOrderLink,
-		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
-		InventoryPermission, InventoryRole, InventoryUser, Item, ItemAsset,
-		ItemCategory, ItemPricing, ItemTranslation, ItemVariant, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck,
-		RateLimitConfig, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockTransfer, StockTransferLine, Supplier, SupplierPerformance, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
+		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
+		AssetReservation, AssetTransfer, BatchRawMaterial, Bundle, BundleComponent,
+		Consumption, Contract, ContractOrderLink, CustomFieldDefinition,
+		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
+		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )

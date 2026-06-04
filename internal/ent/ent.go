@@ -12,6 +12,10 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/bengobox/inventory-service/internal/ent/approvalaction"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrequest"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrule"
+	"github.com/bengobox/inventory-service/internal/ent/approvalstep"
 	"github.com/bengobox/inventory-service/internal/ent/asset"
 	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
 	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
@@ -136,6 +140,10 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			approvalaction.Table:        approvalaction.ValidColumn,
+			approvalrequest.Table:       approvalrequest.ValidColumn,
+			approvalrule.Table:          approvalrule.ValidColumn,
+			approvalstep.Table:          approvalstep.ValidColumn,
 			asset.Table:                 asset.ValidColumn,
 			assetaudit.Table:            assetaudit.ValidColumn,
 			assetcategory.Table:         assetcategory.ValidColumn,

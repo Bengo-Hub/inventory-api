@@ -5,6 +5,10 @@ package ent
 import (
 	"time"
 
+	"github.com/bengobox/inventory-service/internal/ent/approvalaction"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrequest"
+	"github.com/bengobox/inventory-service/internal/ent/approvalrule"
+	"github.com/bengobox/inventory-service/internal/ent/approvalstep"
 	"github.com/bengobox/inventory-service/internal/ent/asset"
 	"github.com/bengobox/inventory-service/internal/ent/assetaudit"
 	"github.com/bengobox/inventory-service/internal/ent/assetcategory"
@@ -76,6 +80,90 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	approvalactionFields := schema.ApprovalAction{}.Fields()
+	_ = approvalactionFields
+	// approvalactionDescApproverRole is the schema descriptor for approver_role field.
+	approvalactionDescApproverRole := approvalactionFields[5].Descriptor()
+	// approvalaction.ApproverRoleValidator is a validator for the "approver_role" field. It is called by the builders before save.
+	approvalaction.ApproverRoleValidator = approvalactionDescApproverRole.Validators[0].(func(string) error)
+	// approvalactionDescCreatedAt is the schema descriptor for created_at field.
+	approvalactionDescCreatedAt := approvalactionFields[10].Descriptor()
+	// approvalaction.DefaultCreatedAt holds the default value on creation for the created_at field.
+	approvalaction.DefaultCreatedAt = approvalactionDescCreatedAt.Default.(func() time.Time)
+	// approvalactionDescID is the schema descriptor for id field.
+	approvalactionDescID := approvalactionFields[0].Descriptor()
+	// approvalaction.DefaultID holds the default value on creation for the id field.
+	approvalaction.DefaultID = approvalactionDescID.Default.(func() uuid.UUID)
+	approvalrequestFields := schema.ApprovalRequest{}.Fields()
+	_ = approvalrequestFields
+	// approvalrequestDescAmount is the schema descriptor for amount field.
+	approvalrequestDescAmount := approvalrequestFields[5].Descriptor()
+	// approvalrequest.DefaultAmount holds the default value on creation for the amount field.
+	approvalrequest.DefaultAmount = approvalrequestDescAmount.Default.(float64)
+	// approvalrequestDescCurrentSequence is the schema descriptor for current_sequence field.
+	approvalrequestDescCurrentSequence := approvalrequestFields[8].Descriptor()
+	// approvalrequest.DefaultCurrentSequence holds the default value on creation for the current_sequence field.
+	approvalrequest.DefaultCurrentSequence = approvalrequestDescCurrentSequence.Default.(int)
+	// approvalrequestDescCreatedAt is the schema descriptor for created_at field.
+	approvalrequestDescCreatedAt := approvalrequestFields[10].Descriptor()
+	// approvalrequest.DefaultCreatedAt holds the default value on creation for the created_at field.
+	approvalrequest.DefaultCreatedAt = approvalrequestDescCreatedAt.Default.(func() time.Time)
+	// approvalrequestDescUpdatedAt is the schema descriptor for updated_at field.
+	approvalrequestDescUpdatedAt := approvalrequestFields[11].Descriptor()
+	// approvalrequest.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	approvalrequest.DefaultUpdatedAt = approvalrequestDescUpdatedAt.Default.(func() time.Time)
+	// approvalrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	approvalrequest.UpdateDefaultUpdatedAt = approvalrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// approvalrequestDescID is the schema descriptor for id field.
+	approvalrequestDescID := approvalrequestFields[0].Descriptor()
+	// approvalrequest.DefaultID holds the default value on creation for the id field.
+	approvalrequest.DefaultID = approvalrequestDescID.Default.(func() uuid.UUID)
+	approvalruleFields := schema.ApprovalRule{}.Fields()
+	_ = approvalruleFields
+	// approvalruleDescName is the schema descriptor for name field.
+	approvalruleDescName := approvalruleFields[3].Descriptor()
+	// approvalrule.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	approvalrule.NameValidator = approvalruleDescName.Validators[0].(func(string) error)
+	// approvalruleDescMinAmount is the schema descriptor for min_amount field.
+	approvalruleDescMinAmount := approvalruleFields[4].Descriptor()
+	// approvalrule.DefaultMinAmount holds the default value on creation for the min_amount field.
+	approvalrule.DefaultMinAmount = approvalruleDescMinAmount.Default.(float64)
+	// approvalruleDescIsActive is the schema descriptor for is_active field.
+	approvalruleDescIsActive := approvalruleFields[6].Descriptor()
+	// approvalrule.DefaultIsActive holds the default value on creation for the is_active field.
+	approvalrule.DefaultIsActive = approvalruleDescIsActive.Default.(bool)
+	// approvalruleDescCreatedAt is the schema descriptor for created_at field.
+	approvalruleDescCreatedAt := approvalruleFields[7].Descriptor()
+	// approvalrule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	approvalrule.DefaultCreatedAt = approvalruleDescCreatedAt.Default.(func() time.Time)
+	// approvalruleDescUpdatedAt is the schema descriptor for updated_at field.
+	approvalruleDescUpdatedAt := approvalruleFields[8].Descriptor()
+	// approvalrule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	approvalrule.DefaultUpdatedAt = approvalruleDescUpdatedAt.Default.(func() time.Time)
+	// approvalrule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	approvalrule.UpdateDefaultUpdatedAt = approvalruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// approvalruleDescID is the schema descriptor for id field.
+	approvalruleDescID := approvalruleFields[0].Descriptor()
+	// approvalrule.DefaultID holds the default value on creation for the id field.
+	approvalrule.DefaultID = approvalruleDescID.Default.(func() uuid.UUID)
+	approvalstepFields := schema.ApprovalStep{}.Fields()
+	_ = approvalstepFields
+	// approvalstepDescName is the schema descriptor for name field.
+	approvalstepDescName := approvalstepFields[4].Descriptor()
+	// approvalstep.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	approvalstep.NameValidator = approvalstepDescName.Validators[0].(func(string) error)
+	// approvalstepDescApproverRole is the schema descriptor for approver_role field.
+	approvalstepDescApproverRole := approvalstepFields[5].Descriptor()
+	// approvalstep.ApproverRoleValidator is a validator for the "approver_role" field. It is called by the builders before save.
+	approvalstep.ApproverRoleValidator = approvalstepDescApproverRole.Validators[0].(func(string) error)
+	// approvalstepDescCreatedAt is the schema descriptor for created_at field.
+	approvalstepDescCreatedAt := approvalstepFields[6].Descriptor()
+	// approvalstep.DefaultCreatedAt holds the default value on creation for the created_at field.
+	approvalstep.DefaultCreatedAt = approvalstepDescCreatedAt.Default.(func() time.Time)
+	// approvalstepDescID is the schema descriptor for id field.
+	approvalstepDescID := approvalstepFields[0].Descriptor()
+	// approvalstep.DefaultID holds the default value on creation for the id field.
+	approvalstep.DefaultID = approvalstepDescID.Default.(func() uuid.UUID)
 	assetFields := schema.Asset{}.Fields()
 	_ = assetFields
 	// assetDescAssetTag is the schema descriptor for asset_tag field.

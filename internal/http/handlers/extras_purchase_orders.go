@@ -459,6 +459,12 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft orders can be sent")
 		return
 	}
+	// Approval-matrix gate: if a rule matches this PO's amount, an approved request is
+	// required before sending. No matching rule → no gate (state "not_required").
+	if ok, state, aerr := h.approvals().Satisfied(r.Context(), tenantID, "purchase_order", po.ID, po.TotalAmount); aerr == nil && !ok {
+		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "Purchase order requires approval before sending (status: "+state+")")
+		return
+	}
 	if _, err := h.orm.PurchaseOrder.UpdateOneID(poID).SetStatus("sent").Save(r.Context()); err != nil {
 		h.log.Error("send PO failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "SEND_FAILED", "Failed to send purchase order")
