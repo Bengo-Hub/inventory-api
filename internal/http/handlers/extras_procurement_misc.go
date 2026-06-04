@@ -11,7 +11,11 @@ import (
 
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
+	entgrl "github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
+	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entsd "github.com/bengobox/inventory-service/internal/ent/servicedelivery"
+	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	entsp "github.com/bengobox/inventory-service/internal/ent/supplierperformance"
 )
 
@@ -21,6 +25,7 @@ import (
 func (h *InventoryExtrasHandler) registerProcurementMiscRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
 	r.Get("/inventory/supplier-performance", h.ListSupplierPerformance)
 	r.With(perm(add)).Post("/inventory/supplier-performance", h.RecordSupplierPerformance)
+	r.With(perm(change)).Post("/inventory/supplier-performance/recompute", h.RecomputeSupplierPerformance)
 	r.Get("/inventory/service-deliveries", h.ListServiceDeliveries)
 	r.With(perm(add)).Post("/inventory/service-deliveries", h.CreateServiceDelivery)
 	r.With(perm(change)).Put("/inventory/service-deliveries/{sdID}/status", h.UpdateServiceDeliveryStatus)
@@ -142,6 +147,93 @@ func (h *InventoryExtrasHandler) RecordSupplierPerformance(w http.ResponseWriter
 		return
 	}
 	writeJSON(w, http.StatusCreated, supplierPerfToDTO(s))
+}
+
+// RecomputeSupplierPerformance handles POST /inventory/supplier-performance/recompute.
+// Computes a fresh performance snapshot per active supplier from PO + GRN data
+// (total spend, on-time %, defect rate, average lead time) over the trailing
+// quarter. Enabled by the GRN data captured at goods receipt.
+//
+//	@Summary  Recompute supplier performance from PO + GRN data
+//	@Tags     Procurement
+//	@Produce  json
+//	@Success  200  {object}  map[string]interface{}
+//	@Security bearerAuth
+//	@Router   /{tenant}/inventory/supplier-performance/recompute [post]
+func (h *InventoryExtrasHandler) RecomputeSupplierPerformance(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	ctx := r.Context()
+	now := time.Now().UTC()
+	periodStart := now.AddDate(0, -3, 0) // trailing quarter
+
+	suppliers, _ := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID), entsupplier.IsActive(true)).All(ctx)
+	computed := 0
+	for _, s := range suppliers {
+		pos, _ := h.orm.PurchaseOrder.Query().Where(entpo.TenantID(tenantID), entpo.SupplierID(s.ID)).All(ctx)
+		if len(pos) == 0 {
+			continue
+		}
+		poByID := make(map[uuid.UUID]*ent.PurchaseOrder, len(pos))
+		poIDs := make([]uuid.UUID, 0, len(pos))
+		var totalSpend float64
+		for _, po := range pos {
+			poByID[po.ID] = po
+			poIDs = append(poIDs, po.ID)
+			if po.Status == entpo.StatusReceived || po.Status == entpo.StatusPartiallyReceived {
+				totalSpend += po.TotalAmount
+			}
+		}
+
+		grns, _ := h.orm.GoodsReceipt.Query().
+			Where(entgr.TenantID(tenantID), entgr.PurchaseOrderIDIn(poIDs...), entgr.StatusEQ(entgr.StatusPosted)).
+			All(ctx)
+		var onTime, totalGRN, leadDaysSum float64
+		grnIDs := make([]uuid.UUID, 0, len(grns))
+		for _, g := range grns {
+			grnIDs = append(grnIDs, g.ID)
+			totalGRN++
+			if po := poByID[g.PurchaseOrderID]; po != nil {
+				leadDaysSum += g.ReceivedDate.Sub(po.CreatedAt).Hours() / 24
+				if po.ExpectedDate != nil && !g.ReceivedDate.After(*po.ExpectedDate) {
+					onTime++
+				}
+			}
+		}
+
+		var recv, rej float64
+		if len(grnIDs) > 0 {
+			lines, _ := h.orm.GoodsReceiptLine.Query().
+				Where(entgrl.TenantID(tenantID), entgrl.GoodsReceiptIDIn(grnIDs...)).All(ctx)
+			for _, l := range lines {
+				recv += float64(l.QuantityReceived)
+				rej += float64(l.QuantityRejected)
+			}
+		}
+
+		onTimeRate, defectRate, avgLead := 0.0, 0.0, 0.0
+		if totalGRN > 0 {
+			onTimeRate = onTime / totalGRN
+			avgLead = leadDaysSum / totalGRN
+		}
+		if recv > 0 {
+			defectRate = rej / recv
+		}
+		if _, e := h.orm.SupplierPerformance.Create().
+			SetTenantID(tenantID).SetSupplierID(s.ID).
+			SetPeriodStart(periodStart).SetPeriodEnd(now).
+			SetOnTimeDeliveryRate(onTimeRate).SetDefectRate(defectRate).
+			SetAverageLeadTimeDays(avgLead).SetTotalSpend(totalSpend).
+			Save(ctx); e != nil {
+			h.log.Warn("recompute supplier performance failed", zap.String("supplier", s.ID.String()), zap.Error(e))
+		} else {
+			computed++
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"computed": computed, "period_start": periodStart, "period_end": now})
 }
 
 // --- Service delivery ---
