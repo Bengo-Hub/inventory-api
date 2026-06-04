@@ -41,6 +41,9 @@ func buildPermDefs() []permDef {
 		{"config", "Config", "service configuration management"},
 		{"users", "Users", "user management"},
 		{"tickets", "Tickets", "event ticket selling, issuance and check-in"},
+		{"procurement", "Procurement", "requisitions, purchase orders, goods receipts, returns, contracts, suppliers"},
+		{"manufacturing", "Manufacturing", "production batches, BOM, quality checks"},
+		{"assets", "Assets", "fixed-asset register and lifecycle"},
 	}
 
 	actions := []struct {

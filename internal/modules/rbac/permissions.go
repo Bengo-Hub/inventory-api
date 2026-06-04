@@ -95,6 +95,27 @@ const (
 	PermTicketsChange = "inventory.tickets.change"
 	PermTicketsDelete = "inventory.tickets.delete"
 	PermTicketsManage = "inventory.tickets.manage"
+
+	// procurement (requisitions, POs, goods receipts, returns, contracts, suppliers)
+	PermProcurementView   = "inventory.procurement.view"
+	PermProcurementAdd    = "inventory.procurement.add"
+	PermProcurementChange = "inventory.procurement.change"
+	PermProcurementDelete = "inventory.procurement.delete"
+	PermProcurementManage = "inventory.procurement.manage"
+
+	// manufacturing (production batches, BOM, QC)
+	PermManufacturingView   = "inventory.manufacturing.view"
+	PermManufacturingAdd    = "inventory.manufacturing.add"
+	PermManufacturingChange = "inventory.manufacturing.change"
+	PermManufacturingDelete = "inventory.manufacturing.delete"
+	PermManufacturingManage = "inventory.manufacturing.manage"
+
+	// assets (fixed-asset register + lifecycle)
+	PermAssetsView   = "inventory.assets.view"
+	PermAssetsAdd    = "inventory.assets.add"
+	PermAssetsChange = "inventory.assets.change"
+	PermAssetsDelete = "inventory.assets.delete"
+	PermAssetsManage = "inventory.assets.manage"
 )
 
 // Role codes seeded per tenant.

@@ -45,6 +45,11 @@ var rolePermMap = map[string][]string{
 		"inventory.reservations.add", "inventory.reservations.view", "inventory.reservations.change", "inventory.reservations.delete", "inventory.reservations.manage",
 		"inventory.units.view",
 		"inventory.tickets.add", "inventory.tickets.view", "inventory.tickets.change", "inventory.tickets.delete", "inventory.tickets.manage",
+		// Procurement / manufacturing / assets (matches the prior items.add+change grant;
+		// asset delete stays admin-only, mirroring no items.delete).
+		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage",
+		"inventory.manufacturing.view", "inventory.manufacturing.add", "inventory.manufacturing.change", "inventory.manufacturing.manage",
+		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
 	},
 	"stock_clerk": {
 		"inventory.stock.view", "inventory.stock.change", "inventory.stock.add",
@@ -57,6 +62,7 @@ var rolePermMap = map[string][]string{
 		"inventory.units.view",
 		"inventory.recipes.view",
 		"inventory.tickets.view", "inventory.tickets.add", "inventory.tickets.change",
+		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view",
 	},
 	"viewer": {
 		"inventory.items.view",
@@ -69,6 +75,7 @@ var rolePermMap = map[string][]string{
 		"inventory.reservations.view",
 		"inventory.units.view",
 		"inventory.tickets.view",
+		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view",
 	},
 }
 
