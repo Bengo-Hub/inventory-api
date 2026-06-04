@@ -49,6 +49,8 @@ const (
 	FieldAccumulatedDepreciation = "accumulated_depreciation"
 	// FieldBookValue holds the string denoting the book_value field in the database.
 	FieldBookValue = "book_value"
+	// FieldLastDepreciationPeriod holds the string denoting the last_depreciation_period field in the database.
+	FieldLastDepreciationPeriod = "last_depreciation_period"
 	// FieldLocation holds the string denoting the location field in the database.
 	FieldLocation = "location"
 	// FieldOutletID holds the string denoting the outlet_id field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldDepreciationMethod,
 	FieldAccumulatedDepreciation,
 	FieldBookValue,
+	FieldLastDepreciationPeriod,
 	FieldLocation,
 	FieldOutletID,
 	FieldAssignedTo,
@@ -310,6 +313,11 @@ func ByAccumulatedDepreciation(opts ...sql.OrderTermOption) OrderOption {
 // ByBookValue orders the results by the book_value field.
 func ByBookValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBookValue, opts...).ToFunc()
+}
+
+// ByLastDepreciationPeriod orders the results by the last_depreciation_period field.
+func ByLastDepreciationPeriod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastDepreciationPeriod, opts...).ToFunc()
 }
 
 // ByLocation orders the results by the location field.

@@ -52,6 +52,8 @@ type Asset struct {
 	AccumulatedDepreciation float64 `json:"accumulated_depreciation,omitempty"`
 	// BookValue holds the value of the "book_value" field.
 	BookValue float64 `json:"book_value,omitempty"`
+	// YYYY-MM of the last applied depreciation (idempotency guard)
+	LastDepreciationPeriod string `json:"last_depreciation_period,omitempty"`
 	// Location holds the value of the "location" field.
 	Location string `json:"location,omitempty"`
 	// Branch/outlet
@@ -98,7 +100,7 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case asset.FieldPurchaseCost, asset.FieldCurrentValue, asset.FieldSalvageValue, asset.FieldDepreciationRate, asset.FieldAccumulatedDepreciation, asset.FieldBookValue:
 			values[i] = new(sql.NullFloat64)
-		case asset.FieldAssetTag, asset.FieldName, asset.FieldDescription, asset.FieldSerialNumber, asset.FieldModel, asset.FieldManufacturer, asset.FieldBarcode, asset.FieldDepreciationMethod, asset.FieldLocation, asset.FieldStatus, asset.FieldCondition, asset.FieldMaintenanceSchedule, asset.FieldNotes:
+		case asset.FieldAssetTag, asset.FieldName, asset.FieldDescription, asset.FieldSerialNumber, asset.FieldModel, asset.FieldManufacturer, asset.FieldBarcode, asset.FieldDepreciationMethod, asset.FieldLastDepreciationPeriod, asset.FieldLocation, asset.FieldStatus, asset.FieldCondition, asset.FieldMaintenanceSchedule, asset.FieldNotes:
 			values[i] = new(sql.NullString)
 		case asset.FieldPurchaseDate, asset.FieldWarrantyExpiry, asset.FieldLastMaintenance, asset.FieldNextMaintenance, asset.FieldCreatedAt, asset.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -228,6 +230,12 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field book_value", values[i])
 			} else if value.Valid {
 				_m.BookValue = value.Float64
+			}
+		case asset.FieldLastDepreciationPeriod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_depreciation_period", values[i])
+			} else if value.Valid {
+				_m.LastDepreciationPeriod = value.String
 			}
 		case asset.FieldLocation:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -423,6 +431,9 @@ func (_m *Asset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("book_value=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BookValue))
+	builder.WriteString(", ")
+	builder.WriteString("last_depreciation_period=")
+	builder.WriteString(_m.LastDepreciationPeriod)
 	builder.WriteString(", ")
 	builder.WriteString("location=")
 	builder.WriteString(_m.Location)

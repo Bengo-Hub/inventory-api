@@ -28,6 +28,7 @@ var (
 		{Name: "depreciation_method", Type: field.TypeEnum, Enums: []string{"straight_line", "declining_balance"}, Default: "straight_line"},
 		{Name: "accumulated_depreciation", Type: field.TypeFloat64, Default: 0},
 		{Name: "book_value", Type: field.TypeFloat64, Default: 0},
+		{Name: "last_depreciation_period", Type: field.TypeString, Nullable: true},
 		{Name: "location", Type: field.TypeString, Nullable: true},
 		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "assigned_to", Type: field.TypeUUID, Nullable: true},
@@ -59,7 +60,7 @@ var (
 			{
 				Name:    "asset_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[23]},
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[24]},
 			},
 			{
 				Name:    "asset_tenant_id_category_id",
