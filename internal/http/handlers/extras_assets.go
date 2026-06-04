@@ -428,10 +428,17 @@ func (h *InventoryExtrasHandler) RunAssetDepreciation(w http.ResponseWriter, r *
 	if !ok {
 		return
 	}
+	// period + currency are required by the treasury depreciation consumer: it keys
+	// idempotency on (tenant_id, asset_id, period) and stamps the journal currency.
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = time.Now().UTC().Format("2006-01")
+	}
 	h.publishOutbox(r.Context(), tenantID, "asset", a.ID, "inventory.asset.depreciation_due", map[string]any{
-		"id": a.ID, "asset_tag": a.AssetTag, "purchase_cost": a.PurchaseCost, "salvage_value": a.SalvageValue,
+		"id": a.ID, "asset_id": a.ID, "asset_tag": a.AssetTag, "purchase_cost": a.PurchaseCost, "salvage_value": a.SalvageValue,
 		"depreciation_rate": a.DepreciationRate, "depreciation_method": a.DepreciationMethod,
 		"accumulated_depreciation": a.AccumulatedDepreciation, "book_value": a.BookValue,
+		"period": period, "currency": "KES",
 	})
 	writeJSON(w, http.StatusAccepted, map[string]any{"status": "depreciation_event_emitted", "asset_id": a.ID})
 }
