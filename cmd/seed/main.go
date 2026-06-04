@@ -119,6 +119,12 @@ func main() {
 		}
 		recalculateAllRecipeCosts(ctx, client, tenantID)
 
+		if slug == "codevertex-demo" {
+			if err := seedProductionBatches(ctx, client, tenantID); err != nil {
+				log.Printf("[WARN] seed production batches for %s: %v", slug, err)
+			}
+		}
+
 		if err := seedSubRecipeDemo(ctx, client, tenantID); err != nil {
 			log.Printf("[WARN] seed sub-recipe demo for %s: %v", slug, err)
 		}
