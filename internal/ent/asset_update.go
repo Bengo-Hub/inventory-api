@@ -431,6 +431,26 @@ func (_u *AssetUpdate) ClearCustodianID() *AssetUpdate {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *AssetUpdate) SetItemID(v uuid.UUID) *AssetUpdate {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableItemID(v *uuid.UUID) *AssetUpdate {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (_u *AssetUpdate) ClearItemID() *AssetUpdate {
+	_u.mutation.ClearItemID()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *AssetUpdate) SetStatus(v asset.Status) *AssetUpdate {
 	_u.mutation.SetStatus(v)
@@ -796,6 +816,12 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CustodianIDCleared() {
 		_spec.ClearField(asset.FieldCustodianID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ItemID(); ok {
+		_spec.SetField(asset.FieldItemID, field.TypeUUID, value)
+	}
+	if _u.mutation.ItemIDCleared() {
+		_spec.ClearField(asset.FieldItemID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)
@@ -1270,6 +1296,26 @@ func (_u *AssetUpdateOne) ClearCustodianID() *AssetUpdateOne {
 	return _u
 }
 
+// SetItemID sets the "item_id" field.
+func (_u *AssetUpdateOne) SetItemID(v uuid.UUID) *AssetUpdateOne {
+	_u.mutation.SetItemID(v)
+	return _u
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableItemID(v *uuid.UUID) *AssetUpdateOne {
+	if v != nil {
+		_u.SetItemID(*v)
+	}
+	return _u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (_u *AssetUpdateOne) ClearItemID() *AssetUpdateOne {
+	_u.mutation.ClearItemID()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *AssetUpdateOne) SetStatus(v asset.Status) *AssetUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -1665,6 +1711,12 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 	}
 	if _u.mutation.CustodianIDCleared() {
 		_spec.ClearField(asset.FieldCustodianID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ItemID(); ok {
+		_spec.SetField(asset.FieldItemID, field.TypeUUID, value)
+	}
+	if _u.mutation.ItemIDCleared() {
+		_spec.ClearField(asset.FieldItemID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)

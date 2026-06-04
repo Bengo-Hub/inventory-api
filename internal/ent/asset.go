@@ -60,6 +60,8 @@ type Asset struct {
 	AssignedTo *uuid.UUID `json:"assigned_to,omitempty"`
 	// CustodianID holds the value of the "custodian_id" field.
 	CustodianID *uuid.UUID `json:"custodian_id,omitempty"`
+	// Optional link to the inventory Item this asset was capitalised from
+	ItemID *uuid.UUID `json:"item_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status asset.Status `json:"status,omitempty"`
 	// excellent|good|fair|poor|critical
@@ -90,7 +92,7 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case asset.FieldCategoryID, asset.FieldOutletID, asset.FieldAssignedTo, asset.FieldCustodianID, asset.FieldCreatedBy:
+		case asset.FieldCategoryID, asset.FieldOutletID, asset.FieldAssignedTo, asset.FieldCustodianID, asset.FieldItemID, asset.FieldCreatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case asset.FieldIsActive:
 			values[i] = new(sql.NullBool)
@@ -253,6 +255,13 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CustodianID = new(uuid.UUID)
 				*_m.CustodianID = *value.S.(*uuid.UUID)
+			}
+		case asset.FieldItemID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field item_id", values[i])
+			} else if value.Valid {
+				_m.ItemID = new(uuid.UUID)
+				*_m.ItemID = *value.S.(*uuid.UUID)
 			}
 		case asset.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -430,6 +439,11 @@ func (_m *Asset) String() string {
 	builder.WriteString(", ")
 	if v := _m.CustodianID; v != nil {
 		builder.WriteString("custodian_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ItemID; v != nil {
+		builder.WriteString("item_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

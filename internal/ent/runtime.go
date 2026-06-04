@@ -23,6 +23,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -109,15 +111,15 @@ func init() {
 	// asset.DefaultBookValue holds the default value on creation for the book_value field.
 	asset.DefaultBookValue = assetDescBookValue.Default.(float64)
 	// assetDescIsActive is the schema descriptor for is_active field.
-	assetDescIsActive := assetFields[29].Descriptor()
+	assetDescIsActive := assetFields[30].Descriptor()
 	// asset.DefaultIsActive holds the default value on creation for the is_active field.
 	asset.DefaultIsActive = assetDescIsActive.Default.(bool)
 	// assetDescCreatedAt is the schema descriptor for created_at field.
-	assetDescCreatedAt := assetFields[31].Descriptor()
+	assetDescCreatedAt := assetFields[32].Descriptor()
 	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
 	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
 	// assetDescUpdatedAt is the schema descriptor for updated_at field.
-	assetDescUpdatedAt := assetFields[32].Descriptor()
+	assetDescUpdatedAt := assetFields[33].Descriptor()
 	// asset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	asset.DefaultUpdatedAt = assetDescUpdatedAt.Default.(func() time.Time)
 	// asset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -484,6 +486,56 @@ func init() {
 	foodcostvarianceDescID := foodcostvarianceFields[0].Descriptor()
 	// foodcostvariance.DefaultID holds the default value on creation for the id field.
 	foodcostvariance.DefaultID = foodcostvarianceDescID.Default.(func() uuid.UUID)
+	goodsreceiptFields := schema.GoodsReceipt{}.Fields()
+	_ = goodsreceiptFields
+	// goodsreceiptDescGrnNumber is the schema descriptor for grn_number field.
+	goodsreceiptDescGrnNumber := goodsreceiptFields[2].Descriptor()
+	// goodsreceipt.GrnNumberValidator is a validator for the "grn_number" field. It is called by the builders before save.
+	goodsreceipt.GrnNumberValidator = goodsreceiptDescGrnNumber.Validators[0].(func(string) error)
+	// goodsreceiptDescReceivedDate is the schema descriptor for received_date field.
+	goodsreceiptDescReceivedDate := goodsreceiptFields[7].Descriptor()
+	// goodsreceipt.DefaultReceivedDate holds the default value on creation for the received_date field.
+	goodsreceipt.DefaultReceivedDate = goodsreceiptDescReceivedDate.Default.(func() time.Time)
+	// goodsreceiptDescCreatedAt is the schema descriptor for created_at field.
+	goodsreceiptDescCreatedAt := goodsreceiptFields[10].Descriptor()
+	// goodsreceipt.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goodsreceipt.DefaultCreatedAt = goodsreceiptDescCreatedAt.Default.(func() time.Time)
+	// goodsreceiptDescUpdatedAt is the schema descriptor for updated_at field.
+	goodsreceiptDescUpdatedAt := goodsreceiptFields[11].Descriptor()
+	// goodsreceipt.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	goodsreceipt.DefaultUpdatedAt = goodsreceiptDescUpdatedAt.Default.(func() time.Time)
+	// goodsreceipt.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	goodsreceipt.UpdateDefaultUpdatedAt = goodsreceiptDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// goodsreceiptDescID is the schema descriptor for id field.
+	goodsreceiptDescID := goodsreceiptFields[0].Descriptor()
+	// goodsreceipt.DefaultID holds the default value on creation for the id field.
+	goodsreceipt.DefaultID = goodsreceiptDescID.Default.(func() uuid.UUID)
+	goodsreceiptlineFields := schema.GoodsReceiptLine{}.Fields()
+	_ = goodsreceiptlineFields
+	// goodsreceiptlineDescQuantityReceived is the schema descriptor for quantity_received field.
+	goodsreceiptlineDescQuantityReceived := goodsreceiptlineFields[5].Descriptor()
+	// goodsreceiptline.DefaultQuantityReceived holds the default value on creation for the quantity_received field.
+	goodsreceiptline.DefaultQuantityReceived = goodsreceiptlineDescQuantityReceived.Default.(int)
+	// goodsreceiptlineDescQuantityAccepted is the schema descriptor for quantity_accepted field.
+	goodsreceiptlineDescQuantityAccepted := goodsreceiptlineFields[6].Descriptor()
+	// goodsreceiptline.DefaultQuantityAccepted holds the default value on creation for the quantity_accepted field.
+	goodsreceiptline.DefaultQuantityAccepted = goodsreceiptlineDescQuantityAccepted.Default.(int)
+	// goodsreceiptlineDescQuantityRejected is the schema descriptor for quantity_rejected field.
+	goodsreceiptlineDescQuantityRejected := goodsreceiptlineFields[7].Descriptor()
+	// goodsreceiptline.DefaultQuantityRejected holds the default value on creation for the quantity_rejected field.
+	goodsreceiptline.DefaultQuantityRejected = goodsreceiptlineDescQuantityRejected.Default.(int)
+	// goodsreceiptlineDescUnitCost is the schema descriptor for unit_cost field.
+	goodsreceiptlineDescUnitCost := goodsreceiptlineFields[8].Descriptor()
+	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
+	goodsreceiptline.DefaultUnitCost = goodsreceiptlineDescUnitCost.Default.(float64)
+	// goodsreceiptlineDescCreatedAt is the schema descriptor for created_at field.
+	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[10].Descriptor()
+	// goodsreceiptline.DefaultCreatedAt holds the default value on creation for the created_at field.
+	goodsreceiptline.DefaultCreatedAt = goodsreceiptlineDescCreatedAt.Default.(func() time.Time)
+	// goodsreceiptlineDescID is the schema descriptor for id field.
+	goodsreceiptlineDescID := goodsreceiptlineFields[0].Descriptor()
+	// goodsreceiptline.DefaultID holds the default value on creation for the id field.
+	goodsreceiptline.DefaultID = goodsreceiptlineDescID.Default.(func() uuid.UUID)
 	inventorybalanceFields := schema.InventoryBalance{}.Fields()
 	_ = inventorybalanceFields
 	// inventorybalanceDescOnHand is the schema descriptor for on_hand field.

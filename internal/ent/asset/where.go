@@ -155,6 +155,11 @@ func CustodianID(v uuid.UUID) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldCustodianID, v))
 }
 
+// ItemID applies equality check predicate on the "item_id" field. It's identical to ItemIDEQ.
+func ItemID(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldItemID, v))
+}
+
 // Condition applies equality check predicate on the "condition" field. It's identical to ConditionEQ.
 func Condition(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldCondition, v))
@@ -1333,6 +1338,56 @@ func CustodianIDIsNil() predicate.Asset {
 // CustodianIDNotNil applies the NotNil predicate on the "custodian_id" field.
 func CustodianIDNotNil() predicate.Asset {
 	return predicate.Asset(sql.FieldNotNull(FieldCustodianID))
+}
+
+// ItemIDEQ applies the EQ predicate on the "item_id" field.
+func ItemIDEQ(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldItemID, v))
+}
+
+// ItemIDNEQ applies the NEQ predicate on the "item_id" field.
+func ItemIDNEQ(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldItemID, v))
+}
+
+// ItemIDIn applies the In predicate on the "item_id" field.
+func ItemIDIn(vs ...uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldItemID, vs...))
+}
+
+// ItemIDNotIn applies the NotIn predicate on the "item_id" field.
+func ItemIDNotIn(vs ...uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldItemID, vs...))
+}
+
+// ItemIDGT applies the GT predicate on the "item_id" field.
+func ItemIDGT(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldItemID, v))
+}
+
+// ItemIDGTE applies the GTE predicate on the "item_id" field.
+func ItemIDGTE(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldItemID, v))
+}
+
+// ItemIDLT applies the LT predicate on the "item_id" field.
+func ItemIDLT(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldItemID, v))
+}
+
+// ItemIDLTE applies the LTE predicate on the "item_id" field.
+func ItemIDLTE(v uuid.UUID) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldItemID, v))
+}
+
+// ItemIDIsNil applies the IsNil predicate on the "item_id" field.
+func ItemIDIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldItemID))
+}
+
+// ItemIDNotNil applies the NotNil predicate on the "item_id" field.
+func ItemIDNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldItemID))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

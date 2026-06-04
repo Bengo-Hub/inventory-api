@@ -34,6 +34,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -121,6 +123,10 @@ type Client struct {
 	DocumentSequence *DocumentSequenceClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
+	// GoodsReceipt is the client for interacting with the GoodsReceipt builders.
+	GoodsReceipt *GoodsReceiptClient
+	// GoodsReceiptLine is the client for interacting with the GoodsReceiptLine builders.
+	GoodsReceiptLine *GoodsReceiptLineClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -238,6 +244,8 @@ func (c *Client) init() {
 	c.CustomFieldValue = NewCustomFieldValueClient(c.config)
 	c.DocumentSequence = NewDocumentSequenceClient(c.config)
 	c.FoodCostVariance = NewFoodCostVarianceClient(c.config)
+	c.GoodsReceipt = NewGoodsReceiptClient(c.config)
+	c.GoodsReceiptLine = NewGoodsReceiptLineClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
 	c.InventoryLot = NewInventoryLotClient(c.config)
 	c.InventoryPermission = NewInventoryPermissionClient(c.config)
@@ -392,6 +400,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
 		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
+		GoodsReceipt:          NewGoodsReceiptClient(cfg),
+		GoodsReceiptLine:      NewGoodsReceiptLineClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
 		InventoryPermission:   NewInventoryPermissionClient(cfg),
@@ -473,6 +483,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CustomFieldValue:      NewCustomFieldValueClient(cfg),
 		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
+		GoodsReceipt:          NewGoodsReceiptClient(cfg),
+		GoodsReceiptLine:      NewGoodsReceiptLineClient(cfg),
 		InventoryBalance:      NewInventoryBalanceClient(cfg),
 		InventoryLot:          NewInventoryLotClient(cfg),
 		InventoryPermission:   NewInventoryPermissionClient(cfg),
@@ -550,17 +562,17 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
 		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Ticket,
-		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
+		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
+		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
+		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -574,17 +586,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.BatchRawMaterial,
 		c.Bundle, c.BundleComponent, c.Consumption, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.FoodCostVariance, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemCategory,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.Tenant, c.TenantInventoryConfig, c.Ticket,
-		c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
+		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
+		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
+		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -629,6 +641,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.DocumentSequence.mutate(ctx, m)
 	case *FoodCostVarianceMutation:
 		return c.FoodCostVariance.mutate(ctx, m)
+	case *GoodsReceiptMutation:
+		return c.GoodsReceipt.mutate(ctx, m)
+	case *GoodsReceiptLineMutation:
+		return c.GoodsReceiptLine.mutate(ctx, m)
 	case *InventoryBalanceMutation:
 		return c.InventoryBalance.mutate(ctx, m)
 	case *InventoryLotMutation:
@@ -3289,6 +3305,304 @@ func (c *FoodCostVarianceClient) mutate(ctx context.Context, m *FoodCostVariance
 		return (&FoodCostVarianceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown FoodCostVariance mutation op: %q", m.Op())
+	}
+}
+
+// GoodsReceiptClient is a client for the GoodsReceipt schema.
+type GoodsReceiptClient struct {
+	config
+}
+
+// NewGoodsReceiptClient returns a client for the GoodsReceipt from the given config.
+func NewGoodsReceiptClient(c config) *GoodsReceiptClient {
+	return &GoodsReceiptClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goodsreceipt.Hooks(f(g(h())))`.
+func (c *GoodsReceiptClient) Use(hooks ...Hook) {
+	c.hooks.GoodsReceipt = append(c.hooks.GoodsReceipt, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goodsreceipt.Intercept(f(g(h())))`.
+func (c *GoodsReceiptClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoodsReceipt = append(c.inters.GoodsReceipt, interceptors...)
+}
+
+// Create returns a builder for creating a GoodsReceipt entity.
+func (c *GoodsReceiptClient) Create() *GoodsReceiptCreate {
+	mutation := newGoodsReceiptMutation(c.config, OpCreate)
+	return &GoodsReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoodsReceipt entities.
+func (c *GoodsReceiptClient) CreateBulk(builders ...*GoodsReceiptCreate) *GoodsReceiptCreateBulk {
+	return &GoodsReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoodsReceiptClient) MapCreateBulk(slice any, setFunc func(*GoodsReceiptCreate, int)) *GoodsReceiptCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoodsReceiptCreateBulk{err: fmt.Errorf("calling to GoodsReceiptClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoodsReceiptCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoodsReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoodsReceipt.
+func (c *GoodsReceiptClient) Update() *GoodsReceiptUpdate {
+	mutation := newGoodsReceiptMutation(c.config, OpUpdate)
+	return &GoodsReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoodsReceiptClient) UpdateOne(_m *GoodsReceipt) *GoodsReceiptUpdateOne {
+	mutation := newGoodsReceiptMutation(c.config, OpUpdateOne, withGoodsReceipt(_m))
+	return &GoodsReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoodsReceiptClient) UpdateOneID(id uuid.UUID) *GoodsReceiptUpdateOne {
+	mutation := newGoodsReceiptMutation(c.config, OpUpdateOne, withGoodsReceiptID(id))
+	return &GoodsReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoodsReceipt.
+func (c *GoodsReceiptClient) Delete() *GoodsReceiptDelete {
+	mutation := newGoodsReceiptMutation(c.config, OpDelete)
+	return &GoodsReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoodsReceiptClient) DeleteOne(_m *GoodsReceipt) *GoodsReceiptDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoodsReceiptClient) DeleteOneID(id uuid.UUID) *GoodsReceiptDeleteOne {
+	builder := c.Delete().Where(goodsreceipt.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoodsReceiptDeleteOne{builder}
+}
+
+// Query returns a query builder for GoodsReceipt.
+func (c *GoodsReceiptClient) Query() *GoodsReceiptQuery {
+	return &GoodsReceiptQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoodsReceipt},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoodsReceipt entity by its id.
+func (c *GoodsReceiptClient) Get(ctx context.Context, id uuid.UUID) (*GoodsReceipt, error) {
+	return c.Query().Where(goodsreceipt.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoodsReceiptClient) GetX(ctx context.Context, id uuid.UUID) *GoodsReceipt {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryLines queries the lines edge of a GoodsReceipt.
+func (c *GoodsReceiptClient) QueryLines(_m *GoodsReceipt) *GoodsReceiptLineQuery {
+	query := (&GoodsReceiptLineClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goodsreceipt.Table, goodsreceipt.FieldID, id),
+			sqlgraph.To(goodsreceiptline.Table, goodsreceiptline.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, goodsreceipt.LinesTable, goodsreceipt.LinesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoodsReceiptClient) Hooks() []Hook {
+	return c.hooks.GoodsReceipt
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoodsReceiptClient) Interceptors() []Interceptor {
+	return c.inters.GoodsReceipt
+}
+
+func (c *GoodsReceiptClient) mutate(ctx context.Context, m *GoodsReceiptMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoodsReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoodsReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoodsReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoodsReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown GoodsReceipt mutation op: %q", m.Op())
+	}
+}
+
+// GoodsReceiptLineClient is a client for the GoodsReceiptLine schema.
+type GoodsReceiptLineClient struct {
+	config
+}
+
+// NewGoodsReceiptLineClient returns a client for the GoodsReceiptLine from the given config.
+func NewGoodsReceiptLineClient(c config) *GoodsReceiptLineClient {
+	return &GoodsReceiptLineClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `goodsreceiptline.Hooks(f(g(h())))`.
+func (c *GoodsReceiptLineClient) Use(hooks ...Hook) {
+	c.hooks.GoodsReceiptLine = append(c.hooks.GoodsReceiptLine, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `goodsreceiptline.Intercept(f(g(h())))`.
+func (c *GoodsReceiptLineClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GoodsReceiptLine = append(c.inters.GoodsReceiptLine, interceptors...)
+}
+
+// Create returns a builder for creating a GoodsReceiptLine entity.
+func (c *GoodsReceiptLineClient) Create() *GoodsReceiptLineCreate {
+	mutation := newGoodsReceiptLineMutation(c.config, OpCreate)
+	return &GoodsReceiptLineCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of GoodsReceiptLine entities.
+func (c *GoodsReceiptLineClient) CreateBulk(builders ...*GoodsReceiptLineCreate) *GoodsReceiptLineCreateBulk {
+	return &GoodsReceiptLineCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GoodsReceiptLineClient) MapCreateBulk(slice any, setFunc func(*GoodsReceiptLineCreate, int)) *GoodsReceiptLineCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GoodsReceiptLineCreateBulk{err: fmt.Errorf("calling to GoodsReceiptLineClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GoodsReceiptLineCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GoodsReceiptLineCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for GoodsReceiptLine.
+func (c *GoodsReceiptLineClient) Update() *GoodsReceiptLineUpdate {
+	mutation := newGoodsReceiptLineMutation(c.config, OpUpdate)
+	return &GoodsReceiptLineUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GoodsReceiptLineClient) UpdateOne(_m *GoodsReceiptLine) *GoodsReceiptLineUpdateOne {
+	mutation := newGoodsReceiptLineMutation(c.config, OpUpdateOne, withGoodsReceiptLine(_m))
+	return &GoodsReceiptLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GoodsReceiptLineClient) UpdateOneID(id uuid.UUID) *GoodsReceiptLineUpdateOne {
+	mutation := newGoodsReceiptLineMutation(c.config, OpUpdateOne, withGoodsReceiptLineID(id))
+	return &GoodsReceiptLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for GoodsReceiptLine.
+func (c *GoodsReceiptLineClient) Delete() *GoodsReceiptLineDelete {
+	mutation := newGoodsReceiptLineMutation(c.config, OpDelete)
+	return &GoodsReceiptLineDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GoodsReceiptLineClient) DeleteOne(_m *GoodsReceiptLine) *GoodsReceiptLineDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GoodsReceiptLineClient) DeleteOneID(id uuid.UUID) *GoodsReceiptLineDeleteOne {
+	builder := c.Delete().Where(goodsreceiptline.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GoodsReceiptLineDeleteOne{builder}
+}
+
+// Query returns a query builder for GoodsReceiptLine.
+func (c *GoodsReceiptLineClient) Query() *GoodsReceiptLineQuery {
+	return &GoodsReceiptLineQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGoodsReceiptLine},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a GoodsReceiptLine entity by its id.
+func (c *GoodsReceiptLineClient) Get(ctx context.Context, id uuid.UUID) (*GoodsReceiptLine, error) {
+	return c.Query().Where(goodsreceiptline.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GoodsReceiptLineClient) GetX(ctx context.Context, id uuid.UUID) *GoodsReceiptLine {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGoodsReceipt queries the goods_receipt edge of a GoodsReceiptLine.
+func (c *GoodsReceiptLineClient) QueryGoodsReceipt(_m *GoodsReceiptLine) *GoodsReceiptQuery {
+	query := (&GoodsReceiptClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(goodsreceiptline.Table, goodsreceiptline.FieldID, id),
+			sqlgraph.To(goodsreceipt.Table, goodsreceipt.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, goodsreceiptline.GoodsReceiptTable, goodsreceiptline.GoodsReceiptColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GoodsReceiptLineClient) Hooks() []Hook {
+	return c.hooks.GoodsReceiptLine
+}
+
+// Interceptors returns the client interceptors.
+func (c *GoodsReceiptLineClient) Interceptors() []Interceptor {
+	return c.inters.GoodsReceiptLine
+}
+
+func (c *GoodsReceiptLineClient) mutate(ctx context.Context, m *GoodsReceiptLineMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GoodsReceiptLineCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GoodsReceiptLineUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GoodsReceiptLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GoodsReceiptLineDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown GoodsReceiptLine mutation op: %q", m.Op())
 	}
 }
 
@@ -10319,31 +10633,31 @@ type (
 		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
 		BundleComponent, Consumption, Contract, ContractOrderLink,
 		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Hook
+		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		InventoryPermission, InventoryRole, InventoryUser, Item, ItemAsset,
+		ItemCategory, ItemPricing, ItemTranslation, ItemVariant, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck,
+		RateLimitConfig, Recipe, RecipeIngredient, Requisition, RequisitionLine,
+		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockTransfer, StockTransferLine, Supplier, SupplierPerformance, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		Asset, AssetAudit, AssetCategory, AssetDisposal, AssetInsurance,
 		AssetMaintenance, AssetReservation, AssetTransfer, BatchRawMaterial, Bundle,
 		BundleComponent, Consumption, Contract, ContractOrderLink,
 		CustomFieldDefinition, CustomFieldValue, DocumentSequence, FoodCostVariance,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing, ItemTranslation,
-		ItemVariant, ModifierGroup, ModifierOption, OutboxEvent, PricingTier,
-		ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Interceptor
+		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		InventoryPermission, InventoryRole, InventoryUser, Item, ItemAsset,
+		ItemCategory, ItemPricing, ItemTranslation, ItemVariant, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck,
+		RateLimitConfig, Recipe, RecipeIngredient, Requisition, RequisitionLine,
+		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockTransfer, StockTransferLine, Supplier, SupplierPerformance, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )
