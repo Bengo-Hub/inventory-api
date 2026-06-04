@@ -1,7 +1,16 @@
 # Sprint: Absorb ERP Procurement + Manufacturing — inventory-api
 
 **Created:** 2026-06-03
-**Status:** 🚧 In progress — **data model + Atlas migration complete (2026-06-03)**; handlers/routes/events/RBAC/swagger + inventory-ui pending before ERP-side deletion.
+**Status:** ✅ Feature-complete (2026-06-04, inventory-api + inventory-ui). Procurement, manufacturing and fixed-assets shipped end-to-end. Remaining: domain RBAC codes, depreciation close-loop (book-value sync + scheduler), RFQ/approval-matrix, fractional-qty precision.
+
+## Shipped 2026-06-04 (parity hardening + frontend)
+
+Backend (inventory-api, `main`):
+- **Procurement:** requisition request-type persistence (inventory/external/service line fields); `ConvertRequisitionToPO` branches by type (service → ServiceDelivery); **GoodsReceipt/GoodsReceiptLine** entities + migration; GRN create/post (warehouse-scoped stock-in of accepted qty, `PurchaseOrderLine.quantity_received` bump, PO status recompute, enriched `purchase_order.received` on full receipt); **3-way match** endpoint; **supplier-performance auto-compute** (spend/on-time/defect/lead-time from PO+GRN).
+- **Manufacturing:** `Recipe.requires_qc`, `ProductionBatch.scrap_quantity`+`unit_cost`, `BatchRawMaterial.cost` (migration); material-availability pre-check + `/manufacturing/material-check`; per-material cost on start; cost rollup + QC gate + scrap on complete; dashboard enriched (completion rate, scrap, recent batches).
+- **Assets:** audit starts in-progress + `CompleteAssetAudit`; transfer **approval gate** (`ApproveAssetTransfer`); `asset.item_id` link; `depreciation_due` event carries `period`+`currency`; `asset-dashboard` endpoint.
+
+Frontend (inventory-ui, `master`): requisition type-gating form; asset detail + lifecycle UIs (maintenance/transfers w/ approve/disposals/insurance/audits) + categories page + asset analytics; returns + contracts UIs; procurement analytics + supplier scorecard (+recompute); GoodsReceipts list + receive dialog + post + 3-way-match panel; manufacturing recipe selector + material banner + batch detail + QC UI + analytics. Sidebar entries for all. Detergent demo data seeded for `codevertex-demo`.
 
 ### Implementation status 2026-06-03 (local commits, unpushed)
 **Backends implemented + `go build`/`vet` clean:**
@@ -13,12 +22,15 @@
 
 **Still pending (not production-complete):**
 - [ ] Domain-specific RBAC permissions (currently reuse generic `items.*`).
-- [ ] GRN (distinct goods-receipt + 3-way match) and RFQ/sourcing.
+- [x] GRN (distinct goods-receipt + 3-way match) — shipped 2026-06-04. RFQ/sourcing still pending.
+- [ ] RFQ + approval-matrix + PO amendment.
 - [ ] OpenAPI annotations for the new endpoints (swag regen runs but new routes are undocumented until annotated).
 - [ ] Handler/integration tests (INV-ERP-17).
 - [ ] erd.md/integrations.md/architecture.md detail for the new entities.
-- [ ] inventory-ui pages (procurement/manufacturing/assets).
-- [ ] treasury: consume `inventory.asset.depreciation_due` → FixedAssetDepreciation + GL; emit back a snapshot event for inventory to update accumulated_depreciation/book_value.
+- [x] inventory-ui pages (procurement/manufacturing/assets) — shipped 2026-06-04.
+- [x] treasury: consume `inventory.asset.depreciation_due` → FixedAssetDepreciation + GL — already implemented (treasury `internal/modules/assets`). Inventory now sends `period`+`currency`.
+- [ ] Depreciation **close-loop**: treasury emit `treasury.asset.depreciation_posted` → inventory consumer updates `accumulated_depreciation`/`book_value`; + monthly scheduled `depreciation_due` run.
+- [ ] Fractional-qty precision: `InventoryBalance` on_hand/available are `int` → fractional chemical consumption truncates; switch to float or consume INGREDIENT in base units (cross-service: POS/ordering read balances).
 
 ### Progress 2026-06-03 (commit af925ac, local)
 - ✅ Ent schemas added (compile + `go build` clean): `requisition`(+line), `contract`(+order_link), `purchase_return`(+line), `supplier_performance`, `service_delivery` (Procurement); `production_batch`, `batch_raw_material`, `quality_check` (Manufacturing).
