@@ -162,6 +162,34 @@ func (_c *ProductionBatchCreate) SetNillableOverheadCost(v *float64) *Production
 	return _c
 }
 
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (_c *ProductionBatchCreate) SetScrapQuantity(v float64) *ProductionBatchCreate {
+	_c.mutation.SetScrapQuantity(v)
+	return _c
+}
+
+// SetNillableScrapQuantity sets the "scrap_quantity" field if the given value is not nil.
+func (_c *ProductionBatchCreate) SetNillableScrapQuantity(v *float64) *ProductionBatchCreate {
+	if v != nil {
+		_c.SetScrapQuantity(*v)
+	}
+	return _c
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (_c *ProductionBatchCreate) SetUnitCost(v float64) *ProductionBatchCreate {
+	_c.mutation.SetUnitCost(v)
+	return _c
+}
+
+// SetNillableUnitCost sets the "unit_cost" field if the given value is not nil.
+func (_c *ProductionBatchCreate) SetNillableUnitCost(v *float64) *ProductionBatchCreate {
+	if v != nil {
+		_c.SetUnitCost(*v)
+	}
+	return _c
+}
+
 // SetNotes sets the "notes" field.
 func (_c *ProductionBatchCreate) SetNotes(v string) *ProductionBatchCreate {
 	_c.mutation.SetNotes(v)
@@ -327,6 +355,10 @@ func (_c *ProductionBatchCreate) defaults() {
 		v := productionbatch.DefaultOverheadCost
 		_c.mutation.SetOverheadCost(v)
 	}
+	if _, ok := _c.mutation.ScrapQuantity(); !ok {
+		v := productionbatch.DefaultScrapQuantity
+		_c.mutation.SetScrapQuantity(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := productionbatch.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -376,6 +408,9 @@ func (_c *ProductionBatchCreate) check() error {
 	}
 	if _, ok := _c.mutation.OverheadCost(); !ok {
 		return &ValidationError{Name: "overhead_cost", err: errors.New(`ent: missing required field "ProductionBatch.overhead_cost"`)}
+	}
+	if _, ok := _c.mutation.ScrapQuantity(); !ok {
+		return &ValidationError{Name: "scrap_quantity", err: errors.New(`ent: missing required field "ProductionBatch.scrap_quantity"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "ProductionBatch.created_at"`)}
@@ -466,6 +501,14 @@ func (_c *ProductionBatchCreate) createSpec() (*ProductionBatch, *sqlgraph.Creat
 	if value, ok := _c.mutation.OverheadCost(); ok {
 		_spec.SetField(productionbatch.FieldOverheadCost, field.TypeFloat64, value)
 		_node.OverheadCost = value
+	}
+	if value, ok := _c.mutation.ScrapQuantity(); ok {
+		_spec.SetField(productionbatch.FieldScrapQuantity, field.TypeFloat64, value)
+		_node.ScrapQuantity = value
+	}
+	if value, ok := _c.mutation.UnitCost(); ok {
+		_spec.SetField(productionbatch.FieldUnitCost, field.TypeFloat64, value)
+		_node.UnitCost = &value
 	}
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(productionbatch.FieldNotes, field.TypeString, value)
@@ -760,6 +803,48 @@ func (u *ProductionBatchUpsert) UpdateOverheadCost() *ProductionBatchUpsert {
 // AddOverheadCost adds v to the "overhead_cost" field.
 func (u *ProductionBatchUpsert) AddOverheadCost(v float64) *ProductionBatchUpsert {
 	u.Add(productionbatch.FieldOverheadCost, v)
+	return u
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsert) SetScrapQuantity(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldScrapQuantity, v)
+	return u
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateScrapQuantity() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldScrapQuantity)
+	return u
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsert) AddScrapQuantity(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldScrapQuantity, v)
+	return u
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsert) SetUnitCost(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldUnitCost, v)
+	return u
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateUnitCost() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldUnitCost)
+	return u
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsert) AddUnitCost(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldUnitCost, v)
+	return u
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsert) ClearUnitCost() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldUnitCost)
 	return u
 }
 
@@ -1101,6 +1186,55 @@ func (u *ProductionBatchUpsertOne) AddOverheadCost(v float64) *ProductionBatchUp
 func (u *ProductionBatchUpsertOne) UpdateOverheadCost() *ProductionBatchUpsertOne {
 	return u.Update(func(s *ProductionBatchUpsert) {
 		s.UpdateOverheadCost()
+	})
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsertOne) SetScrapQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScrapQuantity(v)
+	})
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsertOne) AddScrapQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddScrapQuantity(v)
+	})
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateScrapQuantity() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScrapQuantity()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) SetUnitCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) AddUnitCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateUnitCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) ClearUnitCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearUnitCost()
 	})
 }
 
@@ -1620,6 +1754,55 @@ func (u *ProductionBatchUpsertBulk) AddOverheadCost(v float64) *ProductionBatchU
 func (u *ProductionBatchUpsertBulk) UpdateOverheadCost() *ProductionBatchUpsertBulk {
 	return u.Update(func(s *ProductionBatchUpsert) {
 		s.UpdateOverheadCost()
+	})
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsertBulk) SetScrapQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScrapQuantity(v)
+	})
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsertBulk) AddScrapQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddScrapQuantity(v)
+	})
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateScrapQuantity() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScrapQuantity()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) SetUnitCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) AddUnitCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateUnitCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) ClearUnitCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearUnitCost()
 	})
 }
 

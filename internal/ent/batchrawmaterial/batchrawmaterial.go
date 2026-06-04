@@ -25,6 +25,8 @@ const (
 	FieldUnitID = "unit_id"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldCost holds the string denoting the cost field in the database.
+	FieldCost = "cost"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeProductionBatch holds the string denoting the production_batch edge name in mutations.
@@ -48,6 +50,7 @@ var Columns = []string{
 	FieldItemID,
 	FieldUnitID,
 	FieldQuantity,
+	FieldCost,
 	FieldCreatedAt,
 }
 
@@ -64,6 +67,8 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity float64
+	// DefaultCost holds the default value on creation for the "cost" field.
+	DefaultCost float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -101,6 +106,11 @@ func ByUnitID(opts ...sql.OrderTermOption) OrderOption {
 // ByQuantity orders the results by the quantity field.
 func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByCost orders the results by the cost field.
+func ByCost(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCost, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

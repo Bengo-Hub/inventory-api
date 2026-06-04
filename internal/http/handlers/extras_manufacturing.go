@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,12 +15,91 @@ import (
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entbrm "github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
+	entib "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entpb "github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	entqc "github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	entrecipe "github.com/bengobox/inventory-service/internal/ent/recipe"
 	entri "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
+
+// matShortage describes a raw-material whose available stock is below the batch's
+// required quantity (used by the material-availability pre-check).
+type matShortage struct {
+	ItemID    uuid.UUID `json:"item_id"`
+	ItemSku   string    `json:"item_sku"`
+	Required  float64   `json:"required"`
+	Available int       `json:"available"`
+}
+
+// computeMaterialShortages explodes a recipe to the planned quantity and returns
+// any ingredients whose tenant-wide available stock is below what the batch needs.
+func (h *InventoryExtrasHandler) computeMaterialShortages(ctx context.Context, tenantID, recipeID uuid.UUID, plannedQty float64) ([]matShortage, error) {
+	recipe, err := h.orm.Recipe.Query().Where(entrecipe.ID(recipeID), entrecipe.TenantID(tenantID)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ratio := 1.0
+	if recipe.OutputQty > 0 {
+		ratio = plannedQty / recipe.OutputQty
+	}
+	ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(ctx)
+	shortages := make([]matShortage, 0)
+	for _, ing := range ings {
+		required := ing.Quantity * ratio
+		var agg []struct {
+			Sum int `json:"sum"`
+		}
+		_ = h.orm.InventoryBalance.Query().
+			Where(entib.TenantID(tenantID), entib.ItemID(ing.ItemID)).
+			Aggregate(ent.Sum(entib.FieldAvailable)).Scan(ctx, &agg)
+		avail := 0
+		if len(agg) > 0 {
+			avail = agg[0].Sum
+		}
+		if float64(avail) < required {
+			shortages = append(shortages, matShortage{ItemID: ing.ItemID, ItemSku: ing.ItemSku, Required: required, Available: avail})
+		}
+	}
+	return shortages, nil
+}
+
+// CheckMaterialAvailability previews whether a recipe can be produced at a given
+// quantity, returning any raw-material shortages (powers the UI shortage banner
+// before a batch is started).
+//
+//	@Summary      Preview raw-material availability for a recipe + quantity
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        recipe_id  query     string  true   "Recipe ID"
+//	@Param        quantity   query     number  false  "Planned output quantity"
+//	@Success      200        {object}  map[string]interface{}
+//	@Failure      400        {object}  map[string]string
+//	@Failure      404        {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/manufacturing/material-check [get]
+func (h *InventoryExtrasHandler) CheckMaterialAvailability(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	recipeID, err := uuid.Parse(r.URL.Query().Get("recipe_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "recipe_id is required")
+		return
+	}
+	qty, _ := strconv.ParseFloat(r.URL.Query().Get("quantity"), 64)
+	if qty <= 0 {
+		qty = 1
+	}
+	shortages, err := h.computeMaterialShortages(r.Context(), tenantID, recipeID, qty)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Recipe not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": len(shortages) == 0, "shortages": shortages})
+}
 
 // ─── Manufacturing: production batches + QC (migrated from ERP manufacturing) ──
 // BOM = Recipe; raw-material consumption + finished-goods receipt are applied by
@@ -42,6 +123,7 @@ type batchRawMaterialDTO struct {
 	ItemID   uuid.UUID  `json:"item_id"`
 	UnitID   *uuid.UUID `json:"unit_id"`
 	Quantity float64    `json:"quantity"`
+	Cost     float64    `json:"cost"`
 }
 
 type qualityCheckDTO struct {
@@ -61,6 +143,8 @@ type productionBatchDTO struct {
 	ActualQuantity  *float64              `json:"actual_quantity"`
 	LaborCost       float64               `json:"labor_cost"`
 	OverheadCost    float64               `json:"overhead_cost"`
+	ScrapQuantity   float64               `json:"scrap_quantity"`
+	UnitCost        *float64              `json:"unit_cost"`
 	OutletID        *uuid.UUID            `json:"outlet_id"`
 	ScheduledDate   time.Time             `json:"scheduled_date"`
 	StartDate       *time.Time            `json:"start_date"`
@@ -75,12 +159,12 @@ func productionBatchToDTO(b *ent.ProductionBatch, mats []*ent.BatchRawMaterial, 
 	dto := productionBatchDTO{
 		ID: b.ID, BatchNumber: b.BatchNumber, RecipeID: b.RecipeID, Status: string(b.Status),
 		PlannedQuantity: b.PlannedQuantity, ActualQuantity: b.ActualQuantity,
-		LaborCost: b.LaborCost, OverheadCost: b.OverheadCost, OutletID: b.OutletID,
+		LaborCost: b.LaborCost, OverheadCost: b.OverheadCost, ScrapQuantity: b.ScrapQuantity, UnitCost: b.UnitCost, OutletID: b.OutletID,
 		ScheduledDate: b.ScheduledDate, StartDate: b.StartDate, EndDate: b.EndDate,
 		Notes: b.Notes, CreatedAt: b.CreatedAt,
 	}
 	for _, m := range mats {
-		dto.RawMaterials = append(dto.RawMaterials, batchRawMaterialDTO{ID: m.ID, ItemID: m.ItemID, UnitID: m.UnitID, Quantity: m.Quantity})
+		dto.RawMaterials = append(dto.RawMaterials, batchRawMaterialDTO{ID: m.ID, ItemID: m.ItemID, UnitID: m.UnitID, Quantity: m.Quantity, Cost: m.Cost})
 	}
 	for _, qc := range qcs {
 		dto.QualityChecks = append(dto.QualityChecks, qualityCheckDTO{ID: qc.ID, InspectorID: qc.InspectorID, Result: string(qc.Result), Notes: qc.Notes, CheckDate: qc.CheckDate})
@@ -90,6 +174,7 @@ func productionBatchToDTO(b *ent.ProductionBatch, mats []*ent.BatchRawMaterial, 
 
 func (h *InventoryExtrasHandler) registerManufacturingRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
 	r.Get("/inventory/production-batches", h.ListProductionBatches)
+	r.Get("/inventory/manufacturing/material-check", h.CheckMaterialAvailability)
 	r.Get("/inventory/production-batches/{batchID}", h.GetProductionBatch)
 	r.With(perm(add)).Post("/inventory/production-batches", h.CreateProductionBatch)
 	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/start", h.StartProductionBatch)
@@ -247,6 +332,16 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 		writeError(w, http.StatusBadRequest, "RECIPE_NOT_FOUND", "Batch recipe not found")
 		return
 	}
+	// Material-availability pre-check (skip with ?force=true). A detergent batch
+	// must not start if a chemical raw material is short.
+	if r.URL.Query().Get("force") != "true" {
+		if shortages, e := h.computeMaterialShortages(r.Context(), tenantID, b.RecipeID, b.PlannedQuantity); e == nil && len(shortages) > 0 {
+			writeJSON(w, http.StatusConflict, map[string]any{
+				"error": "Insufficient raw materials to start this batch", "code": "INSUFFICIENT_MATERIALS", "shortages": shortages,
+			})
+			return
+		}
+	}
 	ratio := 1.0
 	if recipe.OutputQty > 0 {
 		ratio = b.PlannedQuantity / recipe.OutputQty
@@ -256,8 +351,13 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 	consumeItems := make([]stock.ConsumptionItem, 0, len(ings))
 	for _, ing := range ings {
 		qty := ing.Quantity * ratio
+		// Material cost = item.cost_price * qty (rolled into unit cost at completion).
+		matCost := 0.0
+		if it, e := h.orm.Item.Get(r.Context(), ing.ItemID); e == nil && it.CostPrice != nil {
+			matCost = *it.CostPrice * qty
+		}
 		mc := h.orm.BatchRawMaterial.Create().
-			SetTenantID(tenantID).SetProductionBatchID(b.ID).SetItemID(ing.ItemID).SetQuantity(qty)
+			SetTenantID(tenantID).SetProductionBatchID(b.ID).SetItemID(ing.ItemID).SetQuantity(qty).SetCost(matCost)
 		if ing.UnitID != nil {
 			mc = mc.SetUnitID(*ing.UnitID)
 		}
@@ -320,27 +420,43 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 	}
 	var body struct {
 		ActualQuantity float64 `json:"actual_quantity"`
+		ScrapQuantity  float64 `json:"scrap_quantity"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ActualQuantity <= 0 {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "A positive actual_quantity is required")
 		return
 	}
-	totalCost := b.LaborCost + b.OverheadCost
+	recipe, _ := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID)).Only(r.Context())
+	// QC gate: recipes flagged requires_qc need a passing quality check first.
+	if recipe != nil && recipe.RequiresQc {
+		passed, _ := h.orm.QualityCheck.Query().Where(entqc.ProductionBatchID(b.ID), entqc.ResultEQ(entqc.ResultPass)).Count(r.Context())
+		if passed == 0 {
+			writeError(w, http.StatusBadRequest, "QC_REQUIRED", "This recipe requires a passing quality check before completion")
+			return
+		}
+	}
+	// Batch cost = raw materials (set at start) + labor + overhead → unit cost over actual output.
+	mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(b.ID)).All(r.Context())
+	materialCost := 0.0
+	for _, m := range mats {
+		materialCost += m.Cost
+	}
+	totalCost := materialCost + b.LaborCost + b.OverheadCost
 	unitCost := 0.0
 	if body.ActualQuantity > 0 {
 		unitCost = totalCost / body.ActualQuantity
 	}
 	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).
-		SetStatus(entpb.StatusCompleted).SetActualQuantity(body.ActualQuantity).SetEndDate(time.Now().UTC()).
+		SetStatus(entpb.StatusCompleted).SetActualQuantity(body.ActualQuantity).
+		SetScrapQuantity(body.ScrapQuantity).SetUnitCost(unitCost).SetEndDate(time.Now().UTC()).
 		Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete batch")
 		return
 	}
-	recipe, _ := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID)).Only(r.Context())
 	payload := map[string]any{
-		"id": updated.ID, "batch_number": updated.BatchNumber, "actual_quantity": body.ActualQuantity,
-		"labor_cost": b.LaborCost, "overhead_cost": b.OverheadCost, "total_cost": totalCost, "unit_cost": unitCost,
+		"id": updated.ID, "batch_number": updated.BatchNumber, "actual_quantity": body.ActualQuantity, "scrap_quantity": body.ScrapQuantity,
+		"material_cost": materialCost, "labor_cost": b.LaborCost, "overhead_cost": b.OverheadCost, "total_cost": totalCost, "unit_cost": unitCost,
 	}
 	if recipe != nil && recipe.ItemID != nil {
 		payload["finished_item_id"] = *recipe.ItemID
@@ -419,7 +535,7 @@ func (h *InventoryExtrasHandler) ListBatchMaterials(w http.ResponseWriter, r *ht
 	mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(b.ID)).All(r.Context())
 	out := make([]batchRawMaterialDTO, len(mats))
 	for i, m := range mats {
-		out[i] = batchRawMaterialDTO{ID: m.ID, ItemID: m.ItemID, UnitID: m.UnitID, Quantity: m.Quantity}
+		out[i] = batchRawMaterialDTO{ID: m.ID, ItemID: m.ItemID, UnitID: m.UnitID, Quantity: m.Quantity, Cost: m.Cost}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

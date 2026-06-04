@@ -29,6 +29,8 @@ type BatchRawMaterial struct {
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Quantity holds the value of the "quantity" field.
 	Quantity float64 `json:"quantity,omitempty"`
+	// Cost of this material in the batch = item.cost_price * quantity
+	Cost float64 `json:"cost,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -64,7 +66,7 @@ func (*BatchRawMaterial) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case batchrawmaterial.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case batchrawmaterial.FieldQuantity:
+		case batchrawmaterial.FieldQuantity, batchrawmaterial.FieldCost:
 			values[i] = new(sql.NullFloat64)
 		case batchrawmaterial.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -121,6 +123,12 @@ func (_m *BatchRawMaterial) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
 				_m.Quantity = value.Float64
+			}
+		case batchrawmaterial.FieldCost:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost", values[i])
+			} else if value.Valid {
+				_m.Cost = value.Float64
 			}
 		case batchrawmaterial.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -185,6 +193,9 @@ func (_m *BatchRawMaterial) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("quantity=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Quantity))
+	builder.WriteString(", ")
+	builder.WriteString("cost=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Cost))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

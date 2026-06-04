@@ -40,6 +40,10 @@ const (
 	FieldLaborCost = "labor_cost"
 	// FieldOverheadCost holds the string denoting the overhead_cost field in the database.
 	FieldOverheadCost = "overhead_cost"
+	// FieldScrapQuantity holds the string denoting the scrap_quantity field in the database.
+	FieldScrapQuantity = "scrap_quantity"
+	// FieldUnitCost holds the string denoting the unit_cost field in the database.
+	FieldUnitCost = "unit_cost"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
 	// FieldCreatedBy holds the string denoting the created_by field in the database.
@@ -87,6 +91,8 @@ var Columns = []string{
 	FieldActualQuantity,
 	FieldLaborCost,
 	FieldOverheadCost,
+	FieldScrapQuantity,
+	FieldUnitCost,
 	FieldNotes,
 	FieldCreatedBy,
 	FieldSupervisorID,
@@ -113,6 +119,8 @@ var (
 	DefaultLaborCost float64
 	// DefaultOverheadCost holds the default value on creation for the "overhead_cost" field.
 	DefaultOverheadCost float64
+	// DefaultScrapQuantity holds the default value on creation for the "scrap_quantity" field.
+	DefaultScrapQuantity float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -218,6 +226,16 @@ func ByLaborCost(opts ...sql.OrderTermOption) OrderOption {
 // ByOverheadCost orders the results by the overhead_cost field.
 func ByOverheadCost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOverheadCost, opts...).ToFunc()
+}
+
+// ByScrapQuantity orders the results by the scrap_quantity field.
+func ByScrapQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldScrapQuantity, opts...).ToFunc()
+}
+
+// ByUnitCost orders the results by the unit_cost field.
+func ByUnitCost(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitCost, opts...).ToFunc()
 }
 
 // ByNotes orders the results by the notes field.

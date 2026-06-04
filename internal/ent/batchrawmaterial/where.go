@@ -81,6 +81,11 @@ func Quantity(v float64) predicate.BatchRawMaterial {
 	return predicate.BatchRawMaterial(sql.FieldEQ(FieldQuantity, v))
 }
 
+// Cost applies equality check predicate on the "cost" field. It's identical to CostEQ.
+func Cost(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldEQ(FieldCost, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.BatchRawMaterial {
 	return predicate.BatchRawMaterial(sql.FieldEQ(FieldCreatedAt, v))
@@ -274,6 +279,46 @@ func QuantityLT(v float64) predicate.BatchRawMaterial {
 // QuantityLTE applies the LTE predicate on the "quantity" field.
 func QuantityLTE(v float64) predicate.BatchRawMaterial {
 	return predicate.BatchRawMaterial(sql.FieldLTE(FieldQuantity, v))
+}
+
+// CostEQ applies the EQ predicate on the "cost" field.
+func CostEQ(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldEQ(FieldCost, v))
+}
+
+// CostNEQ applies the NEQ predicate on the "cost" field.
+func CostNEQ(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldNEQ(FieldCost, v))
+}
+
+// CostIn applies the In predicate on the "cost" field.
+func CostIn(vs ...float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldIn(FieldCost, vs...))
+}
+
+// CostNotIn applies the NotIn predicate on the "cost" field.
+func CostNotIn(vs ...float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldNotIn(FieldCost, vs...))
+}
+
+// CostGT applies the GT predicate on the "cost" field.
+func CostGT(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldGT(FieldCost, v))
+}
+
+// CostGTE applies the GTE predicate on the "cost" field.
+func CostGTE(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldGTE(FieldCost, v))
+}
+
+// CostLT applies the LT predicate on the "cost" field.
+func CostLT(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldLT(FieldCost, v))
+}
+
+// CostLTE applies the LTE predicate on the "cost" field.
+func CostLTE(v float64) predicate.BatchRawMaterial {
+	return predicate.BatchRawMaterial(sql.FieldLTE(FieldCost, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

@@ -86,6 +86,20 @@ func (_c *RecipeCreate) SetNillableIsActive(v *bool) *RecipeCreate {
 	return _c
 }
 
+// SetRequiresQc sets the "requires_qc" field.
+func (_c *RecipeCreate) SetRequiresQc(v bool) *RecipeCreate {
+	_c.mutation.SetRequiresQc(v)
+	return _c
+}
+
+// SetNillableRequiresQc sets the "requires_qc" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableRequiresQc(v *bool) *RecipeCreate {
+	if v != nil {
+		_c.SetRequiresQc(*v)
+	}
+	return _c
+}
+
 // SetTotalCost sets the "total_cost" field.
 func (_c *RecipeCreate) SetTotalCost(v float64) *RecipeCreate {
 	_c.mutation.SetTotalCost(v)
@@ -342,6 +356,10 @@ func (_c *RecipeCreate) defaults() {
 		v := recipe.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.RequiresQc(); !ok {
+		v := recipe.DefaultRequiresQc
+		_c.mutation.SetRequiresQc(v)
+	}
 	if _, ok := _c.mutation.Metadata(); !ok {
 		v := recipe.DefaultMetadata
 		_c.mutation.SetMetadata(v)
@@ -399,6 +417,9 @@ func (_c *RecipeCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Recipe.is_active"`)}
+	}
+	if _, ok := _c.mutation.RequiresQc(); !ok {
+		return &ValidationError{Name: "requires_qc", err: errors.New(`ent: missing required field "Recipe.requires_qc"`)}
 	}
 	if v, ok := _c.mutation.Status(); ok {
 		if err := recipe.StatusValidator(v); err != nil {
@@ -470,6 +491,10 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
+	}
+	if value, ok := _c.mutation.RequiresQc(); ok {
+		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)
+		_node.RequiresQc = value
 	}
 	if value, ok := _c.mutation.TotalCost(); ok {
 		_spec.SetField(recipe.FieldTotalCost, field.TypeFloat64, value)
@@ -691,6 +716,18 @@ func (u *RecipeUpsert) SetIsActive(v bool) *RecipeUpsert {
 // UpdateIsActive sets the "is_active" field to the value that was provided on create.
 func (u *RecipeUpsert) UpdateIsActive() *RecipeUpsert {
 	u.SetExcluded(recipe.FieldIsActive)
+	return u
+}
+
+// SetRequiresQc sets the "requires_qc" field.
+func (u *RecipeUpsert) SetRequiresQc(v bool) *RecipeUpsert {
+	u.Set(recipe.FieldRequiresQc, v)
+	return u
+}
+
+// UpdateRequiresQc sets the "requires_qc" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateRequiresQc() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldRequiresQc)
 	return u
 }
 
@@ -1067,6 +1104,20 @@ func (u *RecipeUpsertOne) SetIsActive(v bool) *RecipeUpsertOne {
 func (u *RecipeUpsertOne) UpdateIsActive() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetRequiresQc sets the "requires_qc" field.
+func (u *RecipeUpsertOne) SetRequiresQc(v bool) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetRequiresQc(v)
+	})
+}
+
+// UpdateRequiresQc sets the "requires_qc" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateRequiresQc() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateRequiresQc()
 	})
 }
 
@@ -1649,6 +1700,20 @@ func (u *RecipeUpsertBulk) SetIsActive(v bool) *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) UpdateIsActive() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetRequiresQc sets the "requires_qc" field.
+func (u *RecipeUpsertBulk) SetRequiresQc(v bool) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetRequiresQc(v)
+	})
+}
+
+// UpdateRequiresQc sets the "requires_qc" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateRequiresQc() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateRequiresQc()
 	})
 }
 

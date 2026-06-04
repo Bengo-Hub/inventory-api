@@ -10213,6 +10213,8 @@ type BatchRawMaterialMutation struct {
 	unit_id                 *uuid.UUID
 	quantity                *float64
 	addquantity             *float64
+	cost                    *float64
+	addcost                 *float64
 	created_at              *time.Time
 	clearedFields           map[string]struct{}
 	production_batch        *uuid.UUID
@@ -10539,6 +10541,62 @@ func (m *BatchRawMaterialMutation) ResetQuantity() {
 	m.addquantity = nil
 }
 
+// SetCost sets the "cost" field.
+func (m *BatchRawMaterialMutation) SetCost(f float64) {
+	m.cost = &f
+	m.addcost = nil
+}
+
+// Cost returns the value of the "cost" field in the mutation.
+func (m *BatchRawMaterialMutation) Cost() (r float64, exists bool) {
+	v := m.cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCost returns the old "cost" field's value of the BatchRawMaterial entity.
+// If the BatchRawMaterial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BatchRawMaterialMutation) OldCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCost: %w", err)
+	}
+	return oldValue.Cost, nil
+}
+
+// AddCost adds f to the "cost" field.
+func (m *BatchRawMaterialMutation) AddCost(f float64) {
+	if m.addcost != nil {
+		*m.addcost += f
+	} else {
+		m.addcost = &f
+	}
+}
+
+// AddedCost returns the value that was added to the "cost" field in this mutation.
+func (m *BatchRawMaterialMutation) AddedCost() (r float64, exists bool) {
+	v := m.addcost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCost resets all changes to the "cost" field.
+func (m *BatchRawMaterialMutation) ResetCost() {
+	m.cost = nil
+	m.addcost = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *BatchRawMaterialMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -10636,7 +10694,7 @@ func (m *BatchRawMaterialMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BatchRawMaterialMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.tenant_id != nil {
 		fields = append(fields, batchrawmaterial.FieldTenantID)
 	}
@@ -10651,6 +10709,9 @@ func (m *BatchRawMaterialMutation) Fields() []string {
 	}
 	if m.quantity != nil {
 		fields = append(fields, batchrawmaterial.FieldQuantity)
+	}
+	if m.cost != nil {
+		fields = append(fields, batchrawmaterial.FieldCost)
 	}
 	if m.created_at != nil {
 		fields = append(fields, batchrawmaterial.FieldCreatedAt)
@@ -10673,6 +10734,8 @@ func (m *BatchRawMaterialMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitID()
 	case batchrawmaterial.FieldQuantity:
 		return m.Quantity()
+	case batchrawmaterial.FieldCost:
+		return m.Cost()
 	case batchrawmaterial.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -10694,6 +10757,8 @@ func (m *BatchRawMaterialMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUnitID(ctx)
 	case batchrawmaterial.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case batchrawmaterial.FieldCost:
+		return m.OldCost(ctx)
 	case batchrawmaterial.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -10740,6 +10805,13 @@ func (m *BatchRawMaterialMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetQuantity(v)
 		return nil
+	case batchrawmaterial.FieldCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCost(v)
+		return nil
 	case batchrawmaterial.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -10758,6 +10830,9 @@ func (m *BatchRawMaterialMutation) AddedFields() []string {
 	if m.addquantity != nil {
 		fields = append(fields, batchrawmaterial.FieldQuantity)
 	}
+	if m.addcost != nil {
+		fields = append(fields, batchrawmaterial.FieldCost)
+	}
 	return fields
 }
 
@@ -10768,6 +10843,8 @@ func (m *BatchRawMaterialMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case batchrawmaterial.FieldQuantity:
 		return m.AddedQuantity()
+	case batchrawmaterial.FieldCost:
+		return m.AddedCost()
 	}
 	return nil, false
 }
@@ -10783,6 +10860,13 @@ func (m *BatchRawMaterialMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantity(v)
+		return nil
+	case batchrawmaterial.FieldCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCost(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BatchRawMaterial numeric field %s", name)
@@ -10834,6 +10918,9 @@ func (m *BatchRawMaterialMutation) ResetField(name string) error {
 		return nil
 	case batchrawmaterial.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case batchrawmaterial.FieldCost:
+		m.ResetCost()
 		return nil
 	case batchrawmaterial.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -37832,6 +37919,10 @@ type ProductionBatchMutation struct {
 	addlabor_cost         *float64
 	overhead_cost         *float64
 	addoverhead_cost      *float64
+	scrap_quantity        *float64
+	addscrap_quantity     *float64
+	unit_cost             *float64
+	addunit_cost          *float64
 	notes                 *string
 	created_by            *uuid.UUID
 	supervisor_id         *uuid.UUID
@@ -38518,6 +38609,132 @@ func (m *ProductionBatchMutation) ResetOverheadCost() {
 	m.addoverhead_cost = nil
 }
 
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (m *ProductionBatchMutation) SetScrapQuantity(f float64) {
+	m.scrap_quantity = &f
+	m.addscrap_quantity = nil
+}
+
+// ScrapQuantity returns the value of the "scrap_quantity" field in the mutation.
+func (m *ProductionBatchMutation) ScrapQuantity() (r float64, exists bool) {
+	v := m.scrap_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScrapQuantity returns the old "scrap_quantity" field's value of the ProductionBatch entity.
+// If the ProductionBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductionBatchMutation) OldScrapQuantity(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScrapQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScrapQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScrapQuantity: %w", err)
+	}
+	return oldValue.ScrapQuantity, nil
+}
+
+// AddScrapQuantity adds f to the "scrap_quantity" field.
+func (m *ProductionBatchMutation) AddScrapQuantity(f float64) {
+	if m.addscrap_quantity != nil {
+		*m.addscrap_quantity += f
+	} else {
+		m.addscrap_quantity = &f
+	}
+}
+
+// AddedScrapQuantity returns the value that was added to the "scrap_quantity" field in this mutation.
+func (m *ProductionBatchMutation) AddedScrapQuantity() (r float64, exists bool) {
+	v := m.addscrap_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetScrapQuantity resets all changes to the "scrap_quantity" field.
+func (m *ProductionBatchMutation) ResetScrapQuantity() {
+	m.scrap_quantity = nil
+	m.addscrap_quantity = nil
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (m *ProductionBatchMutation) SetUnitCost(f float64) {
+	m.unit_cost = &f
+	m.addunit_cost = nil
+}
+
+// UnitCost returns the value of the "unit_cost" field in the mutation.
+func (m *ProductionBatchMutation) UnitCost() (r float64, exists bool) {
+	v := m.unit_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitCost returns the old "unit_cost" field's value of the ProductionBatch entity.
+// If the ProductionBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductionBatchMutation) OldUnitCost(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitCost: %w", err)
+	}
+	return oldValue.UnitCost, nil
+}
+
+// AddUnitCost adds f to the "unit_cost" field.
+func (m *ProductionBatchMutation) AddUnitCost(f float64) {
+	if m.addunit_cost != nil {
+		*m.addunit_cost += f
+	} else {
+		m.addunit_cost = &f
+	}
+}
+
+// AddedUnitCost returns the value that was added to the "unit_cost" field in this mutation.
+func (m *ProductionBatchMutation) AddedUnitCost() (r float64, exists bool) {
+	v := m.addunit_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (m *ProductionBatchMutation) ClearUnitCost() {
+	m.unit_cost = nil
+	m.addunit_cost = nil
+	m.clearedFields[productionbatch.FieldUnitCost] = struct{}{}
+}
+
+// UnitCostCleared returns if the "unit_cost" field was cleared in this mutation.
+func (m *ProductionBatchMutation) UnitCostCleared() bool {
+	_, ok := m.clearedFields[productionbatch.FieldUnitCost]
+	return ok
+}
+
+// ResetUnitCost resets all changes to the "unit_cost" field.
+func (m *ProductionBatchMutation) ResetUnitCost() {
+	m.unit_cost = nil
+	m.addunit_cost = nil
+	delete(m.clearedFields, productionbatch.FieldUnitCost)
+}
+
 // SetNotes sets the "notes" field.
 func (m *ProductionBatchMutation) SetNotes(s string) {
 	m.notes = &s
@@ -38879,7 +39096,7 @@ func (m *ProductionBatchMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductionBatchMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 19)
 	if m.tenant_id != nil {
 		fields = append(fields, productionbatch.FieldTenantID)
 	}
@@ -38915,6 +39132,12 @@ func (m *ProductionBatchMutation) Fields() []string {
 	}
 	if m.overhead_cost != nil {
 		fields = append(fields, productionbatch.FieldOverheadCost)
+	}
+	if m.scrap_quantity != nil {
+		fields = append(fields, productionbatch.FieldScrapQuantity)
+	}
+	if m.unit_cost != nil {
+		fields = append(fields, productionbatch.FieldUnitCost)
 	}
 	if m.notes != nil {
 		fields = append(fields, productionbatch.FieldNotes)
@@ -38963,6 +39186,10 @@ func (m *ProductionBatchMutation) Field(name string) (ent.Value, bool) {
 		return m.LaborCost()
 	case productionbatch.FieldOverheadCost:
 		return m.OverheadCost()
+	case productionbatch.FieldScrapQuantity:
+		return m.ScrapQuantity()
+	case productionbatch.FieldUnitCost:
+		return m.UnitCost()
 	case productionbatch.FieldNotes:
 		return m.Notes()
 	case productionbatch.FieldCreatedBy:
@@ -39006,6 +39233,10 @@ func (m *ProductionBatchMutation) OldField(ctx context.Context, name string) (en
 		return m.OldLaborCost(ctx)
 	case productionbatch.FieldOverheadCost:
 		return m.OldOverheadCost(ctx)
+	case productionbatch.FieldScrapQuantity:
+		return m.OldScrapQuantity(ctx)
+	case productionbatch.FieldUnitCost:
+		return m.OldUnitCost(ctx)
 	case productionbatch.FieldNotes:
 		return m.OldNotes(ctx)
 	case productionbatch.FieldCreatedBy:
@@ -39109,6 +39340,20 @@ func (m *ProductionBatchMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOverheadCost(v)
 		return nil
+	case productionbatch.FieldScrapQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScrapQuantity(v)
+		return nil
+	case productionbatch.FieldUnitCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitCost(v)
+		return nil
 	case productionbatch.FieldNotes:
 		v, ok := value.(string)
 		if !ok {
@@ -39164,6 +39409,12 @@ func (m *ProductionBatchMutation) AddedFields() []string {
 	if m.addoverhead_cost != nil {
 		fields = append(fields, productionbatch.FieldOverheadCost)
 	}
+	if m.addscrap_quantity != nil {
+		fields = append(fields, productionbatch.FieldScrapQuantity)
+	}
+	if m.addunit_cost != nil {
+		fields = append(fields, productionbatch.FieldUnitCost)
+	}
 	return fields
 }
 
@@ -39180,6 +39431,10 @@ func (m *ProductionBatchMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedLaborCost()
 	case productionbatch.FieldOverheadCost:
 		return m.AddedOverheadCost()
+	case productionbatch.FieldScrapQuantity:
+		return m.AddedScrapQuantity()
+	case productionbatch.FieldUnitCost:
+		return m.AddedUnitCost()
 	}
 	return nil, false
 }
@@ -39217,6 +39472,20 @@ func (m *ProductionBatchMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddOverheadCost(v)
 		return nil
+	case productionbatch.FieldScrapQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddScrapQuantity(v)
+		return nil
+	case productionbatch.FieldUnitCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUnitCost(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ProductionBatch numeric field %s", name)
 }
@@ -39236,6 +39505,9 @@ func (m *ProductionBatchMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(productionbatch.FieldActualQuantity) {
 		fields = append(fields, productionbatch.FieldActualQuantity)
+	}
+	if m.FieldCleared(productionbatch.FieldUnitCost) {
+		fields = append(fields, productionbatch.FieldUnitCost)
 	}
 	if m.FieldCleared(productionbatch.FieldNotes) {
 		fields = append(fields, productionbatch.FieldNotes)
@@ -39271,6 +39543,9 @@ func (m *ProductionBatchMutation) ClearField(name string) error {
 		return nil
 	case productionbatch.FieldActualQuantity:
 		m.ClearActualQuantity()
+		return nil
+	case productionbatch.FieldUnitCost:
+		m.ClearUnitCost()
 		return nil
 	case productionbatch.FieldNotes:
 		m.ClearNotes()
@@ -39324,6 +39599,12 @@ func (m *ProductionBatchMutation) ResetField(name string) error {
 		return nil
 	case productionbatch.FieldOverheadCost:
 		m.ResetOverheadCost()
+		return nil
+	case productionbatch.FieldScrapQuantity:
+		m.ResetScrapQuantity()
+		return nil
+	case productionbatch.FieldUnitCost:
+		m.ResetUnitCost()
 		return nil
 	case productionbatch.FieldNotes:
 		m.ResetNotes()
@@ -45104,6 +45385,7 @@ type RecipeMutation struct {
 	addoutput_qty             *float64
 	unit_of_measure           *string
 	is_active                 *bool
+	requires_qc               *bool
 	total_cost                *float64
 	addtotal_cost             *float64
 	cost_per_portion          *float64
@@ -45474,6 +45756,42 @@ func (m *RecipeMutation) OldIsActive(ctx context.Context) (v bool, err error) {
 // ResetIsActive resets all changes to the "is_active" field.
 func (m *RecipeMutation) ResetIsActive() {
 	m.is_active = nil
+}
+
+// SetRequiresQc sets the "requires_qc" field.
+func (m *RecipeMutation) SetRequiresQc(b bool) {
+	m.requires_qc = &b
+}
+
+// RequiresQc returns the value of the "requires_qc" field in the mutation.
+func (m *RecipeMutation) RequiresQc() (r bool, exists bool) {
+	v := m.requires_qc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequiresQc returns the old "requires_qc" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldRequiresQc(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequiresQc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequiresQc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequiresQc: %w", err)
+	}
+	return oldValue.RequiresQc, nil
+}
+
+// ResetRequiresQc resets all changes to the "requires_qc" field.
+func (m *RecipeMutation) ResetRequiresQc() {
+	m.requires_qc = nil
 }
 
 // SetTotalCost sets the "total_cost" field.
@@ -46354,7 +46672,7 @@ func (m *RecipeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.tenant_id != nil {
 		fields = append(fields, recipe.FieldTenantID)
 	}
@@ -46372,6 +46690,9 @@ func (m *RecipeMutation) Fields() []string {
 	}
 	if m.is_active != nil {
 		fields = append(fields, recipe.FieldIsActive)
+	}
+	if m.requires_qc != nil {
+		fields = append(fields, recipe.FieldRequiresQc)
 	}
 	if m.total_cost != nil {
 		fields = append(fields, recipe.FieldTotalCost)
@@ -46429,6 +46750,8 @@ func (m *RecipeMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitOfMeasure()
 	case recipe.FieldIsActive:
 		return m.IsActive()
+	case recipe.FieldRequiresQc:
+		return m.RequiresQc()
 	case recipe.FieldTotalCost:
 		return m.TotalCost()
 	case recipe.FieldCostPerPortion:
@@ -46474,6 +46797,8 @@ func (m *RecipeMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUnitOfMeasure(ctx)
 	case recipe.FieldIsActive:
 		return m.OldIsActive(ctx)
+	case recipe.FieldRequiresQc:
+		return m.OldRequiresQc(ctx)
 	case recipe.FieldTotalCost:
 		return m.OldTotalCost(ctx)
 	case recipe.FieldCostPerPortion:
@@ -46548,6 +46873,13 @@ func (m *RecipeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsActive(v)
+		return nil
+	case recipe.FieldRequiresQc:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequiresQc(v)
 		return nil
 	case recipe.FieldTotalCost:
 		v, ok := value.(float64)
@@ -46861,6 +47193,9 @@ func (m *RecipeMutation) ResetField(name string) error {
 		return nil
 	case recipe.FieldIsActive:
 		m.ResetIsActive()
+		return nil
+	case recipe.FieldRequiresQc:
+		m.ResetRequiresQc()
 		return nil
 	case recipe.FieldTotalCost:
 		m.ResetTotalCost()

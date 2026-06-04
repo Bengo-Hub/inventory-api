@@ -21,6 +21,7 @@ func (BatchRawMaterial) Fields() []ent.Field {
 		field.UUID("item_id", uuid.UUID{}).Comment("FK to Item (raw material)"),
 		field.UUID("unit_id", uuid.UUID{}).Optional().Nillable(),
 		field.Float("quantity").Default(0),
+		field.Float("cost").Default(0).Comment("Cost of this material in the batch = item.cost_price * quantity"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }

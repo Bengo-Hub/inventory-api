@@ -41,6 +41,9 @@ func (Recipe) Fields() []ent.Field {
 			Comment("Unit for output: PORTION, KG, LITRE"),
 		field.Bool("is_active").
 			Default(true),
+		field.Bool("requires_qc").
+			Default(false).
+			Comment("If true, completing a production batch for this recipe requires a passing QualityCheck"),
 		// Recipe costing (Phase 7.1)
 		field.Float("total_cost").
 			Optional().

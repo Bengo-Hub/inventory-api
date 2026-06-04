@@ -32,6 +32,8 @@ type Recipe struct {
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// If true, completing a production batch for this recipe requires a passing QualityCheck
+	RequiresQc bool `json:"requires_qc,omitempty"`
 	// Sum of ingredient costs, auto-calculated from ingredient cost_prices
 	TotalCost *float64 `json:"total_cost,omitempty"`
 	// total_cost / output_qty
@@ -113,7 +115,7 @@ func (*Recipe) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case recipe.FieldMetadata:
 			values[i] = new([]byte)
-		case recipe.FieldIsActive:
+		case recipe.FieldIsActive, recipe.FieldRequiresQc:
 			values[i] = new(sql.NullBool)
 		case recipe.FieldOutputQty, recipe.FieldTotalCost, recipe.FieldCostPerPortion, recipe.FieldTargetMarginPercent, recipe.FieldSuggestedPrice, recipe.FieldSellingPrice, recipe.FieldFoodCostPct:
 			values[i] = new(sql.NullFloat64)
@@ -181,6 +183,12 @@ func (_m *Recipe) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case recipe.FieldRequiresQc:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field requires_qc", values[i])
+			} else if value.Valid {
+				_m.RequiresQc = value.Bool
 			}
 		case recipe.FieldTotalCost:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -332,6 +340,9 @@ func (_m *Recipe) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	builder.WriteString("requires_qc=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RequiresQc))
 	builder.WriteString(", ")
 	if v := _m.TotalCost; v != nil {
 		builder.WriteString("total_cost=")

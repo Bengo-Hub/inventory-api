@@ -260,8 +260,12 @@ func init() {
 	batchrawmaterialDescQuantity := batchrawmaterialFields[5].Descriptor()
 	// batchrawmaterial.DefaultQuantity holds the default value on creation for the quantity field.
 	batchrawmaterial.DefaultQuantity = batchrawmaterialDescQuantity.Default.(float64)
+	// batchrawmaterialDescCost is the schema descriptor for cost field.
+	batchrawmaterialDescCost := batchrawmaterialFields[6].Descriptor()
+	// batchrawmaterial.DefaultCost holds the default value on creation for the cost field.
+	batchrawmaterial.DefaultCost = batchrawmaterialDescCost.Default.(float64)
 	// batchrawmaterialDescCreatedAt is the schema descriptor for created_at field.
-	batchrawmaterialDescCreatedAt := batchrawmaterialFields[6].Descriptor()
+	batchrawmaterialDescCreatedAt := batchrawmaterialFields[7].Descriptor()
 	// batchrawmaterial.DefaultCreatedAt holds the default value on creation for the created_at field.
 	batchrawmaterial.DefaultCreatedAt = batchrawmaterialDescCreatedAt.Default.(func() time.Time)
 	// batchrawmaterialDescID is the schema descriptor for id field.
@@ -1008,12 +1012,16 @@ func init() {
 	productionbatchDescOverheadCost := productionbatchFields[12].Descriptor()
 	// productionbatch.DefaultOverheadCost holds the default value on creation for the overhead_cost field.
 	productionbatch.DefaultOverheadCost = productionbatchDescOverheadCost.Default.(float64)
+	// productionbatchDescScrapQuantity is the schema descriptor for scrap_quantity field.
+	productionbatchDescScrapQuantity := productionbatchFields[13].Descriptor()
+	// productionbatch.DefaultScrapQuantity holds the default value on creation for the scrap_quantity field.
+	productionbatch.DefaultScrapQuantity = productionbatchDescScrapQuantity.Default.(float64)
 	// productionbatchDescCreatedAt is the schema descriptor for created_at field.
-	productionbatchDescCreatedAt := productionbatchFields[16].Descriptor()
+	productionbatchDescCreatedAt := productionbatchFields[18].Descriptor()
 	// productionbatch.DefaultCreatedAt holds the default value on creation for the created_at field.
 	productionbatch.DefaultCreatedAt = productionbatchDescCreatedAt.Default.(func() time.Time)
 	// productionbatchDescUpdatedAt is the schema descriptor for updated_at field.
-	productionbatchDescUpdatedAt := productionbatchFields[17].Descriptor()
+	productionbatchDescUpdatedAt := productionbatchFields[19].Descriptor()
 	// productionbatch.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	productionbatch.DefaultUpdatedAt = productionbatchDescUpdatedAt.Default.(func() time.Time)
 	// productionbatch.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1216,20 +1224,24 @@ func init() {
 	recipeDescIsActive := recipeFields[6].Descriptor()
 	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
 	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
+	// recipeDescRequiresQc is the schema descriptor for requires_qc field.
+	recipeDescRequiresQc := recipeFields[7].Descriptor()
+	// recipe.DefaultRequiresQc holds the default value on creation for the requires_qc field.
+	recipe.DefaultRequiresQc = recipeDescRequiresQc.Default.(bool)
 	// recipeDescStatus is the schema descriptor for status field.
-	recipeDescStatus := recipeFields[13].Descriptor()
+	recipeDescStatus := recipeFields[14].Descriptor()
 	// recipe.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	recipe.StatusValidator = recipeDescStatus.Validators[0].(func(string) error)
 	// recipeDescMetadata is the schema descriptor for metadata field.
-	recipeDescMetadata := recipeFields[16].Descriptor()
+	recipeDescMetadata := recipeFields[17].Descriptor()
 	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
 	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
 	// recipeDescCreatedAt is the schema descriptor for created_at field.
-	recipeDescCreatedAt := recipeFields[17].Descriptor()
+	recipeDescCreatedAt := recipeFields[18].Descriptor()
 	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
 	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
-	recipeDescUpdatedAt := recipeFields[18].Descriptor()
+	recipeDescUpdatedAt := recipeFields[19].Descriptor()
 	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
 	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
