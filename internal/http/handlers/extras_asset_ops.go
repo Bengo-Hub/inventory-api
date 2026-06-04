@@ -38,6 +38,7 @@ func (h *InventoryExtrasHandler) registerAssetOpsRoutes(r chi.Router, perm func(
 
 	r.Get("/inventory/assets/{assetID}/audits", h.ListAssetAudits)
 	r.With(perm(add)).Post("/inventory/assets/{assetID}/audits", h.CreateAssetAudit)
+	r.With(perm(change)).Post("/inventory/asset-audits/{recID}/complete", h.CompleteAssetAudit)
 
 	r.Get("/inventory/assets/{assetID}/reservations", h.ListAssetReservations)
 	r.With(perm(add)).Post("/inventory/assets/{assetID}/reservations", h.CreateAssetReservation)
@@ -502,9 +503,11 @@ func (h *InventoryExtrasHandler) CreateAssetAudit(w http.ResponseWriter, r *http
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
+	// An audit starts in progress; it is finalised via CompleteAssetAudit. (Previously
+	// it was created as 'completed', which skipped the actual verification step.)
 	c := h.orm.AssetAudit.Create().SetTenantID(tenantID).SetAssetID(assetID).SetAuditDate(time.Now().UTC()).
 		SetLocationVerified(b.LocationVerified).SetConditionVerified(b.ConditionVerified).
-		SetDiscrepancies(b.Discrepancies).SetRecommendations(b.Recommendations).SetStatus(entaudit.StatusCompleted)
+		SetDiscrepancies(b.Discrepancies).SetRecommendations(b.Recommendations).SetStatus(entaudit.StatusInProgress)
 	if b.AuditorID != nil {
 		c = c.SetAuditorID(*b.AuditorID)
 	}
@@ -514,6 +517,68 @@ func (h *InventoryExtrasHandler) CreateAssetAudit(w http.ResponseWriter, r *http
 		return
 	}
 	writeJSON(w, http.StatusCreated, row)
+}
+
+// CompleteAssetAudit handles POST /inventory/asset-audits/{recID}/complete.
+//
+//	@Summary      Complete an asset audit
+//	@Tags         Assets
+//	@Accept       json
+//	@Produce      json
+//	@Param        recID  path      string  true  "Audit record ID"
+//	@Param        body   body      object  false  "Optional verification results"
+//	@Success      200    {object}  map[string]interface{}
+//	@Failure      400    {object}  map[string]string
+//	@Failure      404    {object}  map[string]string
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/asset-audits/{recID}/complete [post]
+func (h *InventoryExtrasHandler) CompleteAssetAudit(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "recID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid record ID")
+		return
+	}
+	rec, err := h.orm.AssetAudit.Query().Where(entaudit.ID(id), entaudit.TenantID(tenantID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Audit not found")
+		return
+	}
+	// Optional verification results captured at completion time.
+	var b struct {
+		LocationVerified  *string    `json:"location_verified"`
+		ConditionVerified *string    `json:"condition_verified"`
+		Discrepancies     *string    `json:"discrepancies"`
+		Recommendations   *string    `json:"recommendations"`
+		NextAuditDate     *time.Time `json:"next_audit_date"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&b)
+	upd := h.orm.AssetAudit.UpdateOneID(rec.ID).SetStatus(entaudit.StatusCompleted)
+	if b.LocationVerified != nil {
+		upd = upd.SetLocationVerified(*b.LocationVerified)
+	}
+	if b.ConditionVerified != nil {
+		upd = upd.SetConditionVerified(*b.ConditionVerified)
+	}
+	if b.Discrepancies != nil {
+		upd = upd.SetDiscrepancies(*b.Discrepancies)
+	}
+	if b.Recommendations != nil {
+		upd = upd.SetRecommendations(*b.Recommendations)
+	}
+	if b.NextAuditDate != nil {
+		upd = upd.SetNextAuditDate(*b.NextAuditDate)
+	}
+	updated, err := upd.Save(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete audit")
+		return
+	}
+	writeJSON(w, http.StatusOK, updated)
 }
 
 // --- Reservations ---
