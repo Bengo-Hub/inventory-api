@@ -168,6 +168,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	h.registerRequisitionRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerContractRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerPurchaseReturnRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
+	h.registerGoodsReceiptRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementMiscRoutes(r, perm, rbac.PermItemsAdd, rbac.PermItemsChange)
 	h.registerProcurementAnalyticsRoutes(r)
 	r.Get("/inventory/purchase-orders/{poID}/pdf", h.GeneratePurchaseOrderPDF)

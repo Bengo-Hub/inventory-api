@@ -57,6 +57,8 @@ const (
 	FieldAssignedTo = "assigned_to"
 	// FieldCustodianID holds the string denoting the custodian_id field in the database.
 	FieldCustodianID = "custodian_id"
+	// FieldItemID holds the string denoting the item_id field in the database.
+	FieldItemID = "item_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldCondition holds the string denoting the condition field in the database.
@@ -107,6 +109,7 @@ var Columns = []string{
 	FieldOutletID,
 	FieldAssignedTo,
 	FieldCustodianID,
+	FieldItemID,
 	FieldStatus,
 	FieldCondition,
 	FieldWarrantyExpiry,
@@ -327,6 +330,11 @@ func ByAssignedTo(opts ...sql.OrderTermOption) OrderOption {
 // ByCustodianID orders the results by the custodian_id field.
 func ByCustodianID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCustodianID, opts...).ToFunc()
+}
+
+// ByItemID orders the results by the item_id field.
+func ByItemID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldItemID, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

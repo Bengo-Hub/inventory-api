@@ -42,6 +42,7 @@ func (Asset) Fields() []ent.Field {
 		field.UUID("outlet_id", uuid.UUID{}).Optional().Nillable().Comment("Branch/outlet"),
 		field.UUID("assigned_to", uuid.UUID{}).Optional().Nillable(),
 		field.UUID("custodian_id", uuid.UUID{}).Optional().Nillable(),
+		field.UUID("item_id", uuid.UUID{}).Optional().Nillable().Comment("Optional link to the inventory Item this asset was capitalised from"),
 		// Status & condition
 		field.Enum("status").Values("active", "inactive", "maintenance", "disposed", "lost", "damaged", "retired").Default("active"),
 		field.String("condition").Optional().Comment("excellent|good|fair|poor|critical"),

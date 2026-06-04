@@ -30,6 +30,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -152,6 +154,8 @@ func checkColumn(t, c string) error {
 			customfieldvalue.Table:      customfieldvalue.ValidColumn,
 			documentsequence.Table:      documentsequence.ValidColumn,
 			foodcostvariance.Table:      foodcostvariance.ValidColumn,
+			goodsreceipt.Table:          goodsreceipt.ValidColumn,
+			goodsreceiptline.Table:      goodsreceiptline.ValidColumn,
 			inventorybalance.Table:      inventorybalance.ValidColumn,
 			inventorylot.Table:          inventorylot.ValidColumn,
 			inventorypermission.Table:   inventorypermission.ValidColumn,

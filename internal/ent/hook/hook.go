@@ -225,6 +225,30 @@ func (f FoodCostVarianceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FoodCostVarianceMutation", m)
 }
 
+// The GoodsReceiptFunc type is an adapter to allow the use of ordinary
+// function as GoodsReceipt mutator.
+type GoodsReceiptFunc func(context.Context, *ent.GoodsReceiptMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoodsReceiptFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.GoodsReceiptMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GoodsReceiptMutation", m)
+}
+
+// The GoodsReceiptLineFunc type is an adapter to allow the use of ordinary
+// function as GoodsReceiptLine mutator.
+type GoodsReceiptLineFunc func(context.Context, *ent.GoodsReceiptLineMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GoodsReceiptLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.GoodsReceiptLineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GoodsReceiptLineMutation", m)
+}
+
 // The InventoryBalanceFunc type is an adapter to allow the use of ordinary
 // function as InventoryBalance mutator.
 type InventoryBalanceFunc func(context.Context, *ent.InventoryBalanceMutation) (ent.Value, error)

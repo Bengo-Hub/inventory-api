@@ -48,6 +48,10 @@ type Tx struct {
 	DocumentSequence *DocumentSequenceClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
+	// GoodsReceipt is the client for interacting with the GoodsReceipt builders.
+	GoodsReceipt *GoodsReceiptClient
+	// GoodsReceiptLine is the client for interacting with the GoodsReceiptLine builders.
+	GoodsReceiptLine *GoodsReceiptLineClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -285,6 +289,8 @@ func (tx *Tx) init() {
 	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
 	tx.DocumentSequence = NewDocumentSequenceClient(tx.config)
 	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
+	tx.GoodsReceipt = NewGoodsReceiptClient(tx.config)
+	tx.GoodsReceiptLine = NewGoodsReceiptLineClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.InventoryLot = NewInventoryLotClient(tx.config)
 	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)

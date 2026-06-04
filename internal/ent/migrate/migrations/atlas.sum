@@ -1,4 +1,4 @@
-h1:8Gdc0cjVxF1YQ8zjUyll1xEsGj+7mq+2+OQSRj8CAGY=
+h1:OcZIX/GvrFF52oze9OXiadq9SOboALxbxXe/SN7SCGw=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -25,3 +25,4 @@ h1:8Gdc0cjVxF1YQ8zjUyll1xEsGj+7mq+2+OQSRj8CAGY=
 20260603183429_add_asset_register.sql h1:P6xVqXOUscgD93pXDhTdnbDTM4EKyOe9oVLwBPxDAWc=
 20260604080413_add_tenant_tax_config.sql h1:j1B+LG5l+1hnXRnJUoQ0eN/qt4z2y0oJJsBqVqeaDNg=
 20260604180220_manufacturing_cost_qc_scrap.sql h1:QrS+FN/Aq4C2sxjLMYIQZQTfv6Qs/XoXkRYvSHjPid8=
+20260604183730_add_goods_receipts_asset_item.sql h1:X+S+lJGxvZ6SdTT/P0tel5JR+AnuGF+fC6i46vdwi3Q=

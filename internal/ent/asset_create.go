@@ -294,6 +294,20 @@ func (_c *AssetCreate) SetNillableCustodianID(v *uuid.UUID) *AssetCreate {
 	return _c
 }
 
+// SetItemID sets the "item_id" field.
+func (_c *AssetCreate) SetItemID(v uuid.UUID) *AssetCreate {
+	_c.mutation.SetItemID(v)
+	return _c
+}
+
+// SetNillableItemID sets the "item_id" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableItemID(v *uuid.UUID) *AssetCreate {
+	if v != nil {
+		_c.SetItemID(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *AssetCreate) SetStatus(v asset.Status) *AssetCreate {
 	_c.mutation.SetStatus(v)
@@ -730,6 +744,10 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CustodianID(); ok {
 		_spec.SetField(asset.FieldCustodianID, field.TypeUUID, value)
 		_node.CustodianID = &value
+	}
+	if value, ok := _c.mutation.ItemID(); ok {
+		_spec.SetField(asset.FieldItemID, field.TypeUUID, value)
+		_node.ItemID = &value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)
@@ -1178,6 +1196,24 @@ func (u *AssetUpsert) UpdateCustodianID() *AssetUpsert {
 // ClearCustodianID clears the value of the "custodian_id" field.
 func (u *AssetUpsert) ClearCustodianID() *AssetUpsert {
 	u.SetNull(asset.FieldCustodianID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *AssetUpsert) SetItemID(v uuid.UUID) *AssetUpsert {
+	u.Set(asset.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *AssetUpsert) UpdateItemID() *AssetUpsert {
+	u.SetExcluded(asset.FieldItemID)
+	return u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *AssetUpsert) ClearItemID() *AssetUpsert {
+	u.SetNull(asset.FieldItemID)
 	return u
 }
 
@@ -1804,6 +1840,27 @@ func (u *AssetUpsertOne) UpdateCustodianID() *AssetUpsertOne {
 func (u *AssetUpsertOne) ClearCustodianID() *AssetUpsertOne {
 	return u.Update(func(s *AssetUpsert) {
 		s.ClearCustodianID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *AssetUpsertOne) SetItemID(v uuid.UUID) *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *AssetUpsertOne) UpdateItemID() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *AssetUpsertOne) ClearItemID() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearItemID()
 	})
 }
 
@@ -2624,6 +2681,27 @@ func (u *AssetUpsertBulk) UpdateCustodianID() *AssetUpsertBulk {
 func (u *AssetUpsertBulk) ClearCustodianID() *AssetUpsertBulk {
 	return u.Update(func(s *AssetUpsert) {
 		s.ClearCustodianID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *AssetUpsertBulk) SetItemID(v uuid.UUID) *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *AssetUpsertBulk) UpdateItemID() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *AssetUpsertBulk) ClearItemID() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearItemID()
 	})
 }
 

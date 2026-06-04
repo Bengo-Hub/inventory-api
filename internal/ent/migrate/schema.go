@@ -32,6 +32,7 @@ var (
 		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "assigned_to", Type: field.TypeUUID, Nullable: true},
 		{Name: "custodian_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive", "maintenance", "disposed", "lost", "damaged", "retired"}, Default: "active"},
 		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "warranty_expiry", Type: field.TypeTime, Nullable: true},
@@ -58,7 +59,7 @@ var (
 			{
 				Name:    "asset_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[22]},
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[23]},
 			},
 			{
 				Name:    "asset_tenant_id_category_id",
@@ -670,6 +671,84 @@ var (
 				Name:    "foodcostvariance_tenant_id_recipe_sku",
 				Unique:  false,
 				Columns: []*schema.Column{FoodCostVariancesColumns[1], FoodCostVariancesColumns[4]},
+			},
+		},
+	}
+	// GoodsReceiptsColumns holds the columns for the "goods_receipts" table.
+	GoodsReceiptsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "grn_number", Type: field.TypeString},
+		{Name: "purchase_order_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "received_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "received_date", Type: field.TypeTime},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "posted", "cancelled"}, Default: "draft"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// GoodsReceiptsTable holds the schema information for the "goods_receipts" table.
+	GoodsReceiptsTable = &schema.Table{
+		Name:       "goods_receipts",
+		Columns:    GoodsReceiptsColumns,
+		PrimaryKey: []*schema.Column{GoodsReceiptsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goodsreceipt_tenant_id_grn_number",
+				Unique:  true,
+				Columns: []*schema.Column{GoodsReceiptsColumns[1], GoodsReceiptsColumns[2]},
+			},
+			{
+				Name:    "goodsreceipt_tenant_id_purchase_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsReceiptsColumns[1], GoodsReceiptsColumns[3]},
+			},
+			{
+				Name:    "goodsreceipt_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsReceiptsColumns[1], GoodsReceiptsColumns[8]},
+			},
+		},
+	}
+	// GoodsReceiptLinesColumns holds the columns for the "goods_receipt_lines" table.
+	GoodsReceiptLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "purchase_order_line_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "quantity_received", Type: field.TypeInt, Default: 0},
+		{Name: "quantity_accepted", Type: field.TypeInt, Default: 0},
+		{Name: "quantity_rejected", Type: field.TypeInt, Default: 0},
+		{Name: "unit_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "rejection_reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "goods_receipt_id", Type: field.TypeUUID},
+	}
+	// GoodsReceiptLinesTable holds the schema information for the "goods_receipt_lines" table.
+	GoodsReceiptLinesTable = &schema.Table{
+		Name:       "goods_receipt_lines",
+		Columns:    GoodsReceiptLinesColumns,
+		PrimaryKey: []*schema.Column{GoodsReceiptLinesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "goods_receipt_lines_goods_receipts_lines",
+				Columns:    []*schema.Column{GoodsReceiptLinesColumns[10]},
+				RefColumns: []*schema.Column{GoodsReceiptsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "goodsreceiptline_tenant_id_goods_receipt_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[10]},
+			},
+			{
+				Name:    "goodsreceiptline_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{GoodsReceiptLinesColumns[3]},
 			},
 		},
 	}
@@ -2609,6 +2688,8 @@ var (
 		CustomFieldValuesTable,
 		DocumentSequencesTable,
 		FoodCostVariancesTable,
+		GoodsReceiptsTable,
+		GoodsReceiptLinesTable,
 		InventoryBalancesTable,
 		InventoryLotsTable,
 		InventoryPermissionsTable,
@@ -2665,6 +2746,7 @@ func init() {
 	CustomFieldDefinitionsTable.ForeignKeys[0].RefTable = ItemCategoriesTable
 	CustomFieldValuesTable.ForeignKeys[0].RefTable = CustomFieldDefinitionsTable
 	CustomFieldValuesTable.ForeignKeys[1].RefTable = ItemsTable
+	GoodsReceiptLinesTable.ForeignKeys[0].RefTable = GoodsReceiptsTable
 	InventoryBalancesTable.ForeignKeys[0].RefTable = WarehouseLocationsTable
 	InventoryBalancesTable.ForeignKeys[1].RefTable = ItemsTable
 	InventoryBalancesTable.ForeignKeys[2].RefTable = WarehousesTable

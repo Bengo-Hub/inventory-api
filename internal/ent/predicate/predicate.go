@@ -60,6 +60,12 @@ type DocumentSequence func(*sql.Selector)
 // FoodCostVariance is the predicate function for foodcostvariance builders.
 type FoodCostVariance func(*sql.Selector)
 
+// GoodsReceipt is the predicate function for goodsreceipt builders.
+type GoodsReceipt func(*sql.Selector)
+
+// GoodsReceiptLine is the predicate function for goodsreceiptline builders.
+type GoodsReceiptLine func(*sql.Selector)
+
 // InventoryBalance is the predicate function for inventorybalance builders.
 type InventoryBalance func(*sql.Selector)
 
