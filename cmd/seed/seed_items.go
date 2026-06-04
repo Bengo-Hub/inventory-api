@@ -58,7 +58,7 @@ const (
 // tenantItemGroups maps tenant slugs to the item group functions they should use.
 // Add a slug here to scope which items a tenant receives during seeding.
 var tenantItemGroups = map[string][]func() []itemDef{
-	"codevertex-demo": {hospitalityItems, eventItems, pharmacyItems, retailItems, beautyServiceItems},
+	"codevertex-demo": {hospitalityItems, eventItems, pharmacyItems, retailItems, beautyServiceItems, detergentItems},
 }
 
 // itemDefsForSlug returns all item definitions for the given tenant slug.
