@@ -39,6 +39,7 @@ func buildPermDefs() []permDef {
 		{"reservations", "Reservations", "inventory reservations and allocation"},
 		{"units", "Units", "unit of measure management (platform-only for manage operations)"},
 		{"config", "Config", "service configuration management"},
+		{"settings", "Settings", "tenant inventory settings: general, stock policy, modules, tax/compliance"},
 		{"users", "Users", "user management"},
 		{"tickets", "Tickets", "event ticket selling, issuance and check-in"},
 		{"procurement", "Procurement", "requisitions, purchase orders, goods receipts, returns, contracts, suppliers"},
