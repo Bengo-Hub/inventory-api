@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
@@ -30,14 +31,16 @@ type TransferHandler struct {
 	log         *zap.Logger
 	transferSvc TransferServicer
 	rbacSvc     *rbac.Service
+	appSvc      *approvals.Service
 }
 
 // NewTransferHandler creates a new transfer handler.
-func NewTransferHandler(log *zap.Logger, transferSvc TransferServicer, rbacSvc *rbac.Service) *TransferHandler {
+func NewTransferHandler(log *zap.Logger, transferSvc TransferServicer, rbacSvc *rbac.Service, appSvc *approvals.Service) *TransferHandler {
 	return &TransferHandler{
 		log:         log.Named("transfer.handler"),
 		transferSvc: transferSvc,
 		rbacSvc:     rbacSvc,
+		appSvc:      appSvc,
 	}
 }
 
@@ -165,6 +168,26 @@ func (h *TransferHandler) ShipTransfer(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid transfer ID")
 		return
+	}
+
+	// Approval gate: shipping moves stock between warehouses. Gate when a
+	// stock_transfer rule exists (no natural amount → 0). Reuses the shared engine.
+	if h.appSvc != nil {
+		if ok, state, aerr := h.appSvc.Satisfied(r.Context(), tenantID, "stock_transfer", transferID, 0); aerr == nil && !ok {
+			if state == "not_submitted" {
+				var by *uuid.UUID
+				if uid, ok := actingUserID(r); ok {
+					by = &uid
+				}
+				_, _, _ = h.appSvc.Submit(r.Context(), tenantID, "stock_transfer", transferID, "", 0, by)
+				writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This transfer requires approval — it has been submitted for sign-off.")
+			} else if state == "pending" {
+				writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This transfer is awaiting approval sign-off.")
+			} else {
+				writeError(w, http.StatusConflict, "APPROVAL_REJECTED", "The approval request for this transfer was rejected.")
+			}
+			return
+		}
 	}
 
 	if err := h.transferSvc.ShipTransfer(r.Context(), tenantID, transferID); err != nil {

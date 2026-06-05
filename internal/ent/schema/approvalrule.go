@@ -23,7 +23,12 @@ func (ApprovalRule) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}).Comment("Owning tenant"),
 		field.Enum("module").
-			Values("purchase_order", "requisition").
+			Values(
+				"purchase_order", "requisition",
+				"stock_transfer", "purchase_return", "goods_receipt",
+				"production_batch", "asset_disposal", "asset_transfer",
+				"asset_maintenance", "rfq", "contract",
+			).
 			Comment("Document type this rule governs"),
 		field.String("name").NotEmpty(),
 		field.Float("min_amount").Default(0).Comment("Inclusive lower bound of the amount band"),

@@ -221,6 +221,13 @@ func (h *InventoryExtrasHandler) UpdateContract(w http.ResponseWriter, r *http.R
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/contracts/{contractID}/activate [post]
 func (h *InventoryExtrasHandler) ActivateContract(w http.ResponseWriter, r *http.Request) {
+	tenantID, c, ok := h.loadContract(w, r)
+	if !ok {
+		return
+	}
+	if !h.gateApproval(w, r, tenantID, "contract", c.ID, c.Title, c.Value) {
+		return
+	}
 	h.setContractStatus(w, r, entcontract.StatusActive, "inventory.contract.activated")
 }
 

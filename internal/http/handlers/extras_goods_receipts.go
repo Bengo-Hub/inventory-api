@@ -267,6 +267,9 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
 		return
 	}
+	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
+		return
+	}
 	warehouseID := po.WarehouseID
 	if g.WarehouseID != nil {
 		warehouseID = *g.WarehouseID

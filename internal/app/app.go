@@ -28,6 +28,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/migrate"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -174,7 +175,7 @@ func New(ctx context.Context) (*App, error) {
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
-	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService)
+	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
 	bundleSvc := bundles.NewService(ormClient, log)
 	inventoryExtrasHandler.SetBundleService(bundleSvc)

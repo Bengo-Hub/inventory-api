@@ -434,6 +434,11 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 		writeError(w, http.StatusBadRequest, "INVALID_STATE", "Only planned batches can be started")
 		return
 	}
+	// Approval gate: a production run commits raw materials, so gate the start of a
+	// batch when a production_batch approval rule is configured.
+	if !h.gateApproval(w, r, tenantID, "production_batch", b.ID, b.BatchNumber, 0) {
+		return
+	}
 	recipe, err := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID), entrecipe.TenantID(tenantID)).Only(r.Context())
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "RECIPE_NOT_FOUND", "Batch recipe not found")
