@@ -665,6 +665,18 @@ func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "NO_AWARDS", "Select at least one line to award")
 		return
 	}
+	// Approval gate: awarding commits the tenant to suppliers. Amount = total award value.
+	var awardTotal float64
+	for _, a := range body.Awards {
+		awardTotal += a.UnitPrice * a.Quantity
+	}
+	rfqRef := ""
+	if rfq, e := h.orm.RFQ.Query().Where(entrfq.ID(rfqID), entrfq.TenantID(tenantID)).Only(r.Context()); e == nil {
+		rfqRef = rfq.RfqNumber
+	}
+	if !h.gateApproval(w, r, tenantID, "rfq", rfqID, rfqRef, awardTotal) {
+		return
+	}
 	// Replace prior awards that have not yet been converted to POs.
 	_, _ = h.orm.RFQAward.Delete().Where(entrfqaward.RfqID(rfqID), entrfqaward.PoIDIsNil()).Exec(r.Context())
 	for _, a := range body.Awards {

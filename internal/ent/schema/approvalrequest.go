@@ -21,7 +21,12 @@ func (ApprovalRequest) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}).Comment("Owning tenant"),
-		field.Enum("module").Values("purchase_order", "requisition"),
+		field.Enum("module").Values(
+			"purchase_order", "requisition",
+			"stock_transfer", "purchase_return", "goods_receipt",
+			"production_batch", "asset_disposal", "asset_transfer",
+			"asset_maintenance", "rfq", "contract",
+		),
 		field.UUID("object_id", uuid.UUID{}).Comment("ID of the PO/requisition being approved"),
 		field.String("object_reference").Optional().Comment("PO number / requisition reference for display"),
 		field.Float("amount").Default(0).Comment("Document amount snapshot at submission"),

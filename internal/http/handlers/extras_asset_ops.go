@@ -163,6 +163,9 @@ func (h *InventoryExtrasHandler) CompleteAssetMaintenance(w http.ResponseWriter,
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Maintenance record not found")
 		return
 	}
+	if !h.gateApproval(w, r, tenantID, "asset_maintenance", rec.ID, "", rec.Cost) {
+		return
+	}
 	now := time.Now().UTC()
 	updated, err := h.orm.AssetMaintenance.UpdateOneID(rec.ID).SetStatus(entmaint.StatusCompleted).SetCompletedDate(now).Save(r.Context())
 	if err != nil {
@@ -269,6 +272,13 @@ func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r 
 	// A transfer must be approved (or in transit) before it can be completed.
 	if rec.Status != enttrf.StatusApproved && rec.Status != enttrf.StatusInTransit {
 		writeError(w, http.StatusBadRequest, "NOT_APPROVED", "Transfer must be approved before it can be completed")
+		return
+	}
+	var assetVal float64
+	if a, e := h.orm.Asset.Get(r.Context(), rec.AssetID); e == nil {
+		assetVal = a.CurrentValue
+	}
+	if !h.gateApproval(w, r, tenantID, "asset_transfer", rec.ID, "", assetVal) {
 		return
 	}
 	updated, err := h.orm.AssetTransfer.UpdateOneID(rec.ID).SetStatus(enttrf.StatusCompleted).Save(r.Context())
@@ -423,6 +433,9 @@ func (h *InventoryExtrasHandler) CompleteAssetDisposal(w http.ResponseWriter, r 
 	rec, err := h.orm.AssetDisposal.Query().Where(entdisp.ID(id), entdisp.TenantID(tenantID)).Only(r.Context())
 	if err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Disposal not found")
+		return
+	}
+	if !h.gateApproval(w, r, tenantID, "asset_disposal", rec.ID, "", rec.DisposalValue) {
 		return
 	}
 	updated, err := h.orm.AssetDisposal.UpdateOneID(rec.ID).SetStatus(entdisp.StatusCompleted).Save(r.Context())

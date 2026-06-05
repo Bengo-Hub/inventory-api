@@ -649,3 +649,42 @@ func (h *InventoryExtrasHandler) SubmitPurchaseOrderForApproval(w http.ResponseW
 	full, _ := h.orm.ApprovalRequest.Query().Where(areq.ID(req.ID)).WithActions().Only(r.Context())
 	writeJSON(w, http.StatusOK, map[string]any{"approval_required": true, "request": approvalRequestToDTO(full)})
 }
+
+// gateApproval enforces the approval matrix on ANY effecting action across the
+// inventory service (procurement, manufacturing, assets, stock). It returns true
+// when the caller may proceed — no matching rule (not_required) or an approved
+// request exists. Otherwise it writes a 409 and returns false: when no request
+// exists yet it auto-creates one ("submitted for approval"); a pending/rejected
+// request reports that state. Module-agnostic so every workflow reuses one path;
+// mirrors the PO-send gate. Amount 0 means "gate whenever any rule exists".
+func (h *InventoryExtrasHandler) gateApproval(w http.ResponseWriter, r *http.Request, tenantID uuid.UUID, module string, objectID uuid.UUID, reference string, amount float64) bool {
+	ok, state, err := h.approvals().Satisfied(r.Context(), tenantID, module, objectID, amount)
+	if err != nil {
+		// Fail open on engine errors — never block a legitimate action on infra failure.
+		h.log.Warn("approval gate check failed; allowing", zap.String("module", module), zap.Error(err))
+		return true
+	}
+	if ok {
+		return true // not_required or approved
+	}
+	switch state {
+	case "not_submitted":
+		var submittedBy *uuid.UUID
+		if uid, ok := actingUserID(r); ok {
+			submittedBy = &uid
+		}
+		if req, required, serr := h.approvals().Submit(r.Context(), tenantID, module, objectID, reference, amount, submittedBy); serr == nil && required {
+			h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
+				"id": req.ID, "module": module, "object_id": objectID, "amount": amount,
+			})
+		}
+		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This action requires approval — it has been submitted for sign-off.")
+	case "pending":
+		writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This action is awaiting approval sign-off.")
+	case "rejected":
+		writeError(w, http.StatusConflict, "APPROVAL_REJECTED", "The approval request for this action was rejected.")
+	default:
+		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This action requires approval before it can proceed.")
+	}
+	return false
+}

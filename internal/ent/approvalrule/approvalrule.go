@@ -90,8 +90,17 @@ type Module string
 
 // Module values.
 const (
-	ModulePurchaseOrder Module = "purchase_order"
-	ModuleRequisition   Module = "requisition"
+	ModulePurchaseOrder    Module = "purchase_order"
+	ModuleRequisition      Module = "requisition"
+	ModuleStockTransfer    Module = "stock_transfer"
+	ModulePurchaseReturn   Module = "purchase_return"
+	ModuleGoodsReceipt     Module = "goods_receipt"
+	ModuleProductionBatch  Module = "production_batch"
+	ModuleAssetDisposal    Module = "asset_disposal"
+	ModuleAssetTransfer    Module = "asset_transfer"
+	ModuleAssetMaintenance Module = "asset_maintenance"
+	ModuleRfq              Module = "rfq"
+	ModuleContract         Module = "contract"
 )
 
 func (m Module) String() string {
@@ -101,7 +110,7 @@ func (m Module) String() string {
 // ModuleValidator is a validator for the "module" field enum values. It is called by the builders before save.
 func ModuleValidator(m Module) error {
 	switch m {
-	case ModulePurchaseOrder, ModuleRequisition:
+	case ModulePurchaseOrder, ModuleRequisition, ModuleStockTransfer, ModulePurchaseReturn, ModuleGoodsReceipt, ModuleProductionBatch, ModuleAssetDisposal, ModuleAssetTransfer, ModuleAssetMaintenance, ModuleRfq, ModuleContract:
 		return nil
 	default:
 		return fmt.Errorf("approvalrule: invalid enum value for module field: %q", m)

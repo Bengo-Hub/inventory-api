@@ -191,6 +191,9 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	if !ok {
 		return
 	}
+	if !h.gateApproval(w, r, tenantID, "purchase_return", pr.ID, pr.ReturnNumber, pr.ReturnAmount) {
+		return
+	}
 	updated, err := h.orm.PurchaseReturn.UpdateOneID(pr.ID).SetPaymentStatus(entpr.PaymentStatusPaid).Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to approve purchase return")
