@@ -183,10 +183,20 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		).
 		First(ctx)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, fmt.Errorf("stock: no balance found for sku=%s", req.SKU)
+		if !ent.IsNotFound(err) {
+			return nil, fmt.Errorf("stock: query balance: %w", err)
 		}
-		return nil, fmt.Errorf("stock: query balance: %w", err)
+		// No balance row exists yet for this item in this warehouse. Rather than failing the
+		// adjustment (the common case for Initial Stock Count / Found on a fresh item),
+		// initialize a zero balance and apply the adjustment against it.
+		bal, err = tx.InventoryBalance.Create().
+			SetTenantID(tenantID).
+			SetItemID(itm.ID).
+			SetWarehouseID(whID).
+			Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("stock: init balance for sku=%s: %w", req.SKU, err)
+		}
 	}
 
 	qtyBefore := float64(bal.OnHand)
