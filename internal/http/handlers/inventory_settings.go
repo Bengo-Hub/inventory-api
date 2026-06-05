@@ -12,6 +12,7 @@ import (
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/platform/treasury"
 )
 
 // DefaultUnitReorderLevels returns sensible per-unit reorder minimums used when
@@ -39,13 +40,19 @@ func DefaultUnitReorderLevels() map[string]int {
 
 // InventorySettingsHandler manages typed tenant inventory configuration.
 type InventorySettingsHandler struct {
-	log     *zap.Logger
-	db      *ent.Client
-	rbacSvc *rbac.Service
+	log      *zap.Logger
+	db       *ent.Client
+	rbacSvc  *rbac.Service
+	treasury *treasury.Client
 }
 
 func NewInventorySettingsHandler(log *zap.Logger, db *ent.Client) *InventorySettingsHandler {
 	return &InventorySettingsHandler{log: log, db: db}
+}
+
+// SetTreasuryClient injects the treasury S2S client used to source the tenant's tax codes.
+func (h *InventorySettingsHandler) SetTreasuryClient(c *treasury.Client) {
+	h.treasury = c
 }
 
 // SetRBACService injects the RBAC service so settings mutations enforce per-action permissions.
@@ -315,6 +322,49 @@ func (h *InventorySettingsHandler) PatchModules(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, toInventorySettingsResponse(updated))
 }
 
+// taxCodeDTO is the inventory-ui-facing shape for a treasury tax code (rates are sourced
+// from treasury-api; inventory never stores them).
+type taxCodeDTO struct {
+	Code      string  `json:"code"`
+	Name      string  `json:"name"`
+	Rate      float64 `json:"rate"`
+	TaxType   string  `json:"tax_type"`
+	IsDefault bool    `json:"is_default"`
+}
+
+// ListTaxes handles GET /{tenant}/inventory/taxes — the tenant's active tax codes, sourced
+// and cached from treasury-api (the platform source of truth). Powers the tax-code picker in
+// inventory-ui. Returns an empty list (never an error) when treasury is unavailable so the UI
+// degrades gracefully to manual entry.
+func (h *InventorySettingsHandler) ListTaxes(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_tenant", "invalid tenant ID")
+		return
+	}
+
+	out := []taxCodeDTO{}
+	if h.treasury != nil {
+		codes, tErr := h.treasury.GetTaxCodes(r.Context(), tenantID)
+		if tErr != nil {
+			h.log.Warn("list taxes: treasury unavailable", zap.Error(tErr))
+		}
+		for _, t := range codes {
+			if !t.IsActive {
+				continue
+			}
+			out = append(out, taxCodeDTO{
+				Code:      t.Code,
+				Name:      t.Name,
+				Rate:      float64(t.Rate),
+				TaxType:   t.TaxType,
+				IsDefault: t.IsDefault,
+			})
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"tax_codes": out, "total": len(out)})
+}
+
 // RegisterRoutes registers typed inventory settings routes under the tenant group.
 // GET stays open to any authenticated tenant user; mutations require settings-change
 // permission (platform owners bypass via the RBAC middleware).
@@ -329,5 +379,7 @@ func (h *InventorySettingsHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/settings", h.GetSettings)
 	r.With(perm(rbac.PermSettingsChange)).Put("/inventory/settings", h.PutSettings)
 	r.With(perm(rbac.PermSettingsChange)).Patch("/inventory/settings/modules", h.PatchModules)
+	// Tax codes for the settings + item tax-code pickers (read-only mirror of treasury-api).
+	r.Get("/inventory/taxes", h.ListTaxes)
 }
 
