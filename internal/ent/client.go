@@ -67,6 +67,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
 	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rfq"
+	"github.com/bengobox/inventory-service/internal/ent/rfqaward"
+	"github.com/bengobox/inventory-service/internal/ent/rfqline"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
@@ -75,6 +78,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
+	"github.com/bengobox/inventory-service/internal/ent/supplierresponse"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -181,6 +185,12 @@ type Client struct {
 	PurchaseReturnLine *PurchaseReturnLineClient
 	// QualityCheck is the client for interacting with the QualityCheck builders.
 	QualityCheck *QualityCheckClient
+	// RFQ is the client for interacting with the RFQ builders.
+	RFQ *RFQClient
+	// RFQAward is the client for interacting with the RFQAward builders.
+	RFQAward *RFQAwardClient
+	// RFQLine is the client for interacting with the RFQLine builders.
+	RFQLine *RFQLineClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
@@ -209,6 +219,8 @@ type Client struct {
 	Supplier *SupplierClient
 	// SupplierPerformance is the client for interacting with the SupplierPerformance builders.
 	SupplierPerformance *SupplierPerformanceClient
+	// SupplierResponse is the client for interacting with the SupplierResponse builders.
+	SupplierResponse *SupplierResponseClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
@@ -283,6 +295,9 @@ func (c *Client) init() {
 	c.PurchaseReturn = NewPurchaseReturnClient(c.config)
 	c.PurchaseReturnLine = NewPurchaseReturnLineClient(c.config)
 	c.QualityCheck = NewQualityCheckClient(c.config)
+	c.RFQ = NewRFQClient(c.config)
+	c.RFQAward = NewRFQAwardClient(c.config)
+	c.RFQLine = NewRFQLineClient(c.config)
 	c.RateLimitConfig = NewRateLimitConfigClient(c.config)
 	c.Recipe = NewRecipeClient(c.config)
 	c.RecipeIngredient = NewRecipeIngredientClient(c.config)
@@ -297,6 +312,7 @@ func (c *Client) init() {
 	c.StockTransferLine = NewStockTransferLineClient(c.config)
 	c.Supplier = NewSupplierClient(c.config)
 	c.SupplierPerformance = NewSupplierPerformanceClient(c.config)
+	c.SupplierResponse = NewSupplierResponseClient(c.config)
 	c.Tenant = NewTenantClient(c.config)
 	c.TenantInventoryConfig = NewTenantInventoryConfigClient(c.config)
 	c.Ticket = NewTicketClient(c.config)
@@ -443,6 +459,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PurchaseReturn:        NewPurchaseReturnClient(cfg),
 		PurchaseReturnLine:    NewPurchaseReturnLineClient(cfg),
 		QualityCheck:          NewQualityCheckClient(cfg),
+		RFQ:                   NewRFQClient(cfg),
+		RFQAward:              NewRFQAwardClient(cfg),
+		RFQLine:               NewRFQLineClient(cfg),
 		RateLimitConfig:       NewRateLimitConfigClient(cfg),
 		Recipe:                NewRecipeClient(cfg),
 		RecipeIngredient:      NewRecipeIngredientClient(cfg),
@@ -457,6 +476,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StockTransferLine:     NewStockTransferLineClient(cfg),
 		Supplier:              NewSupplierClient(cfg),
 		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
+		SupplierResponse:      NewSupplierResponseClient(cfg),
 		Tenant:                NewTenantClient(cfg),
 		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
 		Ticket:                NewTicketClient(cfg),
@@ -530,6 +550,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PurchaseReturn:        NewPurchaseReturnClient(cfg),
 		PurchaseReturnLine:    NewPurchaseReturnLineClient(cfg),
 		QualityCheck:          NewQualityCheckClient(cfg),
+		RFQ:                   NewRFQClient(cfg),
+		RFQAward:              NewRFQAwardClient(cfg),
+		RFQLine:               NewRFQLineClient(cfg),
 		RateLimitConfig:       NewRateLimitConfigClient(cfg),
 		Recipe:                NewRecipeClient(cfg),
 		RecipeIngredient:      NewRecipeIngredientClient(cfg),
@@ -544,6 +567,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StockTransferLine:     NewStockTransferLineClient(cfg),
 		Supplier:              NewSupplierClient(cfg),
 		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
+		SupplierResponse:      NewSupplierResponseClient(cfg),
 		Tenant:                NewTenantClient(cfg),
 		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
 		Ticket:                NewTicketClient(cfg),
@@ -592,11 +616,12 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
 		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
 		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
+		c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
+		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
+		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
 		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
@@ -617,11 +642,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
 		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
 		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RateLimitConfig, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
+		c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
+		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
+		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
 		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
@@ -721,6 +747,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PurchaseReturnLine.mutate(ctx, m)
 	case *QualityCheckMutation:
 		return c.QualityCheck.mutate(ctx, m)
+	case *RFQMutation:
+		return c.RFQ.mutate(ctx, m)
+	case *RFQAwardMutation:
+		return c.RFQAward.mutate(ctx, m)
+	case *RFQLineMutation:
+		return c.RFQLine.mutate(ctx, m)
 	case *RateLimitConfigMutation:
 		return c.RateLimitConfig.mutate(ctx, m)
 	case *RecipeMutation:
@@ -749,6 +781,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Supplier.mutate(ctx, m)
 	case *SupplierPerformanceMutation:
 		return c.SupplierPerformance.mutate(ctx, m)
+	case *SupplierResponseMutation:
+		return c.SupplierResponse.mutate(ctx, m)
 	case *TenantMutation:
 		return c.Tenant.mutate(ctx, m)
 	case *TenantInventoryConfigMutation:
@@ -7749,6 +7783,485 @@ func (c *QualityCheckClient) mutate(ctx context.Context, m *QualityCheckMutation
 	}
 }
 
+// RFQClient is a client for the RFQ schema.
+type RFQClient struct {
+	config
+}
+
+// NewRFQClient returns a client for the RFQ from the given config.
+func NewRFQClient(c config) *RFQClient {
+	return &RFQClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rfq.Hooks(f(g(h())))`.
+func (c *RFQClient) Use(hooks ...Hook) {
+	c.hooks.RFQ = append(c.hooks.RFQ, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rfq.Intercept(f(g(h())))`.
+func (c *RFQClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RFQ = append(c.inters.RFQ, interceptors...)
+}
+
+// Create returns a builder for creating a RFQ entity.
+func (c *RFQClient) Create() *RFQCreate {
+	mutation := newRFQMutation(c.config, OpCreate)
+	return &RFQCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RFQ entities.
+func (c *RFQClient) CreateBulk(builders ...*RFQCreate) *RFQCreateBulk {
+	return &RFQCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RFQClient) MapCreateBulk(slice any, setFunc func(*RFQCreate, int)) *RFQCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RFQCreateBulk{err: fmt.Errorf("calling to RFQClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RFQCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RFQCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RFQ.
+func (c *RFQClient) Update() *RFQUpdate {
+	mutation := newRFQMutation(c.config, OpUpdate)
+	return &RFQUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RFQClient) UpdateOne(_m *RFQ) *RFQUpdateOne {
+	mutation := newRFQMutation(c.config, OpUpdateOne, withRFQ(_m))
+	return &RFQUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RFQClient) UpdateOneID(id uuid.UUID) *RFQUpdateOne {
+	mutation := newRFQMutation(c.config, OpUpdateOne, withRFQID(id))
+	return &RFQUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RFQ.
+func (c *RFQClient) Delete() *RFQDelete {
+	mutation := newRFQMutation(c.config, OpDelete)
+	return &RFQDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RFQClient) DeleteOne(_m *RFQ) *RFQDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RFQClient) DeleteOneID(id uuid.UUID) *RFQDeleteOne {
+	builder := c.Delete().Where(rfq.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RFQDeleteOne{builder}
+}
+
+// Query returns a query builder for RFQ.
+func (c *RFQClient) Query() *RFQQuery {
+	return &RFQQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRFQ},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RFQ entity by its id.
+func (c *RFQClient) Get(ctx context.Context, id uuid.UUID) (*RFQ, error) {
+	return c.Query().Where(rfq.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RFQClient) GetX(ctx context.Context, id uuid.UUID) *RFQ {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryLines queries the lines edge of a RFQ.
+func (c *RFQClient) QueryLines(_m *RFQ) *RFQLineQuery {
+	query := (&RFQLineClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rfq.Table, rfq.FieldID, id),
+			sqlgraph.To(rfqline.Table, rfqline.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rfq.LinesTable, rfq.LinesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryResponses queries the responses edge of a RFQ.
+func (c *RFQClient) QueryResponses(_m *RFQ) *SupplierResponseQuery {
+	query := (&SupplierResponseClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rfq.Table, rfq.FieldID, id),
+			sqlgraph.To(supplierresponse.Table, supplierresponse.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rfq.ResponsesTable, rfq.ResponsesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAwards queries the awards edge of a RFQ.
+func (c *RFQClient) QueryAwards(_m *RFQ) *RFQAwardQuery {
+	query := (&RFQAwardClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rfq.Table, rfq.FieldID, id),
+			sqlgraph.To(rfqaward.Table, rfqaward.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rfq.AwardsTable, rfq.AwardsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RFQClient) Hooks() []Hook {
+	return c.hooks.RFQ
+}
+
+// Interceptors returns the client interceptors.
+func (c *RFQClient) Interceptors() []Interceptor {
+	return c.inters.RFQ
+}
+
+func (c *RFQClient) mutate(ctx context.Context, m *RFQMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RFQCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RFQUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RFQUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RFQDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RFQ mutation op: %q", m.Op())
+	}
+}
+
+// RFQAwardClient is a client for the RFQAward schema.
+type RFQAwardClient struct {
+	config
+}
+
+// NewRFQAwardClient returns a client for the RFQAward from the given config.
+func NewRFQAwardClient(c config) *RFQAwardClient {
+	return &RFQAwardClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rfqaward.Hooks(f(g(h())))`.
+func (c *RFQAwardClient) Use(hooks ...Hook) {
+	c.hooks.RFQAward = append(c.hooks.RFQAward, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rfqaward.Intercept(f(g(h())))`.
+func (c *RFQAwardClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RFQAward = append(c.inters.RFQAward, interceptors...)
+}
+
+// Create returns a builder for creating a RFQAward entity.
+func (c *RFQAwardClient) Create() *RFQAwardCreate {
+	mutation := newRFQAwardMutation(c.config, OpCreate)
+	return &RFQAwardCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RFQAward entities.
+func (c *RFQAwardClient) CreateBulk(builders ...*RFQAwardCreate) *RFQAwardCreateBulk {
+	return &RFQAwardCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RFQAwardClient) MapCreateBulk(slice any, setFunc func(*RFQAwardCreate, int)) *RFQAwardCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RFQAwardCreateBulk{err: fmt.Errorf("calling to RFQAwardClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RFQAwardCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RFQAwardCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RFQAward.
+func (c *RFQAwardClient) Update() *RFQAwardUpdate {
+	mutation := newRFQAwardMutation(c.config, OpUpdate)
+	return &RFQAwardUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RFQAwardClient) UpdateOne(_m *RFQAward) *RFQAwardUpdateOne {
+	mutation := newRFQAwardMutation(c.config, OpUpdateOne, withRFQAward(_m))
+	return &RFQAwardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RFQAwardClient) UpdateOneID(id uuid.UUID) *RFQAwardUpdateOne {
+	mutation := newRFQAwardMutation(c.config, OpUpdateOne, withRFQAwardID(id))
+	return &RFQAwardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RFQAward.
+func (c *RFQAwardClient) Delete() *RFQAwardDelete {
+	mutation := newRFQAwardMutation(c.config, OpDelete)
+	return &RFQAwardDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RFQAwardClient) DeleteOne(_m *RFQAward) *RFQAwardDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RFQAwardClient) DeleteOneID(id uuid.UUID) *RFQAwardDeleteOne {
+	builder := c.Delete().Where(rfqaward.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RFQAwardDeleteOne{builder}
+}
+
+// Query returns a query builder for RFQAward.
+func (c *RFQAwardClient) Query() *RFQAwardQuery {
+	return &RFQAwardQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRFQAward},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RFQAward entity by its id.
+func (c *RFQAwardClient) Get(ctx context.Context, id uuid.UUID) (*RFQAward, error) {
+	return c.Query().Where(rfqaward.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RFQAwardClient) GetX(ctx context.Context, id uuid.UUID) *RFQAward {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRfq queries the rfq edge of a RFQAward.
+func (c *RFQAwardClient) QueryRfq(_m *RFQAward) *RFQQuery {
+	query := (&RFQClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rfqaward.Table, rfqaward.FieldID, id),
+			sqlgraph.To(rfq.Table, rfq.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rfqaward.RfqTable, rfqaward.RfqColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RFQAwardClient) Hooks() []Hook {
+	return c.hooks.RFQAward
+}
+
+// Interceptors returns the client interceptors.
+func (c *RFQAwardClient) Interceptors() []Interceptor {
+	return c.inters.RFQAward
+}
+
+func (c *RFQAwardClient) mutate(ctx context.Context, m *RFQAwardMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RFQAwardCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RFQAwardUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RFQAwardUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RFQAwardDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RFQAward mutation op: %q", m.Op())
+	}
+}
+
+// RFQLineClient is a client for the RFQLine schema.
+type RFQLineClient struct {
+	config
+}
+
+// NewRFQLineClient returns a client for the RFQLine from the given config.
+func NewRFQLineClient(c config) *RFQLineClient {
+	return &RFQLineClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rfqline.Hooks(f(g(h())))`.
+func (c *RFQLineClient) Use(hooks ...Hook) {
+	c.hooks.RFQLine = append(c.hooks.RFQLine, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rfqline.Intercept(f(g(h())))`.
+func (c *RFQLineClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RFQLine = append(c.inters.RFQLine, interceptors...)
+}
+
+// Create returns a builder for creating a RFQLine entity.
+func (c *RFQLineClient) Create() *RFQLineCreate {
+	mutation := newRFQLineMutation(c.config, OpCreate)
+	return &RFQLineCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RFQLine entities.
+func (c *RFQLineClient) CreateBulk(builders ...*RFQLineCreate) *RFQLineCreateBulk {
+	return &RFQLineCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RFQLineClient) MapCreateBulk(slice any, setFunc func(*RFQLineCreate, int)) *RFQLineCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RFQLineCreateBulk{err: fmt.Errorf("calling to RFQLineClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RFQLineCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RFQLineCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RFQLine.
+func (c *RFQLineClient) Update() *RFQLineUpdate {
+	mutation := newRFQLineMutation(c.config, OpUpdate)
+	return &RFQLineUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RFQLineClient) UpdateOne(_m *RFQLine) *RFQLineUpdateOne {
+	mutation := newRFQLineMutation(c.config, OpUpdateOne, withRFQLine(_m))
+	return &RFQLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RFQLineClient) UpdateOneID(id uuid.UUID) *RFQLineUpdateOne {
+	mutation := newRFQLineMutation(c.config, OpUpdateOne, withRFQLineID(id))
+	return &RFQLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RFQLine.
+func (c *RFQLineClient) Delete() *RFQLineDelete {
+	mutation := newRFQLineMutation(c.config, OpDelete)
+	return &RFQLineDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RFQLineClient) DeleteOne(_m *RFQLine) *RFQLineDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RFQLineClient) DeleteOneID(id uuid.UUID) *RFQLineDeleteOne {
+	builder := c.Delete().Where(rfqline.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RFQLineDeleteOne{builder}
+}
+
+// Query returns a query builder for RFQLine.
+func (c *RFQLineClient) Query() *RFQLineQuery {
+	return &RFQLineQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRFQLine},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RFQLine entity by its id.
+func (c *RFQLineClient) Get(ctx context.Context, id uuid.UUID) (*RFQLine, error) {
+	return c.Query().Where(rfqline.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RFQLineClient) GetX(ctx context.Context, id uuid.UUID) *RFQLine {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRfq queries the rfq edge of a RFQLine.
+func (c *RFQLineClient) QueryRfq(_m *RFQLine) *RFQQuery {
+	query := (&RFQClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rfqline.Table, rfqline.FieldID, id),
+			sqlgraph.To(rfq.Table, rfq.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rfqline.RfqTable, rfqline.RfqColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RFQLineClient) Hooks() []Hook {
+	return c.hooks.RFQLine
+}
+
+// Interceptors returns the client interceptors.
+func (c *RFQLineClient) Interceptors() []Interceptor {
+	return c.inters.RFQLine
+}
+
+func (c *RFQLineClient) mutate(ctx context.Context, m *RFQLineMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RFQLineCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RFQLineUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RFQLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RFQLineDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RFQLine mutation op: %q", m.Op())
+	}
+}
+
 // RateLimitConfigClient is a client for the RateLimitConfig schema.
 type RateLimitConfigClient struct {
 	config
@@ -9851,6 +10364,155 @@ func (c *SupplierPerformanceClient) mutate(ctx context.Context, m *SupplierPerfo
 	}
 }
 
+// SupplierResponseClient is a client for the SupplierResponse schema.
+type SupplierResponseClient struct {
+	config
+}
+
+// NewSupplierResponseClient returns a client for the SupplierResponse from the given config.
+func NewSupplierResponseClient(c config) *SupplierResponseClient {
+	return &SupplierResponseClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `supplierresponse.Hooks(f(g(h())))`.
+func (c *SupplierResponseClient) Use(hooks ...Hook) {
+	c.hooks.SupplierResponse = append(c.hooks.SupplierResponse, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `supplierresponse.Intercept(f(g(h())))`.
+func (c *SupplierResponseClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SupplierResponse = append(c.inters.SupplierResponse, interceptors...)
+}
+
+// Create returns a builder for creating a SupplierResponse entity.
+func (c *SupplierResponseClient) Create() *SupplierResponseCreate {
+	mutation := newSupplierResponseMutation(c.config, OpCreate)
+	return &SupplierResponseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SupplierResponse entities.
+func (c *SupplierResponseClient) CreateBulk(builders ...*SupplierResponseCreate) *SupplierResponseCreateBulk {
+	return &SupplierResponseCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SupplierResponseClient) MapCreateBulk(slice any, setFunc func(*SupplierResponseCreate, int)) *SupplierResponseCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SupplierResponseCreateBulk{err: fmt.Errorf("calling to SupplierResponseClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SupplierResponseCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SupplierResponseCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SupplierResponse.
+func (c *SupplierResponseClient) Update() *SupplierResponseUpdate {
+	mutation := newSupplierResponseMutation(c.config, OpUpdate)
+	return &SupplierResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SupplierResponseClient) UpdateOne(_m *SupplierResponse) *SupplierResponseUpdateOne {
+	mutation := newSupplierResponseMutation(c.config, OpUpdateOne, withSupplierResponse(_m))
+	return &SupplierResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SupplierResponseClient) UpdateOneID(id uuid.UUID) *SupplierResponseUpdateOne {
+	mutation := newSupplierResponseMutation(c.config, OpUpdateOne, withSupplierResponseID(id))
+	return &SupplierResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SupplierResponse.
+func (c *SupplierResponseClient) Delete() *SupplierResponseDelete {
+	mutation := newSupplierResponseMutation(c.config, OpDelete)
+	return &SupplierResponseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SupplierResponseClient) DeleteOne(_m *SupplierResponse) *SupplierResponseDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SupplierResponseClient) DeleteOneID(id uuid.UUID) *SupplierResponseDeleteOne {
+	builder := c.Delete().Where(supplierresponse.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SupplierResponseDeleteOne{builder}
+}
+
+// Query returns a query builder for SupplierResponse.
+func (c *SupplierResponseClient) Query() *SupplierResponseQuery {
+	return &SupplierResponseQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSupplierResponse},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SupplierResponse entity by its id.
+func (c *SupplierResponseClient) Get(ctx context.Context, id uuid.UUID) (*SupplierResponse, error) {
+	return c.Query().Where(supplierresponse.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SupplierResponseClient) GetX(ctx context.Context, id uuid.UUID) *SupplierResponse {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRfq queries the rfq edge of a SupplierResponse.
+func (c *SupplierResponseClient) QueryRfq(_m *SupplierResponse) *RFQQuery {
+	query := (&RFQClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(supplierresponse.Table, supplierresponse.FieldID, id),
+			sqlgraph.To(rfq.Table, rfq.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, supplierresponse.RfqTable, supplierresponse.RfqColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SupplierResponseClient) Hooks() []Hook {
+	return c.hooks.SupplierResponse
+}
+
+// Interceptors returns the client interceptors.
+func (c *SupplierResponseClient) Interceptors() []Interceptor {
+	return c.inters.SupplierResponse
+}
+
+func (c *SupplierResponseClient) mutate(ctx context.Context, m *SupplierResponseMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SupplierResponseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SupplierResponseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SupplierResponseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SupplierResponseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SupplierResponse mutation op: %q", m.Op())
+	}
+}
+
 // TenantClient is a client for the Tenant schema.
 type TenantClient struct {
 	config
@@ -11268,12 +11930,12 @@ type (
 		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
 		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
 		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Hook
+		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -11285,11 +11947,11 @@ type (
 		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
 		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
 		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RateLimitConfig, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, Tenant, TenantInventoryConfig, Ticket, Unit,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Interceptor
+		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )

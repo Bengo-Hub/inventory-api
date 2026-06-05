@@ -173,6 +173,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	h.registerGoodsReceiptRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
 	h.registerProcurementMiscRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
 	h.registerProcurementAnalyticsRoutes(r)
+	h.registerRFQRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange, rbac.PermProcurementDelete)
 	r.Get("/inventory/purchase-orders/{poID}/pdf", h.GeneratePurchaseOrderPDF)
 
 	// Manufacturing (migrated from ERP manufacturing/*)

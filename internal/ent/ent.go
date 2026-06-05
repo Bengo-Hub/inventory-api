@@ -63,6 +63,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
 	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rfq"
+	"github.com/bengobox/inventory-service/internal/ent/rfqaward"
+	"github.com/bengobox/inventory-service/internal/ent/rfqline"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
@@ -71,6 +74,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
+	"github.com/bengobox/inventory-service/internal/ent/supplierresponse"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -185,6 +189,9 @@ func checkColumn(t, c string) error {
 			purchasereturn.Table:        purchasereturn.ValidColumn,
 			purchasereturnline.Table:    purchasereturnline.ValidColumn,
 			qualitycheck.Table:          qualitycheck.ValidColumn,
+			rfq.Table:                   rfq.ValidColumn,
+			rfqaward.Table:              rfqaward.ValidColumn,
+			rfqline.Table:               rfqline.ValidColumn,
 			ratelimitconfig.Table:       ratelimitconfig.ValidColumn,
 			recipe.Table:                recipe.ValidColumn,
 			recipeingredient.Table:      recipeingredient.ValidColumn,
@@ -199,6 +206,7 @@ func checkColumn(t, c string) error {
 			stocktransferline.Table:     stocktransferline.ValidColumn,
 			supplier.Table:              supplier.ValidColumn,
 			supplierperformance.Table:   supplierperformance.ValidColumn,
+			supplierresponse.Table:      supplierresponse.ValidColumn,
 			tenant.Table:                tenant.ValidColumn,
 			tenantinventoryconfig.Table: tenantinventoryconfig.ValidColumn,
 			ticket.Table:                ticket.ValidColumn,
