@@ -29,11 +29,11 @@ const (
 type stockLowPayload struct {
 	TenantID     string `json:"tenant_id"`
 	ItemID       string `json:"item_id"`
-	SKU          string `json:"sku"`
-	Name         string `json:"name"`
-	Available    int    `json:"available"`
-	ReorderLevel int    `json:"reorder_level"`
-	WarehouseID  string `json:"warehouse_id"`
+	SKU          string  `json:"sku"`
+	Name         string  `json:"name"`
+	Available    float64 `json:"available"`
+	ReorderLevel int     `json:"reorder_level"`
+	WarehouseID  string  `json:"warehouse_id"`
 }
 
 // StockEventsConsumer consumes inventory.stock.low events and auto-creates
@@ -207,7 +207,7 @@ func (c *StockEventsConsumer) handleLowStock(ctx context.Context, tenantID, item
 		SetTotalAmount(0).
 		SetCurrency("KES").
 		SetNotes(fmt.Sprintf(
-			"Auto-generated reorder: %s fell below reorder level (%d available, reorder level %d). Review and set unit prices before issuing.",
+			"Auto-generated reorder: %s fell below reorder level (%g available, reorder level %d). Review and set unit prices before issuing.",
 			p.SKU, p.Available, p.ReorderLevel,
 		)).
 		Save(ctx)
@@ -218,7 +218,7 @@ func (c *StockEventsConsumer) handleLowStock(ctx context.Context, tenantID, item
 	_, err = c.orm.PurchaseOrderLine.Create().
 		SetPoID(po.ID).
 		SetItemID(itemID).
-		SetQuantityOrdered(reorderQty).
+		SetQuantityOrdered(float64(reorderQty)).
 		SetUnitPrice(0).
 		SetTotalPrice(0).
 		Save(ctx)

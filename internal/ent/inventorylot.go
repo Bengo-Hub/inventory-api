@@ -32,8 +32,8 @@ type InventoryLot struct {
 	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
 	// Manufacturing/production date
 	ManufacturedDate *time.Time `json:"manufactured_date,omitempty"`
-	// Current quantity in this lot
-	Quantity int `json:"quantity,omitempty"`
+	// Current quantity in this lot (fractional-capable)
+	Quantity float64 `json:"quantity,omitempty"`
 	// Status holds the value of the "status" field.
 	Status inventorylot.Status `json:"status,omitempty"`
 	// Cost per unit in this lot for FIFO/LIFO costing
@@ -88,10 +88,8 @@ func (*InventoryLot) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventorylot.FieldCostPrice:
+		case inventorylot.FieldQuantity, inventorylot.FieldCostPrice:
 			values[i] = new(sql.NullFloat64)
-		case inventorylot.FieldQuantity:
-			values[i] = new(sql.NullInt64)
 		case inventorylot.FieldLotNumber, inventorylot.FieldStatus, inventorylot.FieldSupplierReference:
 			values[i] = new(sql.NullString)
 		case inventorylot.FieldExpiryDate, inventorylot.FieldManufacturedDate, inventorylot.FieldCreatedAt, inventorylot.FieldUpdatedAt:
@@ -158,10 +156,10 @@ func (_m *InventoryLot) assignValues(columns []string, values []any) error {
 				*_m.ManufacturedDate = value.Time
 			}
 		case inventorylot.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		case inventorylot.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {

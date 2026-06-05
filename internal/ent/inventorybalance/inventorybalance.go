@@ -102,11 +102,11 @@ func ValidColumn(column string) bool {
 
 var (
 	// DefaultOnHand holds the default value on creation for the "on_hand" field.
-	DefaultOnHand int
+	DefaultOnHand float64
 	// DefaultAvailable holds the default value on creation for the "available" field.
-	DefaultAvailable int
+	DefaultAvailable float64
 	// DefaultReserved holds the default value on creation for the "reserved" field.
-	DefaultReserved int
+	DefaultReserved float64
 	// DefaultUnitOfMeasure holds the default value on creation for the "unit_of_measure" field.
 	DefaultUnitOfMeasure string
 	// DefaultReorderLevel holds the default value on creation for the "reorder_level" field.

@@ -87,7 +87,7 @@ func ManufacturedDate(v time.Time) predicate.InventoryLot {
 }
 
 // Quantity applies equality check predicate on the "quantity" field. It's identical to QuantityEQ.
-func Quantity(v int) predicate.InventoryLot {
+func Quantity(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldEQ(FieldQuantity, v))
 }
 
@@ -357,42 +357,42 @@ func ManufacturedDateNotNil() predicate.InventoryLot {
 }
 
 // QuantityEQ applies the EQ predicate on the "quantity" field.
-func QuantityEQ(v int) predicate.InventoryLot {
+func QuantityEQ(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldEQ(FieldQuantity, v))
 }
 
 // QuantityNEQ applies the NEQ predicate on the "quantity" field.
-func QuantityNEQ(v int) predicate.InventoryLot {
+func QuantityNEQ(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldNEQ(FieldQuantity, v))
 }
 
 // QuantityIn applies the In predicate on the "quantity" field.
-func QuantityIn(vs ...int) predicate.InventoryLot {
+func QuantityIn(vs ...float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldIn(FieldQuantity, vs...))
 }
 
 // QuantityNotIn applies the NotIn predicate on the "quantity" field.
-func QuantityNotIn(vs ...int) predicate.InventoryLot {
+func QuantityNotIn(vs ...float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldNotIn(FieldQuantity, vs...))
 }
 
 // QuantityGT applies the GT predicate on the "quantity" field.
-func QuantityGT(v int) predicate.InventoryLot {
+func QuantityGT(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldGT(FieldQuantity, v))
 }
 
 // QuantityGTE applies the GTE predicate on the "quantity" field.
-func QuantityGTE(v int) predicate.InventoryLot {
+func QuantityGTE(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldGTE(FieldQuantity, v))
 }
 
 // QuantityLT applies the LT predicate on the "quantity" field.
-func QuantityLT(v int) predicate.InventoryLot {
+func QuantityLT(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldLT(FieldQuantity, v))
 }
 
 // QuantityLTE applies the LTE predicate on the "quantity" field.
-func QuantityLTE(v int) predicate.InventoryLot {
+func QuantityLTE(v float64) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldLTE(FieldQuantity, v))
 }
 

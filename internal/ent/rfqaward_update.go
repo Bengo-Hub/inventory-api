@@ -107,14 +107,14 @@ func (_u *RFQAwardUpdate) AddUnitPrice(v float64) *RFQAwardUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RFQAwardUpdate) SetQuantity(v int) *RFQAwardUpdate {
+func (_u *RFQAwardUpdate) SetQuantity(v float64) *RFQAwardUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RFQAwardUpdate) SetNillableQuantity(v *int) *RFQAwardUpdate {
+func (_u *RFQAwardUpdate) SetNillableQuantity(v *float64) *RFQAwardUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -122,7 +122,7 @@ func (_u *RFQAwardUpdate) SetNillableQuantity(v *int) *RFQAwardUpdate {
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RFQAwardUpdate) AddQuantity(v int) *RFQAwardUpdate {
+func (_u *RFQAwardUpdate) AddQuantity(v float64) *RFQAwardUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -226,10 +226,10 @@ func (_u *RFQAwardUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.AddField(rfqaward.FieldUnitPrice, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(rfqaward.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqaward.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(rfqaward.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(rfqaward.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.PoID(); ok {
 		_spec.SetField(rfqaward.FieldPoID, field.TypeUUID, value)
@@ -364,14 +364,14 @@ func (_u *RFQAwardUpdateOne) AddUnitPrice(v float64) *RFQAwardUpdateOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RFQAwardUpdateOne) SetQuantity(v int) *RFQAwardUpdateOne {
+func (_u *RFQAwardUpdateOne) SetQuantity(v float64) *RFQAwardUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RFQAwardUpdateOne) SetNillableQuantity(v *int) *RFQAwardUpdateOne {
+func (_u *RFQAwardUpdateOne) SetNillableQuantity(v *float64) *RFQAwardUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -379,7 +379,7 @@ func (_u *RFQAwardUpdateOne) SetNillableQuantity(v *int) *RFQAwardUpdateOne {
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RFQAwardUpdateOne) AddQuantity(v int) *RFQAwardUpdateOne {
+func (_u *RFQAwardUpdateOne) AddQuantity(v float64) *RFQAwardUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -513,10 +513,10 @@ func (_u *RFQAwardUpdateOne) sqlSave(ctx context.Context) (_node *RFQAward, err 
 		_spec.AddField(rfqaward.FieldUnitPrice, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(rfqaward.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqaward.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(rfqaward.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(rfqaward.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.PoID(); ok {
 		_spec.SetField(rfqaward.FieldPoID, field.TypeUUID, value)

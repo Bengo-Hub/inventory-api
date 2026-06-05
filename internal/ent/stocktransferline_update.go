@@ -98,14 +98,14 @@ func (_u *StockTransferLineUpdate) ClearLotID() *StockTransferLineUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *StockTransferLineUpdate) SetQuantity(v int) *StockTransferLineUpdate {
+func (_u *StockTransferLineUpdate) SetQuantity(v float64) *StockTransferLineUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *StockTransferLineUpdate) SetNillableQuantity(v *int) *StockTransferLineUpdate {
+func (_u *StockTransferLineUpdate) SetNillableQuantity(v *float64) *StockTransferLineUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -113,7 +113,7 @@ func (_u *StockTransferLineUpdate) SetNillableQuantity(v *int) *StockTransferLin
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *StockTransferLineUpdate) AddQuantity(v int) *StockTransferLineUpdate {
+func (_u *StockTransferLineUpdate) AddQuantity(v float64) *StockTransferLineUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -197,10 +197,10 @@ func (_u *StockTransferLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 		_spec.ClearField(stocktransferline.FieldLotID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(stocktransferline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(stocktransferline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if _u.mutation.TransferCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -320,14 +320,14 @@ func (_u *StockTransferLineUpdateOne) ClearLotID() *StockTransferLineUpdateOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *StockTransferLineUpdateOne) SetQuantity(v int) *StockTransferLineUpdateOne {
+func (_u *StockTransferLineUpdateOne) SetQuantity(v float64) *StockTransferLineUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *StockTransferLineUpdateOne) SetNillableQuantity(v *int) *StockTransferLineUpdateOne {
+func (_u *StockTransferLineUpdateOne) SetNillableQuantity(v *float64) *StockTransferLineUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -335,7 +335,7 @@ func (_u *StockTransferLineUpdateOne) SetNillableQuantity(v *int) *StockTransfer
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *StockTransferLineUpdateOne) AddQuantity(v int) *StockTransferLineUpdateOne {
+func (_u *StockTransferLineUpdateOne) AddQuantity(v float64) *StockTransferLineUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -449,10 +449,10 @@ func (_u *StockTransferLineUpdateOne) sqlSave(ctx context.Context) (_node *Stock
 		_spec.ClearField(stocktransferline.FieldLotID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(stocktransferline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(stocktransferline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if _u.mutation.TransferCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -27,9 +27,9 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("FK to ItemVariant if variant-specific"),
-		field.Int("quantity_ordered").
+		field.Float("quantity_ordered").
 			Default(0),
-		field.Int("quantity_received").
+		field.Float("quantity_received").
 			Default(0),
 		field.Float("unit_price").
 			Default(0),

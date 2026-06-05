@@ -75,14 +75,14 @@ func (_u *InventoryBalanceUpdate) SetNillableWarehouseID(v *uuid.UUID) *Inventor
 }
 
 // SetOnHand sets the "on_hand" field.
-func (_u *InventoryBalanceUpdate) SetOnHand(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetOnHand(v float64) *InventoryBalanceUpdate {
 	_u.mutation.ResetOnHand()
 	_u.mutation.SetOnHand(v)
 	return _u
 }
 
 // SetNillableOnHand sets the "on_hand" field if the given value is not nil.
-func (_u *InventoryBalanceUpdate) SetNillableOnHand(v *int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetNillableOnHand(v *float64) *InventoryBalanceUpdate {
 	if v != nil {
 		_u.SetOnHand(*v)
 	}
@@ -90,20 +90,20 @@ func (_u *InventoryBalanceUpdate) SetNillableOnHand(v *int) *InventoryBalanceUpd
 }
 
 // AddOnHand adds value to the "on_hand" field.
-func (_u *InventoryBalanceUpdate) AddOnHand(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) AddOnHand(v float64) *InventoryBalanceUpdate {
 	_u.mutation.AddOnHand(v)
 	return _u
 }
 
 // SetAvailable sets the "available" field.
-func (_u *InventoryBalanceUpdate) SetAvailable(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetAvailable(v float64) *InventoryBalanceUpdate {
 	_u.mutation.ResetAvailable()
 	_u.mutation.SetAvailable(v)
 	return _u
 }
 
 // SetNillableAvailable sets the "available" field if the given value is not nil.
-func (_u *InventoryBalanceUpdate) SetNillableAvailable(v *int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetNillableAvailable(v *float64) *InventoryBalanceUpdate {
 	if v != nil {
 		_u.SetAvailable(*v)
 	}
@@ -111,20 +111,20 @@ func (_u *InventoryBalanceUpdate) SetNillableAvailable(v *int) *InventoryBalance
 }
 
 // AddAvailable adds value to the "available" field.
-func (_u *InventoryBalanceUpdate) AddAvailable(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) AddAvailable(v float64) *InventoryBalanceUpdate {
 	_u.mutation.AddAvailable(v)
 	return _u
 }
 
 // SetReserved sets the "reserved" field.
-func (_u *InventoryBalanceUpdate) SetReserved(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetReserved(v float64) *InventoryBalanceUpdate {
 	_u.mutation.ResetReserved()
 	_u.mutation.SetReserved(v)
 	return _u
 }
 
 // SetNillableReserved sets the "reserved" field if the given value is not nil.
-func (_u *InventoryBalanceUpdate) SetNillableReserved(v *int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) SetNillableReserved(v *float64) *InventoryBalanceUpdate {
 	if v != nil {
 		_u.SetReserved(*v)
 	}
@@ -132,7 +132,7 @@ func (_u *InventoryBalanceUpdate) SetNillableReserved(v *int) *InventoryBalanceU
 }
 
 // AddReserved adds value to the "reserved" field.
-func (_u *InventoryBalanceUpdate) AddReserved(v int) *InventoryBalanceUpdate {
+func (_u *InventoryBalanceUpdate) AddReserved(v float64) *InventoryBalanceUpdate {
 	_u.mutation.AddReserved(v)
 	return _u
 }
@@ -354,22 +354,22 @@ func (_u *InventoryBalanceUpdate) sqlSave(ctx context.Context) (_node int, err e
 		_spec.SetField(inventorybalance.FieldTenantID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.OnHand(); ok {
-		_spec.SetField(inventorybalance.FieldOnHand, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldOnHand, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedOnHand(); ok {
-		_spec.AddField(inventorybalance.FieldOnHand, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldOnHand, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Available(); ok {
-		_spec.SetField(inventorybalance.FieldAvailable, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldAvailable, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedAvailable(); ok {
-		_spec.AddField(inventorybalance.FieldAvailable, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldAvailable, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Reserved(); ok {
-		_spec.SetField(inventorybalance.FieldReserved, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldReserved, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedReserved(); ok {
-		_spec.AddField(inventorybalance.FieldReserved, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldReserved, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitOfMeasure(); ok {
 		_spec.SetField(inventorybalance.FieldUnitOfMeasure, field.TypeString, value)
@@ -548,14 +548,14 @@ func (_u *InventoryBalanceUpdateOne) SetNillableWarehouseID(v *uuid.UUID) *Inven
 }
 
 // SetOnHand sets the "on_hand" field.
-func (_u *InventoryBalanceUpdateOne) SetOnHand(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetOnHand(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.ResetOnHand()
 	_u.mutation.SetOnHand(v)
 	return _u
 }
 
 // SetNillableOnHand sets the "on_hand" field if the given value is not nil.
-func (_u *InventoryBalanceUpdateOne) SetNillableOnHand(v *int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetNillableOnHand(v *float64) *InventoryBalanceUpdateOne {
 	if v != nil {
 		_u.SetOnHand(*v)
 	}
@@ -563,20 +563,20 @@ func (_u *InventoryBalanceUpdateOne) SetNillableOnHand(v *int) *InventoryBalance
 }
 
 // AddOnHand adds value to the "on_hand" field.
-func (_u *InventoryBalanceUpdateOne) AddOnHand(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) AddOnHand(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.AddOnHand(v)
 	return _u
 }
 
 // SetAvailable sets the "available" field.
-func (_u *InventoryBalanceUpdateOne) SetAvailable(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetAvailable(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.ResetAvailable()
 	_u.mutation.SetAvailable(v)
 	return _u
 }
 
 // SetNillableAvailable sets the "available" field if the given value is not nil.
-func (_u *InventoryBalanceUpdateOne) SetNillableAvailable(v *int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetNillableAvailable(v *float64) *InventoryBalanceUpdateOne {
 	if v != nil {
 		_u.SetAvailable(*v)
 	}
@@ -584,20 +584,20 @@ func (_u *InventoryBalanceUpdateOne) SetNillableAvailable(v *int) *InventoryBala
 }
 
 // AddAvailable adds value to the "available" field.
-func (_u *InventoryBalanceUpdateOne) AddAvailable(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) AddAvailable(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.AddAvailable(v)
 	return _u
 }
 
 // SetReserved sets the "reserved" field.
-func (_u *InventoryBalanceUpdateOne) SetReserved(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetReserved(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.ResetReserved()
 	_u.mutation.SetReserved(v)
 	return _u
 }
 
 // SetNillableReserved sets the "reserved" field if the given value is not nil.
-func (_u *InventoryBalanceUpdateOne) SetNillableReserved(v *int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) SetNillableReserved(v *float64) *InventoryBalanceUpdateOne {
 	if v != nil {
 		_u.SetReserved(*v)
 	}
@@ -605,7 +605,7 @@ func (_u *InventoryBalanceUpdateOne) SetNillableReserved(v *int) *InventoryBalan
 }
 
 // AddReserved adds value to the "reserved" field.
-func (_u *InventoryBalanceUpdateOne) AddReserved(v int) *InventoryBalanceUpdateOne {
+func (_u *InventoryBalanceUpdateOne) AddReserved(v float64) *InventoryBalanceUpdateOne {
 	_u.mutation.AddReserved(v)
 	return _u
 }
@@ -857,22 +857,22 @@ func (_u *InventoryBalanceUpdateOne) sqlSave(ctx context.Context) (_node *Invent
 		_spec.SetField(inventorybalance.FieldTenantID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.OnHand(); ok {
-		_spec.SetField(inventorybalance.FieldOnHand, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldOnHand, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedOnHand(); ok {
-		_spec.AddField(inventorybalance.FieldOnHand, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldOnHand, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Available(); ok {
-		_spec.SetField(inventorybalance.FieldAvailable, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldAvailable, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedAvailable(); ok {
-		_spec.AddField(inventorybalance.FieldAvailable, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldAvailable, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Reserved(); ok {
-		_spec.SetField(inventorybalance.FieldReserved, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldReserved, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedReserved(); ok {
-		_spec.AddField(inventorybalance.FieldReserved, field.TypeInt, value)
+		_spec.AddField(inventorybalance.FieldReserved, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitOfMeasure(); ok {
 		_spec.SetField(inventorybalance.FieldUnitOfMeasure, field.TypeString, value)

@@ -26,7 +26,7 @@ type lotDTO struct {
 	WarehouseName    string     `json:"warehouse_name"`
 	ExpiryDate       *time.Time `json:"expiry_date"`
 	ManufacturedDate *time.Time `json:"manufacture_date"`
-	Quantity         int        `json:"quantity"`
+	Quantity         float64    `json:"quantity"`
 	CostPrice        *float64   `json:"cost_per_unit"`
 	Status           string     `json:"status"`
 	SupplierRef      string     `json:"supplier_reference"`
@@ -103,7 +103,7 @@ type createLotInput struct {
 	LotNumber        string     `json:"lot_number"`
 	ExpiryDate       *time.Time `json:"expiry_date"`
 	ManufacturedDate *time.Time `json:"manufacture_date"`
-	Quantity         int        `json:"quantity"`
+	Quantity         float64    `json:"quantity"`
 	CostPrice        float64    `json:"cost_per_unit"`
 	SupplierRef      string     `json:"supplier_reference"`
 }
@@ -174,7 +174,7 @@ func (h *InventoryExtrasHandler) CreateLot(w http.ResponseWriter, r *http.Reques
 type updateLotInput struct {
 	ExpiryDate       *time.Time `json:"expiry_date"`
 	ManufacturedDate *time.Time `json:"manufacture_date"`
-	Quantity         int        `json:"quantity"`
+	Quantity         float64    `json:"quantity"`
 	CostPrice        *float64   `json:"cost_per_unit"`
 	Status           string     `json:"status"`
 	SupplierRef      string     `json:"supplier_reference"`

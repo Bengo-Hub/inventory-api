@@ -26,8 +26,8 @@ type StockTransferLine struct {
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	// FK to InventoryLot for lot-tracked items
 	LotID *uuid.UUID `json:"lot_id,omitempty"`
-	// Quantity to transfer
-	Quantity int `json:"quantity,omitempty"`
+	// Quantity to transfer (fractional-capable)
+	Quantity float64 `json:"quantity,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StockTransferLineQuery when eager-loading is set.
 	Edges        StockTransferLineEdges `json:"edges"`
@@ -62,7 +62,7 @@ func (*StockTransferLine) scanValues(columns []string) ([]any, error) {
 		case stocktransferline.FieldVariantID, stocktransferline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case stocktransferline.FieldQuantity:
-			values[i] = new(sql.NullInt64)
+			values[i] = new(sql.NullFloat64)
 		case stocktransferline.FieldID, stocktransferline.FieldTransferID, stocktransferline.FieldItemID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -113,10 +113,10 @@ func (_m *StockTransferLine) assignValues(columns []string, values []any) error 
 				*_m.LotID = *value.S.(*uuid.UUID)
 			}
 		case stocktransferline.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])

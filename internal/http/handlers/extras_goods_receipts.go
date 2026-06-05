@@ -31,9 +31,9 @@ import (
 type grnLinePayload struct {
 	PurchaseOrderLineID *uuid.UUID `json:"purchase_order_line_id"`
 	ItemID              uuid.UUID  `json:"item_id"`
-	QuantityReceived    int        `json:"quantity_received"`
-	QuantityAccepted    int        `json:"quantity_accepted"`
-	QuantityRejected    int        `json:"quantity_rejected"`
+	QuantityReceived    float64    `json:"quantity_received"`
+	QuantityAccepted    float64    `json:"quantity_accepted"`
+	QuantityRejected    float64    `json:"quantity_rejected"`
 	UnitCost            float64    `json:"unit_cost"`
 	RejectionReason     string     `json:"rejection_reason"`
 }
@@ -49,9 +49,9 @@ type grnLineDTO struct {
 	ID                  uuid.UUID  `json:"id"`
 	PurchaseOrderLineID *uuid.UUID `json:"purchase_order_line_id"`
 	ItemID              uuid.UUID  `json:"item_id"`
-	QuantityReceived    int        `json:"quantity_received"`
-	QuantityAccepted    int        `json:"quantity_accepted"`
-	QuantityRejected    int        `json:"quantity_rejected"`
+	QuantityReceived    float64    `json:"quantity_received"`
+	QuantityAccepted    float64    `json:"quantity_accepted"`
+	QuantityRejected    float64    `json:"quantity_rejected"`
 	UnitCost            float64    `json:"unit_cost"`
 	RejectionReason     string     `json:"rejection_reason"`
 }
@@ -94,7 +94,7 @@ func (h *InventoryExtrasHandler) registerGoodsReceiptRoutes(r chi.Router, perm f
 
 // applyStockIn upserts a warehouse-scoped InventoryBalance, incrementing on_hand
 // + available by qty (shared receipt logic).
-func (h *InventoryExtrasHandler) applyStockIn(ctx context.Context, tx *ent.Tx, tenantID, warehouseID, itemID uuid.UUID, qty int) error {
+func (h *InventoryExtrasHandler) applyStockIn(ctx context.Context, tx *ent.Tx, tenantID, warehouseID, itemID uuid.UUID, qty float64) error {
 	if qty <= 0 {
 		return nil
 	}
@@ -409,12 +409,12 @@ func (h *InventoryExtrasHandler) MatchPurchaseOrder(w http.ResponseWriter, r *ht
 
 	type lineMatch struct {
 		ItemID   uuid.UUID `json:"item_id"`
-		Ordered  int       `json:"ordered"`
-		Received int       `json:"received"`
+		Ordered  float64   `json:"ordered"`
+		Received float64   `json:"received"`
 		Status   string    `json:"status"`
 	}
 	lineMatches := make([]lineMatch, 0, len(poLines))
-	totalOrdered, totalReceived := 0, 0
+	totalOrdered, totalReceived := 0.0, 0.0
 	for _, pl := range poLines {
 		totalOrdered += pl.QuantityOrdered
 		totalReceived += pl.QuantityReceived
@@ -439,7 +439,7 @@ func (h *InventoryExtrasHandler) MatchPurchaseOrder(w http.ResponseWriter, r *ht
 	if invoiceTotal > 0 && invoiceTotal != po.TotalAmount {
 		header = "price_variance"
 	}
-	if invoicedQty > 0 && invoicedQty != totalReceived {
+	if invoicedQty > 0 && float64(invoicedQty) != totalReceived {
 		header = "qty_variance"
 	}
 

@@ -92,14 +92,14 @@ func (_u *GoodsReceiptLineUpdate) SetNillableItemID(v *uuid.UUID) *GoodsReceiptL
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_u *GoodsReceiptLineUpdate) SetQuantityReceived(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetQuantityReceived(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.ResetQuantityReceived()
 	_u.mutation.SetQuantityReceived(v)
 	return _u
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdate) SetNillableQuantityReceived(v *int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetNillableQuantityReceived(v *float64) *GoodsReceiptLineUpdate {
 	if v != nil {
 		_u.SetQuantityReceived(*v)
 	}
@@ -107,20 +107,20 @@ func (_u *GoodsReceiptLineUpdate) SetNillableQuantityReceived(v *int) *GoodsRece
 }
 
 // AddQuantityReceived adds value to the "quantity_received" field.
-func (_u *GoodsReceiptLineUpdate) AddQuantityReceived(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) AddQuantityReceived(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.AddQuantityReceived(v)
 	return _u
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (_u *GoodsReceiptLineUpdate) SetQuantityAccepted(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetQuantityAccepted(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.ResetQuantityAccepted()
 	_u.mutation.SetQuantityAccepted(v)
 	return _u
 }
 
 // SetNillableQuantityAccepted sets the "quantity_accepted" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdate) SetNillableQuantityAccepted(v *int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetNillableQuantityAccepted(v *float64) *GoodsReceiptLineUpdate {
 	if v != nil {
 		_u.SetQuantityAccepted(*v)
 	}
@@ -128,20 +128,20 @@ func (_u *GoodsReceiptLineUpdate) SetNillableQuantityAccepted(v *int) *GoodsRece
 }
 
 // AddQuantityAccepted adds value to the "quantity_accepted" field.
-func (_u *GoodsReceiptLineUpdate) AddQuantityAccepted(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) AddQuantityAccepted(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.AddQuantityAccepted(v)
 	return _u
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (_u *GoodsReceiptLineUpdate) SetQuantityRejected(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetQuantityRejected(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.ResetQuantityRejected()
 	_u.mutation.SetQuantityRejected(v)
 	return _u
 }
 
 // SetNillableQuantityRejected sets the "quantity_rejected" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdate) SetNillableQuantityRejected(v *int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) SetNillableQuantityRejected(v *float64) *GoodsReceiptLineUpdate {
 	if v != nil {
 		_u.SetQuantityRejected(*v)
 	}
@@ -149,7 +149,7 @@ func (_u *GoodsReceiptLineUpdate) SetNillableQuantityRejected(v *int) *GoodsRece
 }
 
 // AddQuantityRejected adds value to the "quantity_rejected" field.
-func (_u *GoodsReceiptLineUpdate) AddQuantityRejected(v int) *GoodsReceiptLineUpdate {
+func (_u *GoodsReceiptLineUpdate) AddQuantityRejected(v float64) *GoodsReceiptLineUpdate {
 	_u.mutation.AddQuantityRejected(v)
 	return _u
 }
@@ -271,22 +271,22 @@ func (_u *GoodsReceiptLineUpdate) sqlSave(ctx context.Context) (_node int, err e
 		_spec.SetField(goodsreceiptline.FieldItemID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.QuantityReceived(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityAccepted(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityAccepted(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityAccepted, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityAccepted, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityRejected(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityRejected(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityRejected, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityRejected, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitCost(); ok {
 		_spec.SetField(goodsreceiptline.FieldUnitCost, field.TypeFloat64, value)
@@ -412,14 +412,14 @@ func (_u *GoodsReceiptLineUpdateOne) SetNillableItemID(v *uuid.UUID) *GoodsRecei
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_u *GoodsReceiptLineUpdateOne) SetQuantityReceived(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetQuantityReceived(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.ResetQuantityReceived()
 	_u.mutation.SetQuantityReceived(v)
 	return _u
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityReceived(v *int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityReceived(v *float64) *GoodsReceiptLineUpdateOne {
 	if v != nil {
 		_u.SetQuantityReceived(*v)
 	}
@@ -427,20 +427,20 @@ func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityReceived(v *int) *GoodsR
 }
 
 // AddQuantityReceived adds value to the "quantity_received" field.
-func (_u *GoodsReceiptLineUpdateOne) AddQuantityReceived(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) AddQuantityReceived(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.AddQuantityReceived(v)
 	return _u
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (_u *GoodsReceiptLineUpdateOne) SetQuantityAccepted(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetQuantityAccepted(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.ResetQuantityAccepted()
 	_u.mutation.SetQuantityAccepted(v)
 	return _u
 }
 
 // SetNillableQuantityAccepted sets the "quantity_accepted" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityAccepted(v *int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityAccepted(v *float64) *GoodsReceiptLineUpdateOne {
 	if v != nil {
 		_u.SetQuantityAccepted(*v)
 	}
@@ -448,20 +448,20 @@ func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityAccepted(v *int) *GoodsR
 }
 
 // AddQuantityAccepted adds value to the "quantity_accepted" field.
-func (_u *GoodsReceiptLineUpdateOne) AddQuantityAccepted(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) AddQuantityAccepted(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.AddQuantityAccepted(v)
 	return _u
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (_u *GoodsReceiptLineUpdateOne) SetQuantityRejected(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetQuantityRejected(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.ResetQuantityRejected()
 	_u.mutation.SetQuantityRejected(v)
 	return _u
 }
 
 // SetNillableQuantityRejected sets the "quantity_rejected" field if the given value is not nil.
-func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityRejected(v *int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityRejected(v *float64) *GoodsReceiptLineUpdateOne {
 	if v != nil {
 		_u.SetQuantityRejected(*v)
 	}
@@ -469,7 +469,7 @@ func (_u *GoodsReceiptLineUpdateOne) SetNillableQuantityRejected(v *int) *GoodsR
 }
 
 // AddQuantityRejected adds value to the "quantity_rejected" field.
-func (_u *GoodsReceiptLineUpdateOne) AddQuantityRejected(v int) *GoodsReceiptLineUpdateOne {
+func (_u *GoodsReceiptLineUpdateOne) AddQuantityRejected(v float64) *GoodsReceiptLineUpdateOne {
 	_u.mutation.AddQuantityRejected(v)
 	return _u
 }
@@ -621,22 +621,22 @@ func (_u *GoodsReceiptLineUpdateOne) sqlSave(ctx context.Context) (_node *GoodsR
 		_spec.SetField(goodsreceiptline.FieldItemID, field.TypeUUID, value)
 	}
 	if value, ok := _u.mutation.QuantityReceived(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityAccepted(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityAccepted(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityAccepted, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityAccepted, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityRejected(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityRejected(); ok {
-		_spec.AddField(goodsreceiptline.FieldQuantityRejected, field.TypeInt, value)
+		_spec.AddField(goodsreceiptline.FieldQuantityRejected, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitCost(); ok {
 		_spec.SetField(goodsreceiptline.FieldUnitCost, field.TypeFloat64, value)

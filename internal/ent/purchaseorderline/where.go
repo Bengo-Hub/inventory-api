@@ -70,12 +70,12 @@ func VariantID(v uuid.UUID) predicate.PurchaseOrderLine {
 }
 
 // QuantityOrdered applies equality check predicate on the "quantity_ordered" field. It's identical to QuantityOrderedEQ.
-func QuantityOrdered(v int) predicate.PurchaseOrderLine {
+func QuantityOrdered(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityOrdered, v))
 }
 
 // QuantityReceived applies equality check predicate on the "quantity_received" field. It's identical to QuantityReceivedEQ.
-func QuantityReceived(v int) predicate.PurchaseOrderLine {
+func QuantityReceived(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityReceived, v))
 }
 
@@ -200,82 +200,82 @@ func VariantIDNotNil() predicate.PurchaseOrderLine {
 }
 
 // QuantityOrderedEQ applies the EQ predicate on the "quantity_ordered" field.
-func QuantityOrderedEQ(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedEQ(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityOrdered, v))
 }
 
 // QuantityOrderedNEQ applies the NEQ predicate on the "quantity_ordered" field.
-func QuantityOrderedNEQ(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedNEQ(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldQuantityOrdered, v))
 }
 
 // QuantityOrderedIn applies the In predicate on the "quantity_ordered" field.
-func QuantityOrderedIn(vs ...int) predicate.PurchaseOrderLine {
+func QuantityOrderedIn(vs ...float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldIn(FieldQuantityOrdered, vs...))
 }
 
 // QuantityOrderedNotIn applies the NotIn predicate on the "quantity_ordered" field.
-func QuantityOrderedNotIn(vs ...int) predicate.PurchaseOrderLine {
+func QuantityOrderedNotIn(vs ...float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldQuantityOrdered, vs...))
 }
 
 // QuantityOrderedGT applies the GT predicate on the "quantity_ordered" field.
-func QuantityOrderedGT(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedGT(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldGT(FieldQuantityOrdered, v))
 }
 
 // QuantityOrderedGTE applies the GTE predicate on the "quantity_ordered" field.
-func QuantityOrderedGTE(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedGTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldQuantityOrdered, v))
 }
 
 // QuantityOrderedLT applies the LT predicate on the "quantity_ordered" field.
-func QuantityOrderedLT(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedLT(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLT(FieldQuantityOrdered, v))
 }
 
 // QuantityOrderedLTE applies the LTE predicate on the "quantity_ordered" field.
-func QuantityOrderedLTE(v int) predicate.PurchaseOrderLine {
+func QuantityOrderedLTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldQuantityOrdered, v))
 }
 
 // QuantityReceivedEQ applies the EQ predicate on the "quantity_received" field.
-func QuantityReceivedEQ(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedEQ(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedNEQ applies the NEQ predicate on the "quantity_received" field.
-func QuantityReceivedNEQ(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedNEQ(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedIn applies the In predicate on the "quantity_received" field.
-func QuantityReceivedIn(vs ...int) predicate.PurchaseOrderLine {
+func QuantityReceivedIn(vs ...float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldIn(FieldQuantityReceived, vs...))
 }
 
 // QuantityReceivedNotIn applies the NotIn predicate on the "quantity_received" field.
-func QuantityReceivedNotIn(vs ...int) predicate.PurchaseOrderLine {
+func QuantityReceivedNotIn(vs ...float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldQuantityReceived, vs...))
 }
 
 // QuantityReceivedGT applies the GT predicate on the "quantity_received" field.
-func QuantityReceivedGT(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedGT(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldGT(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedGTE applies the GTE predicate on the "quantity_received" field.
-func QuantityReceivedGTE(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedGTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedLT applies the LT predicate on the "quantity_received" field.
-func QuantityReceivedLT(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedLT(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLT(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedLTE applies the LTE predicate on the "quantity_received" field.
-func QuantityReceivedLTE(v int) predicate.PurchaseOrderLine {
+func QuantityReceivedLTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldQuantityReceived, v))
 }
 

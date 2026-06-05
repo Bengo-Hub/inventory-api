@@ -31,9 +31,9 @@ func (StockTransferLine) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("FK to InventoryLot for lot-tracked items"),
-		field.Int("quantity").
+		field.Float("quantity").
 			Default(0).
-			Comment("Quantity to transfer"),
+			Comment("Quantity to transfer (fractional-capable)"),
 	}
 }
 

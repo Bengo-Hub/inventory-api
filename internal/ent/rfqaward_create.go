@@ -64,13 +64,13 @@ func (_c *RFQAwardCreate) SetNillableUnitPrice(v *float64) *RFQAwardCreate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *RFQAwardCreate) SetQuantity(v int) *RFQAwardCreate {
+func (_c *RFQAwardCreate) SetQuantity(v float64) *RFQAwardCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *RFQAwardCreate) SetNillableQuantity(v *int) *RFQAwardCreate {
+func (_c *RFQAwardCreate) SetNillableQuantity(v *float64) *RFQAwardCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -256,7 +256,7 @@ func (_c *RFQAwardCreate) createSpec() (*RFQAward, *sqlgraph.CreateSpec) {
 		_node.UnitPrice = value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(rfqaward.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqaward.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if value, ok := _c.mutation.PoID(); ok {
@@ -403,7 +403,7 @@ func (u *RFQAwardUpsert) AddUnitPrice(v float64) *RFQAwardUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQAwardUpsert) SetQuantity(v int) *RFQAwardUpsert {
+func (u *RFQAwardUpsert) SetQuantity(v float64) *RFQAwardUpsert {
 	u.Set(rfqaward.FieldQuantity, v)
 	return u
 }
@@ -415,7 +415,7 @@ func (u *RFQAwardUpsert) UpdateQuantity() *RFQAwardUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQAwardUpsert) AddQuantity(v int) *RFQAwardUpsert {
+func (u *RFQAwardUpsert) AddQuantity(v float64) *RFQAwardUpsert {
 	u.Add(rfqaward.FieldQuantity, v)
 	return u
 }
@@ -567,14 +567,14 @@ func (u *RFQAwardUpsertOne) UpdateUnitPrice() *RFQAwardUpsertOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQAwardUpsertOne) SetQuantity(v int) *RFQAwardUpsertOne {
+func (u *RFQAwardUpsertOne) SetQuantity(v float64) *RFQAwardUpsertOne {
 	return u.Update(func(s *RFQAwardUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQAwardUpsertOne) AddQuantity(v int) *RFQAwardUpsertOne {
+func (u *RFQAwardUpsertOne) AddQuantity(v float64) *RFQAwardUpsertOne {
 	return u.Update(func(s *RFQAwardUpsert) {
 		s.AddQuantity(v)
 	})
@@ -904,14 +904,14 @@ func (u *RFQAwardUpsertBulk) UpdateUnitPrice() *RFQAwardUpsertBulk {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQAwardUpsertBulk) SetQuantity(v int) *RFQAwardUpsertBulk {
+func (u *RFQAwardUpsertBulk) SetQuantity(v float64) *RFQAwardUpsertBulk {
 	return u.Update(func(s *RFQAwardUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQAwardUpsertBulk) AddQuantity(v int) *RFQAwardUpsertBulk {
+func (u *RFQAwardUpsertBulk) AddQuantity(v float64) *RFQAwardUpsertBulk {
 	return u.Update(func(s *RFQAwardUpsert) {
 		s.AddQuantity(v)
 	})

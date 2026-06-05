@@ -27,12 +27,12 @@ type InventoryBalance struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// FK to warehouses table
 	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
-	// Total physical stock
-	OnHand int `json:"on_hand,omitempty"`
-	// on_hand minus reserved
-	Available int `json:"available,omitempty"`
-	// Reserved for pending orders
-	Reserved int `json:"reserved,omitempty"`
+	// Total physical stock (fractional-capable)
+	OnHand float64 `json:"on_hand,omitempty"`
+	// on_hand minus reserved (fractional-capable)
+	Available float64 `json:"available,omitempty"`
+	// Reserved for pending orders (fractional-capable)
+	Reserved float64 `json:"reserved,omitempty"`
 	// UnitOfMeasure holds the value of the "unit_of_measure" field.
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// Threshold below which a reorder notification is triggered
@@ -108,7 +108,9 @@ func (*InventoryBalance) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case inventorybalance.FieldAutoReorderEnabled:
 			values[i] = new(sql.NullBool)
-		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved, inventorybalance.FieldReorderLevel, inventorybalance.FieldReorderQuantity:
+		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved:
+			values[i] = new(sql.NullFloat64)
+		case inventorybalance.FieldReorderLevel, inventorybalance.FieldReorderQuantity:
 			values[i] = new(sql.NullInt64)
 		case inventorybalance.FieldUnitOfMeasure:
 			values[i] = new(sql.NullString)
@@ -156,22 +158,22 @@ func (_m *InventoryBalance) assignValues(columns []string, values []any) error {
 				_m.WarehouseID = *value
 			}
 		case inventorybalance.FieldOnHand:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field on_hand", values[i])
 			} else if value.Valid {
-				_m.OnHand = int(value.Int64)
+				_m.OnHand = value.Float64
 			}
 		case inventorybalance.FieldAvailable:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field available", values[i])
 			} else if value.Valid {
-				_m.Available = int(value.Int64)
+				_m.Available = value.Float64
 			}
 		case inventorybalance.FieldReserved:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field reserved", values[i])
 			} else if value.Valid {
-				_m.Reserved = int(value.Int64)
+				_m.Reserved = value.Float64
 			}
 		case inventorybalance.FieldUnitOfMeasure:
 			if value, ok := values[i].(*sql.NullString); !ok {

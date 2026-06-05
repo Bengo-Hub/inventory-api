@@ -78,14 +78,14 @@ func (_u *PurchaseOrderLineUpdate) ClearVariantID() *PurchaseOrderLineUpdate {
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (_u *PurchaseOrderLineUpdate) SetQuantityOrdered(v int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) SetQuantityOrdered(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.ResetQuantityOrdered()
 	_u.mutation.SetQuantityOrdered(v)
 	return _u
 }
 
 // SetNillableQuantityOrdered sets the "quantity_ordered" field if the given value is not nil.
-func (_u *PurchaseOrderLineUpdate) SetNillableQuantityOrdered(v *int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) SetNillableQuantityOrdered(v *float64) *PurchaseOrderLineUpdate {
 	if v != nil {
 		_u.SetQuantityOrdered(*v)
 	}
@@ -93,20 +93,20 @@ func (_u *PurchaseOrderLineUpdate) SetNillableQuantityOrdered(v *int) *PurchaseO
 }
 
 // AddQuantityOrdered adds value to the "quantity_ordered" field.
-func (_u *PurchaseOrderLineUpdate) AddQuantityOrdered(v int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) AddQuantityOrdered(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.AddQuantityOrdered(v)
 	return _u
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_u *PurchaseOrderLineUpdate) SetQuantityReceived(v int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) SetQuantityReceived(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.ResetQuantityReceived()
 	_u.mutation.SetQuantityReceived(v)
 	return _u
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_u *PurchaseOrderLineUpdate) SetNillableQuantityReceived(v *int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) SetNillableQuantityReceived(v *float64) *PurchaseOrderLineUpdate {
 	if v != nil {
 		_u.SetQuantityReceived(*v)
 	}
@@ -114,7 +114,7 @@ func (_u *PurchaseOrderLineUpdate) SetNillableQuantityReceived(v *int) *Purchase
 }
 
 // AddQuantityReceived adds value to the "quantity_received" field.
-func (_u *PurchaseOrderLineUpdate) AddQuantityReceived(v int) *PurchaseOrderLineUpdate {
+func (_u *PurchaseOrderLineUpdate) AddQuantityReceived(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.AddQuantityReceived(v)
 	return _u
 }
@@ -240,16 +240,16 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 		_spec.ClearField(purchaseorderline.FieldVariantID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.QuantityOrdered(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityOrdered(); ok {
-		_spec.AddField(purchaseorderline.FieldQuantityOrdered, field.TypeInt, value)
+		_spec.AddField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityReceived(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
-		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldUnitPrice, field.TypeFloat64, value)
@@ -361,14 +361,14 @@ func (_u *PurchaseOrderLineUpdateOne) ClearVariantID() *PurchaseOrderLineUpdateO
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (_u *PurchaseOrderLineUpdateOne) SetQuantityOrdered(v int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) SetQuantityOrdered(v float64) *PurchaseOrderLineUpdateOne {
 	_u.mutation.ResetQuantityOrdered()
 	_u.mutation.SetQuantityOrdered(v)
 	return _u
 }
 
 // SetNillableQuantityOrdered sets the "quantity_ordered" field if the given value is not nil.
-func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityOrdered(v *int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityOrdered(v *float64) *PurchaseOrderLineUpdateOne {
 	if v != nil {
 		_u.SetQuantityOrdered(*v)
 	}
@@ -376,20 +376,20 @@ func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityOrdered(v *int) *Purcha
 }
 
 // AddQuantityOrdered adds value to the "quantity_ordered" field.
-func (_u *PurchaseOrderLineUpdateOne) AddQuantityOrdered(v int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) AddQuantityOrdered(v float64) *PurchaseOrderLineUpdateOne {
 	_u.mutation.AddQuantityOrdered(v)
 	return _u
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_u *PurchaseOrderLineUpdateOne) SetQuantityReceived(v int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) SetQuantityReceived(v float64) *PurchaseOrderLineUpdateOne {
 	_u.mutation.ResetQuantityReceived()
 	_u.mutation.SetQuantityReceived(v)
 	return _u
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityReceived(v *int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityReceived(v *float64) *PurchaseOrderLineUpdateOne {
 	if v != nil {
 		_u.SetQuantityReceived(*v)
 	}
@@ -397,7 +397,7 @@ func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityReceived(v *int) *Purch
 }
 
 // AddQuantityReceived adds value to the "quantity_received" field.
-func (_u *PurchaseOrderLineUpdateOne) AddQuantityReceived(v int) *PurchaseOrderLineUpdateOne {
+func (_u *PurchaseOrderLineUpdateOne) AddQuantityReceived(v float64) *PurchaseOrderLineUpdateOne {
 	_u.mutation.AddQuantityReceived(v)
 	return _u
 }
@@ -553,16 +553,16 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 		_spec.ClearField(purchaseorderline.FieldVariantID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.QuantityOrdered(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityOrdered(); ok {
-		_spec.AddField(purchaseorderline.FieldQuantityOrdered, field.TypeInt, value)
+		_spec.AddField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.QuantityReceived(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
-		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldUnitPrice, field.TypeFloat64, value)

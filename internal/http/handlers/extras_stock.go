@@ -23,8 +23,8 @@ type stockLevelDTO struct {
 	SKU           string    `json:"sku"`
 	WarehouseName string    `json:"warehouse_name"`
 	WarehouseID   uuid.UUID `json:"warehouse_id"`
-	Available     int       `json:"available"`
-	Reserved      int       `json:"reserved"`
+	Available     float64   `json:"available"`
+	Reserved      float64   `json:"reserved"`
 	ReorderPoint  *int      `json:"reorder_point"`
 	Unit          string    `json:"unit"`
 }

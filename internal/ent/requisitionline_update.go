@@ -93,14 +93,14 @@ func (_u *RequisitionLineUpdate) ClearItemID() *RequisitionLineUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RequisitionLineUpdate) SetQuantity(v int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) SetQuantity(v float64) *RequisitionLineUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RequisitionLineUpdate) SetNillableQuantity(v *int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) SetNillableQuantity(v *float64) *RequisitionLineUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -108,20 +108,20 @@ func (_u *RequisitionLineUpdate) SetNillableQuantity(v *int) *RequisitionLineUpd
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RequisitionLineUpdate) AddQuantity(v int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) AddQuantity(v float64) *RequisitionLineUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (_u *RequisitionLineUpdate) SetApprovedQuantity(v int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) SetApprovedQuantity(v float64) *RequisitionLineUpdate {
 	_u.mutation.ResetApprovedQuantity()
 	_u.mutation.SetApprovedQuantity(v)
 	return _u
 }
 
 // SetNillableApprovedQuantity sets the "approved_quantity" field if the given value is not nil.
-func (_u *RequisitionLineUpdate) SetNillableApprovedQuantity(v *int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) SetNillableApprovedQuantity(v *float64) *RequisitionLineUpdate {
 	if v != nil {
 		_u.SetApprovedQuantity(*v)
 	}
@@ -129,7 +129,7 @@ func (_u *RequisitionLineUpdate) SetNillableApprovedQuantity(v *int) *Requisitio
 }
 
 // AddApprovedQuantity adds value to the "approved_quantity" field.
-func (_u *RequisitionLineUpdate) AddApprovedQuantity(v int) *RequisitionLineUpdate {
+func (_u *RequisitionLineUpdate) AddApprovedQuantity(v float64) *RequisitionLineUpdate {
 	_u.mutation.AddApprovedQuantity(v)
 	return _u
 }
@@ -437,19 +437,19 @@ func (_u *RequisitionLineUpdate) sqlSave(ctx context.Context) (_node int, err er
 		_spec.ClearField(requisitionline.FieldItemID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(requisitionline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(requisitionline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(requisitionline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.ApprovedQuantity(); ok {
-		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedApprovedQuantity(); ok {
-		_spec.AddField(requisitionline.FieldApprovedQuantity, field.TypeInt, value)
+		_spec.AddField(requisitionline.FieldApprovedQuantity, field.TypeFloat64, value)
 	}
 	if _u.mutation.ApprovedQuantityCleared() {
-		_spec.ClearField(requisitionline.FieldApprovedQuantity, field.TypeInt)
+		_spec.ClearField(requisitionline.FieldApprovedQuantity, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Urgent(); ok {
 		_spec.SetField(requisitionline.FieldUrgent, field.TypeBool, value)
@@ -626,14 +626,14 @@ func (_u *RequisitionLineUpdateOne) ClearItemID() *RequisitionLineUpdateOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RequisitionLineUpdateOne) SetQuantity(v int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) SetQuantity(v float64) *RequisitionLineUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RequisitionLineUpdateOne) SetNillableQuantity(v *int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) SetNillableQuantity(v *float64) *RequisitionLineUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -641,20 +641,20 @@ func (_u *RequisitionLineUpdateOne) SetNillableQuantity(v *int) *RequisitionLine
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RequisitionLineUpdateOne) AddQuantity(v int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) AddQuantity(v float64) *RequisitionLineUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (_u *RequisitionLineUpdateOne) SetApprovedQuantity(v int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) SetApprovedQuantity(v float64) *RequisitionLineUpdateOne {
 	_u.mutation.ResetApprovedQuantity()
 	_u.mutation.SetApprovedQuantity(v)
 	return _u
 }
 
 // SetNillableApprovedQuantity sets the "approved_quantity" field if the given value is not nil.
-func (_u *RequisitionLineUpdateOne) SetNillableApprovedQuantity(v *int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) SetNillableApprovedQuantity(v *float64) *RequisitionLineUpdateOne {
 	if v != nil {
 		_u.SetApprovedQuantity(*v)
 	}
@@ -662,7 +662,7 @@ func (_u *RequisitionLineUpdateOne) SetNillableApprovedQuantity(v *int) *Requisi
 }
 
 // AddApprovedQuantity adds value to the "approved_quantity" field.
-func (_u *RequisitionLineUpdateOne) AddApprovedQuantity(v int) *RequisitionLineUpdateOne {
+func (_u *RequisitionLineUpdateOne) AddApprovedQuantity(v float64) *RequisitionLineUpdateOne {
 	_u.mutation.AddApprovedQuantity(v)
 	return _u
 }
@@ -1000,19 +1000,19 @@ func (_u *RequisitionLineUpdateOne) sqlSave(ctx context.Context) (_node *Requisi
 		_spec.ClearField(requisitionline.FieldItemID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(requisitionline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(requisitionline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(requisitionline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.ApprovedQuantity(); ok {
-		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedApprovedQuantity(); ok {
-		_spec.AddField(requisitionline.FieldApprovedQuantity, field.TypeInt, value)
+		_spec.AddField(requisitionline.FieldApprovedQuantity, field.TypeFloat64, value)
 	}
 	if _u.mutation.ApprovedQuantityCleared() {
-		_spec.ClearField(requisitionline.FieldApprovedQuantity, field.TypeInt)
+		_spec.ClearField(requisitionline.FieldApprovedQuantity, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.Urgent(); ok {
 		_spec.SetField(requisitionline.FieldUrgent, field.TypeBool, value)

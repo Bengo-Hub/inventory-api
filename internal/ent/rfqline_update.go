@@ -98,14 +98,14 @@ func (_u *RFQLineUpdate) ClearDescription() *RFQLineUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RFQLineUpdate) SetQuantity(v int) *RFQLineUpdate {
+func (_u *RFQLineUpdate) SetQuantity(v float64) *RFQLineUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RFQLineUpdate) SetNillableQuantity(v *int) *RFQLineUpdate {
+func (_u *RFQLineUpdate) SetNillableQuantity(v *float64) *RFQLineUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -113,7 +113,7 @@ func (_u *RFQLineUpdate) SetNillableQuantity(v *int) *RFQLineUpdate {
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RFQLineUpdate) AddQuantity(v int) *RFQLineUpdate {
+func (_u *RFQLineUpdate) AddQuantity(v float64) *RFQLineUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -217,10 +217,10 @@ func (_u *RFQLineUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.ClearField(rfqline.FieldDescription, field.TypeString)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(rfqline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(rfqline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(rfqline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Uom(); ok {
 		_spec.SetField(rfqline.FieldUom, field.TypeString, value)
@@ -346,14 +346,14 @@ func (_u *RFQLineUpdateOne) ClearDescription() *RFQLineUpdateOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *RFQLineUpdateOne) SetQuantity(v int) *RFQLineUpdateOne {
+func (_u *RFQLineUpdateOne) SetQuantity(v float64) *RFQLineUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *RFQLineUpdateOne) SetNillableQuantity(v *int) *RFQLineUpdateOne {
+func (_u *RFQLineUpdateOne) SetNillableQuantity(v *float64) *RFQLineUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -361,7 +361,7 @@ func (_u *RFQLineUpdateOne) SetNillableQuantity(v *int) *RFQLineUpdateOne {
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *RFQLineUpdateOne) AddQuantity(v int) *RFQLineUpdateOne {
+func (_u *RFQLineUpdateOne) AddQuantity(v float64) *RFQLineUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -495,10 +495,10 @@ func (_u *RFQLineUpdateOne) sqlSave(ctx context.Context) (_node *RFQLine, err er
 		_spec.ClearField(rfqline.FieldDescription, field.TypeString)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(rfqline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(rfqline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(rfqline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Uom(); ok {
 		_spec.SetField(rfqline.FieldUom, field.TypeString, value)

@@ -79,13 +79,13 @@ func (_c *InventoryLotCreate) SetNillableManufacturedDate(v *time.Time) *Invento
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *InventoryLotCreate) SetQuantity(v int) *InventoryLotCreate {
+func (_c *InventoryLotCreate) SetQuantity(v float64) *InventoryLotCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *InventoryLotCreate) SetNillableQuantity(v *int) *InventoryLotCreate {
+func (_c *InventoryLotCreate) SetNillableQuantity(v *float64) *InventoryLotCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -338,7 +338,7 @@ func (_c *InventoryLotCreate) createSpec() (*InventoryLot, *sqlgraph.CreateSpec)
 		_node.ManufacturedDate = &value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(inventorylot.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(inventorylot.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
@@ -532,7 +532,7 @@ func (u *InventoryLotUpsert) ClearManufacturedDate() *InventoryLotUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *InventoryLotUpsert) SetQuantity(v int) *InventoryLotUpsert {
+func (u *InventoryLotUpsert) SetQuantity(v float64) *InventoryLotUpsert {
 	u.Set(inventorylot.FieldQuantity, v)
 	return u
 }
@@ -544,7 +544,7 @@ func (u *InventoryLotUpsert) UpdateQuantity() *InventoryLotUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *InventoryLotUpsert) AddQuantity(v int) *InventoryLotUpsert {
+func (u *InventoryLotUpsert) AddQuantity(v float64) *InventoryLotUpsert {
 	u.Add(inventorylot.FieldQuantity, v)
 	return u
 }
@@ -765,14 +765,14 @@ func (u *InventoryLotUpsertOne) ClearManufacturedDate() *InventoryLotUpsertOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *InventoryLotUpsertOne) SetQuantity(v int) *InventoryLotUpsertOne {
+func (u *InventoryLotUpsertOne) SetQuantity(v float64) *InventoryLotUpsertOne {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *InventoryLotUpsertOne) AddQuantity(v int) *InventoryLotUpsertOne {
+func (u *InventoryLotUpsertOne) AddQuantity(v float64) *InventoryLotUpsertOne {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.AddQuantity(v)
 	})
@@ -1179,14 +1179,14 @@ func (u *InventoryLotUpsertBulk) ClearManufacturedDate() *InventoryLotUpsertBulk
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *InventoryLotUpsertBulk) SetQuantity(v int) *InventoryLotUpsertBulk {
+func (u *InventoryLotUpsertBulk) SetQuantity(v float64) *InventoryLotUpsertBulk {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *InventoryLotUpsertBulk) AddQuantity(v int) *InventoryLotUpsertBulk {
+func (u *InventoryLotUpsertBulk) AddQuantity(v float64) *InventoryLotUpsertBulk {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.AddQuantity(v)
 	})

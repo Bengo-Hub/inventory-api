@@ -11,12 +11,13 @@ import (
 )
 
 // ReservedItemJSON is the JSON structure for items within a reservation.
+// Quantities are float64 to support fractional stock (e.g. 0.5 L).
 type ReservedItemJSON struct {
-	SKU             string `json:"sku"`
-	RequestedQty    int    `json:"requested_qty"`
-	ReservedQty     int    `json:"reserved_qty"`
-	AvailableQty    int    `json:"available_qty"`
-	IsFullyReserved bool   `json:"is_fully_reserved"`
+	SKU             string  `json:"sku"`
+	RequestedQty    float64 `json:"requested_qty"`
+	ReservedQty     float64 `json:"reserved_qty"`
+	AvailableQty    float64 `json:"available_qty"`
+	IsFullyReserved bool    `json:"is_fully_reserved"`
 }
 
 // Reservation holds the schema definition for stock reservations.

@@ -72,12 +72,12 @@ func ItemID(v uuid.UUID) predicate.RequisitionLine {
 }
 
 // Quantity applies equality check predicate on the "quantity" field. It's identical to QuantityEQ.
-func Quantity(v int) predicate.RequisitionLine {
+func Quantity(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldEQ(FieldQuantity, v))
 }
 
 // ApprovedQuantity applies equality check predicate on the "approved_quantity" field. It's identical to ApprovedQuantityEQ.
-func ApprovedQuantity(v int) predicate.RequisitionLine {
+func ApprovedQuantity(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldEQ(FieldApprovedQuantity, v))
 }
 
@@ -272,82 +272,82 @@ func ItemIDNotNil() predicate.RequisitionLine {
 }
 
 // QuantityEQ applies the EQ predicate on the "quantity" field.
-func QuantityEQ(v int) predicate.RequisitionLine {
+func QuantityEQ(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldEQ(FieldQuantity, v))
 }
 
 // QuantityNEQ applies the NEQ predicate on the "quantity" field.
-func QuantityNEQ(v int) predicate.RequisitionLine {
+func QuantityNEQ(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldNEQ(FieldQuantity, v))
 }
 
 // QuantityIn applies the In predicate on the "quantity" field.
-func QuantityIn(vs ...int) predicate.RequisitionLine {
+func QuantityIn(vs ...float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldIn(FieldQuantity, vs...))
 }
 
 // QuantityNotIn applies the NotIn predicate on the "quantity" field.
-func QuantityNotIn(vs ...int) predicate.RequisitionLine {
+func QuantityNotIn(vs ...float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldNotIn(FieldQuantity, vs...))
 }
 
 // QuantityGT applies the GT predicate on the "quantity" field.
-func QuantityGT(v int) predicate.RequisitionLine {
+func QuantityGT(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldGT(FieldQuantity, v))
 }
 
 // QuantityGTE applies the GTE predicate on the "quantity" field.
-func QuantityGTE(v int) predicate.RequisitionLine {
+func QuantityGTE(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldGTE(FieldQuantity, v))
 }
 
 // QuantityLT applies the LT predicate on the "quantity" field.
-func QuantityLT(v int) predicate.RequisitionLine {
+func QuantityLT(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldLT(FieldQuantity, v))
 }
 
 // QuantityLTE applies the LTE predicate on the "quantity" field.
-func QuantityLTE(v int) predicate.RequisitionLine {
+func QuantityLTE(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldLTE(FieldQuantity, v))
 }
 
 // ApprovedQuantityEQ applies the EQ predicate on the "approved_quantity" field.
-func ApprovedQuantityEQ(v int) predicate.RequisitionLine {
+func ApprovedQuantityEQ(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldEQ(FieldApprovedQuantity, v))
 }
 
 // ApprovedQuantityNEQ applies the NEQ predicate on the "approved_quantity" field.
-func ApprovedQuantityNEQ(v int) predicate.RequisitionLine {
+func ApprovedQuantityNEQ(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldNEQ(FieldApprovedQuantity, v))
 }
 
 // ApprovedQuantityIn applies the In predicate on the "approved_quantity" field.
-func ApprovedQuantityIn(vs ...int) predicate.RequisitionLine {
+func ApprovedQuantityIn(vs ...float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldIn(FieldApprovedQuantity, vs...))
 }
 
 // ApprovedQuantityNotIn applies the NotIn predicate on the "approved_quantity" field.
-func ApprovedQuantityNotIn(vs ...int) predicate.RequisitionLine {
+func ApprovedQuantityNotIn(vs ...float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldNotIn(FieldApprovedQuantity, vs...))
 }
 
 // ApprovedQuantityGT applies the GT predicate on the "approved_quantity" field.
-func ApprovedQuantityGT(v int) predicate.RequisitionLine {
+func ApprovedQuantityGT(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldGT(FieldApprovedQuantity, v))
 }
 
 // ApprovedQuantityGTE applies the GTE predicate on the "approved_quantity" field.
-func ApprovedQuantityGTE(v int) predicate.RequisitionLine {
+func ApprovedQuantityGTE(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldGTE(FieldApprovedQuantity, v))
 }
 
 // ApprovedQuantityLT applies the LT predicate on the "approved_quantity" field.
-func ApprovedQuantityLT(v int) predicate.RequisitionLine {
+func ApprovedQuantityLT(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldLT(FieldApprovedQuantity, v))
 }
 
 // ApprovedQuantityLTE applies the LTE predicate on the "approved_quantity" field.
-func ApprovedQuantityLTE(v int) predicate.RequisitionLine {
+func ApprovedQuantityLTE(v float64) predicate.RequisitionLine {
 	return predicate.RequisitionLine(sql.FieldLTE(FieldApprovedQuantity, v))
 }
 

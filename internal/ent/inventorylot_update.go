@@ -128,14 +128,14 @@ func (_u *InventoryLotUpdate) ClearManufacturedDate() *InventoryLotUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *InventoryLotUpdate) SetQuantity(v int) *InventoryLotUpdate {
+func (_u *InventoryLotUpdate) SetQuantity(v float64) *InventoryLotUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *InventoryLotUpdate) SetNillableQuantity(v *int) *InventoryLotUpdate {
+func (_u *InventoryLotUpdate) SetNillableQuantity(v *float64) *InventoryLotUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -143,7 +143,7 @@ func (_u *InventoryLotUpdate) SetNillableQuantity(v *int) *InventoryLotUpdate {
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *InventoryLotUpdate) AddQuantity(v int) *InventoryLotUpdate {
+func (_u *InventoryLotUpdate) AddQuantity(v float64) *InventoryLotUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -330,10 +330,10 @@ func (_u *InventoryLotUpdate) sqlSave(ctx context.Context) (_node int, err error
 		_spec.ClearField(inventorylot.FieldManufacturedDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(inventorylot.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(inventorylot.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(inventorylot.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(inventorylot.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(inventorylot.FieldStatus, field.TypeEnum, value)
@@ -531,14 +531,14 @@ func (_u *InventoryLotUpdateOne) ClearManufacturedDate() *InventoryLotUpdateOne 
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *InventoryLotUpdateOne) SetQuantity(v int) *InventoryLotUpdateOne {
+func (_u *InventoryLotUpdateOne) SetQuantity(v float64) *InventoryLotUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *InventoryLotUpdateOne) SetNillableQuantity(v *int) *InventoryLotUpdateOne {
+func (_u *InventoryLotUpdateOne) SetNillableQuantity(v *float64) *InventoryLotUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -546,7 +546,7 @@ func (_u *InventoryLotUpdateOne) SetNillableQuantity(v *int) *InventoryLotUpdate
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *InventoryLotUpdateOne) AddQuantity(v int) *InventoryLotUpdateOne {
+func (_u *InventoryLotUpdateOne) AddQuantity(v float64) *InventoryLotUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -763,10 +763,10 @@ func (_u *InventoryLotUpdateOne) sqlSave(ctx context.Context) (_node *InventoryL
 		_spec.ClearField(inventorylot.FieldManufacturedDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(inventorylot.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(inventorylot.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(inventorylot.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(inventorylot.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(inventorylot.FieldStatus, field.TypeEnum, value)

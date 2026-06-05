@@ -64,9 +64,9 @@ func ValidColumn(column string) bool {
 
 var (
 	// DefaultQuantityOrdered holds the default value on creation for the "quantity_ordered" field.
-	DefaultQuantityOrdered int
+	DefaultQuantityOrdered float64
 	// DefaultQuantityReceived holds the default value on creation for the "quantity_received" field.
-	DefaultQuantityReceived int
+	DefaultQuantityReceived float64
 	// DefaultUnitPrice holds the default value on creation for the "unit_price" field.
 	DefaultUnitPrice float64
 	// DefaultTotalPrice holds the default value on creation for the "total_price" field.

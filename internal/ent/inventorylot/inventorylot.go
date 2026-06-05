@@ -93,7 +93,7 @@ var (
 	// LotNumberValidator is a validator for the "lot_number" field. It is called by the builders before save.
 	LotNumberValidator func(string) error
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
-	DefaultQuantity int
+	DefaultQuantity float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.

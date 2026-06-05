@@ -66,13 +66,13 @@ func (_c *RequisitionLineCreate) SetNillableItemID(v *uuid.UUID) *RequisitionLin
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *RequisitionLineCreate) SetQuantity(v int) *RequisitionLineCreate {
+func (_c *RequisitionLineCreate) SetQuantity(v float64) *RequisitionLineCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *RequisitionLineCreate) SetNillableQuantity(v *int) *RequisitionLineCreate {
+func (_c *RequisitionLineCreate) SetNillableQuantity(v *float64) *RequisitionLineCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -80,13 +80,13 @@ func (_c *RequisitionLineCreate) SetNillableQuantity(v *int) *RequisitionLineCre
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (_c *RequisitionLineCreate) SetApprovedQuantity(v int) *RequisitionLineCreate {
+func (_c *RequisitionLineCreate) SetApprovedQuantity(v float64) *RequisitionLineCreate {
 	_c.mutation.SetApprovedQuantity(v)
 	return _c
 }
 
 // SetNillableApprovedQuantity sets the "approved_quantity" field if the given value is not nil.
-func (_c *RequisitionLineCreate) SetNillableApprovedQuantity(v *int) *RequisitionLineCreate {
+func (_c *RequisitionLineCreate) SetNillableApprovedQuantity(v *float64) *RequisitionLineCreate {
 	if v != nil {
 		_c.SetApprovedQuantity(*v)
 	}
@@ -421,11 +421,11 @@ func (_c *RequisitionLineCreate) createSpec() (*RequisitionLine, *sqlgraph.Creat
 		_node.ItemID = &value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(requisitionline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if value, ok := _c.mutation.ApprovedQuantity(); ok {
-		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeInt, value)
+		_spec.SetField(requisitionline.FieldApprovedQuantity, field.TypeFloat64, value)
 		_node.ApprovedQuantity = &value
 	}
 	if value, ok := _c.mutation.Urgent(); ok {
@@ -600,7 +600,7 @@ func (u *RequisitionLineUpsert) ClearItemID() *RequisitionLineUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RequisitionLineUpsert) SetQuantity(v int) *RequisitionLineUpsert {
+func (u *RequisitionLineUpsert) SetQuantity(v float64) *RequisitionLineUpsert {
 	u.Set(requisitionline.FieldQuantity, v)
 	return u
 }
@@ -612,13 +612,13 @@ func (u *RequisitionLineUpsert) UpdateQuantity() *RequisitionLineUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RequisitionLineUpsert) AddQuantity(v int) *RequisitionLineUpsert {
+func (u *RequisitionLineUpsert) AddQuantity(v float64) *RequisitionLineUpsert {
 	u.Add(requisitionline.FieldQuantity, v)
 	return u
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (u *RequisitionLineUpsert) SetApprovedQuantity(v int) *RequisitionLineUpsert {
+func (u *RequisitionLineUpsert) SetApprovedQuantity(v float64) *RequisitionLineUpsert {
 	u.Set(requisitionline.FieldApprovedQuantity, v)
 	return u
 }
@@ -630,7 +630,7 @@ func (u *RequisitionLineUpsert) UpdateApprovedQuantity() *RequisitionLineUpsert 
 }
 
 // AddApprovedQuantity adds v to the "approved_quantity" field.
-func (u *RequisitionLineUpsert) AddApprovedQuantity(v int) *RequisitionLineUpsert {
+func (u *RequisitionLineUpsert) AddApprovedQuantity(v float64) *RequisitionLineUpsert {
 	u.Add(requisitionline.FieldApprovedQuantity, v)
 	return u
 }
@@ -948,14 +948,14 @@ func (u *RequisitionLineUpsertOne) ClearItemID() *RequisitionLineUpsertOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RequisitionLineUpsertOne) SetQuantity(v int) *RequisitionLineUpsertOne {
+func (u *RequisitionLineUpsertOne) SetQuantity(v float64) *RequisitionLineUpsertOne {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RequisitionLineUpsertOne) AddQuantity(v int) *RequisitionLineUpsertOne {
+func (u *RequisitionLineUpsertOne) AddQuantity(v float64) *RequisitionLineUpsertOne {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.AddQuantity(v)
 	})
@@ -969,14 +969,14 @@ func (u *RequisitionLineUpsertOne) UpdateQuantity() *RequisitionLineUpsertOne {
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (u *RequisitionLineUpsertOne) SetApprovedQuantity(v int) *RequisitionLineUpsertOne {
+func (u *RequisitionLineUpsertOne) SetApprovedQuantity(v float64) *RequisitionLineUpsertOne {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.SetApprovedQuantity(v)
 	})
 }
 
 // AddApprovedQuantity adds v to the "approved_quantity" field.
-func (u *RequisitionLineUpsertOne) AddApprovedQuantity(v int) *RequisitionLineUpsertOne {
+func (u *RequisitionLineUpsertOne) AddApprovedQuantity(v float64) *RequisitionLineUpsertOne {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.AddApprovedQuantity(v)
 	})
@@ -1502,14 +1502,14 @@ func (u *RequisitionLineUpsertBulk) ClearItemID() *RequisitionLineUpsertBulk {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RequisitionLineUpsertBulk) SetQuantity(v int) *RequisitionLineUpsertBulk {
+func (u *RequisitionLineUpsertBulk) SetQuantity(v float64) *RequisitionLineUpsertBulk {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RequisitionLineUpsertBulk) AddQuantity(v int) *RequisitionLineUpsertBulk {
+func (u *RequisitionLineUpsertBulk) AddQuantity(v float64) *RequisitionLineUpsertBulk {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.AddQuantity(v)
 	})
@@ -1523,14 +1523,14 @@ func (u *RequisitionLineUpsertBulk) UpdateQuantity() *RequisitionLineUpsertBulk 
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (u *RequisitionLineUpsertBulk) SetApprovedQuantity(v int) *RequisitionLineUpsertBulk {
+func (u *RequisitionLineUpsertBulk) SetApprovedQuantity(v float64) *RequisitionLineUpsertBulk {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.SetApprovedQuantity(v)
 	})
 }
 
 // AddApprovedQuantity adds v to the "approved_quantity" field.
-func (u *RequisitionLineUpsertBulk) AddApprovedQuantity(v int) *RequisitionLineUpsertBulk {
+func (u *RequisitionLineUpsertBulk) AddApprovedQuantity(v float64) *RequisitionLineUpsertBulk {
 	return u.Update(func(s *RequisitionLineUpsert) {
 		s.AddApprovedQuantity(v)
 	})
