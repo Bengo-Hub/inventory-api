@@ -30,7 +30,7 @@ type RFQAward struct {
 	// UnitPrice holds the value of the "unit_price" field.
 	UnitPrice float64 `json:"unit_price,omitempty"`
 	// Quantity holds the value of the "quantity" field.
-	Quantity int `json:"quantity,omitempty"`
+	Quantity float64 `json:"quantity,omitempty"`
 	// PO created from this award
 	PoID *uuid.UUID `json:"po_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -68,10 +68,8 @@ func (*RFQAward) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case rfqaward.FieldPoID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case rfqaward.FieldUnitPrice:
+		case rfqaward.FieldUnitPrice, rfqaward.FieldQuantity:
 			values[i] = new(sql.NullFloat64)
-		case rfqaward.FieldQuantity:
-			values[i] = new(sql.NullInt64)
 		case rfqaward.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case rfqaward.FieldID, rfqaward.FieldTenantID, rfqaward.FieldRfqID, rfqaward.FieldRfqLineID, rfqaward.FieldSupplierID:
@@ -128,10 +126,10 @@ func (_m *RFQAward) assignValues(columns []string, values []any) error {
 				_m.UnitPrice = value.Float64
 			}
 		case rfqaward.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		case rfqaward.FieldPoID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {

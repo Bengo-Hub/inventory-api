@@ -46,13 +46,13 @@ func (_c *InventoryBalanceCreate) SetWarehouseID(v uuid.UUID) *InventoryBalanceC
 }
 
 // SetOnHand sets the "on_hand" field.
-func (_c *InventoryBalanceCreate) SetOnHand(v int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetOnHand(v float64) *InventoryBalanceCreate {
 	_c.mutation.SetOnHand(v)
 	return _c
 }
 
 // SetNillableOnHand sets the "on_hand" field if the given value is not nil.
-func (_c *InventoryBalanceCreate) SetNillableOnHand(v *int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetNillableOnHand(v *float64) *InventoryBalanceCreate {
 	if v != nil {
 		_c.SetOnHand(*v)
 	}
@@ -60,13 +60,13 @@ func (_c *InventoryBalanceCreate) SetNillableOnHand(v *int) *InventoryBalanceCre
 }
 
 // SetAvailable sets the "available" field.
-func (_c *InventoryBalanceCreate) SetAvailable(v int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetAvailable(v float64) *InventoryBalanceCreate {
 	_c.mutation.SetAvailable(v)
 	return _c
 }
 
 // SetNillableAvailable sets the "available" field if the given value is not nil.
-func (_c *InventoryBalanceCreate) SetNillableAvailable(v *int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetNillableAvailable(v *float64) *InventoryBalanceCreate {
 	if v != nil {
 		_c.SetAvailable(*v)
 	}
@@ -74,13 +74,13 @@ func (_c *InventoryBalanceCreate) SetNillableAvailable(v *int) *InventoryBalance
 }
 
 // SetReserved sets the "reserved" field.
-func (_c *InventoryBalanceCreate) SetReserved(v int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetReserved(v float64) *InventoryBalanceCreate {
 	_c.mutation.SetReserved(v)
 	return _c
 }
 
 // SetNillableReserved sets the "reserved" field if the given value is not nil.
-func (_c *InventoryBalanceCreate) SetNillableReserved(v *int) *InventoryBalanceCreate {
+func (_c *InventoryBalanceCreate) SetNillableReserved(v *float64) *InventoryBalanceCreate {
 	if v != nil {
 		_c.SetReserved(*v)
 	}
@@ -369,15 +369,15 @@ func (_c *InventoryBalanceCreate) createSpec() (*InventoryBalance, *sqlgraph.Cre
 		_node.TenantID = value
 	}
 	if value, ok := _c.mutation.OnHand(); ok {
-		_spec.SetField(inventorybalance.FieldOnHand, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldOnHand, field.TypeFloat64, value)
 		_node.OnHand = value
 	}
 	if value, ok := _c.mutation.Available(); ok {
-		_spec.SetField(inventorybalance.FieldAvailable, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldAvailable, field.TypeFloat64, value)
 		_node.Available = value
 	}
 	if value, ok := _c.mutation.Reserved(); ok {
-		_spec.SetField(inventorybalance.FieldReserved, field.TypeInt, value)
+		_spec.SetField(inventorybalance.FieldReserved, field.TypeFloat64, value)
 		_node.Reserved = value
 	}
 	if value, ok := _c.mutation.UnitOfMeasure(); ok {
@@ -544,7 +544,7 @@ func (u *InventoryBalanceUpsert) UpdateWarehouseID() *InventoryBalanceUpsert {
 }
 
 // SetOnHand sets the "on_hand" field.
-func (u *InventoryBalanceUpsert) SetOnHand(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) SetOnHand(v float64) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldOnHand, v)
 	return u
 }
@@ -556,13 +556,13 @@ func (u *InventoryBalanceUpsert) UpdateOnHand() *InventoryBalanceUpsert {
 }
 
 // AddOnHand adds v to the "on_hand" field.
-func (u *InventoryBalanceUpsert) AddOnHand(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) AddOnHand(v float64) *InventoryBalanceUpsert {
 	u.Add(inventorybalance.FieldOnHand, v)
 	return u
 }
 
 // SetAvailable sets the "available" field.
-func (u *InventoryBalanceUpsert) SetAvailable(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) SetAvailable(v float64) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldAvailable, v)
 	return u
 }
@@ -574,13 +574,13 @@ func (u *InventoryBalanceUpsert) UpdateAvailable() *InventoryBalanceUpsert {
 }
 
 // AddAvailable adds v to the "available" field.
-func (u *InventoryBalanceUpsert) AddAvailable(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) AddAvailable(v float64) *InventoryBalanceUpsert {
 	u.Add(inventorybalance.FieldAvailable, v)
 	return u
 }
 
 // SetReserved sets the "reserved" field.
-func (u *InventoryBalanceUpsert) SetReserved(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) SetReserved(v float64) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldReserved, v)
 	return u
 }
@@ -592,7 +592,7 @@ func (u *InventoryBalanceUpsert) UpdateReserved() *InventoryBalanceUpsert {
 }
 
 // AddReserved adds v to the "reserved" field.
-func (u *InventoryBalanceUpsert) AddReserved(v int) *InventoryBalanceUpsert {
+func (u *InventoryBalanceUpsert) AddReserved(v float64) *InventoryBalanceUpsert {
 	u.Add(inventorybalance.FieldReserved, v)
 	return u
 }
@@ -796,14 +796,14 @@ func (u *InventoryBalanceUpsertOne) UpdateWarehouseID() *InventoryBalanceUpsertO
 }
 
 // SetOnHand sets the "on_hand" field.
-func (u *InventoryBalanceUpsertOne) SetOnHand(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) SetOnHand(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetOnHand(v)
 	})
 }
 
 // AddOnHand adds v to the "on_hand" field.
-func (u *InventoryBalanceUpsertOne) AddOnHand(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) AddOnHand(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddOnHand(v)
 	})
@@ -817,14 +817,14 @@ func (u *InventoryBalanceUpsertOne) UpdateOnHand() *InventoryBalanceUpsertOne {
 }
 
 // SetAvailable sets the "available" field.
-func (u *InventoryBalanceUpsertOne) SetAvailable(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) SetAvailable(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetAvailable(v)
 	})
 }
 
 // AddAvailable adds v to the "available" field.
-func (u *InventoryBalanceUpsertOne) AddAvailable(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) AddAvailable(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddAvailable(v)
 	})
@@ -838,14 +838,14 @@ func (u *InventoryBalanceUpsertOne) UpdateAvailable() *InventoryBalanceUpsertOne
 }
 
 // SetReserved sets the "reserved" field.
-func (u *InventoryBalanceUpsertOne) SetReserved(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) SetReserved(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetReserved(v)
 	})
 }
 
 // AddReserved adds v to the "reserved" field.
-func (u *InventoryBalanceUpsertOne) AddReserved(v int) *InventoryBalanceUpsertOne {
+func (u *InventoryBalanceUpsertOne) AddReserved(v float64) *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddReserved(v)
 	})
@@ -1242,14 +1242,14 @@ func (u *InventoryBalanceUpsertBulk) UpdateWarehouseID() *InventoryBalanceUpsert
 }
 
 // SetOnHand sets the "on_hand" field.
-func (u *InventoryBalanceUpsertBulk) SetOnHand(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) SetOnHand(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetOnHand(v)
 	})
 }
 
 // AddOnHand adds v to the "on_hand" field.
-func (u *InventoryBalanceUpsertBulk) AddOnHand(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) AddOnHand(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddOnHand(v)
 	})
@@ -1263,14 +1263,14 @@ func (u *InventoryBalanceUpsertBulk) UpdateOnHand() *InventoryBalanceUpsertBulk 
 }
 
 // SetAvailable sets the "available" field.
-func (u *InventoryBalanceUpsertBulk) SetAvailable(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) SetAvailable(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetAvailable(v)
 	})
 }
 
 // AddAvailable adds v to the "available" field.
-func (u *InventoryBalanceUpsertBulk) AddAvailable(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) AddAvailable(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddAvailable(v)
 	})
@@ -1284,14 +1284,14 @@ func (u *InventoryBalanceUpsertBulk) UpdateAvailable() *InventoryBalanceUpsertBu
 }
 
 // SetReserved sets the "reserved" field.
-func (u *InventoryBalanceUpsertBulk) SetReserved(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) SetReserved(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.SetReserved(v)
 	})
 }
 
 // AddReserved adds v to the "reserved" field.
-func (u *InventoryBalanceUpsertBulk) AddReserved(v int) *InventoryBalanceUpsertBulk {
+func (u *InventoryBalanceUpsertBulk) AddReserved(v float64) *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.AddReserved(v)
 	})

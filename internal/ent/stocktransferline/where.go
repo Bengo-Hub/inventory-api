@@ -75,7 +75,7 @@ func LotID(v uuid.UUID) predicate.StockTransferLine {
 }
 
 // Quantity applies equality check predicate on the "quantity" field. It's identical to QuantityEQ.
-func Quantity(v int) predicate.StockTransferLine {
+func Quantity(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldEQ(FieldQuantity, v))
 }
 
@@ -240,42 +240,42 @@ func LotIDNotNil() predicate.StockTransferLine {
 }
 
 // QuantityEQ applies the EQ predicate on the "quantity" field.
-func QuantityEQ(v int) predicate.StockTransferLine {
+func QuantityEQ(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldEQ(FieldQuantity, v))
 }
 
 // QuantityNEQ applies the NEQ predicate on the "quantity" field.
-func QuantityNEQ(v int) predicate.StockTransferLine {
+func QuantityNEQ(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldNEQ(FieldQuantity, v))
 }
 
 // QuantityIn applies the In predicate on the "quantity" field.
-func QuantityIn(vs ...int) predicate.StockTransferLine {
+func QuantityIn(vs ...float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldIn(FieldQuantity, vs...))
 }
 
 // QuantityNotIn applies the NotIn predicate on the "quantity" field.
-func QuantityNotIn(vs ...int) predicate.StockTransferLine {
+func QuantityNotIn(vs ...float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldNotIn(FieldQuantity, vs...))
 }
 
 // QuantityGT applies the GT predicate on the "quantity" field.
-func QuantityGT(v int) predicate.StockTransferLine {
+func QuantityGT(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldGT(FieldQuantity, v))
 }
 
 // QuantityGTE applies the GTE predicate on the "quantity" field.
-func QuantityGTE(v int) predicate.StockTransferLine {
+func QuantityGTE(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldGTE(FieldQuantity, v))
 }
 
 // QuantityLT applies the LT predicate on the "quantity" field.
-func QuantityLT(v int) predicate.StockTransferLine {
+func QuantityLT(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldLT(FieldQuantity, v))
 }
 
 // QuantityLTE applies the LTE predicate on the "quantity" field.
-func QuantityLTE(v int) predicate.StockTransferLine {
+func QuantityLTE(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldLTE(FieldQuantity, v))
 }
 

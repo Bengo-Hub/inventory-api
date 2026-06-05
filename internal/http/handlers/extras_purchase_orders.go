@@ -165,8 +165,8 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		ItemID      uuid.UUID `json:"item_id"`
 		ItemName    string    `json:"item_name"`
 		ItemSKU     string    `json:"item_sku"`
-		Quantity    int       `json:"quantity"`
-		ReceivedQty int       `json:"received_qty"`
+		Quantity    float64   `json:"quantity"`
+		ReceivedQty float64   `json:"received_qty"`
 		UnitCost    float64   `json:"unit_cost"`
 		TotalCost   float64   `json:"total_cost"`
 	}
@@ -213,7 +213,7 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 
 type createPOLineInput struct {
 	ItemID   uuid.UUID `json:"item_id"`
-	Quantity int       `json:"quantity"`
+	Quantity float64   `json:"quantity"`
 	UnitCost float64   `json:"unit_cost"`
 }
 

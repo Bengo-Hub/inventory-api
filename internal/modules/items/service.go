@@ -93,8 +93,8 @@ type ItemDTO struct {
 	SingleSupplement *float64 `json:"single_supplement,omitempty"`
 	// Current stock levels (aggregated across all warehouses).
 	// Populated by ListItems; nil when no balance row exists.
-	Available *int      `json:"available,omitempty"`
-	OnHand    *int      `json:"on_hand,omitempty"`
+	Available *float64  `json:"available,omitempty"`
+	OnHand    *float64  `json:"on_hand,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -116,9 +116,9 @@ type StockAvailability struct {
 	ItemID              uuid.UUID  `json:"item_id"`
 	SKU                 string     `json:"sku"`
 	WarehouseID         uuid.UUID  `json:"warehouse_id"`
-	OnHand              int        `json:"on_hand"`
-	Available           int        `json:"available"`
-	Reserved            int        `json:"reserved"`
+	OnHand              float64    `json:"on_hand"`
+	Available           float64    `json:"available"`
+	Reserved            float64    `json:"reserved"`
 	UnitOfMeasure       string     `json:"unit_of_measure"`
 	ReorderLevel        int        `json:"reorder_level"`
 	ReorderQuantity     int        `json:"reorder_quantity"`
@@ -272,7 +272,7 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 		return nil, fmt.Errorf("items: query ingredient balances: %w", err)
 	}
 
-	balMap := make(map[uuid.UUID]int, len(balances))
+	balMap := make(map[uuid.UUID]float64, len(balances))
 	for _, b := range balances {
 		balMap[b.ItemID] = b.Available
 	}
@@ -306,8 +306,8 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 		ItemID:        itm.ID,
 		SKU:           itm.Sku,
 		WarehouseID:   uuid.Nil,
-		OnHand:        availablePortions,
-		Available:     availablePortions,
+		OnHand:        float64(availablePortions),
+		Available:     float64(availablePortions),
 		Reserved:      0,
 		UnitOfMeasure: rec.UnitOfMeasure,
 		UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
@@ -318,7 +318,7 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 type BOMAvailabilityResult struct {
 	SKU           string    `json:"sku"`
 	ItemID        uuid.UUID `json:"item_id"`
-	Available     int       `json:"available"`
+	Available     float64   `json:"available"`
 	Type          string    `json:"type"` // "recipe" or "simple"
 	UnitOfMeasure string    `json:"unit_of_measure,omitempty"`
 	UpdatedAt     string    `json:"updated_at"`
@@ -665,8 +665,8 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		type balSummary struct {
 			reorderLevel    int
 			reorderQuantity int
-			available       int
-			onHand          int
+			available       float64
+			onHand          float64
 		}
 		balMap := make(map[uuid.UUID]balSummary, len(itemIDs))
 		if len(itemIDs) > 0 {
@@ -1121,7 +1121,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	}
 
 	// Create initial balance if initial_quantity > 0
-	initialQty := dto.InitialQuantity
+	initialQty := float64(dto.InitialQuantity)
 	if initialQty <= 0 {
 		initialQty = 1
 	}

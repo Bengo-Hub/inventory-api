@@ -61,7 +61,7 @@ func ValidColumn(column string) bool {
 
 var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
-	DefaultQuantity int
+	DefaultQuantity float64
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

@@ -96,8 +96,8 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID, s
 			SetTenantID(tenantID).
 			SetItemID(itm.ID).
 			SetWarehouseID(wh.ID).
-			SetOnHand(onHand).
-			SetAvailable(onHand).
+			SetOnHand(float64(onHand)).
+			SetAvailable(float64(onHand)).
 			SetReserved(0).
 			SetReorderLevel(reorderLvl).
 			SetReorderQuantity(reorderLvl).

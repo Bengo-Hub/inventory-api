@@ -65,13 +65,13 @@ func (_c *StockTransferLineCreate) SetNillableLotID(v *uuid.UUID) *StockTransfer
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *StockTransferLineCreate) SetQuantity(v int) *StockTransferLineCreate {
+func (_c *StockTransferLineCreate) SetQuantity(v float64) *StockTransferLineCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *StockTransferLineCreate) SetNillableQuantity(v *int) *StockTransferLineCreate {
+func (_c *StockTransferLineCreate) SetNillableQuantity(v *float64) *StockTransferLineCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -205,7 +205,7 @@ func (_c *StockTransferLineCreate) createSpec() (*StockTransferLine, *sqlgraph.C
 		_node.LotID = &value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(stocktransferline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if nodes := _c.mutation.TransferIDs(); len(nodes) > 0 {
@@ -338,7 +338,7 @@ func (u *StockTransferLineUpsert) ClearLotID() *StockTransferLineUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *StockTransferLineUpsert) SetQuantity(v int) *StockTransferLineUpsert {
+func (u *StockTransferLineUpsert) SetQuantity(v float64) *StockTransferLineUpsert {
 	u.Set(stocktransferline.FieldQuantity, v)
 	return u
 }
@@ -350,7 +350,7 @@ func (u *StockTransferLineUpsert) UpdateQuantity() *StockTransferLineUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *StockTransferLineUpsert) AddQuantity(v int) *StockTransferLineUpsert {
+func (u *StockTransferLineUpsert) AddQuantity(v float64) *StockTransferLineUpsert {
 	u.Add(stocktransferline.FieldQuantity, v)
 	return u
 }
@@ -474,14 +474,14 @@ func (u *StockTransferLineUpsertOne) ClearLotID() *StockTransferLineUpsertOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *StockTransferLineUpsertOne) SetQuantity(v int) *StockTransferLineUpsertOne {
+func (u *StockTransferLineUpsertOne) SetQuantity(v float64) *StockTransferLineUpsertOne {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *StockTransferLineUpsertOne) AddQuantity(v int) *StockTransferLineUpsertOne {
+func (u *StockTransferLineUpsertOne) AddQuantity(v float64) *StockTransferLineUpsertOne {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.AddQuantity(v)
 	})
@@ -780,14 +780,14 @@ func (u *StockTransferLineUpsertBulk) ClearLotID() *StockTransferLineUpsertBulk 
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *StockTransferLineUpsertBulk) SetQuantity(v int) *StockTransferLineUpsertBulk {
+func (u *StockTransferLineUpsertBulk) SetQuantity(v float64) *StockTransferLineUpsertBulk {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *StockTransferLineUpsertBulk) AddQuantity(v int) *StockTransferLineUpsertBulk {
+func (u *StockTransferLineUpsertBulk) AddQuantity(v float64) *StockTransferLineUpsertBulk {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.AddQuantity(v)
 	})

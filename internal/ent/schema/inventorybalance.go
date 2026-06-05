@@ -26,15 +26,15 @@ func (InventoryBalance) Fields() []ent.Field {
 			Comment("FK to items table"),
 		field.UUID("warehouse_id", uuid.UUID{}).
 			Comment("FK to warehouses table"),
-		field.Int("on_hand").
+		field.Float("on_hand").
 			Default(0).
-			Comment("Total physical stock"),
-		field.Int("available").
+			Comment("Total physical stock (fractional-capable)"),
+		field.Float("available").
 			Default(0).
-			Comment("on_hand minus reserved"),
-		field.Int("reserved").
+			Comment("on_hand minus reserved (fractional-capable)"),
+		field.Float("reserved").
 			Default(0).
-			Comment("Reserved for pending orders"),
+			Comment("Reserved for pending orders (fractional-capable)"),
 		field.String("unit_of_measure").
 			Default("PIECE"),
 		field.Int("reorder_level").

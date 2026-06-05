@@ -25,9 +25,9 @@ type PurchaseOrderLine struct {
 	// FK to ItemVariant if variant-specific
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	// QuantityOrdered holds the value of the "quantity_ordered" field.
-	QuantityOrdered int `json:"quantity_ordered,omitempty"`
+	QuantityOrdered float64 `json:"quantity_ordered,omitempty"`
 	// QuantityReceived holds the value of the "quantity_received" field.
-	QuantityReceived int `json:"quantity_received,omitempty"`
+	QuantityReceived float64 `json:"quantity_received,omitempty"`
 	// UnitPrice holds the value of the "unit_price" field.
 	UnitPrice float64 `json:"unit_price,omitempty"`
 	// quantity_ordered * unit_price
@@ -65,10 +65,8 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchaseorderline.FieldVariantID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice:
+		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice:
 			values[i] = new(sql.NullFloat64)
-		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived:
-			values[i] = new(sql.NullInt64)
 		case purchaseorderline.FieldID, purchaseorderline.FieldPoID, purchaseorderline.FieldItemID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -112,16 +110,16 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 				*_m.VariantID = *value.S.(*uuid.UUID)
 			}
 		case purchaseorderline.FieldQuantityOrdered:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity_ordered", values[i])
 			} else if value.Valid {
-				_m.QuantityOrdered = int(value.Int64)
+				_m.QuantityOrdered = value.Float64
 			}
 		case purchaseorderline.FieldQuantityReceived:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity_received", values[i])
 			} else if value.Valid {
-				_m.QuantityReceived = int(value.Int64)
+				_m.QuantityReceived = value.Float64
 			}
 		case purchaseorderline.FieldUnitPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {

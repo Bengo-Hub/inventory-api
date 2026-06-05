@@ -28,11 +28,11 @@ type GoodsReceiptLine struct {
 	// FK to Item
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// QuantityReceived holds the value of the "quantity_received" field.
-	QuantityReceived int `json:"quantity_received,omitempty"`
+	QuantityReceived float64 `json:"quantity_received,omitempty"`
 	// QuantityAccepted holds the value of the "quantity_accepted" field.
-	QuantityAccepted int `json:"quantity_accepted,omitempty"`
+	QuantityAccepted float64 `json:"quantity_accepted,omitempty"`
 	// QuantityRejected holds the value of the "quantity_rejected" field.
-	QuantityRejected int `json:"quantity_rejected,omitempty"`
+	QuantityRejected float64 `json:"quantity_rejected,omitempty"`
 	// UnitCost holds the value of the "unit_cost" field.
 	UnitCost float64 `json:"unit_cost,omitempty"`
 	// RejectionReason holds the value of the "rejection_reason" field.
@@ -72,10 +72,8 @@ func (*GoodsReceiptLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case goodsreceiptline.FieldPurchaseOrderLineID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case goodsreceiptline.FieldUnitCost:
+		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost:
 			values[i] = new(sql.NullFloat64)
-		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected:
-			values[i] = new(sql.NullInt64)
 		case goodsreceiptline.FieldRejectionReason:
 			values[i] = new(sql.NullString)
 		case goodsreceiptline.FieldCreatedAt:
@@ -129,22 +127,22 @@ func (_m *GoodsReceiptLine) assignValues(columns []string, values []any) error {
 				_m.ItemID = *value
 			}
 		case goodsreceiptline.FieldQuantityReceived:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity_received", values[i])
 			} else if value.Valid {
-				_m.QuantityReceived = int(value.Int64)
+				_m.QuantityReceived = value.Float64
 			}
 		case goodsreceiptline.FieldQuantityAccepted:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity_accepted", values[i])
 			} else if value.Valid {
-				_m.QuantityAccepted = int(value.Int64)
+				_m.QuantityAccepted = value.Float64
 			}
 		case goodsreceiptline.FieldQuantityRejected:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity_rejected", values[i])
 			} else if value.Valid {
-				_m.QuantityRejected = int(value.Int64)
+				_m.QuantityRejected = value.Float64
 			}
 		case goodsreceiptline.FieldUnitCost:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {

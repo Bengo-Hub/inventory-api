@@ -21,7 +21,7 @@ func (RFQLine) Fields() []ent.Field {
 		field.UUID("rfq_id", uuid.UUID{}).Comment("FK to RFQ"),
 		field.UUID("item_id", uuid.UUID{}).Optional().Nillable().Comment("FK to Item; nil for free-text/external"),
 		field.String("description").Optional(),
-		field.Int("quantity").Default(1),
+		field.Float("quantity").Default(1),
 		field.String("uom").Optional().Comment("Unit of measure label"),
 	}
 }

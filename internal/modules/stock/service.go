@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"time"
 
 	eventslib "github.com/Bengo-Hub/shared-events"
@@ -33,10 +32,10 @@ type ReservationRequest struct {
 	IdempotencyKey string            `json:"idempotency_key,omitempty"`
 }
 
-// ReservationItem represents a single item to reserve.
+// ReservationItem represents a single item to reserve (fractional-capable).
 type ReservationItem struct {
-	SKU      string `json:"sku"`
-	Quantity int    `json:"quantity"`
+	SKU      string  `json:"sku"`
+	Quantity float64 `json:"quantity"`
 }
 
 // ReservationResponse matches the ordering-backend client DTO.
@@ -53,11 +52,11 @@ type ReservationResponse struct {
 
 // ReservedItem matches the ordering-backend client DTO.
 type ReservedItem struct {
-	SKU             string `json:"sku"`
-	RequestedQty    int    `json:"requested_qty"`
-	ReservedQty     int    `json:"reserved_qty"`
-	AvailableQty    int    `json:"available_qty"`
-	IsFullyReserved bool   `json:"is_fully_reserved"`
+	SKU             string  `json:"sku"`
+	RequestedQty    float64 `json:"requested_qty"`
+	ReservedQty     float64 `json:"reserved_qty"`
+	AvailableQty    float64 `json:"available_qty"`
+	IsFullyReserved bool    `json:"is_fully_reserved"`
 }
 
 // ConsumptionRequest matches the ordering-backend client DTO.
@@ -102,7 +101,7 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 // AdjustStockRequest represents a stock adjustment request.
 type AdjustStockRequest struct {
 	SKU         string    `json:"sku"`
-	Adjustment  int       `json:"adjustment"`
+	Adjustment  float64   `json:"adjustment"`
 	Reason      string    `json:"reason"`
 	Reference   string    `json:"reference,omitempty"`
 	Notes       string    `json:"notes,omitempty"`
@@ -114,9 +113,9 @@ type AdjustStockRequest struct {
 type AdjustStockResponse struct {
 	ID           uuid.UUID `json:"id"`
 	SKU          string    `json:"sku"`
-	OnHand       int       `json:"on_hand"`
-	Available    int       `json:"available"`
-	Reserved     int       `json:"reserved"`
+	OnHand       float64   `json:"on_hand"`
+	Available    float64   `json:"available"`
+	Reserved     float64   `json:"reserved"`
 	Reason       string    `json:"reason"`
 	QtyBefore    float64   `json:"quantity_before"`
 	QtyChange    float64   `json:"quantity_change"`
@@ -271,9 +270,9 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 
 	s.log.Info("stock adjusted",
 		zap.String("sku", req.SKU),
-		zap.Int("adjustment", req.Adjustment),
+		zap.Float64("adjustment", req.Adjustment),
 		zap.String("reason", req.Reason),
-		zap.Int("new_on_hand", newOnHand),
+		zap.Float64("new_on_hand", newOnHand),
 		zap.String("adjustment_id", adj.ID.String()),
 	)
 
@@ -408,11 +407,11 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 		})
 		s.log.Warn("stock-out alert published",
 			zap.String("sku", itm.Sku),
-			zap.Int("available", bal.Available),
+			zap.Float64("available", bal.Available),
 		)
 		// Cascade: mark recipe items as unavailable when an ingredient runs out.
 		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID)
-	} else if bal.Available <= bal.ReorderLevel {
+	} else if bal.Available <= float64(bal.ReorderLevel) {
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
 			"item_id":       itm.ID.String(),
@@ -427,7 +426,7 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 		})
 		s.log.Info("low stock alert published",
 			zap.String("sku", itm.Sku),
-			zap.Int("available", bal.Available),
+			zap.Float64("available", bal.Available),
 			zap.Int("reorder_level", bal.ReorderLevel),
 		)
 	}
@@ -457,13 +456,13 @@ func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID 
 // explodedIngredient holds a single resolved ingredient SKU + quantity.
 type explodedIngredient struct {
 	SKU      string
-	Quantity int
+	Quantity float64
 }
 
 // explodeBOM resolves a menu-item SKU to its raw ingredients using the recipe/BOM table.
 // If the SKU has no recipe or the recipe has no ingredients, returns the original SKU × qty.
 // portionsRequested is the number of portions of the menu item to produce.
-func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string, portionsRequested int) ([]explodedIngredient, bool) {
+func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string, portionsRequested float64) ([]explodedIngredient, bool) {
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.Sku(sku), recipe.IsActive(true)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
@@ -481,11 +480,11 @@ func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string
 
 	ingredients := make([]explodedIngredient, 0, len(r.Edges.Ingredients))
 	for _, ing := range r.Edges.Ingredients {
-		// Scale ingredient by (portions / outputQty)
-		rawQty := (ing.Quantity / outputQty) * float64(portionsRequested)
-		qty := int(math.Ceil(rawQty)) // round up to avoid partial units
-		if qty <= 0 {
-			qty = 1
+		// Scale ingredient by (portions / outputQty). Keep the result fractional —
+		// a recipe needing 0.5 L per portion must reserve/consume 0.5 L, not 1.
+		qty := (ing.Quantity / outputQty) * portionsRequested
+		if qty < 0 {
+			qty = 0
 		}
 		ingredients = append(ingredients, explodedIngredient{SKU: ing.ItemSku, Quantity: qty})
 	}
@@ -530,7 +529,7 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 			ingredientsToReserve = []explodedIngredient{{SKU: ri.SKU, Quantity: ri.Quantity}}
 		}
 
-		totalReservedQty := 0
+		totalReservedQty := 0.0
 		fullyReserved := true
 
 		for _, ing := range ingredientsToReserve {
@@ -552,7 +551,7 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 				).
 				First(ctx)
 
-			var availableQty int
+			var availableQty float64
 			if err != nil {
 				if ent.IsNotFound(err) {
 					availableQty = 0
@@ -920,7 +919,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			).
 			First(ctx)
 		if err == nil {
-			deduct := int(ci.Quantity)
+			deduct := ci.Quantity // keep fractional — do not truncate sub-unit consumption
 			updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(max(0, bal.OnHand-deduct)).
 				SetAvailable(max(0, bal.Available-deduct)).
@@ -1049,7 +1048,7 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.U
 			continue
 		}
 
-		qty := int(ri.Quantity)
+		qty := ri.Quantity // fractional-capable restock
 		_, err = tx.InventoryBalance.UpdateOne(bal).
 			SetOnHand(bal.OnHand + qty).
 			SetAvailable(bal.Available + qty).

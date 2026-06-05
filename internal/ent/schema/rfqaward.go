@@ -25,7 +25,7 @@ func (RFQAward) Fields() []ent.Field {
 		field.UUID("rfq_line_id", uuid.UUID{}).Comment("Awarded RFQ line"),
 		field.UUID("supplier_id", uuid.UUID{}).Comment("Winning supplier"),
 		field.Float("unit_price").Default(0),
-		field.Int("quantity").Default(1),
+		field.Float("quantity").Default(1),
 		field.UUID("po_id", uuid.UUID{}).Optional().Nillable().Comment("PO created from this award"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}

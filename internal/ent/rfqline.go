@@ -27,7 +27,7 @@ type RFQLine struct {
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
 	// Quantity holds the value of the "quantity" field.
-	Quantity int `json:"quantity,omitempty"`
+	Quantity float64 `json:"quantity,omitempty"`
 	// Unit of measure label
 	Uom string `json:"uom,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -64,7 +64,7 @@ func (*RFQLine) scanValues(columns []string) ([]any, error) {
 		case rfqline.FieldItemID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case rfqline.FieldQuantity:
-			values[i] = new(sql.NullInt64)
+			values[i] = new(sql.NullFloat64)
 		case rfqline.FieldDescription, rfqline.FieldUom:
 			values[i] = new(sql.NullString)
 		case rfqline.FieldID, rfqline.FieldTenantID, rfqline.FieldRfqID:
@@ -116,10 +116,10 @@ func (_m *RFQLine) assignValues(columns []string, values []any) error {
 				_m.Description = value.String
 			}
 		case rfqline.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		case rfqline.FieldUom:
 			if value, ok := values[i].(*sql.NullString); !ok {

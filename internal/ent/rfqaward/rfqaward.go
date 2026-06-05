@@ -71,7 +71,7 @@ var (
 	// DefaultUnitPrice holds the default value on creation for the "unit_price" field.
 	DefaultUnitPrice float64
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
-	DefaultQuantity int
+	DefaultQuantity float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.

@@ -72,17 +72,17 @@ func WarehouseID(v uuid.UUID) predicate.InventoryBalance {
 }
 
 // OnHand applies equality check predicate on the "on_hand" field. It's identical to OnHandEQ.
-func OnHand(v int) predicate.InventoryBalance {
+func OnHand(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldOnHand, v))
 }
 
 // Available applies equality check predicate on the "available" field. It's identical to AvailableEQ.
-func Available(v int) predicate.InventoryBalance {
+func Available(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldAvailable, v))
 }
 
 // Reserved applies equality check predicate on the "reserved" field. It's identical to ReservedEQ.
-func Reserved(v int) predicate.InventoryBalance {
+func Reserved(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldReserved, v))
 }
 
@@ -202,122 +202,122 @@ func WarehouseIDNotIn(vs ...uuid.UUID) predicate.InventoryBalance {
 }
 
 // OnHandEQ applies the EQ predicate on the "on_hand" field.
-func OnHandEQ(v int) predicate.InventoryBalance {
+func OnHandEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldOnHand, v))
 }
 
 // OnHandNEQ applies the NEQ predicate on the "on_hand" field.
-func OnHandNEQ(v int) predicate.InventoryBalance {
+func OnHandNEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNEQ(FieldOnHand, v))
 }
 
 // OnHandIn applies the In predicate on the "on_hand" field.
-func OnHandIn(vs ...int) predicate.InventoryBalance {
+func OnHandIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldIn(FieldOnHand, vs...))
 }
 
 // OnHandNotIn applies the NotIn predicate on the "on_hand" field.
-func OnHandNotIn(vs ...int) predicate.InventoryBalance {
+func OnHandNotIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNotIn(FieldOnHand, vs...))
 }
 
 // OnHandGT applies the GT predicate on the "on_hand" field.
-func OnHandGT(v int) predicate.InventoryBalance {
+func OnHandGT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGT(FieldOnHand, v))
 }
 
 // OnHandGTE applies the GTE predicate on the "on_hand" field.
-func OnHandGTE(v int) predicate.InventoryBalance {
+func OnHandGTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGTE(FieldOnHand, v))
 }
 
 // OnHandLT applies the LT predicate on the "on_hand" field.
-func OnHandLT(v int) predicate.InventoryBalance {
+func OnHandLT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLT(FieldOnHand, v))
 }
 
 // OnHandLTE applies the LTE predicate on the "on_hand" field.
-func OnHandLTE(v int) predicate.InventoryBalance {
+func OnHandLTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLTE(FieldOnHand, v))
 }
 
 // AvailableEQ applies the EQ predicate on the "available" field.
-func AvailableEQ(v int) predicate.InventoryBalance {
+func AvailableEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldAvailable, v))
 }
 
 // AvailableNEQ applies the NEQ predicate on the "available" field.
-func AvailableNEQ(v int) predicate.InventoryBalance {
+func AvailableNEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNEQ(FieldAvailable, v))
 }
 
 // AvailableIn applies the In predicate on the "available" field.
-func AvailableIn(vs ...int) predicate.InventoryBalance {
+func AvailableIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldIn(FieldAvailable, vs...))
 }
 
 // AvailableNotIn applies the NotIn predicate on the "available" field.
-func AvailableNotIn(vs ...int) predicate.InventoryBalance {
+func AvailableNotIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNotIn(FieldAvailable, vs...))
 }
 
 // AvailableGT applies the GT predicate on the "available" field.
-func AvailableGT(v int) predicate.InventoryBalance {
+func AvailableGT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGT(FieldAvailable, v))
 }
 
 // AvailableGTE applies the GTE predicate on the "available" field.
-func AvailableGTE(v int) predicate.InventoryBalance {
+func AvailableGTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGTE(FieldAvailable, v))
 }
 
 // AvailableLT applies the LT predicate on the "available" field.
-func AvailableLT(v int) predicate.InventoryBalance {
+func AvailableLT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLT(FieldAvailable, v))
 }
 
 // AvailableLTE applies the LTE predicate on the "available" field.
-func AvailableLTE(v int) predicate.InventoryBalance {
+func AvailableLTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLTE(FieldAvailable, v))
 }
 
 // ReservedEQ applies the EQ predicate on the "reserved" field.
-func ReservedEQ(v int) predicate.InventoryBalance {
+func ReservedEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldReserved, v))
 }
 
 // ReservedNEQ applies the NEQ predicate on the "reserved" field.
-func ReservedNEQ(v int) predicate.InventoryBalance {
+func ReservedNEQ(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNEQ(FieldReserved, v))
 }
 
 // ReservedIn applies the In predicate on the "reserved" field.
-func ReservedIn(vs ...int) predicate.InventoryBalance {
+func ReservedIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldIn(FieldReserved, vs...))
 }
 
 // ReservedNotIn applies the NotIn predicate on the "reserved" field.
-func ReservedNotIn(vs ...int) predicate.InventoryBalance {
+func ReservedNotIn(vs ...float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNotIn(FieldReserved, vs...))
 }
 
 // ReservedGT applies the GT predicate on the "reserved" field.
-func ReservedGT(v int) predicate.InventoryBalance {
+func ReservedGT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGT(FieldReserved, v))
 }
 
 // ReservedGTE applies the GTE predicate on the "reserved" field.
-func ReservedGTE(v int) predicate.InventoryBalance {
+func ReservedGTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldGTE(FieldReserved, v))
 }
 
 // ReservedLT applies the LT predicate on the "reserved" field.
-func ReservedLT(v int) predicate.InventoryBalance {
+func ReservedLT(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLT(FieldReserved, v))
 }
 
 // ReservedLTE applies the LTE predicate on the "reserved" field.
-func ReservedLTE(v int) predicate.InventoryBalance {
+func ReservedLTE(v float64) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldLTE(FieldReserved, v))
 }
 

@@ -28,7 +28,7 @@ type rfqLineDTO struct {
 	ItemID      *uuid.UUID `json:"item_id,omitempty"`
 	ItemName    string     `json:"item_name,omitempty"`
 	Description string     `json:"description"`
-	Quantity    int        `json:"quantity"`
+	Quantity    float64    `json:"quantity"`
 	UOM         string     `json:"uom,omitempty"`
 }
 
@@ -58,7 +58,7 @@ type rfqAwardDTO struct {
 	SupplierID   uuid.UUID  `json:"supplier_id"`
 	SupplierName string     `json:"supplier_name,omitempty"`
 	UnitPrice    float64    `json:"unit_price"`
-	Quantity     int        `json:"quantity"`
+	Quantity     float64    `json:"quantity"`
 	POID         *uuid.UUID `json:"po_id,omitempty"`
 }
 
@@ -157,7 +157,7 @@ func (h *InventoryExtrasHandler) rfqToDTO(ctx context.Context, tenantID uuid.UUI
 }
 
 // qtyForLine returns the requested quantity for a line id from a loaded RFQ.
-func (h *InventoryExtrasHandler) qtyForLine(r *ent.RFQ, lineID uuid.UUID) int {
+func (h *InventoryExtrasHandler) qtyForLine(r *ent.RFQ, lineID uuid.UUID) float64 {
 	for _, l := range r.Edges.Lines {
 		if l.ID == lineID {
 			return l.Quantity
@@ -196,7 +196,7 @@ func (h *InventoryExtrasHandler) registerRFQRoutes(r chi.Router, perm func(strin
 type rfqLinePayload struct {
 	ItemID      *uuid.UUID `json:"item_id"`
 	Description string     `json:"description"`
-	Quantity    int        `json:"quantity"`
+	Quantity    float64    `json:"quantity"`
 	UOM         string     `json:"uom"`
 }
 
@@ -558,7 +558,7 @@ type comparisonLine struct {
 	RFQLineID      uuid.UUID         `json:"rfq_line_id"`
 	Description    string            `json:"description"`
 	ItemName       string            `json:"item_name,omitempty"`
-	Quantity       int               `json:"quantity"`
+	Quantity       float64           `json:"quantity"`
 	BestSupplierID *uuid.UUID        `json:"best_supplier_id,omitempty"`
 	Quotes         []comparisonQuote `json:"quotes"`
 }
@@ -645,7 +645,7 @@ type awardEntry struct {
 	RFQLineID  uuid.UUID `json:"rfq_line_id"`
 	SupplierID uuid.UUID `json:"supplier_id"`
 	UnitPrice  float64   `json:"unit_price"`
-	Quantity   int       `json:"quantity"`
+	Quantity   float64   `json:"quantity"`
 }
 
 // AwardRFQ handles POST /inventory/rfqs/{rfqID}/award. Replaces any prior awards.
@@ -689,7 +689,7 @@ func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, h.rfqToDTO(r.Context(), tenantID, full, true))
 }
 
-func (h *InventoryExtrasHandler) lineQty(ctx context.Context, rfqID, lineID uuid.UUID) int {
+func (h *InventoryExtrasHandler) lineQty(ctx context.Context, rfqID, lineID uuid.UUID) float64 {
 	l, err := h.orm.RFQLine.Query().Where(entrfqline.ID(lineID), entrfqline.RfqID(rfqID)).Only(ctx)
 	if err != nil {
 		return 1

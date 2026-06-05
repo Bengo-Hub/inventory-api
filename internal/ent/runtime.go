@@ -607,15 +607,15 @@ func init() {
 	// goodsreceiptlineDescQuantityReceived is the schema descriptor for quantity_received field.
 	goodsreceiptlineDescQuantityReceived := goodsreceiptlineFields[5].Descriptor()
 	// goodsreceiptline.DefaultQuantityReceived holds the default value on creation for the quantity_received field.
-	goodsreceiptline.DefaultQuantityReceived = goodsreceiptlineDescQuantityReceived.Default.(int)
+	goodsreceiptline.DefaultQuantityReceived = goodsreceiptlineDescQuantityReceived.Default.(float64)
 	// goodsreceiptlineDescQuantityAccepted is the schema descriptor for quantity_accepted field.
 	goodsreceiptlineDescQuantityAccepted := goodsreceiptlineFields[6].Descriptor()
 	// goodsreceiptline.DefaultQuantityAccepted holds the default value on creation for the quantity_accepted field.
-	goodsreceiptline.DefaultQuantityAccepted = goodsreceiptlineDescQuantityAccepted.Default.(int)
+	goodsreceiptline.DefaultQuantityAccepted = goodsreceiptlineDescQuantityAccepted.Default.(float64)
 	// goodsreceiptlineDescQuantityRejected is the schema descriptor for quantity_rejected field.
 	goodsreceiptlineDescQuantityRejected := goodsreceiptlineFields[7].Descriptor()
 	// goodsreceiptline.DefaultQuantityRejected holds the default value on creation for the quantity_rejected field.
-	goodsreceiptline.DefaultQuantityRejected = goodsreceiptlineDescQuantityRejected.Default.(int)
+	goodsreceiptline.DefaultQuantityRejected = goodsreceiptlineDescQuantityRejected.Default.(float64)
 	// goodsreceiptlineDescUnitCost is the schema descriptor for unit_cost field.
 	goodsreceiptlineDescUnitCost := goodsreceiptlineFields[8].Descriptor()
 	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
@@ -633,15 +633,15 @@ func init() {
 	// inventorybalanceDescOnHand is the schema descriptor for on_hand field.
 	inventorybalanceDescOnHand := inventorybalanceFields[4].Descriptor()
 	// inventorybalance.DefaultOnHand holds the default value on creation for the on_hand field.
-	inventorybalance.DefaultOnHand = inventorybalanceDescOnHand.Default.(int)
+	inventorybalance.DefaultOnHand = inventorybalanceDescOnHand.Default.(float64)
 	// inventorybalanceDescAvailable is the schema descriptor for available field.
 	inventorybalanceDescAvailable := inventorybalanceFields[5].Descriptor()
 	// inventorybalance.DefaultAvailable holds the default value on creation for the available field.
-	inventorybalance.DefaultAvailable = inventorybalanceDescAvailable.Default.(int)
+	inventorybalance.DefaultAvailable = inventorybalanceDescAvailable.Default.(float64)
 	// inventorybalanceDescReserved is the schema descriptor for reserved field.
 	inventorybalanceDescReserved := inventorybalanceFields[6].Descriptor()
 	// inventorybalance.DefaultReserved holds the default value on creation for the reserved field.
-	inventorybalance.DefaultReserved = inventorybalanceDescReserved.Default.(int)
+	inventorybalance.DefaultReserved = inventorybalanceDescReserved.Default.(float64)
 	// inventorybalanceDescUnitOfMeasure is the schema descriptor for unit_of_measure field.
 	inventorybalanceDescUnitOfMeasure := inventorybalanceFields[7].Descriptor()
 	// inventorybalance.DefaultUnitOfMeasure holds the default value on creation for the unit_of_measure field.
@@ -677,7 +677,7 @@ func init() {
 	// inventorylotDescQuantity is the schema descriptor for quantity field.
 	inventorylotDescQuantity := inventorylotFields[7].Descriptor()
 	// inventorylot.DefaultQuantity holds the default value on creation for the quantity field.
-	inventorylot.DefaultQuantity = inventorylotDescQuantity.Default.(int)
+	inventorylot.DefaultQuantity = inventorylotDescQuantity.Default.(float64)
 	// inventorylotDescCreatedAt is the schema descriptor for created_at field.
 	inventorylotDescCreatedAt := inventorylotFields[11].Descriptor()
 	// inventorylot.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -1207,11 +1207,11 @@ func init() {
 	// purchaseorderlineDescQuantityOrdered is the schema descriptor for quantity_ordered field.
 	purchaseorderlineDescQuantityOrdered := purchaseorderlineFields[4].Descriptor()
 	// purchaseorderline.DefaultQuantityOrdered holds the default value on creation for the quantity_ordered field.
-	purchaseorderline.DefaultQuantityOrdered = purchaseorderlineDescQuantityOrdered.Default.(int)
+	purchaseorderline.DefaultQuantityOrdered = purchaseorderlineDescQuantityOrdered.Default.(float64)
 	// purchaseorderlineDescQuantityReceived is the schema descriptor for quantity_received field.
 	purchaseorderlineDescQuantityReceived := purchaseorderlineFields[5].Descriptor()
 	// purchaseorderline.DefaultQuantityReceived holds the default value on creation for the quantity_received field.
-	purchaseorderline.DefaultQuantityReceived = purchaseorderlineDescQuantityReceived.Default.(int)
+	purchaseorderline.DefaultQuantityReceived = purchaseorderlineDescQuantityReceived.Default.(float64)
 	// purchaseorderlineDescUnitPrice is the schema descriptor for unit_price field.
 	purchaseorderlineDescUnitPrice := purchaseorderlineFields[6].Descriptor()
 	// purchaseorderline.DefaultUnitPrice holds the default value on creation for the unit_price field.
@@ -1309,7 +1309,7 @@ func init() {
 	// rfqawardDescQuantity is the schema descriptor for quantity field.
 	rfqawardDescQuantity := rfqawardFields[6].Descriptor()
 	// rfqaward.DefaultQuantity holds the default value on creation for the quantity field.
-	rfqaward.DefaultQuantity = rfqawardDescQuantity.Default.(int)
+	rfqaward.DefaultQuantity = rfqawardDescQuantity.Default.(float64)
 	// rfqawardDescCreatedAt is the schema descriptor for created_at field.
 	rfqawardDescCreatedAt := rfqawardFields[8].Descriptor()
 	// rfqaward.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -1323,7 +1323,7 @@ func init() {
 	// rfqlineDescQuantity is the schema descriptor for quantity field.
 	rfqlineDescQuantity := rfqlineFields[5].Descriptor()
 	// rfqline.DefaultQuantity holds the default value on creation for the quantity field.
-	rfqline.DefaultQuantity = rfqlineDescQuantity.Default.(int)
+	rfqline.DefaultQuantity = rfqlineDescQuantity.Default.(float64)
 	// rfqlineDescID is the schema descriptor for id field.
 	rfqlineDescID := rfqlineFields[0].Descriptor()
 	// rfqline.DefaultID holds the default value on creation for the id field.
@@ -1513,7 +1513,7 @@ func init() {
 	// requisitionlineDescQuantity is the schema descriptor for quantity field.
 	requisitionlineDescQuantity := requisitionlineFields[5].Descriptor()
 	// requisitionline.DefaultQuantity holds the default value on creation for the quantity field.
-	requisitionline.DefaultQuantity = requisitionlineDescQuantity.Default.(int)
+	requisitionline.DefaultQuantity = requisitionlineDescQuantity.Default.(float64)
 	// requisitionlineDescUrgent is the schema descriptor for urgent field.
 	requisitionlineDescUrgent := requisitionlineFields[7].Descriptor()
 	// requisitionline.DefaultUrgent holds the default value on creation for the urgent field.
@@ -1643,7 +1643,7 @@ func init() {
 	// stocktransferlineDescQuantity is the schema descriptor for quantity field.
 	stocktransferlineDescQuantity := stocktransferlineFields[5].Descriptor()
 	// stocktransferline.DefaultQuantity holds the default value on creation for the quantity field.
-	stocktransferline.DefaultQuantity = stocktransferlineDescQuantity.Default.(int)
+	stocktransferline.DefaultQuantity = stocktransferlineDescQuantity.Default.(float64)
 	// stocktransferlineDescID is the schema descriptor for id field.
 	stocktransferlineDescID := stocktransferlineFields[0].Descriptor()
 	// stocktransferline.DefaultID holds the default value on creation for the id field.

@@ -24,8 +24,8 @@ func (RequisitionLine) Fields() []ent.Field {
 		field.Enum("item_type").Values("inventory", "external", "service").Default("inventory"),
 		// Inventory item reference (when item_type=inventory). Loose UUID ref to Item.
 		field.UUID("item_id", uuid.UUID{}).Optional().Nillable().Comment("FK to Item (inventory type)"),
-		field.Int("quantity").Default(1),
-		field.Int("approved_quantity").Optional().Nillable(),
+		field.Float("quantity").Default(1),
+		field.Float("approved_quantity").Optional().Nillable(),
 		field.Bool("urgent").Default(false),
 		// External item fields
 		field.Text("description").Optional(),

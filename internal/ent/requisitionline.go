@@ -28,9 +28,9 @@ type RequisitionLine struct {
 	// FK to Item (inventory type)
 	ItemID *uuid.UUID `json:"item_id,omitempty"`
 	// Quantity holds the value of the "quantity" field.
-	Quantity int `json:"quantity,omitempty"`
+	Quantity float64 `json:"quantity,omitempty"`
 	// ApprovedQuantity holds the value of the "approved_quantity" field.
-	ApprovedQuantity *int `json:"approved_quantity,omitempty"`
+	ApprovedQuantity *float64 `json:"approved_quantity,omitempty"`
 	// Urgent holds the value of the "urgent" field.
 	Urgent bool `json:"urgent,omitempty"`
 	// Description holds the value of the "description" field.
@@ -90,10 +90,8 @@ func (*RequisitionLine) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case requisitionline.FieldUrgent:
 			values[i] = new(sql.NullBool)
-		case requisitionline.FieldEstimatedPrice:
+		case requisitionline.FieldQuantity, requisitionline.FieldApprovedQuantity, requisitionline.FieldEstimatedPrice:
 			values[i] = new(sql.NullFloat64)
-		case requisitionline.FieldQuantity, requisitionline.FieldApprovedQuantity:
-			values[i] = new(sql.NullInt64)
 		case requisitionline.FieldItemType, requisitionline.FieldDescription, requisitionline.FieldSpecifications, requisitionline.FieldServiceDescription, requisitionline.FieldExpectedDeliverables, requisitionline.FieldDuration:
 			values[i] = new(sql.NullString)
 		case requisitionline.FieldStartDate, requisitionline.FieldEndDate, requisitionline.FieldCreatedAt, requisitionline.FieldUpdatedAt:
@@ -147,17 +145,17 @@ func (_m *RequisitionLine) assignValues(columns []string, values []any) error {
 				*_m.ItemID = *value.S.(*uuid.UUID)
 			}
 		case requisitionline.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		case requisitionline.FieldApprovedQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field approved_quantity", values[i])
 			} else if value.Valid {
-				_m.ApprovedQuantity = new(int)
-				*_m.ApprovedQuantity = int(value.Int64)
+				_m.ApprovedQuantity = new(float64)
+				*_m.ApprovedQuantity = value.Float64
 			}
 		case requisitionline.FieldUrgent:
 			if value, ok := values[i].(*sql.NullBool); !ok {

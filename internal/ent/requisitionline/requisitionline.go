@@ -100,7 +100,7 @@ func ValidColumn(column string) bool {
 
 var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
-	DefaultQuantity int
+	DefaultQuantity float64
 	// DefaultUrgent holds the default value on creation for the "urgent" field.
 	DefaultUrgent bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

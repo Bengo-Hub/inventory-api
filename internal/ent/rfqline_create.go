@@ -65,13 +65,13 @@ func (_c *RFQLineCreate) SetNillableDescription(v *string) *RFQLineCreate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *RFQLineCreate) SetQuantity(v int) *RFQLineCreate {
+func (_c *RFQLineCreate) SetQuantity(v float64) *RFQLineCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *RFQLineCreate) SetNillableQuantity(v *int) *RFQLineCreate {
+func (_c *RFQLineCreate) SetNillableQuantity(v *float64) *RFQLineCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -219,7 +219,7 @@ func (_c *RFQLineCreate) createSpec() (*RFQLine, *sqlgraph.CreateSpec) {
 		_node.Description = value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(rfqline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(rfqline.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if value, ok := _c.mutation.Uom(); ok {
@@ -356,7 +356,7 @@ func (u *RFQLineUpsert) ClearDescription() *RFQLineUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQLineUpsert) SetQuantity(v int) *RFQLineUpsert {
+func (u *RFQLineUpsert) SetQuantity(v float64) *RFQLineUpsert {
 	u.Set(rfqline.FieldQuantity, v)
 	return u
 }
@@ -368,7 +368,7 @@ func (u *RFQLineUpsert) UpdateQuantity() *RFQLineUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQLineUpsert) AddQuantity(v int) *RFQLineUpsert {
+func (u *RFQLineUpsert) AddQuantity(v float64) *RFQLineUpsert {
 	u.Add(rfqline.FieldQuantity, v)
 	return u
 }
@@ -510,14 +510,14 @@ func (u *RFQLineUpsertOne) ClearDescription() *RFQLineUpsertOne {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQLineUpsertOne) SetQuantity(v int) *RFQLineUpsertOne {
+func (u *RFQLineUpsertOne) SetQuantity(v float64) *RFQLineUpsertOne {
 	return u.Update(func(s *RFQLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQLineUpsertOne) AddQuantity(v int) *RFQLineUpsertOne {
+func (u *RFQLineUpsertOne) AddQuantity(v float64) *RFQLineUpsertOne {
 	return u.Update(func(s *RFQLineUpsert) {
 		s.AddQuantity(v)
 	})
@@ -837,14 +837,14 @@ func (u *RFQLineUpsertBulk) ClearDescription() *RFQLineUpsertBulk {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *RFQLineUpsertBulk) SetQuantity(v int) *RFQLineUpsertBulk {
+func (u *RFQLineUpsertBulk) SetQuantity(v float64) *RFQLineUpsertBulk {
 	return u.Update(func(s *RFQLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *RFQLineUpsertBulk) AddQuantity(v int) *RFQLineUpsertBulk {
+func (u *RFQLineUpsertBulk) AddQuantity(v float64) *RFQLineUpsertBulk {
 	return u.Update(func(s *RFQLineUpsert) {
 		s.AddQuantity(v)
 	})

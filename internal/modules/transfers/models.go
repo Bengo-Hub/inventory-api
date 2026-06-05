@@ -19,7 +19,7 @@ type TransferLineRequest struct {
 	ItemID    uuid.UUID  `json:"item_id"`
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	LotID     *uuid.UUID `json:"lot_id,omitempty"`
-	Quantity  int        `json:"quantity"`
+	Quantity  float64    `json:"quantity"`
 }
 
 // TransferResponse is the full representation of a stock transfer with lines.
@@ -45,7 +45,7 @@ type TransferLineResponse struct {
 	ItemID    uuid.UUID  `json:"item_id"`
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	LotID     *uuid.UUID `json:"lot_id,omitempty"`
-	Quantity  int        `json:"quantity"`
+	Quantity  float64    `json:"quantity"`
 }
 
 // WarehouseInfo is a lightweight warehouse representation for transfer responses.

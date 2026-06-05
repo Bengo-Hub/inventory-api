@@ -433,7 +433,7 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 			continue
 		}
 
-		delta := int(qty) - avail.OnHand
+		delta := qty - avail.OnHand
 		if delta == 0 {
 			res.Updated++ // already at target
 			continue

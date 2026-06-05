@@ -51,13 +51,13 @@ func (_c *PurchaseOrderLineCreate) SetNillableVariantID(v *uuid.UUID) *PurchaseO
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (_c *PurchaseOrderLineCreate) SetQuantityOrdered(v int) *PurchaseOrderLineCreate {
+func (_c *PurchaseOrderLineCreate) SetQuantityOrdered(v float64) *PurchaseOrderLineCreate {
 	_c.mutation.SetQuantityOrdered(v)
 	return _c
 }
 
 // SetNillableQuantityOrdered sets the "quantity_ordered" field if the given value is not nil.
-func (_c *PurchaseOrderLineCreate) SetNillableQuantityOrdered(v *int) *PurchaseOrderLineCreate {
+func (_c *PurchaseOrderLineCreate) SetNillableQuantityOrdered(v *float64) *PurchaseOrderLineCreate {
 	if v != nil {
 		_c.SetQuantityOrdered(*v)
 	}
@@ -65,13 +65,13 @@ func (_c *PurchaseOrderLineCreate) SetNillableQuantityOrdered(v *int) *PurchaseO
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_c *PurchaseOrderLineCreate) SetQuantityReceived(v int) *PurchaseOrderLineCreate {
+func (_c *PurchaseOrderLineCreate) SetQuantityReceived(v float64) *PurchaseOrderLineCreate {
 	_c.mutation.SetQuantityReceived(v)
 	return _c
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_c *PurchaseOrderLineCreate) SetNillableQuantityReceived(v *int) *PurchaseOrderLineCreate {
+func (_c *PurchaseOrderLineCreate) SetNillableQuantityReceived(v *float64) *PurchaseOrderLineCreate {
 	if v != nil {
 		_c.SetQuantityReceived(*v)
 	}
@@ -256,11 +256,11 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 		_node.VariantID = &value
 	}
 	if value, ok := _c.mutation.QuantityOrdered(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 		_node.QuantityOrdered = value
 	}
 	if value, ok := _c.mutation.QuantityReceived(); ok {
-		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 		_node.QuantityReceived = value
 	}
 	if value, ok := _c.mutation.UnitPrice(); ok {
@@ -383,7 +383,7 @@ func (u *PurchaseOrderLineUpsert) ClearVariantID() *PurchaseOrderLineUpsert {
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsert) SetQuantityOrdered(v int) *PurchaseOrderLineUpsert {
+func (u *PurchaseOrderLineUpsert) SetQuantityOrdered(v float64) *PurchaseOrderLineUpsert {
 	u.Set(purchaseorderline.FieldQuantityOrdered, v)
 	return u
 }
@@ -395,13 +395,13 @@ func (u *PurchaseOrderLineUpsert) UpdateQuantityOrdered() *PurchaseOrderLineUpse
 }
 
 // AddQuantityOrdered adds v to the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsert) AddQuantityOrdered(v int) *PurchaseOrderLineUpsert {
+func (u *PurchaseOrderLineUpsert) AddQuantityOrdered(v float64) *PurchaseOrderLineUpsert {
 	u.Add(purchaseorderline.FieldQuantityOrdered, v)
 	return u
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *PurchaseOrderLineUpsert) SetQuantityReceived(v int) *PurchaseOrderLineUpsert {
+func (u *PurchaseOrderLineUpsert) SetQuantityReceived(v float64) *PurchaseOrderLineUpsert {
 	u.Set(purchaseorderline.FieldQuantityReceived, v)
 	return u
 }
@@ -413,7 +413,7 @@ func (u *PurchaseOrderLineUpsert) UpdateQuantityReceived() *PurchaseOrderLineUps
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *PurchaseOrderLineUpsert) AddQuantityReceived(v int) *PurchaseOrderLineUpsert {
+func (u *PurchaseOrderLineUpsert) AddQuantityReceived(v float64) *PurchaseOrderLineUpsert {
 	u.Add(purchaseorderline.FieldQuantityReceived, v)
 	return u
 }
@@ -552,14 +552,14 @@ func (u *PurchaseOrderLineUpsertOne) ClearVariantID() *PurchaseOrderLineUpsertOn
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsertOne) SetQuantityOrdered(v int) *PurchaseOrderLineUpsertOne {
+func (u *PurchaseOrderLineUpsertOne) SetQuantityOrdered(v float64) *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.SetQuantityOrdered(v)
 	})
 }
 
 // AddQuantityOrdered adds v to the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsertOne) AddQuantityOrdered(v int) *PurchaseOrderLineUpsertOne {
+func (u *PurchaseOrderLineUpsertOne) AddQuantityOrdered(v float64) *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.AddQuantityOrdered(v)
 	})
@@ -573,14 +573,14 @@ func (u *PurchaseOrderLineUpsertOne) UpdateQuantityOrdered() *PurchaseOrderLineU
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *PurchaseOrderLineUpsertOne) SetQuantityReceived(v int) *PurchaseOrderLineUpsertOne {
+func (u *PurchaseOrderLineUpsertOne) SetQuantityReceived(v float64) *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.SetQuantityReceived(v)
 	})
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *PurchaseOrderLineUpsertOne) AddQuantityReceived(v int) *PurchaseOrderLineUpsertOne {
+func (u *PurchaseOrderLineUpsertOne) AddQuantityReceived(v float64) *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.AddQuantityReceived(v)
 	})
@@ -900,14 +900,14 @@ func (u *PurchaseOrderLineUpsertBulk) ClearVariantID() *PurchaseOrderLineUpsertB
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsertBulk) SetQuantityOrdered(v int) *PurchaseOrderLineUpsertBulk {
+func (u *PurchaseOrderLineUpsertBulk) SetQuantityOrdered(v float64) *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.SetQuantityOrdered(v)
 	})
 }
 
 // AddQuantityOrdered adds v to the "quantity_ordered" field.
-func (u *PurchaseOrderLineUpsertBulk) AddQuantityOrdered(v int) *PurchaseOrderLineUpsertBulk {
+func (u *PurchaseOrderLineUpsertBulk) AddQuantityOrdered(v float64) *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.AddQuantityOrdered(v)
 	})
@@ -921,14 +921,14 @@ func (u *PurchaseOrderLineUpsertBulk) UpdateQuantityOrdered() *PurchaseOrderLine
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *PurchaseOrderLineUpsertBulk) SetQuantityReceived(v int) *PurchaseOrderLineUpsertBulk {
+func (u *PurchaseOrderLineUpsertBulk) SetQuantityReceived(v float64) *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.SetQuantityReceived(v)
 	})
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *PurchaseOrderLineUpsertBulk) AddQuantityReceived(v int) *PurchaseOrderLineUpsertBulk {
+func (u *PurchaseOrderLineUpsertBulk) AddQuantityReceived(v float64) *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.AddQuantityReceived(v)
 	})

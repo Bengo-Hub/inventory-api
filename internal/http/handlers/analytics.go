@@ -60,7 +60,7 @@ type categoryDistribution struct {
 	CategoryID   *uuid.UUID `json:"category_id"`
 	CategoryName string     `json:"category_name"`
 	ItemCount    int        `json:"item_count"`
-	TotalUnits   int        `json:"total_units"`
+	TotalUnits   float64    `json:"total_units"`
 	Percentage   float64    `json:"percentage"`
 }
 
@@ -70,9 +70,9 @@ type reorderAlertDTO struct {
 	ItemName      string    `json:"item_name"`
 	WarehouseID   uuid.UUID `json:"warehouse_id"`
 	WarehouseName string    `json:"warehouse_name"`
-	CurrentQty    int       `json:"current_qty"`
+	CurrentQty    float64   `json:"current_qty"`
 	ReorderLevel  int       `json:"reorder_level"`
-	Deficit       int       `json:"deficit"`
+	Deficit       float64   `json:"deficit"`
 }
 
 type enhancedSummaryDTO struct {
@@ -265,7 +265,7 @@ func (h *AnalyticsHandler) Distribution(w http.ResponseWriter, r *http.Request) 
 		id    *uuid.UUID
 		name  string
 		items map[uuid.UUID]struct{}
-		units int
+		units float64
 	}
 	cats := map[string]*catBucket{}
 
@@ -290,7 +290,7 @@ func (h *AnalyticsHandler) Distribution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Compute totals for percentage
-	totalUnits := 0
+	totalUnits := 0.0
 	for _, c := range cats {
 		totalUnits += c.units
 	}
@@ -336,13 +336,13 @@ func (h *AnalyticsHandler) ReorderAlerts(w http.ResponseWriter, r *http.Request)
 
 	result := make([]reorderAlertDTO, 0)
 	for _, b := range balances {
-		if b.ReorderLevel <= 0 || b.Available > b.ReorderLevel {
+		if b.ReorderLevel <= 0 || b.Available > float64(b.ReorderLevel) {
 			continue
 		}
 		dto := reorderAlertDTO{
 			CurrentQty:   b.Available,
 			ReorderLevel: b.ReorderLevel,
-			Deficit:      b.ReorderLevel - b.Available,
+			Deficit:      float64(b.ReorderLevel) - b.Available,
 			WarehouseID:  b.WarehouseID,
 			ItemID:       b.ItemID,
 		}

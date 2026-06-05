@@ -77,17 +77,17 @@ func ItemID(v uuid.UUID) predicate.GoodsReceiptLine {
 }
 
 // QuantityReceived applies equality check predicate on the "quantity_received" field. It's identical to QuantityReceivedEQ.
-func QuantityReceived(v int) predicate.GoodsReceiptLine {
+func QuantityReceived(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityReceived, v))
 }
 
 // QuantityAccepted applies equality check predicate on the "quantity_accepted" field. It's identical to QuantityAcceptedEQ.
-func QuantityAccepted(v int) predicate.GoodsReceiptLine {
+func QuantityAccepted(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityAccepted, v))
 }
 
 // QuantityRejected applies equality check predicate on the "quantity_rejected" field. It's identical to QuantityRejectedEQ.
-func QuantityRejected(v int) predicate.GoodsReceiptLine {
+func QuantityRejected(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityRejected, v))
 }
 
@@ -257,122 +257,122 @@ func ItemIDLTE(v uuid.UUID) predicate.GoodsReceiptLine {
 }
 
 // QuantityReceivedEQ applies the EQ predicate on the "quantity_received" field.
-func QuantityReceivedEQ(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedNEQ applies the NEQ predicate on the "quantity_received" field.
-func QuantityReceivedNEQ(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedNEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedIn applies the In predicate on the "quantity_received" field.
-func QuantityReceivedIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityReceivedIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldIn(FieldQuantityReceived, vs...))
 }
 
 // QuantityReceivedNotIn applies the NotIn predicate on the "quantity_received" field.
-func QuantityReceivedNotIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityReceivedNotIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldQuantityReceived, vs...))
 }
 
 // QuantityReceivedGT applies the GT predicate on the "quantity_received" field.
-func QuantityReceivedGT(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedGT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGT(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedGTE applies the GTE predicate on the "quantity_received" field.
-func QuantityReceivedGTE(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedGTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedLT applies the LT predicate on the "quantity_received" field.
-func QuantityReceivedLT(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedLT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLT(FieldQuantityReceived, v))
 }
 
 // QuantityReceivedLTE applies the LTE predicate on the "quantity_received" field.
-func QuantityReceivedLTE(v int) predicate.GoodsReceiptLine {
+func QuantityReceivedLTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldQuantityReceived, v))
 }
 
 // QuantityAcceptedEQ applies the EQ predicate on the "quantity_accepted" field.
-func QuantityAcceptedEQ(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityAccepted, v))
 }
 
 // QuantityAcceptedNEQ applies the NEQ predicate on the "quantity_accepted" field.
-func QuantityAcceptedNEQ(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedNEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldQuantityAccepted, v))
 }
 
 // QuantityAcceptedIn applies the In predicate on the "quantity_accepted" field.
-func QuantityAcceptedIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityAcceptedIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldIn(FieldQuantityAccepted, vs...))
 }
 
 // QuantityAcceptedNotIn applies the NotIn predicate on the "quantity_accepted" field.
-func QuantityAcceptedNotIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityAcceptedNotIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldQuantityAccepted, vs...))
 }
 
 // QuantityAcceptedGT applies the GT predicate on the "quantity_accepted" field.
-func QuantityAcceptedGT(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedGT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGT(FieldQuantityAccepted, v))
 }
 
 // QuantityAcceptedGTE applies the GTE predicate on the "quantity_accepted" field.
-func QuantityAcceptedGTE(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedGTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldQuantityAccepted, v))
 }
 
 // QuantityAcceptedLT applies the LT predicate on the "quantity_accepted" field.
-func QuantityAcceptedLT(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedLT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLT(FieldQuantityAccepted, v))
 }
 
 // QuantityAcceptedLTE applies the LTE predicate on the "quantity_accepted" field.
-func QuantityAcceptedLTE(v int) predicate.GoodsReceiptLine {
+func QuantityAcceptedLTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldQuantityAccepted, v))
 }
 
 // QuantityRejectedEQ applies the EQ predicate on the "quantity_rejected" field.
-func QuantityRejectedEQ(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldQuantityRejected, v))
 }
 
 // QuantityRejectedNEQ applies the NEQ predicate on the "quantity_rejected" field.
-func QuantityRejectedNEQ(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedNEQ(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldQuantityRejected, v))
 }
 
 // QuantityRejectedIn applies the In predicate on the "quantity_rejected" field.
-func QuantityRejectedIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityRejectedIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldIn(FieldQuantityRejected, vs...))
 }
 
 // QuantityRejectedNotIn applies the NotIn predicate on the "quantity_rejected" field.
-func QuantityRejectedNotIn(vs ...int) predicate.GoodsReceiptLine {
+func QuantityRejectedNotIn(vs ...float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldQuantityRejected, vs...))
 }
 
 // QuantityRejectedGT applies the GT predicate on the "quantity_rejected" field.
-func QuantityRejectedGT(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedGT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGT(FieldQuantityRejected, v))
 }
 
 // QuantityRejectedGTE applies the GTE predicate on the "quantity_rejected" field.
-func QuantityRejectedGTE(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedGTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldQuantityRejected, v))
 }
 
 // QuantityRejectedLT applies the LT predicate on the "quantity_rejected" field.
-func QuantityRejectedLT(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedLT(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLT(FieldQuantityRejected, v))
 }
 
 // QuantityRejectedLTE applies the LTE predicate on the "quantity_rejected" field.
-func QuantityRejectedLTE(v int) predicate.GoodsReceiptLine {
+func QuantityRejectedLTE(v float64) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldQuantityRejected, v))
 }
 

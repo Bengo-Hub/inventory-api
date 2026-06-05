@@ -58,13 +58,13 @@ func (_c *GoodsReceiptLineCreate) SetItemID(v uuid.UUID) *GoodsReceiptLineCreate
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (_c *GoodsReceiptLineCreate) SetQuantityReceived(v int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetQuantityReceived(v float64) *GoodsReceiptLineCreate {
 	_c.mutation.SetQuantityReceived(v)
 	return _c
 }
 
 // SetNillableQuantityReceived sets the "quantity_received" field if the given value is not nil.
-func (_c *GoodsReceiptLineCreate) SetNillableQuantityReceived(v *int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetNillableQuantityReceived(v *float64) *GoodsReceiptLineCreate {
 	if v != nil {
 		_c.SetQuantityReceived(*v)
 	}
@@ -72,13 +72,13 @@ func (_c *GoodsReceiptLineCreate) SetNillableQuantityReceived(v *int) *GoodsRece
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (_c *GoodsReceiptLineCreate) SetQuantityAccepted(v int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetQuantityAccepted(v float64) *GoodsReceiptLineCreate {
 	_c.mutation.SetQuantityAccepted(v)
 	return _c
 }
 
 // SetNillableQuantityAccepted sets the "quantity_accepted" field if the given value is not nil.
-func (_c *GoodsReceiptLineCreate) SetNillableQuantityAccepted(v *int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetNillableQuantityAccepted(v *float64) *GoodsReceiptLineCreate {
 	if v != nil {
 		_c.SetQuantityAccepted(*v)
 	}
@@ -86,13 +86,13 @@ func (_c *GoodsReceiptLineCreate) SetNillableQuantityAccepted(v *int) *GoodsRece
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (_c *GoodsReceiptLineCreate) SetQuantityRejected(v int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetQuantityRejected(v float64) *GoodsReceiptLineCreate {
 	_c.mutation.SetQuantityRejected(v)
 	return _c
 }
 
 // SetNillableQuantityRejected sets the "quantity_rejected" field if the given value is not nil.
-func (_c *GoodsReceiptLineCreate) SetNillableQuantityRejected(v *int) *GoodsReceiptLineCreate {
+func (_c *GoodsReceiptLineCreate) SetNillableQuantityRejected(v *float64) *GoodsReceiptLineCreate {
 	if v != nil {
 		_c.SetQuantityRejected(*v)
 	}
@@ -299,15 +299,15 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 		_node.ItemID = value
 	}
 	if value, ok := _c.mutation.QuantityReceived(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityReceived, field.TypeFloat64, value)
 		_node.QuantityReceived = value
 	}
 	if value, ok := _c.mutation.QuantityAccepted(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityAccepted, field.TypeFloat64, value)
 		_node.QuantityAccepted = value
 	}
 	if value, ok := _c.mutation.QuantityRejected(); ok {
-		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeInt, value)
+		_spec.SetField(goodsreceiptline.FieldQuantityRejected, field.TypeFloat64, value)
 		_node.QuantityRejected = value
 	}
 	if value, ok := _c.mutation.UnitCost(); ok {
@@ -446,7 +446,7 @@ func (u *GoodsReceiptLineUpsert) UpdateItemID() *GoodsReceiptLineUpsert {
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *GoodsReceiptLineUpsert) SetQuantityReceived(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) SetQuantityReceived(v float64) *GoodsReceiptLineUpsert {
 	u.Set(goodsreceiptline.FieldQuantityReceived, v)
 	return u
 }
@@ -458,13 +458,13 @@ func (u *GoodsReceiptLineUpsert) UpdateQuantityReceived() *GoodsReceiptLineUpser
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *GoodsReceiptLineUpsert) AddQuantityReceived(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) AddQuantityReceived(v float64) *GoodsReceiptLineUpsert {
 	u.Add(goodsreceiptline.FieldQuantityReceived, v)
 	return u
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsert) SetQuantityAccepted(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsert {
 	u.Set(goodsreceiptline.FieldQuantityAccepted, v)
 	return u
 }
@@ -476,13 +476,13 @@ func (u *GoodsReceiptLineUpsert) UpdateQuantityAccepted() *GoodsReceiptLineUpser
 }
 
 // AddQuantityAccepted adds v to the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsert) AddQuantityAccepted(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsert {
 	u.Add(goodsreceiptline.FieldQuantityAccepted, v)
 	return u
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsert) SetQuantityRejected(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) SetQuantityRejected(v float64) *GoodsReceiptLineUpsert {
 	u.Set(goodsreceiptline.FieldQuantityRejected, v)
 	return u
 }
@@ -494,7 +494,7 @@ func (u *GoodsReceiptLineUpsert) UpdateQuantityRejected() *GoodsReceiptLineUpser
 }
 
 // AddQuantityRejected adds v to the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsert) AddQuantityRejected(v int) *GoodsReceiptLineUpsert {
+func (u *GoodsReceiptLineUpsert) AddQuantityRejected(v float64) *GoodsReceiptLineUpsert {
 	u.Add(goodsreceiptline.FieldQuantityRejected, v)
 	return u
 }
@@ -650,14 +650,14 @@ func (u *GoodsReceiptLineUpsertOne) UpdateItemID() *GoodsReceiptLineUpsertOne {
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *GoodsReceiptLineUpsertOne) SetQuantityReceived(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) SetQuantityReceived(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityReceived(v)
 	})
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *GoodsReceiptLineUpsertOne) AddQuantityReceived(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) AddQuantityReceived(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityReceived(v)
 	})
@@ -671,14 +671,14 @@ func (u *GoodsReceiptLineUpsertOne) UpdateQuantityReceived() *GoodsReceiptLineUp
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsertOne) SetQuantityAccepted(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityAccepted(v)
 	})
 }
 
 // AddQuantityAccepted adds v to the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsertOne) AddQuantityAccepted(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityAccepted(v)
 	})
@@ -692,14 +692,14 @@ func (u *GoodsReceiptLineUpsertOne) UpdateQuantityAccepted() *GoodsReceiptLineUp
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsertOne) SetQuantityRejected(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) SetQuantityRejected(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityRejected(v)
 	})
 }
 
 // AddQuantityRejected adds v to the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsertOne) AddQuantityRejected(v int) *GoodsReceiptLineUpsertOne {
+func (u *GoodsReceiptLineUpsertOne) AddQuantityRejected(v float64) *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityRejected(v)
 	})
@@ -1036,14 +1036,14 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateItemID() *GoodsReceiptLineUpsertBulk 
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (u *GoodsReceiptLineUpsertBulk) SetQuantityReceived(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityReceived(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityReceived(v)
 	})
 }
 
 // AddQuantityReceived adds v to the "quantity_received" field.
-func (u *GoodsReceiptLineUpsertBulk) AddQuantityReceived(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityReceived(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityReceived(v)
 	})
@@ -1057,14 +1057,14 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateQuantityReceived() *GoodsReceiptLineU
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsertBulk) SetQuantityAccepted(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityAccepted(v)
 	})
 }
 
 // AddQuantityAccepted adds v to the "quantity_accepted" field.
-func (u *GoodsReceiptLineUpsertBulk) AddQuantityAccepted(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityAccepted(v)
 	})
@@ -1078,14 +1078,14 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateQuantityAccepted() *GoodsReceiptLineU
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsertBulk) SetQuantityRejected(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityRejected(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.SetQuantityRejected(v)
 	})
 }
 
 // AddQuantityRejected adds v to the "quantity_rejected" field.
-func (u *GoodsReceiptLineUpsertBulk) AddQuantityRejected(v int) *GoodsReceiptLineUpsertBulk {
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityRejected(v float64) *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.AddQuantityRejected(v)
 	})

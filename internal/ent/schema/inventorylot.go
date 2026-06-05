@@ -39,9 +39,9 @@ func (InventoryLot) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Manufacturing/production date"),
-		field.Int("quantity").
+		field.Float("quantity").
 			Default(0).
-			Comment("Current quantity in this lot"),
+			Comment("Current quantity in this lot (fractional-capable)"),
 		field.Enum("status").
 			Values("active", "expired", "recalled", "depleted").
 			Default("active"),

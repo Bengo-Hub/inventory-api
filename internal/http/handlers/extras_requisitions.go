@@ -29,7 +29,7 @@ import (
 type requisitionLinePayload struct {
 	ItemType       string     `json:"item_type"` // inventory | external | service
 	ItemID         *uuid.UUID `json:"item_id"`
-	Quantity       int        `json:"quantity"`
+	Quantity       float64    `json:"quantity"`
 	EstimatedPrice float64    `json:"estimated_price"`
 	Description    string     `json:"description"`
 	SupplierID     *uuid.UUID `json:"supplier_id"`
@@ -57,7 +57,7 @@ type requisitionLineDTO struct {
 	ID                   uuid.UUID  `json:"id"`
 	ItemType             string     `json:"item_type"`
 	ItemID               *uuid.UUID `json:"item_id"`
-	Quantity             int        `json:"quantity"`
+	Quantity             float64    `json:"quantity"`
 	EstimatedPrice       *float64   `json:"estimated_price"`
 	Description          string     `json:"description"`
 	SupplierID           *uuid.UUID `json:"supplier_id"`

@@ -24160,12 +24160,12 @@ type GoodsReceiptLineMutation struct {
 	tenant_id              *uuid.UUID
 	purchase_order_line_id *uuid.UUID
 	item_id                *uuid.UUID
-	quantity_received      *int
-	addquantity_received   *int
-	quantity_accepted      *int
-	addquantity_accepted   *int
-	quantity_rejected      *int
-	addquantity_rejected   *int
+	quantity_received      *float64
+	addquantity_received   *float64
+	quantity_accepted      *float64
+	addquantity_accepted   *float64
+	quantity_rejected      *float64
+	addquantity_rejected   *float64
 	unit_cost              *float64
 	addunit_cost           *float64
 	rejection_reason       *string
@@ -24440,13 +24440,13 @@ func (m *GoodsReceiptLineMutation) ResetItemID() {
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (m *GoodsReceiptLineMutation) SetQuantityReceived(i int) {
-	m.quantity_received = &i
+func (m *GoodsReceiptLineMutation) SetQuantityReceived(f float64) {
+	m.quantity_received = &f
 	m.addquantity_received = nil
 }
 
 // QuantityReceived returns the value of the "quantity_received" field in the mutation.
-func (m *GoodsReceiptLineMutation) QuantityReceived() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) QuantityReceived() (r float64, exists bool) {
 	v := m.quantity_received
 	if v == nil {
 		return
@@ -24457,7 +24457,7 @@ func (m *GoodsReceiptLineMutation) QuantityReceived() (r int, exists bool) {
 // OldQuantityReceived returns the old "quantity_received" field's value of the GoodsReceiptLine entity.
 // If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GoodsReceiptLineMutation) OldQuantityReceived(ctx context.Context) (v int, err error) {
+func (m *GoodsReceiptLineMutation) OldQuantityReceived(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantityReceived is only allowed on UpdateOne operations")
 	}
@@ -24471,17 +24471,17 @@ func (m *GoodsReceiptLineMutation) OldQuantityReceived(ctx context.Context) (v i
 	return oldValue.QuantityReceived, nil
 }
 
-// AddQuantityReceived adds i to the "quantity_received" field.
-func (m *GoodsReceiptLineMutation) AddQuantityReceived(i int) {
+// AddQuantityReceived adds f to the "quantity_received" field.
+func (m *GoodsReceiptLineMutation) AddQuantityReceived(f float64) {
 	if m.addquantity_received != nil {
-		*m.addquantity_received += i
+		*m.addquantity_received += f
 	} else {
-		m.addquantity_received = &i
+		m.addquantity_received = &f
 	}
 }
 
 // AddedQuantityReceived returns the value that was added to the "quantity_received" field in this mutation.
-func (m *GoodsReceiptLineMutation) AddedQuantityReceived() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) AddedQuantityReceived() (r float64, exists bool) {
 	v := m.addquantity_received
 	if v == nil {
 		return
@@ -24496,13 +24496,13 @@ func (m *GoodsReceiptLineMutation) ResetQuantityReceived() {
 }
 
 // SetQuantityAccepted sets the "quantity_accepted" field.
-func (m *GoodsReceiptLineMutation) SetQuantityAccepted(i int) {
-	m.quantity_accepted = &i
+func (m *GoodsReceiptLineMutation) SetQuantityAccepted(f float64) {
+	m.quantity_accepted = &f
 	m.addquantity_accepted = nil
 }
 
 // QuantityAccepted returns the value of the "quantity_accepted" field in the mutation.
-func (m *GoodsReceiptLineMutation) QuantityAccepted() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) QuantityAccepted() (r float64, exists bool) {
 	v := m.quantity_accepted
 	if v == nil {
 		return
@@ -24513,7 +24513,7 @@ func (m *GoodsReceiptLineMutation) QuantityAccepted() (r int, exists bool) {
 // OldQuantityAccepted returns the old "quantity_accepted" field's value of the GoodsReceiptLine entity.
 // If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GoodsReceiptLineMutation) OldQuantityAccepted(ctx context.Context) (v int, err error) {
+func (m *GoodsReceiptLineMutation) OldQuantityAccepted(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantityAccepted is only allowed on UpdateOne operations")
 	}
@@ -24527,17 +24527,17 @@ func (m *GoodsReceiptLineMutation) OldQuantityAccepted(ctx context.Context) (v i
 	return oldValue.QuantityAccepted, nil
 }
 
-// AddQuantityAccepted adds i to the "quantity_accepted" field.
-func (m *GoodsReceiptLineMutation) AddQuantityAccepted(i int) {
+// AddQuantityAccepted adds f to the "quantity_accepted" field.
+func (m *GoodsReceiptLineMutation) AddQuantityAccepted(f float64) {
 	if m.addquantity_accepted != nil {
-		*m.addquantity_accepted += i
+		*m.addquantity_accepted += f
 	} else {
-		m.addquantity_accepted = &i
+		m.addquantity_accepted = &f
 	}
 }
 
 // AddedQuantityAccepted returns the value that was added to the "quantity_accepted" field in this mutation.
-func (m *GoodsReceiptLineMutation) AddedQuantityAccepted() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) AddedQuantityAccepted() (r float64, exists bool) {
 	v := m.addquantity_accepted
 	if v == nil {
 		return
@@ -24552,13 +24552,13 @@ func (m *GoodsReceiptLineMutation) ResetQuantityAccepted() {
 }
 
 // SetQuantityRejected sets the "quantity_rejected" field.
-func (m *GoodsReceiptLineMutation) SetQuantityRejected(i int) {
-	m.quantity_rejected = &i
+func (m *GoodsReceiptLineMutation) SetQuantityRejected(f float64) {
+	m.quantity_rejected = &f
 	m.addquantity_rejected = nil
 }
 
 // QuantityRejected returns the value of the "quantity_rejected" field in the mutation.
-func (m *GoodsReceiptLineMutation) QuantityRejected() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) QuantityRejected() (r float64, exists bool) {
 	v := m.quantity_rejected
 	if v == nil {
 		return
@@ -24569,7 +24569,7 @@ func (m *GoodsReceiptLineMutation) QuantityRejected() (r int, exists bool) {
 // OldQuantityRejected returns the old "quantity_rejected" field's value of the GoodsReceiptLine entity.
 // If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GoodsReceiptLineMutation) OldQuantityRejected(ctx context.Context) (v int, err error) {
+func (m *GoodsReceiptLineMutation) OldQuantityRejected(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantityRejected is only allowed on UpdateOne operations")
 	}
@@ -24583,17 +24583,17 @@ func (m *GoodsReceiptLineMutation) OldQuantityRejected(ctx context.Context) (v i
 	return oldValue.QuantityRejected, nil
 }
 
-// AddQuantityRejected adds i to the "quantity_rejected" field.
-func (m *GoodsReceiptLineMutation) AddQuantityRejected(i int) {
+// AddQuantityRejected adds f to the "quantity_rejected" field.
+func (m *GoodsReceiptLineMutation) AddQuantityRejected(f float64) {
 	if m.addquantity_rejected != nil {
-		*m.addquantity_rejected += i
+		*m.addquantity_rejected += f
 	} else {
-		m.addquantity_rejected = &i
+		m.addquantity_rejected = &f
 	}
 }
 
 // AddedQuantityRejected returns the value that was added to the "quantity_rejected" field in this mutation.
-func (m *GoodsReceiptLineMutation) AddedQuantityRejected() (r int, exists bool) {
+func (m *GoodsReceiptLineMutation) AddedQuantityRejected() (r float64, exists bool) {
 	v := m.addquantity_rejected
 	if v == nil {
 		return
@@ -24935,21 +24935,21 @@ func (m *GoodsReceiptLineMutation) SetField(name string, value ent.Value) error 
 		m.SetItemID(v)
 		return nil
 	case goodsreceiptline.FieldQuantityReceived:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantityReceived(v)
 		return nil
 	case goodsreceiptline.FieldQuantityAccepted:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantityAccepted(v)
 		return nil
 	case goodsreceiptline.FieldQuantityRejected:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -25022,21 +25022,21 @@ func (m *GoodsReceiptLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *GoodsReceiptLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case goodsreceiptline.FieldQuantityReceived:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantityReceived(v)
 		return nil
 	case goodsreceiptline.FieldQuantityAccepted:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantityAccepted(v)
 		return nil
 	case goodsreceiptline.FieldQuantityRejected:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -25206,12 +25206,12 @@ type InventoryBalanceMutation struct {
 	typ                   string
 	id                    *uuid.UUID
 	tenant_id             *uuid.UUID
-	on_hand               *int
-	addon_hand            *int
-	available             *int
-	addavailable          *int
-	reserved              *int
-	addreserved           *int
+	on_hand               *float64
+	addon_hand            *float64
+	available             *float64
+	addavailable          *float64
+	reserved              *float64
+	addreserved           *float64
 	unit_of_measure       *string
 	reorder_level         *int
 	addreorder_level      *int
@@ -25445,13 +25445,13 @@ func (m *InventoryBalanceMutation) ResetWarehouseID() {
 }
 
 // SetOnHand sets the "on_hand" field.
-func (m *InventoryBalanceMutation) SetOnHand(i int) {
-	m.on_hand = &i
+func (m *InventoryBalanceMutation) SetOnHand(f float64) {
+	m.on_hand = &f
 	m.addon_hand = nil
 }
 
 // OnHand returns the value of the "on_hand" field in the mutation.
-func (m *InventoryBalanceMutation) OnHand() (r int, exists bool) {
+func (m *InventoryBalanceMutation) OnHand() (r float64, exists bool) {
 	v := m.on_hand
 	if v == nil {
 		return
@@ -25462,7 +25462,7 @@ func (m *InventoryBalanceMutation) OnHand() (r int, exists bool) {
 // OldOnHand returns the old "on_hand" field's value of the InventoryBalance entity.
 // If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InventoryBalanceMutation) OldOnHand(ctx context.Context) (v int, err error) {
+func (m *InventoryBalanceMutation) OldOnHand(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOnHand is only allowed on UpdateOne operations")
 	}
@@ -25476,17 +25476,17 @@ func (m *InventoryBalanceMutation) OldOnHand(ctx context.Context) (v int, err er
 	return oldValue.OnHand, nil
 }
 
-// AddOnHand adds i to the "on_hand" field.
-func (m *InventoryBalanceMutation) AddOnHand(i int) {
+// AddOnHand adds f to the "on_hand" field.
+func (m *InventoryBalanceMutation) AddOnHand(f float64) {
 	if m.addon_hand != nil {
-		*m.addon_hand += i
+		*m.addon_hand += f
 	} else {
-		m.addon_hand = &i
+		m.addon_hand = &f
 	}
 }
 
 // AddedOnHand returns the value that was added to the "on_hand" field in this mutation.
-func (m *InventoryBalanceMutation) AddedOnHand() (r int, exists bool) {
+func (m *InventoryBalanceMutation) AddedOnHand() (r float64, exists bool) {
 	v := m.addon_hand
 	if v == nil {
 		return
@@ -25501,13 +25501,13 @@ func (m *InventoryBalanceMutation) ResetOnHand() {
 }
 
 // SetAvailable sets the "available" field.
-func (m *InventoryBalanceMutation) SetAvailable(i int) {
-	m.available = &i
+func (m *InventoryBalanceMutation) SetAvailable(f float64) {
+	m.available = &f
 	m.addavailable = nil
 }
 
 // Available returns the value of the "available" field in the mutation.
-func (m *InventoryBalanceMutation) Available() (r int, exists bool) {
+func (m *InventoryBalanceMutation) Available() (r float64, exists bool) {
 	v := m.available
 	if v == nil {
 		return
@@ -25518,7 +25518,7 @@ func (m *InventoryBalanceMutation) Available() (r int, exists bool) {
 // OldAvailable returns the old "available" field's value of the InventoryBalance entity.
 // If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InventoryBalanceMutation) OldAvailable(ctx context.Context) (v int, err error) {
+func (m *InventoryBalanceMutation) OldAvailable(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAvailable is only allowed on UpdateOne operations")
 	}
@@ -25532,17 +25532,17 @@ func (m *InventoryBalanceMutation) OldAvailable(ctx context.Context) (v int, err
 	return oldValue.Available, nil
 }
 
-// AddAvailable adds i to the "available" field.
-func (m *InventoryBalanceMutation) AddAvailable(i int) {
+// AddAvailable adds f to the "available" field.
+func (m *InventoryBalanceMutation) AddAvailable(f float64) {
 	if m.addavailable != nil {
-		*m.addavailable += i
+		*m.addavailable += f
 	} else {
-		m.addavailable = &i
+		m.addavailable = &f
 	}
 }
 
 // AddedAvailable returns the value that was added to the "available" field in this mutation.
-func (m *InventoryBalanceMutation) AddedAvailable() (r int, exists bool) {
+func (m *InventoryBalanceMutation) AddedAvailable() (r float64, exists bool) {
 	v := m.addavailable
 	if v == nil {
 		return
@@ -25557,13 +25557,13 @@ func (m *InventoryBalanceMutation) ResetAvailable() {
 }
 
 // SetReserved sets the "reserved" field.
-func (m *InventoryBalanceMutation) SetReserved(i int) {
-	m.reserved = &i
+func (m *InventoryBalanceMutation) SetReserved(f float64) {
+	m.reserved = &f
 	m.addreserved = nil
 }
 
 // Reserved returns the value of the "reserved" field in the mutation.
-func (m *InventoryBalanceMutation) Reserved() (r int, exists bool) {
+func (m *InventoryBalanceMutation) Reserved() (r float64, exists bool) {
 	v := m.reserved
 	if v == nil {
 		return
@@ -25574,7 +25574,7 @@ func (m *InventoryBalanceMutation) Reserved() (r int, exists bool) {
 // OldReserved returns the old "reserved" field's value of the InventoryBalance entity.
 // If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InventoryBalanceMutation) OldReserved(ctx context.Context) (v int, err error) {
+func (m *InventoryBalanceMutation) OldReserved(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldReserved is only allowed on UpdateOne operations")
 	}
@@ -25588,17 +25588,17 @@ func (m *InventoryBalanceMutation) OldReserved(ctx context.Context) (v int, err 
 	return oldValue.Reserved, nil
 }
 
-// AddReserved adds i to the "reserved" field.
-func (m *InventoryBalanceMutation) AddReserved(i int) {
+// AddReserved adds f to the "reserved" field.
+func (m *InventoryBalanceMutation) AddReserved(f float64) {
 	if m.addreserved != nil {
-		*m.addreserved += i
+		*m.addreserved += f
 	} else {
-		m.addreserved = &i
+		m.addreserved = &f
 	}
 }
 
 // AddedReserved returns the value that was added to the "reserved" field in this mutation.
-func (m *InventoryBalanceMutation) AddedReserved() (r int, exists bool) {
+func (m *InventoryBalanceMutation) AddedReserved() (r float64, exists bool) {
 	v := m.addreserved
 	if v == nil {
 		return
@@ -26185,21 +26185,21 @@ func (m *InventoryBalanceMutation) SetField(name string, value ent.Value) error 
 		m.SetWarehouseID(v)
 		return nil
 	case inventorybalance.FieldOnHand:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOnHand(v)
 		return nil
 	case inventorybalance.FieldAvailable:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAvailable(v)
 		return nil
 	case inventorybalance.FieldReserved:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -26305,21 +26305,21 @@ func (m *InventoryBalanceMutation) AddedField(name string) (ent.Value, bool) {
 func (m *InventoryBalanceMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case inventorybalance.FieldOnHand:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddOnHand(v)
 		return nil
 	case inventorybalance.FieldAvailable:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddAvailable(v)
 		return nil
 	case inventorybalance.FieldReserved:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -26544,8 +26544,8 @@ type InventoryLotMutation struct {
 	lot_number         *string
 	expiry_date        *time.Time
 	manufactured_date  *time.Time
-	quantity           *int
-	addquantity        *int
+	quantity           *float64
+	addquantity        *float64
 	status             *inventorylot.Status
 	cost_price         *float64
 	addcost_price      *float64
@@ -26909,13 +26909,13 @@ func (m *InventoryLotMutation) ResetManufacturedDate() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *InventoryLotMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *InventoryLotMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *InventoryLotMutation) Quantity() (r int, exists bool) {
+func (m *InventoryLotMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -26926,7 +26926,7 @@ func (m *InventoryLotMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the InventoryLot entity.
 // If the InventoryLot object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InventoryLotMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *InventoryLotMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -26940,17 +26940,17 @@ func (m *InventoryLotMutation) OldQuantity(ctx context.Context) (v int, err erro
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *InventoryLotMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *InventoryLotMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *InventoryLotMutation) AddedQuantity() (r int, exists bool) {
+func (m *InventoryLotMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -27433,7 +27433,7 @@ func (m *InventoryLotMutation) SetField(name string, value ent.Value) error {
 		m.SetManufacturedDate(v)
 		return nil
 	case inventorylot.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -27510,7 +27510,7 @@ func (m *InventoryLotMutation) AddedField(name string) (ent.Value, bool) {
 func (m *InventoryLotMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case inventorylot.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -46949,10 +46949,10 @@ type PurchaseOrderLineMutation struct {
 	id                    *uuid.UUID
 	item_id               *uuid.UUID
 	variant_id            *uuid.UUID
-	quantity_ordered      *int
-	addquantity_ordered   *int
-	quantity_received     *int
-	addquantity_received  *int
+	quantity_ordered      *float64
+	addquantity_ordered   *float64
+	quantity_received     *float64
+	addquantity_received  *float64
 	unit_price            *float64
 	addunit_price         *float64
 	total_price           *float64
@@ -47191,13 +47191,13 @@ func (m *PurchaseOrderLineMutation) ResetVariantID() {
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
-func (m *PurchaseOrderLineMutation) SetQuantityOrdered(i int) {
-	m.quantity_ordered = &i
+func (m *PurchaseOrderLineMutation) SetQuantityOrdered(f float64) {
+	m.quantity_ordered = &f
 	m.addquantity_ordered = nil
 }
 
 // QuantityOrdered returns the value of the "quantity_ordered" field in the mutation.
-func (m *PurchaseOrderLineMutation) QuantityOrdered() (r int, exists bool) {
+func (m *PurchaseOrderLineMutation) QuantityOrdered() (r float64, exists bool) {
 	v := m.quantity_ordered
 	if v == nil {
 		return
@@ -47208,7 +47208,7 @@ func (m *PurchaseOrderLineMutation) QuantityOrdered() (r int, exists bool) {
 // OldQuantityOrdered returns the old "quantity_ordered" field's value of the PurchaseOrderLine entity.
 // If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PurchaseOrderLineMutation) OldQuantityOrdered(ctx context.Context) (v int, err error) {
+func (m *PurchaseOrderLineMutation) OldQuantityOrdered(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantityOrdered is only allowed on UpdateOne operations")
 	}
@@ -47222,17 +47222,17 @@ func (m *PurchaseOrderLineMutation) OldQuantityOrdered(ctx context.Context) (v i
 	return oldValue.QuantityOrdered, nil
 }
 
-// AddQuantityOrdered adds i to the "quantity_ordered" field.
-func (m *PurchaseOrderLineMutation) AddQuantityOrdered(i int) {
+// AddQuantityOrdered adds f to the "quantity_ordered" field.
+func (m *PurchaseOrderLineMutation) AddQuantityOrdered(f float64) {
 	if m.addquantity_ordered != nil {
-		*m.addquantity_ordered += i
+		*m.addquantity_ordered += f
 	} else {
-		m.addquantity_ordered = &i
+		m.addquantity_ordered = &f
 	}
 }
 
 // AddedQuantityOrdered returns the value that was added to the "quantity_ordered" field in this mutation.
-func (m *PurchaseOrderLineMutation) AddedQuantityOrdered() (r int, exists bool) {
+func (m *PurchaseOrderLineMutation) AddedQuantityOrdered() (r float64, exists bool) {
 	v := m.addquantity_ordered
 	if v == nil {
 		return
@@ -47247,13 +47247,13 @@ func (m *PurchaseOrderLineMutation) ResetQuantityOrdered() {
 }
 
 // SetQuantityReceived sets the "quantity_received" field.
-func (m *PurchaseOrderLineMutation) SetQuantityReceived(i int) {
-	m.quantity_received = &i
+func (m *PurchaseOrderLineMutation) SetQuantityReceived(f float64) {
+	m.quantity_received = &f
 	m.addquantity_received = nil
 }
 
 // QuantityReceived returns the value of the "quantity_received" field in the mutation.
-func (m *PurchaseOrderLineMutation) QuantityReceived() (r int, exists bool) {
+func (m *PurchaseOrderLineMutation) QuantityReceived() (r float64, exists bool) {
 	v := m.quantity_received
 	if v == nil {
 		return
@@ -47264,7 +47264,7 @@ func (m *PurchaseOrderLineMutation) QuantityReceived() (r int, exists bool) {
 // OldQuantityReceived returns the old "quantity_received" field's value of the PurchaseOrderLine entity.
 // If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PurchaseOrderLineMutation) OldQuantityReceived(ctx context.Context) (v int, err error) {
+func (m *PurchaseOrderLineMutation) OldQuantityReceived(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantityReceived is only allowed on UpdateOne operations")
 	}
@@ -47278,17 +47278,17 @@ func (m *PurchaseOrderLineMutation) OldQuantityReceived(ctx context.Context) (v 
 	return oldValue.QuantityReceived, nil
 }
 
-// AddQuantityReceived adds i to the "quantity_received" field.
-func (m *PurchaseOrderLineMutation) AddQuantityReceived(i int) {
+// AddQuantityReceived adds f to the "quantity_received" field.
+func (m *PurchaseOrderLineMutation) AddQuantityReceived(f float64) {
 	if m.addquantity_received != nil {
-		*m.addquantity_received += i
+		*m.addquantity_received += f
 	} else {
-		m.addquantity_received = &i
+		m.addquantity_received = &f
 	}
 }
 
 // AddedQuantityReceived returns the value that was added to the "quantity_received" field in this mutation.
-func (m *PurchaseOrderLineMutation) AddedQuantityReceived() (r int, exists bool) {
+func (m *PurchaseOrderLineMutation) AddedQuantityReceived() (r float64, exists bool) {
 	v := m.addquantity_received
 	if v == nil {
 		return
@@ -47586,14 +47586,14 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 		m.SetVariantID(v)
 		return nil
 	case purchaseorderline.FieldQuantityOrdered:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantityOrdered(v)
 		return nil
 	case purchaseorderline.FieldQuantityReceived:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -47659,14 +47659,14 @@ func (m *PurchaseOrderLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *PurchaseOrderLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case purchaseorderline.FieldQuantityOrdered:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantityOrdered(v)
 		return nil
 	case purchaseorderline.FieldQuantityReceived:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -51688,8 +51688,8 @@ type RFQAwardMutation struct {
 	supplier_id   *uuid.UUID
 	unit_price    *float64
 	addunit_price *float64
-	quantity      *int
-	addquantity   *int
+	quantity      *float64
+	addquantity   *float64
 	po_id         *uuid.UUID
 	created_at    *time.Time
 	clearedFields map[string]struct{}
@@ -52005,13 +52005,13 @@ func (m *RFQAwardMutation) ResetUnitPrice() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *RFQAwardMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *RFQAwardMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *RFQAwardMutation) Quantity() (r int, exists bool) {
+func (m *RFQAwardMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -52022,7 +52022,7 @@ func (m *RFQAwardMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the RFQAward entity.
 // If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RFQAwardMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *RFQAwardMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -52036,17 +52036,17 @@ func (m *RFQAwardMutation) OldQuantity(ctx context.Context) (v int, err error) {
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *RFQAwardMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *RFQAwardMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *RFQAwardMutation) AddedQuantity() (r int, exists bool) {
+func (m *RFQAwardMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -52325,7 +52325,7 @@ func (m *RFQAwardMutation) SetField(name string, value ent.Value) error {
 		m.SetUnitPrice(v)
 		return nil
 	case rfqaward.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -52388,7 +52388,7 @@ func (m *RFQAwardMutation) AddField(name string, value ent.Value) error {
 		m.AddUnitPrice(v)
 		return nil
 	case rfqaward.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -52541,8 +52541,8 @@ type RFQLineMutation struct {
 	tenant_id     *uuid.UUID
 	item_id       *uuid.UUID
 	description   *string
-	quantity      *int
-	addquantity   *int
+	quantity      *float64
+	addquantity   *float64
 	uom           *string
 	clearedFields map[string]struct{}
 	rfq           *uuid.UUID
@@ -52827,13 +52827,13 @@ func (m *RFQLineMutation) ResetDescription() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *RFQLineMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *RFQLineMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *RFQLineMutation) Quantity() (r int, exists bool) {
+func (m *RFQLineMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -52844,7 +52844,7 @@ func (m *RFQLineMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the RFQLine entity.
 // If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RFQLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *RFQLineMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -52858,17 +52858,17 @@ func (m *RFQLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *RFQLineMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *RFQLineMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *RFQLineMutation) AddedQuantity() (r int, exists bool) {
+func (m *RFQLineMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -53090,7 +53090,7 @@ func (m *RFQLineMutation) SetField(name string, value ent.Value) error {
 		m.SetDescription(v)
 		return nil
 	case rfqline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -53134,7 +53134,7 @@ func (m *RFQLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *RFQLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case rfqline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -58537,10 +58537,10 @@ type RequisitionLineMutation struct {
 	tenant_id             *uuid.UUID
 	item_type             *requisitionline.ItemType
 	item_id               *uuid.UUID
-	quantity              *int
-	addquantity           *int
-	approved_quantity     *int
-	addapproved_quantity  *int
+	quantity              *float64
+	addquantity           *float64
+	approved_quantity     *float64
+	addapproved_quantity  *float64
 	urgent                *bool
 	description           *string
 	specifications        *string
@@ -58824,13 +58824,13 @@ func (m *RequisitionLineMutation) ResetItemID() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *RequisitionLineMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *RequisitionLineMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *RequisitionLineMutation) Quantity() (r int, exists bool) {
+func (m *RequisitionLineMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -58841,7 +58841,7 @@ func (m *RequisitionLineMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the RequisitionLine entity.
 // If the RequisitionLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RequisitionLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *RequisitionLineMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -58855,17 +58855,17 @@ func (m *RequisitionLineMutation) OldQuantity(ctx context.Context) (v int, err e
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *RequisitionLineMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *RequisitionLineMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *RequisitionLineMutation) AddedQuantity() (r int, exists bool) {
+func (m *RequisitionLineMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -58880,13 +58880,13 @@ func (m *RequisitionLineMutation) ResetQuantity() {
 }
 
 // SetApprovedQuantity sets the "approved_quantity" field.
-func (m *RequisitionLineMutation) SetApprovedQuantity(i int) {
-	m.approved_quantity = &i
+func (m *RequisitionLineMutation) SetApprovedQuantity(f float64) {
+	m.approved_quantity = &f
 	m.addapproved_quantity = nil
 }
 
 // ApprovedQuantity returns the value of the "approved_quantity" field in the mutation.
-func (m *RequisitionLineMutation) ApprovedQuantity() (r int, exists bool) {
+func (m *RequisitionLineMutation) ApprovedQuantity() (r float64, exists bool) {
 	v := m.approved_quantity
 	if v == nil {
 		return
@@ -58897,7 +58897,7 @@ func (m *RequisitionLineMutation) ApprovedQuantity() (r int, exists bool) {
 // OldApprovedQuantity returns the old "approved_quantity" field's value of the RequisitionLine entity.
 // If the RequisitionLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RequisitionLineMutation) OldApprovedQuantity(ctx context.Context) (v *int, err error) {
+func (m *RequisitionLineMutation) OldApprovedQuantity(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldApprovedQuantity is only allowed on UpdateOne operations")
 	}
@@ -58911,17 +58911,17 @@ func (m *RequisitionLineMutation) OldApprovedQuantity(ctx context.Context) (v *i
 	return oldValue.ApprovedQuantity, nil
 }
 
-// AddApprovedQuantity adds i to the "approved_quantity" field.
-func (m *RequisitionLineMutation) AddApprovedQuantity(i int) {
+// AddApprovedQuantity adds f to the "approved_quantity" field.
+func (m *RequisitionLineMutation) AddApprovedQuantity(f float64) {
 	if m.addapproved_quantity != nil {
-		*m.addapproved_quantity += i
+		*m.addapproved_quantity += f
 	} else {
-		m.addapproved_quantity = &i
+		m.addapproved_quantity = &f
 	}
 }
 
 // AddedApprovedQuantity returns the value that was added to the "approved_quantity" field in this mutation.
-func (m *RequisitionLineMutation) AddedApprovedQuantity() (r int, exists bool) {
+func (m *RequisitionLineMutation) AddedApprovedQuantity() (r float64, exists bool) {
 	v := m.addapproved_quantity
 	if v == nil {
 		return
@@ -59762,14 +59762,14 @@ func (m *RequisitionLineMutation) SetField(name string, value ent.Value) error {
 		m.SetItemID(v)
 		return nil
 	case requisitionline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantity(v)
 		return nil
 	case requisitionline.FieldApprovedQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -59900,14 +59900,14 @@ func (m *RequisitionLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *RequisitionLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case requisitionline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantity(v)
 		return nil
 	case requisitionline.FieldApprovedQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -65292,8 +65292,8 @@ type StockTransferLineMutation struct {
 	item_id         *uuid.UUID
 	variant_id      *uuid.UUID
 	lot_id          *uuid.UUID
-	quantity        *int
-	addquantity     *int
+	quantity        *float64
+	addquantity     *float64
 	clearedFields   map[string]struct{}
 	transfer        *uuid.UUID
 	clearedtransfer bool
@@ -65577,13 +65577,13 @@ func (m *StockTransferLineMutation) ResetLotID() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *StockTransferLineMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *StockTransferLineMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *StockTransferLineMutation) Quantity() (r int, exists bool) {
+func (m *StockTransferLineMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -65594,7 +65594,7 @@ func (m *StockTransferLineMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the StockTransferLine entity.
 // If the StockTransferLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *StockTransferLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *StockTransferLineMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -65608,17 +65608,17 @@ func (m *StockTransferLineMutation) OldQuantity(ctx context.Context) (v int, err
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *StockTransferLineMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *StockTransferLineMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *StockTransferLineMutation) AddedQuantity() (r int, exists bool) {
+func (m *StockTransferLineMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -65784,7 +65784,7 @@ func (m *StockTransferLineMutation) SetField(name string, value ent.Value) error
 		m.SetLotID(v)
 		return nil
 	case stocktransferline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -65821,7 +65821,7 @@ func (m *StockTransferLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *StockTransferLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case stocktransferline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
