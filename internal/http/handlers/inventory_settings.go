@@ -10,6 +10,8 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
 
 // DefaultUnitReorderLevels returns sensible per-unit reorder minimums used when
@@ -37,12 +39,18 @@ func DefaultUnitReorderLevels() map[string]int {
 
 // InventorySettingsHandler manages typed tenant inventory configuration.
 type InventorySettingsHandler struct {
-	log *zap.Logger
-	db  *ent.Client
+	log     *zap.Logger
+	db      *ent.Client
+	rbacSvc *rbac.Service
 }
 
 func NewInventorySettingsHandler(log *zap.Logger, db *ent.Client) *InventorySettingsHandler {
 	return &InventorySettingsHandler{log: log, db: db}
+}
+
+// SetRBACService injects the RBAC service so settings mutations enforce per-action permissions.
+func (h *InventorySettingsHandler) SetRBACService(svc *rbac.Service) {
+	h.rbacSvc = svc
 }
 
 type inventorySettingsResponse struct {
@@ -308,9 +316,18 @@ func (h *InventorySettingsHandler) PatchModules(w http.ResponseWriter, r *http.R
 }
 
 // RegisterRoutes registers typed inventory settings routes under the tenant group.
+// GET stays open to any authenticated tenant user; mutations require settings-change
+// permission (platform owners bypass via the RBAC middleware).
 func (h *InventorySettingsHandler) RegisterRoutes(r chi.Router) {
+	perm := func(code string) func(http.Handler) http.Handler {
+		if h.rbacSvc == nil {
+			return func(next http.Handler) http.Handler { return next }
+		}
+		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
+	}
+
 	r.Get("/inventory/settings", h.GetSettings)
-	r.Put("/inventory/settings", h.PutSettings)
-	r.Patch("/inventory/settings/modules", h.PatchModules)
+	r.With(perm(rbac.PermSettingsChange)).Put("/inventory/settings", h.PutSettings)
+	r.With(perm(rbac.PermSettingsChange)).Patch("/inventory/settings/modules", h.PatchModules)
 }
 

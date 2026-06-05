@@ -273,6 +273,7 @@ func New(ctx context.Context) (*App, error) {
 
 	// Typed tenant inventory config (thresholds, module toggles, tracking settings)
 	inventorySettingsHandler := handlers.NewInventorySettingsHandler(log, ormClient)
+	inventorySettingsHandler.SetRBACService(rbacService)
 
 	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
 

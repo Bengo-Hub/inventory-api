@@ -82,6 +82,13 @@ const (
 	PermConfigChange = "inventory.config.change"
 	PermConfigManage = "inventory.config.manage"
 
+	// settings (tenant inventory settings: general, stock policy, modules, tax/compliance)
+	PermSettingsView   = "inventory.settings.view"
+	PermSettingsAdd    = "inventory.settings.add"
+	PermSettingsChange = "inventory.settings.change"
+	PermSettingsDelete = "inventory.settings.delete"
+	PermSettingsManage = "inventory.settings.manage"
+
 	// users
 	PermUsersView   = "inventory.users.view"
 	PermUsersAdd    = "inventory.users.add"
