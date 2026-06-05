@@ -35,6 +35,18 @@ var unitDefs = []unitDef{
 	{"BAG", "bag", "count"},
 	{"TICKET", "tkt", "count"},
 	{"PORTION", "ptn", "count"},
+	// Sellable / serving units (previously auto-created on import without a type).
+	{"PAIR", "pair", "count"},
+	{"POT", "pot", "count"},
+	{"TIN", "tin", "count"},
+	{"QTR", "qtr", "count"},
+	{"PKT", "pkt", "count"},
+	{"COMBO", "combo", "count"},
+	{"FULL", "full", "count"},
+	{"GLS", "gls", "volume"},
+	{"TOT", "tot", "volume"},
+	{"DAY", "day", "other"},
+	{"HOUR", "hour", "other"},
 }
 
 func unitUUID(name string) uuid.UUID {
@@ -43,22 +55,24 @@ func unitUUID(name string) uuid.UUID {
 
 func seedUnits(ctx context.Context, client *ent.Client) error {
 	for _, u := range unitDefs {
-		id := unitUUID(u.Name)
-		exists, err := client.Unit.Query().Where(entunit.IDEQ(id)).Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("check unit %s: %w", u.Name, err)
-		}
-		if exists {
-			if _, err := client.Unit.UpdateOneID(id).
+		// Reconcile by NAME (not the deterministic ID) so units auto-created on import — which
+		// have random IDs and an empty/"-" type — are fixed in place instead of duplicated.
+		existing, err := client.Unit.Query().Where(entunit.NameEQ(u.Name)).First(ctx)
+		if err == nil {
+			if _, err := client.Unit.UpdateOneID(existing.ID).
 				SetAbbreviation(u.Abbreviation).
 				SetType(u.UnitType).
+				SetIsActive(true).
 				Save(ctx); err != nil {
 				return fmt.Errorf("update unit %s: %w", u.Name, err)
 			}
 			continue
 		}
+		if !ent.IsNotFound(err) {
+			return fmt.Errorf("check unit %s: %w", u.Name, err)
+		}
 		if _, err := client.Unit.Create().
-			SetID(id).
+			SetID(unitUUID(u.Name)).
 			SetName(u.Name).
 			SetAbbreviation(u.Abbreviation).
 			SetType(u.UnitType).
@@ -67,6 +81,12 @@ func seedUnits(ctx context.Context, client *ent.Client) error {
 			return fmt.Errorf("create unit %s: %w", u.Name, err)
 		}
 		log.Printf("unit created: %s (%s)", u.Name, u.UnitType)
+	}
+	// Retire the legacy placeholder "-" unit so it stops appearing in unit pickers.
+	if n, err := client.Unit.Update().Where(entunit.NameEQ("-")).SetIsActive(false).Save(ctx); err != nil {
+		log.Printf("[WARN] deactivate placeholder unit: %v", err)
+	} else if n > 0 {
+		log.Printf("deactivated %d placeholder \"-\" unit(s)", n)
 	}
 	return nil
 }
