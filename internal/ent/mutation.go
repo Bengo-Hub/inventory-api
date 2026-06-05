@@ -47,6 +47,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/manufacturinganalytics"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
@@ -59,6 +60,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
 	"github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
+	"github.com/bengobox/inventory-service/internal/ent/rawmaterialusage"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
@@ -98,78 +100,80 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeApprovalAction        = "ApprovalAction"
-	TypeApprovalRequest       = "ApprovalRequest"
-	TypeApprovalRule          = "ApprovalRule"
-	TypeApprovalStep          = "ApprovalStep"
-	TypeAsset                 = "Asset"
-	TypeAssetAudit            = "AssetAudit"
-	TypeAssetCategory         = "AssetCategory"
-	TypeAssetDisposal         = "AssetDisposal"
-	TypeAssetInsurance        = "AssetInsurance"
-	TypeAssetMaintenance      = "AssetMaintenance"
-	TypeAssetReservation      = "AssetReservation"
-	TypeAssetTransfer         = "AssetTransfer"
-	TypeBatchRawMaterial      = "BatchRawMaterial"
-	TypeBundle                = "Bundle"
-	TypeBundleComponent       = "BundleComponent"
-	TypeConsumption           = "Consumption"
-	TypeContract              = "Contract"
-	TypeContractOrderLink     = "ContractOrderLink"
-	TypeCustomFieldDefinition = "CustomFieldDefinition"
-	TypeCustomFieldValue      = "CustomFieldValue"
-	TypeDocumentSequence      = "DocumentSequence"
-	TypeFoodCostVariance      = "FoodCostVariance"
-	TypeGoodsReceipt          = "GoodsReceipt"
-	TypeGoodsReceiptLine      = "GoodsReceiptLine"
-	TypeInventoryBalance      = "InventoryBalance"
-	TypeInventoryLot          = "InventoryLot"
-	TypeInventoryPermission   = "InventoryPermission"
-	TypeInventoryRole         = "InventoryRole"
-	TypeInventoryUser         = "InventoryUser"
-	TypeItem                  = "Item"
-	TypeItemAsset             = "ItemAsset"
-	TypeItemCategory          = "ItemCategory"
-	TypeItemPricing           = "ItemPricing"
-	TypeItemTranslation       = "ItemTranslation"
-	TypeItemVariant           = "ItemVariant"
-	TypeModifierGroup         = "ModifierGroup"
-	TypeModifierOption        = "ModifierOption"
-	TypeOutboxEvent           = "OutboxEvent"
-	TypePricingTier           = "PricingTier"
-	TypeProductionBatch       = "ProductionBatch"
-	TypePurchaseOrder         = "PurchaseOrder"
-	TypePurchaseOrderLine     = "PurchaseOrderLine"
-	TypePurchaseReturn        = "PurchaseReturn"
-	TypePurchaseReturnLine    = "PurchaseReturnLine"
-	TypeQualityCheck          = "QualityCheck"
-	TypeRFQ                   = "RFQ"
-	TypeRFQAward              = "RFQAward"
-	TypeRFQLine               = "RFQLine"
-	TypeRateLimitConfig       = "RateLimitConfig"
-	TypeRecipe                = "Recipe"
-	TypeRecipeIngredient      = "RecipeIngredient"
-	TypeRequisition           = "Requisition"
-	TypeRequisitionLine       = "RequisitionLine"
-	TypeReservation           = "Reservation"
-	TypeRolePermission        = "RolePermission"
-	TypeServiceConfig         = "ServiceConfig"
-	TypeServiceDelivery       = "ServiceDelivery"
-	TypeStockAdjustment       = "StockAdjustment"
-	TypeStockTransfer         = "StockTransfer"
-	TypeStockTransferLine     = "StockTransferLine"
-	TypeSupplier              = "Supplier"
-	TypeSupplierPerformance   = "SupplierPerformance"
-	TypeSupplierResponse      = "SupplierResponse"
-	TypeTenant                = "Tenant"
-	TypeTenantInventoryConfig = "TenantInventoryConfig"
-	TypeTicket                = "Ticket"
-	TypeUnit                  = "Unit"
-	TypeUserRoleAssignment    = "UserRoleAssignment"
-	TypeVariantAttribute      = "VariantAttribute"
-	TypeWarehouse             = "Warehouse"
-	TypeWarehouseLocation     = "WarehouseLocation"
-	TypeWarranty              = "Warranty"
+	TypeApprovalAction         = "ApprovalAction"
+	TypeApprovalRequest        = "ApprovalRequest"
+	TypeApprovalRule           = "ApprovalRule"
+	TypeApprovalStep           = "ApprovalStep"
+	TypeAsset                  = "Asset"
+	TypeAssetAudit             = "AssetAudit"
+	TypeAssetCategory          = "AssetCategory"
+	TypeAssetDisposal          = "AssetDisposal"
+	TypeAssetInsurance         = "AssetInsurance"
+	TypeAssetMaintenance       = "AssetMaintenance"
+	TypeAssetReservation       = "AssetReservation"
+	TypeAssetTransfer          = "AssetTransfer"
+	TypeBatchRawMaterial       = "BatchRawMaterial"
+	TypeBundle                 = "Bundle"
+	TypeBundleComponent        = "BundleComponent"
+	TypeConsumption            = "Consumption"
+	TypeContract               = "Contract"
+	TypeContractOrderLink      = "ContractOrderLink"
+	TypeCustomFieldDefinition  = "CustomFieldDefinition"
+	TypeCustomFieldValue       = "CustomFieldValue"
+	TypeDocumentSequence       = "DocumentSequence"
+	TypeFoodCostVariance       = "FoodCostVariance"
+	TypeGoodsReceipt           = "GoodsReceipt"
+	TypeGoodsReceiptLine       = "GoodsReceiptLine"
+	TypeInventoryBalance       = "InventoryBalance"
+	TypeInventoryLot           = "InventoryLot"
+	TypeInventoryPermission    = "InventoryPermission"
+	TypeInventoryRole          = "InventoryRole"
+	TypeInventoryUser          = "InventoryUser"
+	TypeItem                   = "Item"
+	TypeItemAsset              = "ItemAsset"
+	TypeItemCategory           = "ItemCategory"
+	TypeItemPricing            = "ItemPricing"
+	TypeItemTranslation        = "ItemTranslation"
+	TypeItemVariant            = "ItemVariant"
+	TypeManufacturingAnalytics = "ManufacturingAnalytics"
+	TypeModifierGroup          = "ModifierGroup"
+	TypeModifierOption         = "ModifierOption"
+	TypeOutboxEvent            = "OutboxEvent"
+	TypePricingTier            = "PricingTier"
+	TypeProductionBatch        = "ProductionBatch"
+	TypePurchaseOrder          = "PurchaseOrder"
+	TypePurchaseOrderLine      = "PurchaseOrderLine"
+	TypePurchaseReturn         = "PurchaseReturn"
+	TypePurchaseReturnLine     = "PurchaseReturnLine"
+	TypeQualityCheck           = "QualityCheck"
+	TypeRFQ                    = "RFQ"
+	TypeRFQAward               = "RFQAward"
+	TypeRFQLine                = "RFQLine"
+	TypeRateLimitConfig        = "RateLimitConfig"
+	TypeRawMaterialUsage       = "RawMaterialUsage"
+	TypeRecipe                 = "Recipe"
+	TypeRecipeIngredient       = "RecipeIngredient"
+	TypeRequisition            = "Requisition"
+	TypeRequisitionLine        = "RequisitionLine"
+	TypeReservation            = "Reservation"
+	TypeRolePermission         = "RolePermission"
+	TypeServiceConfig          = "ServiceConfig"
+	TypeServiceDelivery        = "ServiceDelivery"
+	TypeStockAdjustment        = "StockAdjustment"
+	TypeStockTransfer          = "StockTransfer"
+	TypeStockTransferLine      = "StockTransferLine"
+	TypeSupplier               = "Supplier"
+	TypeSupplierPerformance    = "SupplierPerformance"
+	TypeSupplierResponse       = "SupplierResponse"
+	TypeTenant                 = "Tenant"
+	TypeTenantInventoryConfig  = "TenantInventoryConfig"
+	TypeTicket                 = "Ticket"
+	TypeUnit                   = "Unit"
+	TypeUserRoleAssignment     = "UserRoleAssignment"
+	TypeVariantAttribute       = "VariantAttribute"
+	TypeWarehouse              = "Warehouse"
+	TypeWarehouseLocation      = "WarehouseLocation"
+	TypeWarranty               = "Warranty"
 )
 
 // ApprovalActionMutation represents an operation that mutates the ApprovalAction nodes in the graph.
@@ -40284,6 +40288,1112 @@ func (m *ItemVariantMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ItemVariant edge %s", name)
 }
 
+// ManufacturingAnalyticsMutation represents an operation that mutates the ManufacturingAnalytics nodes in the graph.
+type ManufacturingAnalyticsMutation struct {
+	config
+	op                         Op
+	typ                        string
+	id                         *uuid.UUID
+	tenant_id                  *uuid.UUID
+	date                       *string
+	total_batches              *int
+	addtotal_batches           *int
+	completed_batches          *int
+	addcompleted_batches       *int
+	failed_batches             *int
+	addfailed_batches          *int
+	total_production_qty       *float64
+	addtotal_production_qty    *float64
+	total_raw_material_cost    *float64
+	addtotal_raw_material_cost *float64
+	total_labor_cost           *float64
+	addtotal_labor_cost        *float64
+	total_overhead_cost        *float64
+	addtotal_overhead_cost     *float64
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	clearedFields              map[string]struct{}
+	done                       bool
+	oldValue                   func(context.Context) (*ManufacturingAnalytics, error)
+	predicates                 []predicate.ManufacturingAnalytics
+}
+
+var _ ent.Mutation = (*ManufacturingAnalyticsMutation)(nil)
+
+// manufacturinganalyticsOption allows management of the mutation configuration using functional options.
+type manufacturinganalyticsOption func(*ManufacturingAnalyticsMutation)
+
+// newManufacturingAnalyticsMutation creates new mutation for the ManufacturingAnalytics entity.
+func newManufacturingAnalyticsMutation(c config, op Op, opts ...manufacturinganalyticsOption) *ManufacturingAnalyticsMutation {
+	m := &ManufacturingAnalyticsMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeManufacturingAnalytics,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withManufacturingAnalyticsID sets the ID field of the mutation.
+func withManufacturingAnalyticsID(id uuid.UUID) manufacturinganalyticsOption {
+	return func(m *ManufacturingAnalyticsMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ManufacturingAnalytics
+		)
+		m.oldValue = func(ctx context.Context) (*ManufacturingAnalytics, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ManufacturingAnalytics.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withManufacturingAnalytics sets the old ManufacturingAnalytics of the mutation.
+func withManufacturingAnalytics(node *ManufacturingAnalytics) manufacturinganalyticsOption {
+	return func(m *ManufacturingAnalyticsMutation) {
+		m.oldValue = func(context.Context) (*ManufacturingAnalytics, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ManufacturingAnalyticsMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ManufacturingAnalyticsMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ManufacturingAnalytics entities.
+func (m *ManufacturingAnalyticsMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ManufacturingAnalyticsMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ManufacturingAnalyticsMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ManufacturingAnalytics.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *ManufacturingAnalyticsMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *ManufacturingAnalyticsMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetDate sets the "date" field.
+func (m *ManufacturingAnalyticsMutation) SetDate(s string) {
+	m.date = &s
+}
+
+// Date returns the value of the "date" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) Date() (r string, exists bool) {
+	v := m.date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDate returns the old "date" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldDate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDate: %w", err)
+	}
+	return oldValue.Date, nil
+}
+
+// ResetDate resets all changes to the "date" field.
+func (m *ManufacturingAnalyticsMutation) ResetDate() {
+	m.date = nil
+}
+
+// SetTotalBatches sets the "total_batches" field.
+func (m *ManufacturingAnalyticsMutation) SetTotalBatches(i int) {
+	m.total_batches = &i
+	m.addtotal_batches = nil
+}
+
+// TotalBatches returns the value of the "total_batches" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TotalBatches() (r int, exists bool) {
+	v := m.total_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalBatches returns the old "total_batches" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTotalBatches(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalBatches is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalBatches requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalBatches: %w", err)
+	}
+	return oldValue.TotalBatches, nil
+}
+
+// AddTotalBatches adds i to the "total_batches" field.
+func (m *ManufacturingAnalyticsMutation) AddTotalBatches(i int) {
+	if m.addtotal_batches != nil {
+		*m.addtotal_batches += i
+	} else {
+		m.addtotal_batches = &i
+	}
+}
+
+// AddedTotalBatches returns the value that was added to the "total_batches" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedTotalBatches() (r int, exists bool) {
+	v := m.addtotal_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalBatches resets all changes to the "total_batches" field.
+func (m *ManufacturingAnalyticsMutation) ResetTotalBatches() {
+	m.total_batches = nil
+	m.addtotal_batches = nil
+}
+
+// SetCompletedBatches sets the "completed_batches" field.
+func (m *ManufacturingAnalyticsMutation) SetCompletedBatches(i int) {
+	m.completed_batches = &i
+	m.addcompleted_batches = nil
+}
+
+// CompletedBatches returns the value of the "completed_batches" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) CompletedBatches() (r int, exists bool) {
+	v := m.completed_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompletedBatches returns the old "completed_batches" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldCompletedBatches(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompletedBatches is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompletedBatches requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompletedBatches: %w", err)
+	}
+	return oldValue.CompletedBatches, nil
+}
+
+// AddCompletedBatches adds i to the "completed_batches" field.
+func (m *ManufacturingAnalyticsMutation) AddCompletedBatches(i int) {
+	if m.addcompleted_batches != nil {
+		*m.addcompleted_batches += i
+	} else {
+		m.addcompleted_batches = &i
+	}
+}
+
+// AddedCompletedBatches returns the value that was added to the "completed_batches" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedCompletedBatches() (r int, exists bool) {
+	v := m.addcompleted_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCompletedBatches resets all changes to the "completed_batches" field.
+func (m *ManufacturingAnalyticsMutation) ResetCompletedBatches() {
+	m.completed_batches = nil
+	m.addcompleted_batches = nil
+}
+
+// SetFailedBatches sets the "failed_batches" field.
+func (m *ManufacturingAnalyticsMutation) SetFailedBatches(i int) {
+	m.failed_batches = &i
+	m.addfailed_batches = nil
+}
+
+// FailedBatches returns the value of the "failed_batches" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) FailedBatches() (r int, exists bool) {
+	v := m.failed_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailedBatches returns the old "failed_batches" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldFailedBatches(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailedBatches is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailedBatches requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailedBatches: %w", err)
+	}
+	return oldValue.FailedBatches, nil
+}
+
+// AddFailedBatches adds i to the "failed_batches" field.
+func (m *ManufacturingAnalyticsMutation) AddFailedBatches(i int) {
+	if m.addfailed_batches != nil {
+		*m.addfailed_batches += i
+	} else {
+		m.addfailed_batches = &i
+	}
+}
+
+// AddedFailedBatches returns the value that was added to the "failed_batches" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedFailedBatches() (r int, exists bool) {
+	v := m.addfailed_batches
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailedBatches resets all changes to the "failed_batches" field.
+func (m *ManufacturingAnalyticsMutation) ResetFailedBatches() {
+	m.failed_batches = nil
+	m.addfailed_batches = nil
+}
+
+// SetTotalProductionQty sets the "total_production_qty" field.
+func (m *ManufacturingAnalyticsMutation) SetTotalProductionQty(f float64) {
+	m.total_production_qty = &f
+	m.addtotal_production_qty = nil
+}
+
+// TotalProductionQty returns the value of the "total_production_qty" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TotalProductionQty() (r float64, exists bool) {
+	v := m.total_production_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalProductionQty returns the old "total_production_qty" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTotalProductionQty(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalProductionQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalProductionQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalProductionQty: %w", err)
+	}
+	return oldValue.TotalProductionQty, nil
+}
+
+// AddTotalProductionQty adds f to the "total_production_qty" field.
+func (m *ManufacturingAnalyticsMutation) AddTotalProductionQty(f float64) {
+	if m.addtotal_production_qty != nil {
+		*m.addtotal_production_qty += f
+	} else {
+		m.addtotal_production_qty = &f
+	}
+}
+
+// AddedTotalProductionQty returns the value that was added to the "total_production_qty" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedTotalProductionQty() (r float64, exists bool) {
+	v := m.addtotal_production_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalProductionQty resets all changes to the "total_production_qty" field.
+func (m *ManufacturingAnalyticsMutation) ResetTotalProductionQty() {
+	m.total_production_qty = nil
+	m.addtotal_production_qty = nil
+}
+
+// SetTotalRawMaterialCost sets the "total_raw_material_cost" field.
+func (m *ManufacturingAnalyticsMutation) SetTotalRawMaterialCost(f float64) {
+	m.total_raw_material_cost = &f
+	m.addtotal_raw_material_cost = nil
+}
+
+// TotalRawMaterialCost returns the value of the "total_raw_material_cost" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TotalRawMaterialCost() (r float64, exists bool) {
+	v := m.total_raw_material_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalRawMaterialCost returns the old "total_raw_material_cost" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTotalRawMaterialCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalRawMaterialCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalRawMaterialCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalRawMaterialCost: %w", err)
+	}
+	return oldValue.TotalRawMaterialCost, nil
+}
+
+// AddTotalRawMaterialCost adds f to the "total_raw_material_cost" field.
+func (m *ManufacturingAnalyticsMutation) AddTotalRawMaterialCost(f float64) {
+	if m.addtotal_raw_material_cost != nil {
+		*m.addtotal_raw_material_cost += f
+	} else {
+		m.addtotal_raw_material_cost = &f
+	}
+}
+
+// AddedTotalRawMaterialCost returns the value that was added to the "total_raw_material_cost" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedTotalRawMaterialCost() (r float64, exists bool) {
+	v := m.addtotal_raw_material_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalRawMaterialCost resets all changes to the "total_raw_material_cost" field.
+func (m *ManufacturingAnalyticsMutation) ResetTotalRawMaterialCost() {
+	m.total_raw_material_cost = nil
+	m.addtotal_raw_material_cost = nil
+}
+
+// SetTotalLaborCost sets the "total_labor_cost" field.
+func (m *ManufacturingAnalyticsMutation) SetTotalLaborCost(f float64) {
+	m.total_labor_cost = &f
+	m.addtotal_labor_cost = nil
+}
+
+// TotalLaborCost returns the value of the "total_labor_cost" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TotalLaborCost() (r float64, exists bool) {
+	v := m.total_labor_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalLaborCost returns the old "total_labor_cost" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTotalLaborCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalLaborCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalLaborCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalLaborCost: %w", err)
+	}
+	return oldValue.TotalLaborCost, nil
+}
+
+// AddTotalLaborCost adds f to the "total_labor_cost" field.
+func (m *ManufacturingAnalyticsMutation) AddTotalLaborCost(f float64) {
+	if m.addtotal_labor_cost != nil {
+		*m.addtotal_labor_cost += f
+	} else {
+		m.addtotal_labor_cost = &f
+	}
+}
+
+// AddedTotalLaborCost returns the value that was added to the "total_labor_cost" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedTotalLaborCost() (r float64, exists bool) {
+	v := m.addtotal_labor_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalLaborCost resets all changes to the "total_labor_cost" field.
+func (m *ManufacturingAnalyticsMutation) ResetTotalLaborCost() {
+	m.total_labor_cost = nil
+	m.addtotal_labor_cost = nil
+}
+
+// SetTotalOverheadCost sets the "total_overhead_cost" field.
+func (m *ManufacturingAnalyticsMutation) SetTotalOverheadCost(f float64) {
+	m.total_overhead_cost = &f
+	m.addtotal_overhead_cost = nil
+}
+
+// TotalOverheadCost returns the value of the "total_overhead_cost" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) TotalOverheadCost() (r float64, exists bool) {
+	v := m.total_overhead_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotalOverheadCost returns the old "total_overhead_cost" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldTotalOverheadCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotalOverheadCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotalOverheadCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotalOverheadCost: %w", err)
+	}
+	return oldValue.TotalOverheadCost, nil
+}
+
+// AddTotalOverheadCost adds f to the "total_overhead_cost" field.
+func (m *ManufacturingAnalyticsMutation) AddTotalOverheadCost(f float64) {
+	if m.addtotal_overhead_cost != nil {
+		*m.addtotal_overhead_cost += f
+	} else {
+		m.addtotal_overhead_cost = &f
+	}
+}
+
+// AddedTotalOverheadCost returns the value that was added to the "total_overhead_cost" field in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedTotalOverheadCost() (r float64, exists bool) {
+	v := m.addtotal_overhead_cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTotalOverheadCost resets all changes to the "total_overhead_cost" field.
+func (m *ManufacturingAnalyticsMutation) ResetTotalOverheadCost() {
+	m.total_overhead_cost = nil
+	m.addtotal_overhead_cost = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ManufacturingAnalyticsMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ManufacturingAnalyticsMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ManufacturingAnalyticsMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ManufacturingAnalyticsMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ManufacturingAnalytics entity.
+// If the ManufacturingAnalytics object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ManufacturingAnalyticsMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ManufacturingAnalyticsMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the ManufacturingAnalyticsMutation builder.
+func (m *ManufacturingAnalyticsMutation) Where(ps ...predicate.ManufacturingAnalytics) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ManufacturingAnalyticsMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ManufacturingAnalyticsMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ManufacturingAnalytics, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ManufacturingAnalyticsMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ManufacturingAnalyticsMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ManufacturingAnalytics).
+func (m *ManufacturingAnalyticsMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ManufacturingAnalyticsMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.tenant_id != nil {
+		fields = append(fields, manufacturinganalytics.FieldTenantID)
+	}
+	if m.date != nil {
+		fields = append(fields, manufacturinganalytics.FieldDate)
+	}
+	if m.total_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalBatches)
+	}
+	if m.completed_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldCompletedBatches)
+	}
+	if m.failed_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldFailedBatches)
+	}
+	if m.total_production_qty != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalProductionQty)
+	}
+	if m.total_raw_material_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalRawMaterialCost)
+	}
+	if m.total_labor_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalLaborCost)
+	}
+	if m.total_overhead_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalOverheadCost)
+	}
+	if m.created_at != nil {
+		fields = append(fields, manufacturinganalytics.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, manufacturinganalytics.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ManufacturingAnalyticsMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case manufacturinganalytics.FieldTenantID:
+		return m.TenantID()
+	case manufacturinganalytics.FieldDate:
+		return m.Date()
+	case manufacturinganalytics.FieldTotalBatches:
+		return m.TotalBatches()
+	case manufacturinganalytics.FieldCompletedBatches:
+		return m.CompletedBatches()
+	case manufacturinganalytics.FieldFailedBatches:
+		return m.FailedBatches()
+	case manufacturinganalytics.FieldTotalProductionQty:
+		return m.TotalProductionQty()
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		return m.TotalRawMaterialCost()
+	case manufacturinganalytics.FieldTotalLaborCost:
+		return m.TotalLaborCost()
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		return m.TotalOverheadCost()
+	case manufacturinganalytics.FieldCreatedAt:
+		return m.CreatedAt()
+	case manufacturinganalytics.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ManufacturingAnalyticsMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case manufacturinganalytics.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case manufacturinganalytics.FieldDate:
+		return m.OldDate(ctx)
+	case manufacturinganalytics.FieldTotalBatches:
+		return m.OldTotalBatches(ctx)
+	case manufacturinganalytics.FieldCompletedBatches:
+		return m.OldCompletedBatches(ctx)
+	case manufacturinganalytics.FieldFailedBatches:
+		return m.OldFailedBatches(ctx)
+	case manufacturinganalytics.FieldTotalProductionQty:
+		return m.OldTotalProductionQty(ctx)
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		return m.OldTotalRawMaterialCost(ctx)
+	case manufacturinganalytics.FieldTotalLaborCost:
+		return m.OldTotalLaborCost(ctx)
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		return m.OldTotalOverheadCost(ctx)
+	case manufacturinganalytics.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case manufacturinganalytics.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ManufacturingAnalytics field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ManufacturingAnalyticsMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case manufacturinganalytics.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case manufacturinganalytics.FieldDate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDate(v)
+		return nil
+	case manufacturinganalytics.FieldTotalBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalBatches(v)
+		return nil
+	case manufacturinganalytics.FieldCompletedBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompletedBatches(v)
+		return nil
+	case manufacturinganalytics.FieldFailedBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailedBatches(v)
+		return nil
+	case manufacturinganalytics.FieldTotalProductionQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalProductionQty(v)
+		return nil
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalRawMaterialCost(v)
+		return nil
+	case manufacturinganalytics.FieldTotalLaborCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalLaborCost(v)
+		return nil
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotalOverheadCost(v)
+		return nil
+	case manufacturinganalytics.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case manufacturinganalytics.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ManufacturingAnalytics field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedFields() []string {
+	var fields []string
+	if m.addtotal_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalBatches)
+	}
+	if m.addcompleted_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldCompletedBatches)
+	}
+	if m.addfailed_batches != nil {
+		fields = append(fields, manufacturinganalytics.FieldFailedBatches)
+	}
+	if m.addtotal_production_qty != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalProductionQty)
+	}
+	if m.addtotal_raw_material_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalRawMaterialCost)
+	}
+	if m.addtotal_labor_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalLaborCost)
+	}
+	if m.addtotal_overhead_cost != nil {
+		fields = append(fields, manufacturinganalytics.FieldTotalOverheadCost)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ManufacturingAnalyticsMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case manufacturinganalytics.FieldTotalBatches:
+		return m.AddedTotalBatches()
+	case manufacturinganalytics.FieldCompletedBatches:
+		return m.AddedCompletedBatches()
+	case manufacturinganalytics.FieldFailedBatches:
+		return m.AddedFailedBatches()
+	case manufacturinganalytics.FieldTotalProductionQty:
+		return m.AddedTotalProductionQty()
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		return m.AddedTotalRawMaterialCost()
+	case manufacturinganalytics.FieldTotalLaborCost:
+		return m.AddedTotalLaborCost()
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		return m.AddedTotalOverheadCost()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ManufacturingAnalyticsMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case manufacturinganalytics.FieldTotalBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalBatches(v)
+		return nil
+	case manufacturinganalytics.FieldCompletedBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCompletedBatches(v)
+		return nil
+	case manufacturinganalytics.FieldFailedBatches:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailedBatches(v)
+		return nil
+	case manufacturinganalytics.FieldTotalProductionQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalProductionQty(v)
+		return nil
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalRawMaterialCost(v)
+		return nil
+	case manufacturinganalytics.FieldTotalLaborCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalLaborCost(v)
+		return nil
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTotalOverheadCost(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ManufacturingAnalytics numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ManufacturingAnalyticsMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ManufacturingAnalyticsMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ManufacturingAnalyticsMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ManufacturingAnalytics nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ManufacturingAnalyticsMutation) ResetField(name string) error {
+	switch name {
+	case manufacturinganalytics.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case manufacturinganalytics.FieldDate:
+		m.ResetDate()
+		return nil
+	case manufacturinganalytics.FieldTotalBatches:
+		m.ResetTotalBatches()
+		return nil
+	case manufacturinganalytics.FieldCompletedBatches:
+		m.ResetCompletedBatches()
+		return nil
+	case manufacturinganalytics.FieldFailedBatches:
+		m.ResetFailedBatches()
+		return nil
+	case manufacturinganalytics.FieldTotalProductionQty:
+		m.ResetTotalProductionQty()
+		return nil
+	case manufacturinganalytics.FieldTotalRawMaterialCost:
+		m.ResetTotalRawMaterialCost()
+		return nil
+	case manufacturinganalytics.FieldTotalLaborCost:
+		m.ResetTotalLaborCost()
+		return nil
+	case manufacturinganalytics.FieldTotalOverheadCost:
+		m.ResetTotalOverheadCost()
+		return nil
+	case manufacturinganalytics.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case manufacturinganalytics.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ManufacturingAnalytics field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ManufacturingAnalyticsMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ManufacturingAnalyticsMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ManufacturingAnalyticsMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ManufacturingAnalyticsMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ManufacturingAnalyticsMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ManufacturingAnalyticsMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ManufacturingAnalytics unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ManufacturingAnalyticsMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ManufacturingAnalytics edge %s", name)
+}
+
 // ModifierGroupMutation represents an operation that mutates the ModifierGroup nodes in the graph.
 type ModifierGroupMutation struct {
 	config
@@ -54226,6 +55336,972 @@ func (m *RateLimitConfigMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown RateLimitConfig edge %s", name)
 }
 
+// RawMaterialUsageMutation represents an operation that mutates the RawMaterialUsage nodes in the graph.
+type RawMaterialUsageMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	tenant_id           *uuid.UUID
+	production_batch_id *uuid.UUID
+	finished_item_id    *uuid.UUID
+	raw_item_id         *uuid.UUID
+	raw_sku             *string
+	quantity            *float64
+	addquantity         *float64
+	cost                *float64
+	addcost             *float64
+	transaction_type    *rawmaterialusage.TransactionType
+	notes               *string
+	occurred_at         *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*RawMaterialUsage, error)
+	predicates          []predicate.RawMaterialUsage
+}
+
+var _ ent.Mutation = (*RawMaterialUsageMutation)(nil)
+
+// rawmaterialusageOption allows management of the mutation configuration using functional options.
+type rawmaterialusageOption func(*RawMaterialUsageMutation)
+
+// newRawMaterialUsageMutation creates new mutation for the RawMaterialUsage entity.
+func newRawMaterialUsageMutation(c config, op Op, opts ...rawmaterialusageOption) *RawMaterialUsageMutation {
+	m := &RawMaterialUsageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRawMaterialUsage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRawMaterialUsageID sets the ID field of the mutation.
+func withRawMaterialUsageID(id uuid.UUID) rawmaterialusageOption {
+	return func(m *RawMaterialUsageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RawMaterialUsage
+		)
+		m.oldValue = func(ctx context.Context) (*RawMaterialUsage, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RawMaterialUsage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRawMaterialUsage sets the old RawMaterialUsage of the mutation.
+func withRawMaterialUsage(node *RawMaterialUsage) rawmaterialusageOption {
+	return func(m *RawMaterialUsageMutation) {
+		m.oldValue = func(context.Context) (*RawMaterialUsage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RawMaterialUsageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RawMaterialUsageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RawMaterialUsage entities.
+func (m *RawMaterialUsageMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RawMaterialUsageMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RawMaterialUsageMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RawMaterialUsage.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *RawMaterialUsageMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *RawMaterialUsageMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *RawMaterialUsageMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetProductionBatchID sets the "production_batch_id" field.
+func (m *RawMaterialUsageMutation) SetProductionBatchID(u uuid.UUID) {
+	m.production_batch_id = &u
+}
+
+// ProductionBatchID returns the value of the "production_batch_id" field in the mutation.
+func (m *RawMaterialUsageMutation) ProductionBatchID() (r uuid.UUID, exists bool) {
+	v := m.production_batch_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductionBatchID returns the old "production_batch_id" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldProductionBatchID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductionBatchID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductionBatchID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductionBatchID: %w", err)
+	}
+	return oldValue.ProductionBatchID, nil
+}
+
+// ClearProductionBatchID clears the value of the "production_batch_id" field.
+func (m *RawMaterialUsageMutation) ClearProductionBatchID() {
+	m.production_batch_id = nil
+	m.clearedFields[rawmaterialusage.FieldProductionBatchID] = struct{}{}
+}
+
+// ProductionBatchIDCleared returns if the "production_batch_id" field was cleared in this mutation.
+func (m *RawMaterialUsageMutation) ProductionBatchIDCleared() bool {
+	_, ok := m.clearedFields[rawmaterialusage.FieldProductionBatchID]
+	return ok
+}
+
+// ResetProductionBatchID resets all changes to the "production_batch_id" field.
+func (m *RawMaterialUsageMutation) ResetProductionBatchID() {
+	m.production_batch_id = nil
+	delete(m.clearedFields, rawmaterialusage.FieldProductionBatchID)
+}
+
+// SetFinishedItemID sets the "finished_item_id" field.
+func (m *RawMaterialUsageMutation) SetFinishedItemID(u uuid.UUID) {
+	m.finished_item_id = &u
+}
+
+// FinishedItemID returns the value of the "finished_item_id" field in the mutation.
+func (m *RawMaterialUsageMutation) FinishedItemID() (r uuid.UUID, exists bool) {
+	v := m.finished_item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedItemID returns the old "finished_item_id" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldFinishedItemID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedItemID: %w", err)
+	}
+	return oldValue.FinishedItemID, nil
+}
+
+// ClearFinishedItemID clears the value of the "finished_item_id" field.
+func (m *RawMaterialUsageMutation) ClearFinishedItemID() {
+	m.finished_item_id = nil
+	m.clearedFields[rawmaterialusage.FieldFinishedItemID] = struct{}{}
+}
+
+// FinishedItemIDCleared returns if the "finished_item_id" field was cleared in this mutation.
+func (m *RawMaterialUsageMutation) FinishedItemIDCleared() bool {
+	_, ok := m.clearedFields[rawmaterialusage.FieldFinishedItemID]
+	return ok
+}
+
+// ResetFinishedItemID resets all changes to the "finished_item_id" field.
+func (m *RawMaterialUsageMutation) ResetFinishedItemID() {
+	m.finished_item_id = nil
+	delete(m.clearedFields, rawmaterialusage.FieldFinishedItemID)
+}
+
+// SetRawItemID sets the "raw_item_id" field.
+func (m *RawMaterialUsageMutation) SetRawItemID(u uuid.UUID) {
+	m.raw_item_id = &u
+}
+
+// RawItemID returns the value of the "raw_item_id" field in the mutation.
+func (m *RawMaterialUsageMutation) RawItemID() (r uuid.UUID, exists bool) {
+	v := m.raw_item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRawItemID returns the old "raw_item_id" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldRawItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRawItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRawItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRawItemID: %w", err)
+	}
+	return oldValue.RawItemID, nil
+}
+
+// ResetRawItemID resets all changes to the "raw_item_id" field.
+func (m *RawMaterialUsageMutation) ResetRawItemID() {
+	m.raw_item_id = nil
+}
+
+// SetRawSku sets the "raw_sku" field.
+func (m *RawMaterialUsageMutation) SetRawSku(s string) {
+	m.raw_sku = &s
+}
+
+// RawSku returns the value of the "raw_sku" field in the mutation.
+func (m *RawMaterialUsageMutation) RawSku() (r string, exists bool) {
+	v := m.raw_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRawSku returns the old "raw_sku" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldRawSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRawSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRawSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRawSku: %w", err)
+	}
+	return oldValue.RawSku, nil
+}
+
+// ClearRawSku clears the value of the "raw_sku" field.
+func (m *RawMaterialUsageMutation) ClearRawSku() {
+	m.raw_sku = nil
+	m.clearedFields[rawmaterialusage.FieldRawSku] = struct{}{}
+}
+
+// RawSkuCleared returns if the "raw_sku" field was cleared in this mutation.
+func (m *RawMaterialUsageMutation) RawSkuCleared() bool {
+	_, ok := m.clearedFields[rawmaterialusage.FieldRawSku]
+	return ok
+}
+
+// ResetRawSku resets all changes to the "raw_sku" field.
+func (m *RawMaterialUsageMutation) ResetRawSku() {
+	m.raw_sku = nil
+	delete(m.clearedFields, rawmaterialusage.FieldRawSku)
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *RawMaterialUsageMutation) SetQuantity(f float64) {
+	m.quantity = &f
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *RawMaterialUsageMutation) Quantity() (r float64, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldQuantity(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds f to the "quantity" field.
+func (m *RawMaterialUsageMutation) AddQuantity(f float64) {
+	if m.addquantity != nil {
+		*m.addquantity += f
+	} else {
+		m.addquantity = &f
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *RawMaterialUsageMutation) AddedQuantity() (r float64, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *RawMaterialUsageMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetCost sets the "cost" field.
+func (m *RawMaterialUsageMutation) SetCost(f float64) {
+	m.cost = &f
+	m.addcost = nil
+}
+
+// Cost returns the value of the "cost" field in the mutation.
+func (m *RawMaterialUsageMutation) Cost() (r float64, exists bool) {
+	v := m.cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCost returns the old "cost" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldCost(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCost is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCost: %w", err)
+	}
+	return oldValue.Cost, nil
+}
+
+// AddCost adds f to the "cost" field.
+func (m *RawMaterialUsageMutation) AddCost(f float64) {
+	if m.addcost != nil {
+		*m.addcost += f
+	} else {
+		m.addcost = &f
+	}
+}
+
+// AddedCost returns the value that was added to the "cost" field in this mutation.
+func (m *RawMaterialUsageMutation) AddedCost() (r float64, exists bool) {
+	v := m.addcost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCost resets all changes to the "cost" field.
+func (m *RawMaterialUsageMutation) ResetCost() {
+	m.cost = nil
+	m.addcost = nil
+}
+
+// SetTransactionType sets the "transaction_type" field.
+func (m *RawMaterialUsageMutation) SetTransactionType(rt rawmaterialusage.TransactionType) {
+	m.transaction_type = &rt
+}
+
+// TransactionType returns the value of the "transaction_type" field in the mutation.
+func (m *RawMaterialUsageMutation) TransactionType() (r rawmaterialusage.TransactionType, exists bool) {
+	v := m.transaction_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransactionType returns the old "transaction_type" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldTransactionType(ctx context.Context) (v rawmaterialusage.TransactionType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransactionType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransactionType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransactionType: %w", err)
+	}
+	return oldValue.TransactionType, nil
+}
+
+// ResetTransactionType resets all changes to the "transaction_type" field.
+func (m *RawMaterialUsageMutation) ResetTransactionType() {
+	m.transaction_type = nil
+}
+
+// SetNotes sets the "notes" field.
+func (m *RawMaterialUsageMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *RawMaterialUsageMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *RawMaterialUsageMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[rawmaterialusage.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *RawMaterialUsageMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[rawmaterialusage.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *RawMaterialUsageMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, rawmaterialusage.FieldNotes)
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (m *RawMaterialUsageMutation) SetOccurredAt(t time.Time) {
+	m.occurred_at = &t
+}
+
+// OccurredAt returns the value of the "occurred_at" field in the mutation.
+func (m *RawMaterialUsageMutation) OccurredAt() (r time.Time, exists bool) {
+	v := m.occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurredAt returns the old "occurred_at" field's value of the RawMaterialUsage entity.
+// If the RawMaterialUsage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RawMaterialUsageMutation) OldOccurredAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurredAt: %w", err)
+	}
+	return oldValue.OccurredAt, nil
+}
+
+// ResetOccurredAt resets all changes to the "occurred_at" field.
+func (m *RawMaterialUsageMutation) ResetOccurredAt() {
+	m.occurred_at = nil
+}
+
+// Where appends a list predicates to the RawMaterialUsageMutation builder.
+func (m *RawMaterialUsageMutation) Where(ps ...predicate.RawMaterialUsage) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RawMaterialUsageMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RawMaterialUsageMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RawMaterialUsage, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RawMaterialUsageMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RawMaterialUsageMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RawMaterialUsage).
+func (m *RawMaterialUsageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RawMaterialUsageMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.tenant_id != nil {
+		fields = append(fields, rawmaterialusage.FieldTenantID)
+	}
+	if m.production_batch_id != nil {
+		fields = append(fields, rawmaterialusage.FieldProductionBatchID)
+	}
+	if m.finished_item_id != nil {
+		fields = append(fields, rawmaterialusage.FieldFinishedItemID)
+	}
+	if m.raw_item_id != nil {
+		fields = append(fields, rawmaterialusage.FieldRawItemID)
+	}
+	if m.raw_sku != nil {
+		fields = append(fields, rawmaterialusage.FieldRawSku)
+	}
+	if m.quantity != nil {
+		fields = append(fields, rawmaterialusage.FieldQuantity)
+	}
+	if m.cost != nil {
+		fields = append(fields, rawmaterialusage.FieldCost)
+	}
+	if m.transaction_type != nil {
+		fields = append(fields, rawmaterialusage.FieldTransactionType)
+	}
+	if m.notes != nil {
+		fields = append(fields, rawmaterialusage.FieldNotes)
+	}
+	if m.occurred_at != nil {
+		fields = append(fields, rawmaterialusage.FieldOccurredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RawMaterialUsageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case rawmaterialusage.FieldTenantID:
+		return m.TenantID()
+	case rawmaterialusage.FieldProductionBatchID:
+		return m.ProductionBatchID()
+	case rawmaterialusage.FieldFinishedItemID:
+		return m.FinishedItemID()
+	case rawmaterialusage.FieldRawItemID:
+		return m.RawItemID()
+	case rawmaterialusage.FieldRawSku:
+		return m.RawSku()
+	case rawmaterialusage.FieldQuantity:
+		return m.Quantity()
+	case rawmaterialusage.FieldCost:
+		return m.Cost()
+	case rawmaterialusage.FieldTransactionType:
+		return m.TransactionType()
+	case rawmaterialusage.FieldNotes:
+		return m.Notes()
+	case rawmaterialusage.FieldOccurredAt:
+		return m.OccurredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RawMaterialUsageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case rawmaterialusage.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case rawmaterialusage.FieldProductionBatchID:
+		return m.OldProductionBatchID(ctx)
+	case rawmaterialusage.FieldFinishedItemID:
+		return m.OldFinishedItemID(ctx)
+	case rawmaterialusage.FieldRawItemID:
+		return m.OldRawItemID(ctx)
+	case rawmaterialusage.FieldRawSku:
+		return m.OldRawSku(ctx)
+	case rawmaterialusage.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case rawmaterialusage.FieldCost:
+		return m.OldCost(ctx)
+	case rawmaterialusage.FieldTransactionType:
+		return m.OldTransactionType(ctx)
+	case rawmaterialusage.FieldNotes:
+		return m.OldNotes(ctx)
+	case rawmaterialusage.FieldOccurredAt:
+		return m.OldOccurredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RawMaterialUsage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RawMaterialUsageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case rawmaterialusage.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case rawmaterialusage.FieldProductionBatchID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductionBatchID(v)
+		return nil
+	case rawmaterialusage.FieldFinishedItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedItemID(v)
+		return nil
+	case rawmaterialusage.FieldRawItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRawItemID(v)
+		return nil
+	case rawmaterialusage.FieldRawSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRawSku(v)
+		return nil
+	case rawmaterialusage.FieldQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case rawmaterialusage.FieldCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCost(v)
+		return nil
+	case rawmaterialusage.FieldTransactionType:
+		v, ok := value.(rawmaterialusage.TransactionType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransactionType(v)
+		return nil
+	case rawmaterialusage.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case rawmaterialusage.FieldOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RawMaterialUsage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RawMaterialUsageMutation) AddedFields() []string {
+	var fields []string
+	if m.addquantity != nil {
+		fields = append(fields, rawmaterialusage.FieldQuantity)
+	}
+	if m.addcost != nil {
+		fields = append(fields, rawmaterialusage.FieldCost)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RawMaterialUsageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case rawmaterialusage.FieldQuantity:
+		return m.AddedQuantity()
+	case rawmaterialusage.FieldCost:
+		return m.AddedCost()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RawMaterialUsageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case rawmaterialusage.FieldQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	case rawmaterialusage.FieldCost:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCost(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RawMaterialUsage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RawMaterialUsageMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(rawmaterialusage.FieldProductionBatchID) {
+		fields = append(fields, rawmaterialusage.FieldProductionBatchID)
+	}
+	if m.FieldCleared(rawmaterialusage.FieldFinishedItemID) {
+		fields = append(fields, rawmaterialusage.FieldFinishedItemID)
+	}
+	if m.FieldCleared(rawmaterialusage.FieldRawSku) {
+		fields = append(fields, rawmaterialusage.FieldRawSku)
+	}
+	if m.FieldCleared(rawmaterialusage.FieldNotes) {
+		fields = append(fields, rawmaterialusage.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RawMaterialUsageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RawMaterialUsageMutation) ClearField(name string) error {
+	switch name {
+	case rawmaterialusage.FieldProductionBatchID:
+		m.ClearProductionBatchID()
+		return nil
+	case rawmaterialusage.FieldFinishedItemID:
+		m.ClearFinishedItemID()
+		return nil
+	case rawmaterialusage.FieldRawSku:
+		m.ClearRawSku()
+		return nil
+	case rawmaterialusage.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown RawMaterialUsage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RawMaterialUsageMutation) ResetField(name string) error {
+	switch name {
+	case rawmaterialusage.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case rawmaterialusage.FieldProductionBatchID:
+		m.ResetProductionBatchID()
+		return nil
+	case rawmaterialusage.FieldFinishedItemID:
+		m.ResetFinishedItemID()
+		return nil
+	case rawmaterialusage.FieldRawItemID:
+		m.ResetRawItemID()
+		return nil
+	case rawmaterialusage.FieldRawSku:
+		m.ResetRawSku()
+		return nil
+	case rawmaterialusage.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case rawmaterialusage.FieldCost:
+		m.ResetCost()
+		return nil
+	case rawmaterialusage.FieldTransactionType:
+		m.ResetTransactionType()
+		return nil
+	case rawmaterialusage.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case rawmaterialusage.FieldOccurredAt:
+		m.ResetOccurredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RawMaterialUsage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RawMaterialUsageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RawMaterialUsageMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RawMaterialUsageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RawMaterialUsageMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RawMaterialUsageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RawMaterialUsageMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RawMaterialUsageMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown RawMaterialUsage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RawMaterialUsageMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown RawMaterialUsage edge %s", name)
+}
+
 // RecipeMutation represents an operation that mutates the Recipe nodes in the graph.
 type RecipeMutation struct {
 	config
@@ -54239,6 +56315,7 @@ type RecipeMutation struct {
 	addoutput_qty             *float64
 	unit_of_measure           *string
 	is_active                 *bool
+	kind                      *recipe.Kind
 	requires_qc               *bool
 	total_cost                *float64
 	addtotal_cost             *float64
@@ -54610,6 +56687,42 @@ func (m *RecipeMutation) OldIsActive(ctx context.Context) (v bool, err error) {
 // ResetIsActive resets all changes to the "is_active" field.
 func (m *RecipeMutation) ResetIsActive() {
 	m.is_active = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *RecipeMutation) SetKind(r recipe.Kind) {
+	m.kind = &r
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *RecipeMutation) Kind() (r recipe.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the Recipe entity.
+// If the Recipe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RecipeMutation) OldKind(ctx context.Context) (v recipe.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *RecipeMutation) ResetKind() {
+	m.kind = nil
 }
 
 // SetRequiresQc sets the "requires_qc" field.
@@ -55526,7 +57639,7 @@ func (m *RecipeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RecipeMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 20)
 	if m.tenant_id != nil {
 		fields = append(fields, recipe.FieldTenantID)
 	}
@@ -55544,6 +57657,9 @@ func (m *RecipeMutation) Fields() []string {
 	}
 	if m.is_active != nil {
 		fields = append(fields, recipe.FieldIsActive)
+	}
+	if m.kind != nil {
+		fields = append(fields, recipe.FieldKind)
 	}
 	if m.requires_qc != nil {
 		fields = append(fields, recipe.FieldRequiresQc)
@@ -55604,6 +57720,8 @@ func (m *RecipeMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitOfMeasure()
 	case recipe.FieldIsActive:
 		return m.IsActive()
+	case recipe.FieldKind:
+		return m.Kind()
 	case recipe.FieldRequiresQc:
 		return m.RequiresQc()
 	case recipe.FieldTotalCost:
@@ -55651,6 +57769,8 @@ func (m *RecipeMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUnitOfMeasure(ctx)
 	case recipe.FieldIsActive:
 		return m.OldIsActive(ctx)
+	case recipe.FieldKind:
+		return m.OldKind(ctx)
 	case recipe.FieldRequiresQc:
 		return m.OldRequiresQc(ctx)
 	case recipe.FieldTotalCost:
@@ -55727,6 +57847,13 @@ func (m *RecipeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsActive(v)
+		return nil
+	case recipe.FieldKind:
+		v, ok := value.(recipe.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
 		return nil
 	case recipe.FieldRequiresQc:
 		v, ok := value.(bool)
@@ -56047,6 +58174,9 @@ func (m *RecipeMutation) ResetField(name string) error {
 		return nil
 	case recipe.FieldIsActive:
 		m.ResetIsActive()
+		return nil
+	case recipe.FieldKind:
+		m.ResetKind()
 		return nil
 	case recipe.FieldRequiresQc:
 		m.ResetRequiresQc()

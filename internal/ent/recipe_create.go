@@ -86,6 +86,20 @@ func (_c *RecipeCreate) SetNillableIsActive(v *bool) *RecipeCreate {
 	return _c
 }
 
+// SetKind sets the "kind" field.
+func (_c *RecipeCreate) SetKind(v recipe.Kind) *RecipeCreate {
+	_c.mutation.SetKind(v)
+	return _c
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (_c *RecipeCreate) SetNillableKind(v *recipe.Kind) *RecipeCreate {
+	if v != nil {
+		_c.SetKind(*v)
+	}
+	return _c
+}
+
 // SetRequiresQc sets the "requires_qc" field.
 func (_c *RecipeCreate) SetRequiresQc(v bool) *RecipeCreate {
 	_c.mutation.SetRequiresQc(v)
@@ -356,6 +370,10 @@ func (_c *RecipeCreate) defaults() {
 		v := recipe.DefaultIsActive
 		_c.mutation.SetIsActive(v)
 	}
+	if _, ok := _c.mutation.Kind(); !ok {
+		v := recipe.DefaultKind
+		_c.mutation.SetKind(v)
+	}
 	if _, ok := _c.mutation.RequiresQc(); !ok {
 		v := recipe.DefaultRequiresQc
 		_c.mutation.SetRequiresQc(v)
@@ -417,6 +435,14 @@ func (_c *RecipeCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsActive(); !ok {
 		return &ValidationError{Name: "is_active", err: errors.New(`ent: missing required field "Recipe.is_active"`)}
+	}
+	if _, ok := _c.mutation.Kind(); !ok {
+		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "Recipe.kind"`)}
+	}
+	if v, ok := _c.mutation.Kind(); ok {
+		if err := recipe.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Recipe.kind": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.RequiresQc(); !ok {
 		return &ValidationError{Name: "requires_qc", err: errors.New(`ent: missing required field "Recipe.requires_qc"`)}
@@ -491,6 +517,10 @@ func (_c *RecipeCreate) createSpec() (*Recipe, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
+	}
+	if value, ok := _c.mutation.Kind(); ok {
+		_spec.SetField(recipe.FieldKind, field.TypeEnum, value)
+		_node.Kind = value
 	}
 	if value, ok := _c.mutation.RequiresQc(); ok {
 		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)
@@ -716,6 +746,18 @@ func (u *RecipeUpsert) SetIsActive(v bool) *RecipeUpsert {
 // UpdateIsActive sets the "is_active" field to the value that was provided on create.
 func (u *RecipeUpsert) UpdateIsActive() *RecipeUpsert {
 	u.SetExcluded(recipe.FieldIsActive)
+	return u
+}
+
+// SetKind sets the "kind" field.
+func (u *RecipeUpsert) SetKind(v recipe.Kind) *RecipeUpsert {
+	u.Set(recipe.FieldKind, v)
+	return u
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *RecipeUpsert) UpdateKind() *RecipeUpsert {
+	u.SetExcluded(recipe.FieldKind)
 	return u
 }
 
@@ -1104,6 +1146,20 @@ func (u *RecipeUpsertOne) SetIsActive(v bool) *RecipeUpsertOne {
 func (u *RecipeUpsertOne) UpdateIsActive() *RecipeUpsertOne {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *RecipeUpsertOne) SetKind(v recipe.Kind) *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *RecipeUpsertOne) UpdateKind() *RecipeUpsertOne {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateKind()
 	})
 }
 
@@ -1700,6 +1756,20 @@ func (u *RecipeUpsertBulk) SetIsActive(v bool) *RecipeUpsertBulk {
 func (u *RecipeUpsertBulk) UpdateIsActive() *RecipeUpsertBulk {
 	return u.Update(func(s *RecipeUpsert) {
 		s.UpdateIsActive()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *RecipeUpsertBulk) SetKind(v recipe.Kind) *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *RecipeUpsertBulk) UpdateKind() *RecipeUpsertBulk {
+	return u.Update(func(s *RecipeUpsert) {
+		s.UpdateKind()
 	})
 }
 

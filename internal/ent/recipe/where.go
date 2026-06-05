@@ -431,6 +431,26 @@ func IsActiveNEQ(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldNEQ(FieldIsActive, v))
 }
 
+// KindEQ applies the EQ predicate on the "kind" field.
+func KindEQ(v Kind) predicate.Recipe {
+	return predicate.Recipe(sql.FieldEQ(FieldKind, v))
+}
+
+// KindNEQ applies the NEQ predicate on the "kind" field.
+func KindNEQ(v Kind) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNEQ(FieldKind, v))
+}
+
+// KindIn applies the In predicate on the "kind" field.
+func KindIn(vs ...Kind) predicate.Recipe {
+	return predicate.Recipe(sql.FieldIn(FieldKind, vs...))
+}
+
+// KindNotIn applies the NotIn predicate on the "kind" field.
+func KindNotIn(vs ...Kind) predicate.Recipe {
+	return predicate.Recipe(sql.FieldNotIn(FieldKind, vs...))
+}
+
 // RequiresQcEQ applies the EQ predicate on the "requires_qc" field.
 func RequiresQcEQ(v bool) predicate.Recipe {
 	return predicate.Recipe(sql.FieldEQ(FieldRequiresQc, v))

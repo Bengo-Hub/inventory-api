@@ -122,6 +122,20 @@ func (_u *RecipeUpdate) SetNillableIsActive(v *bool) *RecipeUpdate {
 	return _u
 }
 
+// SetKind sets the "kind" field.
+func (_u *RecipeUpdate) SetKind(v recipe.Kind) *RecipeUpdate {
+	_u.mutation.SetKind(v)
+	return _u
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (_u *RecipeUpdate) SetNillableKind(v *recipe.Kind) *RecipeUpdate {
+	if v != nil {
+		_u.SetKind(*v)
+	}
+	return _u
+}
+
 // SetRequiresQc sets the "requires_qc" field.
 func (_u *RecipeUpdate) SetRequiresQc(v bool) *RecipeUpdate {
 	_u.mutation.SetRequiresQc(v)
@@ -529,6 +543,11 @@ func (_u *RecipeUpdate) check() error {
 			return &ValidationError{Name: "unit_of_measure", err: fmt.Errorf(`ent: validator failed for field "Recipe.unit_of_measure": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Kind(); ok {
+		if err := recipe.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Recipe.kind": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := recipe.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Recipe.status": %w`, err)}
@@ -569,6 +588,9 @@ func (_u *RecipeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Kind(); ok {
+		_spec.SetField(recipe.FieldKind, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.RequiresQc(); ok {
 		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)
@@ -877,6 +899,20 @@ func (_u *RecipeUpdateOne) SetIsActive(v bool) *RecipeUpdateOne {
 func (_u *RecipeUpdateOne) SetNillableIsActive(v *bool) *RecipeUpdateOne {
 	if v != nil {
 		_u.SetIsActive(*v)
+	}
+	return _u
+}
+
+// SetKind sets the "kind" field.
+func (_u *RecipeUpdateOne) SetKind(v recipe.Kind) *RecipeUpdateOne {
+	_u.mutation.SetKind(v)
+	return _u
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (_u *RecipeUpdateOne) SetNillableKind(v *recipe.Kind) *RecipeUpdateOne {
+	if v != nil {
+		_u.SetKind(*v)
 	}
 	return _u
 }
@@ -1301,6 +1337,11 @@ func (_u *RecipeUpdateOne) check() error {
 			return &ValidationError{Name: "unit_of_measure", err: fmt.Errorf(`ent: validator failed for field "Recipe.unit_of_measure": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Kind(); ok {
+		if err := recipe.KindValidator(v); err != nil {
+			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "Recipe.kind": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := recipe.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Recipe.status": %w`, err)}
@@ -1358,6 +1399,9 @@ func (_u *RecipeUpdateOne) sqlSave(ctx context.Context) (_node *Recipe, err erro
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(recipe.FieldIsActive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Kind(); ok {
+		_spec.SetField(recipe.FieldKind, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.RequiresQc(); ok {
 		_spec.SetField(recipe.FieldRequiresQc, field.TypeBool, value)

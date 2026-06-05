@@ -45,6 +45,8 @@ type RecipeDTO struct {
 	Servings            float64               `json:"servings"`
 	UnitOfMeasure       string                `json:"unit_of_measure"`
 	IsActive            bool                  `json:"is_active"`
+	Kind                string                `json:"kind"` // menu | bom
+	RequiresQC          bool                  `json:"requires_qc"`
 	TotalCost           *float64              `json:"total_cost"`
 	CostPerPortion      *float64              `json:"cost_per_portion"`
 	TargetMarginPercent *float64              `json:"target_margin_percent"`
@@ -219,6 +221,8 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 		SetOutputQty(dto.OutputQty).
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
+		SetKind(recipeKind(dto.Kind)).
+		SetRequiresQc(dto.RequiresQC).
 		SetNillableItemID(dto.ItemID).
 		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
 		SetNillableSellingPrice(dto.SellingPrice)
@@ -301,6 +305,8 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 		SetOutputQty(dto.OutputQty).
 		SetUnitOfMeasure(dto.UnitOfMeasure).
 		SetIsActive(dto.IsActive).
+		SetKind(recipeKind(dto.Kind)).
+		SetRequiresQc(dto.RequiresQC).
 		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
 		SetNillableSellingPrice(dto.SellingPrice)
 
@@ -414,6 +420,15 @@ func (s *Service) toDTO(r *ent.Recipe) RecipeDTO {
 	return s.toDTOWithItemName(r, "")
 }
 
+// recipeKind normalizes a free-form kind string to the recipe.Kind enum,
+// defaulting to "menu" for anything unrecognized.
+func recipeKind(s string) recipe.Kind {
+	if s == string(recipe.KindBom) {
+		return recipe.KindBom
+	}
+	return recipe.KindMenu
+}
+
 func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) RecipeDTO {
 	itemName := linkedItemName
 	if itemName == "" {
@@ -430,6 +445,8 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 		Servings:      r.OutputQty,
 		UnitOfMeasure: r.UnitOfMeasure,
 		IsActive:      r.IsActive,
+		Kind:          string(r.Kind),
+		RequiresQC:    r.RequiresQc,
 		TotalCost:           r.TotalCost,
 		CostPerPortion:      r.CostPerPortion,
 		TargetMarginPercent: r.TargetMarginPercent,

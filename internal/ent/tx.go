@@ -82,6 +82,8 @@ type Tx struct {
 	ItemTranslation *ItemTranslationClient
 	// ItemVariant is the client for interacting with the ItemVariant builders.
 	ItemVariant *ItemVariantClient
+	// ManufacturingAnalytics is the client for interacting with the ManufacturingAnalytics builders.
+	ManufacturingAnalytics *ManufacturingAnalyticsClient
 	// ModifierGroup is the client for interacting with the ModifierGroup builders.
 	ModifierGroup *ModifierGroupClient
 	// ModifierOption is the client for interacting with the ModifierOption builders.
@@ -110,6 +112,8 @@ type Tx struct {
 	RFQLine *RFQLineClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
+	// RawMaterialUsage is the client for interacting with the RawMaterialUsage builders.
+	RawMaterialUsage *RawMaterialUsageClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
@@ -322,6 +326,7 @@ func (tx *Tx) init() {
 	tx.ItemPricing = NewItemPricingClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)
 	tx.ItemVariant = NewItemVariantClient(tx.config)
+	tx.ManufacturingAnalytics = NewManufacturingAnalyticsClient(tx.config)
 	tx.ModifierGroup = NewModifierGroupClient(tx.config)
 	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
@@ -336,6 +341,7 @@ func (tx *Tx) init() {
 	tx.RFQAward = NewRFQAwardClient(tx.config)
 	tx.RFQLine = NewRFQLineClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
+	tx.RawMaterialUsage = NewRawMaterialUsageClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
 	tx.Requisition = NewRequisitionClient(tx.config)

@@ -22,12 +22,13 @@ import (
 // inventoryAcceptedUseCases is the set of outlet use_cases whose outlets get a warehouse mirror.
 // Logistics hubs and weighbridge stations don't hold inventory stock.
 var inventoryAcceptedUseCases = map[string]bool{
-	"hospitality":  true,
-	"retail":       true,
+	"hospitality":   true,
+	"retail":        true,
 	"quick_service": true,
-	"pharmacy":     true,
-	"services":     true,
-	"warehouse":    true,
+	"pharmacy":      true,
+	"services":      true,
+	"warehouse":     true,
+	"manufacturing": true,
 }
 
 const authStream = "auth"

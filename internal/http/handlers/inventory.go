@@ -64,6 +64,8 @@ type RecipesServicer interface {
 	GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*recipes.RecipeDTO, error)
 	// RecalculateCostsForIngredient cascades cost recalculation to all recipes using the given ingredient.
 	RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error
+	// RecalculateRecipeCosts recomputes total/unit cost for a single recipe from current ingredient prices.
+	RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error
 }
 
 // UnitsServicer defines the contract for unit management.
@@ -181,13 +183,15 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
 
-		// Recipes — hospitality and quick_service outlets only
+		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
+		// & manufacturing (bills of materials). HQ/platform users bypass gating.
 		inv.Group(func(rec chi.Router) {
-			rec.Use(invmiddleware.RequireOutletUseCase("hospitality", "quick_service"))
+			rec.Use(invmiddleware.RequireOutletUseCase("hospitality", "quick_service", "warehouse", "manufacturing"))
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
 			rec.Get("/recipes/{recipeID}", h.GetRecipe)
 			rec.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
+			rec.With(perm(rbac.PermRecipesChange)).Post("/recipes/{recipeID}/recompute-cost", h.RecomputeRecipeCost)
 			rec.With(perm(rbac.PermRecipesDelete)).Delete("/recipes/{recipeID}", h.DeleteRecipe)
 		})
 
@@ -606,6 +610,32 @@ func (h *InventoryHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// RecomputeRecipeCost handles POST /v1/{tenant}/inventory/recipes/{recipeID}/recompute-cost —
+// recomputes a recipe/BOM's cost from current ingredient prices.
+func (h *InventoryHandler) RecomputeRecipeCost(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	recipeID, err := uuid.Parse(chi.URLParam(r, "recipeID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid recipe ID")
+		return
+	}
+	if err := h.recipeSvc.RecalculateRecipeCosts(r.Context(), tenantID, recipeID); err != nil {
+		h.log.Error("recompute recipe cost failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "RECOMPUTE_FAILED", err.Error())
+		return
+	}
+	result, err := h.recipeSvc.GetRecipe(r.Context(), tenantID, recipeID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Recipe not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 // GetInventorySummary handles GET /v1/{tenant}/inventory/summary

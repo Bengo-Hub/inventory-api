@@ -123,6 +123,11 @@ func main() {
 			if err := seedProductionBatches(ctx, client, tenantID); err != nil {
 				log.Printf("[WARN] seed production batches for %s: %v", slug, err)
 			}
+			// Mirror detergent stock into the manufacturing outlet's warehouse (no-op
+			// until the demo-manufacturing outlet has synced from auth-api).
+			if err := seedManufacturingStock(ctx, client, tenantID); err != nil {
+				log.Printf("[WARN] seed manufacturing stock for %s: %v", slug, err)
+			}
 		}
 
 		if err := seedSubRecipeDemo(ctx, client, tenantID); err != nil {

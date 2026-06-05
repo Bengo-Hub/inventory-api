@@ -40,6 +40,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/manufacturinganalytics"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
@@ -51,6 +52,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
 	"github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
+	"github.com/bengobox/inventory-service/internal/ent/rawmaterialusage"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
@@ -1010,6 +1012,50 @@ func init() {
 	itemvariantDescID := itemvariantFields[0].Descriptor()
 	// itemvariant.DefaultID holds the default value on creation for the id field.
 	itemvariant.DefaultID = itemvariantDescID.Default.(func() uuid.UUID)
+	manufacturinganalyticsFields := schema.ManufacturingAnalytics{}.Fields()
+	_ = manufacturinganalyticsFields
+	// manufacturinganalyticsDescTotalBatches is the schema descriptor for total_batches field.
+	manufacturinganalyticsDescTotalBatches := manufacturinganalyticsFields[3].Descriptor()
+	// manufacturinganalytics.DefaultTotalBatches holds the default value on creation for the total_batches field.
+	manufacturinganalytics.DefaultTotalBatches = manufacturinganalyticsDescTotalBatches.Default.(int)
+	// manufacturinganalyticsDescCompletedBatches is the schema descriptor for completed_batches field.
+	manufacturinganalyticsDescCompletedBatches := manufacturinganalyticsFields[4].Descriptor()
+	// manufacturinganalytics.DefaultCompletedBatches holds the default value on creation for the completed_batches field.
+	manufacturinganalytics.DefaultCompletedBatches = manufacturinganalyticsDescCompletedBatches.Default.(int)
+	// manufacturinganalyticsDescFailedBatches is the schema descriptor for failed_batches field.
+	manufacturinganalyticsDescFailedBatches := manufacturinganalyticsFields[5].Descriptor()
+	// manufacturinganalytics.DefaultFailedBatches holds the default value on creation for the failed_batches field.
+	manufacturinganalytics.DefaultFailedBatches = manufacturinganalyticsDescFailedBatches.Default.(int)
+	// manufacturinganalyticsDescTotalProductionQty is the schema descriptor for total_production_qty field.
+	manufacturinganalyticsDescTotalProductionQty := manufacturinganalyticsFields[6].Descriptor()
+	// manufacturinganalytics.DefaultTotalProductionQty holds the default value on creation for the total_production_qty field.
+	manufacturinganalytics.DefaultTotalProductionQty = manufacturinganalyticsDescTotalProductionQty.Default.(float64)
+	// manufacturinganalyticsDescTotalRawMaterialCost is the schema descriptor for total_raw_material_cost field.
+	manufacturinganalyticsDescTotalRawMaterialCost := manufacturinganalyticsFields[7].Descriptor()
+	// manufacturinganalytics.DefaultTotalRawMaterialCost holds the default value on creation for the total_raw_material_cost field.
+	manufacturinganalytics.DefaultTotalRawMaterialCost = manufacturinganalyticsDescTotalRawMaterialCost.Default.(float64)
+	// manufacturinganalyticsDescTotalLaborCost is the schema descriptor for total_labor_cost field.
+	manufacturinganalyticsDescTotalLaborCost := manufacturinganalyticsFields[8].Descriptor()
+	// manufacturinganalytics.DefaultTotalLaborCost holds the default value on creation for the total_labor_cost field.
+	manufacturinganalytics.DefaultTotalLaborCost = manufacturinganalyticsDescTotalLaborCost.Default.(float64)
+	// manufacturinganalyticsDescTotalOverheadCost is the schema descriptor for total_overhead_cost field.
+	manufacturinganalyticsDescTotalOverheadCost := manufacturinganalyticsFields[9].Descriptor()
+	// manufacturinganalytics.DefaultTotalOverheadCost holds the default value on creation for the total_overhead_cost field.
+	manufacturinganalytics.DefaultTotalOverheadCost = manufacturinganalyticsDescTotalOverheadCost.Default.(float64)
+	// manufacturinganalyticsDescCreatedAt is the schema descriptor for created_at field.
+	manufacturinganalyticsDescCreatedAt := manufacturinganalyticsFields[10].Descriptor()
+	// manufacturinganalytics.DefaultCreatedAt holds the default value on creation for the created_at field.
+	manufacturinganalytics.DefaultCreatedAt = manufacturinganalyticsDescCreatedAt.Default.(func() time.Time)
+	// manufacturinganalyticsDescUpdatedAt is the schema descriptor for updated_at field.
+	manufacturinganalyticsDescUpdatedAt := manufacturinganalyticsFields[11].Descriptor()
+	// manufacturinganalytics.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	manufacturinganalytics.DefaultUpdatedAt = manufacturinganalyticsDescUpdatedAt.Default.(func() time.Time)
+	// manufacturinganalytics.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	manufacturinganalytics.UpdateDefaultUpdatedAt = manufacturinganalyticsDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// manufacturinganalyticsDescID is the schema descriptor for id field.
+	manufacturinganalyticsDescID := manufacturinganalyticsFields[0].Descriptor()
+	// manufacturinganalytics.DefaultID holds the default value on creation for the id field.
+	manufacturinganalytics.DefaultID = manufacturinganalyticsDescID.Default.(func() uuid.UUID)
 	modifiergroupFields := schema.ModifierGroup{}.Fields()
 	_ = modifiergroupFields
 	// modifiergroupDescName is the schema descriptor for name field.
@@ -1376,6 +1422,24 @@ func init() {
 	ratelimitconfigDescID := ratelimitconfigFields[0].Descriptor()
 	// ratelimitconfig.DefaultID holds the default value on creation for the id field.
 	ratelimitconfig.DefaultID = ratelimitconfigDescID.Default.(func() uuid.UUID)
+	rawmaterialusageFields := schema.RawMaterialUsage{}.Fields()
+	_ = rawmaterialusageFields
+	// rawmaterialusageDescQuantity is the schema descriptor for quantity field.
+	rawmaterialusageDescQuantity := rawmaterialusageFields[6].Descriptor()
+	// rawmaterialusage.DefaultQuantity holds the default value on creation for the quantity field.
+	rawmaterialusage.DefaultQuantity = rawmaterialusageDescQuantity.Default.(float64)
+	// rawmaterialusageDescCost is the schema descriptor for cost field.
+	rawmaterialusageDescCost := rawmaterialusageFields[7].Descriptor()
+	// rawmaterialusage.DefaultCost holds the default value on creation for the cost field.
+	rawmaterialusage.DefaultCost = rawmaterialusageDescCost.Default.(float64)
+	// rawmaterialusageDescOccurredAt is the schema descriptor for occurred_at field.
+	rawmaterialusageDescOccurredAt := rawmaterialusageFields[10].Descriptor()
+	// rawmaterialusage.DefaultOccurredAt holds the default value on creation for the occurred_at field.
+	rawmaterialusage.DefaultOccurredAt = rawmaterialusageDescOccurredAt.Default.(func() time.Time)
+	// rawmaterialusageDescID is the schema descriptor for id field.
+	rawmaterialusageDescID := rawmaterialusageFields[0].Descriptor()
+	// rawmaterialusage.DefaultID holds the default value on creation for the id field.
+	rawmaterialusage.DefaultID = rawmaterialusageDescID.Default.(func() uuid.UUID)
 	recipeFields := schema.Recipe{}.Fields()
 	_ = recipeFields
 	// recipeDescSku is the schema descriptor for sku field.
@@ -1417,23 +1481,23 @@ func init() {
 	// recipe.DefaultIsActive holds the default value on creation for the is_active field.
 	recipe.DefaultIsActive = recipeDescIsActive.Default.(bool)
 	// recipeDescRequiresQc is the schema descriptor for requires_qc field.
-	recipeDescRequiresQc := recipeFields[7].Descriptor()
+	recipeDescRequiresQc := recipeFields[8].Descriptor()
 	// recipe.DefaultRequiresQc holds the default value on creation for the requires_qc field.
 	recipe.DefaultRequiresQc = recipeDescRequiresQc.Default.(bool)
 	// recipeDescStatus is the schema descriptor for status field.
-	recipeDescStatus := recipeFields[14].Descriptor()
+	recipeDescStatus := recipeFields[15].Descriptor()
 	// recipe.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	recipe.StatusValidator = recipeDescStatus.Validators[0].(func(string) error)
 	// recipeDescMetadata is the schema descriptor for metadata field.
-	recipeDescMetadata := recipeFields[17].Descriptor()
+	recipeDescMetadata := recipeFields[18].Descriptor()
 	// recipe.DefaultMetadata holds the default value on creation for the metadata field.
 	recipe.DefaultMetadata = recipeDescMetadata.Default.(map[string]interface{})
 	// recipeDescCreatedAt is the schema descriptor for created_at field.
-	recipeDescCreatedAt := recipeFields[18].Descriptor()
+	recipeDescCreatedAt := recipeFields[19].Descriptor()
 	// recipe.DefaultCreatedAt holds the default value on creation for the created_at field.
 	recipe.DefaultCreatedAt = recipeDescCreatedAt.Default.(func() time.Time)
 	// recipeDescUpdatedAt is the schema descriptor for updated_at field.
-	recipeDescUpdatedAt := recipeFields[19].Descriptor()
+	recipeDescUpdatedAt := recipeFields[20].Descriptor()
 	// recipe.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	recipe.DefaultUpdatedAt = recipeDescUpdatedAt.Default.(func() time.Time)
 	// recipe.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
