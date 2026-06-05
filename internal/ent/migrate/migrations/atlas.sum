@@ -1,4 +1,4 @@
-h1:Cm/26FRXqBMHtCRqQ+slbPE/eDnCwB2nG9Wwqix/B+M=
+h1:LyxGASDYHDCEC6DyTfi8e9Z0zX3FqwsefgfheGdquBk=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -28,3 +28,4 @@ h1:Cm/26FRXqBMHtCRqQ+slbPE/eDnCwB2nG9Wwqix/B+M=
 20260604183730_add_goods_receipts_asset_item.sql h1:X+S+lJGxvZ6SdTT/P0tel5JR+AnuGF+fC6i46vdwi3Q=
 20260604201700_add_asset_last_depreciation_period.sql h1:7MxI1e1NSjuUKTk9yKsZ1l65twuqTV2oL9sJwzlFlk0=
 20260604211945_add_approval_matrix.sql h1:62AxvrojzH0ZZVeU8rc4KrRSIj8tJQkXdyGmSILLUqo=
+20260605071730_add_rfq.sql h1:9dgu4tRSvEDj7UTGi6PvyHL7UTJzm1WzrKySEfmCljo=

@@ -141,6 +141,15 @@ type PurchaseReturnLine func(*sql.Selector)
 // QualityCheck is the predicate function for qualitycheck builders.
 type QualityCheck func(*sql.Selector)
 
+// RFQ is the predicate function for rfq builders.
+type RFQ func(*sql.Selector)
+
+// RFQAward is the predicate function for rfqaward builders.
+type RFQAward func(*sql.Selector)
+
+// RFQLine is the predicate function for rfqline builders.
+type RFQLine func(*sql.Selector)
+
 // RateLimitConfig is the predicate function for ratelimitconfig builders.
 type RateLimitConfig func(*sql.Selector)
 
@@ -182,6 +191,9 @@ type Supplier func(*sql.Selector)
 
 // SupplierPerformance is the predicate function for supplierperformance builders.
 type SupplierPerformance func(*sql.Selector)
+
+// SupplierResponse is the predicate function for supplierresponse builders.
+type SupplierResponse func(*sql.Selector)
 
 // Tenant is the predicate function for tenant builders.
 type Tenant func(*sql.Selector)

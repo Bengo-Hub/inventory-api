@@ -56,6 +56,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
 	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rfq"
+	"github.com/bengobox/inventory-service/internal/ent/rfqaward"
+	"github.com/bengobox/inventory-service/internal/ent/rfqline"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
@@ -64,6 +67,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
+	"github.com/bengobox/inventory-service/internal/ent/supplierresponse"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -1276,6 +1280,54 @@ func init() {
 	qualitycheckDescID := qualitycheckFields[0].Descriptor()
 	// qualitycheck.DefaultID holds the default value on creation for the id field.
 	qualitycheck.DefaultID = qualitycheckDescID.Default.(func() uuid.UUID)
+	rfqFields := schema.RFQ{}.Fields()
+	_ = rfqFields
+	// rfqDescRfqNumber is the schema descriptor for rfq_number field.
+	rfqDescRfqNumber := rfqFields[2].Descriptor()
+	// rfq.RfqNumberValidator is a validator for the "rfq_number" field. It is called by the builders before save.
+	rfq.RfqNumberValidator = rfqDescRfqNumber.Validators[0].(func(string) error)
+	// rfqDescCreatedAt is the schema descriptor for created_at field.
+	rfqDescCreatedAt := rfqFields[10].Descriptor()
+	// rfq.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rfq.DefaultCreatedAt = rfqDescCreatedAt.Default.(func() time.Time)
+	// rfqDescUpdatedAt is the schema descriptor for updated_at field.
+	rfqDescUpdatedAt := rfqFields[11].Descriptor()
+	// rfq.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rfq.DefaultUpdatedAt = rfqDescUpdatedAt.Default.(func() time.Time)
+	// rfq.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rfq.UpdateDefaultUpdatedAt = rfqDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// rfqDescID is the schema descriptor for id field.
+	rfqDescID := rfqFields[0].Descriptor()
+	// rfq.DefaultID holds the default value on creation for the id field.
+	rfq.DefaultID = rfqDescID.Default.(func() uuid.UUID)
+	rfqawardFields := schema.RFQAward{}.Fields()
+	_ = rfqawardFields
+	// rfqawardDescUnitPrice is the schema descriptor for unit_price field.
+	rfqawardDescUnitPrice := rfqawardFields[5].Descriptor()
+	// rfqaward.DefaultUnitPrice holds the default value on creation for the unit_price field.
+	rfqaward.DefaultUnitPrice = rfqawardDescUnitPrice.Default.(float64)
+	// rfqawardDescQuantity is the schema descriptor for quantity field.
+	rfqawardDescQuantity := rfqawardFields[6].Descriptor()
+	// rfqaward.DefaultQuantity holds the default value on creation for the quantity field.
+	rfqaward.DefaultQuantity = rfqawardDescQuantity.Default.(int)
+	// rfqawardDescCreatedAt is the schema descriptor for created_at field.
+	rfqawardDescCreatedAt := rfqawardFields[8].Descriptor()
+	// rfqaward.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rfqaward.DefaultCreatedAt = rfqawardDescCreatedAt.Default.(func() time.Time)
+	// rfqawardDescID is the schema descriptor for id field.
+	rfqawardDescID := rfqawardFields[0].Descriptor()
+	// rfqaward.DefaultID holds the default value on creation for the id field.
+	rfqaward.DefaultID = rfqawardDescID.Default.(func() uuid.UUID)
+	rfqlineFields := schema.RFQLine{}.Fields()
+	_ = rfqlineFields
+	// rfqlineDescQuantity is the schema descriptor for quantity field.
+	rfqlineDescQuantity := rfqlineFields[5].Descriptor()
+	// rfqline.DefaultQuantity holds the default value on creation for the quantity field.
+	rfqline.DefaultQuantity = rfqlineDescQuantity.Default.(int)
+	// rfqlineDescID is the schema descriptor for id field.
+	rfqlineDescID := rfqlineFields[0].Descriptor()
+	// rfqline.DefaultID holds the default value on creation for the id field.
+	rfqline.DefaultID = rfqlineDescID.Default.(func() uuid.UUID)
 	ratelimitconfigFields := schema.RateLimitConfig{}.Fields()
 	_ = ratelimitconfigFields
 	// ratelimitconfigDescServiceName is the schema descriptor for service_name field.
@@ -1666,6 +1718,30 @@ func init() {
 	supplierperformanceDescID := supplierperformanceFields[0].Descriptor()
 	// supplierperformance.DefaultID holds the default value on creation for the id field.
 	supplierperformance.DefaultID = supplierperformanceDescID.Default.(func() uuid.UUID)
+	supplierresponseFields := schema.SupplierResponse{}.Fields()
+	_ = supplierresponseFields
+	// supplierresponseDescCurrency is the schema descriptor for currency field.
+	supplierresponseDescCurrency := supplierresponseFields[5].Descriptor()
+	// supplierresponse.DefaultCurrency holds the default value on creation for the currency field.
+	supplierresponse.DefaultCurrency = supplierresponseDescCurrency.Default.(string)
+	// supplierresponseDescQuotedItems is the schema descriptor for quoted_items field.
+	supplierresponseDescQuotedItems := supplierresponseFields[8].Descriptor()
+	// supplierresponse.DefaultQuotedItems holds the default value on creation for the quoted_items field.
+	supplierresponse.DefaultQuotedItems = supplierresponseDescQuotedItems.Default.([]schema.QuotedItemJSON)
+	// supplierresponseDescCreatedAt is the schema descriptor for created_at field.
+	supplierresponseDescCreatedAt := supplierresponseFields[9].Descriptor()
+	// supplierresponse.DefaultCreatedAt holds the default value on creation for the created_at field.
+	supplierresponse.DefaultCreatedAt = supplierresponseDescCreatedAt.Default.(func() time.Time)
+	// supplierresponseDescUpdatedAt is the schema descriptor for updated_at field.
+	supplierresponseDescUpdatedAt := supplierresponseFields[10].Descriptor()
+	// supplierresponse.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	supplierresponse.DefaultUpdatedAt = supplierresponseDescUpdatedAt.Default.(func() time.Time)
+	// supplierresponse.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	supplierresponse.UpdateDefaultUpdatedAt = supplierresponseDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// supplierresponseDescID is the schema descriptor for id field.
+	supplierresponseDescID := supplierresponseFields[0].Descriptor()
+	// supplierresponse.DefaultID holds the default value on creation for the id field.
+	supplierresponse.DefaultID = supplierresponseDescID.Default.(func() uuid.UUID)
 	tenantFields := schema.Tenant{}.Fields()
 	_ = tenantFields
 	// tenantDescName is the schema descriptor for name field.

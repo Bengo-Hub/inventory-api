@@ -1843,6 +1843,118 @@ var (
 			},
 		},
 	}
+	// RfQsColumns holds the columns for the "rf_qs" table.
+	RfQsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "rfq_number", Type: field.TypeString},
+		{Name: "title", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "sent", "closed", "awarded", "cancelled"}, Default: "draft"},
+		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "due_date", Type: field.TypeTime, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// RfQsTable holds the schema information for the "rf_qs" table.
+	RfQsTable = &schema.Table{
+		Name:       "rf_qs",
+		Columns:    RfQsColumns,
+		PrimaryKey: []*schema.Column{RfQsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rfq_tenant_id_rfq_number",
+				Unique:  true,
+				Columns: []*schema.Column{RfQsColumns[1], RfQsColumns[2]},
+			},
+			{
+				Name:    "rfq_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{RfQsColumns[1], RfQsColumns[4]},
+			},
+		},
+	}
+	// RfqAwardsColumns holds the columns for the "rfq_awards" table.
+	RfqAwardsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "rfq_line_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID},
+		{Name: "unit_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "po_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "rfq_id", Type: field.TypeUUID},
+	}
+	// RfqAwardsTable holds the schema information for the "rfq_awards" table.
+	RfqAwardsTable = &schema.Table{
+		Name:       "rfq_awards",
+		Columns:    RfqAwardsColumns,
+		PrimaryKey: []*schema.Column{RfqAwardsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rfq_awards_rf_qs_awards",
+				Columns:    []*schema.Column{RfqAwardsColumns[8]},
+				RefColumns: []*schema.Column{RfQsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rfqaward_rfq_id",
+				Unique:  false,
+				Columns: []*schema.Column{RfqAwardsColumns[8]},
+			},
+			{
+				Name:    "rfqaward_rfq_id_rfq_line_id",
+				Unique:  true,
+				Columns: []*schema.Column{RfqAwardsColumns[8], RfqAwardsColumns[2]},
+			},
+			{
+				Name:    "rfqaward_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{RfqAwardsColumns[1]},
+			},
+		},
+	}
+	// RfqLinesColumns holds the columns for the "rfq_lines" table.
+	RfqLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "quantity", Type: field.TypeInt, Default: 1},
+		{Name: "uom", Type: field.TypeString, Nullable: true},
+		{Name: "rfq_id", Type: field.TypeUUID},
+	}
+	// RfqLinesTable holds the schema information for the "rfq_lines" table.
+	RfqLinesTable = &schema.Table{
+		Name:       "rfq_lines",
+		Columns:    RfqLinesColumns,
+		PrimaryKey: []*schema.Column{RfqLinesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rfq_lines_rf_qs_lines",
+				Columns:    []*schema.Column{RfqLinesColumns[6]},
+				RefColumns: []*schema.Column{RfQsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rfqline_rfq_id",
+				Unique:  false,
+				Columns: []*schema.Column{RfqLinesColumns[6]},
+			},
+			{
+				Name:    "rfqline_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{RfqLinesColumns[1]},
+			},
+		},
+	}
 	// RateLimitConfigsColumns holds the columns for the "rate_limit_configs" table.
 	RateLimitConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2422,6 +2534,46 @@ var (
 			},
 		},
 	}
+	// SupplierResponsesColumns holds the columns for the "supplier_responses" table.
+	SupplierResponsesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"invited", "submitted", "declined"}, Default: "invited"},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "submitted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "quoted_items", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "rfq_id", Type: field.TypeUUID},
+	}
+	// SupplierResponsesTable holds the schema information for the "supplier_responses" table.
+	SupplierResponsesTable = &schema.Table{
+		Name:       "supplier_responses",
+		Columns:    SupplierResponsesColumns,
+		PrimaryKey: []*schema.Column{SupplierResponsesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "supplier_responses_rf_qs_responses",
+				Columns:    []*schema.Column{SupplierResponsesColumns[10]},
+				RefColumns: []*schema.Column{RfQsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "supplierresponse_rfq_id_supplier_id",
+				Unique:  true,
+				Columns: []*schema.Column{SupplierResponsesColumns[10], SupplierResponsesColumns[2]},
+			},
+			{
+				Name:    "supplierresponse_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{SupplierResponsesColumns[1]},
+			},
+		},
+	}
 	// TenantsColumns holds the columns for the "tenants" table.
 	TenantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2851,6 +3003,9 @@ var (
 		PurchaseReturnsTable,
 		PurchaseReturnLinesTable,
 		QualityChecksTable,
+		RfQsTable,
+		RfqAwardsTable,
+		RfqLinesTable,
 		RateLimitConfigsTable,
 		RecipesTable,
 		RecipeIngredientsTable,
@@ -2865,6 +3020,7 @@ var (
 		StockTransferLinesTable,
 		SuppliersTable,
 		SupplierPerformancesTable,
+		SupplierResponsesTable,
 		TenantsTable,
 		TenantInventoryConfigsTable,
 		TicketsTable,
@@ -2909,6 +3065,8 @@ func init() {
 	PurchaseOrderLinesTable.ForeignKeys[0].RefTable = PurchaseOrdersTable
 	PurchaseReturnLinesTable.ForeignKeys[0].RefTable = PurchaseReturnsTable
 	QualityChecksTable.ForeignKeys[0].RefTable = ProductionBatchesTable
+	RfqAwardsTable.ForeignKeys[0].RefTable = RfQsTable
+	RfqLinesTable.ForeignKeys[0].RefTable = RfQsTable
 	RecipesTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[0].RefTable = ItemsTable
 	RecipeIngredientsTable.ForeignKeys[1].RefTable = RecipesTable
@@ -2919,6 +3077,7 @@ func init() {
 	RolePermissionsTable.ForeignKeys[0].RefTable = InventoryRolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = InventoryPermissionsTable
 	StockTransferLinesTable.ForeignKeys[0].RefTable = StockTransfersTable
+	SupplierResponsesTable.ForeignKeys[0].RefTable = RfQsTable
 	UserRoleAssignmentsTable.ForeignKeys[0].RefTable = InventoryRolesTable
 	UserRoleAssignmentsTable.ForeignKeys[1].RefTable = InventoryUsersTable
 	UserRoleAssignmentsTable.ForeignKeys[2].RefTable = InventoryRolesTable

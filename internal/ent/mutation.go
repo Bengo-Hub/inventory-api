@@ -64,6 +64,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
 	"github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/rfq"
+	"github.com/bengobox/inventory-service/internal/ent/rfqaward"
+	"github.com/bengobox/inventory-service/internal/ent/rfqline"
 	"github.com/bengobox/inventory-service/internal/ent/rolepermission"
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
@@ -73,6 +76,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/supplierperformance"
+	"github.com/bengobox/inventory-service/internal/ent/supplierresponse"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -139,6 +143,9 @@ const (
 	TypePurchaseReturn        = "PurchaseReturn"
 	TypePurchaseReturnLine    = "PurchaseReturnLine"
 	TypeQualityCheck          = "QualityCheck"
+	TypeRFQ                   = "RFQ"
+	TypeRFQAward              = "RFQAward"
+	TypeRFQLine               = "RFQLine"
 	TypeRateLimitConfig       = "RateLimitConfig"
 	TypeRecipe                = "Recipe"
 	TypeRecipeIngredient      = "RecipeIngredient"
@@ -153,6 +160,7 @@ const (
 	TypeStockTransferLine     = "StockTransferLine"
 	TypeSupplier              = "Supplier"
 	TypeSupplierPerformance   = "SupplierPerformance"
+	TypeSupplierResponse      = "SupplierResponse"
 	TypeTenant                = "Tenant"
 	TypeTenantInventoryConfig = "TenantInventoryConfig"
 	TypeTicket                = "Ticket"
@@ -50421,6 +50429,2861 @@ func (m *QualityCheckMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown QualityCheck edge %s", name)
 }
 
+// RFQMutation represents an operation that mutates the RFQ nodes in the graph.
+type RFQMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	tenant_id        *uuid.UUID
+	rfq_number       *string
+	title            *string
+	status           *rfq.Status
+	requisition_id   *uuid.UUID
+	warehouse_id     *uuid.UUID
+	notes            *string
+	due_date         *time.Time
+	created_by       *uuid.UUID
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	lines            map[uuid.UUID]struct{}
+	removedlines     map[uuid.UUID]struct{}
+	clearedlines     bool
+	responses        map[uuid.UUID]struct{}
+	removedresponses map[uuid.UUID]struct{}
+	clearedresponses bool
+	awards           map[uuid.UUID]struct{}
+	removedawards    map[uuid.UUID]struct{}
+	clearedawards    bool
+	done             bool
+	oldValue         func(context.Context) (*RFQ, error)
+	predicates       []predicate.RFQ
+}
+
+var _ ent.Mutation = (*RFQMutation)(nil)
+
+// rfqOption allows management of the mutation configuration using functional options.
+type rfqOption func(*RFQMutation)
+
+// newRFQMutation creates new mutation for the RFQ entity.
+func newRFQMutation(c config, op Op, opts ...rfqOption) *RFQMutation {
+	m := &RFQMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRFQ,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRFQID sets the ID field of the mutation.
+func withRFQID(id uuid.UUID) rfqOption {
+	return func(m *RFQMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RFQ
+		)
+		m.oldValue = func(ctx context.Context) (*RFQ, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RFQ.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRFQ sets the old RFQ of the mutation.
+func withRFQ(node *RFQ) rfqOption {
+	return func(m *RFQMutation) {
+		m.oldValue = func(context.Context) (*RFQ, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RFQMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RFQMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RFQ entities.
+func (m *RFQMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RFQMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RFQMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RFQ.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *RFQMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *RFQMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *RFQMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetRfqNumber sets the "rfq_number" field.
+func (m *RFQMutation) SetRfqNumber(s string) {
+	m.rfq_number = &s
+}
+
+// RfqNumber returns the value of the "rfq_number" field in the mutation.
+func (m *RFQMutation) RfqNumber() (r string, exists bool) {
+	v := m.rfq_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqNumber returns the old "rfq_number" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldRfqNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqNumber: %w", err)
+	}
+	return oldValue.RfqNumber, nil
+}
+
+// ResetRfqNumber resets all changes to the "rfq_number" field.
+func (m *RFQMutation) ResetRfqNumber() {
+	m.rfq_number = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *RFQMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *RFQMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ClearTitle clears the value of the "title" field.
+func (m *RFQMutation) ClearTitle() {
+	m.title = nil
+	m.clearedFields[rfq.FieldTitle] = struct{}{}
+}
+
+// TitleCleared returns if the "title" field was cleared in this mutation.
+func (m *RFQMutation) TitleCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldTitle]
+	return ok
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *RFQMutation) ResetTitle() {
+	m.title = nil
+	delete(m.clearedFields, rfq.FieldTitle)
+}
+
+// SetStatus sets the "status" field.
+func (m *RFQMutation) SetStatus(r rfq.Status) {
+	m.status = &r
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *RFQMutation) Status() (r rfq.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldStatus(ctx context.Context) (v rfq.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *RFQMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (m *RFQMutation) SetRequisitionID(u uuid.UUID) {
+	m.requisition_id = &u
+}
+
+// RequisitionID returns the value of the "requisition_id" field in the mutation.
+func (m *RFQMutation) RequisitionID() (r uuid.UUID, exists bool) {
+	v := m.requisition_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequisitionID returns the old "requisition_id" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldRequisitionID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequisitionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequisitionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequisitionID: %w", err)
+	}
+	return oldValue.RequisitionID, nil
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (m *RFQMutation) ClearRequisitionID() {
+	m.requisition_id = nil
+	m.clearedFields[rfq.FieldRequisitionID] = struct{}{}
+}
+
+// RequisitionIDCleared returns if the "requisition_id" field was cleared in this mutation.
+func (m *RFQMutation) RequisitionIDCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldRequisitionID]
+	return ok
+}
+
+// ResetRequisitionID resets all changes to the "requisition_id" field.
+func (m *RFQMutation) ResetRequisitionID() {
+	m.requisition_id = nil
+	delete(m.clearedFields, rfq.FieldRequisitionID)
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (m *RFQMutation) SetWarehouseID(u uuid.UUID) {
+	m.warehouse_id = &u
+}
+
+// WarehouseID returns the value of the "warehouse_id" field in the mutation.
+func (m *RFQMutation) WarehouseID() (r uuid.UUID, exists bool) {
+	v := m.warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWarehouseID returns the old "warehouse_id" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldWarehouseID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWarehouseID: %w", err)
+	}
+	return oldValue.WarehouseID, nil
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (m *RFQMutation) ClearWarehouseID() {
+	m.warehouse_id = nil
+	m.clearedFields[rfq.FieldWarehouseID] = struct{}{}
+}
+
+// WarehouseIDCleared returns if the "warehouse_id" field was cleared in this mutation.
+func (m *RFQMutation) WarehouseIDCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldWarehouseID]
+	return ok
+}
+
+// ResetWarehouseID resets all changes to the "warehouse_id" field.
+func (m *RFQMutation) ResetWarehouseID() {
+	m.warehouse_id = nil
+	delete(m.clearedFields, rfq.FieldWarehouseID)
+}
+
+// SetNotes sets the "notes" field.
+func (m *RFQMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *RFQMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *RFQMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[rfq.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *RFQMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *RFQMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, rfq.FieldNotes)
+}
+
+// SetDueDate sets the "due_date" field.
+func (m *RFQMutation) SetDueDate(t time.Time) {
+	m.due_date = &t
+}
+
+// DueDate returns the value of the "due_date" field in the mutation.
+func (m *RFQMutation) DueDate() (r time.Time, exists bool) {
+	v := m.due_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDueDate returns the old "due_date" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldDueDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDueDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDueDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDueDate: %w", err)
+	}
+	return oldValue.DueDate, nil
+}
+
+// ClearDueDate clears the value of the "due_date" field.
+func (m *RFQMutation) ClearDueDate() {
+	m.due_date = nil
+	m.clearedFields[rfq.FieldDueDate] = struct{}{}
+}
+
+// DueDateCleared returns if the "due_date" field was cleared in this mutation.
+func (m *RFQMutation) DueDateCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldDueDate]
+	return ok
+}
+
+// ResetDueDate resets all changes to the "due_date" field.
+func (m *RFQMutation) ResetDueDate() {
+	m.due_date = nil
+	delete(m.clearedFields, rfq.FieldDueDate)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *RFQMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *RFQMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldCreatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *RFQMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.clearedFields[rfq.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *RFQMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *RFQMutation) ResetCreatedBy() {
+	m.created_by = nil
+	delete(m.clearedFields, rfq.FieldCreatedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RFQMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RFQMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RFQMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RFQMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RFQMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RFQMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// AddLineIDs adds the "lines" edge to the RFQLine entity by ids.
+func (m *RFQMutation) AddLineIDs(ids ...uuid.UUID) {
+	if m.lines == nil {
+		m.lines = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.lines[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLines clears the "lines" edge to the RFQLine entity.
+func (m *RFQMutation) ClearLines() {
+	m.clearedlines = true
+}
+
+// LinesCleared reports if the "lines" edge to the RFQLine entity was cleared.
+func (m *RFQMutation) LinesCleared() bool {
+	return m.clearedlines
+}
+
+// RemoveLineIDs removes the "lines" edge to the RFQLine entity by IDs.
+func (m *RFQMutation) RemoveLineIDs(ids ...uuid.UUID) {
+	if m.removedlines == nil {
+		m.removedlines = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.lines, ids[i])
+		m.removedlines[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLines returns the removed IDs of the "lines" edge to the RFQLine entity.
+func (m *RFQMutation) RemovedLinesIDs() (ids []uuid.UUID) {
+	for id := range m.removedlines {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LinesIDs returns the "lines" edge IDs in the mutation.
+func (m *RFQMutation) LinesIDs() (ids []uuid.UUID) {
+	for id := range m.lines {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLines resets all changes to the "lines" edge.
+func (m *RFQMutation) ResetLines() {
+	m.lines = nil
+	m.clearedlines = false
+	m.removedlines = nil
+}
+
+// AddResponseIDs adds the "responses" edge to the SupplierResponse entity by ids.
+func (m *RFQMutation) AddResponseIDs(ids ...uuid.UUID) {
+	if m.responses == nil {
+		m.responses = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.responses[ids[i]] = struct{}{}
+	}
+}
+
+// ClearResponses clears the "responses" edge to the SupplierResponse entity.
+func (m *RFQMutation) ClearResponses() {
+	m.clearedresponses = true
+}
+
+// ResponsesCleared reports if the "responses" edge to the SupplierResponse entity was cleared.
+func (m *RFQMutation) ResponsesCleared() bool {
+	return m.clearedresponses
+}
+
+// RemoveResponseIDs removes the "responses" edge to the SupplierResponse entity by IDs.
+func (m *RFQMutation) RemoveResponseIDs(ids ...uuid.UUID) {
+	if m.removedresponses == nil {
+		m.removedresponses = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.responses, ids[i])
+		m.removedresponses[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedResponses returns the removed IDs of the "responses" edge to the SupplierResponse entity.
+func (m *RFQMutation) RemovedResponsesIDs() (ids []uuid.UUID) {
+	for id := range m.removedresponses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResponsesIDs returns the "responses" edge IDs in the mutation.
+func (m *RFQMutation) ResponsesIDs() (ids []uuid.UUID) {
+	for id := range m.responses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetResponses resets all changes to the "responses" edge.
+func (m *RFQMutation) ResetResponses() {
+	m.responses = nil
+	m.clearedresponses = false
+	m.removedresponses = nil
+}
+
+// AddAwardIDs adds the "awards" edge to the RFQAward entity by ids.
+func (m *RFQMutation) AddAwardIDs(ids ...uuid.UUID) {
+	if m.awards == nil {
+		m.awards = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.awards[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAwards clears the "awards" edge to the RFQAward entity.
+func (m *RFQMutation) ClearAwards() {
+	m.clearedawards = true
+}
+
+// AwardsCleared reports if the "awards" edge to the RFQAward entity was cleared.
+func (m *RFQMutation) AwardsCleared() bool {
+	return m.clearedawards
+}
+
+// RemoveAwardIDs removes the "awards" edge to the RFQAward entity by IDs.
+func (m *RFQMutation) RemoveAwardIDs(ids ...uuid.UUID) {
+	if m.removedawards == nil {
+		m.removedawards = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.awards, ids[i])
+		m.removedawards[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAwards returns the removed IDs of the "awards" edge to the RFQAward entity.
+func (m *RFQMutation) RemovedAwardsIDs() (ids []uuid.UUID) {
+	for id := range m.removedawards {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AwardsIDs returns the "awards" edge IDs in the mutation.
+func (m *RFQMutation) AwardsIDs() (ids []uuid.UUID) {
+	for id := range m.awards {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAwards resets all changes to the "awards" edge.
+func (m *RFQMutation) ResetAwards() {
+	m.awards = nil
+	m.clearedawards = false
+	m.removedawards = nil
+}
+
+// Where appends a list predicates to the RFQMutation builder.
+func (m *RFQMutation) Where(ps ...predicate.RFQ) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RFQMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RFQMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RFQ, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RFQMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RFQMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RFQ).
+func (m *RFQMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RFQMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.tenant_id != nil {
+		fields = append(fields, rfq.FieldTenantID)
+	}
+	if m.rfq_number != nil {
+		fields = append(fields, rfq.FieldRfqNumber)
+	}
+	if m.title != nil {
+		fields = append(fields, rfq.FieldTitle)
+	}
+	if m.status != nil {
+		fields = append(fields, rfq.FieldStatus)
+	}
+	if m.requisition_id != nil {
+		fields = append(fields, rfq.FieldRequisitionID)
+	}
+	if m.warehouse_id != nil {
+		fields = append(fields, rfq.FieldWarehouseID)
+	}
+	if m.notes != nil {
+		fields = append(fields, rfq.FieldNotes)
+	}
+	if m.due_date != nil {
+		fields = append(fields, rfq.FieldDueDate)
+	}
+	if m.created_by != nil {
+		fields = append(fields, rfq.FieldCreatedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, rfq.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, rfq.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RFQMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case rfq.FieldTenantID:
+		return m.TenantID()
+	case rfq.FieldRfqNumber:
+		return m.RfqNumber()
+	case rfq.FieldTitle:
+		return m.Title()
+	case rfq.FieldStatus:
+		return m.Status()
+	case rfq.FieldRequisitionID:
+		return m.RequisitionID()
+	case rfq.FieldWarehouseID:
+		return m.WarehouseID()
+	case rfq.FieldNotes:
+		return m.Notes()
+	case rfq.FieldDueDate:
+		return m.DueDate()
+	case rfq.FieldCreatedBy:
+		return m.CreatedBy()
+	case rfq.FieldCreatedAt:
+		return m.CreatedAt()
+	case rfq.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RFQMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case rfq.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case rfq.FieldRfqNumber:
+		return m.OldRfqNumber(ctx)
+	case rfq.FieldTitle:
+		return m.OldTitle(ctx)
+	case rfq.FieldStatus:
+		return m.OldStatus(ctx)
+	case rfq.FieldRequisitionID:
+		return m.OldRequisitionID(ctx)
+	case rfq.FieldWarehouseID:
+		return m.OldWarehouseID(ctx)
+	case rfq.FieldNotes:
+		return m.OldNotes(ctx)
+	case rfq.FieldDueDate:
+		return m.OldDueDate(ctx)
+	case rfq.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case rfq.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case rfq.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RFQ field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case rfq.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case rfq.FieldRfqNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqNumber(v)
+		return nil
+	case rfq.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case rfq.FieldStatus:
+		v, ok := value.(rfq.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case rfq.FieldRequisitionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequisitionID(v)
+		return nil
+	case rfq.FieldWarehouseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWarehouseID(v)
+		return nil
+	case rfq.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case rfq.FieldDueDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDueDate(v)
+		return nil
+	case rfq.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case rfq.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case rfq.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RFQ field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RFQMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RFQMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RFQ numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RFQMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(rfq.FieldTitle) {
+		fields = append(fields, rfq.FieldTitle)
+	}
+	if m.FieldCleared(rfq.FieldRequisitionID) {
+		fields = append(fields, rfq.FieldRequisitionID)
+	}
+	if m.FieldCleared(rfq.FieldWarehouseID) {
+		fields = append(fields, rfq.FieldWarehouseID)
+	}
+	if m.FieldCleared(rfq.FieldNotes) {
+		fields = append(fields, rfq.FieldNotes)
+	}
+	if m.FieldCleared(rfq.FieldDueDate) {
+		fields = append(fields, rfq.FieldDueDate)
+	}
+	if m.FieldCleared(rfq.FieldCreatedBy) {
+		fields = append(fields, rfq.FieldCreatedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RFQMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RFQMutation) ClearField(name string) error {
+	switch name {
+	case rfq.FieldTitle:
+		m.ClearTitle()
+		return nil
+	case rfq.FieldRequisitionID:
+		m.ClearRequisitionID()
+		return nil
+	case rfq.FieldWarehouseID:
+		m.ClearWarehouseID()
+		return nil
+	case rfq.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case rfq.FieldDueDate:
+		m.ClearDueDate()
+		return nil
+	case rfq.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQ nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RFQMutation) ResetField(name string) error {
+	switch name {
+	case rfq.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case rfq.FieldRfqNumber:
+		m.ResetRfqNumber()
+		return nil
+	case rfq.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case rfq.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case rfq.FieldRequisitionID:
+		m.ResetRequisitionID()
+		return nil
+	case rfq.FieldWarehouseID:
+		m.ResetWarehouseID()
+		return nil
+	case rfq.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case rfq.FieldDueDate:
+		m.ResetDueDate()
+		return nil
+	case rfq.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case rfq.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case rfq.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQ field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RFQMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.lines != nil {
+		edges = append(edges, rfq.EdgeLines)
+	}
+	if m.responses != nil {
+		edges = append(edges, rfq.EdgeResponses)
+	}
+	if m.awards != nil {
+		edges = append(edges, rfq.EdgeAwards)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RFQMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case rfq.EdgeLines:
+		ids := make([]ent.Value, 0, len(m.lines))
+		for id := range m.lines {
+			ids = append(ids, id)
+		}
+		return ids
+	case rfq.EdgeResponses:
+		ids := make([]ent.Value, 0, len(m.responses))
+		for id := range m.responses {
+			ids = append(ids, id)
+		}
+		return ids
+	case rfq.EdgeAwards:
+		ids := make([]ent.Value, 0, len(m.awards))
+		for id := range m.awards {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RFQMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedlines != nil {
+		edges = append(edges, rfq.EdgeLines)
+	}
+	if m.removedresponses != nil {
+		edges = append(edges, rfq.EdgeResponses)
+	}
+	if m.removedawards != nil {
+		edges = append(edges, rfq.EdgeAwards)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RFQMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case rfq.EdgeLines:
+		ids := make([]ent.Value, 0, len(m.removedlines))
+		for id := range m.removedlines {
+			ids = append(ids, id)
+		}
+		return ids
+	case rfq.EdgeResponses:
+		ids := make([]ent.Value, 0, len(m.removedresponses))
+		for id := range m.removedresponses {
+			ids = append(ids, id)
+		}
+		return ids
+	case rfq.EdgeAwards:
+		ids := make([]ent.Value, 0, len(m.removedawards))
+		for id := range m.removedawards {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RFQMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedlines {
+		edges = append(edges, rfq.EdgeLines)
+	}
+	if m.clearedresponses {
+		edges = append(edges, rfq.EdgeResponses)
+	}
+	if m.clearedawards {
+		edges = append(edges, rfq.EdgeAwards)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RFQMutation) EdgeCleared(name string) bool {
+	switch name {
+	case rfq.EdgeLines:
+		return m.clearedlines
+	case rfq.EdgeResponses:
+		return m.clearedresponses
+	case rfq.EdgeAwards:
+		return m.clearedawards
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RFQMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RFQ unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RFQMutation) ResetEdge(name string) error {
+	switch name {
+	case rfq.EdgeLines:
+		m.ResetLines()
+		return nil
+	case rfq.EdgeResponses:
+		m.ResetResponses()
+		return nil
+	case rfq.EdgeAwards:
+		m.ResetAwards()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQ edge %s", name)
+}
+
+// RFQAwardMutation represents an operation that mutates the RFQAward nodes in the graph.
+type RFQAwardMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	tenant_id     *uuid.UUID
+	rfq_line_id   *uuid.UUID
+	supplier_id   *uuid.UUID
+	unit_price    *float64
+	addunit_price *float64
+	quantity      *int
+	addquantity   *int
+	po_id         *uuid.UUID
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	rfq           *uuid.UUID
+	clearedrfq    bool
+	done          bool
+	oldValue      func(context.Context) (*RFQAward, error)
+	predicates    []predicate.RFQAward
+}
+
+var _ ent.Mutation = (*RFQAwardMutation)(nil)
+
+// rfqawardOption allows management of the mutation configuration using functional options.
+type rfqawardOption func(*RFQAwardMutation)
+
+// newRFQAwardMutation creates new mutation for the RFQAward entity.
+func newRFQAwardMutation(c config, op Op, opts ...rfqawardOption) *RFQAwardMutation {
+	m := &RFQAwardMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRFQAward,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRFQAwardID sets the ID field of the mutation.
+func withRFQAwardID(id uuid.UUID) rfqawardOption {
+	return func(m *RFQAwardMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RFQAward
+		)
+		m.oldValue = func(ctx context.Context) (*RFQAward, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RFQAward.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRFQAward sets the old RFQAward of the mutation.
+func withRFQAward(node *RFQAward) rfqawardOption {
+	return func(m *RFQAwardMutation) {
+		m.oldValue = func(context.Context) (*RFQAward, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RFQAwardMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RFQAwardMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RFQAward entities.
+func (m *RFQAwardMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RFQAwardMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RFQAwardMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RFQAward.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *RFQAwardMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *RFQAwardMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *RFQAwardMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (m *RFQAwardMutation) SetRfqID(u uuid.UUID) {
+	m.rfq = &u
+}
+
+// RfqID returns the value of the "rfq_id" field in the mutation.
+func (m *RFQAwardMutation) RfqID() (r uuid.UUID, exists bool) {
+	v := m.rfq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqID returns the old "rfq_id" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldRfqID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqID: %w", err)
+	}
+	return oldValue.RfqID, nil
+}
+
+// ResetRfqID resets all changes to the "rfq_id" field.
+func (m *RFQAwardMutation) ResetRfqID() {
+	m.rfq = nil
+}
+
+// SetRfqLineID sets the "rfq_line_id" field.
+func (m *RFQAwardMutation) SetRfqLineID(u uuid.UUID) {
+	m.rfq_line_id = &u
+}
+
+// RfqLineID returns the value of the "rfq_line_id" field in the mutation.
+func (m *RFQAwardMutation) RfqLineID() (r uuid.UUID, exists bool) {
+	v := m.rfq_line_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqLineID returns the old "rfq_line_id" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldRfqLineID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqLineID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqLineID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqLineID: %w", err)
+	}
+	return oldValue.RfqLineID, nil
+}
+
+// ResetRfqLineID resets all changes to the "rfq_line_id" field.
+func (m *RFQAwardMutation) ResetRfqLineID() {
+	m.rfq_line_id = nil
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (m *RFQAwardMutation) SetSupplierID(u uuid.UUID) {
+	m.supplier_id = &u
+}
+
+// SupplierID returns the value of the "supplier_id" field in the mutation.
+func (m *RFQAwardMutation) SupplierID() (r uuid.UUID, exists bool) {
+	v := m.supplier_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplierID returns the old "supplier_id" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldSupplierID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplierID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplierID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplierID: %w", err)
+	}
+	return oldValue.SupplierID, nil
+}
+
+// ResetSupplierID resets all changes to the "supplier_id" field.
+func (m *RFQAwardMutation) ResetSupplierID() {
+	m.supplier_id = nil
+}
+
+// SetUnitPrice sets the "unit_price" field.
+func (m *RFQAwardMutation) SetUnitPrice(f float64) {
+	m.unit_price = &f
+	m.addunit_price = nil
+}
+
+// UnitPrice returns the value of the "unit_price" field in the mutation.
+func (m *RFQAwardMutation) UnitPrice() (r float64, exists bool) {
+	v := m.unit_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitPrice returns the old "unit_price" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldUnitPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitPrice: %w", err)
+	}
+	return oldValue.UnitPrice, nil
+}
+
+// AddUnitPrice adds f to the "unit_price" field.
+func (m *RFQAwardMutation) AddUnitPrice(f float64) {
+	if m.addunit_price != nil {
+		*m.addunit_price += f
+	} else {
+		m.addunit_price = &f
+	}
+}
+
+// AddedUnitPrice returns the value that was added to the "unit_price" field in this mutation.
+func (m *RFQAwardMutation) AddedUnitPrice() (r float64, exists bool) {
+	v := m.addunit_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUnitPrice resets all changes to the "unit_price" field.
+func (m *RFQAwardMutation) ResetUnitPrice() {
+	m.unit_price = nil
+	m.addunit_price = nil
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *RFQAwardMutation) SetQuantity(i int) {
+	m.quantity = &i
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *RFQAwardMutation) Quantity() (r int, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldQuantity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (m *RFQAwardMutation) AddQuantity(i int) {
+	if m.addquantity != nil {
+		*m.addquantity += i
+	} else {
+		m.addquantity = &i
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *RFQAwardMutation) AddedQuantity() (r int, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *RFQAwardMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetPoID sets the "po_id" field.
+func (m *RFQAwardMutation) SetPoID(u uuid.UUID) {
+	m.po_id = &u
+}
+
+// PoID returns the value of the "po_id" field in the mutation.
+func (m *RFQAwardMutation) PoID() (r uuid.UUID, exists bool) {
+	v := m.po_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPoID returns the old "po_id" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldPoID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPoID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPoID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPoID: %w", err)
+	}
+	return oldValue.PoID, nil
+}
+
+// ClearPoID clears the value of the "po_id" field.
+func (m *RFQAwardMutation) ClearPoID() {
+	m.po_id = nil
+	m.clearedFields[rfqaward.FieldPoID] = struct{}{}
+}
+
+// PoIDCleared returns if the "po_id" field was cleared in this mutation.
+func (m *RFQAwardMutation) PoIDCleared() bool {
+	_, ok := m.clearedFields[rfqaward.FieldPoID]
+	return ok
+}
+
+// ResetPoID resets all changes to the "po_id" field.
+func (m *RFQAwardMutation) ResetPoID() {
+	m.po_id = nil
+	delete(m.clearedFields, rfqaward.FieldPoID)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RFQAwardMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RFQAwardMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RFQAward entity.
+// If the RFQAward object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQAwardMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RFQAwardMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearRfq clears the "rfq" edge to the RFQ entity.
+func (m *RFQAwardMutation) ClearRfq() {
+	m.clearedrfq = true
+	m.clearedFields[rfqaward.FieldRfqID] = struct{}{}
+}
+
+// RfqCleared reports if the "rfq" edge to the RFQ entity was cleared.
+func (m *RFQAwardMutation) RfqCleared() bool {
+	return m.clearedrfq
+}
+
+// RfqIDs returns the "rfq" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RfqID instead. It exists only for internal usage by the builders.
+func (m *RFQAwardMutation) RfqIDs() (ids []uuid.UUID) {
+	if id := m.rfq; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRfq resets all changes to the "rfq" edge.
+func (m *RFQAwardMutation) ResetRfq() {
+	m.rfq = nil
+	m.clearedrfq = false
+}
+
+// Where appends a list predicates to the RFQAwardMutation builder.
+func (m *RFQAwardMutation) Where(ps ...predicate.RFQAward) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RFQAwardMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RFQAwardMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RFQAward, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RFQAwardMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RFQAwardMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RFQAward).
+func (m *RFQAwardMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RFQAwardMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.tenant_id != nil {
+		fields = append(fields, rfqaward.FieldTenantID)
+	}
+	if m.rfq != nil {
+		fields = append(fields, rfqaward.FieldRfqID)
+	}
+	if m.rfq_line_id != nil {
+		fields = append(fields, rfqaward.FieldRfqLineID)
+	}
+	if m.supplier_id != nil {
+		fields = append(fields, rfqaward.FieldSupplierID)
+	}
+	if m.unit_price != nil {
+		fields = append(fields, rfqaward.FieldUnitPrice)
+	}
+	if m.quantity != nil {
+		fields = append(fields, rfqaward.FieldQuantity)
+	}
+	if m.po_id != nil {
+		fields = append(fields, rfqaward.FieldPoID)
+	}
+	if m.created_at != nil {
+		fields = append(fields, rfqaward.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RFQAwardMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case rfqaward.FieldTenantID:
+		return m.TenantID()
+	case rfqaward.FieldRfqID:
+		return m.RfqID()
+	case rfqaward.FieldRfqLineID:
+		return m.RfqLineID()
+	case rfqaward.FieldSupplierID:
+		return m.SupplierID()
+	case rfqaward.FieldUnitPrice:
+		return m.UnitPrice()
+	case rfqaward.FieldQuantity:
+		return m.Quantity()
+	case rfqaward.FieldPoID:
+		return m.PoID()
+	case rfqaward.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RFQAwardMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case rfqaward.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case rfqaward.FieldRfqID:
+		return m.OldRfqID(ctx)
+	case rfqaward.FieldRfqLineID:
+		return m.OldRfqLineID(ctx)
+	case rfqaward.FieldSupplierID:
+		return m.OldSupplierID(ctx)
+	case rfqaward.FieldUnitPrice:
+		return m.OldUnitPrice(ctx)
+	case rfqaward.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case rfqaward.FieldPoID:
+		return m.OldPoID(ctx)
+	case rfqaward.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RFQAward field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQAwardMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case rfqaward.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case rfqaward.FieldRfqID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqID(v)
+		return nil
+	case rfqaward.FieldRfqLineID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqLineID(v)
+		return nil
+	case rfqaward.FieldSupplierID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplierID(v)
+		return nil
+	case rfqaward.FieldUnitPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitPrice(v)
+		return nil
+	case rfqaward.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case rfqaward.FieldPoID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPoID(v)
+		return nil
+	case rfqaward.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RFQAwardMutation) AddedFields() []string {
+	var fields []string
+	if m.addunit_price != nil {
+		fields = append(fields, rfqaward.FieldUnitPrice)
+	}
+	if m.addquantity != nil {
+		fields = append(fields, rfqaward.FieldQuantity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RFQAwardMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case rfqaward.FieldUnitPrice:
+		return m.AddedUnitPrice()
+	case rfqaward.FieldQuantity:
+		return m.AddedQuantity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQAwardMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case rfqaward.FieldUnitPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUnitPrice(v)
+		return nil
+	case rfqaward.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RFQAwardMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(rfqaward.FieldPoID) {
+		fields = append(fields, rfqaward.FieldPoID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RFQAwardMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RFQAwardMutation) ClearField(name string) error {
+	switch name {
+	case rfqaward.FieldPoID:
+		m.ClearPoID()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RFQAwardMutation) ResetField(name string) error {
+	switch name {
+	case rfqaward.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case rfqaward.FieldRfqID:
+		m.ResetRfqID()
+		return nil
+	case rfqaward.FieldRfqLineID:
+		m.ResetRfqLineID()
+		return nil
+	case rfqaward.FieldSupplierID:
+		m.ResetSupplierID()
+		return nil
+	case rfqaward.FieldUnitPrice:
+		m.ResetUnitPrice()
+		return nil
+	case rfqaward.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case rfqaward.FieldPoID:
+		m.ResetPoID()
+		return nil
+	case rfqaward.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RFQAwardMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.rfq != nil {
+		edges = append(edges, rfqaward.EdgeRfq)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RFQAwardMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case rfqaward.EdgeRfq:
+		if id := m.rfq; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RFQAwardMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RFQAwardMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RFQAwardMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedrfq {
+		edges = append(edges, rfqaward.EdgeRfq)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RFQAwardMutation) EdgeCleared(name string) bool {
+	switch name {
+	case rfqaward.EdgeRfq:
+		return m.clearedrfq
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RFQAwardMutation) ClearEdge(name string) error {
+	switch name {
+	case rfqaward.EdgeRfq:
+		m.ClearRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RFQAwardMutation) ResetEdge(name string) error {
+	switch name {
+	case rfqaward.EdgeRfq:
+		m.ResetRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQAward edge %s", name)
+}
+
+// RFQLineMutation represents an operation that mutates the RFQLine nodes in the graph.
+type RFQLineMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	tenant_id     *uuid.UUID
+	item_id       *uuid.UUID
+	description   *string
+	quantity      *int
+	addquantity   *int
+	uom           *string
+	clearedFields map[string]struct{}
+	rfq           *uuid.UUID
+	clearedrfq    bool
+	done          bool
+	oldValue      func(context.Context) (*RFQLine, error)
+	predicates    []predicate.RFQLine
+}
+
+var _ ent.Mutation = (*RFQLineMutation)(nil)
+
+// rfqlineOption allows management of the mutation configuration using functional options.
+type rfqlineOption func(*RFQLineMutation)
+
+// newRFQLineMutation creates new mutation for the RFQLine entity.
+func newRFQLineMutation(c config, op Op, opts ...rfqlineOption) *RFQLineMutation {
+	m := &RFQLineMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRFQLine,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRFQLineID sets the ID field of the mutation.
+func withRFQLineID(id uuid.UUID) rfqlineOption {
+	return func(m *RFQLineMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RFQLine
+		)
+		m.oldValue = func(ctx context.Context) (*RFQLine, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RFQLine.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRFQLine sets the old RFQLine of the mutation.
+func withRFQLine(node *RFQLine) rfqlineOption {
+	return func(m *RFQLineMutation) {
+		m.oldValue = func(context.Context) (*RFQLine, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RFQLineMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RFQLineMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RFQLine entities.
+func (m *RFQLineMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RFQLineMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RFQLineMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RFQLine.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *RFQLineMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *RFQLineMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *RFQLineMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (m *RFQLineMutation) SetRfqID(u uuid.UUID) {
+	m.rfq = &u
+}
+
+// RfqID returns the value of the "rfq_id" field in the mutation.
+func (m *RFQLineMutation) RfqID() (r uuid.UUID, exists bool) {
+	v := m.rfq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqID returns the old "rfq_id" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldRfqID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqID: %w", err)
+	}
+	return oldValue.RfqID, nil
+}
+
+// ResetRfqID resets all changes to the "rfq_id" field.
+func (m *RFQLineMutation) ResetRfqID() {
+	m.rfq = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *RFQLineMutation) SetItemID(u uuid.UUID) {
+	m.item_id = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *RFQLineMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldItemID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (m *RFQLineMutation) ClearItemID() {
+	m.item_id = nil
+	m.clearedFields[rfqline.FieldItemID] = struct{}{}
+}
+
+// ItemIDCleared returns if the "item_id" field was cleared in this mutation.
+func (m *RFQLineMutation) ItemIDCleared() bool {
+	_, ok := m.clearedFields[rfqline.FieldItemID]
+	return ok
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *RFQLineMutation) ResetItemID() {
+	m.item_id = nil
+	delete(m.clearedFields, rfqline.FieldItemID)
+}
+
+// SetDescription sets the "description" field.
+func (m *RFQLineMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *RFQLineMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *RFQLineMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[rfqline.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *RFQLineMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[rfqline.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *RFQLineMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, rfqline.FieldDescription)
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *RFQLineMutation) SetQuantity(i int) {
+	m.quantity = &i
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *RFQLineMutation) Quantity() (r int, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (m *RFQLineMutation) AddQuantity(i int) {
+	if m.addquantity != nil {
+		*m.addquantity += i
+	} else {
+		m.addquantity = &i
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *RFQLineMutation) AddedQuantity() (r int, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *RFQLineMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetUom sets the "uom" field.
+func (m *RFQLineMutation) SetUom(s string) {
+	m.uom = &s
+}
+
+// Uom returns the value of the "uom" field in the mutation.
+func (m *RFQLineMutation) Uom() (r string, exists bool) {
+	v := m.uom
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUom returns the old "uom" field's value of the RFQLine entity.
+// If the RFQLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQLineMutation) OldUom(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUom is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUom: %w", err)
+	}
+	return oldValue.Uom, nil
+}
+
+// ClearUom clears the value of the "uom" field.
+func (m *RFQLineMutation) ClearUom() {
+	m.uom = nil
+	m.clearedFields[rfqline.FieldUom] = struct{}{}
+}
+
+// UomCleared returns if the "uom" field was cleared in this mutation.
+func (m *RFQLineMutation) UomCleared() bool {
+	_, ok := m.clearedFields[rfqline.FieldUom]
+	return ok
+}
+
+// ResetUom resets all changes to the "uom" field.
+func (m *RFQLineMutation) ResetUom() {
+	m.uom = nil
+	delete(m.clearedFields, rfqline.FieldUom)
+}
+
+// ClearRfq clears the "rfq" edge to the RFQ entity.
+func (m *RFQLineMutation) ClearRfq() {
+	m.clearedrfq = true
+	m.clearedFields[rfqline.FieldRfqID] = struct{}{}
+}
+
+// RfqCleared reports if the "rfq" edge to the RFQ entity was cleared.
+func (m *RFQLineMutation) RfqCleared() bool {
+	return m.clearedrfq
+}
+
+// RfqIDs returns the "rfq" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RfqID instead. It exists only for internal usage by the builders.
+func (m *RFQLineMutation) RfqIDs() (ids []uuid.UUID) {
+	if id := m.rfq; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRfq resets all changes to the "rfq" edge.
+func (m *RFQLineMutation) ResetRfq() {
+	m.rfq = nil
+	m.clearedrfq = false
+}
+
+// Where appends a list predicates to the RFQLineMutation builder.
+func (m *RFQLineMutation) Where(ps ...predicate.RFQLine) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RFQLineMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RFQLineMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RFQLine, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RFQLineMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RFQLineMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RFQLine).
+func (m *RFQLineMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RFQLineMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.tenant_id != nil {
+		fields = append(fields, rfqline.FieldTenantID)
+	}
+	if m.rfq != nil {
+		fields = append(fields, rfqline.FieldRfqID)
+	}
+	if m.item_id != nil {
+		fields = append(fields, rfqline.FieldItemID)
+	}
+	if m.description != nil {
+		fields = append(fields, rfqline.FieldDescription)
+	}
+	if m.quantity != nil {
+		fields = append(fields, rfqline.FieldQuantity)
+	}
+	if m.uom != nil {
+		fields = append(fields, rfqline.FieldUom)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RFQLineMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case rfqline.FieldTenantID:
+		return m.TenantID()
+	case rfqline.FieldRfqID:
+		return m.RfqID()
+	case rfqline.FieldItemID:
+		return m.ItemID()
+	case rfqline.FieldDescription:
+		return m.Description()
+	case rfqline.FieldQuantity:
+		return m.Quantity()
+	case rfqline.FieldUom:
+		return m.Uom()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RFQLineMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case rfqline.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case rfqline.FieldRfqID:
+		return m.OldRfqID(ctx)
+	case rfqline.FieldItemID:
+		return m.OldItemID(ctx)
+	case rfqline.FieldDescription:
+		return m.OldDescription(ctx)
+	case rfqline.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case rfqline.FieldUom:
+		return m.OldUom(ctx)
+	}
+	return nil, fmt.Errorf("unknown RFQLine field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQLineMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case rfqline.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case rfqline.FieldRfqID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqID(v)
+		return nil
+	case rfqline.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case rfqline.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case rfqline.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case rfqline.FieldUom:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUom(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RFQLineMutation) AddedFields() []string {
+	var fields []string
+	if m.addquantity != nil {
+		fields = append(fields, rfqline.FieldQuantity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RFQLineMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case rfqline.FieldQuantity:
+		return m.AddedQuantity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RFQLineMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case rfqline.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RFQLineMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(rfqline.FieldItemID) {
+		fields = append(fields, rfqline.FieldItemID)
+	}
+	if m.FieldCleared(rfqline.FieldDescription) {
+		fields = append(fields, rfqline.FieldDescription)
+	}
+	if m.FieldCleared(rfqline.FieldUom) {
+		fields = append(fields, rfqline.FieldUom)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RFQLineMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RFQLineMutation) ClearField(name string) error {
+	switch name {
+	case rfqline.FieldItemID:
+		m.ClearItemID()
+		return nil
+	case rfqline.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case rfqline.FieldUom:
+		m.ClearUom()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RFQLineMutation) ResetField(name string) error {
+	switch name {
+	case rfqline.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case rfqline.FieldRfqID:
+		m.ResetRfqID()
+		return nil
+	case rfqline.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case rfqline.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case rfqline.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case rfqline.FieldUom:
+		m.ResetUom()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RFQLineMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.rfq != nil {
+		edges = append(edges, rfqline.EdgeRfq)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RFQLineMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case rfqline.EdgeRfq:
+		if id := m.rfq; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RFQLineMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RFQLineMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RFQLineMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedrfq {
+		edges = append(edges, rfqline.EdgeRfq)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RFQLineMutation) EdgeCleared(name string) bool {
+	switch name {
+	case rfqline.EdgeRfq:
+		return m.clearedrfq
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RFQLineMutation) ClearEdge(name string) error {
+	switch name {
+	case rfqline.EdgeRfq:
+		m.ClearRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RFQLineMutation) ResetEdge(name string) error {
+	switch name {
+	case rfqline.EdgeRfq:
+		m.ResetRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown RFQLine edge %s", name)
+}
+
 // RateLimitConfigMutation represents an operation that mutates the RateLimitConfig nodes in the graph.
 type RateLimitConfigMutation struct {
 	config
@@ -66002,6 +68865,935 @@ func (m *SupplierPerformanceMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SupplierPerformanceMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown SupplierPerformance edge %s", name)
+}
+
+// SupplierResponseMutation represents an operation that mutates the SupplierResponse nodes in the graph.
+type SupplierResponseMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	tenant_id          *uuid.UUID
+	supplier_id        *uuid.UUID
+	status             *supplierresponse.Status
+	currency           *string
+	notes              *string
+	submitted_at       *time.Time
+	quoted_items       *[]schema.QuotedItemJSON
+	appendquoted_items []schema.QuotedItemJSON
+	created_at         *time.Time
+	updated_at         *time.Time
+	clearedFields      map[string]struct{}
+	rfq                *uuid.UUID
+	clearedrfq         bool
+	done               bool
+	oldValue           func(context.Context) (*SupplierResponse, error)
+	predicates         []predicate.SupplierResponse
+}
+
+var _ ent.Mutation = (*SupplierResponseMutation)(nil)
+
+// supplierresponseOption allows management of the mutation configuration using functional options.
+type supplierresponseOption func(*SupplierResponseMutation)
+
+// newSupplierResponseMutation creates new mutation for the SupplierResponse entity.
+func newSupplierResponseMutation(c config, op Op, opts ...supplierresponseOption) *SupplierResponseMutation {
+	m := &SupplierResponseMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSupplierResponse,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSupplierResponseID sets the ID field of the mutation.
+func withSupplierResponseID(id uuid.UUID) supplierresponseOption {
+	return func(m *SupplierResponseMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SupplierResponse
+		)
+		m.oldValue = func(ctx context.Context) (*SupplierResponse, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SupplierResponse.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSupplierResponse sets the old SupplierResponse of the mutation.
+func withSupplierResponse(node *SupplierResponse) supplierresponseOption {
+	return func(m *SupplierResponseMutation) {
+		m.oldValue = func(context.Context) (*SupplierResponse, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SupplierResponseMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SupplierResponseMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SupplierResponse entities.
+func (m *SupplierResponseMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SupplierResponseMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SupplierResponseMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SupplierResponse.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *SupplierResponseMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *SupplierResponseMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *SupplierResponseMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (m *SupplierResponseMutation) SetRfqID(u uuid.UUID) {
+	m.rfq = &u
+}
+
+// RfqID returns the value of the "rfq_id" field in the mutation.
+func (m *SupplierResponseMutation) RfqID() (r uuid.UUID, exists bool) {
+	v := m.rfq
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqID returns the old "rfq_id" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldRfqID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqID: %w", err)
+	}
+	return oldValue.RfqID, nil
+}
+
+// ResetRfqID resets all changes to the "rfq_id" field.
+func (m *SupplierResponseMutation) ResetRfqID() {
+	m.rfq = nil
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (m *SupplierResponseMutation) SetSupplierID(u uuid.UUID) {
+	m.supplier_id = &u
+}
+
+// SupplierID returns the value of the "supplier_id" field in the mutation.
+func (m *SupplierResponseMutation) SupplierID() (r uuid.UUID, exists bool) {
+	v := m.supplier_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplierID returns the old "supplier_id" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldSupplierID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplierID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplierID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplierID: %w", err)
+	}
+	return oldValue.SupplierID, nil
+}
+
+// ResetSupplierID resets all changes to the "supplier_id" field.
+func (m *SupplierResponseMutation) ResetSupplierID() {
+	m.supplier_id = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *SupplierResponseMutation) SetStatus(s supplierresponse.Status) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *SupplierResponseMutation) Status() (r supplierresponse.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldStatus(ctx context.Context) (v supplierresponse.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *SupplierResponseMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetCurrency sets the "currency" field.
+func (m *SupplierResponseMutation) SetCurrency(s string) {
+	m.currency = &s
+}
+
+// Currency returns the value of the "currency" field in the mutation.
+func (m *SupplierResponseMutation) Currency() (r string, exists bool) {
+	v := m.currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrency returns the old "currency" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrency: %w", err)
+	}
+	return oldValue.Currency, nil
+}
+
+// ResetCurrency resets all changes to the "currency" field.
+func (m *SupplierResponseMutation) ResetCurrency() {
+	m.currency = nil
+}
+
+// SetNotes sets the "notes" field.
+func (m *SupplierResponseMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *SupplierResponseMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *SupplierResponseMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[supplierresponse.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *SupplierResponseMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[supplierresponse.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *SupplierResponseMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, supplierresponse.FieldNotes)
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (m *SupplierResponseMutation) SetSubmittedAt(t time.Time) {
+	m.submitted_at = &t
+}
+
+// SubmittedAt returns the value of the "submitted_at" field in the mutation.
+func (m *SupplierResponseMutation) SubmittedAt() (r time.Time, exists bool) {
+	v := m.submitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedAt returns the old "submitted_at" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldSubmittedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedAt: %w", err)
+	}
+	return oldValue.SubmittedAt, nil
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (m *SupplierResponseMutation) ClearSubmittedAt() {
+	m.submitted_at = nil
+	m.clearedFields[supplierresponse.FieldSubmittedAt] = struct{}{}
+}
+
+// SubmittedAtCleared returns if the "submitted_at" field was cleared in this mutation.
+func (m *SupplierResponseMutation) SubmittedAtCleared() bool {
+	_, ok := m.clearedFields[supplierresponse.FieldSubmittedAt]
+	return ok
+}
+
+// ResetSubmittedAt resets all changes to the "submitted_at" field.
+func (m *SupplierResponseMutation) ResetSubmittedAt() {
+	m.submitted_at = nil
+	delete(m.clearedFields, supplierresponse.FieldSubmittedAt)
+}
+
+// SetQuotedItems sets the "quoted_items" field.
+func (m *SupplierResponseMutation) SetQuotedItems(sij []schema.QuotedItemJSON) {
+	m.quoted_items = &sij
+	m.appendquoted_items = nil
+}
+
+// QuotedItems returns the value of the "quoted_items" field in the mutation.
+func (m *SupplierResponseMutation) QuotedItems() (r []schema.QuotedItemJSON, exists bool) {
+	v := m.quoted_items
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotedItems returns the old "quoted_items" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldQuotedItems(ctx context.Context) (v []schema.QuotedItemJSON, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotedItems is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotedItems requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotedItems: %w", err)
+	}
+	return oldValue.QuotedItems, nil
+}
+
+// AppendQuotedItems adds sij to the "quoted_items" field.
+func (m *SupplierResponseMutation) AppendQuotedItems(sij []schema.QuotedItemJSON) {
+	m.appendquoted_items = append(m.appendquoted_items, sij...)
+}
+
+// AppendedQuotedItems returns the list of values that were appended to the "quoted_items" field in this mutation.
+func (m *SupplierResponseMutation) AppendedQuotedItems() ([]schema.QuotedItemJSON, bool) {
+	if len(m.appendquoted_items) == 0 {
+		return nil, false
+	}
+	return m.appendquoted_items, true
+}
+
+// ResetQuotedItems resets all changes to the "quoted_items" field.
+func (m *SupplierResponseMutation) ResetQuotedItems() {
+	m.quoted_items = nil
+	m.appendquoted_items = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SupplierResponseMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SupplierResponseMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SupplierResponseMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SupplierResponseMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SupplierResponseMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SupplierResponse entity.
+// If the SupplierResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierResponseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SupplierResponseMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearRfq clears the "rfq" edge to the RFQ entity.
+func (m *SupplierResponseMutation) ClearRfq() {
+	m.clearedrfq = true
+	m.clearedFields[supplierresponse.FieldRfqID] = struct{}{}
+}
+
+// RfqCleared reports if the "rfq" edge to the RFQ entity was cleared.
+func (m *SupplierResponseMutation) RfqCleared() bool {
+	return m.clearedrfq
+}
+
+// RfqIDs returns the "rfq" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RfqID instead. It exists only for internal usage by the builders.
+func (m *SupplierResponseMutation) RfqIDs() (ids []uuid.UUID) {
+	if id := m.rfq; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRfq resets all changes to the "rfq" edge.
+func (m *SupplierResponseMutation) ResetRfq() {
+	m.rfq = nil
+	m.clearedrfq = false
+}
+
+// Where appends a list predicates to the SupplierResponseMutation builder.
+func (m *SupplierResponseMutation) Where(ps ...predicate.SupplierResponse) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SupplierResponseMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SupplierResponseMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SupplierResponse, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SupplierResponseMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SupplierResponseMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SupplierResponse).
+func (m *SupplierResponseMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SupplierResponseMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.tenant_id != nil {
+		fields = append(fields, supplierresponse.FieldTenantID)
+	}
+	if m.rfq != nil {
+		fields = append(fields, supplierresponse.FieldRfqID)
+	}
+	if m.supplier_id != nil {
+		fields = append(fields, supplierresponse.FieldSupplierID)
+	}
+	if m.status != nil {
+		fields = append(fields, supplierresponse.FieldStatus)
+	}
+	if m.currency != nil {
+		fields = append(fields, supplierresponse.FieldCurrency)
+	}
+	if m.notes != nil {
+		fields = append(fields, supplierresponse.FieldNotes)
+	}
+	if m.submitted_at != nil {
+		fields = append(fields, supplierresponse.FieldSubmittedAt)
+	}
+	if m.quoted_items != nil {
+		fields = append(fields, supplierresponse.FieldQuotedItems)
+	}
+	if m.created_at != nil {
+		fields = append(fields, supplierresponse.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, supplierresponse.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SupplierResponseMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case supplierresponse.FieldTenantID:
+		return m.TenantID()
+	case supplierresponse.FieldRfqID:
+		return m.RfqID()
+	case supplierresponse.FieldSupplierID:
+		return m.SupplierID()
+	case supplierresponse.FieldStatus:
+		return m.Status()
+	case supplierresponse.FieldCurrency:
+		return m.Currency()
+	case supplierresponse.FieldNotes:
+		return m.Notes()
+	case supplierresponse.FieldSubmittedAt:
+		return m.SubmittedAt()
+	case supplierresponse.FieldQuotedItems:
+		return m.QuotedItems()
+	case supplierresponse.FieldCreatedAt:
+		return m.CreatedAt()
+	case supplierresponse.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SupplierResponseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case supplierresponse.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case supplierresponse.FieldRfqID:
+		return m.OldRfqID(ctx)
+	case supplierresponse.FieldSupplierID:
+		return m.OldSupplierID(ctx)
+	case supplierresponse.FieldStatus:
+		return m.OldStatus(ctx)
+	case supplierresponse.FieldCurrency:
+		return m.OldCurrency(ctx)
+	case supplierresponse.FieldNotes:
+		return m.OldNotes(ctx)
+	case supplierresponse.FieldSubmittedAt:
+		return m.OldSubmittedAt(ctx)
+	case supplierresponse.FieldQuotedItems:
+		return m.OldQuotedItems(ctx)
+	case supplierresponse.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case supplierresponse.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown SupplierResponse field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SupplierResponseMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case supplierresponse.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case supplierresponse.FieldRfqID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqID(v)
+		return nil
+	case supplierresponse.FieldSupplierID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplierID(v)
+		return nil
+	case supplierresponse.FieldStatus:
+		v, ok := value.(supplierresponse.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case supplierresponse.FieldCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrency(v)
+		return nil
+	case supplierresponse.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case supplierresponse.FieldSubmittedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedAt(v)
+		return nil
+	case supplierresponse.FieldQuotedItems:
+		v, ok := value.([]schema.QuotedItemJSON)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotedItems(v)
+		return nil
+	case supplierresponse.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case supplierresponse.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SupplierResponse field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SupplierResponseMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SupplierResponseMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SupplierResponseMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SupplierResponse numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SupplierResponseMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(supplierresponse.FieldNotes) {
+		fields = append(fields, supplierresponse.FieldNotes)
+	}
+	if m.FieldCleared(supplierresponse.FieldSubmittedAt) {
+		fields = append(fields, supplierresponse.FieldSubmittedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SupplierResponseMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SupplierResponseMutation) ClearField(name string) error {
+	switch name {
+	case supplierresponse.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case supplierresponse.FieldSubmittedAt:
+		m.ClearSubmittedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplierResponse nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SupplierResponseMutation) ResetField(name string) error {
+	switch name {
+	case supplierresponse.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case supplierresponse.FieldRfqID:
+		m.ResetRfqID()
+		return nil
+	case supplierresponse.FieldSupplierID:
+		m.ResetSupplierID()
+		return nil
+	case supplierresponse.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case supplierresponse.FieldCurrency:
+		m.ResetCurrency()
+		return nil
+	case supplierresponse.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case supplierresponse.FieldSubmittedAt:
+		m.ResetSubmittedAt()
+		return nil
+	case supplierresponse.FieldQuotedItems:
+		m.ResetQuotedItems()
+		return nil
+	case supplierresponse.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case supplierresponse.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplierResponse field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SupplierResponseMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.rfq != nil {
+		edges = append(edges, supplierresponse.EdgeRfq)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SupplierResponseMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case supplierresponse.EdgeRfq:
+		if id := m.rfq; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SupplierResponseMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SupplierResponseMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SupplierResponseMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedrfq {
+		edges = append(edges, supplierresponse.EdgeRfq)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SupplierResponseMutation) EdgeCleared(name string) bool {
+	switch name {
+	case supplierresponse.EdgeRfq:
+		return m.clearedrfq
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SupplierResponseMutation) ClearEdge(name string) error {
+	switch name {
+	case supplierresponse.EdgeRfq:
+		m.ClearRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplierResponse unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SupplierResponseMutation) ResetEdge(name string) error {
+	switch name {
+	case supplierresponse.EdgeRfq:
+		m.ResetRfq()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplierResponse edge %s", name)
 }
 
 // TenantMutation represents an operation that mutates the Tenant nodes in the graph.

@@ -549,6 +549,42 @@ func (f QualityCheckFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QualityCheckMutation", m)
 }
 
+// The RFQFunc type is an adapter to allow the use of ordinary
+// function as RFQ mutator.
+type RFQFunc func(context.Context, *ent.RFQMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RFQFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RFQMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RFQMutation", m)
+}
+
+// The RFQAwardFunc type is an adapter to allow the use of ordinary
+// function as RFQAward mutator.
+type RFQAwardFunc func(context.Context, *ent.RFQAwardMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RFQAwardFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RFQAwardMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RFQAwardMutation", m)
+}
+
+// The RFQLineFunc type is an adapter to allow the use of ordinary
+// function as RFQLine mutator.
+type RFQLineFunc func(context.Context, *ent.RFQLineMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RFQLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RFQLineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RFQLineMutation", m)
+}
+
 // The RateLimitConfigFunc type is an adapter to allow the use of ordinary
 // function as RateLimitConfig mutator.
 type RateLimitConfigFunc func(context.Context, *ent.RateLimitConfigMutation) (ent.Value, error)
@@ -715,6 +751,18 @@ func (f SupplierPerformanceFunc) Mutate(ctx context.Context, m ent.Mutation) (en
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplierPerformanceMutation", m)
+}
+
+// The SupplierResponseFunc type is an adapter to allow the use of ordinary
+// function as SupplierResponse mutator.
+type SupplierResponseFunc func(context.Context, *ent.SupplierResponseMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SupplierResponseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SupplierResponseMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplierResponseMutation", m)
 }
 
 // The TenantFunc type is an adapter to allow the use of ordinary

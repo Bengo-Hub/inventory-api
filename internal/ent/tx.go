@@ -102,6 +102,12 @@ type Tx struct {
 	PurchaseReturnLine *PurchaseReturnLineClient
 	// QualityCheck is the client for interacting with the QualityCheck builders.
 	QualityCheck *QualityCheckClient
+	// RFQ is the client for interacting with the RFQ builders.
+	RFQ *RFQClient
+	// RFQAward is the client for interacting with the RFQAward builders.
+	RFQAward *RFQAwardClient
+	// RFQLine is the client for interacting with the RFQLine builders.
+	RFQLine *RFQLineClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
 	// Recipe is the client for interacting with the Recipe builders.
@@ -130,6 +136,8 @@ type Tx struct {
 	Supplier *SupplierClient
 	// SupplierPerformance is the client for interacting with the SupplierPerformance builders.
 	SupplierPerformance *SupplierPerformanceClient
+	// SupplierResponse is the client for interacting with the SupplierResponse builders.
+	SupplierResponse *SupplierResponseClient
 	// Tenant is the client for interacting with the Tenant builders.
 	Tenant *TenantClient
 	// TenantInventoryConfig is the client for interacting with the TenantInventoryConfig builders.
@@ -324,6 +332,9 @@ func (tx *Tx) init() {
 	tx.PurchaseReturn = NewPurchaseReturnClient(tx.config)
 	tx.PurchaseReturnLine = NewPurchaseReturnLineClient(tx.config)
 	tx.QualityCheck = NewQualityCheckClient(tx.config)
+	tx.RFQ = NewRFQClient(tx.config)
+	tx.RFQAward = NewRFQAwardClient(tx.config)
+	tx.RFQLine = NewRFQLineClient(tx.config)
 	tx.RateLimitConfig = NewRateLimitConfigClient(tx.config)
 	tx.Recipe = NewRecipeClient(tx.config)
 	tx.RecipeIngredient = NewRecipeIngredientClient(tx.config)
@@ -338,6 +349,7 @@ func (tx *Tx) init() {
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
 	tx.Supplier = NewSupplierClient(tx.config)
 	tx.SupplierPerformance = NewSupplierPerformanceClient(tx.config)
+	tx.SupplierResponse = NewSupplierResponseClient(tx.config)
 	tx.Tenant = NewTenantClient(tx.config)
 	tx.TenantInventoryConfig = NewTenantInventoryConfigClient(tx.config)
 	tx.Ticket = NewTicketClient(tx.config)
