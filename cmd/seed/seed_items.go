@@ -12,6 +12,7 @@ import (
 	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
+	entrecipeingredient "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 )
 
 // itemDef describes a catalog item for seeding.
@@ -191,6 +192,14 @@ func cleanupStaleItems(ctx context.Context, client *ent.Client, tenantID uuid.UU
 		Where(entinventorylot.ItemIDIn(staleIDs...)).
 		Exec(ctx); err != nil {
 		log.Printf("[WARN] cleanup: delete lots: %v", err)
+	}
+	// Recipe ingredients reference items via item_id (FK recipe_ingredients_items_recipe_ingredients,
+	// ON DELETE NO ACTION), so any stale item used as an ingredient must have its links removed first.
+	// seedRecipes re-creates current ingredients afterwards, so this only drops stale links.
+	if _, err := client.RecipeIngredient.Delete().
+		Where(entrecipeingredient.ItemIDIn(staleIDs...)).
+		Exec(ctx); err != nil {
+		log.Printf("[WARN] cleanup: delete recipe ingredients: %v", err)
 	}
 	if deleted, err := client.Item.Delete().
 		Where(entitem.IDIn(staleIDs...)).
