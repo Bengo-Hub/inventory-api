@@ -250,17 +250,34 @@ func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, n
 	return &c.ID
 }
 
+// inferUnitType guesses a category for an ad-hoc imported unit so a newly created unit is
+// never left without a type (which previously surfaced as a "-" type in the UI pickers).
+func inferUnitType(name string) string {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "g", "gram", "grams", "kg", "kilogram", "mg":
+		return "weight"
+	case "ml", "l", "litre", "liter", "cl", "cup", "shot", "tot", "gls", "glass", "btl", "bottle":
+		return "volume"
+	case "day", "hour", "hr", "min", "minute", "week", "month":
+		return "other"
+	default:
+		return "count"
+	}
+}
+
 // ensureUnit returns an existing unit ID or creates a new global one.
 // Units have no tenant_id (already globally shared); this creates if missing.
 func (h *InventoryHandler) ensureUnit(r *http.Request, tenantID uuid.UUID, name string, m map[string]uuid.UUID) *uuid.UUID {
-	if name == "" {
+	name = strings.TrimSpace(name)
+	// Never create a placeholder/blank unit (e.g. "-") — these are the source of "-" units.
+	if name == "" || name == "-" || name == "—" || strings.EqualFold(name, "n/a") {
 		return nil
 	}
-	key := strings.ToLower(strings.TrimSpace(name))
+	key := strings.ToLower(name)
 	if id, ok := m[key]; ok {
 		return &id
 	}
-	u, err := h.unitSvc.CreateUnit(r.Context(), tenantID, units.UnitDTO{Name: strings.ToUpper(name), Abbreviation: name, IsActive: true})
+	u, err := h.unitSvc.CreateUnit(r.Context(), tenantID, units.UnitDTO{Name: strings.ToUpper(name), Abbreviation: name, Type: inferUnitType(name), IsActive: true})
 	if err != nil {
 		h.log.Error("bulk import: failed to create unit",
 			zap.String("name", name),
