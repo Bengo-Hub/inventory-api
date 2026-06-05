@@ -23,6 +23,7 @@ func batchUUID(tenantID uuid.UUID, batchNumber string) uuid.UUID {
 func seedProductionBatches(ctx context.Context, client *ent.Client, tenantID uuid.UUID) error {
 	now := time.Now().UTC()
 	actual148 := 148.0
+	actual118 := 118.0
 
 	seeds := []struct {
 		BatchNumber  string
@@ -36,6 +37,8 @@ func seedProductionBatches(ctx context.Context, client *ent.Client, tenantID uui
 	}{
 		{"BATCH-DET-0001", "FIN-DISH-001", 150, &actual148, entpb.StatusCompleted, 3000, 1200, true},
 		{"BATCH-DET-0002", "FIN-HAND-001", 200, nil, entpb.StatusInProgress, 2500, 1000, false},
+		{"BATCH-DET-0003", "FIN-MULT-001", 120, nil, entpb.StatusPlanned, 2000, 900, false},
+		{"BATCH-DET-0004", "FIN-BLCH-001", 150, &actual118, entpb.StatusCompleted, 2200, 800, true},
 	}
 
 	for _, bs := range seeds {
@@ -74,12 +77,13 @@ func seedProductionBatches(ctx context.Context, client *ent.Client, tenantID uui
 		}
 
 		// Explode BOM → BatchRawMaterial rows with cost (item.cost_price × qty).
+		// Planned batches have not consumed materials yet, so skip the explosion.
 		ratio := 1.0
 		if rd != nil && rd.OutputQty > 0 {
 			ratio = bs.Planned / rd.OutputQty
 		}
 		var materialCost float64
-		if rd != nil {
+		if rd != nil && bs.Status != entpb.StatusPlanned {
 			for _, ing := range rd.Ingredients {
 				rawItemID := itemUUID(tenantID, ing.RawSKU)
 				qty := ing.Qty * ratio

@@ -18,6 +18,7 @@ import (
 	entib "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entpb "github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	entqc "github.com/bengobox/inventory-service/internal/ent/qualitycheck"
+	entrmu "github.com/bengobox/inventory-service/internal/ent/rawmaterialusage"
 	entrecipe "github.com/bengobox/inventory-service/internal/ent/recipe"
 	entri "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -62,6 +63,25 @@ func (h *InventoryExtrasHandler) computeMaterialShortages(ctx context.Context, t
 		}
 	}
 	return shortages, nil
+}
+
+// recordRawMaterialUsage writes an audit-trail row for one raw-material movement
+// (production consume, return on cancel, or wastage on QC failure/scrap).
+func (h *InventoryExtrasHandler) recordRawMaterialUsage(ctx context.Context, tenantID, batchID uuid.UUID, finishedItemID *uuid.UUID, rawItemID uuid.UUID, rawSKU string, qty, cost float64, txType string) {
+	c := h.orm.RawMaterialUsage.Create().
+		SetTenantID(tenantID).
+		SetProductionBatchID(batchID).
+		SetRawItemID(rawItemID).
+		SetRawSku(rawSKU).
+		SetQuantity(qty).
+		SetCost(cost).
+		SetTransactionType(entrmu.TransactionType(txType))
+	if finishedItemID != nil {
+		c = c.SetFinishedItemID(*finishedItemID)
+	}
+	if _, err := c.Save(ctx); err != nil {
+		h.log.Warn("record raw-material usage failed", zap.Error(err))
+	}
 }
 
 // CheckMaterialAvailability previews whether a recipe can be produced at a given
@@ -152,7 +172,21 @@ type productionBatchDTO struct {
 	Notes           string                `json:"notes"`
 	RawMaterials    []batchRawMaterialDTO `json:"raw_materials,omitempty"`
 	QualityChecks   []qualityCheckDTO     `json:"quality_checks,omitempty"`
+	// Variance (populated on the detail view only).
+	YieldVariance    *float64              `json:"yield_variance,omitempty"`     // actual - planned output
+	YieldVariancePct *float64             `json:"yield_variance_pct,omitempty"` // (actual-planned)/planned * 100
+	MaterialVariance []materialVarianceDTO `json:"material_variance,omitempty"`
 	CreatedAt       time.Time             `json:"created_at"`
+}
+
+// materialVarianceDTO compares the BOM-implied planned quantity for a line against
+// what the batch actually consumed.
+type materialVarianceDTO struct {
+	ItemID   uuid.UUID `json:"item_id"`
+	ItemSku  string    `json:"item_sku"`
+	Planned  float64   `json:"planned"`
+	Actual   float64   `json:"actual"`
+	Variance float64   `json:"variance"`
 }
 
 func productionBatchToDTO(b *ent.ProductionBatch, mats []*ent.BatchRawMaterial, qcs []*ent.QualityCheck) productionBatchDTO {
@@ -181,8 +215,49 @@ func (h *InventoryExtrasHandler) registerManufacturingRoutes(r chi.Router, perm 
 	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/complete", h.CompleteProductionBatch)
 	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/cancel", h.CancelProductionBatch)
 	r.Get("/inventory/production-batches/{batchID}/materials", h.ListBatchMaterials)
+	r.Get("/inventory/production-batches/{batchID}/usage", h.ListRawMaterialUsage)
 	r.Get("/inventory/production-batches/{batchID}/quality-checks", h.ListQualityChecks)
 	r.With(perm(add)).Post("/inventory/production-batches/{batchID}/quality-checks", h.CreateQualityCheck)
+}
+
+// rawMaterialUsageDTO is the audit-trail row for raw-material movements.
+type rawMaterialUsageDTO struct {
+	ID              uuid.UUID  `json:"id"`
+	RawItemID       uuid.UUID  `json:"raw_item_id"`
+	RawSKU          string     `json:"raw_sku"`
+	FinishedItemID  *uuid.UUID `json:"finished_item_id,omitempty"`
+	Quantity        float64    `json:"quantity"`
+	Cost            float64    `json:"cost"`
+	TransactionType string     `json:"transaction_type"`
+	OccurredAt      time.Time  `json:"occurred_at"`
+}
+
+// ListRawMaterialUsage handles GET /inventory/production-batches/{batchID}/usage.
+//
+//	@Summary      Raw-material usage audit trail for a production batch
+//	@Tags         Manufacturing
+//	@Produce      json
+//	@Param        batchID  path      string  true  "Production batch ID"
+//	@Success      200      {array}   rawMaterialUsageDTO
+//	@Security     bearerAuth
+//	@Router       /{tenant}/inventory/production-batches/{batchID}/usage [get]
+func (h *InventoryExtrasHandler) ListRawMaterialUsage(w http.ResponseWriter, r *http.Request) {
+	_, b, ok := h.loadBatch(w, r)
+	if !ok {
+		return
+	}
+	rows, _ := h.orm.RawMaterialUsage.Query().
+		Where(entrmu.ProductionBatchID(b.ID)).
+		Order(ent.Desc(entrmu.FieldOccurredAt)).
+		All(r.Context())
+	out := make([]rawMaterialUsageDTO, len(rows))
+	for i, u := range rows {
+		out[i] = rawMaterialUsageDTO{
+			ID: u.ID, RawItemID: u.RawItemID, RawSKU: u.RawSku, FinishedItemID: u.FinishedItemID,
+			Quantity: u.Quantity, Cost: u.Cost, TransactionType: string(u.TransactionType), OccurredAt: u.OccurredAt,
+		}
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // ListProductionBatches handles GET /inventory/production-batches.
@@ -242,9 +317,41 @@ func (h *InventoryExtrasHandler) GetProductionBatch(w http.ResponseWriter, r *ht
 	if !ok {
 		return
 	}
+	tenantID, _ := parseTenantID(r)
 	mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(b.ID)).All(r.Context())
 	qcs, _ := h.orm.QualityCheck.Query().Where(entqc.ProductionBatchID(b.ID)).All(r.Context())
-	writeJSON(w, http.StatusOK, productionBatchToDTO(b, mats, qcs))
+	dto := productionBatchToDTO(b, mats, qcs)
+
+	// Yield variance: actual output vs plan.
+	if b.ActualQuantity != nil {
+		yv := *b.ActualQuantity - b.PlannedQuantity
+		dto.YieldVariance = &yv
+		if b.PlannedQuantity > 0 {
+			pct := yv / b.PlannedQuantity * 100
+			dto.YieldVariancePct = &pct
+		}
+	}
+	// Material variance: BOM-implied planned (recipe ratio) vs actually consumed.
+	if recipe, e := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID), entrecipe.TenantID(tenantID)).Only(r.Context()); e == nil && len(mats) > 0 {
+		ratio := 1.0
+		if recipe.OutputQty > 0 {
+			ratio = b.PlannedQuantity / recipe.OutputQty
+		}
+		ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(r.Context())
+		plannedByItem := make(map[uuid.UUID]float64, len(ings))
+		skuByItem := make(map[uuid.UUID]string, len(ings))
+		for _, ing := range ings {
+			plannedByItem[ing.ItemID] = ing.Quantity * ratio
+			skuByItem[ing.ItemID] = ing.ItemSku
+		}
+		for _, m := range mats {
+			planned := plannedByItem[m.ItemID]
+			dto.MaterialVariance = append(dto.MaterialVariance, materialVarianceDTO{
+				ItemID: m.ItemID, ItemSku: skuByItem[m.ItemID], Planned: planned, Actual: m.Quantity, Variance: m.Quantity - planned,
+			})
+		}
+	}
+	writeJSON(w, http.StatusOK, dto)
 }
 
 // CreateProductionBatch handles POST /inventory/production-batches.
@@ -369,6 +476,8 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 		if ing.ItemSku != "" {
 			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: ing.ItemSku, Quantity: qty})
 		}
+		// Audit trail: raw material issued to production.
+		h.recordRawMaterialUsage(r.Context(), tenantID, b.ID, recipe.ItemID, ing.ItemID, ing.ItemSku, qty, matCost, "production")
 	}
 	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusInProgress).SetStartDate(time.Now().UTC()).Save(r.Context())
 	if err != nil {
@@ -478,6 +587,8 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 		}
 	}
 	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.completed", payload)
+	// Keep the persisted daily analytics snapshots fresh (best-effort).
+	_, _ = h.recomputeManufacturingAnalytics(r.Context(), tenantID)
 	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, nil, nil))
 }
 
@@ -507,12 +618,38 @@ func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r 
 	if body.Reason != "" {
 		notes = strings.TrimSpace(notes + "\nCancelled: " + body.Reason)
 	}
+
+	// Rollback: if the batch was already started, return the consumed raw materials
+	// to stock and record the reversal in the usage audit trail.
+	returned := make([]map[string]any, 0)
+	if b.Status == entpb.StatusInProgress {
+		var finishedItemID *uuid.UUID
+		if recipe, e := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID)).Only(r.Context()); e == nil {
+			finishedItemID = recipe.ItemID
+		}
+		mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(b.ID)).All(r.Context())
+		restock := make([]stock.RestockItem, 0, len(mats))
+		for _, m := range mats {
+			sku := h.skuForItem(r.Context(), tenantID, m.ItemID)
+			if sku != "" {
+				restock = append(restock, stock.RestockItem{SKU: sku, Quantity: m.Quantity})
+			}
+			h.recordRawMaterialUsage(r.Context(), tenantID, b.ID, finishedItemID, m.ItemID, sku, m.Quantity, m.Cost, "return")
+			returned = append(returned, map[string]any{"item_id": m.ItemID, "quantity": m.Quantity})
+		}
+		if h.stockSvc != nil && len(restock) > 0 {
+			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{}, restock, "production-cancel-"+b.ID.String()); err != nil {
+				h.log.Warn("production cancel: material restock failed", zap.Error(err))
+			}
+		}
+	}
+
 	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusCancelled).SetNotes(notes).Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to cancel batch")
 		return
 	}
-	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.cancelled", map[string]any{"id": updated.ID, "reason": body.Reason})
+	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.cancelled", map[string]any{"id": updated.ID, "reason": body.Reason, "returned_materials": returned})
 	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, nil, nil))
 }
 
@@ -603,9 +740,17 @@ func (h *InventoryExtrasHandler) CreateQualityCheck(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create quality check")
 		return
 	}
-	// On fail, fail the batch.
+	// On fail, fail the batch and book the consumed materials as wastage.
 	if qc.Result == entqc.ResultFail {
 		_, _ = h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusFailed).Save(r.Context())
+		var finishedItemID *uuid.UUID
+		if recipe, e := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID)).Only(r.Context()); e == nil {
+			finishedItemID = recipe.ItemID
+		}
+		mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(b.ID)).All(r.Context())
+		for _, m := range mats {
+			h.recordRawMaterialUsage(r.Context(), tenantID, b.ID, finishedItemID, m.ItemID, h.skuForItem(r.Context(), tenantID, m.ItemID), m.Quantity, m.Cost, "wastage")
+		}
 		h.publishOutbox(r.Context(), tenantID, "production_batch", b.ID, "inventory.production.qc_failed", map[string]any{"id": b.ID, "quality_check_id": qc.ID})
 	}
 	writeJSON(w, http.StatusCreated, qualityCheckDTO{ID: qc.ID, InspectorID: qc.InspectorID, Result: string(qc.Result), Notes: qc.Notes, CheckDate: qc.CheckDate})

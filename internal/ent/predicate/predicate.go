@@ -111,6 +111,9 @@ type ItemTranslation func(*sql.Selector)
 // ItemVariant is the predicate function for itemvariant builders.
 type ItemVariant func(*sql.Selector)
 
+// ManufacturingAnalytics is the predicate function for manufacturinganalytics builders.
+type ManufacturingAnalytics func(*sql.Selector)
+
 // ModifierGroup is the predicate function for modifiergroup builders.
 type ModifierGroup func(*sql.Selector)
 
@@ -152,6 +155,9 @@ type RFQLine func(*sql.Selector)
 
 // RateLimitConfig is the predicate function for ratelimitconfig builders.
 type RateLimitConfig func(*sql.Selector)
+
+// RawMaterialUsage is the predicate function for rawmaterialusage builders.
+type RawMaterialUsage func(*sql.Selector)
 
 // Recipe is the predicate function for recipe builders.
 type Recipe func(*sql.Selector)

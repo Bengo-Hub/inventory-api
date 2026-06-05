@@ -51,6 +51,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/manufacturinganalytics"
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
@@ -62,6 +63,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
 	"github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	"github.com/bengobox/inventory-service/internal/ent/ratelimitconfig"
+	"github.com/bengobox/inventory-service/internal/ent/rawmaterialusage"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/requisition"
@@ -165,6 +167,8 @@ type Client struct {
 	ItemTranslation *ItemTranslationClient
 	// ItemVariant is the client for interacting with the ItemVariant builders.
 	ItemVariant *ItemVariantClient
+	// ManufacturingAnalytics is the client for interacting with the ManufacturingAnalytics builders.
+	ManufacturingAnalytics *ManufacturingAnalyticsClient
 	// ModifierGroup is the client for interacting with the ModifierGroup builders.
 	ModifierGroup *ModifierGroupClient
 	// ModifierOption is the client for interacting with the ModifierOption builders.
@@ -193,6 +197,8 @@ type Client struct {
 	RFQLine *RFQLineClient
 	// RateLimitConfig is the client for interacting with the RateLimitConfig builders.
 	RateLimitConfig *RateLimitConfigClient
+	// RawMaterialUsage is the client for interacting with the RawMaterialUsage builders.
+	RawMaterialUsage *RawMaterialUsageClient
 	// Recipe is the client for interacting with the Recipe builders.
 	Recipe *RecipeClient
 	// RecipeIngredient is the client for interacting with the RecipeIngredient builders.
@@ -285,6 +291,7 @@ func (c *Client) init() {
 	c.ItemPricing = NewItemPricingClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
 	c.ItemVariant = NewItemVariantClient(c.config)
+	c.ManufacturingAnalytics = NewManufacturingAnalyticsClient(c.config)
 	c.ModifierGroup = NewModifierGroupClient(c.config)
 	c.ModifierOption = NewModifierOptionClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
@@ -299,6 +306,7 @@ func (c *Client) init() {
 	c.RFQAward = NewRFQAwardClient(c.config)
 	c.RFQLine = NewRFQLineClient(c.config)
 	c.RateLimitConfig = NewRateLimitConfigClient(c.config)
+	c.RawMaterialUsage = NewRawMaterialUsageClient(c.config)
 	c.Recipe = NewRecipeClient(c.config)
 	c.RecipeIngredient = NewRecipeIngredientClient(c.config)
 	c.Requisition = NewRequisitionClient(c.config)
@@ -412,80 +420,82 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                   ctx,
-		config:                cfg,
-		ApprovalAction:        NewApprovalActionClient(cfg),
-		ApprovalRequest:       NewApprovalRequestClient(cfg),
-		ApprovalRule:          NewApprovalRuleClient(cfg),
-		ApprovalStep:          NewApprovalStepClient(cfg),
-		Asset:                 NewAssetClient(cfg),
-		AssetAudit:            NewAssetAuditClient(cfg),
-		AssetCategory:         NewAssetCategoryClient(cfg),
-		AssetDisposal:         NewAssetDisposalClient(cfg),
-		AssetInsurance:        NewAssetInsuranceClient(cfg),
-		AssetMaintenance:      NewAssetMaintenanceClient(cfg),
-		AssetReservation:      NewAssetReservationClient(cfg),
-		AssetTransfer:         NewAssetTransferClient(cfg),
-		BatchRawMaterial:      NewBatchRawMaterialClient(cfg),
-		Bundle:                NewBundleClient(cfg),
-		BundleComponent:       NewBundleComponentClient(cfg),
-		Consumption:           NewConsumptionClient(cfg),
-		Contract:              NewContractClient(cfg),
-		ContractOrderLink:     NewContractOrderLinkClient(cfg),
-		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
-		CustomFieldValue:      NewCustomFieldValueClient(cfg),
-		DocumentSequence:      NewDocumentSequenceClient(cfg),
-		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
-		GoodsReceipt:          NewGoodsReceiptClient(cfg),
-		GoodsReceiptLine:      NewGoodsReceiptLineClient(cfg),
-		InventoryBalance:      NewInventoryBalanceClient(cfg),
-		InventoryLot:          NewInventoryLotClient(cfg),
-		InventoryPermission:   NewInventoryPermissionClient(cfg),
-		InventoryRole:         NewInventoryRoleClient(cfg),
-		InventoryUser:         NewInventoryUserClient(cfg),
-		Item:                  NewItemClient(cfg),
-		ItemAsset:             NewItemAssetClient(cfg),
-		ItemCategory:          NewItemCategoryClient(cfg),
-		ItemPricing:           NewItemPricingClient(cfg),
-		ItemTranslation:       NewItemTranslationClient(cfg),
-		ItemVariant:           NewItemVariantClient(cfg),
-		ModifierGroup:         NewModifierGroupClient(cfg),
-		ModifierOption:        NewModifierOptionClient(cfg),
-		OutboxEvent:           NewOutboxEventClient(cfg),
-		PricingTier:           NewPricingTierClient(cfg),
-		ProductionBatch:       NewProductionBatchClient(cfg),
-		PurchaseOrder:         NewPurchaseOrderClient(cfg),
-		PurchaseOrderLine:     NewPurchaseOrderLineClient(cfg),
-		PurchaseReturn:        NewPurchaseReturnClient(cfg),
-		PurchaseReturnLine:    NewPurchaseReturnLineClient(cfg),
-		QualityCheck:          NewQualityCheckClient(cfg),
-		RFQ:                   NewRFQClient(cfg),
-		RFQAward:              NewRFQAwardClient(cfg),
-		RFQLine:               NewRFQLineClient(cfg),
-		RateLimitConfig:       NewRateLimitConfigClient(cfg),
-		Recipe:                NewRecipeClient(cfg),
-		RecipeIngredient:      NewRecipeIngredientClient(cfg),
-		Requisition:           NewRequisitionClient(cfg),
-		RequisitionLine:       NewRequisitionLineClient(cfg),
-		Reservation:           NewReservationClient(cfg),
-		RolePermission:        NewRolePermissionClient(cfg),
-		ServiceConfig:         NewServiceConfigClient(cfg),
-		ServiceDelivery:       NewServiceDeliveryClient(cfg),
-		StockAdjustment:       NewStockAdjustmentClient(cfg),
-		StockTransfer:         NewStockTransferClient(cfg),
-		StockTransferLine:     NewStockTransferLineClient(cfg),
-		Supplier:              NewSupplierClient(cfg),
-		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
-		SupplierResponse:      NewSupplierResponseClient(cfg),
-		Tenant:                NewTenantClient(cfg),
-		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
-		Ticket:                NewTicketClient(cfg),
-		Unit:                  NewUnitClient(cfg),
-		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
-		VariantAttribute:      NewVariantAttributeClient(cfg),
-		Warehouse:             NewWarehouseClient(cfg),
-		WarehouseLocation:     NewWarehouseLocationClient(cfg),
-		Warranty:              NewWarrantyClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		ApprovalAction:         NewApprovalActionClient(cfg),
+		ApprovalRequest:        NewApprovalRequestClient(cfg),
+		ApprovalRule:           NewApprovalRuleClient(cfg),
+		ApprovalStep:           NewApprovalStepClient(cfg),
+		Asset:                  NewAssetClient(cfg),
+		AssetAudit:             NewAssetAuditClient(cfg),
+		AssetCategory:          NewAssetCategoryClient(cfg),
+		AssetDisposal:          NewAssetDisposalClient(cfg),
+		AssetInsurance:         NewAssetInsuranceClient(cfg),
+		AssetMaintenance:       NewAssetMaintenanceClient(cfg),
+		AssetReservation:       NewAssetReservationClient(cfg),
+		AssetTransfer:          NewAssetTransferClient(cfg),
+		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
+		Bundle:                 NewBundleClient(cfg),
+		BundleComponent:        NewBundleComponentClient(cfg),
+		Consumption:            NewConsumptionClient(cfg),
+		Contract:               NewContractClient(cfg),
+		ContractOrderLink:      NewContractOrderLinkClient(cfg),
+		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
+		CustomFieldValue:       NewCustomFieldValueClient(cfg),
+		DocumentSequence:       NewDocumentSequenceClient(cfg),
+		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
+		GoodsReceipt:           NewGoodsReceiptClient(cfg),
+		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
+		InventoryBalance:       NewInventoryBalanceClient(cfg),
+		InventoryLot:           NewInventoryLotClient(cfg),
+		InventoryPermission:    NewInventoryPermissionClient(cfg),
+		InventoryRole:          NewInventoryRoleClient(cfg),
+		InventoryUser:          NewInventoryUserClient(cfg),
+		Item:                   NewItemClient(cfg),
+		ItemAsset:              NewItemAssetClient(cfg),
+		ItemCategory:           NewItemCategoryClient(cfg),
+		ItemPricing:            NewItemPricingClient(cfg),
+		ItemTranslation:        NewItemTranslationClient(cfg),
+		ItemVariant:            NewItemVariantClient(cfg),
+		ManufacturingAnalytics: NewManufacturingAnalyticsClient(cfg),
+		ModifierGroup:          NewModifierGroupClient(cfg),
+		ModifierOption:         NewModifierOptionClient(cfg),
+		OutboxEvent:            NewOutboxEventClient(cfg),
+		PricingTier:            NewPricingTierClient(cfg),
+		ProductionBatch:        NewProductionBatchClient(cfg),
+		PurchaseOrder:          NewPurchaseOrderClient(cfg),
+		PurchaseOrderLine:      NewPurchaseOrderLineClient(cfg),
+		PurchaseReturn:         NewPurchaseReturnClient(cfg),
+		PurchaseReturnLine:     NewPurchaseReturnLineClient(cfg),
+		QualityCheck:           NewQualityCheckClient(cfg),
+		RFQ:                    NewRFQClient(cfg),
+		RFQAward:               NewRFQAwardClient(cfg),
+		RFQLine:                NewRFQLineClient(cfg),
+		RateLimitConfig:        NewRateLimitConfigClient(cfg),
+		RawMaterialUsage:       NewRawMaterialUsageClient(cfg),
+		Recipe:                 NewRecipeClient(cfg),
+		RecipeIngredient:       NewRecipeIngredientClient(cfg),
+		Requisition:            NewRequisitionClient(cfg),
+		RequisitionLine:        NewRequisitionLineClient(cfg),
+		Reservation:            NewReservationClient(cfg),
+		RolePermission:         NewRolePermissionClient(cfg),
+		ServiceConfig:          NewServiceConfigClient(cfg),
+		ServiceDelivery:        NewServiceDeliveryClient(cfg),
+		StockAdjustment:        NewStockAdjustmentClient(cfg),
+		StockTransfer:          NewStockTransferClient(cfg),
+		StockTransferLine:      NewStockTransferLineClient(cfg),
+		Supplier:               NewSupplierClient(cfg),
+		SupplierPerformance:    NewSupplierPerformanceClient(cfg),
+		SupplierResponse:       NewSupplierResponseClient(cfg),
+		Tenant:                 NewTenantClient(cfg),
+		TenantInventoryConfig:  NewTenantInventoryConfigClient(cfg),
+		Ticket:                 NewTicketClient(cfg),
+		Unit:                   NewUnitClient(cfg),
+		UserRoleAssignment:     NewUserRoleAssignmentClient(cfg),
+		VariantAttribute:       NewVariantAttributeClient(cfg),
+		Warehouse:              NewWarehouseClient(cfg),
+		WarehouseLocation:      NewWarehouseLocationClient(cfg),
+		Warranty:               NewWarrantyClient(cfg),
 	}, nil
 }
 
@@ -503,80 +513,82 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                   ctx,
-		config:                cfg,
-		ApprovalAction:        NewApprovalActionClient(cfg),
-		ApprovalRequest:       NewApprovalRequestClient(cfg),
-		ApprovalRule:          NewApprovalRuleClient(cfg),
-		ApprovalStep:          NewApprovalStepClient(cfg),
-		Asset:                 NewAssetClient(cfg),
-		AssetAudit:            NewAssetAuditClient(cfg),
-		AssetCategory:         NewAssetCategoryClient(cfg),
-		AssetDisposal:         NewAssetDisposalClient(cfg),
-		AssetInsurance:        NewAssetInsuranceClient(cfg),
-		AssetMaintenance:      NewAssetMaintenanceClient(cfg),
-		AssetReservation:      NewAssetReservationClient(cfg),
-		AssetTransfer:         NewAssetTransferClient(cfg),
-		BatchRawMaterial:      NewBatchRawMaterialClient(cfg),
-		Bundle:                NewBundleClient(cfg),
-		BundleComponent:       NewBundleComponentClient(cfg),
-		Consumption:           NewConsumptionClient(cfg),
-		Contract:              NewContractClient(cfg),
-		ContractOrderLink:     NewContractOrderLinkClient(cfg),
-		CustomFieldDefinition: NewCustomFieldDefinitionClient(cfg),
-		CustomFieldValue:      NewCustomFieldValueClient(cfg),
-		DocumentSequence:      NewDocumentSequenceClient(cfg),
-		FoodCostVariance:      NewFoodCostVarianceClient(cfg),
-		GoodsReceipt:          NewGoodsReceiptClient(cfg),
-		GoodsReceiptLine:      NewGoodsReceiptLineClient(cfg),
-		InventoryBalance:      NewInventoryBalanceClient(cfg),
-		InventoryLot:          NewInventoryLotClient(cfg),
-		InventoryPermission:   NewInventoryPermissionClient(cfg),
-		InventoryRole:         NewInventoryRoleClient(cfg),
-		InventoryUser:         NewInventoryUserClient(cfg),
-		Item:                  NewItemClient(cfg),
-		ItemAsset:             NewItemAssetClient(cfg),
-		ItemCategory:          NewItemCategoryClient(cfg),
-		ItemPricing:           NewItemPricingClient(cfg),
-		ItemTranslation:       NewItemTranslationClient(cfg),
-		ItemVariant:           NewItemVariantClient(cfg),
-		ModifierGroup:         NewModifierGroupClient(cfg),
-		ModifierOption:        NewModifierOptionClient(cfg),
-		OutboxEvent:           NewOutboxEventClient(cfg),
-		PricingTier:           NewPricingTierClient(cfg),
-		ProductionBatch:       NewProductionBatchClient(cfg),
-		PurchaseOrder:         NewPurchaseOrderClient(cfg),
-		PurchaseOrderLine:     NewPurchaseOrderLineClient(cfg),
-		PurchaseReturn:        NewPurchaseReturnClient(cfg),
-		PurchaseReturnLine:    NewPurchaseReturnLineClient(cfg),
-		QualityCheck:          NewQualityCheckClient(cfg),
-		RFQ:                   NewRFQClient(cfg),
-		RFQAward:              NewRFQAwardClient(cfg),
-		RFQLine:               NewRFQLineClient(cfg),
-		RateLimitConfig:       NewRateLimitConfigClient(cfg),
-		Recipe:                NewRecipeClient(cfg),
-		RecipeIngredient:      NewRecipeIngredientClient(cfg),
-		Requisition:           NewRequisitionClient(cfg),
-		RequisitionLine:       NewRequisitionLineClient(cfg),
-		Reservation:           NewReservationClient(cfg),
-		RolePermission:        NewRolePermissionClient(cfg),
-		ServiceConfig:         NewServiceConfigClient(cfg),
-		ServiceDelivery:       NewServiceDeliveryClient(cfg),
-		StockAdjustment:       NewStockAdjustmentClient(cfg),
-		StockTransfer:         NewStockTransferClient(cfg),
-		StockTransferLine:     NewStockTransferLineClient(cfg),
-		Supplier:              NewSupplierClient(cfg),
-		SupplierPerformance:   NewSupplierPerformanceClient(cfg),
-		SupplierResponse:      NewSupplierResponseClient(cfg),
-		Tenant:                NewTenantClient(cfg),
-		TenantInventoryConfig: NewTenantInventoryConfigClient(cfg),
-		Ticket:                NewTicketClient(cfg),
-		Unit:                  NewUnitClient(cfg),
-		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
-		VariantAttribute:      NewVariantAttributeClient(cfg),
-		Warehouse:             NewWarehouseClient(cfg),
-		WarehouseLocation:     NewWarehouseLocationClient(cfg),
-		Warranty:              NewWarrantyClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		ApprovalAction:         NewApprovalActionClient(cfg),
+		ApprovalRequest:        NewApprovalRequestClient(cfg),
+		ApprovalRule:           NewApprovalRuleClient(cfg),
+		ApprovalStep:           NewApprovalStepClient(cfg),
+		Asset:                  NewAssetClient(cfg),
+		AssetAudit:             NewAssetAuditClient(cfg),
+		AssetCategory:          NewAssetCategoryClient(cfg),
+		AssetDisposal:          NewAssetDisposalClient(cfg),
+		AssetInsurance:         NewAssetInsuranceClient(cfg),
+		AssetMaintenance:       NewAssetMaintenanceClient(cfg),
+		AssetReservation:       NewAssetReservationClient(cfg),
+		AssetTransfer:          NewAssetTransferClient(cfg),
+		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
+		Bundle:                 NewBundleClient(cfg),
+		BundleComponent:        NewBundleComponentClient(cfg),
+		Consumption:            NewConsumptionClient(cfg),
+		Contract:               NewContractClient(cfg),
+		ContractOrderLink:      NewContractOrderLinkClient(cfg),
+		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
+		CustomFieldValue:       NewCustomFieldValueClient(cfg),
+		DocumentSequence:       NewDocumentSequenceClient(cfg),
+		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
+		GoodsReceipt:           NewGoodsReceiptClient(cfg),
+		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
+		InventoryBalance:       NewInventoryBalanceClient(cfg),
+		InventoryLot:           NewInventoryLotClient(cfg),
+		InventoryPermission:    NewInventoryPermissionClient(cfg),
+		InventoryRole:          NewInventoryRoleClient(cfg),
+		InventoryUser:          NewInventoryUserClient(cfg),
+		Item:                   NewItemClient(cfg),
+		ItemAsset:              NewItemAssetClient(cfg),
+		ItemCategory:           NewItemCategoryClient(cfg),
+		ItemPricing:            NewItemPricingClient(cfg),
+		ItemTranslation:        NewItemTranslationClient(cfg),
+		ItemVariant:            NewItemVariantClient(cfg),
+		ManufacturingAnalytics: NewManufacturingAnalyticsClient(cfg),
+		ModifierGroup:          NewModifierGroupClient(cfg),
+		ModifierOption:         NewModifierOptionClient(cfg),
+		OutboxEvent:            NewOutboxEventClient(cfg),
+		PricingTier:            NewPricingTierClient(cfg),
+		ProductionBatch:        NewProductionBatchClient(cfg),
+		PurchaseOrder:          NewPurchaseOrderClient(cfg),
+		PurchaseOrderLine:      NewPurchaseOrderLineClient(cfg),
+		PurchaseReturn:         NewPurchaseReturnClient(cfg),
+		PurchaseReturnLine:     NewPurchaseReturnLineClient(cfg),
+		QualityCheck:           NewQualityCheckClient(cfg),
+		RFQ:                    NewRFQClient(cfg),
+		RFQAward:               NewRFQAwardClient(cfg),
+		RFQLine:                NewRFQLineClient(cfg),
+		RateLimitConfig:        NewRateLimitConfigClient(cfg),
+		RawMaterialUsage:       NewRawMaterialUsageClient(cfg),
+		Recipe:                 NewRecipeClient(cfg),
+		RecipeIngredient:       NewRecipeIngredientClient(cfg),
+		Requisition:            NewRequisitionClient(cfg),
+		RequisitionLine:        NewRequisitionLineClient(cfg),
+		Reservation:            NewReservationClient(cfg),
+		RolePermission:         NewRolePermissionClient(cfg),
+		ServiceConfig:          NewServiceConfigClient(cfg),
+		ServiceDelivery:        NewServiceDeliveryClient(cfg),
+		StockAdjustment:        NewStockAdjustmentClient(cfg),
+		StockTransfer:          NewStockTransferClient(cfg),
+		StockTransferLine:      NewStockTransferLineClient(cfg),
+		Supplier:               NewSupplierClient(cfg),
+		SupplierPerformance:    NewSupplierPerformanceClient(cfg),
+		SupplierResponse:       NewSupplierResponseClient(cfg),
+		Tenant:                 NewTenantClient(cfg),
+		TenantInventoryConfig:  NewTenantInventoryConfigClient(cfg),
+		Ticket:                 NewTicketClient(cfg),
+		Unit:                   NewUnitClient(cfg),
+		UserRoleAssignment:     NewUserRoleAssignmentClient(cfg),
+		VariantAttribute:       NewVariantAttributeClient(cfg),
+		Warehouse:              NewWarehouseClient(cfg),
+		WarehouseLocation:      NewWarehouseLocationClient(cfg),
+		Warranty:               NewWarrantyClient(cfg),
 	}, nil
 }
 
@@ -614,15 +626,16 @@ func (c *Client) Use(hooks ...Hook) {
 		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
 		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
 		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
-		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
-		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
-		c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
-		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption,
+		c.OutboxEvent, c.PricingTier, c.ProductionBatch, c.PurchaseOrder,
+		c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck,
+		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -640,15 +653,16 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
 		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
 		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
-		c.ItemVariant, c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PricingTier,
-		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
-		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
-		c.RateLimitConfig, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
-		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption,
+		c.OutboxEvent, c.PricingTier, c.ProductionBatch, c.PurchaseOrder,
+		c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck,
+		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
+		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
+		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -727,6 +741,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ItemTranslation.mutate(ctx, m)
 	case *ItemVariantMutation:
 		return c.ItemVariant.mutate(ctx, m)
+	case *ManufacturingAnalyticsMutation:
+		return c.ManufacturingAnalytics.mutate(ctx, m)
 	case *ModifierGroupMutation:
 		return c.ModifierGroup.mutate(ctx, m)
 	case *ModifierOptionMutation:
@@ -755,6 +771,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RFQLine.mutate(ctx, m)
 	case *RateLimitConfigMutation:
 		return c.RateLimitConfig.mutate(ctx, m)
+	case *RawMaterialUsageMutation:
+		return c.RawMaterialUsage.mutate(ctx, m)
 	case *RecipeMutation:
 		return c.Recipe.mutate(ctx, m)
 	case *RecipeIngredientMutation:
@@ -6261,6 +6279,139 @@ func (c *ItemVariantClient) mutate(ctx context.Context, m *ItemVariantMutation) 
 	}
 }
 
+// ManufacturingAnalyticsClient is a client for the ManufacturingAnalytics schema.
+type ManufacturingAnalyticsClient struct {
+	config
+}
+
+// NewManufacturingAnalyticsClient returns a client for the ManufacturingAnalytics from the given config.
+func NewManufacturingAnalyticsClient(c config) *ManufacturingAnalyticsClient {
+	return &ManufacturingAnalyticsClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `manufacturinganalytics.Hooks(f(g(h())))`.
+func (c *ManufacturingAnalyticsClient) Use(hooks ...Hook) {
+	c.hooks.ManufacturingAnalytics = append(c.hooks.ManufacturingAnalytics, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `manufacturinganalytics.Intercept(f(g(h())))`.
+func (c *ManufacturingAnalyticsClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ManufacturingAnalytics = append(c.inters.ManufacturingAnalytics, interceptors...)
+}
+
+// Create returns a builder for creating a ManufacturingAnalytics entity.
+func (c *ManufacturingAnalyticsClient) Create() *ManufacturingAnalyticsCreate {
+	mutation := newManufacturingAnalyticsMutation(c.config, OpCreate)
+	return &ManufacturingAnalyticsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ManufacturingAnalytics entities.
+func (c *ManufacturingAnalyticsClient) CreateBulk(builders ...*ManufacturingAnalyticsCreate) *ManufacturingAnalyticsCreateBulk {
+	return &ManufacturingAnalyticsCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ManufacturingAnalyticsClient) MapCreateBulk(slice any, setFunc func(*ManufacturingAnalyticsCreate, int)) *ManufacturingAnalyticsCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ManufacturingAnalyticsCreateBulk{err: fmt.Errorf("calling to ManufacturingAnalyticsClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ManufacturingAnalyticsCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ManufacturingAnalyticsCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ManufacturingAnalytics.
+func (c *ManufacturingAnalyticsClient) Update() *ManufacturingAnalyticsUpdate {
+	mutation := newManufacturingAnalyticsMutation(c.config, OpUpdate)
+	return &ManufacturingAnalyticsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ManufacturingAnalyticsClient) UpdateOne(_m *ManufacturingAnalytics) *ManufacturingAnalyticsUpdateOne {
+	mutation := newManufacturingAnalyticsMutation(c.config, OpUpdateOne, withManufacturingAnalytics(_m))
+	return &ManufacturingAnalyticsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ManufacturingAnalyticsClient) UpdateOneID(id uuid.UUID) *ManufacturingAnalyticsUpdateOne {
+	mutation := newManufacturingAnalyticsMutation(c.config, OpUpdateOne, withManufacturingAnalyticsID(id))
+	return &ManufacturingAnalyticsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ManufacturingAnalytics.
+func (c *ManufacturingAnalyticsClient) Delete() *ManufacturingAnalyticsDelete {
+	mutation := newManufacturingAnalyticsMutation(c.config, OpDelete)
+	return &ManufacturingAnalyticsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ManufacturingAnalyticsClient) DeleteOne(_m *ManufacturingAnalytics) *ManufacturingAnalyticsDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ManufacturingAnalyticsClient) DeleteOneID(id uuid.UUID) *ManufacturingAnalyticsDeleteOne {
+	builder := c.Delete().Where(manufacturinganalytics.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ManufacturingAnalyticsDeleteOne{builder}
+}
+
+// Query returns a query builder for ManufacturingAnalytics.
+func (c *ManufacturingAnalyticsClient) Query() *ManufacturingAnalyticsQuery {
+	return &ManufacturingAnalyticsQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeManufacturingAnalytics},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ManufacturingAnalytics entity by its id.
+func (c *ManufacturingAnalyticsClient) Get(ctx context.Context, id uuid.UUID) (*ManufacturingAnalytics, error) {
+	return c.Query().Where(manufacturinganalytics.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ManufacturingAnalyticsClient) GetX(ctx context.Context, id uuid.UUID) *ManufacturingAnalytics {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ManufacturingAnalyticsClient) Hooks() []Hook {
+	return c.hooks.ManufacturingAnalytics
+}
+
+// Interceptors returns the client interceptors.
+func (c *ManufacturingAnalyticsClient) Interceptors() []Interceptor {
+	return c.inters.ManufacturingAnalytics
+}
+
+func (c *ManufacturingAnalyticsClient) mutate(ctx context.Context, m *ManufacturingAnalyticsMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ManufacturingAnalyticsCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ManufacturingAnalyticsUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ManufacturingAnalyticsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ManufacturingAnalyticsDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ManufacturingAnalytics mutation op: %q", m.Op())
+	}
+}
+
 // ModifierGroupClient is a client for the ModifierGroup schema.
 type ModifierGroupClient struct {
 	config
@@ -8392,6 +8543,139 @@ func (c *RateLimitConfigClient) mutate(ctx context.Context, m *RateLimitConfigMu
 		return (&RateLimitConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown RateLimitConfig mutation op: %q", m.Op())
+	}
+}
+
+// RawMaterialUsageClient is a client for the RawMaterialUsage schema.
+type RawMaterialUsageClient struct {
+	config
+}
+
+// NewRawMaterialUsageClient returns a client for the RawMaterialUsage from the given config.
+func NewRawMaterialUsageClient(c config) *RawMaterialUsageClient {
+	return &RawMaterialUsageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rawmaterialusage.Hooks(f(g(h())))`.
+func (c *RawMaterialUsageClient) Use(hooks ...Hook) {
+	c.hooks.RawMaterialUsage = append(c.hooks.RawMaterialUsage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rawmaterialusage.Intercept(f(g(h())))`.
+func (c *RawMaterialUsageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RawMaterialUsage = append(c.inters.RawMaterialUsage, interceptors...)
+}
+
+// Create returns a builder for creating a RawMaterialUsage entity.
+func (c *RawMaterialUsageClient) Create() *RawMaterialUsageCreate {
+	mutation := newRawMaterialUsageMutation(c.config, OpCreate)
+	return &RawMaterialUsageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RawMaterialUsage entities.
+func (c *RawMaterialUsageClient) CreateBulk(builders ...*RawMaterialUsageCreate) *RawMaterialUsageCreateBulk {
+	return &RawMaterialUsageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RawMaterialUsageClient) MapCreateBulk(slice any, setFunc func(*RawMaterialUsageCreate, int)) *RawMaterialUsageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RawMaterialUsageCreateBulk{err: fmt.Errorf("calling to RawMaterialUsageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RawMaterialUsageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RawMaterialUsageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RawMaterialUsage.
+func (c *RawMaterialUsageClient) Update() *RawMaterialUsageUpdate {
+	mutation := newRawMaterialUsageMutation(c.config, OpUpdate)
+	return &RawMaterialUsageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RawMaterialUsageClient) UpdateOne(_m *RawMaterialUsage) *RawMaterialUsageUpdateOne {
+	mutation := newRawMaterialUsageMutation(c.config, OpUpdateOne, withRawMaterialUsage(_m))
+	return &RawMaterialUsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RawMaterialUsageClient) UpdateOneID(id uuid.UUID) *RawMaterialUsageUpdateOne {
+	mutation := newRawMaterialUsageMutation(c.config, OpUpdateOne, withRawMaterialUsageID(id))
+	return &RawMaterialUsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RawMaterialUsage.
+func (c *RawMaterialUsageClient) Delete() *RawMaterialUsageDelete {
+	mutation := newRawMaterialUsageMutation(c.config, OpDelete)
+	return &RawMaterialUsageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RawMaterialUsageClient) DeleteOne(_m *RawMaterialUsage) *RawMaterialUsageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RawMaterialUsageClient) DeleteOneID(id uuid.UUID) *RawMaterialUsageDeleteOne {
+	builder := c.Delete().Where(rawmaterialusage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RawMaterialUsageDeleteOne{builder}
+}
+
+// Query returns a query builder for RawMaterialUsage.
+func (c *RawMaterialUsageClient) Query() *RawMaterialUsageQuery {
+	return &RawMaterialUsageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRawMaterialUsage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RawMaterialUsage entity by its id.
+func (c *RawMaterialUsageClient) Get(ctx context.Context, id uuid.UUID) (*RawMaterialUsage, error) {
+	return c.Query().Where(rawmaterialusage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RawMaterialUsageClient) GetX(ctx context.Context, id uuid.UUID) *RawMaterialUsage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RawMaterialUsageClient) Hooks() []Hook {
+	return c.hooks.RawMaterialUsage
+}
+
+// Interceptors returns the client interceptors.
+func (c *RawMaterialUsageClient) Interceptors() []Interceptor {
+	return c.inters.RawMaterialUsage
+}
+
+func (c *RawMaterialUsageClient) mutate(ctx context.Context, m *RawMaterialUsageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RawMaterialUsageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RawMaterialUsageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RawMaterialUsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RawMaterialUsageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RawMaterialUsage mutation op: %q", m.Op())
 	}
 }
 
@@ -11928,14 +12212,15 @@ type (
 		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
 		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
 		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
-		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Hook
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -11945,13 +12230,14 @@ type (
 		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
 		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
 		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
-		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment, StockTransfer,
-		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )

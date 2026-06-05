@@ -1456,6 +1456,34 @@ var (
 			},
 		},
 	}
+	// ManufacturingAnalyticsColumns holds the columns for the "manufacturing_analytics" table.
+	ManufacturingAnalyticsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "date", Type: field.TypeString},
+		{Name: "total_batches", Type: field.TypeInt, Default: 0},
+		{Name: "completed_batches", Type: field.TypeInt, Default: 0},
+		{Name: "failed_batches", Type: field.TypeInt, Default: 0},
+		{Name: "total_production_qty", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_raw_material_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_labor_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_overhead_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ManufacturingAnalyticsTable holds the schema information for the "manufacturing_analytics" table.
+	ManufacturingAnalyticsTable = &schema.Table{
+		Name:       "manufacturing_analytics",
+		Columns:    ManufacturingAnalyticsColumns,
+		PrimaryKey: []*schema.Column{ManufacturingAnalyticsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "manufacturinganalytics_tenant_id_date",
+				Unique:  true,
+				Columns: []*schema.Column{ManufacturingAnalyticsColumns[1], ManufacturingAnalyticsColumns[2]},
+			},
+		},
+	}
 	// ModifierGroupsColumns holds the columns for the "modifier_groups" table.
 	ModifierGroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1992,6 +2020,43 @@ var (
 			},
 		},
 	}
+	// RawMaterialUsagesColumns holds the columns for the "raw_material_usages" table.
+	RawMaterialUsagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "production_batch_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "finished_item_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "raw_item_id", Type: field.TypeUUID},
+		{Name: "raw_sku", Type: field.TypeString, Nullable: true},
+		{Name: "quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "transaction_type", Type: field.TypeEnum, Enums: []string{"production", "testing", "wastage", "return", "adjustment"}, Default: "production"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "occurred_at", Type: field.TypeTime},
+	}
+	// RawMaterialUsagesTable holds the schema information for the "raw_material_usages" table.
+	RawMaterialUsagesTable = &schema.Table{
+		Name:       "raw_material_usages",
+		Columns:    RawMaterialUsagesColumns,
+		PrimaryKey: []*schema.Column{RawMaterialUsagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rawmaterialusage_tenant_id_production_batch_id",
+				Unique:  false,
+				Columns: []*schema.Column{RawMaterialUsagesColumns[1], RawMaterialUsagesColumns[2]},
+			},
+			{
+				Name:    "rawmaterialusage_tenant_id_raw_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{RawMaterialUsagesColumns[1], RawMaterialUsagesColumns[4]},
+			},
+			{
+				Name:    "rawmaterialusage_tenant_id_transaction_type",
+				Unique:  false,
+				Columns: []*schema.Column{RawMaterialUsagesColumns[1], RawMaterialUsagesColumns[8]},
+			},
+		},
+	}
 	// RecipesColumns holds the columns for the "recipes" table.
 	RecipesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2001,6 +2066,7 @@ var (
 		{Name: "output_qty", Type: field.TypeFloat64, Default: 1},
 		{Name: "unit_of_measure", Type: field.TypeString, Size: 20, Default: "PORTION"},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"menu", "bom"}, Default: "menu"},
 		{Name: "requires_qc", Type: field.TypeBool, Default: false},
 		{Name: "total_cost", Type: field.TypeFloat64, Nullable: true},
 		{Name: "cost_per_portion", Type: field.TypeFloat64, Nullable: true},
@@ -2023,7 +2089,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "recipes_items_produced_by_recipe",
-				Columns:    []*schema.Column{RecipesColumns[19]},
+				Columns:    []*schema.Column{RecipesColumns[20]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -2993,6 +3059,7 @@ var (
 		ItemPricingsTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
+		ManufacturingAnalyticsTable,
 		ModifierGroupsTable,
 		ModifierOptionsTable,
 		OutboxEventsTable,
@@ -3007,6 +3074,7 @@ var (
 		RfqAwardsTable,
 		RfqLinesTable,
 		RateLimitConfigsTable,
+		RawMaterialUsagesTable,
 		RecipesTable,
 		RecipeIngredientsTable,
 		RequisitionsTable,

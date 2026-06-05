@@ -429,6 +429,18 @@ func (f ItemVariantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemVariantMutation", m)
 }
 
+// The ManufacturingAnalyticsFunc type is an adapter to allow the use of ordinary
+// function as ManufacturingAnalytics mutator.
+type ManufacturingAnalyticsFunc func(context.Context, *ent.ManufacturingAnalyticsMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ManufacturingAnalyticsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ManufacturingAnalyticsMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ManufacturingAnalyticsMutation", m)
+}
+
 // The ModifierGroupFunc type is an adapter to allow the use of ordinary
 // function as ModifierGroup mutator.
 type ModifierGroupFunc func(context.Context, *ent.ModifierGroupMutation) (ent.Value, error)
@@ -595,6 +607,18 @@ func (f RateLimitConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RateLimitConfigMutation", m)
+}
+
+// The RawMaterialUsageFunc type is an adapter to allow the use of ordinary
+// function as RawMaterialUsage mutator.
+type RawMaterialUsageFunc func(context.Context, *ent.RawMaterialUsageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RawMaterialUsageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RawMaterialUsageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RawMaterialUsageMutation", m)
 }
 
 // The RecipeFunc type is an adapter to allow the use of ordinary

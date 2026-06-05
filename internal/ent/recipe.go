@@ -32,6 +32,8 @@ type Recipe struct {
 	UnitOfMeasure string `json:"unit_of_measure,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
+	// menu = hospitality recipe; bom = manufacturing bill of materials. Drives use-case-aware UI framing
+	Kind recipe.Kind `json:"kind,omitempty"`
 	// If true, completing a production batch for this recipe requires a passing QualityCheck
 	RequiresQc bool `json:"requires_qc,omitempty"`
 	// Sum of ingredient costs, auto-calculated from ingredient cost_prices
@@ -121,7 +123,7 @@ func (*Recipe) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case recipe.FieldPrepTimeMinutes:
 			values[i] = new(sql.NullInt64)
-		case recipe.FieldSku, recipe.FieldName, recipe.FieldUnitOfMeasure, recipe.FieldStatus:
+		case recipe.FieldSku, recipe.FieldName, recipe.FieldUnitOfMeasure, recipe.FieldKind, recipe.FieldStatus:
 			values[i] = new(sql.NullString)
 		case recipe.FieldCreatedAt, recipe.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -183,6 +185,12 @@ func (_m *Recipe) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_active", values[i])
 			} else if value.Valid {
 				_m.IsActive = value.Bool
+			}
+		case recipe.FieldKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kind", values[i])
+			} else if value.Valid {
+				_m.Kind = recipe.Kind(value.String)
 			}
 		case recipe.FieldRequiresQc:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -340,6 +348,9 @@ func (_m *Recipe) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))
+	builder.WriteString(", ")
+	builder.WriteString("kind=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteString(", ")
 	builder.WriteString("requires_qc=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequiresQc))

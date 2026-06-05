@@ -3,6 +3,7 @@
 package recipe
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -27,6 +28,8 @@ const (
 	FieldUnitOfMeasure = "unit_of_measure"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
+	// FieldKind holds the string denoting the kind field in the database.
+	FieldKind = "kind"
 	// FieldRequiresQc holds the string denoting the requires_qc field in the database.
 	FieldRequiresQc = "requires_qc"
 	// FieldTotalCost holds the string denoting the total_cost field in the database.
@@ -93,6 +96,7 @@ var Columns = []string{
 	FieldOutputQty,
 	FieldUnitOfMeasure,
 	FieldIsActive,
+	FieldKind,
 	FieldRequiresQc,
 	FieldTotalCost,
 	FieldCostPerPortion,
@@ -149,6 +153,32 @@ var (
 	DefaultID func() uuid.UUID
 )
 
+// Kind defines the type for the "kind" enum field.
+type Kind string
+
+// KindMenu is the default value of the Kind enum.
+const DefaultKind = KindMenu
+
+// Kind values.
+const (
+	KindMenu Kind = "menu"
+	KindBom  Kind = "bom"
+)
+
+func (k Kind) String() string {
+	return string(k)
+}
+
+// KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
+func KindValidator(k Kind) error {
+	switch k {
+	case KindMenu, KindBom:
+		return nil
+	default:
+		return fmt.Errorf("recipe: invalid enum value for kind field: %q", k)
+	}
+}
+
 // OrderOption defines the ordering options for the Recipe queries.
 type OrderOption func(*sql.Selector)
 
@@ -185,6 +215,11 @@ func ByUnitOfMeasure(opts ...sql.OrderTermOption) OrderOption {
 // ByIsActive orders the results by the is_active field.
 func ByIsActive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsActive, opts...).ToFunc()
+}
+
+// ByKind orders the results by the kind field.
+func ByKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKind, opts...).ToFunc()
 }
 
 // ByRequiresQc orders the results by the requires_qc field.

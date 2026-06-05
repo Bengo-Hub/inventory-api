@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -275,6 +276,14 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 			recipeName = it.Name
 		}
 
+		// Detergent finished goods (FIN-*) are manufacturing BOMs that require QC;
+		// everything else is a hospitality menu recipe.
+		isBOM := strings.HasPrefix(rd.SKU, "FIN-")
+		kind := entrecipe.KindMenu
+		if isBOM {
+			kind = entrecipe.KindBom
+		}
+
 		_, err := client.Recipe.Get(ctx, recipeID)
 		switch {
 		case ent.IsNotFound(err):
@@ -286,6 +295,8 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 				SetOutputQty(rd.OutputQty).
 				SetUnitOfMeasure(rd.UOM).
 				SetIsActive(true).
+				SetKind(kind).
+				SetRequiresQc(isBOM).
 				SetNillableTargetMarginPercent(rd.TargetMarginPercent).
 				SetNillableItemID(&itemID).
 				Save(ctx); createErr != nil {
@@ -300,6 +311,8 @@ func seedRecipes(ctx context.Context, client *ent.Client, tenantID uuid.UUID) er
 				SetOutputQty(rd.OutputQty).
 				SetUnitOfMeasure(rd.UOM).
 				SetIsActive(true).
+				SetKind(kind).
+				SetRequiresQc(isBOM).
 				SetNillableTargetMarginPercent(rd.TargetMarginPercent).
 				SetNillableItemID(&itemID).
 				Save(ctx); updateErr != nil {

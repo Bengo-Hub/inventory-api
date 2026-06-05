@@ -41,6 +41,10 @@ func (Recipe) Fields() []ent.Field {
 			Comment("Unit for output: PORTION, KG, LITRE"),
 		field.Bool("is_active").
 			Default(true),
+		field.Enum("kind").
+			Values("menu", "bom").
+			Default("menu").
+			Comment("menu = hospitality recipe; bom = manufacturing bill of materials. Drives use-case-aware UI framing"),
 		field.Bool("requires_qc").
 			Default(false).
 			Comment("If true, completing a production batch for this recipe requires a passing QualityCheck"),
