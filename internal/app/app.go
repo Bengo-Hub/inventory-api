@@ -156,8 +156,10 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
 	itemsSvc.SetCache(cacheAside)
-	// Treasury is the source of truth for tax rates; resolve + cache VAT rates for item enrichment.
-	itemsSvc.SetTaxResolver(treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log))
+	// Treasury is the source of truth for tax codes/rates; resolve + cache VAT rates for item
+	// enrichment, and expose the cached tax-code list to inventory-ui for the tax-code picker.
+	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)
+	itemsSvc.SetTaxResolver(treasuryClient)
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log)
 	unitSvc := units.NewService(ormClient, log)
@@ -274,6 +276,7 @@ func New(ctx context.Context) (*App, error) {
 	// Typed tenant inventory config (thresholds, module toggles, tracking settings)
 	inventorySettingsHandler := handlers.NewInventorySettingsHandler(log, ormClient)
 	inventorySettingsHandler.SetRBACService(rbacService)
+	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
 
 	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
 
