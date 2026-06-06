@@ -288,6 +288,36 @@ func (h *InventoryHandler) ensureUnit(r *http.Request, tenantID uuid.UUID, name 
 	return &u.ID
 }
 
+// sanitizeImportedDescription drops internal costing/sourcing notes that costing
+// spreadsheets place in the description column (e.g. "Resale", "Not in manual",
+// "~1000/kg", "Bottle ÷ tots", "Space/time"). These are operational notes, not
+// customer-facing descriptions, so storing them surfaces meaningless text in the
+// storefront/POS. Returns the cleaned description, or "" when the cell is a note.
+func sanitizeImportedDescription(s string) string {
+	t := strings.ToLower(strings.TrimSpace(s))
+	if t == "" {
+		return ""
+	}
+	switch t {
+	case "resale", "costed", "test", "n/a", "na", "none", "tbd", "-", "—",
+		"own product", "space/time", "free with mains", "composite platter", "veg salad":
+		return ""
+	}
+	for _, sub := range []string{
+		"not in manual", "auto-added", "manual entry", "size variant", "variant of",
+		"cooking loss", "÷", "/kg", "/l", " per kg", "own-brand", "proxy", "spirit +",
+	} {
+		if strings.Contains(t, sub) {
+			return ""
+		}
+	}
+	// Price/sourcing notes such as "~1000/kg", "~600/L", "~15 each", "Tinned ~400/kg".
+	if strings.Contains(t, "~") {
+		return ""
+	}
+	return strings.TrimSpace(s)
+}
+
 // buildItemDTOFromRow constructs an ItemDTO from a generic column accessor.
 func buildItemDTOFromRow(
 	col func(row []string, name string) string,
@@ -306,7 +336,7 @@ func buildItemDTOFromRow(
 		SKU:                     sku,
 		Name:                    name,
 		Type:                    tp,
-		Description:             col(row, "description"),
+		Description:             sanitizeImportedDescription(col(row, "description")),
 		IsActive:                parseBool(col(row, "is_active"), true),
 		Barcode:                 col(row, "barcode"),
 		BarcodeType:             col(row, "barcode_type"),
