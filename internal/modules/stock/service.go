@@ -100,13 +100,14 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 
 // AdjustStockRequest represents a stock adjustment request.
 type AdjustStockRequest struct {
-	SKU         string    `json:"sku"`
-	Adjustment  float64   `json:"adjustment"`
-	Reason      string    `json:"reason"`
-	Reference   string    `json:"reference,omitempty"`
-	Notes       string    `json:"notes,omitempty"`
-	AdjustedBy  uuid.UUID `json:"adjusted_by"`
-	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
+	SKU         string     `json:"sku"`
+	Adjustment  float64    `json:"adjustment"`
+	Reason      string     `json:"reason"`
+	Reference   string     `json:"reference,omitempty"`
+	Notes       string     `json:"notes,omitempty"`
+	AdjustedBy  uuid.UUID  `json:"adjusted_by"`
+	WarehouseID uuid.UUID  `json:"warehouse_id,omitempty"`
+	UnitID      *uuid.UUID `json:"unit_id,omitempty"` // optional; when set, records the balance's unit of measure
 }
 
 // AdjustStockResponse represents the result of a stock adjustment.
@@ -213,10 +214,17 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 
 	qtyAfter := float64(newOnHand)
 
-	updatedBal, err := tx.InventoryBalance.UpdateOne(bal).
+	balUpdate := tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(newOnHand).
-		SetAvailable(newAvailable).
-		Save(ctx)
+		SetAvailable(newAvailable)
+	// Record the unit of measure when the caller specifies one (defaults to the
+	// existing balance UoM / item base unit when omitted).
+	if req.UnitID != nil {
+		if u, uErr := tx.Unit.Get(ctx, *req.UnitID); uErr == nil && u.Name != "" {
+			balUpdate = balUpdate.SetUnitOfMeasure(u.Name)
+		}
+	}
+	updatedBal, err := balUpdate.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock: update balance for sku=%s: %w", req.SKU, err)
 	}

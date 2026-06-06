@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -142,15 +143,18 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/suppliers/{supplierID}", h.UpdateSupplier)
 	r.With(perm(rbac.PermProcurementDelete)).Delete("/inventory/suppliers/{supplierID}", h.DeleteSupplier)
 
-	// Purchase Orders
+	// Purchase Orders — mutations require the purchase_orders subscription feature.
+	// (Only POST/PUT are gated: they pass through the group's auth so claims are present.
+	// GET list/detail stay open like other inventory reads.)
+	feat := authclient.RequireFeature("purchase_orders")
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
 	r.Get("/inventory/purchase-orders/{poID}", h.GetPurchaseOrder)
-	r.With(perm(rbac.PermProcurementAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
-	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
-	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
-	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
-	r.With(perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
-	r.With(perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/submit-for-approval", h.SubmitPurchaseOrderForApproval)
+	r.With(feat, perm(rbac.PermProcurementAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/submit-for-approval", h.SubmitPurchaseOrderForApproval)
 
 	// Activity
 	r.Get("/inventory/activity", h.ListActivity)

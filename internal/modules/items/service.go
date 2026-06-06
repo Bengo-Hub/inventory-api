@@ -1013,6 +1013,20 @@ func resolveReorderLevel(ctx context.Context, client *ent.Client, tenantID uuid.
 	return 1
 }
 
+// isStockTracked reports whether an item type holds physical stock that should
+// appear in inventory balances. SERVICE and VOUCHER are non-stockable (e.g.
+// "Conference charges"); RECIPE availability is derived from its BOM, so it is
+// not tracked as a balance directly either. Only GOODS, INGREDIENT and EQUIPMENT
+// carry real on-hand stock.
+func isStockTracked(t item.Type) bool {
+	switch t {
+	case item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT:
+		return true
+	default:
+		return false
+	}
+}
+
 // CreateItem creates a new item and records an outbox event within a transaction.
 func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
 	// Auto-generate SKU if not provided
@@ -1143,7 +1157,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			warehouse.IsActive(true),
 		).
 		First(ctx)
-	if whErr == nil {
+	if whErr == nil && isStockTracked(i.Type) {
 		// Resolve unit of measure name for the balance
 		uom := "PIECE"
 		if dto.UnitID != nil {

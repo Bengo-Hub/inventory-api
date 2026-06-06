@@ -12,22 +12,32 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
 
 type stockLevelDTO struct {
-	ID            uuid.UUID `json:"id"`
-	ItemName      string    `json:"item_name"`
-	SKU           string    `json:"sku"`
-	WarehouseName string    `json:"warehouse_name"`
-	WarehouseID   uuid.UUID `json:"warehouse_id"`
-	Available     float64   `json:"available"`
-	Reserved      float64   `json:"reserved"`
-	ReorderPoint  *int      `json:"reorder_point"`
-	Unit          string    `json:"unit"`
+	ID            uuid.UUID  `json:"id"`
+	ItemName      string     `json:"item_name"`
+	SKU           string     `json:"sku"`
+	WarehouseName string     `json:"warehouse_name"`
+	WarehouseID   uuid.UUID  `json:"warehouse_id"`
+	Available     float64    `json:"available"`
+	Reserved      float64    `json:"reserved"`
+	ReorderPoint  *int       `json:"reorder_point"`
+	Unit          string     `json:"unit"`
+	UnitID        *uuid.UUID `json:"unit_id"`
+	CategoryID    *uuid.UUID `json:"category_id"`
+	CategoryName  string     `json:"category_name"`
+	Type          string     `json:"type"`
 }
+
+// stockableTypes are the item types that hold physical on-hand stock. SERVICE,
+// VOUCHER and RECIPE never appear on the stock levels list (mirrors
+// items.isStockTracked which governs whether a balance is created at all).
+var stockableTypes = []entitem.Type{entitem.TypeGOODS, entitem.TypeINGREDIENT, entitem.TypeEQUIPMENT}
 
 func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -35,13 +45,40 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
-	search := r.URL.Query().Get("search")
 
-	balances, err := h.orm.InventoryBalance.Query().
+	q := r.URL.Query()
+	search := q.Get("search")
+	lowStock := q.Get("low_stock") == "true"
+	outOfStock := q.Get("out_of_stock") == "true"
+	categoryIDStr := q.Get("category_id")
+	typeFilter := strings.ToUpper(strings.TrimSpace(q.Get("type")))
+	warehouseIDStr := q.Get("warehouse_id")
+
+	// Always constrain to stockable item types so non-stock catalog items
+	// (services, vouchers, recipes) never surface on the stock levels list.
+	itemPreds := []predicate.Item{entitem.TypeIn(stockableTypes...)}
+	if categoryIDStr != "" {
+		if cid, e := uuid.Parse(categoryIDStr); e == nil {
+			itemPreds = append(itemPreds, entitem.CategoryID(cid))
+		}
+	}
+	if typeFilter != "" {
+		// Narrow to the requested type (still bounded by stockableTypes above).
+		itemPreds = append(itemPreds, entitem.TypeEQ(entitem.Type(typeFilter)))
+	}
+
+	balQuery := h.orm.InventoryBalance.Query().
 		Where(entinventorybalance.TenantID(tenantID)).
-		WithItem().
-		WithWarehouse().
-		All(r.Context())
+		Where(entinventorybalance.HasItemWith(itemPreds...)).
+		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
+		WithWarehouse()
+	if warehouseIDStr != "" {
+		if wid, e := uuid.Parse(warehouseIDStr); e == nil {
+			balQuery = balQuery.Where(entinventorybalance.WarehouseID(wid))
+		}
+	}
+
+	balances, err := balQuery.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list stock")
 		return
@@ -49,10 +86,17 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 
 	result := make([]stockLevelDTO, 0, len(balances))
 	for _, b := range balances {
-		itemName, sku := "", ""
-		if b.Edges.Item != nil {
-			itemName = b.Edges.Item.Name
-			sku = b.Edges.Item.Sku
+		itemName, sku, typeStr, categoryName := "", "", "", ""
+		var categoryID, unitID *uuid.UUID
+		if it := b.Edges.Item; it != nil {
+			itemName = it.Name
+			sku = it.Sku
+			typeStr = string(it.Type)
+			categoryID = it.CategoryID
+			unitID = it.UnitID
+			if it.Edges.ItemCategory != nil {
+				categoryName = it.Edges.ItemCategory.Name
+			}
 		}
 		warehouseName := ""
 		if b.Edges.Warehouse != nil {
@@ -71,6 +115,17 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 			v := b.ReorderLevel
 			reorderPoint = &v
 		}
+
+		// Status filters: out-of-stock = nothing available; low = at/below reorder but > 0.
+		isOut := b.Available <= 0
+		isLow := reorderPoint != nil && b.Available > 0 && b.Available <= float64(*reorderPoint)
+		if outOfStock && !isOut {
+			continue
+		}
+		if lowStock && !isLow {
+			continue
+		}
+
 		result = append(result, stockLevelDTO{
 			ID:            b.ID,
 			ItemName:      itemName,
@@ -81,6 +136,10 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 			Reserved:      b.Reserved,
 			ReorderPoint:  reorderPoint,
 			Unit:          b.UnitOfMeasure,
+			UnitID:        unitID,
+			CategoryID:    categoryID,
+			CategoryName:  categoryName,
+			Type:          typeStr,
 		})
 	}
 	writeJSON(w, http.StatusOK, result)

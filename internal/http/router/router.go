@@ -45,6 +45,13 @@ func New(
 ) http.Handler {
 	r := chi.NewRouter()
 
+	// Feature-gated GET routes (e.g. GET /inventory/adjustments) are exempt from the
+	// group-level GET auth, so give the handler the auth middleware to re-require auth
+	// on those routes and populate claims before the feature check.
+	if inventoryHandler != nil && authMiddleware != nil {
+		inventoryHandler.SetAuthMiddleware(authMiddleware)
+	}
+
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(httpware.RequestID)
