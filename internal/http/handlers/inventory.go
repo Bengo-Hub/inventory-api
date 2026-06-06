@@ -100,6 +100,7 @@ type InventoryHandler struct {
 	ticketsSvc   *tickets.Service
 	docSvc       *documents.Service
 	rbacSvc      *rbac.Service
+	authMW       *authclient.AuthMiddleware
 }
 
 // NewInventoryHandler creates a new inventory handler.
@@ -117,6 +118,24 @@ func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc Stock
 // When set, mutation routes require the corresponding inventory.*.{action} permission.
 func (h *InventoryHandler) SetRBACService(svc *rbac.Service) {
 	h.rbacSvc = svc
+}
+
+// SetAuthMiddleware injects the auth middleware so feature-gated GET routes can
+// require authentication. The route group skips auth for GETs (to keep public/S2S
+// reads open), which means claims are never extracted — so a feature-gated GET like
+// /adjustments must opt back into auth explicitly, otherwise RequireFeature sees no
+// claims and returns 401 even for logged-in users.
+func (h *InventoryHandler) SetAuthMiddleware(mw *authclient.AuthMiddleware) {
+	h.authMW = mw
+}
+
+// requireAuthForFeatureGet returns RequireAuth when the auth middleware is wired,
+// or a pass-through otherwise (preserving prior behavior in tests / setups without auth).
+func (h *InventoryHandler) requireAuthForFeatureGet() func(http.Handler) http.Handler {
+	if h.authMW == nil {
+		return func(next http.Handler) http.Handler { return next }
+	}
+	return h.authMW.RequireAuth
 }
 
 // SetModifiersService injects the modifiers service (optional; modifier endpoints are skipped if nil).
@@ -162,7 +181,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Stock adjustments — requires stock_tracking feature
 		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
 		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
-		inv.With(authclient.RequireFeature("stock_tracking")).Get("/adjustments", h.ListAdjustments)
+		// GET is exempt from the group-level auth (public/S2S reads), so opt back into
+		// auth here to populate claims before the feature check — otherwise logged-in
+		// users hit a spurious 401 "missing claims".
+		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeature("stock_tracking")).Get("/adjustments", h.ListAdjustments)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
