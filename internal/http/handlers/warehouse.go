@@ -18,6 +18,7 @@ import (
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
 
 // OutletSyncer is implemented by tenant.BranchSubscriber and used by the admin
@@ -380,6 +381,16 @@ func (h *WarehouseHandler) CreateWarehouse(w http.ResponseWriter, r *http.Reques
 	if req.Name == "" || req.Code == "" {
 		writeError(w, http.StatusBadRequest, "MISSING_FIELDS", "name and code are required")
 		return
+	}
+
+	// Subscription limit: enforce max_warehouses for the tenant's plan before creating.
+	existingCount, err := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID)).
+		Count(r.Context())
+	if err != nil {
+		h.log.Error("count warehouses for limit check failed", zap.Error(err))
+	} else if subscriptions.AssertLimit(w, r, "max_warehouses", existingCount) {
+		return // 402 written; tenant at/over their plan's warehouse limit
 	}
 
 	q := h.orm.Warehouse.Create().
