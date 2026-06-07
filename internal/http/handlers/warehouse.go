@@ -21,6 +21,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
 
+// s2sHTTPClient is used for service-to-service HTTP calls with a bounded timeout.
+var s2sHTTPClient = &http.Client{Timeout: 15 * time.Second}
+
 // OutletSyncer is implemented by tenant.BranchSubscriber and used by the admin
 // sync endpoint to reconcile outlet→warehouse mirrors without a circular import.
 type OutletSyncer interface {
@@ -252,7 +255,7 @@ func (h *WarehouseHandler) ListOutlets(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set("Authorization", auth)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s2sHTTPClient.Do(req)
 	if err != nil {
 		h.log.Error("outlet proxy request failed", zap.Error(err))
 		writeError(w, http.StatusBadGateway, "PROXY_ERROR", "Failed to fetch outlets")

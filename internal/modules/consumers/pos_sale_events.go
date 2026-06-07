@@ -11,6 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -77,7 +78,9 @@ func (c *POSSaleEventsConsumer) Start(ctx context.Context, js nats.JetStreamCont
 		}
 	}
 
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"pos.sale.finalized",
 		c.handleMessage,
 		nats.Durable(posSalesDurableConsumer),
@@ -86,13 +89,10 @@ func (c *POSSaleEventsConsumer) Start(ctx context.Context, js nats.JetStreamCont
 		nats.MaxDeliver(posSalesMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("pos sale events: subscribe: %w", err)
-	}
 	c.log.Info("pos sale events consumer started", zap.String("durable", posSalesDurableConsumer))
 
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {

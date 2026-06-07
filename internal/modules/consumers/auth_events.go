@@ -65,7 +65,7 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 
 	for _, s := range subs {
 		s := s
-		if _, subErr := js.Subscribe(s.subject, func(msg *nats.Msg) {
+		sharedevents.SubscribeWithRebind(c.log, js, s.subject, func(msg *nats.Msg) {
 			evt, err := sharedevents.FromJSON(msg.Data)
 			if err != nil {
 				c.log.Error("failed to unmarshal auth user event",
@@ -86,10 +86,7 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 			nats.AckWait(30*time.Second),
 			nats.MaxDeliver(5),
 			nats.DeliverAll(),
-		); subErr != nil {
-			c.log.Warn("auth events: subscribe failed",
-				zap.String("subject", s.subject), zap.Error(subErr))
-		}
+		)
 	}
 
 	c.log.Info("auth user event subscriptions active",
