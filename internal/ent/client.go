@@ -76,6 +76,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -217,6 +218,8 @@ type Client struct {
 	ServiceDelivery *ServiceDeliveryClient
 	// StockAdjustment is the client for interacting with the StockAdjustment builders.
 	StockAdjustment *StockAdjustmentClient
+	// StockBreakdown is the client for interacting with the StockBreakdown builders.
+	StockBreakdown *StockBreakdownClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
 	StockTransfer *StockTransferClient
 	// StockTransferLine is the client for interacting with the StockTransferLine builders.
@@ -316,6 +319,7 @@ func (c *Client) init() {
 	c.ServiceConfig = NewServiceConfigClient(c.config)
 	c.ServiceDelivery = NewServiceDeliveryClient(c.config)
 	c.StockAdjustment = NewStockAdjustmentClient(c.config)
+	c.StockBreakdown = NewStockBreakdownClient(c.config)
 	c.StockTransfer = NewStockTransferClient(c.config)
 	c.StockTransferLine = NewStockTransferLineClient(c.config)
 	c.Supplier = NewSupplierClient(c.config)
@@ -482,6 +486,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ServiceConfig:          NewServiceConfigClient(cfg),
 		ServiceDelivery:        NewServiceDeliveryClient(cfg),
 		StockAdjustment:        NewStockAdjustmentClient(cfg),
+		StockBreakdown:         NewStockBreakdownClient(cfg),
 		StockTransfer:          NewStockTransferClient(cfg),
 		StockTransferLine:      NewStockTransferLineClient(cfg),
 		Supplier:               NewSupplierClient(cfg),
@@ -575,6 +580,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ServiceConfig:          NewServiceConfigClient(cfg),
 		ServiceDelivery:        NewServiceDeliveryClient(cfg),
 		StockAdjustment:        NewStockAdjustmentClient(cfg),
+		StockBreakdown:         NewStockBreakdownClient(cfg),
 		StockTransfer:          NewStockTransferClient(cfg),
 		StockTransferLine:      NewStockTransferLineClient(cfg),
 		Supplier:               NewSupplierClient(cfg),
@@ -632,10 +638,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
 		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
 		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.StockBreakdown, c.StockTransfer, c.StockTransferLine, c.Supplier,
+		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
+		c.Ticket, c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -659,10 +665,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
 		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
 		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
-		c.Warranty,
+		c.StockBreakdown, c.StockTransfer, c.StockTransferLine, c.Supplier,
+		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
+		c.Ticket, c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -791,6 +797,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ServiceDelivery.mutate(ctx, m)
 	case *StockAdjustmentMutation:
 		return c.StockAdjustment.mutate(ctx, m)
+	case *StockBreakdownMutation:
+		return c.StockBreakdown.mutate(ctx, m)
 	case *StockTransferMutation:
 		return c.StockTransfer.mutate(ctx, m)
 	case *StockTransferLineMutation:
@@ -10068,6 +10076,139 @@ func (c *StockAdjustmentClient) mutate(ctx context.Context, m *StockAdjustmentMu
 	}
 }
 
+// StockBreakdownClient is a client for the StockBreakdown schema.
+type StockBreakdownClient struct {
+	config
+}
+
+// NewStockBreakdownClient returns a client for the StockBreakdown from the given config.
+func NewStockBreakdownClient(c config) *StockBreakdownClient {
+	return &StockBreakdownClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stockbreakdown.Hooks(f(g(h())))`.
+func (c *StockBreakdownClient) Use(hooks ...Hook) {
+	c.hooks.StockBreakdown = append(c.hooks.StockBreakdown, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stockbreakdown.Intercept(f(g(h())))`.
+func (c *StockBreakdownClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockBreakdown = append(c.inters.StockBreakdown, interceptors...)
+}
+
+// Create returns a builder for creating a StockBreakdown entity.
+func (c *StockBreakdownClient) Create() *StockBreakdownCreate {
+	mutation := newStockBreakdownMutation(c.config, OpCreate)
+	return &StockBreakdownCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockBreakdown entities.
+func (c *StockBreakdownClient) CreateBulk(builders ...*StockBreakdownCreate) *StockBreakdownCreateBulk {
+	return &StockBreakdownCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockBreakdownClient) MapCreateBulk(slice any, setFunc func(*StockBreakdownCreate, int)) *StockBreakdownCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockBreakdownCreateBulk{err: fmt.Errorf("calling to StockBreakdownClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockBreakdownCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockBreakdownCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockBreakdown.
+func (c *StockBreakdownClient) Update() *StockBreakdownUpdate {
+	mutation := newStockBreakdownMutation(c.config, OpUpdate)
+	return &StockBreakdownUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockBreakdownClient) UpdateOne(_m *StockBreakdown) *StockBreakdownUpdateOne {
+	mutation := newStockBreakdownMutation(c.config, OpUpdateOne, withStockBreakdown(_m))
+	return &StockBreakdownUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockBreakdownClient) UpdateOneID(id uuid.UUID) *StockBreakdownUpdateOne {
+	mutation := newStockBreakdownMutation(c.config, OpUpdateOne, withStockBreakdownID(id))
+	return &StockBreakdownUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockBreakdown.
+func (c *StockBreakdownClient) Delete() *StockBreakdownDelete {
+	mutation := newStockBreakdownMutation(c.config, OpDelete)
+	return &StockBreakdownDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockBreakdownClient) DeleteOne(_m *StockBreakdown) *StockBreakdownDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockBreakdownClient) DeleteOneID(id uuid.UUID) *StockBreakdownDeleteOne {
+	builder := c.Delete().Where(stockbreakdown.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockBreakdownDeleteOne{builder}
+}
+
+// Query returns a query builder for StockBreakdown.
+func (c *StockBreakdownClient) Query() *StockBreakdownQuery {
+	return &StockBreakdownQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockBreakdown},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockBreakdown entity by its id.
+func (c *StockBreakdownClient) Get(ctx context.Context, id uuid.UUID) (*StockBreakdown, error) {
+	return c.Query().Where(stockbreakdown.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockBreakdownClient) GetX(ctx context.Context, id uuid.UUID) *StockBreakdown {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockBreakdownClient) Hooks() []Hook {
+	return c.hooks.StockBreakdown
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockBreakdownClient) Interceptors() []Interceptor {
+	return c.inters.StockBreakdown
+}
+
+func (c *StockBreakdownClient) mutate(ctx context.Context, m *StockBreakdownMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockBreakdownCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockBreakdownUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockBreakdownUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockBreakdownDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockBreakdown mutation op: %q", m.Op())
+	}
+}
+
 // StockTransferClient is a client for the StockTransfer schema.
 type StockTransferClient struct {
 	config
@@ -12217,10 +12358,10 @@ type (
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
 		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Hook
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -12235,9 +12376,9 @@ type (
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
 		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Interceptor
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
+		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )

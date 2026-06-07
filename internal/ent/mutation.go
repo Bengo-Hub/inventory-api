@@ -74,6 +74,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -160,6 +161,7 @@ const (
 	TypeServiceConfig          = "ServiceConfig"
 	TypeServiceDelivery        = "ServiceDelivery"
 	TypeStockAdjustment        = "StockAdjustment"
+	TypeStockBreakdown         = "StockBreakdown"
 	TypeStockTransfer          = "StockTransfer"
 	TypeStockTransferLine      = "StockTransferLine"
 	TypeSupplier               = "Supplier"
@@ -66367,6 +66369,1255 @@ func (m *StockAdjustmentMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *StockAdjustmentMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown StockAdjustment edge %s", name)
+}
+
+// StockBreakdownMutation represents an operation that mutates the StockBreakdown nodes in the graph.
+type StockBreakdownMutation struct {
+	config
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	tenant_id            *uuid.UUID
+	parent_item_id       *uuid.UUID
+	parent_sku           *string
+	child_item_id        *uuid.UUID
+	child_sku            *string
+	warehouse_id         *uuid.UUID
+	parent_quantity      *float64
+	addparent_quantity   *float64
+	child_quantity       *float64
+	addchild_quantity    *float64
+	conversion_factor    *float64
+	addconversion_factor *float64
+	cost_allocated       *float64
+	addcost_allocated    *float64
+	reference            *string
+	notes                *string
+	created_by           *uuid.UUID
+	created_at           *time.Time
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*StockBreakdown, error)
+	predicates           []predicate.StockBreakdown
+}
+
+var _ ent.Mutation = (*StockBreakdownMutation)(nil)
+
+// stockbreakdownOption allows management of the mutation configuration using functional options.
+type stockbreakdownOption func(*StockBreakdownMutation)
+
+// newStockBreakdownMutation creates new mutation for the StockBreakdown entity.
+func newStockBreakdownMutation(c config, op Op, opts ...stockbreakdownOption) *StockBreakdownMutation {
+	m := &StockBreakdownMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStockBreakdown,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStockBreakdownID sets the ID field of the mutation.
+func withStockBreakdownID(id uuid.UUID) stockbreakdownOption {
+	return func(m *StockBreakdownMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StockBreakdown
+		)
+		m.oldValue = func(ctx context.Context) (*StockBreakdown, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StockBreakdown.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStockBreakdown sets the old StockBreakdown of the mutation.
+func withStockBreakdown(node *StockBreakdown) stockbreakdownOption {
+	return func(m *StockBreakdownMutation) {
+		m.oldValue = func(context.Context) (*StockBreakdown, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StockBreakdownMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StockBreakdownMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StockBreakdown entities.
+func (m *StockBreakdownMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StockBreakdownMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StockBreakdownMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StockBreakdown.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *StockBreakdownMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *StockBreakdownMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *StockBreakdownMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetParentItemID sets the "parent_item_id" field.
+func (m *StockBreakdownMutation) SetParentItemID(u uuid.UUID) {
+	m.parent_item_id = &u
+}
+
+// ParentItemID returns the value of the "parent_item_id" field in the mutation.
+func (m *StockBreakdownMutation) ParentItemID() (r uuid.UUID, exists bool) {
+	v := m.parent_item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentItemID returns the old "parent_item_id" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldParentItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentItemID: %w", err)
+	}
+	return oldValue.ParentItemID, nil
+}
+
+// ResetParentItemID resets all changes to the "parent_item_id" field.
+func (m *StockBreakdownMutation) ResetParentItemID() {
+	m.parent_item_id = nil
+}
+
+// SetParentSku sets the "parent_sku" field.
+func (m *StockBreakdownMutation) SetParentSku(s string) {
+	m.parent_sku = &s
+}
+
+// ParentSku returns the value of the "parent_sku" field in the mutation.
+func (m *StockBreakdownMutation) ParentSku() (r string, exists bool) {
+	v := m.parent_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentSku returns the old "parent_sku" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldParentSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentSku: %w", err)
+	}
+	return oldValue.ParentSku, nil
+}
+
+// ResetParentSku resets all changes to the "parent_sku" field.
+func (m *StockBreakdownMutation) ResetParentSku() {
+	m.parent_sku = nil
+}
+
+// SetChildItemID sets the "child_item_id" field.
+func (m *StockBreakdownMutation) SetChildItemID(u uuid.UUID) {
+	m.child_item_id = &u
+}
+
+// ChildItemID returns the value of the "child_item_id" field in the mutation.
+func (m *StockBreakdownMutation) ChildItemID() (r uuid.UUID, exists bool) {
+	v := m.child_item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChildItemID returns the old "child_item_id" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldChildItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChildItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChildItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChildItemID: %w", err)
+	}
+	return oldValue.ChildItemID, nil
+}
+
+// ResetChildItemID resets all changes to the "child_item_id" field.
+func (m *StockBreakdownMutation) ResetChildItemID() {
+	m.child_item_id = nil
+}
+
+// SetChildSku sets the "child_sku" field.
+func (m *StockBreakdownMutation) SetChildSku(s string) {
+	m.child_sku = &s
+}
+
+// ChildSku returns the value of the "child_sku" field in the mutation.
+func (m *StockBreakdownMutation) ChildSku() (r string, exists bool) {
+	v := m.child_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChildSku returns the old "child_sku" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldChildSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChildSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChildSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChildSku: %w", err)
+	}
+	return oldValue.ChildSku, nil
+}
+
+// ResetChildSku resets all changes to the "child_sku" field.
+func (m *StockBreakdownMutation) ResetChildSku() {
+	m.child_sku = nil
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (m *StockBreakdownMutation) SetWarehouseID(u uuid.UUID) {
+	m.warehouse_id = &u
+}
+
+// WarehouseID returns the value of the "warehouse_id" field in the mutation.
+func (m *StockBreakdownMutation) WarehouseID() (r uuid.UUID, exists bool) {
+	v := m.warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWarehouseID returns the old "warehouse_id" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldWarehouseID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWarehouseID: %w", err)
+	}
+	return oldValue.WarehouseID, nil
+}
+
+// ResetWarehouseID resets all changes to the "warehouse_id" field.
+func (m *StockBreakdownMutation) ResetWarehouseID() {
+	m.warehouse_id = nil
+}
+
+// SetParentQuantity sets the "parent_quantity" field.
+func (m *StockBreakdownMutation) SetParentQuantity(f float64) {
+	m.parent_quantity = &f
+	m.addparent_quantity = nil
+}
+
+// ParentQuantity returns the value of the "parent_quantity" field in the mutation.
+func (m *StockBreakdownMutation) ParentQuantity() (r float64, exists bool) {
+	v := m.parent_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentQuantity returns the old "parent_quantity" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldParentQuantity(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentQuantity: %w", err)
+	}
+	return oldValue.ParentQuantity, nil
+}
+
+// AddParentQuantity adds f to the "parent_quantity" field.
+func (m *StockBreakdownMutation) AddParentQuantity(f float64) {
+	if m.addparent_quantity != nil {
+		*m.addparent_quantity += f
+	} else {
+		m.addparent_quantity = &f
+	}
+}
+
+// AddedParentQuantity returns the value that was added to the "parent_quantity" field in this mutation.
+func (m *StockBreakdownMutation) AddedParentQuantity() (r float64, exists bool) {
+	v := m.addparent_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetParentQuantity resets all changes to the "parent_quantity" field.
+func (m *StockBreakdownMutation) ResetParentQuantity() {
+	m.parent_quantity = nil
+	m.addparent_quantity = nil
+}
+
+// SetChildQuantity sets the "child_quantity" field.
+func (m *StockBreakdownMutation) SetChildQuantity(f float64) {
+	m.child_quantity = &f
+	m.addchild_quantity = nil
+}
+
+// ChildQuantity returns the value of the "child_quantity" field in the mutation.
+func (m *StockBreakdownMutation) ChildQuantity() (r float64, exists bool) {
+	v := m.child_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChildQuantity returns the old "child_quantity" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldChildQuantity(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChildQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChildQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChildQuantity: %w", err)
+	}
+	return oldValue.ChildQuantity, nil
+}
+
+// AddChildQuantity adds f to the "child_quantity" field.
+func (m *StockBreakdownMutation) AddChildQuantity(f float64) {
+	if m.addchild_quantity != nil {
+		*m.addchild_quantity += f
+	} else {
+		m.addchild_quantity = &f
+	}
+}
+
+// AddedChildQuantity returns the value that was added to the "child_quantity" field in this mutation.
+func (m *StockBreakdownMutation) AddedChildQuantity() (r float64, exists bool) {
+	v := m.addchild_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetChildQuantity resets all changes to the "child_quantity" field.
+func (m *StockBreakdownMutation) ResetChildQuantity() {
+	m.child_quantity = nil
+	m.addchild_quantity = nil
+}
+
+// SetConversionFactor sets the "conversion_factor" field.
+func (m *StockBreakdownMutation) SetConversionFactor(f float64) {
+	m.conversion_factor = &f
+	m.addconversion_factor = nil
+}
+
+// ConversionFactor returns the value of the "conversion_factor" field in the mutation.
+func (m *StockBreakdownMutation) ConversionFactor() (r float64, exists bool) {
+	v := m.conversion_factor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConversionFactor returns the old "conversion_factor" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldConversionFactor(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConversionFactor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConversionFactor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConversionFactor: %w", err)
+	}
+	return oldValue.ConversionFactor, nil
+}
+
+// AddConversionFactor adds f to the "conversion_factor" field.
+func (m *StockBreakdownMutation) AddConversionFactor(f float64) {
+	if m.addconversion_factor != nil {
+		*m.addconversion_factor += f
+	} else {
+		m.addconversion_factor = &f
+	}
+}
+
+// AddedConversionFactor returns the value that was added to the "conversion_factor" field in this mutation.
+func (m *StockBreakdownMutation) AddedConversionFactor() (r float64, exists bool) {
+	v := m.addconversion_factor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConversionFactor resets all changes to the "conversion_factor" field.
+func (m *StockBreakdownMutation) ResetConversionFactor() {
+	m.conversion_factor = nil
+	m.addconversion_factor = nil
+}
+
+// SetCostAllocated sets the "cost_allocated" field.
+func (m *StockBreakdownMutation) SetCostAllocated(f float64) {
+	m.cost_allocated = &f
+	m.addcost_allocated = nil
+}
+
+// CostAllocated returns the value of the "cost_allocated" field in the mutation.
+func (m *StockBreakdownMutation) CostAllocated() (r float64, exists bool) {
+	v := m.cost_allocated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostAllocated returns the old "cost_allocated" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldCostAllocated(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostAllocated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostAllocated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostAllocated: %w", err)
+	}
+	return oldValue.CostAllocated, nil
+}
+
+// AddCostAllocated adds f to the "cost_allocated" field.
+func (m *StockBreakdownMutation) AddCostAllocated(f float64) {
+	if m.addcost_allocated != nil {
+		*m.addcost_allocated += f
+	} else {
+		m.addcost_allocated = &f
+	}
+}
+
+// AddedCostAllocated returns the value that was added to the "cost_allocated" field in this mutation.
+func (m *StockBreakdownMutation) AddedCostAllocated() (r float64, exists bool) {
+	v := m.addcost_allocated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCostAllocated clears the value of the "cost_allocated" field.
+func (m *StockBreakdownMutation) ClearCostAllocated() {
+	m.cost_allocated = nil
+	m.addcost_allocated = nil
+	m.clearedFields[stockbreakdown.FieldCostAllocated] = struct{}{}
+}
+
+// CostAllocatedCleared returns if the "cost_allocated" field was cleared in this mutation.
+func (m *StockBreakdownMutation) CostAllocatedCleared() bool {
+	_, ok := m.clearedFields[stockbreakdown.FieldCostAllocated]
+	return ok
+}
+
+// ResetCostAllocated resets all changes to the "cost_allocated" field.
+func (m *StockBreakdownMutation) ResetCostAllocated() {
+	m.cost_allocated = nil
+	m.addcost_allocated = nil
+	delete(m.clearedFields, stockbreakdown.FieldCostAllocated)
+}
+
+// SetReference sets the "reference" field.
+func (m *StockBreakdownMutation) SetReference(s string) {
+	m.reference = &s
+}
+
+// Reference returns the value of the "reference" field in the mutation.
+func (m *StockBreakdownMutation) Reference() (r string, exists bool) {
+	v := m.reference
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReference returns the old "reference" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldReference(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReference is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReference requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReference: %w", err)
+	}
+	return oldValue.Reference, nil
+}
+
+// ClearReference clears the value of the "reference" field.
+func (m *StockBreakdownMutation) ClearReference() {
+	m.reference = nil
+	m.clearedFields[stockbreakdown.FieldReference] = struct{}{}
+}
+
+// ReferenceCleared returns if the "reference" field was cleared in this mutation.
+func (m *StockBreakdownMutation) ReferenceCleared() bool {
+	_, ok := m.clearedFields[stockbreakdown.FieldReference]
+	return ok
+}
+
+// ResetReference resets all changes to the "reference" field.
+func (m *StockBreakdownMutation) ResetReference() {
+	m.reference = nil
+	delete(m.clearedFields, stockbreakdown.FieldReference)
+}
+
+// SetNotes sets the "notes" field.
+func (m *StockBreakdownMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *StockBreakdownMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *StockBreakdownMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[stockbreakdown.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *StockBreakdownMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[stockbreakdown.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *StockBreakdownMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, stockbreakdown.FieldNotes)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *StockBreakdownMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *StockBreakdownMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldCreatedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *StockBreakdownMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.clearedFields[stockbreakdown.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *StockBreakdownMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[stockbreakdown.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *StockBreakdownMutation) ResetCreatedBy() {
+	m.created_by = nil
+	delete(m.clearedFields, stockbreakdown.FieldCreatedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *StockBreakdownMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *StockBreakdownMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the StockBreakdown entity.
+// If the StockBreakdown object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockBreakdownMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *StockBreakdownMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the StockBreakdownMutation builder.
+func (m *StockBreakdownMutation) Where(ps ...predicate.StockBreakdown) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StockBreakdownMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StockBreakdownMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StockBreakdown, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StockBreakdownMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StockBreakdownMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StockBreakdown).
+func (m *StockBreakdownMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StockBreakdownMutation) Fields() []string {
+	fields := make([]string, 0, 14)
+	if m.tenant_id != nil {
+		fields = append(fields, stockbreakdown.FieldTenantID)
+	}
+	if m.parent_item_id != nil {
+		fields = append(fields, stockbreakdown.FieldParentItemID)
+	}
+	if m.parent_sku != nil {
+		fields = append(fields, stockbreakdown.FieldParentSku)
+	}
+	if m.child_item_id != nil {
+		fields = append(fields, stockbreakdown.FieldChildItemID)
+	}
+	if m.child_sku != nil {
+		fields = append(fields, stockbreakdown.FieldChildSku)
+	}
+	if m.warehouse_id != nil {
+		fields = append(fields, stockbreakdown.FieldWarehouseID)
+	}
+	if m.parent_quantity != nil {
+		fields = append(fields, stockbreakdown.FieldParentQuantity)
+	}
+	if m.child_quantity != nil {
+		fields = append(fields, stockbreakdown.FieldChildQuantity)
+	}
+	if m.conversion_factor != nil {
+		fields = append(fields, stockbreakdown.FieldConversionFactor)
+	}
+	if m.cost_allocated != nil {
+		fields = append(fields, stockbreakdown.FieldCostAllocated)
+	}
+	if m.reference != nil {
+		fields = append(fields, stockbreakdown.FieldReference)
+	}
+	if m.notes != nil {
+		fields = append(fields, stockbreakdown.FieldNotes)
+	}
+	if m.created_by != nil {
+		fields = append(fields, stockbreakdown.FieldCreatedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, stockbreakdown.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StockBreakdownMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case stockbreakdown.FieldTenantID:
+		return m.TenantID()
+	case stockbreakdown.FieldParentItemID:
+		return m.ParentItemID()
+	case stockbreakdown.FieldParentSku:
+		return m.ParentSku()
+	case stockbreakdown.FieldChildItemID:
+		return m.ChildItemID()
+	case stockbreakdown.FieldChildSku:
+		return m.ChildSku()
+	case stockbreakdown.FieldWarehouseID:
+		return m.WarehouseID()
+	case stockbreakdown.FieldParentQuantity:
+		return m.ParentQuantity()
+	case stockbreakdown.FieldChildQuantity:
+		return m.ChildQuantity()
+	case stockbreakdown.FieldConversionFactor:
+		return m.ConversionFactor()
+	case stockbreakdown.FieldCostAllocated:
+		return m.CostAllocated()
+	case stockbreakdown.FieldReference:
+		return m.Reference()
+	case stockbreakdown.FieldNotes:
+		return m.Notes()
+	case stockbreakdown.FieldCreatedBy:
+		return m.CreatedBy()
+	case stockbreakdown.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StockBreakdownMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case stockbreakdown.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case stockbreakdown.FieldParentItemID:
+		return m.OldParentItemID(ctx)
+	case stockbreakdown.FieldParentSku:
+		return m.OldParentSku(ctx)
+	case stockbreakdown.FieldChildItemID:
+		return m.OldChildItemID(ctx)
+	case stockbreakdown.FieldChildSku:
+		return m.OldChildSku(ctx)
+	case stockbreakdown.FieldWarehouseID:
+		return m.OldWarehouseID(ctx)
+	case stockbreakdown.FieldParentQuantity:
+		return m.OldParentQuantity(ctx)
+	case stockbreakdown.FieldChildQuantity:
+		return m.OldChildQuantity(ctx)
+	case stockbreakdown.FieldConversionFactor:
+		return m.OldConversionFactor(ctx)
+	case stockbreakdown.FieldCostAllocated:
+		return m.OldCostAllocated(ctx)
+	case stockbreakdown.FieldReference:
+		return m.OldReference(ctx)
+	case stockbreakdown.FieldNotes:
+		return m.OldNotes(ctx)
+	case stockbreakdown.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case stockbreakdown.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown StockBreakdown field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockBreakdownMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case stockbreakdown.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case stockbreakdown.FieldParentItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentItemID(v)
+		return nil
+	case stockbreakdown.FieldParentSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentSku(v)
+		return nil
+	case stockbreakdown.FieldChildItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChildItemID(v)
+		return nil
+	case stockbreakdown.FieldChildSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChildSku(v)
+		return nil
+	case stockbreakdown.FieldWarehouseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWarehouseID(v)
+		return nil
+	case stockbreakdown.FieldParentQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentQuantity(v)
+		return nil
+	case stockbreakdown.FieldChildQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChildQuantity(v)
+		return nil
+	case stockbreakdown.FieldConversionFactor:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConversionFactor(v)
+		return nil
+	case stockbreakdown.FieldCostAllocated:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostAllocated(v)
+		return nil
+	case stockbreakdown.FieldReference:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReference(v)
+		return nil
+	case stockbreakdown.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case stockbreakdown.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case stockbreakdown.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockBreakdown field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StockBreakdownMutation) AddedFields() []string {
+	var fields []string
+	if m.addparent_quantity != nil {
+		fields = append(fields, stockbreakdown.FieldParentQuantity)
+	}
+	if m.addchild_quantity != nil {
+		fields = append(fields, stockbreakdown.FieldChildQuantity)
+	}
+	if m.addconversion_factor != nil {
+		fields = append(fields, stockbreakdown.FieldConversionFactor)
+	}
+	if m.addcost_allocated != nil {
+		fields = append(fields, stockbreakdown.FieldCostAllocated)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StockBreakdownMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case stockbreakdown.FieldParentQuantity:
+		return m.AddedParentQuantity()
+	case stockbreakdown.FieldChildQuantity:
+		return m.AddedChildQuantity()
+	case stockbreakdown.FieldConversionFactor:
+		return m.AddedConversionFactor()
+	case stockbreakdown.FieldCostAllocated:
+		return m.AddedCostAllocated()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockBreakdownMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case stockbreakdown.FieldParentQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddParentQuantity(v)
+		return nil
+	case stockbreakdown.FieldChildQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChildQuantity(v)
+		return nil
+	case stockbreakdown.FieldConversionFactor:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConversionFactor(v)
+		return nil
+	case stockbreakdown.FieldCostAllocated:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostAllocated(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockBreakdown numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StockBreakdownMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(stockbreakdown.FieldCostAllocated) {
+		fields = append(fields, stockbreakdown.FieldCostAllocated)
+	}
+	if m.FieldCleared(stockbreakdown.FieldReference) {
+		fields = append(fields, stockbreakdown.FieldReference)
+	}
+	if m.FieldCleared(stockbreakdown.FieldNotes) {
+		fields = append(fields, stockbreakdown.FieldNotes)
+	}
+	if m.FieldCleared(stockbreakdown.FieldCreatedBy) {
+		fields = append(fields, stockbreakdown.FieldCreatedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StockBreakdownMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StockBreakdownMutation) ClearField(name string) error {
+	switch name {
+	case stockbreakdown.FieldCostAllocated:
+		m.ClearCostAllocated()
+		return nil
+	case stockbreakdown.FieldReference:
+		m.ClearReference()
+		return nil
+	case stockbreakdown.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case stockbreakdown.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown StockBreakdown nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StockBreakdownMutation) ResetField(name string) error {
+	switch name {
+	case stockbreakdown.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case stockbreakdown.FieldParentItemID:
+		m.ResetParentItemID()
+		return nil
+	case stockbreakdown.FieldParentSku:
+		m.ResetParentSku()
+		return nil
+	case stockbreakdown.FieldChildItemID:
+		m.ResetChildItemID()
+		return nil
+	case stockbreakdown.FieldChildSku:
+		m.ResetChildSku()
+		return nil
+	case stockbreakdown.FieldWarehouseID:
+		m.ResetWarehouseID()
+		return nil
+	case stockbreakdown.FieldParentQuantity:
+		m.ResetParentQuantity()
+		return nil
+	case stockbreakdown.FieldChildQuantity:
+		m.ResetChildQuantity()
+		return nil
+	case stockbreakdown.FieldConversionFactor:
+		m.ResetConversionFactor()
+		return nil
+	case stockbreakdown.FieldCostAllocated:
+		m.ResetCostAllocated()
+		return nil
+	case stockbreakdown.FieldReference:
+		m.ResetReference()
+		return nil
+	case stockbreakdown.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case stockbreakdown.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case stockbreakdown.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown StockBreakdown field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StockBreakdownMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StockBreakdownMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StockBreakdownMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StockBreakdownMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StockBreakdownMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StockBreakdownMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StockBreakdownMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StockBreakdown unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StockBreakdownMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StockBreakdown edge %s", name)
 }
 
 // StockTransferMutation represents an operation that mutates the StockTransfer nodes in the graph.

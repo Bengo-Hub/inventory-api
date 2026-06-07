@@ -132,6 +132,8 @@ type Tx struct {
 	ServiceDelivery *ServiceDeliveryClient
 	// StockAdjustment is the client for interacting with the StockAdjustment builders.
 	StockAdjustment *StockAdjustmentClient
+	// StockBreakdown is the client for interacting with the StockBreakdown builders.
+	StockBreakdown *StockBreakdownClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
 	StockTransfer *StockTransferClient
 	// StockTransferLine is the client for interacting with the StockTransferLine builders.
@@ -351,6 +353,7 @@ func (tx *Tx) init() {
 	tx.ServiceConfig = NewServiceConfigClient(tx.config)
 	tx.ServiceDelivery = NewServiceDeliveryClient(tx.config)
 	tx.StockAdjustment = NewStockAdjustmentClient(tx.config)
+	tx.StockBreakdown = NewStockBreakdownClient(tx.config)
 	tx.StockTransfer = NewStockTransferClient(tx.config)
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
 	tx.Supplier = NewSupplierClient(tx.config)

@@ -51,6 +51,7 @@ type StockServicer interface {
 	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
+	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
 }
 
@@ -181,6 +182,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Stock adjustments — requires stock_tracking feature
 		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
 		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
+		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
 		// GET is exempt from the group-level auth (public/S2S reads), so opt back into
 		// auth here to populate claims before the feature check — otherwise logged-in
 		// users hit a spurious 401 "missing claims".

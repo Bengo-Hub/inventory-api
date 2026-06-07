@@ -186,6 +186,9 @@ type ServiceDelivery func(*sql.Selector)
 // StockAdjustment is the predicate function for stockadjustment builders.
 type StockAdjustment func(*sql.Selector)
 
+// StockBreakdown is the predicate function for stockbreakdown builders.
+type StockBreakdown func(*sql.Selector)
+
 // StockTransfer is the predicate function for stocktransfer builders.
 type StockTransfer func(*sql.Selector)
 
