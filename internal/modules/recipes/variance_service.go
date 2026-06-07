@@ -16,6 +16,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 )
 
+// s2sHTTPClient is used for service-to-service HTTP calls with a bounded timeout.
+var s2sHTTPClient = &http.Client{Timeout: 15 * time.Second}
+
 // VarianceService computes actual vs theoretical food cost variance.
 type VarianceService struct {
 	client      *ent.Client
@@ -212,7 +215,7 @@ func (s *VarianceService) fetchSoldQty(ctx context.Context, tenantSlug string, s
 		req.Header.Set("X-API-Key", s.apiKey)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s2sHTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

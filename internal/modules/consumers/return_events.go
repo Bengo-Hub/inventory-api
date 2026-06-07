@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -57,7 +58,9 @@ func (c *ReturnEventsConsumer) StartPOSReturns(ctx context.Context, js nats.JetS
 		}
 	}
 
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"pos.return.completed",
 		c.handlePOSReturn,
 		nats.Durable(posReturnDurableConsumer),
@@ -66,13 +69,10 @@ func (c *ReturnEventsConsumer) StartPOSReturns(ctx context.Context, js nats.JetS
 		nats.MaxDeliver(returnEventsMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("pos returns: subscribe: %w", err)
-	}
 	c.log.Info("POS return events consumer started", zap.String("durable", posReturnDurableConsumer))
 
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 // StartOrderingReturns subscribes to ordering.return.approved events.
@@ -91,7 +91,9 @@ func (c *ReturnEventsConsumer) StartOrderingReturns(ctx context.Context, js nats
 		}
 	}
 
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"ordering.return.approved",
 		c.handleOrderingReturn,
 		nats.Durable(orderingReturnDurableConsumer),
@@ -100,13 +102,10 @@ func (c *ReturnEventsConsumer) StartOrderingReturns(ctx context.Context, js nats
 		nats.MaxDeliver(returnEventsMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("ordering returns: subscribe: %w", err)
-	}
 	c.log.Info("ordering return events consumer started", zap.String("durable", orderingReturnDurableConsumer))
 
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 func (c *ReturnEventsConsumer) handlePOSReturn(msg *nats.Msg) {
