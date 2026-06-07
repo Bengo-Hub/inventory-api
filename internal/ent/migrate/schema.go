@@ -2460,6 +2460,52 @@ var (
 			},
 		},
 	}
+	// StockBreakdownsColumns holds the columns for the "stock_breakdowns" table.
+	StockBreakdownsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "parent_item_id", Type: field.TypeUUID},
+		{Name: "parent_sku", Type: field.TypeString},
+		{Name: "child_item_id", Type: field.TypeUUID},
+		{Name: "child_sku", Type: field.TypeString},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "parent_quantity", Type: field.TypeFloat64},
+		{Name: "child_quantity", Type: field.TypeFloat64},
+		{Name: "conversion_factor", Type: field.TypeFloat64},
+		{Name: "cost_allocated", Type: field.TypeFloat64, Nullable: true},
+		{Name: "reference", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// StockBreakdownsTable holds the schema information for the "stock_breakdowns" table.
+	StockBreakdownsTable = &schema.Table{
+		Name:       "stock_breakdowns",
+		Columns:    StockBreakdownsColumns,
+		PrimaryKey: []*schema.Column{StockBreakdownsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockbreakdown_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockBreakdownsColumns[1]},
+			},
+			{
+				Name:    "stockbreakdown_tenant_id_parent_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockBreakdownsColumns[1], StockBreakdownsColumns[2]},
+			},
+			{
+				Name:    "stockbreakdown_tenant_id_child_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockBreakdownsColumns[1], StockBreakdownsColumns[4]},
+			},
+			{
+				Name:    "stockbreakdown_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{StockBreakdownsColumns[14]},
+			},
+		},
+	}
 	// StockTransfersColumns holds the columns for the "stock_transfers" table.
 	StockTransfersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3084,6 +3130,7 @@ var (
 		ServiceConfigsTable,
 		ServiceDeliveriesTable,
 		StockAdjustmentsTable,
+		StockBreakdownsTable,
 		StockTransfersTable,
 		StockTransferLinesTable,
 		SuppliersTable,
