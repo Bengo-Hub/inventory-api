@@ -65,6 +65,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/serviceconfig"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -1682,6 +1683,16 @@ func init() {
 	stockadjustmentDescID := stockadjustmentFields[0].Descriptor()
 	// stockadjustment.DefaultID holds the default value on creation for the id field.
 	stockadjustment.DefaultID = stockadjustmentDescID.Default.(func() uuid.UUID)
+	stockbreakdownFields := schema.StockBreakdown{}.Fields()
+	_ = stockbreakdownFields
+	// stockbreakdownDescCreatedAt is the schema descriptor for created_at field.
+	stockbreakdownDescCreatedAt := stockbreakdownFields[14].Descriptor()
+	// stockbreakdown.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockbreakdown.DefaultCreatedAt = stockbreakdownDescCreatedAt.Default.(func() time.Time)
+	// stockbreakdownDescID is the schema descriptor for id field.
+	stockbreakdownDescID := stockbreakdownFields[0].Descriptor()
+	// stockbreakdown.DefaultID holds the default value on creation for the id field.
+	stockbreakdown.DefaultID = stockbreakdownDescID.Default.(func() uuid.UUID)
 	stocktransferFields := schema.StockTransfer{}.Fields()
 	_ = stocktransferFields
 	// stocktransferDescTransferNumber is the schema descriptor for transfer_number field.
