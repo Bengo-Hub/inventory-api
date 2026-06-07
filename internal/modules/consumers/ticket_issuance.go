@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entticket "github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -52,7 +53,9 @@ func (c *TicketIssuanceConsumer) Start(ctx context.Context, js nats.JetStreamCon
 			return fmt.Errorf("ticket issuance: ensure stream: %w", aerr)
 		}
 	}
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"ordering.order.payment_confirmed",
 		c.handleMessage,
 		nats.Durable(ticketIssuanceDurable),
@@ -61,12 +64,9 @@ func (c *TicketIssuanceConsumer) Start(ctx context.Context, js nats.JetStreamCon
 		nats.MaxDeliver(ticketIssuanceMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("ticket issuance: subscribe: %w", err)
-	}
 	c.log.Info("ticket issuance consumer started", zap.String("durable", ticketIssuanceDurable))
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 type paymentConfirmedEnvelope struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -62,7 +63,9 @@ func (c *OrderEventsConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		}
 	}
 
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"ordering.order.*",
 		c.handleMessage,
 		nats.Durable(orderEventsDurableConsumer),
@@ -71,13 +74,10 @@ func (c *OrderEventsConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		nats.MaxDeliver(orderEventsMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("order events: subscribe: %w", err)
-	}
 	c.log.Info("order events consumer started", zap.String("durable", orderEventsDurableConsumer))
 
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 func (c *OrderEventsConsumer) handleMessage(msg *nats.Msg) {

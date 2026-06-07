@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entbal "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
@@ -68,7 +69,9 @@ func (c *StockEventsConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		}
 	}
 
-	sub, err := js.Subscribe(
+	eventslib.SubscribeWithRebind(
+		c.log,
+		js,
 		"inventory.stock.low",
 		c.handleMessage,
 		nats.Durable(stockLowDurableConsumer),
@@ -77,13 +80,10 @@ func (c *StockEventsConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		nats.MaxDeliver(stockLowMaxDeliver),
 		nats.DeliverAll(),
 	)
-	if err != nil {
-		return fmt.Errorf("stock events: subscribe: %w", err)
-	}
 	c.log.Info("stock low events consumer started", zap.String("durable", stockLowDurableConsumer))
 
 	<-ctx.Done()
-	return sub.Unsubscribe()
+	return nil
 }
 
 func (c *StockEventsConsumer) handleMessage(msg *nats.Msg) {
