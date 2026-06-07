@@ -213,3 +213,25 @@ Tenant B (SuperMart) — use_case: retail
 ---
 
 > Update this ERD whenever Ent schemas change. Run `go generate ./internal/ent` after schema changes, then generate Atlas versioned migration with `go run ent/migrate/main.go <migration_name>`.
+
+---
+
+## Retail POS Revamp — schema reconciliation (2026-06-07)
+
+> This ERD was **stale**: many schemas exist in `internal/ent/schema/` but were undocumented here.
+> Verified present in code 2026-06-07 (add to diagrams): `supplier` (payment_terms, payment_terms_days,
+> credit_limit, payment_method_type[mpesa|mpesa_b2b|bank_transfer|cash|cheque] — but NOT
+> opening/advance balance, which is treasury AP `vendor_balance`), `purchaseorder`/`purchaseorderline`,
+> `goodsreceipt`/`goodsreceiptline`, `purchasereturn`/`purchasereturnline`, `requisition`/`requisitionline`,
+> `rfq`/`rfqline`/`rfqaward`, `supplierresponse`, `supplierperformance`, `stocktransfer`/line,
+> `stockadjustment`, `productionbatch`, `rawmaterialusage`, `qualitycheck`, `recipe`/`recipeingredient`
+> (with **`waste_percent`**), `item.yield_pct`, `pricingtier`/`itempricing`, `assetcategory`/`asset`/
+> `assetmaintenance`/`assetdisposal`/`assetinsurance`/`assetreservation`/`assetaudit`/`assettransfer`,
+> and the generic approval engine (`approvalrequest`/`approvalrule`/`approvalstep`/`approvalaction`).
+>
+> **Events already published** (correct any "planned" note): `inventory.purchase_order.received`,
+> `inventory.goods_receipt.created`, `inventory.goods_receipt.posted`.
+>
+> **New (Phase 1, retail revamp):** `StockBreakdown` — bulk→retail-unit uom-explode that conserves
+> inventory value by carrying cost parent→child (distinct from BOM production). See
+> `docs/sprints/sprint-procurement-breakdowns.md` and `/.claude/plans/_audit-parts/retail-pos-audit-and-roadmap-2026-06-07.md`.

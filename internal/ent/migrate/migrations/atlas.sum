@@ -1,4 +1,4 @@
-h1:/xnANtA3kwFBLslk0jiES4Mz/rRFFjvJMAjvCqvc1i0=
+h1:nb03Hn8je7gPxeXqirANqv7/tXkIqyySlJW5jub5XxI=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -30,4 +30,5 @@ h1:/xnANtA3kwFBLslk0jiES4Mz/rRFFjvJMAjvCqvc1i0=
 20260604211945_add_approval_matrix.sql h1:62AxvrojzH0ZZVeU8rc4KrRSIj8tJQkXdyGmSILLUqo=
 20260605071730_add_rfq.sql h1:9dgu4tRSvEDj7UTGi6PvyHL7UTJzm1WzrKySEfmCljo=
 20260605075831_quantities_to_decimal.sql h1:Aq3zTIlRVthkXVlGEzx16TU0UnZCodAk5dx363+OcQs=
-20260605193552_add_manufacturing_parity.sql h1:sL7MOvDQidwzZw9kDY+6c5q9s5/jbbihfRKA+jFUekc=
+20260605193552_add_manufacturing_parity.sql h1:WHH45NbhyWGWe68gX61pJeF2LQZtq1awH5i2dLkxxvc=
+20260607162429_add_stock_breakdown.sql h1:HCMKUjACO1HC59aM+xxun+AeIDC0tvkNivkDXjwBWdM=
