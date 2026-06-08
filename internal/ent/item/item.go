@@ -378,6 +378,7 @@ const DefaultUseCase = UseCaseRETAIL
 // UseCase values.
 const (
 	UseCaseRETAIL               UseCase = "RETAIL"
+	UseCasePHARMACY             UseCase = "PHARMACY"
 	UseCaseFOOD_BEVERAGE        UseCase = "FOOD_BEVERAGE"
 	UseCaseHOSPITALITY_ROOM     UseCase = "HOSPITALITY_ROOM"
 	UseCaseHOSPITALITY_FACILITY UseCase = "HOSPITALITY_FACILITY"
@@ -393,7 +394,7 @@ func (uc UseCase) String() string {
 // UseCaseValidator is a validator for the "use_case" field enum values. It is called by the builders before save.
 func UseCaseValidator(uc UseCase) error {
 	switch uc {
-	case UseCaseRETAIL, UseCaseFOOD_BEVERAGE, UseCaseHOSPITALITY_ROOM, UseCaseHOSPITALITY_FACILITY, UseCaseCONFERENCE, UseCaseSALON_SERVICE, UseCaseAMENITY:
+	case UseCaseRETAIL, UseCasePHARMACY, UseCaseFOOD_BEVERAGE, UseCaseHOSPITALITY_ROOM, UseCaseHOSPITALITY_FACILITY, UseCaseCONFERENCE, UseCaseSALON_SERVICE, UseCaseAMENITY:
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for use_case field: %q", uc)

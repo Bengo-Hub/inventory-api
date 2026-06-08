@@ -147,7 +147,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"is_active", "NO", "TRUE/FALSE", "Default TRUE."},
 		{"initial_quantity", "NO", "integer", "Set opening stock when creating new items."},
 		{"warehouse_name", "NO", "string", "Leave blank to use primary warehouse."},
-		{"use_case", "NO", "string", "RETAIL | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY. Drives POS classification."},
+		{"use_case", "NO", "string", "RETAIL | PHARMACY | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY. Drives POS classification."},
 		{"tax_code_id", "NO", "string", "KRA eTIMS tax category code (e.g. VAT16). Resolved against treasury tax codes."},
 		{"tax_inclusive", "NO", "TRUE/FALSE", "TRUE if selling_price already includes tax. Default FALSE."},
 		{"purchase_price", "NO", "number", "Supplier price per purchase unit (KES). Used with pack size + yield to auto-calc EP cost."},
