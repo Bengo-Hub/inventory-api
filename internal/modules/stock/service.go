@@ -932,13 +932,34 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		}
 	}()
 
-	consumptionItems := make([]entschema.ConsumptionItemJSON, len(req.Items))
-	for i, ci := range req.Items {
+	// Explode each requested SKU into its raw ingredients (mirrors CreateReservation) so
+	// callers may pass a menu-item SKU and we consume the recipe BOM. A SKU with no recipe
+	// passes through unchanged, so directly-stocked goods still deduct correctly. Without
+	// this, POS sale backflush (which sends menu SKUs) deducted the menu item's own balance
+	// instead of its ingredients.
+	type consumeLine struct {
+		sku string
+		qty float64
+	}
+	flattened := make([]consumeLine, 0, len(req.Items))
+	for _, ci := range req.Items {
+		ingredients, isBOM := s.explodeBOM(ctx, tenantID, ci.SKU, ci.Quantity)
+		if !isBOM {
+			flattened = append(flattened, consumeLine{sku: ci.SKU, qty: ci.Quantity})
+			continue
+		}
+		for _, ing := range ingredients {
+			flattened = append(flattened, consumeLine{sku: ing.SKU, qty: ing.Quantity})
+		}
+	}
+
+	consumptionItems := make([]entschema.ConsumptionItemJSON, len(flattened))
+	for i, cl := range flattened {
 		itm, err := tx.Item.Query().
-			Where(item.TenantID(tenantID), item.Sku(ci.SKU)).
+			Where(item.TenantID(tenantID), item.Sku(cl.sku)).
 			Only(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", ci.SKU, err)
+			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", cl.sku, err)
 		}
 
 		bal, err := tx.InventoryBalance.Query().
@@ -949,13 +970,13 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			).
 			First(ctx)
 		if err == nil {
-			deduct := ci.Quantity // keep fractional — do not truncate sub-unit consumption
+			deduct := cl.qty // keep fractional — do not truncate sub-unit consumption
 			updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(max(0, bal.OnHand-deduct)).
 				SetAvailable(max(0, bal.Available-deduct)).
 				Save(ctx)
 			if updateErr != nil {
-				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ci.SKU, updateErr)
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.sku, updateErr)
 			}
 
 			// Check for low stock after consumption
@@ -963,8 +984,8 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		}
 
 		consumptionItems[i] = entschema.ConsumptionItemJSON{
-			SKU:      ci.SKU,
-			Quantity: ci.Quantity,
+			SKU:      cl.sku,
+			Quantity: cl.qty,
 		}
 	}
 
