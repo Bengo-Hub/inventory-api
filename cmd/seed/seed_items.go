@@ -56,24 +56,54 @@ const (
 	imgMain2        = "/media/images/outlets/menu/main-course-2.jpg"
 )
 
-// tenantItemGroups maps tenant slugs to the item group functions they should use.
-// Add a slug here to scope which items a tenant receives during seeding.
-var tenantItemGroups = map[string][]func() []itemDef{
-	"codevertex-demo": {hospitalityItems, eventItems, pharmacyItems, retailItems, beautyServiceItems, detergentItems},
+// itemGroup pairs an item-definition function with the use_case its items belong to.
+// The use_case is applied to every def the function returns.
+type itemGroup struct {
+	fn      func() []itemDef
+	useCase entitem.UseCase
 }
 
-// itemDefsForSlug returns all item definitions for the given tenant slug.
+// tenantItemGroups maps tenant slugs to the item groups they should receive.
+// Add a slug here to scope which items a tenant receives during seeding.
+var tenantItemGroups = map[string][]itemGroup{
+	"codevertex-demo": {
+		{hospitalityItems, entitem.UseCaseFOOD_BEVERAGE},
+		{eventItems, entitem.UseCaseCONFERENCE},
+		{pharmacyItems, entitem.UseCasePHARMACY},
+		{retailItems, entitem.UseCaseRETAIL},
+		{beautyServiceItems, entitem.UseCaseSALON_SERVICE},
+		{detergentItems, entitem.UseCaseRETAIL},
+	},
+}
+
+// itemDefsForSlug returns all item definitions for the given tenant slug, stamping each
+// def with its group's use_case (unless the def already set one).
 // Falls back to hospitalityItems + eventItems if the slug is not in the map.
 func itemDefsForSlug(slug string) []itemDef {
 	groups, ok := tenantItemGroups[slug]
 	if !ok {
-		groups = []func() []itemDef{hospitalityItems, eventItems}
+		groups = []itemGroup{{hospitalityItems, entitem.UseCaseFOOD_BEVERAGE}, {eventItems, entitem.UseCaseCONFERENCE}}
 	}
 	var all []itemDef
-	for _, fn := range groups {
-		all = append(all, fn()...)
+	for _, g := range groups {
+		all = append(all, g.fn()...)
 	}
 	return all
+}
+
+// useCaseBySKU maps each seeded SKU to its group's use_case for the given tenant slug.
+func useCaseBySKU(slug string) map[string]entitem.UseCase {
+	groups, ok := tenantItemGroups[slug]
+	if !ok {
+		groups = []itemGroup{{hospitalityItems, entitem.UseCaseFOOD_BEVERAGE}, {eventItems, entitem.UseCaseCONFERENCE}}
+	}
+	m := make(map[string]entitem.UseCase)
+	for _, g := range groups {
+		for _, d := range g.fn() {
+			m[d.SKU] = g.useCase
+		}
+	}
+	return m
 }
 
 func itemUUID(tenantID uuid.UUID, sku string) uuid.UUID {
@@ -86,9 +116,14 @@ func itemAssetUUID(itemID uuid.UUID) uuid.UUID {
 
 func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug string, catIDs map[string]uuid.UUID, unitIDs map[string]uuid.UUID) error {
 	defs := itemDefsForSlug(slug)
+	ucBySKU := useCaseBySKU(slug)
 
 	seededSKUs := make(map[string]struct{}, len(defs))
 	for _, def := range defs {
+		useCase := ucBySKU[def.SKU]
+		if useCase == "" {
+			useCase = entitem.UseCaseRETAIL
+		}
 		seededSKUs[def.SKU] = struct{}{}
 
 		id := itemUUID(tenantID, def.SKU)
@@ -125,6 +160,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug
 				SetCategoryID(catID).
 				SetUnitID(unitID).
 				SetType(def.ItemType).
+				SetUseCase(useCase).
 				SetImageURL(imgURL).
 				SetTags(tags).
 				SetIsActive(true).
@@ -142,6 +178,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug
 				SetCategoryID(catID).
 				SetUnitID(unitID).
 				SetType(def.ItemType).
+				SetUseCase(useCase).
 				SetImageURL(imgURL).
 				SetTags(tags)
 			if def.CostPrice != nil {
