@@ -161,6 +161,27 @@ func (_u *PurchaseOrderLineUpdate) AddTotalPrice(v float64) *PurchaseOrderLineUp
 	return _u
 }
 
+// SetRebatePercent sets the "rebate_percent" field.
+func (_u *PurchaseOrderLineUpdate) SetRebatePercent(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.ResetRebatePercent()
+	_u.mutation.SetRebatePercent(v)
+	return _u
+}
+
+// SetNillableRebatePercent sets the "rebate_percent" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableRebatePercent(v *float64) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetRebatePercent(*v)
+	}
+	return _u
+}
+
+// AddRebatePercent adds value to the "rebate_percent" field.
+func (_u *PurchaseOrderLineUpdate) AddRebatePercent(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.AddRebatePercent(v)
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdate) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdate {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -262,6 +283,12 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.AddedTotalPrice(); ok {
 		_spec.AddField(purchaseorderline.FieldTotalPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.RebatePercent(); ok {
+		_spec.SetField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRebatePercent(); ok {
+		_spec.AddField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -444,6 +471,27 @@ func (_u *PurchaseOrderLineUpdateOne) AddTotalPrice(v float64) *PurchaseOrderLin
 	return _u
 }
 
+// SetRebatePercent sets the "rebate_percent" field.
+func (_u *PurchaseOrderLineUpdateOne) SetRebatePercent(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.ResetRebatePercent()
+	_u.mutation.SetRebatePercent(v)
+	return _u
+}
+
+// SetNillableRebatePercent sets the "rebate_percent" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableRebatePercent(v *float64) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetRebatePercent(*v)
+	}
+	return _u
+}
+
+// AddRebatePercent adds value to the "rebate_percent" field.
+func (_u *PurchaseOrderLineUpdateOne) AddRebatePercent(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.AddRebatePercent(v)
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdateOne) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdateOne {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -575,6 +623,12 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 	}
 	if value, ok := _u.mutation.AddedTotalPrice(); ok {
 		_spec.AddField(purchaseorderline.FieldTotalPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.RebatePercent(); ok {
+		_spec.SetField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRebatePercent(); ok {
+		_spec.AddField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -32,6 +32,8 @@ type PurchaseOrderLine struct {
 	UnitPrice float64 `json:"unit_price,omitempty"`
 	// quantity_ordered * unit_price
 	TotalPrice float64 `json:"total_price,omitempty"`
+	// supplier rebate %% accrued on the value received for this line
+	RebatePercent float64 `json:"rebate_percent,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PurchaseOrderLineQuery when eager-loading is set.
 	Edges        PurchaseOrderLineEdges `json:"edges"`
@@ -65,7 +67,7 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchaseorderline.FieldVariantID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice:
+		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent:
 			values[i] = new(sql.NullFloat64)
 		case purchaseorderline.FieldID, purchaseorderline.FieldPoID, purchaseorderline.FieldItemID:
 			values[i] = new(uuid.UUID)
@@ -133,6 +135,12 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.TotalPrice = value.Float64
 			}
+		case purchaseorderline.FieldRebatePercent:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field rebate_percent", values[i])
+			} else if value.Valid {
+				_m.RebatePercent = value.Float64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -196,6 +204,9 @@ func (_m *PurchaseOrderLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("total_price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TotalPrice))
+	builder.WriteString(", ")
+	builder.WriteString("rebate_percent=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RebatePercent))
 	builder.WriteByte(')')
 	return builder.String()
 }

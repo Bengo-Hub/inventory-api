@@ -1742,6 +1742,7 @@ var (
 		{Name: "quantity_received", Type: field.TypeFloat64, Default: 0},
 		{Name: "unit_price", Type: field.TypeFloat64, Default: 0},
 		{Name: "total_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "rebate_percent", Type: field.TypeFloat64, Default: 0},
 		{Name: "po_id", Type: field.TypeUUID},
 	}
 	// PurchaseOrderLinesTable holds the schema information for the "purchase_order_lines" table.
@@ -1752,7 +1753,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_order_lines_purchase_orders_lines",
-				Columns:    []*schema.Column{PurchaseOrderLinesColumns[7]},
+				Columns:    []*schema.Column{PurchaseOrderLinesColumns[8]},
 				RefColumns: []*schema.Column{PurchaseOrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1761,7 +1762,7 @@ var (
 			{
 				Name:    "purchaseorderline_po_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{PurchaseOrderLinesColumns[7], PurchaseOrderLinesColumns[1]},
+				Columns: []*schema.Column{PurchaseOrderLinesColumns[8], PurchaseOrderLinesColumns[1]},
 			},
 		},
 	}

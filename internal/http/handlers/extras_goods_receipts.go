@@ -326,12 +326,21 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		_, _ = h.orm.PurchaseOrder.UpdateOneID(po.ID).SetStatus(entpo.Status(newStatus)).Save(r.Context())
 	}
 
+	// Accrue supplier rebate from the PO lines' rebate_percent on the quantity received so far.
+	totalRebate := 0.0
+	for _, pl := range poLines {
+		if pl.RebatePercent > 0 {
+			totalRebate += pl.QuantityReceived * pl.UnitPrice * pl.RebatePercent / 100.0
+		}
+	}
+
 	h.publishOutbox(r.Context(), tenantID, "goods_receipt", g.ID, "inventory.goods_receipt.posted", map[string]any{
 		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": po.ID, "po_status": newStatus,
+		"total_rebate_accrued": totalRebate,
 	})
 	// On full receipt, emit the enriched purchase_order.received event for treasury auto-payout.
 	if fully {
-		h.emitPurchaseOrderReceived(tenantID, po)
+		h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
 	}
 
 	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
@@ -340,10 +349,11 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 
 // emitPurchaseOrderReceived writes the enriched purchase_order.received outbox
 // event (supplier payment details) that treasury consumes for auto-payout.
-func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder) {
+func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder, totalRebate float64) {
 	payload := map[string]any{
 		"po_id": po.ID, "po_number": po.PoNumber, "tenant_id": tenantID,
 		"supplier_id": po.SupplierID, "total_amount": po.TotalAmount, "currency": po.Currency,
+		"total_rebate_accrued": totalRebate,
 	}
 	if po.Edges.Supplier != nil {
 		s := po.Edges.Supplier

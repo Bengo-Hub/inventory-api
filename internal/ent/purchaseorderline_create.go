@@ -106,6 +106,20 @@ func (_c *PurchaseOrderLineCreate) SetNillableTotalPrice(v *float64) *PurchaseOr
 	return _c
 }
 
+// SetRebatePercent sets the "rebate_percent" field.
+func (_c *PurchaseOrderLineCreate) SetRebatePercent(v float64) *PurchaseOrderLineCreate {
+	_c.mutation.SetRebatePercent(v)
+	return _c
+}
+
+// SetNillableRebatePercent sets the "rebate_percent" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableRebatePercent(v *float64) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetRebatePercent(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PurchaseOrderLineCreate) SetID(v uuid.UUID) *PurchaseOrderLineCreate {
 	_c.mutation.SetID(v)
@@ -182,6 +196,10 @@ func (_c *PurchaseOrderLineCreate) defaults() {
 		v := purchaseorderline.DefaultTotalPrice
 		_c.mutation.SetTotalPrice(v)
 	}
+	if _, ok := _c.mutation.RebatePercent(); !ok {
+		v := purchaseorderline.DefaultRebatePercent
+		_c.mutation.SetRebatePercent(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := purchaseorderline.DefaultID()
 		_c.mutation.SetID(v)
@@ -207,6 +225,9 @@ func (_c *PurchaseOrderLineCreate) check() error {
 	}
 	if _, ok := _c.mutation.TotalPrice(); !ok {
 		return &ValidationError{Name: "total_price", err: errors.New(`ent: missing required field "PurchaseOrderLine.total_price"`)}
+	}
+	if _, ok := _c.mutation.RebatePercent(); !ok {
+		return &ValidationError{Name: "rebate_percent", err: errors.New(`ent: missing required field "PurchaseOrderLine.rebate_percent"`)}
 	}
 	if len(_c.mutation.PurchaseOrderIDs()) == 0 {
 		return &ValidationError{Name: "purchase_order", err: errors.New(`ent: missing required edge "PurchaseOrderLine.purchase_order"`)}
@@ -270,6 +291,10 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 	if value, ok := _c.mutation.TotalPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldTotalPrice, field.TypeFloat64, value)
 		_node.TotalPrice = value
+	}
+	if value, ok := _c.mutation.RebatePercent(); ok {
+		_spec.SetField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
+		_node.RebatePercent = value
 	}
 	if nodes := _c.mutation.PurchaseOrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -454,6 +479,24 @@ func (u *PurchaseOrderLineUpsert) AddTotalPrice(v float64) *PurchaseOrderLineUps
 	return u
 }
 
+// SetRebatePercent sets the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsert) SetRebatePercent(v float64) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldRebatePercent, v)
+	return u
+}
+
+// UpdateRebatePercent sets the "rebate_percent" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateRebatePercent() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldRebatePercent)
+	return u
+}
+
+// AddRebatePercent adds v to the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsert) AddRebatePercent(v float64) *PurchaseOrderLineUpsert {
+	u.Add(purchaseorderline.FieldRebatePercent, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -632,6 +675,27 @@ func (u *PurchaseOrderLineUpsertOne) AddTotalPrice(v float64) *PurchaseOrderLine
 func (u *PurchaseOrderLineUpsertOne) UpdateTotalPrice() *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateTotalPrice()
+	})
+}
+
+// SetRebatePercent sets the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsertOne) SetRebatePercent(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetRebatePercent(v)
+	})
+}
+
+// AddRebatePercent adds v to the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsertOne) AddRebatePercent(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddRebatePercent(v)
+	})
+}
+
+// UpdateRebatePercent sets the "rebate_percent" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateRebatePercent() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateRebatePercent()
 	})
 }
 
@@ -980,6 +1044,27 @@ func (u *PurchaseOrderLineUpsertBulk) AddTotalPrice(v float64) *PurchaseOrderLin
 func (u *PurchaseOrderLineUpsertBulk) UpdateTotalPrice() *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateTotalPrice()
+	})
+}
+
+// SetRebatePercent sets the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsertBulk) SetRebatePercent(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetRebatePercent(v)
+	})
+}
+
+// AddRebatePercent adds v to the "rebate_percent" field.
+func (u *PurchaseOrderLineUpsertBulk) AddRebatePercent(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddRebatePercent(v)
+	})
+}
+
+// UpdateRebatePercent sets the "rebate_percent" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateRebatePercent() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateRebatePercent()
 	})
 }
 
