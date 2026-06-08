@@ -474,7 +474,9 @@ func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID 
 		First(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return uuid.Nil, fmt.Errorf("stock: no default warehouse for tenant")
+			// Include the resolved tenant so callers can see when an S2S request
+			// resolved a wrong/empty tenant (e.g. consumption from a NATS-driven path).
+			return uuid.Nil, fmt.Errorf("stock: no default warehouse for tenant %s", tenantID)
 		}
 		return uuid.Nil, fmt.Errorf("stock: query default warehouse: %w", err)
 	}
