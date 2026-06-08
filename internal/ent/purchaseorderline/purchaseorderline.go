@@ -27,6 +27,8 @@ const (
 	FieldUnitPrice = "unit_price"
 	// FieldTotalPrice holds the string denoting the total_price field in the database.
 	FieldTotalPrice = "total_price"
+	// FieldRebatePercent holds the string denoting the rebate_percent field in the database.
+	FieldRebatePercent = "rebate_percent"
 	// EdgePurchaseOrder holds the string denoting the purchase_order edge name in mutations.
 	EdgePurchaseOrder = "purchase_order"
 	// Table holds the table name of the purchaseorderline in the database.
@@ -50,6 +52,7 @@ var Columns = []string{
 	FieldQuantityReceived,
 	FieldUnitPrice,
 	FieldTotalPrice,
+	FieldRebatePercent,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -71,6 +74,8 @@ var (
 	DefaultUnitPrice float64
 	// DefaultTotalPrice holds the default value on creation for the "total_price" field.
 	DefaultTotalPrice float64
+	// DefaultRebatePercent holds the default value on creation for the "rebate_percent" field.
+	DefaultRebatePercent float64
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -116,6 +121,11 @@ func ByUnitPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByTotalPrice orders the results by the total_price field.
 func ByTotalPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotalPrice, opts...).ToFunc()
+}
+
+// ByRebatePercent orders the results by the rebate_percent field.
+func ByRebatePercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRebatePercent, opts...).ToFunc()
 }
 
 // ByPurchaseOrderField orders the results by purchase_order field.

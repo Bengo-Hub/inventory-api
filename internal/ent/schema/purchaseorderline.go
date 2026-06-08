@@ -36,6 +36,9 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 		field.Float("total_price").
 			Default(0).
 			Comment("quantity_ordered * unit_price"),
+		field.Float("rebate_percent").
+			Default(0).
+			Comment("supplier rebate %% accrued on the value received for this line"),
 	}
 }
 
