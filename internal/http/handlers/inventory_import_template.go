@@ -27,6 +27,12 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		"cost_price", "selling_price", "is_perishable", "track_lots",
 		"reorder_level", "reorder_quantity", "barcode", "tags", "image_url",
 		"requires_age_verification", "is_active", "initial_quantity", "warehouse_name",
+		// Extended (full Item alignment)
+		"use_case", "tax_code_id", "tax_inclusive",
+		"purchase_price", "purchase_pack_size", "purchase_unit", "yield_pct",
+		"weight_kg", "dimensions_cm",
+		"meal_plan", "occupancy_basis", "max_adults", "max_children", "extra_bed_allowed", "single_supplement",
+		"total_capacity", "event_start_at", "event_end_at", "event_venue",
 	}
 	itemExample := []any{
 		"INGR-BEEF-STEAK", "Beef steak (sirloin)", "INGREDIENT",
@@ -34,6 +40,11 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		0.9375, "", "TRUE", "FALSE",
 		100, 500, "", "halal", "",
 		"FALSE", "TRUE", 0, "",
+		"FOOD_BEVERAGE", "", "FALSE",
+		750, 1000, "kg", 0.8,
+		"", "",
+		"", "", "", "", "", "",
+		"", "", "", "",
 	}
 	itemExampleGoods := []any{
 		"SOD001", "Soda 300ml", "GOODS",
@@ -41,6 +52,11 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		35, 150, "FALSE", "FALSE",
 		10, 50, "", "", "",
 		"FALSE", "TRUE", 24, "",
+		"FOOD_BEVERAGE", "", "FALSE",
+		35, 1, "each", 1,
+		0.33, "",
+		"", "", "", "", "", "",
+		"", "", "", "",
 	}
 	itemExampleRecipe := []any{
 		"BEE006", "Beef Grilled (200g)", "RECIPE",
@@ -48,6 +64,11 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		227.73, 900, "FALSE", "FALSE",
 		0, 0, "", "", "",
 		"FALSE", "TRUE", 0, "",
+		"FOOD_BEVERAGE", "", "FALSE",
+		"", "", "", "",
+		"", "",
+		"", "", "", "", "", "",
+		"", "", "", "",
 	}
 	xl.NewSheet("Items")
 	writeXLSXHeader(xl, "Items", itemHeaders)
@@ -126,6 +147,25 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"is_active", "NO", "TRUE/FALSE", "Default TRUE."},
 		{"initial_quantity", "NO", "integer", "Set opening stock when creating new items."},
 		{"warehouse_name", "NO", "string", "Leave blank to use primary warehouse."},
+		{"use_case", "NO", "string", "RETAIL | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY. Drives POS classification."},
+		{"tax_code_id", "NO", "string", "KRA eTIMS tax category code (e.g. VAT16). Resolved against treasury tax codes."},
+		{"tax_inclusive", "NO", "TRUE/FALSE", "TRUE if selling_price already includes tax. Default FALSE."},
+		{"purchase_price", "NO", "number", "Supplier price per purchase unit (KES). Used with pack size + yield to auto-calc EP cost."},
+		{"purchase_pack_size", "NO", "number", "Base units per purchase unit (e.g. 1kg = 1000g)."},
+		{"purchase_unit", "NO", "string", "Purchase UoM (kg, litre, crate, ...)."},
+		{"yield_pct", "NO", "number", "Usable fraction after trim/loss (0 < y <= 1). E.g. 0.8 = 80%."},
+		{"weight_kg", "NO", "number", "Shipping/logistics weight."},
+		{"dimensions_cm", "NO", "string", "LxWxH in cm, e.g. 30x20x10."},
+		{"meal_plan", "NO", "string", "HOSPITALITY_ROOM only: RO | BB | HB | FB | AI."},
+		{"occupancy_basis", "NO", "string", "Room basis: per_person_sharing | per_room."},
+		{"max_adults", "NO", "integer", "Room max adult occupancy."},
+		{"max_children", "NO", "integer", "Room max child occupancy."},
+		{"extra_bed_allowed", "NO", "TRUE/FALSE", "Room: extra bed allowed."},
+		{"single_supplement", "NO", "number", "Surcharge for single occupancy on per_person_sharing rooms."},
+		{"total_capacity", "NO", "integer", "Event/SERVICE total seats or tickets."},
+		{"event_start_at", "NO", "datetime", "Event start (YYYY-MM-DD or RFC3339)."},
+		{"event_end_at", "NO", "datetime", "Event end (YYYY-MM-DD or RFC3339)."},
+		{"event_venue", "NO", "string", "Event venue name/address."},
 	}
 	for i, rowData := range readme {
 		for j, val := range rowData {

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
@@ -383,6 +384,57 @@ func buildItemDTOFromRow(
 		}
 	}
 
+	// ── Extended fields (full Item alignment) ──────────────────────────────────
+	if v := col(row, "use_case"); v != "" {
+		dto.UseCase = strings.ToUpper(strings.TrimSpace(v))
+	}
+	dto.TaxCodeID = strings.TrimSpace(col(row, "tax_code_id"))
+	dto.TaxInclusive = parseBool(col(row, "tax_inclusive"), false)
+	dto.PurchaseUnit = strings.TrimSpace(col(row, "purchase_unit"))
+	dto.ExtraBedAllowed = parseBool(col(row, "extra_bed_allowed"), false)
+	if v := parseFloat(col(row, "purchase_price")); v != nil {
+		dto.PurchasePrice = v
+	}
+	if v := parseFloat(col(row, "purchase_pack_size")); v != nil {
+		dto.PurchasePackSize = v
+	}
+	if v := parseFloat(col(row, "yield_pct")); v != nil {
+		dto.YieldPct = v
+	}
+	if v := parseFloat(col(row, "weight_kg")); v != nil {
+		dto.WeightKg = v
+	}
+	if v := parseFloat(col(row, "single_supplement")); v != nil {
+		dto.SingleSupplement = v
+	}
+	if v := parseIntPtr(col(row, "max_adults")); v != nil {
+		dto.MaxAdults = v
+	}
+	if v := parseIntPtr(col(row, "max_children")); v != nil {
+		dto.MaxChildren = v
+	}
+	if v := parseIntPtr(col(row, "total_capacity")); v != nil {
+		dto.TotalCapacity = v
+	}
+	if v := strPtrOrNil(col(row, "meal_plan")); v != nil {
+		dto.MealPlan = v
+	}
+	if v := strPtrOrNil(col(row, "occupancy_basis")); v != nil {
+		dto.OccupancyBasis = v
+	}
+	if v := strPtrOrNil(col(row, "event_venue")); v != nil {
+		dto.EventVenue = v
+	}
+	if v := parseTimePtr(col(row, "event_start_at")); v != nil {
+		dto.EventStartAt = v
+	}
+	if v := parseTimePtr(col(row, "event_end_at")); v != nil {
+		dto.EventEndAt = v
+	}
+	if dims := parseDimensions(col(row, "dimensions_cm")); dims != nil {
+		dto.DimensionsCm = dims
+	}
+
 	return dto
 }
 
@@ -420,6 +472,58 @@ func parseFloat(s string) *float64 {
 		return nil
 	}
 	return &v
+}
+
+func parseIntPtr(s string) *int {
+	if s = strings.TrimSpace(s); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			return &v
+		}
+	}
+	return nil
+}
+
+func strPtrOrNil(s string) *string {
+	if s = strings.TrimSpace(s); s != "" {
+		return &s
+	}
+	return nil
+}
+
+func parseTimePtr(s string) *time.Time {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04", "2006-01-02"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return &t
+		}
+	}
+	return nil
+}
+
+// parseDimensions parses a "LxWxH" cm string (e.g. "30x20x10") into {length,width,height}.
+func parseDimensions(s string) map[string]float64 {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	parts := strings.FieldsFunc(s, func(r rune) bool { return r == 'x' || r == 'X' || r == '*' })
+	keys := []string{"length", "width", "height"}
+	out := map[string]float64{}
+	for i, p := range parts {
+		if i >= len(keys) {
+			break
+		}
+		if f, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
+			out[keys[i]] = f
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // xlsxColMap builds a lower-cased header-name → column-index map from the
