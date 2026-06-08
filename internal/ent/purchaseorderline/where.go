@@ -89,6 +89,11 @@ func TotalPrice(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldTotalPrice, v))
 }
 
+// RebatePercent applies equality check predicate on the "rebate_percent" field. It's identical to RebatePercentEQ.
+func RebatePercent(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldRebatePercent, v))
+}
+
 // PoIDEQ applies the EQ predicate on the "po_id" field.
 func PoIDEQ(v uuid.UUID) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldPoID, v))
@@ -357,6 +362,46 @@ func TotalPriceLT(v float64) predicate.PurchaseOrderLine {
 // TotalPriceLTE applies the LTE predicate on the "total_price" field.
 func TotalPriceLTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldTotalPrice, v))
+}
+
+// RebatePercentEQ applies the EQ predicate on the "rebate_percent" field.
+func RebatePercentEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldRebatePercent, v))
+}
+
+// RebatePercentNEQ applies the NEQ predicate on the "rebate_percent" field.
+func RebatePercentNEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldRebatePercent, v))
+}
+
+// RebatePercentIn applies the In predicate on the "rebate_percent" field.
+func RebatePercentIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIn(FieldRebatePercent, vs...))
+}
+
+// RebatePercentNotIn applies the NotIn predicate on the "rebate_percent" field.
+func RebatePercentNotIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldRebatePercent, vs...))
+}
+
+// RebatePercentGT applies the GT predicate on the "rebate_percent" field.
+func RebatePercentGT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGT(FieldRebatePercent, v))
+}
+
+// RebatePercentGTE applies the GTE predicate on the "rebate_percent" field.
+func RebatePercentGTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldRebatePercent, v))
+}
+
+// RebatePercentLT applies the LT predicate on the "rebate_percent" field.
+func RebatePercentLT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLT(FieldRebatePercent, v))
+}
+
+// RebatePercentLTE applies the LTE predicate on the "rebate_percent" field.
+func RebatePercentLTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldRebatePercent, v))
 }
 
 // HasPurchaseOrder applies the HasEdge predicate on the "purchase_order" edge.

@@ -48069,6 +48069,8 @@ type PurchaseOrderLineMutation struct {
 	addunit_price         *float64
 	total_price           *float64
 	addtotal_price        *float64
+	rebate_percent        *float64
+	addrebate_percent     *float64
 	clearedFields         map[string]struct{}
 	purchase_order        *uuid.UUID
 	clearedpurchase_order bool
@@ -48526,6 +48528,62 @@ func (m *PurchaseOrderLineMutation) ResetTotalPrice() {
 	m.addtotal_price = nil
 }
 
+// SetRebatePercent sets the "rebate_percent" field.
+func (m *PurchaseOrderLineMutation) SetRebatePercent(f float64) {
+	m.rebate_percent = &f
+	m.addrebate_percent = nil
+}
+
+// RebatePercent returns the value of the "rebate_percent" field in the mutation.
+func (m *PurchaseOrderLineMutation) RebatePercent() (r float64, exists bool) {
+	v := m.rebate_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRebatePercent returns the old "rebate_percent" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldRebatePercent(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRebatePercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRebatePercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRebatePercent: %w", err)
+	}
+	return oldValue.RebatePercent, nil
+}
+
+// AddRebatePercent adds f to the "rebate_percent" field.
+func (m *PurchaseOrderLineMutation) AddRebatePercent(f float64) {
+	if m.addrebate_percent != nil {
+		*m.addrebate_percent += f
+	} else {
+		m.addrebate_percent = &f
+	}
+}
+
+// AddedRebatePercent returns the value that was added to the "rebate_percent" field in this mutation.
+func (m *PurchaseOrderLineMutation) AddedRebatePercent() (r float64, exists bool) {
+	v := m.addrebate_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRebatePercent resets all changes to the "rebate_percent" field.
+func (m *PurchaseOrderLineMutation) ResetRebatePercent() {
+	m.rebate_percent = nil
+	m.addrebate_percent = nil
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by id.
 func (m *PurchaseOrderLineMutation) SetPurchaseOrderID(id uuid.UUID) {
 	m.purchase_order = &id
@@ -48600,7 +48658,7 @@ func (m *PurchaseOrderLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderLineMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.purchase_order != nil {
 		fields = append(fields, purchaseorderline.FieldPoID)
 	}
@@ -48621,6 +48679,9 @@ func (m *PurchaseOrderLineMutation) Fields() []string {
 	}
 	if m.total_price != nil {
 		fields = append(fields, purchaseorderline.FieldTotalPrice)
+	}
+	if m.rebate_percent != nil {
+		fields = append(fields, purchaseorderline.FieldRebatePercent)
 	}
 	return fields
 }
@@ -48644,6 +48705,8 @@ func (m *PurchaseOrderLineMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitPrice()
 	case purchaseorderline.FieldTotalPrice:
 		return m.TotalPrice()
+	case purchaseorderline.FieldRebatePercent:
+		return m.RebatePercent()
 	}
 	return nil, false
 }
@@ -48667,6 +48730,8 @@ func (m *PurchaseOrderLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldUnitPrice(ctx)
 	case purchaseorderline.FieldTotalPrice:
 		return m.OldTotalPrice(ctx)
+	case purchaseorderline.FieldRebatePercent:
+		return m.OldRebatePercent(ctx)
 	}
 	return nil, fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -48725,6 +48790,13 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetTotalPrice(v)
 		return nil
+	case purchaseorderline.FieldRebatePercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRebatePercent(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -48745,6 +48817,9 @@ func (m *PurchaseOrderLineMutation) AddedFields() []string {
 	if m.addtotal_price != nil {
 		fields = append(fields, purchaseorderline.FieldTotalPrice)
 	}
+	if m.addrebate_percent != nil {
+		fields = append(fields, purchaseorderline.FieldRebatePercent)
+	}
 	return fields
 }
 
@@ -48761,6 +48836,8 @@ func (m *PurchaseOrderLineMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedUnitPrice()
 	case purchaseorderline.FieldTotalPrice:
 		return m.AddedTotalPrice()
+	case purchaseorderline.FieldRebatePercent:
+		return m.AddedRebatePercent()
 	}
 	return nil, false
 }
@@ -48797,6 +48874,13 @@ func (m *PurchaseOrderLineMutation) AddField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddTotalPrice(v)
+		return nil
+	case purchaseorderline.FieldRebatePercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRebatePercent(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine numeric field %s", name)
@@ -48854,6 +48938,9 @@ func (m *PurchaseOrderLineMutation) ResetField(name string) error {
 		return nil
 	case purchaseorderline.FieldTotalPrice:
 		m.ResetTotalPrice()
+		return nil
+	case purchaseorderline.FieldRebatePercent:
+		m.ResetRebatePercent()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)
