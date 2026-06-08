@@ -120,12 +120,47 @@ type upsertItemPricingEntry struct {
 
 // --- PricingTier handlers ---
 
+// defaultPricingTiers are seeded the first time a tenant's tiers are listed, so the pricing-profile
+// feature (Retail/Wholesale prices at the POS) works out of the box. Per-tier item prices are then
+// configured by admins via the item-pricing endpoint.
+var defaultPricingTiers = []struct {
+	Name      string
+	Code      string
+	IsDefault bool
+	SortOrder int
+}{
+	{"Retail", "RETAIL", true, 0},
+	{"Wholesale", "WHOLESALE", false, 1},
+}
+
+// ensureDefaultTiers creates the default Retail/Wholesale tiers for a tenant that has none yet.
+// Concurrency-safe: the (tenant_id, code) unique index drops duplicate inserts.
+func (h *PricingTierHandler) ensureDefaultTiers(ctx context.Context, tenantID uuid.UUID) {
+	if exists, err := h.orm.PricingTier.Query().Where(entpt.TenantID(tenantID)).Exist(ctx); err != nil || exists {
+		return
+	}
+	for _, t := range defaultPricingTiers {
+		if _, err := h.orm.PricingTier.Create().
+			SetTenantID(tenantID).
+			SetName(t.Name).
+			SetCode(t.Code).
+			SetIsDefault(t.IsDefault).
+			SetIsActive(true).
+			SetSortOrder(t.SortOrder).
+			Save(ctx); err != nil {
+			h.log.Warn("ensureDefaultTiers: seed failed", zap.String("code", t.Code), zap.Error(err))
+		}
+	}
+}
+
 func (h *PricingTierHandler) ListTiers(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+
+	h.ensureDefaultTiers(r.Context(), tenantID)
 
 	tiers, err := h.orm.PricingTier.Query().
 		Where(entpt.TenantID(tenantID)).
