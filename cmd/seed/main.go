@@ -98,6 +98,10 @@ func main() {
 			log.Fatalf("seed items for %s: %v", slug, err)
 		}
 
+		if err := seedPricingTiers(ctx, client, tenantID); err != nil {
+			log.Fatalf("seed pricing tiers for %s: %v", slug, err)
+		}
+
 		if err := seedInventoryConfig(ctx, client, tenantID); err != nil {
 			log.Fatalf("seed inventory config for %s: %v", slug, err)
 		}
@@ -118,6 +122,12 @@ func main() {
 			log.Fatalf("seed recipes for %s: %v", slug, err)
 		}
 		recalculateAllRecipeCosts(ctx, client, tenantID)
+
+		// Backfill ItemPricing on the Retail tier from recipe suggested prices so seeded
+		// menu items carry a real tier price (parity with the bulk-import behaviour).
+		if err := seedItemPricing(ctx, client, tenantID); err != nil {
+			log.Printf("[WARN] seed item pricing for %s: %v", slug, err)
+		}
 
 		if slug == "codevertex-demo" {
 			if err := seedProductionBatches(ctx, client, tenantID); err != nil {
