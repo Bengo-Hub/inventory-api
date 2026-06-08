@@ -575,22 +575,27 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					warehouse.OutletIDIsNil(),
 				),
 			).IDs(ctx)
-		if len(wIDs) == 0 {
-			return []ItemDTO{}, 0, nil
-		}
-		bals, _ := s.client.InventoryBalance.Query().
-			Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
-			All(ctx)
-		idSet := make(map[uuid.UUID]struct{}, len(bals))
-		for _, b := range bals {
-			idSet[b.ItemID] = struct{}{}
-		}
-		if len(idSet) == 0 {
-			return []ItemDTO{}, 0, nil
-		}
-		outletItemIDs = make([]uuid.UUID, 0, len(idSet))
-		for id := range idSet {
-			outletItemIDs = append(outletItemIDs, id)
+		if len(wIDs) > 0 {
+			bals, _ := s.client.InventoryBalance.Query().
+				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
+				All(ctx)
+			idSet := make(map[uuid.UUID]struct{}, len(bals))
+			for _, b := range bals {
+				idSet[b.ItemID] = struct{}{}
+			}
+			// Only scope to stocked items when the outlet actually HAS stock. A freshly
+			// provisioned outlet whose warehouse has no balances yet (e.g. a retail till that
+			// hasn't received stock) would otherwise get an EMPTY catalog and be unable to sell
+			// anything — which is what made a retail-use-case POS show no items at all. In that
+			// case leave outletItemIDs nil and fall back to the type/category-filtered catalog,
+			// so the outlet's sellable items still appear (their stock surfaces as 0 until goods
+			// are received).
+			if len(idSet) > 0 {
+				outletItemIDs = make([]uuid.UUID, 0, len(idSet))
+				for id := range idSet {
+					outletItemIDs = append(outletItemIDs, id)
+				}
+			}
 		}
 	}
 
