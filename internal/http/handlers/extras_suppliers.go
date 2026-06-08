@@ -98,6 +98,12 @@ func (h *InventoryExtrasHandler) ListSuppliers(w http.ResponseWriter, r *http.Re
 	search := r.URL.Query().Get("search")
 
 	q := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID))
+	// Exclude soft-deleted suppliers (DeleteSupplier sets is_active=false) by default so a
+	// "deleted" supplier no longer appears in lists/pickers. Pass ?include_inactive=true to
+	// include them (e.g. an admin/archive view).
+	if r.URL.Query().Get("include_inactive") != "true" {
+		q = q.Where(entsupplier.IsActive(true))
+	}
 	if search != "" {
 		q = q.Where(entsupplier.Or(
 			entsupplier.NameContainsFold(search),
