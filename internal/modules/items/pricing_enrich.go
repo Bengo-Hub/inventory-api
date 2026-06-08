@@ -83,6 +83,47 @@ func effectivePrice(d *ItemDTO, recipePrice, tierPrice map[uuid.UUID]float64) fl
 	return 0
 }
 
+// EnsureDefaultPrice writes `price` onto the tenant's default pricing tier for an item, creating the
+// default RETAIL tier if none exists, and upserting the all-outlets ItemPricing row. Used by bulk
+// import so an uploaded selling_price becomes a real tier price the POS pricing-resolve can read.
+func (s *Service) EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error {
+	if price <= 0 {
+		return nil
+	}
+	tier, err := s.client.PricingTier.Query().
+		Where(pricingtier.TenantID(tenantID), pricingtier.IsDefault(true), pricingtier.IsActive(true)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		tier, err = s.client.PricingTier.Create().
+			SetTenantID(tenantID).SetName("Retail").SetCode("RETAIL").
+			SetIsDefault(true).SetIsActive(true).SetSortOrder(0).
+			Save(ctx)
+	}
+	if err != nil {
+		return err
+	}
+	if existing, qErr := s.client.ItemPricing.Query().
+		Where(
+			itempricing.TenantID(tenantID),
+			itempricing.ItemID(itemID),
+			itempricing.PricingTierID(tier.ID),
+			itempricing.OutletIDIsNil(),
+		).
+		First(ctx); qErr == nil && existing != nil {
+		_, err = existing.Update().SetPrice(price).SetIsActive(true).Save(ctx)
+		return err
+	}
+	_, err = s.client.ItemPricing.Create().
+		SetTenantID(tenantID).
+		SetItemID(itemID).
+		SetPricingTierID(tier.ID).
+		SetPrice(price).
+		SetCurrency("KES").
+		SetIsActive(true).
+		Save(ctx)
+	return err
+}
+
 // recipeSellingPrices maps RECIPE item_id → selling price (or suggested price fallback).
 func (s *Service) recipeSellingPrices(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]float64 {
 	out := map[uuid.UUID]float64{}

@@ -106,6 +106,9 @@ func (h *InventoryHandler) parseXLSXItems(
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))
 			} else {
 				res.Updated++
+				if dto.SuggestedPrice != nil {
+					_ = h.itemsSvc.EnsureDefaultPrice(r.Context(), tenantID, existingID, *dto.SuggestedPrice)
+				}
 			}
 		} else {
 			if created, err := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); err != nil {
@@ -114,6 +117,9 @@ func (h *InventoryHandler) parseXLSXItems(
 			} else {
 				skuToID[sku] = created.ID
 				res.Created++
+				if dto.SuggestedPrice != nil {
+					_ = h.itemsSvc.EnsureDefaultPrice(r.Context(), tenantID, created.ID, *dto.SuggestedPrice)
+				}
 			}
 		}
 	}

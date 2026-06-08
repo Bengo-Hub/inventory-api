@@ -121,6 +121,9 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 				res.Errors = append(res.Errors, "sku="+sku+": "+uErr.Error())
 			} else {
 				res.Updated++
+				if dto.SuggestedPrice != nil {
+					_ = h.itemsSvc.EnsureDefaultPrice(r.Context(), tenantID, existingID, *dto.SuggestedPrice)
+				}
 			}
 		} else {
 			if created, cErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); cErr != nil {
@@ -129,6 +132,9 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 			} else {
 				skuToID[sku] = created.ID
 				res.Created++
+				if dto.SuggestedPrice != nil {
+					_ = h.itemsSvc.EnsureDefaultPrice(r.Context(), tenantID, created.ID, *dto.SuggestedPrice)
+				}
 			}
 		}
 	}
