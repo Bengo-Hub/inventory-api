@@ -152,34 +152,57 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 		return fmt.Errorf("query warehouse: %w", err)
 	}
 
+	var wh *ent.Warehouse
 	if ent.IsNotFound(err) {
-		if _, err := s.orm.Warehouse.Create().
+		wh, err = s.orm.Warehouse.Create().
 			SetTenantID(evt.TenantID).
 			SetOutletID(outletID).
 			SetName(name).
 			SetCode(whCode).
 			SetIsDefault(isHQ).
 			SetIsActive(status != "archived").
-			Save(ctx); err != nil {
+			Save(ctx)
+		if err != nil {
 			return fmt.Errorf("create warehouse mirror: %w", err)
 		}
 		s.logger.Info("warehouse created from auth.outlet event",
 			zap.String("outlet_id", outletIDStr),
 			zap.String("code", whCode),
 			zap.String("use_case", useCase))
-		return nil
+	} else {
+		wh, err = s.orm.Warehouse.UpdateOne(existing).
+			SetName(name).
+			SetIsDefault(isHQ).
+			SetIsActive(status != "archived").
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("update warehouse mirror: %w", err)
+		}
+		s.logger.Info("warehouse updated from auth.outlet event",
+			zap.String("outlet_id", outletIDStr),
+			zap.String("code", existing.Code))
 	}
 
-	if _, err := s.orm.Warehouse.UpdateOne(existing).
-		SetName(name).
-		SetIsDefault(isHQ).
-		SetIsActive(status != "archived").
-		Save(ctx); err != nil {
-		return fmt.Errorf("update warehouse mirror: %w", err)
+	// Enforce the single-default invariant: a tenant may have at most one default
+	// warehouse. When this (HQ) outlet's warehouse is the default, clear is_default on
+	// every OTHER warehouse of the tenant — otherwise the seed's MAIN default plus the
+	// HQ outlet's default leave two, which breaks default-warehouse resolution (stock
+	// consumption / "no default warehouse for tenant").
+	if isHQ && wh != nil {
+		if n, derr := s.orm.Warehouse.Update().
+			Where(
+				entwarehouse.TenantID(evt.TenantID),
+				entwarehouse.IDNEQ(wh.ID),
+				entwarehouse.IsDefault(true),
+			).
+			SetIsDefault(false).
+			Save(ctx); derr != nil {
+			s.logger.Warn("failed to clear other default warehouses", zap.Error(derr))
+		} else if n > 0 {
+			s.logger.Info("cleared other default warehouses to enforce single default",
+				zap.Int("cleared", n), zap.String("kept", wh.Code))
+		}
 	}
-	s.logger.Info("warehouse updated from auth.outlet event",
-		zap.String("outlet_id", outletIDStr),
-		zap.String("code", existing.Code))
 	return nil
 }
 
