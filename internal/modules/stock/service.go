@@ -282,6 +282,14 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	// Check for low stock and publish event
 	s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 
+	// If a positive correction lifted this ingredient back above zero, re-enable any
+	// recipes its depletion had gated. The goods-receipt path already cascades a
+	// restock (line ~1081); a corrective upward adjustment must do the same, or
+	// recipes disabled by the stock-out cascade would stay hidden until a receipt.
+	if qtyBefore <= 0 && qtyAfter > 0 {
+		s.cascadeIngredientRestocked(ctx, tx, tenantID, itm.ID, whID)
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("stock: commit adjustment: %w", err)
 	}
