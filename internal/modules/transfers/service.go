@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
@@ -256,13 +257,25 @@ func (s *Service) GetTransfer(ctx context.Context, tenantID, transferID uuid.UUI
 	return s.buildTransferResponse(transfer, transfer.Edges.Lines, srcWH, destWH), nil
 }
 
-// ShipTransfer transitions a transfer from draft to in_transit.
+// ShipTransfer transitions a transfer from draft to in_transit and moves the stock OUT
+// of the source warehouse (it is now in transit between warehouses).
 func (s *Service) ShipTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error {
-	transfer, err := s.client.StockTransfer.Query().
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("transfers: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	transfer, err := tx.StockTransfer.Query().
 		Where(
 			stocktransfer.ID(transferID),
 			stocktransfer.TenantID(tenantID),
 		).
+		WithLines().
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -275,19 +288,66 @@ func (s *Service) ShipTransfer(ctx context.Context, tenantID, transferID uuid.UU
 		return fmt.Errorf("transfers: can only ship a draft transfer, current status: %s", transfer.Status)
 	}
 
+	// Deduct each line's quantity from the SOURCE warehouse balance.
+	for _, line := range transfer.Edges.Lines {
+		if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.SourceWarehouseID, -line.Quantity); err != nil {
+			return err
+		}
+	}
+
 	now := time.Now()
-	_, err = s.client.StockTransfer.UpdateOne(transfer).
+	if _, err = tx.StockTransfer.UpdateOne(transfer).
 		SetStatus(stocktransfer.StatusInTransit).
 		SetShippedAt(now).
-		Save(ctx)
-	if err != nil {
+		Save(ctx); err != nil {
 		return fmt.Errorf("transfers: update status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("transfers: commit: %w", err)
 	}
 
 	s.log.Info("transfer shipped",
 		zap.String("transfer_id", transferID.String()),
 	)
 	return nil
+}
+
+// adjustBalance applies delta to an item's on_hand+available at a warehouse within tx.
+// A negative delta requires sufficient available stock; a positive delta creates the
+// balance row when the destination warehouse has none yet.
+func (s *Service) adjustBalance(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, delta float64) error {
+	bal, err := tx.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.ItemID(itemID),
+			inventorybalance.WarehouseID(warehouseID),
+		).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		if delta < 0 {
+			return fmt.Errorf("transfers: no stock for item %s at source warehouse", itemID)
+		}
+		_, cErr := tx.InventoryBalance.Create().
+			SetTenantID(tenantID).
+			SetItemID(itemID).
+			SetWarehouseID(warehouseID).
+			SetOnHand(delta).
+			SetAvailable(delta).
+			Save(ctx)
+		return cErr
+	}
+	if err != nil {
+		return fmt.Errorf("transfers: query balance: %w", err)
+	}
+	if delta < 0 && bal.Available < -delta {
+		return fmt.Errorf("transfers: insufficient stock for item %s at source (available %g, need %g)", itemID, bal.Available, -delta)
+	}
+	_, err = tx.InventoryBalance.UpdateOne(bal).
+		SetOnHand(bal.OnHand + delta).
+		SetAvailable(bal.Available + delta).
+		Save(ctx)
+	return err
 }
 
 // ReceiveTransfer transitions a transfer from in_transit to received.
@@ -318,6 +378,13 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 
 	if transfer.Status != stocktransfer.StatusInTransit {
 		return fmt.Errorf("transfers: can only receive an in-transit transfer, current status: %s", transfer.Status)
+	}
+
+	// Credit each line's quantity to the DESTINATION warehouse balance (stock has arrived).
+	for _, line := range transfer.Edges.Lines {
+		if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.DestinationWarehouseID, line.Quantity); err != nil {
+			return err
+		}
 	}
 
 	now := time.Now()
@@ -352,11 +419,22 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 
 // CancelTransfer cancels a transfer that is in draft or in_transit status.
 func (s *Service) CancelTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error {
-	transfer, err := s.client.StockTransfer.Query().
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("transfers: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	transfer, err := tx.StockTransfer.Query().
 		Where(
 			stocktransfer.ID(transferID),
 			stocktransfer.TenantID(tenantID),
 		).
+		WithLines().
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -369,11 +447,23 @@ func (s *Service) CancelTransfer(ctx context.Context, tenantID, transferID uuid.
 		return fmt.Errorf("transfers: can only cancel a draft or in-transit transfer, current status: %s", transfer.Status)
 	}
 
-	_, err = s.client.StockTransfer.UpdateOne(transfer).
+	// If the transfer was already shipped, its stock left the source warehouse — restore it.
+	if transfer.Status == stocktransfer.StatusInTransit {
+		for _, line := range transfer.Edges.Lines {
+			if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.SourceWarehouseID, line.Quantity); err != nil {
+				return err
+			}
+		}
+	}
+
+	if _, err = tx.StockTransfer.UpdateOne(transfer).
 		SetStatus(stocktransfer.StatusCancelled).
-		Save(ctx)
-	if err != nil {
+		Save(ctx); err != nil {
 		return fmt.Errorf("transfers: update status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("transfers: commit: %w", err)
 	}
 
 	s.log.Info("transfer cancelled",
