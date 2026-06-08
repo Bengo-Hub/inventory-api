@@ -16,6 +16,7 @@ import (
 // recipe can no longer be produced because itemID (an ingredient) hit zero.
 // Best-effort: errors are logged, the parent transaction is never aborted.
 func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) {
+	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
 			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
@@ -36,6 +37,7 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 			"name":         recipeItem.Name,
 			"available":    0,
 			"warehouse_id": warehouseID.String(),
+			"outlet_id":    outletID,
 			"reason":       "ingredient_depleted",
 			"notification": map[string]any{"target": "staff"},
 		})
@@ -50,6 +52,7 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 // recipe is now fully producible because itemID (an ingredient) was restocked.
 // Best-effort: errors are logged, the parent transaction is never aborted.
 func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) {
+	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
 			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
@@ -69,6 +72,7 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 			"sku":          recipeItem.Sku,
 			"name":         recipeItem.Name,
 			"warehouse_id": warehouseID.String(),
+			"outlet_id":    outletID,
 			"reason":       "ingredient_restocked",
 		})
 		s.log.Info("cascade stock.in: recipe item unblocked",
@@ -76,6 +80,18 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 			zap.String("restocked_ingredient_id", itemID.String()),
 		)
 	}
+}
+
+// outletIDForWarehouse resolves the outlet a warehouse serves (warehouses.outlet_id),
+// so cascade events can carry the outlet whose catalog override must be toggled.
+// Returns "" when the warehouse is shared/HQ (outlet_id nil) or cannot be loaded;
+// consumers treat "" as "fall back to sku-wide update".
+func (s *Service) outletIDForWarehouse(ctx context.Context, tx *ent.Tx, warehouseID uuid.UUID) string {
+	wh, err := tx.Warehouse.Get(ctx, warehouseID)
+	if err != nil || wh == nil || wh.OutletID == nil {
+		return ""
+	}
+	return wh.OutletID.String()
 }
 
 // recipesUsingIngredient returns distinct recipe IDs that list itemID as a direct ingredient.
