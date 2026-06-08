@@ -18,6 +18,7 @@ import (
 	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entgrl "github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
 	entib "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 )
@@ -370,6 +371,39 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 		payload["requires_invoice_before_payment"] = s.RequiresInvoiceBeforePayment
 		payload["auto_pay_enabled"] = s.AutoPayEnabled
 	}
+
+	// Itemize the receipt so treasury can build a line-level vendor bill: one entry per PO line
+	// with the item's name/sku, received quantity and unit price.
+	if poLines, err := h.orm.PurchaseOrderLine.Query().Where(entpoline.PoID(po.ID)).All(context.Background()); err == nil && len(poLines) > 0 {
+		itemIDs := make([]uuid.UUID, 0, len(poLines))
+		for _, l := range poLines {
+			itemIDs = append(itemIDs, l.ItemID)
+		}
+		names := map[uuid.UUID]string{}
+		skus := map[uuid.UUID]string{}
+		if items, e := h.orm.Item.Query().Where(entitem.IDIn(itemIDs...)).All(context.Background()); e == nil {
+			for _, it := range items {
+				names[it.ID] = it.Name
+				skus[it.ID] = it.Sku
+			}
+		}
+		lineArr := make([]map[string]any, 0, len(poLines))
+		for _, l := range poLines {
+			qty := l.QuantityReceived
+			if qty <= 0 {
+				qty = l.QuantityOrdered
+			}
+			lineArr = append(lineArr, map[string]any{
+				"item_id":    l.ItemID,
+				"sku":        skus[l.ItemID],
+				"name":       names[l.ItemID],
+				"quantity":   qty,
+				"unit_price": l.UnitPrice,
+			})
+		}
+		payload["lines"] = lineArr
+	}
+
 	go func() {
 		evt := &events.Event{
 			ID: uuid.New(), TenantID: tenantID, AggregateType: "inventory",
