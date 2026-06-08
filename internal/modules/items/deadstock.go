@@ -44,8 +44,10 @@ func (s *Service) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days i
 	}
 	cutoff := time.Now().AddDate(0, 0, -days)
 
+	// Sale-type consumptions count as "movement". The pos→inventory backflush records reason
+	// "pos_sale"; other flows may use "sale" — match both so deadstock means genuinely not selling.
 	cons, err := s.client.Consumption.Query().
-		Where(consumption.TenantID(tenantID), consumption.ReasonEQ("sale"), consumption.CreatedAtGTE(cutoff)).
+		Where(consumption.TenantID(tenantID), consumption.ReasonIn("sale", "pos_sale"), consumption.CreatedAtGTE(cutoff)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("deadstock: query consumptions: %w", err)
