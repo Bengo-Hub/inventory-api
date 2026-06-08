@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -529,6 +530,8 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 			quantity = q
 		}
 	}
+	// Optional explicit pricing tier (e.g. RETAIL, WHOLESALE); empty = default tier.
+	tierCode := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("tier")))
 
 	ctx := r.Context()
 
@@ -562,19 +565,28 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Prefer default tier; fall back to first active entry.
 	var chosen *ent.ItemPricing
 	var chosenTier *ent.PricingTier
-	for _, p := range pricings {
-		t := tierMeta[p.PricingTierID]
-		if chosen == nil {
-			chosen = p
-			chosenTier = t
-			continue
+	// Explicit tier requested → exact (case-insensitive) code match.
+	if tierCode != "" {
+		for _, p := range pricings {
+			if t := tierMeta[p.PricingTierID]; t != nil && strings.EqualFold(t.Code, tierCode) {
+				chosen, chosenTier = p, t
+				break
+			}
 		}
-		if t != nil && t.IsDefault && (chosenTier == nil || !chosenTier.IsDefault) {
-			chosen = p
-			chosenTier = t
+	}
+	// Otherwise (or no match) prefer the default tier, then the first active entry.
+	if chosen == nil {
+		for _, p := range pricings {
+			t := tierMeta[p.PricingTierID]
+			if chosen == nil {
+				chosen, chosenTier = p, t
+				continue
+			}
+			if t != nil && t.IsDefault && (chosenTier == nil || !chosenTier.IsDefault) {
+				chosen, chosenTier = p, t
+			}
 		}
 	}
 
