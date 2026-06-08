@@ -32,6 +32,7 @@ type ItemsServicer interface {
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
 	GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
@@ -206,6 +207,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
+	inv.Get("/reports/stock-valuation", h.StockValuationReport)
 
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.
@@ -678,6 +680,24 @@ func (h *InventoryHandler) GetInventorySummary(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, http.StatusOK, summary)
+}
+
+// StockValuationReport handles GET /v1/{tenant}/inventory/reports/stock-valuation
+func (h *InventoryHandler) StockValuationReport(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	val, err := h.itemsSvc.StockValuation(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("stock valuation report failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute stock valuation")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, val)
 }
 
 // ListUnits handles GET /v1/{tenant}/inventory/units
