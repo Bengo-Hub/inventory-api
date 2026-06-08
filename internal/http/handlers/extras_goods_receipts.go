@@ -236,7 +236,7 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 			h.log.Warn("create GRN line failed", zap.Error(err))
 		}
 	}
-	h.publishOutbox(r.Context(), tenantID, "goods_receipt", g.ID, "inventory.goods_receipt.created", map[string]any{
+	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.created", map[string]any{
 		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": poID,
 	})
 	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
@@ -334,7 +334,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		}
 	}
 
-	h.publishOutbox(r.Context(), tenantID, "goods_receipt", g.ID, "inventory.goods_receipt.posted", map[string]any{
+	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.posted", map[string]any{
 		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": po.ID, "po_status": newStatus,
 		"total_rebate_accrued": totalRebate,
 	})
