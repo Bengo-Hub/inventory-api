@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,6 +33,8 @@ type ItemsServicer interface {
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
 	GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
+	StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error)
+	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
@@ -207,6 +210,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
+		inv.Get("/reports/stock-valuation", h.StockValuationReport)
+		inv.Get("/reports/deadstock", h.StockDeadstockReport)
 
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.
@@ -679,6 +684,44 @@ func (h *InventoryHandler) GetInventorySummary(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, http.StatusOK, summary)
+}
+
+// StockValuationReport handles GET /v1/{tenant}/inventory/reports/stock-valuation
+func (h *InventoryHandler) StockValuationReport(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	val, err := h.itemsSvc.StockValuation(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("stock valuation report failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute stock valuation")
+		return
+	}
+	writeJSON(w, http.StatusOK, val)
+}
+
+// StockDeadstockReport handles GET /v1/{tenant}/inventory/reports/deadstock?days=90
+func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	days := 90
+	if d := r.URL.Query().Get("days"); d != "" {
+		if n, e := strconv.Atoi(d); e == nil && n > 0 {
+			days = n
+		}
+	}
+	rep, err := h.itemsSvc.StockDeadstock(r.Context(), tenantID, days)
+	if err != nil {
+		h.log.Error("deadstock report failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
+		return
+	}
+	writeJSON(w, http.StatusOK, rep)
 }
 
 // ListUnits handles GET /v1/{tenant}/inventory/units
