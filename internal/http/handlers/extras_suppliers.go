@@ -13,6 +13,7 @@ import (
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
+	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
 
 // ─── Suppliers ────────────────────────────────────────────────────────────────
@@ -139,6 +140,14 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Supplier name is required")
 		return
 	}
+
+	// Enforce the plan's max_suppliers structural cap (hard-block, no overage).
+	if count, cerr := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID)).Count(r.Context()); cerr == nil {
+		if subscriptions.AssertLimit(w, r, "suppliers", subscriptions.LimitSuppliers, count) {
+			return
+		}
+	}
+
 	code := strings.ToUpper(strings.ReplaceAll(req.Name, " ", "_"))
 	if len(code) > 20 {
 		code = code[:20]
