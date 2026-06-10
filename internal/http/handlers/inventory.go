@@ -25,6 +25,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
 	"github.com/bengobox/inventory-service/internal/modules/units"
+	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
 
 // ItemsServicer defines the contract for item availability and CRUD operations.
@@ -893,6 +894,13 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	if err := items.ValidateTicketTiers(&req); err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "TIER_CAPACITY", err.Error())
 		return
+	}
+
+	// Enforce the plan's inventory_max_sku structural cap (hard-block, no overage).
+	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 1, 0, nil, nil, "", nil, ""); cerr == nil {
+		if subscriptions.AssertLimit(w, r, "products", subscriptions.LimitSKU, total) {
+			return
+		}
 	}
 
 	result, err := h.itemsSvc.CreateItem(r.Context(), tenantID, req)

@@ -392,7 +392,7 @@ func (h *WarehouseHandler) CreateWarehouse(w http.ResponseWriter, r *http.Reques
 		Count(r.Context())
 	if err != nil {
 		h.log.Error("count warehouses for limit check failed", zap.Error(err))
-	} else if subscriptions.AssertLimit(w, r, "max_warehouses", existingCount) {
+	} else if subscriptions.AssertLimit(w, r, "warehouses", subscriptions.LimitWarehouses, existingCount) {
 		return // 402 written; tenant at/over their plan's warehouse limit
 	}
 
