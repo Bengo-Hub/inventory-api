@@ -26,6 +26,8 @@ const (
 	FieldDescription = "description"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
+	// FieldBrandID holds the string denoting the brand_id field in the database.
+	FieldBrandID = "brand_id"
 	// FieldUnitID holds the string denoting the unit_id field in the database.
 	FieldUnitID = "unit_id"
 	// FieldType holds the string denoting the type field in the database.
@@ -130,6 +132,8 @@ const (
 	EdgeProducedByRecipe = "produced_by_recipe"
 	// EdgeItemCategory holds the string denoting the item_category edge name in mutations.
 	EdgeItemCategory = "item_category"
+	// EdgeItemBrand holds the string denoting the item_brand edge name in mutations.
+	EdgeItemBrand = "item_brand"
 	// Table holds the table name of the item in the database.
 	Table = "items"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -237,6 +241,13 @@ const (
 	ItemCategoryInverseTable = "item_categories"
 	// ItemCategoryColumn is the table column denoting the item_category relation/edge.
 	ItemCategoryColumn = "category_id"
+	// ItemBrandTable is the table that holds the item_brand relation/edge.
+	ItemBrandTable = "items"
+	// ItemBrandInverseTable is the table name for the ItemBrand entity.
+	// It exists in this package in order to avoid circular dependency with the "itembrand" package.
+	ItemBrandInverseTable = "item_brands"
+	// ItemBrandColumn is the table column denoting the item_brand relation/edge.
+	ItemBrandColumn = "brand_id"
 )
 
 // Columns holds all SQL columns for item fields.
@@ -247,6 +258,7 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldCategoryID,
+	FieldBrandID,
 	FieldUnitID,
 	FieldType,
 	FieldUseCase,
@@ -481,6 +493,11 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 // ByCategoryID orders the results by the category_id field.
 func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
+}
+
+// ByBrandID orders the results by the brand_id field.
+func ByBrandID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBrandID, opts...).ToFunc()
 }
 
 // ByUnitID orders the results by the unit_id field.
@@ -827,6 +844,13 @@ func ByItemCategoryField(field string, opts ...sql.OrderTermOption) OrderOption 
 		sqlgraph.OrderByNeighborTerms(s, newItemCategoryStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByItemBrandField orders the results by item_brand field.
+func ByItemBrandField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newItemBrandStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -930,5 +954,12 @@ func newItemCategoryStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemCategoryInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ItemCategoryTable, ItemCategoryColumn),
+	)
+}
+func newItemBrandStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ItemBrandInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ItemBrandTable, ItemBrandColumn),
 	)
 }

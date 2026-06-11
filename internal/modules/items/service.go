@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -40,6 +41,7 @@ type ItemDTO struct {
 	Name            string         `json:"name"`
 	Description     string         `json:"description,omitempty"`
 	CategoryID      *uuid.UUID     `json:"category_id,omitempty"`
+	BrandID         *uuid.UUID     `json:"brand_id,omitempty"`
 	UnitID          *uuid.UUID     `json:"unit_id,omitempty"`
 	Type            string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
 	IsActive        bool           `json:"is_active"`
@@ -52,6 +54,8 @@ type ItemDTO struct {
 	SuggestedPrice  *float64       `json:"suggested_price,omitempty"`
 	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
 	CategoryName    string         `json:"category_name,omitempty"`
+	BrandName       string         `json:"brand_name,omitempty"`
+	BrandCode       string         `json:"brand_code,omitempty"`
 	// Extended fields for POS, logistics, compliance
 	Barcode                 string             `json:"barcode,omitempty"`
 	BarcodeType             string             `json:"barcode_type,omitempty"`
@@ -513,6 +517,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		Name:                    i.Name,
 		Description:             i.Description,
 		CategoryID:              i.CategoryID,
+		BrandID:                 i.BrandID,
 		UnitID:                  i.UnitID,
 		Type:                    string(i.Type),
 		IsActive:                i.IsActive,
@@ -652,10 +657,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 
 	buildDTOs := func(innerCtx context.Context, itms []*ent.Item) ([]ItemDTO, error) {
 		catIDs := make([]uuid.UUID, 0, len(itms))
+		brandIDs := make([]uuid.UUID, 0, len(itms))
 		itemIDs := make([]uuid.UUID, 0, len(itms))
 		for _, it := range itms {
 			if it.CategoryID != nil {
 				catIDs = append(catIDs, *it.CategoryID)
+			}
+			if it.BrandID != nil {
+				brandIDs = append(brandIDs, *it.BrandID)
 			}
 			itemIDs = append(itemIDs, it.ID)
 		}
@@ -664,6 +673,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			cats, _ := s.client.ItemCategory.Query().Where(itemcategory.IDIn(catIDs...)).All(innerCtx)
 			for _, c := range cats {
 				catNames[c.ID] = c.Name
+			}
+		}
+		type brandMeta struct{ name, code string }
+		brandInfo := make(map[uuid.UUID]brandMeta)
+		if len(brandIDs) > 0 {
+			brands, _ := s.client.ItemBrand.Query().Where(itembrand.IDIn(brandIDs...)).All(innerCtx)
+			for _, b := range brands {
+				brandInfo[b.ID] = brandMeta{name: b.Name, code: b.Code}
 			}
 		}
 		// Load balances per item to surface reorder_level, reorder_quantity, and total available/on_hand.
@@ -698,6 +715,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			dto := s.mapToDTO(it)
 			if it.CategoryID != nil {
 				dto.CategoryName = catNames[*it.CategoryID]
+			}
+			if it.BrandID != nil {
+				if bm, ok := brandInfo[*it.BrandID]; ok {
+					dto.BrandName = bm.name
+					dto.BrandCode = bm.code
+				}
 			}
 			if bs, ok := balMap[it.ID]; ok {
 				dto.ReorderLevel = bs.reorderLevel
@@ -1076,6 +1099,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetName(dto.Name).
 		SetNillableDescription(&dto.Description).
 		SetNillableCategoryID(dto.CategoryID).
+		SetNillableBrandID(dto.BrandID).
 		SetNillableUnitID(dto.UnitID).
 		SetType(item.Type(dto.Type)).
 		SetIsActive(dto.IsActive).
@@ -1327,6 +1351,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetName(dto.Name).
 		SetNillableDescription(&dto.Description).
 		SetNillableCategoryID(dto.CategoryID).
+		SetNillableBrandID(dto.BrandID).
 		SetNillableUnitID(dto.UnitID).
 		SetType(item.Type(dto.Type)).
 		SetIsActive(dto.IsActive).
