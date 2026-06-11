@@ -28,6 +28,7 @@ func New(
 	warehouseHandler *handlers.WarehouseHandler,
 	warehouseLocationHandler *handlers.WarehouseLocationHandler,
 	pricingTierHandler *handlers.PricingTierHandler,
+	brandHandler *handlers.BrandHandler,
 	transferHandler *handlers.TransferHandler,
 	inventoryExtrasHandler *handlers.InventoryExtrasHandler,
 	analyticsHandler *handlers.AnalyticsHandler,
@@ -225,6 +226,9 @@ func New(
 					if pricingTierHandler != nil {
 						pricingTierHandler.RegisterRoutes(g)
 					}
+					if brandHandler != nil {
+						brandHandler.RegisterRoutes(g)
+					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)
 					}
@@ -288,6 +292,9 @@ func New(
 					}
 					if pricingTierHandler != nil {
 						pricingTierHandler.RegisterRoutes(g)
+					}
+					if brandHandler != nil {
+						brandHandler.RegisterRoutes(g)
 					}
 					if transferHandler != nil {
 						transferHandler.RegisterRoutes(g)

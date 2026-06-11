@@ -34,6 +34,10 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Reference to ItemCategory"),
+		field.UUID("brand_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Reference to ItemBrand"),
 		field.UUID("unit_id", uuid.UUID{}).
 			Optional().
 			Nillable().
@@ -211,6 +215,10 @@ func (Item) Edges() []ent.Edge {
 			Ref("items").
 			Unique().
 			Field("category_id"),
+		edge.From("item_brand", ItemBrand.Type).
+			Ref("items").
+			Unique().
+			Field("brand_id"),
 	}
 }
 
@@ -219,6 +227,7 @@ func (Item) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "sku").Unique(),
 		index.Fields("tenant_id", "category_id"),
+		index.Fields("tenant_id", "brand_id"),
 		index.Fields("tenant_id", "is_active"),
 		index.Fields("tenant_id", "barcode"),
 		index.Fields("tenant_id", "created_at"),

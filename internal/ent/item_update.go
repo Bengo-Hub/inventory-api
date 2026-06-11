@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -124,6 +125,26 @@ func (_u *ItemUpdate) SetNillableCategoryID(v *uuid.UUID) *ItemUpdate {
 // ClearCategoryID clears the value of the "category_id" field.
 func (_u *ItemUpdate) ClearCategoryID() *ItemUpdate {
 	_u.mutation.ClearCategoryID()
+	return _u
+}
+
+// SetBrandID sets the "brand_id" field.
+func (_u *ItemUpdate) SetBrandID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetBrandID(v)
+	return _u
+}
+
+// SetNillableBrandID sets the "brand_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableBrandID(v *uuid.UUID) *ItemUpdate {
+	if v != nil {
+		_u.SetBrandID(*v)
+	}
+	return _u
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (_u *ItemUpdate) ClearBrandID() *ItemUpdate {
+	_u.mutation.ClearBrandID()
 	return _u
 }
 
@@ -1051,6 +1072,25 @@ func (_u *ItemUpdate) SetItemCategory(v *ItemCategory) *ItemUpdate {
 	return _u.SetItemCategoryID(v.ID)
 }
 
+// SetItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID.
+func (_u *ItemUpdate) SetItemBrandID(id uuid.UUID) *ItemUpdate {
+	_u.mutation.SetItemBrandID(id)
+	return _u
+}
+
+// SetNillableItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID if the given value is not nil.
+func (_u *ItemUpdate) SetNillableItemBrandID(id *uuid.UUID) *ItemUpdate {
+	if id != nil {
+		_u = _u.SetItemBrandID(*id)
+	}
+	return _u
+}
+
+// SetItemBrand sets the "item_brand" edge to the ItemBrand entity.
+func (_u *ItemUpdate) SetItemBrand(v *ItemBrand) *ItemUpdate {
+	return _u.SetItemBrandID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdate) Mutation() *ItemMutation {
 	return _u.mutation
@@ -1293,6 +1333,12 @@ func (_u *ItemUpdate) ClearProducedByRecipe() *ItemUpdate {
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdate) ClearItemCategory() *ItemUpdate {
 	_u.mutation.ClearItemCategory()
+	return _u
+}
+
+// ClearItemBrand clears the "item_brand" edge to the ItemBrand entity.
+func (_u *ItemUpdate) ClearItemBrand() *ItemUpdate {
+	_u.mutation.ClearItemBrand()
 	return _u
 }
 
@@ -2208,6 +2254,35 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ItemBrandCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemBrandTable,
+			Columns: []string{item.ItemBrandColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemBrandIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemBrandTable,
+			Columns: []string{item.ItemBrandColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{item.Label}
@@ -2307,6 +2382,26 @@ func (_u *ItemUpdateOne) SetNillableCategoryID(v *uuid.UUID) *ItemUpdateOne {
 // ClearCategoryID clears the value of the "category_id" field.
 func (_u *ItemUpdateOne) ClearCategoryID() *ItemUpdateOne {
 	_u.mutation.ClearCategoryID()
+	return _u
+}
+
+// SetBrandID sets the "brand_id" field.
+func (_u *ItemUpdateOne) SetBrandID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetBrandID(v)
+	return _u
+}
+
+// SetNillableBrandID sets the "brand_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableBrandID(v *uuid.UUID) *ItemUpdateOne {
+	if v != nil {
+		_u.SetBrandID(*v)
+	}
+	return _u
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (_u *ItemUpdateOne) ClearBrandID() *ItemUpdateOne {
+	_u.mutation.ClearBrandID()
 	return _u
 }
 
@@ -3234,6 +3329,25 @@ func (_u *ItemUpdateOne) SetItemCategory(v *ItemCategory) *ItemUpdateOne {
 	return _u.SetItemCategoryID(v.ID)
 }
 
+// SetItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID.
+func (_u *ItemUpdateOne) SetItemBrandID(id uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetItemBrandID(id)
+	return _u
+}
+
+// SetNillableItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableItemBrandID(id *uuid.UUID) *ItemUpdateOne {
+	if id != nil {
+		_u = _u.SetItemBrandID(*id)
+	}
+	return _u
+}
+
+// SetItemBrand sets the "item_brand" edge to the ItemBrand entity.
+func (_u *ItemUpdateOne) SetItemBrand(v *ItemBrand) *ItemUpdateOne {
+	return _u.SetItemBrandID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdateOne) Mutation() *ItemMutation {
 	return _u.mutation
@@ -3476,6 +3590,12 @@ func (_u *ItemUpdateOne) ClearProducedByRecipe() *ItemUpdateOne {
 // ClearItemCategory clears the "item_category" edge to the ItemCategory entity.
 func (_u *ItemUpdateOne) ClearItemCategory() *ItemUpdateOne {
 	_u.mutation.ClearItemCategory()
+	return _u
+}
+
+// ClearItemBrand clears the "item_brand" edge to the ItemBrand entity.
+func (_u *ItemUpdateOne) ClearItemBrand() *ItemUpdateOne {
+	_u.mutation.ClearItemBrand()
 	return _u
 }
 
@@ -4414,6 +4534,35 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemcategory.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ItemBrandCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemBrandTable,
+			Columns: []string{item.ItemBrandColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ItemBrandIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemBrandTable,
+			Columns: []string{item.ItemBrandColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

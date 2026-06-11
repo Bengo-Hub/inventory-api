@@ -1167,6 +1167,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "brand_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "category_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "tenant_id", Type: field.TypeUUID},
 	}
@@ -1183,14 +1184,20 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "items_item_categories_items",
+				Symbol:     "items_item_brands_items",
 				Columns:    []*schema.Column{ItemsColumns[41]},
+				RefColumns: []*schema.Column{ItemBrandsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "items_item_categories_items",
+				Columns:    []*schema.Column{ItemsColumns[42]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[42]},
+				Columns:    []*schema.Column{ItemsColumns[43]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1199,32 +1206,37 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[41]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[42]},
+			},
+			{
+				Name:    "item_tenant_id_brand_id",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[41]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[12]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[12]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[14]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[14]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[38]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[38]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[42], ItemsColumns[40]},
+				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[40]},
 			},
 		},
 	}
@@ -1271,6 +1283,42 @@ var (
 				Name:    "itemasset_is_primary",
 				Unique:  false,
 				Columns: []*schema.Column{ItemAssetsColumns[8]},
+			},
+		},
+	}
+	// ItemBrandsColumns holds the columns for the "item_brands" table.
+	ItemBrandsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "code", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "logo_url", Type: field.TypeString, Nullable: true},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ItemBrandsTable holds the schema information for the "item_brands" table.
+	ItemBrandsTable = &schema.Table{
+		Name:       "item_brands",
+		Columns:    ItemBrandsColumns,
+		PrimaryKey: []*schema.Column{ItemBrandsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itembrand_tenant_id_name",
+				Unique:  false,
+				Columns: []*schema.Column{ItemBrandsColumns[1], ItemBrandsColumns[2]},
+			},
+			{
+				Name:    "itembrand_tenant_id_code",
+				Unique:  true,
+				Columns: []*schema.Column{ItemBrandsColumns[1], ItemBrandsColumns[3]},
+			},
+			{
+				Name:    "itembrand_tenant_id_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{ItemBrandsColumns[1], ItemBrandsColumns[6]},
 			},
 		},
 	}
@@ -3102,6 +3150,7 @@ var (
 		InventoryUsersTable,
 		ItemsTable,
 		ItemAssetsTable,
+		ItemBrandsTable,
 		ItemCategoriesTable,
 		ItemPricingsTable,
 		ItemTranslationsTable,
@@ -3167,8 +3216,9 @@ func init() {
 	InventoryLotsTable.ForeignKeys[0].RefTable = ItemsTable
 	InventoryLotsTable.ForeignKeys[1].RefTable = WarehousesTable
 	ItemsTable.ForeignKeys[0].RefTable = UnitsTable
-	ItemsTable.ForeignKeys[1].RefTable = ItemCategoriesTable
-	ItemsTable.ForeignKeys[2].RefTable = TenantsTable
+	ItemsTable.ForeignKeys[1].RefTable = ItemBrandsTable
+	ItemsTable.ForeignKeys[2].RefTable = ItemCategoriesTable
+	ItemsTable.ForeignKeys[3].RefTable = TenantsTable
 	ItemAssetsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemCategoriesTable.ForeignKeys[0].RefTable = ItemCategoriesTable
 	ItemCategoriesTable.ForeignKeys[1].RefTable = TenantsTable
