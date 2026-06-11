@@ -30287,6 +30287,8 @@ type ItemMutation struct {
 	sku                        *string
 	name                       *string
 	description                *string
+	manufacturer               *string
+	model                      *string
 	_type                      *item.Type
 	use_case                   *item.UseCase
 	meal_plan                  *item.MealPlan
@@ -30740,6 +30742,104 @@ func (m *ItemMutation) BrandIDCleared() bool {
 func (m *ItemMutation) ResetBrandID() {
 	m.item_brand = nil
 	delete(m.clearedFields, item.FieldBrandID)
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (m *ItemMutation) SetManufacturer(s string) {
+	m.manufacturer = &s
+}
+
+// Manufacturer returns the value of the "manufacturer" field in the mutation.
+func (m *ItemMutation) Manufacturer() (r string, exists bool) {
+	v := m.manufacturer
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManufacturer returns the old "manufacturer" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldManufacturer(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManufacturer is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManufacturer requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManufacturer: %w", err)
+	}
+	return oldValue.Manufacturer, nil
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (m *ItemMutation) ClearManufacturer() {
+	m.manufacturer = nil
+	m.clearedFields[item.FieldManufacturer] = struct{}{}
+}
+
+// ManufacturerCleared returns if the "manufacturer" field was cleared in this mutation.
+func (m *ItemMutation) ManufacturerCleared() bool {
+	_, ok := m.clearedFields[item.FieldManufacturer]
+	return ok
+}
+
+// ResetManufacturer resets all changes to the "manufacturer" field.
+func (m *ItemMutation) ResetManufacturer() {
+	m.manufacturer = nil
+	delete(m.clearedFields, item.FieldManufacturer)
+}
+
+// SetModel sets the "model" field.
+func (m *ItemMutation) SetModel(s string) {
+	m.model = &s
+}
+
+// Model returns the value of the "model" field in the mutation.
+func (m *ItemMutation) Model() (r string, exists bool) {
+	v := m.model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModel returns the old "model" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModel: %w", err)
+	}
+	return oldValue.Model, nil
+}
+
+// ClearModel clears the value of the "model" field.
+func (m *ItemMutation) ClearModel() {
+	m.model = nil
+	m.clearedFields[item.FieldModel] = struct{}{}
+}
+
+// ModelCleared returns if the "model" field was cleared in this mutation.
+func (m *ItemMutation) ModelCleared() bool {
+	_, ok := m.clearedFields[item.FieldModel]
+	return ok
+}
+
+// ResetModel resets all changes to the "model" field.
+func (m *ItemMutation) ResetModel() {
+	m.model = nil
+	delete(m.clearedFields, item.FieldModel)
 }
 
 // SetUnitID sets the "unit_id" field.
@@ -33418,7 +33518,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 43)
+	fields := make([]string, 0, 45)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -33436,6 +33536,12 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.item_brand != nil {
 		fields = append(fields, item.FieldBrandID)
+	}
+	if m.manufacturer != nil {
+		fields = append(fields, item.FieldManufacturer)
+	}
+	if m.model != nil {
+		fields = append(fields, item.FieldModel)
 	}
 	if m.units != nil {
 		fields = append(fields, item.FieldUnitID)
@@ -33568,6 +33674,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.CategoryID()
 	case item.FieldBrandID:
 		return m.BrandID()
+	case item.FieldManufacturer:
+		return m.Manufacturer()
+	case item.FieldModel:
+		return m.Model()
 	case item.FieldUnitID:
 		return m.UnitID()
 	case item.FieldType:
@@ -33663,6 +33773,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCategoryID(ctx)
 	case item.FieldBrandID:
 		return m.OldBrandID(ctx)
+	case item.FieldManufacturer:
+		return m.OldManufacturer(ctx)
+	case item.FieldModel:
+		return m.OldModel(ctx)
 	case item.FieldUnitID:
 		return m.OldUnitID(ctx)
 	case item.FieldType:
@@ -33787,6 +33901,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBrandID(v)
+		return nil
+	case item.FieldManufacturer:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManufacturer(v)
+		return nil
+	case item.FieldModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModel(v)
 		return nil
 	case item.FieldUnitID:
 		v, ok := value.(uuid.UUID)
@@ -34221,6 +34349,12 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldBrandID) {
 		fields = append(fields, item.FieldBrandID)
 	}
+	if m.FieldCleared(item.FieldManufacturer) {
+		fields = append(fields, item.FieldManufacturer)
+	}
+	if m.FieldCleared(item.FieldModel) {
+		fields = append(fields, item.FieldModel)
+	}
 	if m.FieldCleared(item.FieldUnitID) {
 		fields = append(fields, item.FieldUnitID)
 	}
@@ -34312,6 +34446,12 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldBrandID:
 		m.ClearBrandID()
+		return nil
+	case item.FieldManufacturer:
+		m.ClearManufacturer()
+		return nil
+	case item.FieldModel:
+		m.ClearModel()
 		return nil
 	case item.FieldUnitID:
 		m.ClearUnitID()
@@ -34407,6 +34547,12 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldBrandID:
 		m.ResetBrandID()
+		return nil
+	case item.FieldManufacturer:
+		m.ResetManufacturer()
+		return nil
+	case item.FieldModel:
+		m.ResetModel()
 		return nil
 	case item.FieldUnitID:
 		m.ResetUnitID()
