@@ -46,6 +46,8 @@ type ItemsServicer interface {
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
+	ListBrands(ctx context.Context, tenantID uuid.UUID) ([]items.BrandDTO, error)
+	CreateBrand(ctx context.Context, tenantID uuid.UUID, dto items.BrandDTO) (*items.BrandDTO, error)
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.

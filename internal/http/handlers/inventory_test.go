@@ -118,6 +118,14 @@ func (m *mockItemsSvc) DeleteCategory(ctx context.Context, tenantID, id uuid.UUI
 	return nil
 }
 
+func (m *mockItemsSvc) ListBrands(ctx context.Context, tenantID uuid.UUID) ([]items.BrandDTO, error) {
+	return []items.BrandDTO{}, nil
+}
+
+func (m *mockItemsSvc) CreateBrand(ctx context.Context, tenantID uuid.UUID, dto items.BrandDTO) (*items.BrandDTO, error) {
+	return &items.BrandDTO{ID: uuid.New(), Name: dto.Name, Code: dto.Code, IsActive: true}, nil
+}
+
 type mockStockSvc struct {
 	createReservationFn      func(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error)
 	getReservationFn         func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)
