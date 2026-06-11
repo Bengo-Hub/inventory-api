@@ -37,6 +37,10 @@ type Item struct {
 	CategoryID *uuid.UUID `json:"category_id,omitempty"`
 	// Reference to ItemBrand
 	BrandID *uuid.UUID `json:"brand_id,omitempty"`
+	// Manufacturer — retail/pharmacy
+	Manufacturer string `json:"manufacturer,omitempty"`
+	// Product/item model — retail only
+	Model string `json:"model,omitempty"`
 	// Reference to Unit
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
@@ -327,7 +331,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -391,6 +395,18 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.BrandID = new(uuid.UUID)
 				*_m.BrandID = *value.S.(*uuid.UUID)
+			}
+		case item.FieldManufacturer:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field manufacturer", values[i])
+			} else if value.Valid {
+				_m.Manufacturer = value.String
+			}
+		case item.FieldModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field model", values[i])
+			} else if value.Valid {
+				_m.Model = value.String
 			}
 		case item.FieldUnitID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -774,6 +790,12 @@ func (_m *Item) String() string {
 		builder.WriteString("brand_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("manufacturer=")
+	builder.WriteString(_m.Manufacturer)
+	builder.WriteString(", ")
+	builder.WriteString("model=")
+	builder.WriteString(_m.Model)
 	builder.WriteString(", ")
 	if v := _m.UnitID; v != nil {
 		builder.WriteString("unit_id=")

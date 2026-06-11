@@ -148,6 +148,46 @@ func (_u *ItemUpdate) ClearBrandID() *ItemUpdate {
 	return _u
 }
 
+// SetManufacturer sets the "manufacturer" field.
+func (_u *ItemUpdate) SetManufacturer(v string) *ItemUpdate {
+	_u.mutation.SetManufacturer(v)
+	return _u
+}
+
+// SetNillableManufacturer sets the "manufacturer" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableManufacturer(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetManufacturer(*v)
+	}
+	return _u
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (_u *ItemUpdate) ClearManufacturer() *ItemUpdate {
+	_u.mutation.ClearManufacturer()
+	return _u
+}
+
+// SetModel sets the "model" field.
+func (_u *ItemUpdate) SetModel(v string) *ItemUpdate {
+	_u.mutation.SetModel(v)
+	return _u
+}
+
+// SetNillableModel sets the "model" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableModel(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetModel(*v)
+	}
+	return _u
+}
+
+// ClearModel clears the value of the "model" field.
+func (_u *ItemUpdate) ClearModel() *ItemUpdate {
+	_u.mutation.ClearModel()
+	return _u
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_u *ItemUpdate) SetUnitID(v uuid.UUID) *ItemUpdate {
 	_u.mutation.SetUnitID(v)
@@ -1450,6 +1490,18 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(item.FieldDescription, field.TypeString)
 	}
+	if value, ok := _u.mutation.Manufacturer(); ok {
+		_spec.SetField(item.FieldManufacturer, field.TypeString, value)
+	}
+	if _u.mutation.ManufacturerCleared() {
+		_spec.ClearField(item.FieldManufacturer, field.TypeString)
+	}
+	if value, ok := _u.mutation.Model(); ok {
+		_spec.SetField(item.FieldModel, field.TypeString, value)
+	}
+	if _u.mutation.ModelCleared() {
+		_spec.ClearField(item.FieldModel, field.TypeString)
+	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
 	}
@@ -2402,6 +2454,46 @@ func (_u *ItemUpdateOne) SetNillableBrandID(v *uuid.UUID) *ItemUpdateOne {
 // ClearBrandID clears the value of the "brand_id" field.
 func (_u *ItemUpdateOne) ClearBrandID() *ItemUpdateOne {
 	_u.mutation.ClearBrandID()
+	return _u
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (_u *ItemUpdateOne) SetManufacturer(v string) *ItemUpdateOne {
+	_u.mutation.SetManufacturer(v)
+	return _u
+}
+
+// SetNillableManufacturer sets the "manufacturer" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableManufacturer(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetManufacturer(*v)
+	}
+	return _u
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (_u *ItemUpdateOne) ClearManufacturer() *ItemUpdateOne {
+	_u.mutation.ClearManufacturer()
+	return _u
+}
+
+// SetModel sets the "model" field.
+func (_u *ItemUpdateOne) SetModel(v string) *ItemUpdateOne {
+	_u.mutation.SetModel(v)
+	return _u
+}
+
+// SetNillableModel sets the "model" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableModel(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetModel(*v)
+	}
+	return _u
+}
+
+// ClearModel clears the value of the "model" field.
+func (_u *ItemUpdateOne) ClearModel() *ItemUpdateOne {
+	_u.mutation.ClearModel()
 	return _u
 }
 
@@ -3736,6 +3828,18 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(item.FieldDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.Manufacturer(); ok {
+		_spec.SetField(item.FieldManufacturer, field.TypeString, value)
+	}
+	if _u.mutation.ManufacturerCleared() {
+		_spec.ClearField(item.FieldManufacturer, field.TypeString)
+	}
+	if value, ok := _u.mutation.Model(); ok {
+		_spec.SetField(item.FieldModel, field.TypeString, value)
+	}
+	if _u.mutation.ModelCleared() {
+		_spec.ClearField(item.FieldModel, field.TypeString)
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)

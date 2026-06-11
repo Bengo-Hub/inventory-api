@@ -100,6 +100,34 @@ func (_c *ItemCreate) SetNillableBrandID(v *uuid.UUID) *ItemCreate {
 	return _c
 }
 
+// SetManufacturer sets the "manufacturer" field.
+func (_c *ItemCreate) SetManufacturer(v string) *ItemCreate {
+	_c.mutation.SetManufacturer(v)
+	return _c
+}
+
+// SetNillableManufacturer sets the "manufacturer" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableManufacturer(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetManufacturer(*v)
+	}
+	return _c
+}
+
+// SetModel sets the "model" field.
+func (_c *ItemCreate) SetModel(v string) *ItemCreate {
+	_c.mutation.SetModel(v)
+	return _c
+}
+
+// SetNillableModel sets the "model" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableModel(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetModel(*v)
+	}
+	return _c
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_c *ItemCreate) SetUnitID(v uuid.UUID) *ItemCreate {
 	_c.mutation.SetUnitID(v)
@@ -1107,6 +1135,14 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
+	if value, ok := _c.mutation.Manufacturer(); ok {
+		_spec.SetField(item.FieldManufacturer, field.TypeString, value)
+		_node.Manufacturer = value
+	}
+	if value, ok := _c.mutation.Model(); ok {
+		_spec.SetField(item.FieldModel, field.TypeString, value)
+		_node.Model = value
+	}
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
 		_node.Type = value
@@ -1650,6 +1686,42 @@ func (u *ItemUpsert) UpdateBrandID() *ItemUpsert {
 // ClearBrandID clears the value of the "brand_id" field.
 func (u *ItemUpsert) ClearBrandID() *ItemUpsert {
 	u.SetNull(item.FieldBrandID)
+	return u
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsert) SetManufacturer(v string) *ItemUpsert {
+	u.Set(item.FieldManufacturer, v)
+	return u
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateManufacturer() *ItemUpsert {
+	u.SetExcluded(item.FieldManufacturer)
+	return u
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsert) ClearManufacturer() *ItemUpsert {
+	u.SetNull(item.FieldManufacturer)
+	return u
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsert) SetModel(v string) *ItemUpsert {
+	u.Set(item.FieldModel, v)
+	return u
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateModel() *ItemUpsert {
+	u.SetExcluded(item.FieldModel)
+	return u
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsert) ClearModel() *ItemUpsert {
+	u.SetNull(item.FieldModel)
 	return u
 }
 
@@ -2442,6 +2514,48 @@ func (u *ItemUpsertOne) UpdateBrandID() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearBrandID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearBrandID()
+	})
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsertOne) SetManufacturer(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetManufacturer(v)
+	})
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateManufacturer() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateManufacturer()
+	})
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsertOne) ClearManufacturer() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearManufacturer()
+	})
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsertOne) SetModel(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetModel(v)
+	})
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateModel() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateModel()
+	})
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsertOne) ClearModel() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearModel()
 	})
 }
 
@@ -3507,6 +3621,48 @@ func (u *ItemUpsertBulk) UpdateBrandID() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearBrandID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearBrandID()
+	})
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsertBulk) SetManufacturer(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetManufacturer(v)
+	})
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateManufacturer() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateManufacturer()
+	})
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsertBulk) ClearManufacturer() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearManufacturer()
+	})
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsertBulk) SetModel(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetModel(v)
+	})
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateModel() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateModel()
+	})
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsertBulk) ClearModel() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearModel()
 	})
 }
 

@@ -86,6 +86,16 @@ func BrandID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldBrandID, v))
 }
 
+// Manufacturer applies equality check predicate on the "manufacturer" field. It's identical to ManufacturerEQ.
+func Manufacturer(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldManufacturer, v))
+}
+
+// Model applies equality check predicate on the "model" field. It's identical to ModelEQ.
+func Model(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldModel, v))
+}
+
 // UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
 func UnitID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
@@ -519,6 +529,156 @@ func BrandIDIsNil() predicate.Item {
 // BrandIDNotNil applies the NotNil predicate on the "brand_id" field.
 func BrandIDNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldBrandID))
+}
+
+// ManufacturerEQ applies the EQ predicate on the "manufacturer" field.
+func ManufacturerEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldManufacturer, v))
+}
+
+// ManufacturerNEQ applies the NEQ predicate on the "manufacturer" field.
+func ManufacturerNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldManufacturer, v))
+}
+
+// ManufacturerIn applies the In predicate on the "manufacturer" field.
+func ManufacturerIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldManufacturer, vs...))
+}
+
+// ManufacturerNotIn applies the NotIn predicate on the "manufacturer" field.
+func ManufacturerNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldManufacturer, vs...))
+}
+
+// ManufacturerGT applies the GT predicate on the "manufacturer" field.
+func ManufacturerGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldManufacturer, v))
+}
+
+// ManufacturerGTE applies the GTE predicate on the "manufacturer" field.
+func ManufacturerGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldManufacturer, v))
+}
+
+// ManufacturerLT applies the LT predicate on the "manufacturer" field.
+func ManufacturerLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldManufacturer, v))
+}
+
+// ManufacturerLTE applies the LTE predicate on the "manufacturer" field.
+func ManufacturerLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldManufacturer, v))
+}
+
+// ManufacturerContains applies the Contains predicate on the "manufacturer" field.
+func ManufacturerContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldManufacturer, v))
+}
+
+// ManufacturerHasPrefix applies the HasPrefix predicate on the "manufacturer" field.
+func ManufacturerHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldManufacturer, v))
+}
+
+// ManufacturerHasSuffix applies the HasSuffix predicate on the "manufacturer" field.
+func ManufacturerHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldManufacturer, v))
+}
+
+// ManufacturerIsNil applies the IsNil predicate on the "manufacturer" field.
+func ManufacturerIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldManufacturer))
+}
+
+// ManufacturerNotNil applies the NotNil predicate on the "manufacturer" field.
+func ManufacturerNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldManufacturer))
+}
+
+// ManufacturerEqualFold applies the EqualFold predicate on the "manufacturer" field.
+func ManufacturerEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldManufacturer, v))
+}
+
+// ManufacturerContainsFold applies the ContainsFold predicate on the "manufacturer" field.
+func ManufacturerContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldManufacturer, v))
+}
+
+// ModelEQ applies the EQ predicate on the "model" field.
+func ModelEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldModel, v))
+}
+
+// ModelNEQ applies the NEQ predicate on the "model" field.
+func ModelNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldModel, v))
+}
+
+// ModelIn applies the In predicate on the "model" field.
+func ModelIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldModel, vs...))
+}
+
+// ModelNotIn applies the NotIn predicate on the "model" field.
+func ModelNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldModel, vs...))
+}
+
+// ModelGT applies the GT predicate on the "model" field.
+func ModelGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldModel, v))
+}
+
+// ModelGTE applies the GTE predicate on the "model" field.
+func ModelGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldModel, v))
+}
+
+// ModelLT applies the LT predicate on the "model" field.
+func ModelLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldModel, v))
+}
+
+// ModelLTE applies the LTE predicate on the "model" field.
+func ModelLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldModel, v))
+}
+
+// ModelContains applies the Contains predicate on the "model" field.
+func ModelContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldModel, v))
+}
+
+// ModelHasPrefix applies the HasPrefix predicate on the "model" field.
+func ModelHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldModel, v))
+}
+
+// ModelHasSuffix applies the HasSuffix predicate on the "model" field.
+func ModelHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldModel, v))
+}
+
+// ModelIsNil applies the IsNil predicate on the "model" field.
+func ModelIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldModel))
+}
+
+// ModelNotNil applies the NotNil predicate on the "model" field.
+func ModelNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldModel))
+}
+
+// ModelEqualFold applies the EqualFold predicate on the "model" field.
+func ModelEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldModel, v))
+}
+
+// ModelContainsFold applies the ContainsFold predicate on the "model" field.
+func ModelContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldModel, v))
 }
 
 // UnitIDEQ applies the EQ predicate on the "unit_id" field.

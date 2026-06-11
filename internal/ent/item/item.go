@@ -28,6 +28,10 @@ const (
 	FieldCategoryID = "category_id"
 	// FieldBrandID holds the string denoting the brand_id field in the database.
 	FieldBrandID = "brand_id"
+	// FieldManufacturer holds the string denoting the manufacturer field in the database.
+	FieldManufacturer = "manufacturer"
+	// FieldModel holds the string denoting the model field in the database.
+	FieldModel = "model"
 	// FieldUnitID holds the string denoting the unit_id field in the database.
 	FieldUnitID = "unit_id"
 	// FieldType holds the string denoting the type field in the database.
@@ -259,6 +263,8 @@ var Columns = []string{
 	FieldDescription,
 	FieldCategoryID,
 	FieldBrandID,
+	FieldManufacturer,
+	FieldModel,
 	FieldUnitID,
 	FieldType,
 	FieldUseCase,
@@ -498,6 +504,16 @@ func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 // ByBrandID orders the results by the brand_id field.
 func ByBrandID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBrandID, opts...).ToFunc()
+}
+
+// ByManufacturer orders the results by the manufacturer field.
+func ByManufacturer(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldManufacturer, opts...).ToFunc()
+}
+
+// ByModel orders the results by the model field.
+func ByModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldModel, opts...).ToFunc()
 }
 
 // ByUnitID orders the results by the unit_id field.
