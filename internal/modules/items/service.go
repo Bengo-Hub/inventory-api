@@ -1049,6 +1049,57 @@ func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]Cat
 	return sharedcache.GetOrSet(ctx, s.cache, key, sharedcache.TTLReference, fetch)
 }
 
+// BrandDTO is a lightweight item-brand projection used by bulk import for
+// name-based brand resolution / auto-create. Mirrors CategoryDTO.
+type BrandDTO struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Code     string    `json:"code,omitempty"`
+	IsActive bool      `json:"is_active"`
+}
+
+// ListBrands returns all active item brands for a tenant.
+// Mirrors ListCategories so bulk import can resolve brands by name.
+func (s *Service) ListBrands(ctx context.Context, tenantID uuid.UUID) ([]BrandDTO, error) {
+	brands, err := s.client.ItemBrand.Query().
+		Where(itembrand.TenantID(tenantID), itembrand.IsActive(true)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: list brands: %w", err)
+	}
+	dtos := make([]BrandDTO, len(brands))
+	for i, b := range brands {
+		dtos[i] = BrandDTO{
+			ID:       b.ID,
+			Name:     b.Name,
+			Code:     b.Code,
+			IsActive: b.IsActive,
+		}
+	}
+	return dtos, nil
+}
+
+// CreateBrand creates a new tenant-scoped item brand.
+// Mirrors CreateCategory; the code is required by the ItemBrand schema, so the
+// caller slugifies the name when no explicit code is supplied.
+func (s *Service) CreateBrand(ctx context.Context, tenantID uuid.UUID, dto BrandDTO) (*BrandDTO, error) {
+	b, err := s.client.ItemBrand.Create().
+		SetTenantID(tenantID).
+		SetName(dto.Name).
+		SetCode(dto.Code).
+		SetIsActive(true).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: create brand: %w", err)
+	}
+	return &BrandDTO{
+		ID:       b.ID,
+		Name:     b.Name,
+		Code:     b.Code,
+		IsActive: b.IsActive,
+	}, nil
+}
+
 // itemTypeCode maps item types to short codes for SKU generation.
 var itemTypeCode = map[string]string{
 	"GOODS":      "GDS",

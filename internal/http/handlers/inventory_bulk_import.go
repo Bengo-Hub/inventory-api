@@ -95,9 +95,10 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 		return strings.TrimSpace(row[i])
 	}
 
-	// Pre-load categories + units for name-based resolution.
+	// Pre-load categories + units + brands for name-based resolution.
 	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
+	brandMap := h.loadBrandMap(r, tenantID)
 
 	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
@@ -115,7 +116,11 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 			res.Errors = append(res.Errors, fmt.Sprintf("row sku=%s: name and sku are required", sku))
 			continue
 		}
-		dto := buildItemDTOFromRow(col, row, catMap, unitMap)
+		// Auto-create brand if referenced by name but missing (mirrors XLSX path).
+		if brandName := col(row, "brand"); brandName != "" {
+			h.ensureBrand(r, tenantID, brandName, brandMap)
+		}
+		dto := buildItemDTOFromRow(col, row, catMap, unitMap, brandMap)
 		if existingID, ok := skuToID[sku]; ok {
 			if _, uErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); uErr != nil {
 				res.Failed++
@@ -153,6 +158,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
+	brandMap := h.loadBrandMap(r, tenantID)
 
 	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
@@ -164,7 +170,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 1: Items ────────────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("Items"); sheetErr == nil && len(rows) > 1 {
-		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, skuToID)
+		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID)
 	}
 
 	// ── Sheet 2: RecipeIngredients ────────────────────────────────────────────
@@ -228,6 +234,44 @@ func (h *InventoryHandler) loadUnitMap(r *http.Request, tenantID uuid.UUID) map[
 		}
 	}
 	return m
+}
+
+// loadBrandMap returns a lower-cased-name → ID map for the tenant's item brands.
+// Unknown names will be auto-created when first encountered via ensureBrand.
+func (h *InventoryHandler) loadBrandMap(r *http.Request, tenantID uuid.UUID) map[string]uuid.UUID {
+	brands, _ := h.itemsSvc.ListBrands(r.Context(), tenantID)
+	m := make(map[string]uuid.UUID, len(brands))
+	for _, b := range brands {
+		m[strings.ToLower(strings.TrimSpace(b.Name))] = b.ID
+	}
+	return m
+}
+
+// ensureBrand returns an existing brand ID or creates a new tenant-scoped one
+// via get-or-create by (tenant_id, name). The ItemBrand schema requires a code,
+// so the name is slugified the same way the Brands CRUD does on create.
+func (h *InventoryHandler) ensureBrand(r *http.Request, tenantID uuid.UUID, name string, m map[string]uuid.UUID) *uuid.UUID {
+	if name == "" {
+		return nil
+	}
+	key := strings.ToLower(strings.TrimSpace(name))
+	if id, ok := m[key]; ok {
+		return &id
+	}
+	b, err := h.itemsSvc.CreateBrand(r.Context(), tenantID, items.BrandDTO{
+		Name:     name,
+		Code:     slugify(name),
+		IsActive: true,
+	})
+	if err != nil {
+		h.log.Error("bulk import: failed to create brand",
+			zap.String("name", name),
+			zap.String("tenant_id", tenantID.String()),
+			zap.Error(err))
+		return nil
+	}
+	m[key] = b.ID
+	return &b.ID
 }
 
 // ensureCategory returns an existing category ID or creates a new global one.
@@ -331,6 +375,7 @@ func buildItemDTOFromRow(
 	row []string,
 	catMap map[string]uuid.UUID,
 	unitMap map[string]uuid.UUID,
+	brandMap map[string]uuid.UUID,
 ) items.ItemDTO {
 	sku := col(row, "sku")
 	name := col(row, "name")
@@ -382,6 +427,20 @@ func buildItemDTOFromRow(
 		if id, ok := unitMap[strings.ToLower(strings.TrimSpace(unitName))]; ok {
 			dto.UnitID = &id
 		}
+	}
+
+	// Brand resolution by name (auto-created upstream via ensureBrand).
+	if brandName := col(row, "brand"); brandName != "" {
+		if id, ok := brandMap[strings.ToLower(strings.TrimSpace(brandName))]; ok {
+			dto.BrandID = &id
+		}
+	}
+	// Manufacturer / Model — plain string fields (no entity). Trim/skip empties.
+	if v := strings.TrimSpace(col(row, "manufacturer")); v != "" {
+		dto.Manufacturer = v
+	}
+	if v := strings.TrimSpace(col(row, "model")); v != "" {
+		dto.Model = v
 	}
 
 	// ── Extended fields (full Item alignment) ──────────────────────────────────
