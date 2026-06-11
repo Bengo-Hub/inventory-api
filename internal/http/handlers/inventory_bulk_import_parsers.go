@@ -70,6 +70,7 @@ func (h *InventoryHandler) parseXLSXItems(
 	rows [][]string,
 	catMap map[string]uuid.UUID,
 	unitMap map[string]uuid.UUID,
+	brandMap map[string]uuid.UUID,
 	skuToID map[string]uuid.UUID,
 ) importResult {
 	colMap := xlsxColMap(rows)
@@ -88,17 +89,21 @@ func (h *InventoryHandler) parseXLSXItems(
 			continue
 		}
 
-		// Auto-create category / unit if referenced by name but missing.
-		catName  := col(nil, "category_name")
-		unitName := col(nil, "unit_name")
+		// Auto-create category / unit / brand if referenced by name but missing.
+		catName   := col(nil, "category_name")
+		unitName  := col(nil, "unit_name")
+		brandName := col(nil, "brand")
 		if catName != "" {
 			h.ensureCategory(r, tenantID, catName, catMap)
 		}
 		if unitName != "" {
 			h.ensureUnit(r, tenantID, unitName, unitMap)
 		}
+		if brandName != "" {
+			h.ensureBrand(r, tenantID, brandName, brandMap)
+		}
 
-		dto := buildItemDTOFromRow(col, nil, catMap, unitMap)
+		dto := buildItemDTOFromRow(col, nil, catMap, unitMap, brandMap)
 
 		if existingID, ok := skuToID[sku]; ok {
 			if _, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); err != nil {
