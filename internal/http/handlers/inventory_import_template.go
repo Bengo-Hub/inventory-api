@@ -33,6 +33,8 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		"weight_kg", "dimensions_cm",
 		"meal_plan", "occupancy_basis", "max_adults", "max_children", "extra_bed_allowed", "single_supplement",
 		"total_capacity", "event_start_at", "event_end_at", "event_venue",
+		// Brand / item attributes (retail / pharmacy)
+		"brand", "manufacturer", "model",
 	}
 	itemExample := []any{
 		"INGR-BEEF-STEAK", "Beef steak (sirloin)", "INGREDIENT",
@@ -45,6 +47,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		"", "",
 		"", "", "", "", "", "",
 		"", "", "", "",
+		"", "", "",
 	}
 	itemExampleGoods := []any{
 		"SOD001", "Soda 300ml", "GOODS",
@@ -57,6 +60,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		0.33, "",
 		"", "", "", "", "", "",
 		"", "", "", "",
+		"Coca-Cola", "Coca-Cola Company", "330ml Can",
 	}
 	itemExampleRecipe := []any{
 		"BEE006", "Beef Grilled (200g)", "RECIPE",
@@ -69,6 +73,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		"", "",
 		"", "", "", "", "", "",
 		"", "", "", "",
+		"", "", "",
 	}
 	xl.NewSheet("Items")
 	writeXLSXHeader(xl, "Items", itemHeaders)
@@ -166,6 +171,9 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"event_start_at", "NO", "datetime", "Event start (YYYY-MM-DD or RFC3339)."},
 		{"event_end_at", "NO", "datetime", "Event end (YYYY-MM-DD or RFC3339)."},
 		{"event_venue", "NO", "string", "Event venue name/address."},
+		{"brand", "NO", "string", "Brand name. Auto-created (get-or-create by name per tenant) if not found."},
+		{"manufacturer", "NO", "string", "Manufacturer name (retail/pharmacy). Free text."},
+		{"model", "NO", "string", "Model / variant identifier (retail). Free text."},
 	}
 	for i, rowData := range readme {
 		for j, val := range rowData {
