@@ -1130,6 +1130,8 @@ var (
 		{Name: "sku", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "manufacturer", Type: field.TypeString, Nullable: true},
+		{Name: "model", Type: field.TypeString, Nullable: true},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT"}, Default: "GOODS"},
 		{Name: "use_case", Type: field.TypeEnum, Enums: []string{"RETAIL", "PHARMACY", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY"}, Default: "RETAIL"},
 		{Name: "meal_plan", Type: field.TypeEnum, Nullable: true, Enums: []string{"RO", "BB", "HB", "FB", "AI"}},
@@ -1179,25 +1181,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[40]},
+				Columns:    []*schema.Column{ItemsColumns[42]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_brands_items",
-				Columns:    []*schema.Column{ItemsColumns[41]},
+				Columns:    []*schema.Column{ItemsColumns[43]},
 				RefColumns: []*schema.Column{ItemBrandsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[42]},
+				Columns:    []*schema.Column{ItemsColumns[44]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[43]},
+				Columns:    []*schema.Column{ItemsColumns[45]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1206,37 +1208,37 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[42]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[44]},
 			},
 			{
 				Name:    "item_tenant_id_brand_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[41]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[43]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[12]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[14]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[14]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[16]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[38]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[40]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[43], ItemsColumns[40]},
+				Columns: []*schema.Column{ItemsColumns[45], ItemsColumns[42]},
 			},
 		},
 	}

@@ -40,6 +40,7 @@ type ItemsServicer interface {
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -179,6 +180,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/items/{sku}", h.GetStockAvailability)
 		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
+		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
 
 		// Availability
 		inv.Post("/availability", h.BulkAvailability)
@@ -838,8 +840,16 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// ?include=variants opts into eager-loading each item's active variations.
+	ctx := r.Context()
+	for _, inc := range strings.Split(r.URL.Query().Get("include"), ",") {
+		if strings.TrimSpace(inc) == "variants" {
+			ctx = items.WithIncludeVariants(ctx)
+		}
+	}
+
 	p := pagination.Parse(r)
-	results, total, err := h.itemsSvc.ListItems(r.Context(), tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)
+	results, total, err := h.itemsSvc.ListItems(ctx, tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
@@ -865,6 +875,31 @@ func (h *InventoryHandler) ListEventItems(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
+}
+
+// ListItemVariants handles GET /v1/{tenant}/inventory/items/{itemId}/variants —
+// returns the active product variations for an item so retail/POS can sell variations.
+func (h *InventoryHandler) ListItemVariants(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	itemID, err := uuid.Parse(chi.URLParam(r, "itemId"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ITEM_ID", "Invalid item ID")
+		return
+	}
+
+	variants, err := h.itemsSvc.ListItemVariants(r.Context(), tenantID, itemID)
+	if err != nil {
+		h.log.Error("list item variants failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list item variants")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, variants)
 }
 
 // CreateItem handles POST /v1/{tenant}/inventory/items — creates a new inventory item.

@@ -85,6 +85,10 @@ func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFi
 	return nil, 0, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error) {
+	return []items.VariantDTO{}, nil
+}
+
 func (m *mockItemsSvc) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error) {
 	return []items.ItemDTO{}, 0, nil
 }
