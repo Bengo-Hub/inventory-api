@@ -38,6 +38,12 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Reference to ItemBrand"),
+		field.String("manufacturer").
+			Optional().
+			Comment("Manufacturer — retail/pharmacy"),
+		field.String("model").
+			Optional().
+			Comment("Product/item model — retail only"),
 		field.UUID("unit_id", uuid.UUID{}).
 			Optional().
 			Nillable().

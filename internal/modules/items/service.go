@@ -20,6 +20,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
@@ -27,6 +28,22 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
+
+// includeVariantsKey is a context flag set by the HTTP layer (?include=variants)
+// to opt into eager-loading the variants edge on item lists. Variant loading is
+// gated because it is wasteful for large catalogs that don't need variations.
+type includeVariantsKey struct{}
+
+// WithIncludeVariants returns a context that instructs ListItems to eager-load
+// each item's active variants and surface them on the DTO.
+func WithIncludeVariants(ctx context.Context) context.Context {
+	return context.WithValue(ctx, includeVariantsKey{}, true)
+}
+
+func includeVariants(ctx context.Context) bool {
+	v, _ := ctx.Value(includeVariantsKey{}).(bool)
+	return v
+}
 
 // StandardTags defines well-known dietary and allergen tag values.
 var StandardTags = []string{
@@ -56,6 +73,14 @@ type ItemDTO struct {
 	CategoryName    string         `json:"category_name,omitempty"`
 	BrandName       string         `json:"brand_name,omitempty"`
 	BrandCode       string         `json:"brand_code,omitempty"`
+	// Item-attribute fields (retail / pharmacy)
+	Manufacturer string `json:"manufacturer,omitempty"` // retail/pharmacy
+	Model        string `json:"model,omitempty"`        // retail only
+	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
+	// HasVariants is always populated; Variants is populated when variants are eager-loaded
+	// (inline for single-item reads, or for the list when ?include=variants is requested).
+	HasVariants bool         `json:"has_variants"`
+	Variants    []VariantDTO `json:"variants,omitempty"`
 	// Extended fields for POS, logistics, compliance
 	Barcode                 string             `json:"barcode,omitempty"`
 	BarcodeType             string             `json:"barcode_type,omitempty"`
@@ -101,6 +126,18 @@ type ItemDTO struct {
 	OnHand    *float64  `json:"on_hand,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// VariantDTO is the catalog-facing projection of an ItemVariant. Surfaced on the item
+// so POS/ordering catalog proxies can offer variations for sale.
+type VariantDTO struct {
+	ID         uuid.UUID         `json:"id"`
+	SKU        string            `json:"sku"`
+	Name       string            `json:"name"`
+	Price      float64           `json:"price"`
+	Attributes map[string]string `json:"attributes,omitempty"`
+	Barcode    string            `json:"barcode,omitempty"`
+	IsActive   bool              `json:"is_active"`
 }
 
 type CategoryDTO struct {
@@ -511,7 +548,7 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 }
 
 func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
-	return &ItemDTO{
+	dto := &ItemDTO{
 		ID:                      i.ID,
 		SKU:                     i.Sku,
 		Name:                    i.Name,
@@ -521,6 +558,8 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		UnitID:                  i.UnitID,
 		Type:                    string(i.Type),
 		IsActive:                i.IsActive,
+		Manufacturer:            i.Manufacturer,
+		Model:                   i.Model,
 		ImageURL:                s.resolveMediaURL(i.ImageURL),
 		Tags:                    i.Tags,
 		Metadata:                i.Metadata,
@@ -554,6 +593,26 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		CreatedAt:               i.CreatedAt,
 		UpdatedAt:               i.UpdatedAt,
 	}
+	// Surface product variations when the variants edge has been eager-loaded.
+	// Only active variants are exposed for sale; HasVariants reflects that count.
+	if variants, err := i.Edges.VariantsOrErr(); err == nil {
+		for _, v := range variants {
+			if !v.IsActive {
+				continue
+			}
+			dto.Variants = append(dto.Variants, VariantDTO{
+				ID:         v.ID,
+				SKU:        v.Sku,
+				Name:       v.Name,
+				Price:      v.Price,
+				Attributes: v.Attributes,
+				Barcode:    v.Barcode,
+				IsActive:   v.IsActive,
+			})
+		}
+		dto.HasVariants = len(dto.Variants) > 0
+	}
+	return dto
 }
 
 // enumPtrToStr converts a nillable Ent enum pointer to a *string for DTO output.
@@ -750,7 +809,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	if total == 0 {
 		return []ItemDTO{}, 0, nil
 	}
-	itms, err := buildQuery().Order(ent.Asc(item.FieldSku)).Limit(limit).Offset(offset).All(ctx)
+	listQuery := buildQuery().Order(ent.Asc(item.FieldSku)).Limit(limit).Offset(offset)
+	if includeVariants(ctx) {
+		// Eager-load active variants so mapToDTO can surface them inline.
+		listQuery = listQuery.WithVariants(func(vq *ent.ItemVariantQuery) {
+			vq.Where(itemvariant.IsActive(true)).Order(ent.Asc(itemvariant.FieldName))
+		})
+	}
+	itms, err := listQuery.All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: list: %w", err)
 	}
@@ -759,6 +825,41 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		return nil, 0, err
 	}
 	return dtos, total, nil
+}
+
+// ListItemVariants returns the active product variations for a single item.
+// Surfaces the existing ItemVariant edge so retail/POS can sell variations.
+func (s *Service) ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]VariantDTO, error) {
+	// Ensure the item belongs to the tenant before exposing its variants.
+	exists, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.ID(itemID)).
+		Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: lookup item for variants: %w", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("items: item not found")
+	}
+	variants, err := s.client.ItemVariant.Query().
+		Where(itemvariant.ItemID(itemID), itemvariant.IsActive(true)).
+		Order(ent.Asc(itemvariant.FieldName)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: list variants: %w", err)
+	}
+	dtos := make([]VariantDTO, 0, len(variants))
+	for _, v := range variants {
+		dtos = append(dtos, VariantDTO{
+			ID:         v.ID,
+			SKU:        v.Sku,
+			Name:       v.Name,
+			Price:      v.Price,
+			Attributes: v.Attributes,
+			Barcode:    v.Barcode,
+			IsActive:   v.IsActive,
+		})
+	}
+	return dtos, nil
 }
 
 // ListEventItems returns all active SERVICE-type items (one-time and recurring),
@@ -1118,6 +1219,12 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.PurchaseUnit != "" {
 		createBuilder = createBuilder.SetPurchaseUnit(dto.PurchaseUnit)
 	}
+	if dto.Manufacturer != "" {
+		createBuilder = createBuilder.SetManufacturer(dto.Manufacturer)
+	}
+	if dto.Model != "" {
+		createBuilder = createBuilder.SetModel(dto.Model)
+	}
 	if dto.Barcode != "" {
 		createBuilder = createBuilder.SetBarcode(dto.Barcode)
 	}
@@ -1273,6 +1380,8 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			"type":                      i.Type,
 			"category_id":               i.CategoryID,
 			"category_name":             categoryName,
+			"manufacturer":              i.Manufacturer,
+			"model":                     i.Model,
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,
 			"is_active":                 i.IsActive,
@@ -1366,6 +1475,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetIsPerishable(dto.IsPerishable).
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
+		SetManufacturer(dto.Manufacturer).
+		SetModel(dto.Model).
 		SetTaxInclusive(dto.TaxInclusive)
 	if dto.PurchaseUnit != "" {
 		updateBuilder = updateBuilder.SetPurchaseUnit(dto.PurchaseUnit)
@@ -1481,6 +1592,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 			"type":                      i.Type,
 			"category_id":               i.CategoryID,
 			"category_name":             categoryName,
+			"manufacturer":              i.Manufacturer,
+			"model":                     i.Model,
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,
 			"is_active":                 i.IsActive,
