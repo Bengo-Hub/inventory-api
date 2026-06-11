@@ -99,6 +99,9 @@ type Item func(*sql.Selector)
 // ItemAsset is the predicate function for itemasset builders.
 type ItemAsset func(*sql.Selector)
 
+// ItemBrand is the predicate function for itembrand builders.
+type ItemBrand func(*sql.Selector)
+
 // ItemCategory is the predicate function for itemcategory builders.
 type ItemCategory func(*sql.Selector)
 

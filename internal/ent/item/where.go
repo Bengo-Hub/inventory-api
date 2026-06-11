@@ -81,6 +81,11 @@ func CategoryID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCategoryID, v))
 }
 
+// BrandID applies equality check predicate on the "brand_id" field. It's identical to BrandIDEQ.
+func BrandID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBrandID, v))
+}
+
 // UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
 func UnitID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
@@ -484,6 +489,36 @@ func CategoryIDIsNil() predicate.Item {
 // CategoryIDNotNil applies the NotNil predicate on the "category_id" field.
 func CategoryIDNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldCategoryID))
+}
+
+// BrandIDEQ applies the EQ predicate on the "brand_id" field.
+func BrandIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldBrandID, v))
+}
+
+// BrandIDNEQ applies the NEQ predicate on the "brand_id" field.
+func BrandIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldBrandID, v))
+}
+
+// BrandIDIn applies the In predicate on the "brand_id" field.
+func BrandIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldBrandID, vs...))
+}
+
+// BrandIDNotIn applies the NotIn predicate on the "brand_id" field.
+func BrandIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldBrandID, vs...))
+}
+
+// BrandIDIsNil applies the IsNil predicate on the "brand_id" field.
+func BrandIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldBrandID))
+}
+
+// BrandIDNotNil applies the NotNil predicate on the "brand_id" field.
+func BrandIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldBrandID))
 }
 
 // UnitIDEQ applies the EQ predicate on the "unit_id" field.
@@ -2223,6 +2258,29 @@ func HasItemCategory() predicate.Item {
 func HasItemCategoryWith(preds ...predicate.ItemCategory) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newItemCategoryStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasItemBrand applies the HasEdge predicate on the "item_brand" edge.
+func HasItemBrand() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ItemBrandTable, ItemBrandColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasItemBrandWith applies the HasEdge predicate on the "item_brand" edge with a given conditions (other predicates).
+func HasItemBrandWith(preds ...predicate.ItemBrand) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newItemBrandStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

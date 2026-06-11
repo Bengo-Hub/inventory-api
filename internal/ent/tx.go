@@ -74,6 +74,8 @@ type Tx struct {
 	Item *ItemClient
 	// ItemAsset is the client for interacting with the ItemAsset builders.
 	ItemAsset *ItemAssetClient
+	// ItemBrand is the client for interacting with the ItemBrand builders.
+	ItemBrand *ItemBrandClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
 	// ItemPricing is the client for interacting with the ItemPricing builders.
@@ -324,6 +326,7 @@ func (tx *Tx) init() {
 	tx.InventoryUser = NewInventoryUserClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemAsset = NewItemAssetClient(tx.config)
+	tx.ItemBrand = NewItemBrandClient(tx.config)
 	tx.ItemCategory = NewItemCategoryClient(tx.config)
 	tx.ItemPricing = NewItemPricingClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)

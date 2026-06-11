@@ -47,6 +47,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
@@ -160,6 +161,8 @@ type Client struct {
 	Item *ItemClient
 	// ItemAsset is the client for interacting with the ItemAsset builders.
 	ItemAsset *ItemAssetClient
+	// ItemBrand is the client for interacting with the ItemBrand builders.
+	ItemBrand *ItemBrandClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
 	// ItemPricing is the client for interacting with the ItemPricing builders.
@@ -290,6 +293,7 @@ func (c *Client) init() {
 	c.InventoryUser = NewInventoryUserClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.ItemAsset = NewItemAssetClient(c.config)
+	c.ItemBrand = NewItemBrandClient(c.config)
 	c.ItemCategory = NewItemCategoryClient(c.config)
 	c.ItemPricing = NewItemPricingClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
@@ -457,6 +461,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		InventoryUser:          NewInventoryUserClient(cfg),
 		Item:                   NewItemClient(cfg),
 		ItemAsset:              NewItemAssetClient(cfg),
+		ItemBrand:              NewItemBrandClient(cfg),
 		ItemCategory:           NewItemCategoryClient(cfg),
 		ItemPricing:            NewItemPricingClient(cfg),
 		ItemTranslation:        NewItemTranslationClient(cfg),
@@ -551,6 +556,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		InventoryUser:          NewInventoryUserClient(cfg),
 		Item:                   NewItemClient(cfg),
 		ItemAsset:              NewItemAssetClient(cfg),
+		ItemBrand:              NewItemBrandClient(cfg),
 		ItemCategory:           NewItemCategoryClient(cfg),
 		ItemPricing:            NewItemPricingClient(cfg),
 		ItemTranslation:        NewItemTranslationClient(cfg),
@@ -631,17 +637,17 @@ func (c *Client) Use(hooks ...Hook) {
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
 		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
-		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
-		c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption,
-		c.OutboxEvent, c.PricingTier, c.ProductionBatch, c.PurchaseOrder,
-		c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck,
-		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockBreakdown, c.StockTransfer, c.StockTransferLine, c.Supplier,
-		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
-		c.Ticket, c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
+		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -658,17 +664,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
 		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventoryUser,
-		c.Item, c.ItemAsset, c.ItemCategory, c.ItemPricing, c.ItemTranslation,
-		c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption,
-		c.OutboxEvent, c.PricingTier, c.ProductionBatch, c.PurchaseOrder,
-		c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck,
-		c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe,
-		c.RecipeIngredient, c.Requisition, c.RequisitionLine, c.Reservation,
-		c.RolePermission, c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment,
-		c.StockBreakdown, c.StockTransfer, c.StockTransferLine, c.Supplier,
-		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
-		c.Ticket, c.Unit, c.UserRoleAssignment, c.VariantAttribute, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
+		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserRoleAssignment,
+		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -739,6 +745,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Item.mutate(ctx, m)
 	case *ItemAssetMutation:
 		return c.ItemAsset.mutate(ctx, m)
+	case *ItemBrandMutation:
+		return c.ItemBrand.mutate(ctx, m)
 	case *ItemCategoryMutation:
 		return c.ItemCategory.mutate(ctx, m)
 	case *ItemPricingMutation:
@@ -5469,6 +5477,22 @@ func (c *ItemClient) QueryItemCategory(_m *Item) *ItemCategoryQuery {
 	return query
 }
 
+// QueryItemBrand queries the item_brand edge of a Item.
+func (c *ItemClient) QueryItemBrand(_m *Item) *ItemBrandQuery {
+	query := (&ItemBrandClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(itembrand.Table, itembrand.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.ItemBrandTable, item.ItemBrandColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ItemClient) Hooks() []Hook {
 	return c.hooks.Item
@@ -5640,6 +5664,155 @@ func (c *ItemAssetClient) mutate(ctx context.Context, m *ItemAssetMutation) (Val
 		return (&ItemAssetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ItemAsset mutation op: %q", m.Op())
+	}
+}
+
+// ItemBrandClient is a client for the ItemBrand schema.
+type ItemBrandClient struct {
+	config
+}
+
+// NewItemBrandClient returns a client for the ItemBrand from the given config.
+func NewItemBrandClient(c config) *ItemBrandClient {
+	return &ItemBrandClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itembrand.Hooks(f(g(h())))`.
+func (c *ItemBrandClient) Use(hooks ...Hook) {
+	c.hooks.ItemBrand = append(c.hooks.ItemBrand, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itembrand.Intercept(f(g(h())))`.
+func (c *ItemBrandClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemBrand = append(c.inters.ItemBrand, interceptors...)
+}
+
+// Create returns a builder for creating a ItemBrand entity.
+func (c *ItemBrandClient) Create() *ItemBrandCreate {
+	mutation := newItemBrandMutation(c.config, OpCreate)
+	return &ItemBrandCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemBrand entities.
+func (c *ItemBrandClient) CreateBulk(builders ...*ItemBrandCreate) *ItemBrandCreateBulk {
+	return &ItemBrandCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemBrandClient) MapCreateBulk(slice any, setFunc func(*ItemBrandCreate, int)) *ItemBrandCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemBrandCreateBulk{err: fmt.Errorf("calling to ItemBrandClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemBrandCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemBrandCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemBrand.
+func (c *ItemBrandClient) Update() *ItemBrandUpdate {
+	mutation := newItemBrandMutation(c.config, OpUpdate)
+	return &ItemBrandUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemBrandClient) UpdateOne(_m *ItemBrand) *ItemBrandUpdateOne {
+	mutation := newItemBrandMutation(c.config, OpUpdateOne, withItemBrand(_m))
+	return &ItemBrandUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemBrandClient) UpdateOneID(id uuid.UUID) *ItemBrandUpdateOne {
+	mutation := newItemBrandMutation(c.config, OpUpdateOne, withItemBrandID(id))
+	return &ItemBrandUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemBrand.
+func (c *ItemBrandClient) Delete() *ItemBrandDelete {
+	mutation := newItemBrandMutation(c.config, OpDelete)
+	return &ItemBrandDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemBrandClient) DeleteOne(_m *ItemBrand) *ItemBrandDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemBrandClient) DeleteOneID(id uuid.UUID) *ItemBrandDeleteOne {
+	builder := c.Delete().Where(itembrand.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemBrandDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemBrand.
+func (c *ItemBrandClient) Query() *ItemBrandQuery {
+	return &ItemBrandQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemBrand},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemBrand entity by its id.
+func (c *ItemBrandClient) Get(ctx context.Context, id uuid.UUID) (*ItemBrand, error) {
+	return c.Query().Where(itembrand.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemBrandClient) GetX(ctx context.Context, id uuid.UUID) *ItemBrand {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItems queries the items edge of a ItemBrand.
+func (c *ItemBrandClient) QueryItems(_m *ItemBrand) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(itembrand.Table, itembrand.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, itembrand.ItemsTable, itembrand.ItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemBrandClient) Hooks() []Hook {
+	return c.hooks.ItemBrand
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemBrandClient) Interceptors() []Interceptor {
+	return c.inters.ItemBrand
+}
+
+func (c *ItemBrandClient) mutate(ctx context.Context, m *ItemBrandMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemBrandCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemBrandUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemBrandUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemBrandDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ItemBrand mutation op: %q", m.Op())
 	}
 }
 
@@ -12352,16 +12525,17 @@ type (
 		Consumption, Contract, ContractOrderLink, CustomFieldDefinition,
 		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
 		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
-		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockTransfer,
-		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Hook
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemPricing, ItemTranslation, ItemVariant, ManufacturingAnalytics,
+		ModifierGroup, ModifierOption, OutboxEvent, PricingTier, ProductionBatch,
+		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
+		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -12370,15 +12544,16 @@ type (
 		Consumption, Contract, ContractOrderLink, CustomFieldDefinition,
 		CustomFieldValue, DocumentSequence, FoodCostVariance, GoodsReceipt,
 		GoodsReceiptLine, InventoryBalance, InventoryLot, InventoryPermission,
-		InventoryRole, InventoryUser, Item, ItemAsset, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockTransfer,
-		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
-		TenantInventoryConfig, Ticket, Unit, UserRoleAssignment, VariantAttribute,
-		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		InventoryRole, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemPricing, ItemTranslation, ItemVariant, ManufacturingAnalytics,
+		ModifierGroup, ModifierOption, OutboxEvent, PricingTier, ProductionBatch,
+		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
+		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )
