@@ -26,7 +26,7 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		itemIDs[i] = dtos[i].ID
 	}
 
-	recipePrice := s.recipeSellingPrices(ctx, tenantID, itemIDs)
+	recipePrice := s.recipeSellingPrices(ctx, tenantID, cfg, itemIDs)
 	tierPrice := s.defaultTierPrices(ctx, tenantID, itemIDs)
 
 	inclusiveDefault := cfg != nil && cfg.PricesInclusiveOfTax
@@ -124,8 +124,11 @@ func (s *Service) EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.
 	return err
 }
 
-// recipeSellingPrices maps RECIPE item_id → selling price (or suggested price fallback).
-func (s *Service) recipeSellingPrices(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]float64 {
+// recipeSellingPrices maps RECIPE item_id → selling price. Resolution order:
+// explicit recipe selling_price → recipe suggested_price → cost_per_portion at the recipe/tenant
+// target margin (so a fully-costed menu item is NEVER silently priced 0 and hidden on the POS — the
+// merchant can still override with an explicit price/tier). cfg may be nil.
+func (s *Service) recipeSellingPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent.TenantInventoryConfig, itemIDs []uuid.UUID) map[uuid.UUID]float64 {
 	out := map[uuid.UUID]float64{}
 	if len(itemIDs) == 0 {
 		return out
@@ -140,11 +143,25 @@ func (s *Service) recipeSellingPrices(ctx context.Context, tenantID uuid.UUID, i
 		if r.ItemID == nil {
 			continue
 		}
-		if r.SellingPrice != nil && *r.SellingPrice > 0 {
+		switch {
+		case r.SellingPrice != nil && *r.SellingPrice > 0:
 			out[*r.ItemID] = *r.SellingPrice
-		} else if r.SuggestedPrice != nil && *r.SuggestedPrice > 0 {
+		case r.SuggestedPrice != nil && *r.SuggestedPrice > 0:
 			if _, ok := out[*r.ItemID]; !ok {
 				out[*r.ItemID] = *r.SuggestedPrice
+			}
+		case r.CostPerPortion != nil && *r.CostPerPortion > 0:
+			// Derive a sensible menu price from plate cost at the target margin (recipe override →
+			// tenant default → 70% margin ≈ 30% food cost, the industry norm). Prevents costed
+			// recipes from defaulting to KES 0 / unavailable.
+			margin := 70.0
+			if r.TargetMarginPercent != nil && *r.TargetMarginPercent > 0 && *r.TargetMarginPercent < 100 {
+				margin = *r.TargetMarginPercent
+			} else if cfg != nil && cfg.DefaultTargetMarginPercent != nil && *cfg.DefaultTargetMarginPercent > 0 && *cfg.DefaultTargetMarginPercent < 100 {
+				margin = *cfg.DefaultTargetMarginPercent
+			}
+			if _, ok := out[*r.ItemID]; !ok {
+				out[*r.ItemID] = *r.CostPerPortion / (1 - margin/100)
 			}
 		}
 	}
