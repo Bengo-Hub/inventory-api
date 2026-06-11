@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -81,6 +82,20 @@ func (_c *ItemCreate) SetCategoryID(v uuid.UUID) *ItemCreate {
 func (_c *ItemCreate) SetNillableCategoryID(v *uuid.UUID) *ItemCreate {
 	if v != nil {
 		_c.SetCategoryID(*v)
+	}
+	return _c
+}
+
+// SetBrandID sets the "brand_id" field.
+func (_c *ItemCreate) SetBrandID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetBrandID(v)
+	return _c
+}
+
+// SetNillableBrandID sets the "brand_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableBrandID(v *uuid.UUID) *ItemCreate {
+	if v != nil {
+		_c.SetBrandID(*v)
 	}
 	return _c
 }
@@ -824,6 +839,25 @@ func (_c *ItemCreate) SetItemCategory(v *ItemCategory) *ItemCreate {
 	return _c.SetItemCategoryID(v.ID)
 }
 
+// SetItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID.
+func (_c *ItemCreate) SetItemBrandID(id uuid.UUID) *ItemCreate {
+	_c.mutation.SetItemBrandID(id)
+	return _c
+}
+
+// SetNillableItemBrandID sets the "item_brand" edge to the ItemBrand entity by ID if the given value is not nil.
+func (_c *ItemCreate) SetNillableItemBrandID(id *uuid.UUID) *ItemCreate {
+	if id != nil {
+		_c = _c.SetItemBrandID(*id)
+	}
+	return _c
+}
+
+// SetItemBrand sets the "item_brand" edge to the ItemBrand entity.
+func (_c *ItemCreate) SetItemBrand(v *ItemBrand) *ItemCreate {
+	return _c.SetItemBrandID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_c *ItemCreate) Mutation() *ItemMutation {
 	return _c.mutation
@@ -1460,6 +1494,23 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_node.CategoryID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.ItemBrandIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.ItemBrandTable,
+			Columns: []string{item.ItemBrandColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.BrandID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -1581,6 +1632,24 @@ func (u *ItemUpsert) UpdateCategoryID() *ItemUpsert {
 // ClearCategoryID clears the value of the "category_id" field.
 func (u *ItemUpsert) ClearCategoryID() *ItemUpsert {
 	u.SetNull(item.FieldCategoryID)
+	return u
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsert) SetBrandID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldBrandID, v)
+	return u
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBrandID() *ItemUpsert {
+	u.SetExcluded(item.FieldBrandID)
+	return u
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsert) ClearBrandID() *ItemUpsert {
+	u.SetNull(item.FieldBrandID)
 	return u
 }
 
@@ -2352,6 +2421,27 @@ func (u *ItemUpsertOne) UpdateCategoryID() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearCategoryID() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsertOne) SetBrandID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBrandID(v)
+	})
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBrandID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBrandID()
+	})
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsertOne) ClearBrandID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBrandID()
 	})
 }
 
@@ -3396,6 +3486,27 @@ func (u *ItemUpsertBulk) UpdateCategoryID() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearCategoryID() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsertBulk) SetBrandID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBrandID(v)
+	})
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBrandID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBrandID()
+	})
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsertBulk) ClearBrandID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBrandID()
 	})
 }
 

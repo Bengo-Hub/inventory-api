@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -34,6 +35,8 @@ type Item struct {
 	Description string `json:"description,omitempty"`
 	// Reference to ItemCategory
 	CategoryID *uuid.UUID `json:"category_id,omitempty"`
+	// Reference to ItemBrand
+	BrandID *uuid.UUID `json:"brand_id,omitempty"`
 	// Reference to Unit
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
@@ -146,9 +149,11 @@ type ItemEdges struct {
 	ProducedByRecipe *Recipe `json:"produced_by_recipe,omitempty"`
 	// ItemCategory holds the value of the item_category edge.
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
+	// ItemBrand holds the value of the item_brand edge.
+	ItemBrand *ItemBrand `json:"item_brand,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [15]bool
+	loadedTypes [16]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -296,12 +301,23 @@ func (e ItemEdges) ItemCategoryOrErr() (*ItemCategory, error) {
 	return nil, &NotLoadedError{edge: "item_category"}
 }
 
+// ItemBrandOrErr returns the ItemBrand value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) ItemBrandOrErr() (*ItemBrand, error) {
+	if e.ItemBrand != nil {
+		return e.ItemBrand, nil
+	} else if e.loadedTypes[15] {
+		return nil, &NotFoundError{label: itembrand.Label}
+	}
+	return nil, &NotLoadedError{edge: "item_brand"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Item) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldCategoryID, item.FieldUnitID:
+		case item.FieldCategoryID, item.FieldBrandID, item.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
@@ -368,6 +384,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CategoryID = new(uuid.UUID)
 				*_m.CategoryID = *value.S.(*uuid.UUID)
+			}
+		case item.FieldBrandID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field brand_id", values[i])
+			} else if value.Valid {
+				_m.BrandID = new(uuid.UUID)
+				*_m.BrandID = *value.S.(*uuid.UUID)
 			}
 		case item.FieldUnitID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -702,6 +725,11 @@ func (_m *Item) QueryItemCategory() *ItemCategoryQuery {
 	return NewItemClient(_m.config).QueryItemCategory(_m)
 }
 
+// QueryItemBrand queries the "item_brand" edge of the Item entity.
+func (_m *Item) QueryItemBrand() *ItemBrandQuery {
+	return NewItemClient(_m.config).QueryItemBrand(_m)
+}
+
 // Update returns a builder for updating this Item.
 // Note that you need to call Item.Unwrap() before calling this method if this Item
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -739,6 +767,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	if v := _m.CategoryID; v != nil {
 		builder.WriteString("category_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.BrandID; v != nil {
+		builder.WriteString("brand_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
