@@ -28,6 +28,7 @@ func globalRoleUUID(code string) uuid.UUID {
 var roleDefs = []roleDef{
 	{"inventory_admin", "Inventory Admin", "Full access to all inventory operations including config and user management", true},
 	{"warehouse_manager", "Warehouse Manager", "Manage warehouses, stock, reservations, recipes, and consumptions", true},
+	{"accountant", "Accountant", "Finance/back-office: manage purchases (procurement), approvals, fixed assets, and stock valuation adjustments", true},
 	{"stock_clerk", "Stock Clerk", "View and change stock, view items and warehouses, manage own consumptions", true},
 	{"viewer", "Viewer", "Read-only access to all inventory data", true},
 }
@@ -51,6 +52,31 @@ var rolePermMap = map[string][]string{
 		"inventory.manufacturing.view", "inventory.manufacturing.add", "inventory.manufacturing.change", "inventory.manufacturing.manage",
 		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
 		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
+	},
+	// accountant — finance/back-office. Owns purchasing (procurement), approves purchase orders,
+	// maintains the fixed-asset register, and makes stock valuation adjustments. Read access to the
+	// rest of inventory for costing/reconciliation. Catalog/recipe deletes stay admin-only.
+	"accountant": {
+		"inventory.items.view", "inventory.items.add", "inventory.items.change",
+		"inventory.variants.view",
+		"inventory.categories.view",
+		"inventory.warehouses.view",
+		// Valuation write-offs / cost adjustments.
+		"inventory.stock.view", "inventory.stock.add", "inventory.stock.change", "inventory.stock.manage",
+		"inventory.recipes.view",
+		"inventory.consumptions.view",
+		"inventory.reservations.view",
+		"inventory.units.view",
+		"inventory.tickets.view",
+		// Purchases — full procurement lifecycle (requisitions, POs, goods receipts, returns).
+		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage",
+		"inventory.manufacturing.view",
+		// Fixed-asset register (asset accounting / depreciation).
+		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
+		// Approve purchase orders / run the approval matrix.
+		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
+		// Tax/compliance settings visibility.
+		"inventory.settings.view",
 	},
 	"stock_clerk": {
 		"inventory.stock.view", "inventory.stock.change", "inventory.stock.add",

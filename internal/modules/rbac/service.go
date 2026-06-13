@@ -115,6 +115,10 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 			return 4
 		case "warehouse_manager":
 			return 3
+		case "accountant":
+			// Peer of warehouse_manager: distinct permission set (owns procurement/assets/approvals)
+			// but a comparable privilege tier, so it outranks stock_clerk/viewer.
+			return 3
 		case "stock_clerk":
 			return 2
 		case "viewer":
@@ -129,7 +133,9 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 			mapped = "inventory_admin"
 		case "staff", "manager", "store_manager":
 			mapped = "warehouse_manager"
-		case "cashier", "kitchen", "bar", "stock_clerk":
+		case "accountant":
+			mapped = "accountant"
+		case "cashier", "kitchen", "bar", "barista", "stock_clerk":
 			mapped = "stock_clerk"
 		default:
 			mapped = "viewer"
