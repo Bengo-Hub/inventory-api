@@ -147,7 +147,11 @@ func (h *RBACHandler) ListAssignments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"assignments": assignments})
+	out := make([]assignmentDTO, 0, len(assignments))
+	for _, a := range assignments {
+		out = append(out, assignmentDTO{ID: a.ID, UserID: a.UserID, RoleID: a.RoleID, AssignedAt: a.AssignedAt})
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "assignments": out})
 }
 
 // ListRoles lists all roles.
@@ -166,7 +170,11 @@ func (h *RBACHandler) ListRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"roles": roles})
+	out := make([]roleDTO, 0, len(roles))
+	for _, ro := range roles {
+		out = append(out, toRoleDTO(ro))
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "roles": out})
 }
 
 // ListPermissions lists all permissions.
@@ -178,7 +186,11 @@ func (h *RBACHandler) ListPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"permissions": permissions})
+	out := make([]permDTO, 0, len(permissions))
+	for _, p := range permissions {
+		out = append(out, toPermDTO(p))
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "permissions": out})
 }
 
 // GetMyPermissions returns the permissions for the current user.
@@ -208,7 +220,11 @@ func (h *RBACHandler) GetMyPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"permissions": permissions})
+	out := make([]permDTO, 0, len(permissions))
+	for _, p := range permissions {
+		out = append(out, toPermDTO(p))
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "permissions": out})
 }
 
 // GetMyRoles returns the roles for the current user.
@@ -238,7 +254,11 @@ func (h *RBACHandler) GetMyRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"roles": roles})
+	out := make([]roleDTO, 0, len(roles))
+	for _, ro := range roles {
+		out = append(out, toRoleDTO(ro))
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "roles": out})
 }
 
 // RegisterRBACRoutes registers RBAC routes.

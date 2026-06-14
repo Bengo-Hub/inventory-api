@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
@@ -11,6 +12,57 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
+
+// roleDTO is the JSON shape of a role for the user-management UI.
+type roleDTO struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	IsSystem    bool      `json:"is_system"`
+}
+
+func toRoleDTO(r *rbac.InventoryRole) roleDTO {
+	d := roleDTO{ID: r.ID, Code: r.RoleCode, Name: r.Name, IsSystem: r.IsSystemRole}
+	if r.Description != nil {
+		d.Description = *r.Description
+	}
+	return d
+}
+
+// permDTO is the JSON shape of a permission for the permission matrix.
+type permDTO struct {
+	ID       uuid.UUID `json:"id"`
+	Code     string    `json:"code"`
+	Name     string    `json:"name"`
+	Module   string    `json:"module"`
+	Action   string    `json:"action"`
+	Resource string    `json:"resource,omitempty"`
+}
+
+func toPermDTO(p *rbac.InventoryPermission) permDTO {
+	d := permDTO{ID: p.ID, Code: p.PermissionCode, Name: p.Name, Module: p.Module, Action: p.Action}
+	if p.Resource != nil {
+		d.Resource = *p.Resource
+	}
+	return d
+}
+
+// userDTO is the JSON shape of a user for the Accounts tab.
+type userDTO struct {
+	ID         uuid.UUID `json:"id"`
+	Email      string    `json:"email"`
+	Status     string    `json:"status"`
+	SyncStatus string    `json:"sync_status,omitempty"`
+}
+
+// assignmentDTO is the JSON shape of a user-role assignment.
+type assignmentDTO struct {
+	ID         uuid.UUID `json:"id"`
+	UserID     uuid.UUID `json:"user_id"`
+	RoleID     uuid.UUID `json:"role_id"`
+	AssignedAt time.Time `json:"assigned_at"`
+}
 
 // canManageRBAC reports whether the caller may create/edit roles and manage
 // role permissions (inventory_admin or warehouse_manager). Writes the error
@@ -87,7 +139,11 @@ func (h *RBACHandler) GetRolePermissions(w http.ResponseWriter, r *http.Request)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to load role permissions"})
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"permissions": perms})
+	out := make([]permDTO, 0, len(perms))
+	for _, p := range perms {
+		out = append(out, toPermDTO(p))
+	}
+	respondJSON(w, http.StatusOK, map[string]any{"data": out, "permissions": out})
 }
 
 // setRolePermissionsRequest replaces a role's permission set.
