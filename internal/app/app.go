@@ -176,6 +176,7 @@ func New(ctx context.Context) (*App, error) {
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
 	auditSvc := audit.NewService(ormClient, log)
 	warehouseHandler.SetAuditService(auditSvc)
+	stockCountHandler := handlers.NewStockCountHandler(log, ormClient, stockSvc, rbacService, auditSvc)
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
@@ -283,7 +284,7 @@ func New(ctx context.Context) (*App, error) {
 	inventorySettingsHandler.SetRBACService(rbacService)
 	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

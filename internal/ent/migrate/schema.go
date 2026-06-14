@@ -2596,6 +2596,70 @@ var (
 			},
 		},
 	}
+	// StockCountsColumns holds the columns for the "stock_counts" table.
+	StockCountsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "reference", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "counting", "review", "approved", "cancelled"}, Default: "draft"},
+		{Name: "counted_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "approved_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "approved_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// StockCountsTable holds the schema information for the "stock_counts" table.
+	StockCountsTable = &schema.Table{
+		Name:       "stock_counts",
+		Columns:    StockCountsColumns,
+		PrimaryKey: []*schema.Column{StockCountsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockcount_tenant_id_warehouse_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockCountsColumns[1], StockCountsColumns[2]},
+			},
+			{
+				Name:    "stockcount_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{StockCountsColumns[1], StockCountsColumns[4]},
+			},
+		},
+	}
+	// StockCountLinesColumns holds the columns for the "stock_count_lines" table.
+	StockCountLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "stock_count_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "sku", Type: field.TypeString},
+		{Name: "system_qty", Type: field.TypeFloat64, Default: 0},
+		{Name: "counted_qty", Type: field.TypeFloat64, Nullable: true},
+		{Name: "variance", Type: field.TypeFloat64, Nullable: true},
+		{Name: "posted", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// StockCountLinesTable holds the schema information for the "stock_count_lines" table.
+	StockCountLinesTable = &schema.Table{
+		Name:       "stock_count_lines",
+		Columns:    StockCountLinesColumns,
+		PrimaryKey: []*schema.Column{StockCountLinesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockcountline_tenant_id_stock_count_id",
+				Unique:  false,
+				Columns: []*schema.Column{StockCountLinesColumns[1], StockCountLinesColumns[2]},
+			},
+			{
+				Name:    "stockcountline_stock_count_id_item_id",
+				Unique:  true,
+				Columns: []*schema.Column{StockCountLinesColumns[2], StockCountLinesColumns[3]},
+			},
+		},
+	}
 	// StockTransfersColumns holds the columns for the "stock_transfers" table.
 	StockTransfersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3256,6 +3320,8 @@ var (
 		ServiceDeliveriesTable,
 		StockAdjustmentsTable,
 		StockBreakdownsTable,
+		StockCountsTable,
+		StockCountLinesTable,
 		StockTransfersTable,
 		StockTransferLinesTable,
 		SuppliersTable,

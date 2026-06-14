@@ -45,6 +45,7 @@ func New(
 	inventorySettingsHandler *handlers.InventorySettingsHandler,
 	redisClient *redis.Client,
 	ormClient *ent.Client,
+	stockCountHandler *handlers.StockCountHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -249,6 +250,9 @@ func New(
 					if analyticsHandler != nil {
 						analyticsHandler.RegisterRoutes(g)
 					}
+					if stockCountHandler != nil {
+						stockCountHandler.RegisterRoutes(g)
+					}
 				})
 			}
 		})
@@ -319,6 +323,9 @@ func New(
 					}
 					if analyticsHandler != nil {
 						analyticsHandler.RegisterRoutes(g)
+					}
+					if stockCountHandler != nil {
+						stockCountHandler.RegisterRoutes(g)
 					}
 				})
 			}
