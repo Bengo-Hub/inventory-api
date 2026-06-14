@@ -108,6 +108,10 @@ type AdjustStockRequest struct {
 	AdjustedBy  uuid.UUID  `json:"adjusted_by"`
 	WarehouseID uuid.UUID  `json:"warehouse_id,omitempty"`
 	UnitID      *uuid.UUID `json:"unit_id,omitempty"` // optional; when set, records the balance's unit of measure
+	// ApprovalIntentID ties a large adjustment to its approval workflow: the
+	// client passes a stable UUID on the first (blocked) attempt and again on the
+	// retry after a manager approves.
+	ApprovalIntentID *uuid.UUID `json:"approval_intent_id,omitempty"`
 }
 
 // AdjustStockResponse represents the result of a stock adjustment.

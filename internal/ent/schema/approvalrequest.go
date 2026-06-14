@@ -26,6 +26,7 @@ func (ApprovalRequest) Fields() []ent.Field {
 			"stock_transfer", "purchase_return", "goods_receipt",
 			"production_batch", "asset_disposal", "asset_transfer",
 			"asset_maintenance", "rfq", "contract",
+			"stock_adjustment", "stock_writeoff", "stock_count",
 		),
 		field.UUID("object_id", uuid.UUID{}).Comment("ID of the PO/requisition being approved"),
 		field.String("object_reference").Optional().Comment("PO number / requisition reference for display"),

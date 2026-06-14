@@ -20,6 +20,7 @@ import (
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
@@ -112,10 +113,14 @@ type InventoryHandler struct {
 	rbacSvc      *rbac.Service
 	authMW       *authclient.AuthMiddleware
 	auditSvc     *audit.Service
+	approvalSvc  *approvals.Service
 }
 
 // SetAuditService wires the centralized audit trail for stock adjustments / write-offs.
 func (h *InventoryHandler) SetAuditService(a *audit.Service) { h.auditSvc = a }
+
+// SetApprovalService wires the amount-tiered approval workflow for large adjustments.
+func (h *InventoryHandler) SetApprovalService(a *approvals.Service) { h.approvalSvc = a }
 
 // NewInventoryHandler creates a new inventory handler.
 func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer, recipeSvc RecipesServicer, unitSvc UnitsServicer) *InventoryHandler {
@@ -1101,6 +1106,50 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	}
 	if req.Reason == "" {
 		req.Reason = "other"
+	}
+
+	// Large-adjustment approval gate: route adjustments whose magnitude falls in a
+	// configured ApprovalRule band through the approval workflow. Safe by default —
+	// with no rule configured for the stock_adjustment/stock_writeoff module,
+	// nothing is blocked.
+	if h.approvalSvc != nil {
+		module := "stock_adjustment"
+		if req.Reason == "damaged" || req.Reason == "expired" || req.Reason == "shrinkage" {
+			module = "stock_writeoff"
+		}
+		amount := req.Adjustment
+		if amount < 0 {
+			amount = -amount
+		}
+		actor := req.AdjustedBy
+		if actor == uuid.Nil {
+			if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+				actor, _ = claims.UserID()
+			}
+		}
+		if req.ApprovalIntentID != nil {
+			// Retry after a manager decision — only proceed when approved.
+			ok, state, _ := h.approvalSvc.Satisfied(r.Context(), tenantID, module, *req.ApprovalIntentID, amount)
+			if !ok {
+				writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+					"error": "ADJUSTMENT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
+					"intent_id": req.ApprovalIntentID, "state": state,
+				})
+				return
+			}
+		} else {
+			// First attempt — create the approval request if a rule gates this amount.
+			intent := uuid.New()
+			request, gated, _ := h.approvalSvc.Submit(r.Context(), tenantID, module, intent, req.Reference, amount, &actor)
+			if gated {
+				resp := map[string]any{"approval_required": true, "intent_id": intent, "module": module}
+				if request != nil {
+					resp["request_id"] = request.ID
+				}
+				writeJSON(w, http.StatusUnprocessableEntity, resp)
+				return
+			}
+		}
 	}
 
 	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)

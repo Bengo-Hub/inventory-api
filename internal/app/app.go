@@ -172,6 +172,7 @@ func New(ctx context.Context) (*App, error) {
 	inventoryHandler.SetModifiersService(modifiersSvc)
 	inventoryHandler.SetTicketsService(ticketsSvc)
 	inventoryHandler.SetRBACService(rbacService)
+	inventoryHandler.SetApprovalService(approvals.NewService(ormClient))
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
 	auditSvc := audit.NewService(ormClient, log)

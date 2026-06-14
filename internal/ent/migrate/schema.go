@@ -52,7 +52,7 @@ var (
 	ApprovalRequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition", "stock_transfer", "purchase_return", "goods_receipt", "production_batch", "asset_disposal", "asset_transfer", "asset_maintenance", "rfq", "contract"}},
+		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition", "stock_transfer", "purchase_return", "goods_receipt", "production_batch", "asset_disposal", "asset_transfer", "asset_maintenance", "rfq", "contract", "stock_adjustment", "stock_writeoff", "stock_count"}},
 		{Name: "object_id", Type: field.TypeUUID},
 		{Name: "object_reference", Type: field.TypeString, Nullable: true},
 		{Name: "amount", Type: field.TypeFloat64, Default: 0},
@@ -86,7 +86,7 @@ var (
 	ApprovalRulesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition", "stock_transfer", "purchase_return", "goods_receipt", "production_batch", "asset_disposal", "asset_transfer", "asset_maintenance", "rfq", "contract"}},
+		{Name: "module", Type: field.TypeEnum, Enums: []string{"purchase_order", "requisition", "stock_transfer", "purchase_return", "goods_receipt", "production_batch", "asset_disposal", "asset_transfer", "asset_maintenance", "rfq", "contract", "stock_adjustment", "stock_writeoff", "stock_count"}},
 		{Name: "name", Type: field.TypeString},
 		{Name: "min_amount", Type: field.TypeFloat64, Default: 0},
 		{Name: "max_amount", Type: field.TypeFloat64, Nullable: true},
