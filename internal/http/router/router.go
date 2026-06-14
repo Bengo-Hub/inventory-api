@@ -13,6 +13,7 @@ import (
 
 	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/bengobox/inventory-service/internal/ent"
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	ratelimitmw "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -43,6 +44,7 @@ func New(
 	serviceConfigHandler *handlers.ServiceConfigHandler,
 	inventorySettingsHandler *handlers.InventorySettingsHandler,
 	redisClient *redis.Client,
+	ormClient *ent.Client,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -173,6 +175,10 @@ func New(
 
 			// Optional outlet context for warehouse/inventory filtering
 			tenant.Use(ratelimitmw.OutletContext)
+			// Reject non-HQ users targeting an outlet they are not assigned to.
+			if ormClient != nil {
+				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
+			}
 
 			// Private User Routes (Always require auth)
 			tenant.Group(func(private chi.Router) {
@@ -188,6 +194,11 @@ func New(
 				userHandler.RegisterRoutes(private)
 				if rbacHandler != nil {
 					rbacHandler.RegisterRBACRoutes(private)
+				}
+				// User-outlet assignment, my-outlets, and audit-log read API
+				// (always require auth → registered in the private group).
+				if warehouseHandler != nil {
+					warehouseHandler.RegisterPrivateRoutes(private)
 				}
 				if serviceConfigHandler != nil {
 					serviceConfigHandler.RegisterTenantRoutes(private)
@@ -264,6 +275,10 @@ func New(
 
 			// Optional outlet context for warehouse/inventory filtering
 			tenant.Use(ratelimitmw.OutletContext)
+			// Reject non-HQ users targeting an outlet they are not assigned to.
+			if ormClient != nil {
+				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
+			}
 
 			if inventoryHandler != nil {
 				tenant.Group(func(g chi.Router) {

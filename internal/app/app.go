@@ -23,6 +23,7 @@ import (
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
 
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/config"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/migrate"
@@ -173,6 +174,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryHandler.SetRBACService(rbacService)
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
+	auditSvc := audit.NewService(ormClient, log)
+	warehouseHandler.SetAuditService(auditSvc)
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
@@ -280,7 +283,7 @@ func New(ctx context.Context) (*App, error) {
 	inventorySettingsHandler.SetRBACService(rbacService)
 	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

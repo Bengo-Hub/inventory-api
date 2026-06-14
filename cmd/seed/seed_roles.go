@@ -52,6 +52,9 @@ var rolePermMap = map[string][]string{
 		"inventory.manufacturing.view", "inventory.manufacturing.add", "inventory.manufacturing.change", "inventory.manufacturing.manage",
 		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
 		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
+		// Audit trail visibility + cycle-count lifecycle (managers approve count variance).
+		"inventory.audit.view",
+		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change", "inventory.stock_count.approve",
 	},
 	// accountant — finance/back-office. Owns purchasing (procurement), approves purchase orders,
 	// maintains the fixed-asset register, and makes stock valuation adjustments. Read access to the

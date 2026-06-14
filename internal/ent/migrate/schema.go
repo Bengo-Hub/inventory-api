@@ -453,6 +453,45 @@ var (
 			},
 		},
 	}
+	// AuditLogsColumns holds the columns for the "audit_logs" table.
+	AuditLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "actor_user_id", Type: field.TypeUUID},
+		{Name: "approver_user_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "action", Type: field.TypeString},
+		{Name: "entity_type", Type: field.TypeString, Nullable: true},
+		{Name: "entity_id", Type: field.TypeString, Nullable: true},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "before_json", Type: field.TypeJSON, Nullable: true},
+		{Name: "after_json", Type: field.TypeJSON, Nullable: true},
+		{Name: "amount", Type: field.TypeFloat64, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AuditLogsTable holds the schema information for the "audit_logs" table.
+	AuditLogsTable = &schema.Table{
+		Name:       "audit_logs",
+		Columns:    AuditLogsColumns,
+		PrimaryKey: []*schema.Column{AuditLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "auditlog_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{AuditLogsColumns[1], AuditLogsColumns[12]},
+			},
+			{
+				Name:    "auditlog_tenant_id_outlet_id_action",
+				Unique:  false,
+				Columns: []*schema.Column{AuditLogsColumns[1], AuditLogsColumns[2], AuditLogsColumns[5]},
+			},
+			{
+				Name:    "auditlog_tenant_id_actor_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{AuditLogsColumns[1], AuditLogsColumns[3]},
+			},
+		},
+	}
 	// BatchRawMaterialsColumns holds the columns for the "batch_raw_materials" table.
 	BatchRawMaterialsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -2887,6 +2926,39 @@ var (
 			},
 		},
 	}
+	// UserOutletsColumns holds the columns for the "user_outlets" table.
+	UserOutletsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID},
+		{Name: "is_home_outlet", Type: field.TypeBool, Default: false},
+		{Name: "assigned_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "assigned_at", Type: field.TypeTime},
+	}
+	// UserOutletsTable holds the schema information for the "user_outlets" table.
+	UserOutletsTable = &schema.Table{
+		Name:       "user_outlets",
+		Columns:    UserOutletsColumns,
+		PrimaryKey: []*schema.Column{UserOutletsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useroutlet_tenant_id_user_id_outlet_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserOutletsColumns[1], UserOutletsColumns[2], UserOutletsColumns[3]},
+			},
+			{
+				Name:    "useroutlet_tenant_id_outlet_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserOutletsColumns[1], UserOutletsColumns[3]},
+			},
+			{
+				Name:    "useroutlet_tenant_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserOutletsColumns[1], UserOutletsColumns[2]},
+			},
+		},
+	}
 	// UserRoleAssignmentsColumns holds the columns for the "user_role_assignments" table.
 	UserRoleAssignmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3133,6 +3205,7 @@ var (
 		AssetMaintenancesTable,
 		AssetReservationsTable,
 		AssetTransfersTable,
+		AuditLogsTable,
 		BatchRawMaterialsTable,
 		BundlesTable,
 		BundleComponentsTable,
@@ -3192,6 +3265,7 @@ var (
 		TenantInventoryConfigsTable,
 		TicketsTable,
 		UnitsTable,
+		UserOutletsTable,
 		UserRoleAssignmentsTable,
 		VariantAttributesTable,
 		WarehousesTable,

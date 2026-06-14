@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	events "github.com/Bengo-Hub/shared-events"
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -38,6 +39,7 @@ type WarehouseHandler struct {
 	rbacSvc    *rbac.Service
 	authURL    string // base URL of auth-api, e.g. "https://sso.codevertexitsolutions.com"
 	outletSync OutletSyncer
+	auditSvc   *audit.Service
 }
 
 // NewWarehouseHandler creates a warehouse handler.
@@ -47,6 +49,11 @@ func NewWarehouseHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service
 		orm:     orm,
 		rbacSvc: rbacSvc,
 	}
+}
+
+// SetAuditService wires the centralized audit trail used for user-outlet assignment changes.
+func (h *WarehouseHandler) SetAuditService(a *audit.Service) {
+	h.auditSvc = a
 }
 
 // SetAuthURL sets the auth-api base URL used for the outlet proxy endpoint.

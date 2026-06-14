@@ -42,6 +42,9 @@ type AssetReservation func(*sql.Selector)
 // AssetTransfer is the predicate function for assettransfer builders.
 type AssetTransfer func(*sql.Selector)
 
+// AuditLog is the predicate function for auditlog builders.
+type AuditLog func(*sql.Selector)
+
 // BatchRawMaterial is the predicate function for batchrawmaterial builders.
 type BatchRawMaterial func(*sql.Selector)
 
@@ -218,6 +221,9 @@ type Ticket func(*sql.Selector)
 
 // Unit is the predicate function for unit builders.
 type Unit func(*sql.Selector)
+
+// UserOutlet is the predicate function for useroutlet builders.
+type UserOutlet func(*sql.Selector)
 
 // UserRoleAssignment is the predicate function for userroleassignment builders.
 type UserRoleAssignment func(*sql.Selector)

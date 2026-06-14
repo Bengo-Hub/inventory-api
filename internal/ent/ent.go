@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
 	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
 	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
+	"github.com/bengobox/inventory-service/internal/ent/auditlog"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -83,6 +84,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -160,6 +162,7 @@ func checkColumn(t, c string) error {
 			assetmaintenance.Table:       assetmaintenance.ValidColumn,
 			assetreservation.Table:       assetreservation.ValidColumn,
 			assettransfer.Table:          assettransfer.ValidColumn,
+			auditlog.Table:               auditlog.ValidColumn,
 			batchrawmaterial.Table:       batchrawmaterial.ValidColumn,
 			bundle.Table:                 bundle.ValidColumn,
 			bundlecomponent.Table:        bundlecomponent.ValidColumn,
@@ -219,6 +222,7 @@ func checkColumn(t, c string) error {
 			tenantinventoryconfig.Table:  tenantinventoryconfig.ValidColumn,
 			ticket.Table:                 ticket.ValidColumn,
 			unit.Table:                   unit.ValidColumn,
+			useroutlet.Table:             useroutlet.ValidColumn,
 			userroleassignment.Table:     userroleassignment.ValidColumn,
 			variantattribute.Table:       variantattribute.ValidColumn,
 			warehouse.Table:              warehouse.ValidColumn,

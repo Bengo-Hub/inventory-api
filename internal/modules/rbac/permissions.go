@@ -130,6 +130,15 @@ const (
 	PermApprovalsChange = "inventory.approvals.change"
 	PermApprovalsDelete = "inventory.approvals.delete"
 	PermApprovalsManage = "inventory.approvals.manage"
+
+	// audit (centralized sensitive-action trail — read-only API)
+	PermAuditView = "inventory.audit.view"
+
+	// stock counts (cycle/physical counts with variance approval)
+	PermStockCountView    = "inventory.stock_count.view"
+	PermStockCountAdd     = "inventory.stock_count.add"
+	PermStockCountChange  = "inventory.stock_count.change"
+	PermStockCountApprove = "inventory.stock_count.approve"
 )
 
 // Role codes seeded per tenant.
