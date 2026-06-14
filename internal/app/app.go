@@ -176,6 +176,7 @@ func New(ctx context.Context) (*App, error) {
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
 	auditSvc := audit.NewService(ormClient, log)
 	warehouseHandler.SetAuditService(auditSvc)
+	inventoryHandler.SetAuditService(auditSvc)
 	stockCountHandler := handlers.NewStockCountHandler(log, ormClient, stockSvc, rbacService, auditSvc)
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)

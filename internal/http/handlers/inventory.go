@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/items"
@@ -110,7 +111,11 @@ type InventoryHandler struct {
 	docSvc       *documents.Service
 	rbacSvc      *rbac.Service
 	authMW       *authclient.AuthMiddleware
+	auditSvc     *audit.Service
 }
+
+// SetAuditService wires the centralized audit trail for stock adjustments / write-offs.
+func (h *InventoryHandler) SetAuditService(a *audit.Service) { h.auditSvc = a }
 
 // NewInventoryHandler creates a new inventory handler.
 func NewInventoryHandler(log *zap.Logger, itemsSvc ItemsServicer, stockSvc StockServicer, recipeSvc RecipesServicer, unitSvc UnitsServicer) *InventoryHandler {
@@ -1103,6 +1108,35 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 		h.log.Error("create adjustment failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
 		return
+	}
+
+	if h.auditSvc != nil {
+		actor := req.AdjustedBy
+		if actor == uuid.Nil {
+			if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+				actor, _ = claims.UserID()
+			}
+		}
+		action := "stock.adjustment"
+		if req.Reason == "damaged" || req.Reason == "expired" || req.Reason == "shrinkage" {
+			action = "stock.writeoff"
+		}
+		amt := req.Adjustment
+		var oid *uuid.UUID
+		if req.WarehouseID != uuid.Nil {
+			oid = &req.WarehouseID
+		}
+		h.auditSvc.Record(r.Context(), audit.Entry{
+			TenantID:    tenantID,
+			OutletID:    oid,
+			ActorUserID: actor,
+			Action:      action,
+			EntityType:  "stock_adjustment",
+			EntityID:    req.SKU,
+			Reason:      req.Reason,
+			Amount:      &amt,
+			After:       map[string]any{"sku": req.SKU, "adjustment": req.Adjustment, "warehouse_id": req.WarehouseID.String()},
+		})
 	}
 
 	writeJSON(w, http.StatusCreated, result)
