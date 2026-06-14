@@ -28,6 +28,7 @@ func (ApprovalRule) Fields() []ent.Field {
 				"stock_transfer", "purchase_return", "goods_receipt",
 				"production_batch", "asset_disposal", "asset_transfer",
 				"asset_maintenance", "rfq", "contract",
+				"stock_adjustment", "stock_writeoff", "stock_count",
 			).
 			Comment("Document type this rule governs"),
 		field.String("name").NotEmpty(),

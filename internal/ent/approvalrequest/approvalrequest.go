@@ -111,6 +111,9 @@ const (
 	ModuleAssetMaintenance Module = "asset_maintenance"
 	ModuleRfq              Module = "rfq"
 	ModuleContract         Module = "contract"
+	ModuleStockAdjustment  Module = "stock_adjustment"
+	ModuleStockWriteoff    Module = "stock_writeoff"
+	ModuleStockCount       Module = "stock_count"
 )
 
 func (m Module) String() string {
@@ -120,7 +123,7 @@ func (m Module) String() string {
 // ModuleValidator is a validator for the "module" field enum values. It is called by the builders before save.
 func ModuleValidator(m Module) error {
 	switch m {
-	case ModulePurchaseOrder, ModuleRequisition, ModuleStockTransfer, ModulePurchaseReturn, ModuleGoodsReceipt, ModuleProductionBatch, ModuleAssetDisposal, ModuleAssetTransfer, ModuleAssetMaintenance, ModuleRfq, ModuleContract:
+	case ModulePurchaseOrder, ModuleRequisition, ModuleStockTransfer, ModulePurchaseReturn, ModuleGoodsReceipt, ModuleProductionBatch, ModuleAssetDisposal, ModuleAssetTransfer, ModuleAssetMaintenance, ModuleRfq, ModuleContract, ModuleStockAdjustment, ModuleStockWriteoff, ModuleStockCount:
 		return nil
 	default:
 		return fmt.Errorf("approvalrequest: invalid enum value for module field: %q", m)
