@@ -99,7 +99,11 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{"users": users})
+	out := make([]userDTO, 0, len(users))
+	for _, u := range users {
+		out = append(out, userDTO{ID: u.ID, Email: u.Email, Status: u.Status, SyncStatus: u.SyncStatus})
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{"data": out, "users": out})
 }
 
 // GetUser returns a single inventory user by ID.
