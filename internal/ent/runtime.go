@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
 	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
 	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
+	"github.com/bengobox/inventory-service/internal/ent/auditlog"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -76,6 +77,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/ticket"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -352,6 +354,20 @@ func init() {
 	assettransferDescID := assettransferFields[0].Descriptor()
 	// assettransfer.DefaultID holds the default value on creation for the id field.
 	assettransfer.DefaultID = assettransferDescID.Default.(func() uuid.UUID)
+	auditlogFields := schema.AuditLog{}.Fields()
+	_ = auditlogFields
+	// auditlogDescAction is the schema descriptor for action field.
+	auditlogDescAction := auditlogFields[5].Descriptor()
+	// auditlog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	auditlog.ActionValidator = auditlogDescAction.Validators[0].(func(string) error)
+	// auditlogDescCreatedAt is the schema descriptor for created_at field.
+	auditlogDescCreatedAt := auditlogFields[12].Descriptor()
+	// auditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	auditlog.DefaultCreatedAt = auditlogDescCreatedAt.Default.(func() time.Time)
+	// auditlogDescID is the schema descriptor for id field.
+	auditlogDescID := auditlogFields[0].Descriptor()
+	// auditlog.DefaultID holds the default value on creation for the id field.
+	auditlog.DefaultID = auditlogDescID.Default.(func() uuid.UUID)
 	batchrawmaterialFields := schema.BatchRawMaterial{}.Fields()
 	_ = batchrawmaterialFields
 	// batchrawmaterialDescQuantity is the schema descriptor for quantity field.
@@ -2038,6 +2054,20 @@ func init() {
 	unitDescID := unitFields[0].Descriptor()
 	// unit.DefaultID holds the default value on creation for the id field.
 	unit.DefaultID = unitDescID.Default.(func() uuid.UUID)
+	useroutletFields := schema.UserOutlet{}.Fields()
+	_ = useroutletFields
+	// useroutletDescIsHomeOutlet is the schema descriptor for is_home_outlet field.
+	useroutletDescIsHomeOutlet := useroutletFields[4].Descriptor()
+	// useroutlet.DefaultIsHomeOutlet holds the default value on creation for the is_home_outlet field.
+	useroutlet.DefaultIsHomeOutlet = useroutletDescIsHomeOutlet.Default.(bool)
+	// useroutletDescAssignedAt is the schema descriptor for assigned_at field.
+	useroutletDescAssignedAt := useroutletFields[6].Descriptor()
+	// useroutlet.DefaultAssignedAt holds the default value on creation for the assigned_at field.
+	useroutlet.DefaultAssignedAt = useroutletDescAssignedAt.Default.(func() time.Time)
+	// useroutletDescID is the schema descriptor for id field.
+	useroutletDescID := useroutletFields[0].Descriptor()
+	// useroutlet.DefaultID holds the default value on creation for the id field.
+	useroutlet.DefaultID = useroutletDescID.Default.(func() uuid.UUID)
 	userroleassignmentFields := schema.UserRoleAssignment{}.Fields()
 	_ = userroleassignmentFields
 	// userroleassignmentDescAssignedAt is the schema descriptor for assigned_at field.

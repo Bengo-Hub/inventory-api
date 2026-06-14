@@ -78,6 +78,20 @@ func buildPermDefs() []permDef {
 			})
 		}
 	}
+
+	// Fine-grained permissions that don't follow the full action matrix.
+	defs = append(defs,
+		permDef{Code: "inventory.audit.view", Name: "View Audit Log", Module: "audit", Action: "view",
+			Description: "View the centralized sensitive-action audit trail"},
+		permDef{Code: "inventory.stock_count.view", Name: "View Stock Counts", Module: "stock_count", Action: "view",
+			Description: "View cycle / physical stock counts"},
+		permDef{Code: "inventory.stock_count.add", Name: "Create Stock Counts", Module: "stock_count", Action: "add",
+			Description: "Start a cycle / physical stock count"},
+		permDef{Code: "inventory.stock_count.change", Name: "Edit Stock Counts", Module: "stock_count", Action: "change",
+			Description: "Record counted quantities on a stock count"},
+		permDef{Code: "inventory.stock_count.approve", Name: "Approve Stock Counts", Module: "stock_count", Action: "approve",
+			Description: "Approve a stock count and post variance adjustments"},
+	)
 	return defs
 }
 

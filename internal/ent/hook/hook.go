@@ -153,6 +153,18 @@ func (f AssetTransferFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetTransferMutation", m)
 }
 
+// The AuditLogFunc type is an adapter to allow the use of ordinary
+// function as AuditLog mutator.
+type AuditLogFunc func(context.Context, *ent.AuditLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AuditLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AuditLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AuditLogMutation", m)
+}
+
 // The BatchRawMaterialFunc type is an adapter to allow the use of ordinary
 // function as BatchRawMaterial mutator.
 type BatchRawMaterialFunc func(context.Context, *ent.BatchRawMaterialMutation) (ent.Value, error)
@@ -859,6 +871,18 @@ func (f UnitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnitMutation", m)
+}
+
+// The UserOutletFunc type is an adapter to allow the use of ordinary
+// function as UserOutlet mutator.
+type UserOutletFunc func(context.Context, *ent.UserOutletMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserOutletFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserOutletMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserOutletMutation", m)
 }
 
 // The UserRoleAssignmentFunc type is an adapter to allow the use of ordinary

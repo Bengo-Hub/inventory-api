@@ -247,7 +247,11 @@ func (h *RBACHandler) RegisterRBACRoutes(r chi.Router) {
 	r.Get("/rbac/assignments", h.ListAssignments)
 	r.Delete("/rbac/assignments/{id}", h.RevokeRole)
 	r.Get("/rbac/roles", h.ListRoles)
+	r.Post("/rbac/roles", h.CreateRole)
+	r.Get("/rbac/roles/{roleID}/permissions", h.GetRolePermissions)
+	r.Put("/rbac/roles/{roleID}/permissions", h.SetRolePermissions)
 	r.Get("/rbac/permissions", h.ListPermissions)
+	r.Put("/users/{userID}/status", h.UpdateUserStatus)
 	r.Get("/users/me/permissions", h.GetMyPermissions)
 	r.Get("/users/me/roles", h.GetMyRoles)
 }

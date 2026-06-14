@@ -36,6 +36,8 @@ type Tx struct {
 	AssetReservation *AssetReservationClient
 	// AssetTransfer is the client for interacting with the AssetTransfer builders.
 	AssetTransfer *AssetTransferClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
 	// Bundle is the client for interacting with the Bundle builders.
@@ -154,6 +156,8 @@ type Tx struct {
 	Ticket *TicketClient
 	// Unit is the client for interacting with the Unit builders.
 	Unit *UnitClient
+	// UserOutlet is the client for interacting with the UserOutlet builders.
+	UserOutlet *UserOutletClient
 	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
 	UserRoleAssignment *UserRoleAssignmentClient
 	// VariantAttribute is the client for interacting with the VariantAttribute builders.
@@ -307,6 +311,7 @@ func (tx *Tx) init() {
 	tx.AssetMaintenance = NewAssetMaintenanceClient(tx.config)
 	tx.AssetReservation = NewAssetReservationClient(tx.config)
 	tx.AssetTransfer = NewAssetTransferClient(tx.config)
+	tx.AuditLog = NewAuditLogClient(tx.config)
 	tx.BatchRawMaterial = NewBatchRawMaterialClient(tx.config)
 	tx.Bundle = NewBundleClient(tx.config)
 	tx.BundleComponent = NewBundleComponentClient(tx.config)
@@ -366,6 +371,7 @@ func (tx *Tx) init() {
 	tx.TenantInventoryConfig = NewTenantInventoryConfigClient(tx.config)
 	tx.Ticket = NewTicketClient(tx.config)
 	tx.Unit = NewUnitClient(tx.config)
+	tx.UserOutlet = NewUserOutletClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.VariantAttribute = NewVariantAttributeClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
