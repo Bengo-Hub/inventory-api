@@ -765,6 +765,30 @@ func (f StockBreakdownFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockBreakdownMutation", m)
 }
 
+// The StockCountFunc type is an adapter to allow the use of ordinary
+// function as StockCount mutator.
+type StockCountFunc func(context.Context, *ent.StockCountMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockCountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockCountMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockCountMutation", m)
+}
+
+// The StockCountLineFunc type is an adapter to allow the use of ordinary
+// function as StockCountLine mutator.
+type StockCountLineFunc func(context.Context, *ent.StockCountLineMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockCountLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockCountLineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockCountLineMutation", m)
+}
+
 // The StockTransferFunc type is an adapter to allow the use of ordinary
 // function as StockTransfer mutator.
 type StockTransferFunc func(context.Context, *ent.StockTransferMutation) (ent.Value, error)

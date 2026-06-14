@@ -195,6 +195,12 @@ type StockAdjustment func(*sql.Selector)
 // StockBreakdown is the predicate function for stockbreakdown builders.
 type StockBreakdown func(*sql.Selector)
 
+// StockCount is the predicate function for stockcount builders.
+type StockCount func(*sql.Selector)
+
+// StockCountLine is the predicate function for stockcountline builders.
+type StockCountLine func(*sql.Selector)
+
 // StockTransfer is the predicate function for stocktransfer builders.
 type StockTransfer func(*sql.Selector)
 

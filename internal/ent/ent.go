@@ -75,6 +75,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
+	"github.com/bengobox/inventory-service/internal/ent/stockcount"
+	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -213,6 +215,8 @@ func checkColumn(t, c string) error {
 			servicedelivery.Table:        servicedelivery.ValidColumn,
 			stockadjustment.Table:        stockadjustment.ValidColumn,
 			stockbreakdown.Table:         stockbreakdown.ValidColumn,
+			stockcount.Table:             stockcount.ValidColumn,
+			stockcountline.Table:         stockcountline.ValidColumn,
 			stocktransfer.Table:          stocktransfer.ValidColumn,
 			stocktransferline.Table:      stocktransferline.ValidColumn,
 			supplier.Table:               supplier.ValidColumn,

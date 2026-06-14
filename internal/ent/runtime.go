@@ -68,6 +68,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
+	"github.com/bengobox/inventory-service/internal/ent/stockcount"
+	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -1742,6 +1744,50 @@ func init() {
 	stockbreakdownDescID := stockbreakdownFields[0].Descriptor()
 	// stockbreakdown.DefaultID holds the default value on creation for the id field.
 	stockbreakdown.DefaultID = stockbreakdownDescID.Default.(func() uuid.UUID)
+	stockcountFields := schema.StockCount{}.Fields()
+	_ = stockcountFields
+	// stockcountDescCreatedAt is the schema descriptor for created_at field.
+	stockcountDescCreatedAt := stockcountFields[9].Descriptor()
+	// stockcount.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockcount.DefaultCreatedAt = stockcountDescCreatedAt.Default.(func() time.Time)
+	// stockcountDescUpdatedAt is the schema descriptor for updated_at field.
+	stockcountDescUpdatedAt := stockcountFields[10].Descriptor()
+	// stockcount.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockcount.DefaultUpdatedAt = stockcountDescUpdatedAt.Default.(func() time.Time)
+	// stockcount.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockcount.UpdateDefaultUpdatedAt = stockcountDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockcountDescID is the schema descriptor for id field.
+	stockcountDescID := stockcountFields[0].Descriptor()
+	// stockcount.DefaultID holds the default value on creation for the id field.
+	stockcount.DefaultID = stockcountDescID.Default.(func() uuid.UUID)
+	stockcountlineFields := schema.StockCountLine{}.Fields()
+	_ = stockcountlineFields
+	// stockcountlineDescSku is the schema descriptor for sku field.
+	stockcountlineDescSku := stockcountlineFields[4].Descriptor()
+	// stockcountline.SkuValidator is a validator for the "sku" field. It is called by the builders before save.
+	stockcountline.SkuValidator = stockcountlineDescSku.Validators[0].(func(string) error)
+	// stockcountlineDescSystemQty is the schema descriptor for system_qty field.
+	stockcountlineDescSystemQty := stockcountlineFields[5].Descriptor()
+	// stockcountline.DefaultSystemQty holds the default value on creation for the system_qty field.
+	stockcountline.DefaultSystemQty = stockcountlineDescSystemQty.Default.(float64)
+	// stockcountlineDescPosted is the schema descriptor for posted field.
+	stockcountlineDescPosted := stockcountlineFields[8].Descriptor()
+	// stockcountline.DefaultPosted holds the default value on creation for the posted field.
+	stockcountline.DefaultPosted = stockcountlineDescPosted.Default.(bool)
+	// stockcountlineDescCreatedAt is the schema descriptor for created_at field.
+	stockcountlineDescCreatedAt := stockcountlineFields[9].Descriptor()
+	// stockcountline.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockcountline.DefaultCreatedAt = stockcountlineDescCreatedAt.Default.(func() time.Time)
+	// stockcountlineDescUpdatedAt is the schema descriptor for updated_at field.
+	stockcountlineDescUpdatedAt := stockcountlineFields[10].Descriptor()
+	// stockcountline.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockcountline.DefaultUpdatedAt = stockcountlineDescUpdatedAt.Default.(func() time.Time)
+	// stockcountline.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockcountline.UpdateDefaultUpdatedAt = stockcountlineDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockcountlineDescID is the schema descriptor for id field.
+	stockcountlineDescID := stockcountlineFields[0].Descriptor()
+	// stockcountline.DefaultID holds the default value on creation for the id field.
+	stockcountline.DefaultID = stockcountlineDescID.Default.(func() uuid.UUID)
 	stocktransferFields := schema.StockTransfer{}.Fields()
 	_ = stocktransferFields
 	// stocktransferDescTransferNumber is the schema descriptor for transfer_number field.
