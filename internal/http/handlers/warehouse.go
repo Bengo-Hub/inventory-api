@@ -298,6 +298,7 @@ type warehouseResponse struct {
 	IsDefault bool       `json:"is_default"`
 	IsActive  bool       `json:"is_active"`
 	OutletID  *uuid.UUID `json:"outlet_id,omitempty"`
+	UseCase   string     `json:"use_case,omitempty"`
 }
 
 func warehouseToResponse(w *ent.Warehouse) warehouseResponse {
@@ -312,6 +313,7 @@ func warehouseToResponse(w *ent.Warehouse) warehouseResponse {
 		IsDefault: w.IsDefault,
 		IsActive:  w.IsActive,
 		OutletID:  w.OutletID,
+		UseCase:   w.UseCase,
 	}
 }
 
