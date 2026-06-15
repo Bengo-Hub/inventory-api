@@ -18,6 +18,7 @@ func (Contract) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}),
 		field.UUID("supplier_id", uuid.UUID{}).Comment("FK to Supplier"),
+		field.UUID("rfq_id", uuid.UUID{}).Optional().Nillable().Comment("Source RFQ this contract was awarded from"),
 		field.String("title").NotEmpty(),
 		field.Time("start_date"),
 		field.Time("end_date"),

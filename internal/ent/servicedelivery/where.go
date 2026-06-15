@@ -85,6 +85,16 @@ func Deliverables(v string) predicate.ServiceDelivery {
 	return predicate.ServiceDelivery(sql.FieldEQ(FieldDeliverables, v))
 }
 
+// Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
+func Amount(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldEQ(FieldAmount, v))
+}
+
+// Currency applies equality check predicate on the "currency" field. It's identical to CurrencyEQ.
+func Currency(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldEQ(FieldCurrency, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.ServiceDelivery {
 	return predicate.ServiceDelivery(sql.FieldEQ(FieldCreatedAt, v))
@@ -388,6 +398,111 @@ func DeliverablesEqualFold(v string) predicate.ServiceDelivery {
 // DeliverablesContainsFold applies the ContainsFold predicate on the "deliverables" field.
 func DeliverablesContainsFold(v string) predicate.ServiceDelivery {
 	return predicate.ServiceDelivery(sql.FieldContainsFold(FieldDeliverables, v))
+}
+
+// AmountEQ applies the EQ predicate on the "amount" field.
+func AmountEQ(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldEQ(FieldAmount, v))
+}
+
+// AmountNEQ applies the NEQ predicate on the "amount" field.
+func AmountNEQ(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldNEQ(FieldAmount, v))
+}
+
+// AmountIn applies the In predicate on the "amount" field.
+func AmountIn(vs ...float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldIn(FieldAmount, vs...))
+}
+
+// AmountNotIn applies the NotIn predicate on the "amount" field.
+func AmountNotIn(vs ...float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldNotIn(FieldAmount, vs...))
+}
+
+// AmountGT applies the GT predicate on the "amount" field.
+func AmountGT(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldGT(FieldAmount, v))
+}
+
+// AmountGTE applies the GTE predicate on the "amount" field.
+func AmountGTE(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldGTE(FieldAmount, v))
+}
+
+// AmountLT applies the LT predicate on the "amount" field.
+func AmountLT(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldLT(FieldAmount, v))
+}
+
+// AmountLTE applies the LTE predicate on the "amount" field.
+func AmountLTE(v float64) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldLTE(FieldAmount, v))
+}
+
+// CurrencyEQ applies the EQ predicate on the "currency" field.
+func CurrencyEQ(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldEQ(FieldCurrency, v))
+}
+
+// CurrencyNEQ applies the NEQ predicate on the "currency" field.
+func CurrencyNEQ(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldNEQ(FieldCurrency, v))
+}
+
+// CurrencyIn applies the In predicate on the "currency" field.
+func CurrencyIn(vs ...string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldIn(FieldCurrency, vs...))
+}
+
+// CurrencyNotIn applies the NotIn predicate on the "currency" field.
+func CurrencyNotIn(vs ...string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldNotIn(FieldCurrency, vs...))
+}
+
+// CurrencyGT applies the GT predicate on the "currency" field.
+func CurrencyGT(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldGT(FieldCurrency, v))
+}
+
+// CurrencyGTE applies the GTE predicate on the "currency" field.
+func CurrencyGTE(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldGTE(FieldCurrency, v))
+}
+
+// CurrencyLT applies the LT predicate on the "currency" field.
+func CurrencyLT(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldLT(FieldCurrency, v))
+}
+
+// CurrencyLTE applies the LTE predicate on the "currency" field.
+func CurrencyLTE(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldLTE(FieldCurrency, v))
+}
+
+// CurrencyContains applies the Contains predicate on the "currency" field.
+func CurrencyContains(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldContains(FieldCurrency, v))
+}
+
+// CurrencyHasPrefix applies the HasPrefix predicate on the "currency" field.
+func CurrencyHasPrefix(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldHasPrefix(FieldCurrency, v))
+}
+
+// CurrencyHasSuffix applies the HasSuffix predicate on the "currency" field.
+func CurrencyHasSuffix(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldHasSuffix(FieldCurrency, v))
+}
+
+// CurrencyEqualFold applies the EqualFold predicate on the "currency" field.
+func CurrencyEqualFold(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldEqualFold(FieldCurrency, v))
+}
+
+// CurrencyContainsFold applies the ContainsFold predicate on the "currency" field.
+func CurrencyContainsFold(v string) predicate.ServiceDelivery {
+	return predicate.ServiceDelivery(sql.FieldContainsFold(FieldCurrency, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

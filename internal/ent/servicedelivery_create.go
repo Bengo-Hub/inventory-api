@@ -84,6 +84,34 @@ func (_c *ServiceDeliveryCreate) SetNillableDeliverables(v *string) *ServiceDeli
 	return _c
 }
 
+// SetAmount sets the "amount" field.
+func (_c *ServiceDeliveryCreate) SetAmount(v float64) *ServiceDeliveryCreate {
+	_c.mutation.SetAmount(v)
+	return _c
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (_c *ServiceDeliveryCreate) SetNillableAmount(v *float64) *ServiceDeliveryCreate {
+	if v != nil {
+		_c.SetAmount(*v)
+	}
+	return _c
+}
+
+// SetCurrency sets the "currency" field.
+func (_c *ServiceDeliveryCreate) SetCurrency(v string) *ServiceDeliveryCreate {
+	_c.mutation.SetCurrency(v)
+	return _c
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_c *ServiceDeliveryCreate) SetNillableCurrency(v *string) *ServiceDeliveryCreate {
+	if v != nil {
+		_c.SetCurrency(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *ServiceDeliveryCreate) SetStatus(v servicedelivery.Status) *ServiceDeliveryCreate {
 	_c.mutation.SetStatus(v)
@@ -175,6 +203,14 @@ func (_c *ServiceDeliveryCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ServiceDeliveryCreate) defaults() {
+	if _, ok := _c.mutation.Amount(); !ok {
+		v := servicedelivery.DefaultAmount
+		_c.mutation.SetAmount(v)
+	}
+	if _, ok := _c.mutation.Currency(); !ok {
+		v := servicedelivery.DefaultCurrency
+		_c.mutation.SetCurrency(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := servicedelivery.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -203,6 +239,12 @@ func (_c *ServiceDeliveryCreate) check() error {
 	}
 	if _, ok := _c.mutation.EndDate(); !ok {
 		return &ValidationError{Name: "end_date", err: errors.New(`ent: missing required field "ServiceDelivery.end_date"`)}
+	}
+	if _, ok := _c.mutation.Amount(); !ok {
+		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "ServiceDelivery.amount"`)}
+	}
+	if _, ok := _c.mutation.Currency(); !ok {
+		return &ValidationError{Name: "currency", err: errors.New(`ent: missing required field "ServiceDelivery.currency"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "ServiceDelivery.status"`)}
@@ -277,6 +319,14 @@ func (_c *ServiceDeliveryCreate) createSpec() (*ServiceDelivery, *sqlgraph.Creat
 	if value, ok := _c.mutation.Deliverables(); ok {
 		_spec.SetField(servicedelivery.FieldDeliverables, field.TypeString, value)
 		_node.Deliverables = value
+	}
+	if value, ok := _c.mutation.Amount(); ok {
+		_spec.SetField(servicedelivery.FieldAmount, field.TypeFloat64, value)
+		_node.Amount = value
+	}
+	if value, ok := _c.mutation.Currency(); ok {
+		_spec.SetField(servicedelivery.FieldCurrency, field.TypeString, value)
+		_node.Currency = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(servicedelivery.FieldStatus, field.TypeEnum, value)
@@ -429,6 +479,36 @@ func (u *ServiceDeliveryUpsert) UpdateDeliverables() *ServiceDeliveryUpsert {
 // ClearDeliverables clears the value of the "deliverables" field.
 func (u *ServiceDeliveryUpsert) ClearDeliverables() *ServiceDeliveryUpsert {
 	u.SetNull(servicedelivery.FieldDeliverables)
+	return u
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsert) SetAmount(v float64) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldAmount, v)
+	return u
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateAmount() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldAmount)
+	return u
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsert) AddAmount(v float64) *ServiceDeliveryUpsert {
+	u.Add(servicedelivery.FieldAmount, v)
+	return u
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsert) SetCurrency(v string) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldCurrency, v)
+	return u
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateCurrency() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldCurrency)
 	return u
 }
 
@@ -609,6 +689,41 @@ func (u *ServiceDeliveryUpsertOne) UpdateDeliverables() *ServiceDeliveryUpsertOn
 func (u *ServiceDeliveryUpsertOne) ClearDeliverables() *ServiceDeliveryUpsertOne {
 	return u.Update(func(s *ServiceDeliveryUpsert) {
 		s.ClearDeliverables()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsertOne) SetAmount(v float64) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsertOne) AddAmount(v float64) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateAmount() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsertOne) SetCurrency(v string) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateCurrency() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateCurrency()
 	})
 }
 
@@ -960,6 +1075,41 @@ func (u *ServiceDeliveryUpsertBulk) UpdateDeliverables() *ServiceDeliveryUpsertB
 func (u *ServiceDeliveryUpsertBulk) ClearDeliverables() *ServiceDeliveryUpsertBulk {
 	return u.Update(func(s *ServiceDeliveryUpsert) {
 		s.ClearDeliverables()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsertBulk) SetAmount(v float64) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsertBulk) AddAmount(v float64) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateAmount() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsertBulk) SetCurrency(v string) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateCurrency() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateCurrency()
 	})
 }
 

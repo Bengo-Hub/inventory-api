@@ -21,6 +21,8 @@ func (ServiceDelivery) Fields() []ent.Field {
 		field.Time("start_date"),
 		field.Time("end_date"),
 		field.Text("deliverables").Optional(),
+		field.Float("amount").Default(0).Comment("Agreed service cost — posted to treasury as a payable/expense"),
+		field.String("currency").Default("KES"),
 		field.Enum("status").Values("scheduled", "in_progress", "completed", "delayed").Default("scheduled"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

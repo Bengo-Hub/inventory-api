@@ -107,6 +107,62 @@ func (_c *PurchaseOrderCreate) SetNillableCurrency(v *string) *PurchaseOrderCrea
 	return _c
 }
 
+// SetRequisitionID sets the "requisition_id" field.
+func (_c *PurchaseOrderCreate) SetRequisitionID(v uuid.UUID) *PurchaseOrderCreate {
+	_c.mutation.SetRequisitionID(v)
+	return _c
+}
+
+// SetNillableRequisitionID sets the "requisition_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableRequisitionID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetRequisitionID(*v)
+	}
+	return _c
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (_c *PurchaseOrderCreate) SetRfqID(v uuid.UUID) *PurchaseOrderCreate {
+	_c.mutation.SetRfqID(v)
+	return _c
+}
+
+// SetNillableRfqID sets the "rfq_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetRfqID(*v)
+	}
+	return _c
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (_c *PurchaseOrderCreate) SetPayTermDays(v int) *PurchaseOrderCreate {
+	_c.mutation.SetPayTermDays(v)
+	return _c
+}
+
+// SetNillablePayTermDays sets the "pay_term_days" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillablePayTermDays(v *int) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetPayTermDays(*v)
+	}
+	return _c
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (_c *PurchaseOrderCreate) SetAdditionalShippingCharges(v float64) *PurchaseOrderCreate {
+	_c.mutation.SetAdditionalShippingCharges(v)
+	return _c
+}
+
+// SetNillableAdditionalShippingCharges sets the "additional_shipping_charges" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableAdditionalShippingCharges(v *float64) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetAdditionalShippingCharges(*v)
+	}
+	return _c
+}
+
 // SetNotes sets the "notes" field.
 func (_c *PurchaseOrderCreate) SetNotes(v string) *PurchaseOrderCreate {
 	_c.mutation.SetNotes(v)
@@ -249,6 +305,10 @@ func (_c *PurchaseOrderCreate) defaults() {
 		v := purchaseorder.DefaultCurrency
 		_c.mutation.SetCurrency(v)
 	}
+	if _, ok := _c.mutation.AdditionalShippingCharges(); !ok {
+		v := purchaseorder.DefaultAdditionalShippingCharges
+		_c.mutation.SetAdditionalShippingCharges(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := purchaseorder.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -295,6 +355,9 @@ func (_c *PurchaseOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.Currency(); !ok {
 		return &ValidationError{Name: "currency", err: errors.New(`ent: missing required field "PurchaseOrder.currency"`)}
+	}
+	if _, ok := _c.mutation.AdditionalShippingCharges(); !ok {
+		return &ValidationError{Name: "additional_shipping_charges", err: errors.New(`ent: missing required field "PurchaseOrder.additional_shipping_charges"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "PurchaseOrder.created_at"`)}
@@ -367,6 +430,22 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.Currency(); ok {
 		_spec.SetField(purchaseorder.FieldCurrency, field.TypeString, value)
 		_node.Currency = value
+	}
+	if value, ok := _c.mutation.RequisitionID(); ok {
+		_spec.SetField(purchaseorder.FieldRequisitionID, field.TypeUUID, value)
+		_node.RequisitionID = &value
+	}
+	if value, ok := _c.mutation.RfqID(); ok {
+		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
+		_node.RfqID = &value
+	}
+	if value, ok := _c.mutation.PayTermDays(); ok {
+		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
+		_node.PayTermDays = &value
+	}
+	if value, ok := _c.mutation.AdditionalShippingCharges(); ok {
+		_spec.SetField(purchaseorder.FieldAdditionalShippingCharges, field.TypeFloat64, value)
+		_node.AdditionalShippingCharges = value
 	}
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(purchaseorder.FieldNotes, field.TypeString, value)
@@ -594,6 +673,84 @@ func (u *PurchaseOrderUpsert) UpdateCurrency() *PurchaseOrderUpsert {
 	return u
 }
 
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsert) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldRequisitionID, v)
+	return u
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateRequisitionID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldRequisitionID)
+	return u
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsert) ClearRequisitionID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldRequisitionID)
+	return u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsert) SetRfqID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldRfqID, v)
+	return u
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateRfqID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldRfqID)
+	return u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsert) ClearRfqID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldRfqID)
+	return u
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) SetPayTermDays(v int) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldPayTermDays, v)
+	return u
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdatePayTermDays() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldPayTermDays)
+	return u
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) AddPayTermDays(v int) *PurchaseOrderUpsert {
+	u.Add(purchaseorder.FieldPayTermDays, v)
+	return u
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) ClearPayTermDays() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldPayTermDays)
+	return u
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsert) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldAdditionalShippingCharges, v)
+	return u
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateAdditionalShippingCharges() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldAdditionalShippingCharges)
+	return u
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsert) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsert {
+	u.Add(purchaseorder.FieldAdditionalShippingCharges, v)
+	return u
+}
+
 // SetNotes sets the "notes" field.
 func (u *PurchaseOrderUpsert) SetNotes(v string) *PurchaseOrderUpsert {
 	u.Set(purchaseorder.FieldNotes, v)
@@ -816,6 +973,97 @@ func (u *PurchaseOrderUpsertOne) SetCurrency(v string) *PurchaseOrderUpsertOne {
 func (u *PurchaseOrderUpsertOne) UpdateCurrency() *PurchaseOrderUpsertOne {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.UpdateCurrency()
+	})
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsertOne) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRequisitionID(v)
+	})
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateRequisitionID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRequisitionID()
+	})
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsertOne) ClearRequisitionID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRequisitionID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsertOne) SetRfqID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateRfqID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsertOne) ClearRfqID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) SetPayTermDays(v int) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPayTermDays(v)
+	})
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) AddPayTermDays(v int) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddPayTermDays(v)
+	})
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdatePayTermDays() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePayTermDays()
+	})
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) ClearPayTermDays() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearPayTermDays()
+	})
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertOne) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetAdditionalShippingCharges(v)
+	})
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertOne) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddAdditionalShippingCharges(v)
+	})
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateAdditionalShippingCharges() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateAdditionalShippingCharges()
 	})
 }
 
@@ -1216,6 +1464,97 @@ func (u *PurchaseOrderUpsertBulk) SetCurrency(v string) *PurchaseOrderUpsertBulk
 func (u *PurchaseOrderUpsertBulk) UpdateCurrency() *PurchaseOrderUpsertBulk {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.UpdateCurrency()
+	})
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsertBulk) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRequisitionID(v)
+	})
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateRequisitionID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRequisitionID()
+	})
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearRequisitionID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRequisitionID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsertBulk) SetRfqID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateRfqID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearRfqID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) SetPayTermDays(v int) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPayTermDays(v)
+	})
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) AddPayTermDays(v int) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddPayTermDays(v)
+	})
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdatePayTermDays() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePayTermDays()
+	})
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) ClearPayTermDays() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearPayTermDays()
+	})
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertBulk) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetAdditionalShippingCharges(v)
+	})
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertBulk) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddAdditionalShippingCharges(v)
+	})
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateAdditionalShippingCharges() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateAdditionalShippingCharges()
 	})
 }
 

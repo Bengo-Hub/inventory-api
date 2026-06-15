@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entcontract "github.com/bengobox/inventory-service/internal/ent/contract"
 	entreqline "github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	entrfq "github.com/bengobox/inventory-service/internal/ent/rfq"
 	entrfqaward "github.com/bengobox/inventory-service/internal/ent/rfqaward"
@@ -694,6 +695,34 @@ func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request
 	if _, err := h.orm.RFQ.UpdateOneID(rfqID).SetStatus(entrfq.StatusAwarded).Save(r.Context()); err != nil {
 		h.log.Warn("set RFQ awarded failed", zap.Error(err))
 	}
+
+	// Auto-create a draft supplier Contract per awarded supplier, linked to this RFQ. Idempotent:
+	// skip suppliers that already have a contract for this RFQ (so re-awarding doesn't duplicate).
+	awardValueBySupplier := map[uuid.UUID]float64{}
+	for _, a := range body.Awards {
+		q := a.Quantity
+		if q <= 0 {
+			q = h.lineQty(r.Context(), rfqID, a.RFQLineID)
+		}
+		awardValueBySupplier[a.SupplierID] += a.UnitPrice * q
+	}
+	for sid, val := range awardValueBySupplier {
+		exists, _ := h.orm.Contract.Query().
+			Where(entcontract.TenantID(tenantID), entcontract.SupplierID(sid), entcontract.RfqID(rfqID)).
+			Exist(r.Context())
+		if exists {
+			continue
+		}
+		now := time.Now()
+		if _, err := h.orm.Contract.Create().
+			SetTenantID(tenantID).SetSupplierID(sid).SetRfqID(rfqID).
+			SetTitle("Contract from RFQ " + rfqRef).
+			SetStartDate(now).SetEndDate(now.AddDate(1, 0, 0)).
+			SetValue(val).Save(r.Context()); err != nil {
+			h.log.Warn("award RFQ: auto-create contract failed", zap.Error(err))
+		}
+	}
+
 	h.publishOutbox(r.Context(), tenantID, "rfq", rfqID, "inventory.rfq.awarded", map[string]any{
 		"id": rfqID, "awards": len(body.Awards),
 	})
@@ -760,7 +789,7 @@ func (h *InventoryExtrasHandler) ConvertRFQToPOs(w http.ResponseWriter, r *http.
 		}
 		po, err := h.orm.PurchaseOrder.Create().
 			SetTenantID(tenantID).SetSupplierID(sid).SetWarehouseID(*warehouseID).
-			SetPoNumber(poNumber).SetNotes("From RFQ " + rfq.RfqNumber).Save(r.Context())
+			SetPoNumber(poNumber).SetRfqID(rfqID).SetNotes("From RFQ " + rfq.RfqNumber).Save(r.Context())
 		if err != nil {
 			h.log.Warn("convert RFQ: create PO failed", zap.Error(err))
 			continue

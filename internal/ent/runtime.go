@@ -490,19 +490,19 @@ func init() {
 	contractFields := schema.Contract{}.Fields()
 	_ = contractFields
 	// contractDescTitle is the schema descriptor for title field.
-	contractDescTitle := contractFields[3].Descriptor()
+	contractDescTitle := contractFields[4].Descriptor()
 	// contract.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	contract.TitleValidator = contractDescTitle.Validators[0].(func(string) error)
 	// contractDescValue is the schema descriptor for value field.
-	contractDescValue := contractFields[6].Descriptor()
+	contractDescValue := contractFields[7].Descriptor()
 	// contract.DefaultValue holds the default value on creation for the value field.
 	contract.DefaultValue = contractDescValue.Default.(float64)
 	// contractDescCreatedAt is the schema descriptor for created_at field.
-	contractDescCreatedAt := contractFields[9].Descriptor()
+	contractDescCreatedAt := contractFields[10].Descriptor()
 	// contract.DefaultCreatedAt holds the default value on creation for the created_at field.
 	contract.DefaultCreatedAt = contractDescCreatedAt.Default.(func() time.Time)
 	// contractDescUpdatedAt is the schema descriptor for updated_at field.
-	contractDescUpdatedAt := contractFields[10].Descriptor()
+	contractDescUpdatedAt := contractFields[11].Descriptor()
 	// contract.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	contract.DefaultUpdatedAt = contractDescUpdatedAt.Default.(func() time.Time)
 	// contract.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1309,12 +1309,16 @@ func init() {
 	purchaseorderDescCurrency := purchaseorderFields[8].Descriptor()
 	// purchaseorder.DefaultCurrency holds the default value on creation for the currency field.
 	purchaseorder.DefaultCurrency = purchaseorderDescCurrency.Default.(string)
+	// purchaseorderDescAdditionalShippingCharges is the schema descriptor for additional_shipping_charges field.
+	purchaseorderDescAdditionalShippingCharges := purchaseorderFields[12].Descriptor()
+	// purchaseorder.DefaultAdditionalShippingCharges holds the default value on creation for the additional_shipping_charges field.
+	purchaseorder.DefaultAdditionalShippingCharges = purchaseorderDescAdditionalShippingCharges.Default.(float64)
 	// purchaseorderDescCreatedAt is the schema descriptor for created_at field.
-	purchaseorderDescCreatedAt := purchaseorderFields[11].Descriptor()
+	purchaseorderDescCreatedAt := purchaseorderFields[15].Descriptor()
 	// purchaseorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	purchaseorder.DefaultCreatedAt = purchaseorderDescCreatedAt.Default.(func() time.Time)
 	// purchaseorderDescUpdatedAt is the schema descriptor for updated_at field.
-	purchaseorderDescUpdatedAt := purchaseorderFields[12].Descriptor()
+	purchaseorderDescUpdatedAt := purchaseorderFields[16].Descriptor()
 	// purchaseorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchaseorder.DefaultUpdatedAt = purchaseorderDescUpdatedAt.Default.(func() time.Time)
 	// purchaseorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1733,12 +1737,20 @@ func init() {
 	serviceconfig.DefaultID = serviceconfigDescID.Default.(func() uuid.UUID)
 	servicedeliveryFields := schema.ServiceDelivery{}.Fields()
 	_ = servicedeliveryFields
+	// servicedeliveryDescAmount is the schema descriptor for amount field.
+	servicedeliveryDescAmount := servicedeliveryFields[7].Descriptor()
+	// servicedelivery.DefaultAmount holds the default value on creation for the amount field.
+	servicedelivery.DefaultAmount = servicedeliveryDescAmount.Default.(float64)
+	// servicedeliveryDescCurrency is the schema descriptor for currency field.
+	servicedeliveryDescCurrency := servicedeliveryFields[8].Descriptor()
+	// servicedelivery.DefaultCurrency holds the default value on creation for the currency field.
+	servicedelivery.DefaultCurrency = servicedeliveryDescCurrency.Default.(string)
 	// servicedeliveryDescCreatedAt is the schema descriptor for created_at field.
-	servicedeliveryDescCreatedAt := servicedeliveryFields[8].Descriptor()
+	servicedeliveryDescCreatedAt := servicedeliveryFields[10].Descriptor()
 	// servicedelivery.DefaultCreatedAt holds the default value on creation for the created_at field.
 	servicedelivery.DefaultCreatedAt = servicedeliveryDescCreatedAt.Default.(func() time.Time)
 	// servicedeliveryDescUpdatedAt is the schema descriptor for updated_at field.
-	servicedeliveryDescUpdatedAt := servicedeliveryFields[9].Descriptor()
+	servicedeliveryDescUpdatedAt := servicedeliveryFields[11].Descriptor()
 	// servicedelivery.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	servicedelivery.DefaultUpdatedAt = servicedeliveryDescUpdatedAt.Default.(func() time.Time)
 	// servicedelivery.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

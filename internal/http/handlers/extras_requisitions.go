@@ -480,15 +480,30 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 			All(r.Context())
 		created := 0
 		for _, l := range svcLines {
+			// Service cost = estimated unit price × quantity (services aren't stocked; this is the payable).
+			amount := 0.0
+			if l.EstimatedPrice != nil {
+				amount = *l.EstimatedPrice * float64(l.Quantity)
+			}
 			c := h.orm.ServiceDelivery.Create().SetTenantID(tenantID).
-				SetRequisitionLineID(l.ID).SetDeliverables(l.ExpectedDeliverables)
+				SetRequisitionLineID(l.ID).SetDeliverables(l.ExpectedDeliverables).SetAmount(amount)
 			if l.SupplierID != nil {
 				c = c.SetProviderID(*l.SupplierID)
 			}
-			if _, err := c.Save(r.Context()); err != nil {
+			sd, err := c.Save(r.Context())
+			if err != nil {
 				h.log.Warn("convert requisition: create service delivery failed", zap.Error(err))
-			} else {
-				created++
+				continue
+			}
+			created++
+			// Treasury posts a payable/expense for the service when an amount + provider are known.
+			if amount > 0 && l.SupplierID != nil {
+				h.publishOutbox(r.Context(), tenantID, "service_delivery", sd.ID, "inventory.service_delivery.created", map[string]any{
+					"tenant_id": tenantID, "service_delivery_id": sd.ID.String(),
+					"requisition_id": rq.ID.String(), "reference_number": rq.ReferenceNumber,
+					"supplier_id": l.SupplierID.String(), "amount": amount, "currency": "KES",
+					"description": l.ServiceDescription,
+				})
 			}
 		}
 		_, _ = h.orm.Requisition.UpdateOneID(rq.ID).SetStatus(entreq.StatusOrdered).Save(r.Context())
@@ -500,9 +515,11 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 	}
 
 	var body struct {
-		SupplierID  uuid.UUID `json:"supplier_id"`
-		WarehouseID uuid.UUID `json:"warehouse_id"`
-		Currency    string    `json:"currency"`
+		SupplierID                uuid.UUID `json:"supplier_id"`
+		WarehouseID               uuid.UUID `json:"warehouse_id"`
+		Currency                  string    `json:"currency"`
+		PayTermDays               *int      `json:"pay_term_days"`
+		AdditionalShippingCharges float64   `json:"additional_shipping_charges"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
@@ -536,6 +553,9 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 		SetWarehouseID(body.WarehouseID).
 		SetPoNumber(poNumber).
 		SetCurrency(currency).
+		SetRequisitionID(rq.ID).
+		SetNillablePayTermDays(body.PayTermDays).
+		SetAdditionalShippingCharges(body.AdditionalShippingCharges).
 		SetNotes(fmt.Sprintf("From requisition %s", rq.ReferenceNumber)).
 		Save(r.Context())
 	if err != nil {

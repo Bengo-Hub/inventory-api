@@ -36,6 +36,14 @@ type PurchaseOrder struct {
 	TotalAmount float64 `json:"total_amount,omitempty"`
 	// Currency holds the value of the "currency" field.
 	Currency string `json:"currency,omitempty"`
+	// Source requisition this PO was converted from (traceability)
+	RequisitionID *uuid.UUID `json:"requisition_id,omitempty"`
+	// Source RFQ this PO was awarded from (traceability)
+	RfqID *uuid.UUID `json:"rfq_id,omitempty"`
+	// Supplier credit term in days — treasury computes the AP bill due date as receipt + pay_term_days
+	PayTermDays *int `json:"pay_term_days,omitempty"`
+	// Freight/shipping added on the PO; posted as a treasury expense on receipt
+	AdditionalShippingCharges float64 `json:"additional_shipping_charges,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes string `json:"notes,omitempty"`
 	// User who created the PO
@@ -99,10 +107,12 @@ func (*PurchaseOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchaseorder.FieldCreatedBy:
+		case purchaseorder.FieldRequisitionID, purchaseorder.FieldRfqID, purchaseorder.FieldCreatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchaseorder.FieldTotalAmount:
+		case purchaseorder.FieldTotalAmount, purchaseorder.FieldAdditionalShippingCharges:
 			values[i] = new(sql.NullFloat64)
+		case purchaseorder.FieldPayTermDays:
+			values[i] = new(sql.NullInt64)
 		case purchaseorder.FieldPoNumber, purchaseorder.FieldStatus, purchaseorder.FieldCurrency, purchaseorder.FieldNotes:
 			values[i] = new(sql.NullString)
 		case purchaseorder.FieldExpectedDate, purchaseorder.FieldCreatedAt, purchaseorder.FieldUpdatedAt:
@@ -178,6 +188,33 @@ func (_m *PurchaseOrder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field currency", values[i])
 			} else if value.Valid {
 				_m.Currency = value.String
+			}
+		case purchaseorder.FieldRequisitionID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field requisition_id", values[i])
+			} else if value.Valid {
+				_m.RequisitionID = new(uuid.UUID)
+				*_m.RequisitionID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorder.FieldRfqID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field rfq_id", values[i])
+			} else if value.Valid {
+				_m.RfqID = new(uuid.UUID)
+				*_m.RfqID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorder.FieldPayTermDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field pay_term_days", values[i])
+			} else if value.Valid {
+				_m.PayTermDays = new(int)
+				*_m.PayTermDays = int(value.Int64)
+			}
+		case purchaseorder.FieldAdditionalShippingCharges:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field additional_shipping_charges", values[i])
+			} else if value.Valid {
+				_m.AdditionalShippingCharges = value.Float64
 			}
 		case purchaseorder.FieldNotes:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -280,6 +317,24 @@ func (_m *PurchaseOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("currency=")
 	builder.WriteString(_m.Currency)
+	builder.WriteString(", ")
+	if v := _m.RequisitionID; v != nil {
+		builder.WriteString("requisition_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RfqID; v != nil {
+		builder.WriteString("rfq_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.PayTermDays; v != nil {
+		builder.WriteString("pay_term_days=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("additional_shipping_charges=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AdditionalShippingCharges))
 	builder.WriteString(", ")
 	builder.WriteString("notes=")
 	builder.WriteString(_m.Notes)
