@@ -38,6 +38,18 @@ func (StockTransfer) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("User who initiated the transfer"),
+		field.String("reference_no").
+			Optional().
+			Comment("External/business reference number for the transfer (e.g. waybill, dispatch note)"),
+		field.Float("shipping_charges").
+			Default(0).
+			Comment("Freight/shipping cost for moving the stock; posted to treasury as an expense on completion"),
+		field.String("carrier").
+			Optional().
+			Comment("Carrier/courier handling the transfer"),
+		field.Text("freight_notes").
+			Optional().
+			Comment("Notes about the shipment/freight (route, handling, seal references)"),
 		field.Text("notes").
 			Optional(),
 		field.Time("shipped_at").

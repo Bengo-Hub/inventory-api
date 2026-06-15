@@ -78,6 +78,10 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		SetTransferNumber(transferNumber).
 		SetStatus(stocktransfer.StatusDraft).
 		SetNotes(req.Notes).
+		SetReferenceNo(req.ReferenceNo).
+		SetShippingCharges(req.ShippingCharges).
+		SetCarrier(req.Carrier).
+		SetFreightNotes(req.FreightNotes).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: create transfer: %w", err)
@@ -106,6 +110,10 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		"transfer_number": transferNumber,
 		"tenant_id":       tenantID.String(),
 		"status":          "draft",
+		"reference_no":    req.ReferenceNo,
+		"shipping_charges": req.ShippingCharges,
+		"carrier":         req.Carrier,
+		"freight_notes":   req.FreightNotes,
 		"from_warehouse": map[string]any{
 			"id":        srcWH.ID.String(),
 			"name":      srcWH.Name,
@@ -396,7 +404,8 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 		return fmt.Errorf("transfers: update status: %w", err)
 	}
 
-	// Publish transfer.completed event
+	// Publish transfer.completed event. Carries shipping_charges so the treasury freight
+	// subscriber can post a freight expense (only when > 0; idempotent on transfer_id).
 	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "transfer.completed", map[string]any{
 		"transfer_id":              transfer.ID.String(),
 		"transfer_number":          transfer.TransferNumber,
@@ -404,6 +413,10 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 		"source_warehouse_id":      transfer.SourceWarehouseID.String(),
 		"destination_warehouse_id": transfer.DestinationWarehouseID.String(),
 		"received_at":              now.UTC().Format(time.RFC3339),
+		"reference_no":             transfer.ReferenceNo,
+		"shipping_charges":         transfer.ShippingCharges,
+		"carrier":                  transfer.Carrier,
+		"freight_notes":            transfer.FreightNotes,
 		"items":                    s.buildLineItems(transfer.Edges.Lines),
 	})
 
@@ -515,12 +528,16 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 			Latitude:  destWH.Latitude,
 			Longitude: destWH.Longitude,
 		},
-		InitiatedBy: transfer.InitiatedBy,
-		Notes:       transfer.Notes,
-		ShippedAt:   transfer.ShippedAt,
-		ReceivedAt:  transfer.ReceivedAt,
-		CreatedAt:   transfer.CreatedAt,
-		UpdatedAt:   transfer.UpdatedAt,
+		InitiatedBy:     transfer.InitiatedBy,
+		Notes:           transfer.Notes,
+		ReferenceNo:     transfer.ReferenceNo,
+		ShippingCharges: transfer.ShippingCharges,
+		Carrier:         transfer.Carrier,
+		FreightNotes:    transfer.FreightNotes,
+		ShippedAt:       transfer.ShippedAt,
+		ReceivedAt:      transfer.ReceivedAt,
+		CreatedAt:       transfer.CreatedAt,
+		UpdatedAt:       transfer.UpdatedAt,
 	}
 
 	resp.Lines = make([]TransferLineResponse, len(lines))

@@ -73242,6 +73242,11 @@ type StockTransferMutation struct {
 	transfer_number          *string
 	status                   *stocktransfer.Status
 	initiated_by             *uuid.UUID
+	reference_no             *string
+	shipping_charges         *float64
+	addshipping_charges      *float64
+	carrier                  *string
+	freight_notes            *string
 	notes                    *string
 	shipped_at               *time.Time
 	received_at              *time.Time
@@ -73589,6 +73594,209 @@ func (m *StockTransferMutation) ResetInitiatedBy() {
 	delete(m.clearedFields, stocktransfer.FieldInitiatedBy)
 }
 
+// SetReferenceNo sets the "reference_no" field.
+func (m *StockTransferMutation) SetReferenceNo(s string) {
+	m.reference_no = &s
+}
+
+// ReferenceNo returns the value of the "reference_no" field in the mutation.
+func (m *StockTransferMutation) ReferenceNo() (r string, exists bool) {
+	v := m.reference_no
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferenceNo returns the old "reference_no" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldReferenceNo(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferenceNo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferenceNo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferenceNo: %w", err)
+	}
+	return oldValue.ReferenceNo, nil
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (m *StockTransferMutation) ClearReferenceNo() {
+	m.reference_no = nil
+	m.clearedFields[stocktransfer.FieldReferenceNo] = struct{}{}
+}
+
+// ReferenceNoCleared returns if the "reference_no" field was cleared in this mutation.
+func (m *StockTransferMutation) ReferenceNoCleared() bool {
+	_, ok := m.clearedFields[stocktransfer.FieldReferenceNo]
+	return ok
+}
+
+// ResetReferenceNo resets all changes to the "reference_no" field.
+func (m *StockTransferMutation) ResetReferenceNo() {
+	m.reference_no = nil
+	delete(m.clearedFields, stocktransfer.FieldReferenceNo)
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (m *StockTransferMutation) SetShippingCharges(f float64) {
+	m.shipping_charges = &f
+	m.addshipping_charges = nil
+}
+
+// ShippingCharges returns the value of the "shipping_charges" field in the mutation.
+func (m *StockTransferMutation) ShippingCharges() (r float64, exists bool) {
+	v := m.shipping_charges
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShippingCharges returns the old "shipping_charges" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldShippingCharges(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShippingCharges is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShippingCharges requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShippingCharges: %w", err)
+	}
+	return oldValue.ShippingCharges, nil
+}
+
+// AddShippingCharges adds f to the "shipping_charges" field.
+func (m *StockTransferMutation) AddShippingCharges(f float64) {
+	if m.addshipping_charges != nil {
+		*m.addshipping_charges += f
+	} else {
+		m.addshipping_charges = &f
+	}
+}
+
+// AddedShippingCharges returns the value that was added to the "shipping_charges" field in this mutation.
+func (m *StockTransferMutation) AddedShippingCharges() (r float64, exists bool) {
+	v := m.addshipping_charges
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetShippingCharges resets all changes to the "shipping_charges" field.
+func (m *StockTransferMutation) ResetShippingCharges() {
+	m.shipping_charges = nil
+	m.addshipping_charges = nil
+}
+
+// SetCarrier sets the "carrier" field.
+func (m *StockTransferMutation) SetCarrier(s string) {
+	m.carrier = &s
+}
+
+// Carrier returns the value of the "carrier" field in the mutation.
+func (m *StockTransferMutation) Carrier() (r string, exists bool) {
+	v := m.carrier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCarrier returns the old "carrier" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldCarrier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCarrier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCarrier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCarrier: %w", err)
+	}
+	return oldValue.Carrier, nil
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (m *StockTransferMutation) ClearCarrier() {
+	m.carrier = nil
+	m.clearedFields[stocktransfer.FieldCarrier] = struct{}{}
+}
+
+// CarrierCleared returns if the "carrier" field was cleared in this mutation.
+func (m *StockTransferMutation) CarrierCleared() bool {
+	_, ok := m.clearedFields[stocktransfer.FieldCarrier]
+	return ok
+}
+
+// ResetCarrier resets all changes to the "carrier" field.
+func (m *StockTransferMutation) ResetCarrier() {
+	m.carrier = nil
+	delete(m.clearedFields, stocktransfer.FieldCarrier)
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (m *StockTransferMutation) SetFreightNotes(s string) {
+	m.freight_notes = &s
+}
+
+// FreightNotes returns the value of the "freight_notes" field in the mutation.
+func (m *StockTransferMutation) FreightNotes() (r string, exists bool) {
+	v := m.freight_notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFreightNotes returns the old "freight_notes" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldFreightNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFreightNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFreightNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFreightNotes: %w", err)
+	}
+	return oldValue.FreightNotes, nil
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (m *StockTransferMutation) ClearFreightNotes() {
+	m.freight_notes = nil
+	m.clearedFields[stocktransfer.FieldFreightNotes] = struct{}{}
+}
+
+// FreightNotesCleared returns if the "freight_notes" field was cleared in this mutation.
+func (m *StockTransferMutation) FreightNotesCleared() bool {
+	_, ok := m.clearedFields[stocktransfer.FieldFreightNotes]
+	return ok
+}
+
+// ResetFreightNotes resets all changes to the "freight_notes" field.
+func (m *StockTransferMutation) ResetFreightNotes() {
+	m.freight_notes = nil
+	delete(m.clearedFields, stocktransfer.FieldFreightNotes)
+}
+
 // SetNotes sets the "notes" field.
 func (m *StockTransferMutation) SetNotes(s string) {
 	m.notes = &s
@@ -73896,7 +74104,7 @@ func (m *StockTransferMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StockTransferMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 15)
 	if m.tenant_id != nil {
 		fields = append(fields, stocktransfer.FieldTenantID)
 	}
@@ -73914,6 +74122,18 @@ func (m *StockTransferMutation) Fields() []string {
 	}
 	if m.initiated_by != nil {
 		fields = append(fields, stocktransfer.FieldInitiatedBy)
+	}
+	if m.reference_no != nil {
+		fields = append(fields, stocktransfer.FieldReferenceNo)
+	}
+	if m.shipping_charges != nil {
+		fields = append(fields, stocktransfer.FieldShippingCharges)
+	}
+	if m.carrier != nil {
+		fields = append(fields, stocktransfer.FieldCarrier)
+	}
+	if m.freight_notes != nil {
+		fields = append(fields, stocktransfer.FieldFreightNotes)
 	}
 	if m.notes != nil {
 		fields = append(fields, stocktransfer.FieldNotes)
@@ -73950,6 +74170,14 @@ func (m *StockTransferMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case stocktransfer.FieldInitiatedBy:
 		return m.InitiatedBy()
+	case stocktransfer.FieldReferenceNo:
+		return m.ReferenceNo()
+	case stocktransfer.FieldShippingCharges:
+		return m.ShippingCharges()
+	case stocktransfer.FieldCarrier:
+		return m.Carrier()
+	case stocktransfer.FieldFreightNotes:
+		return m.FreightNotes()
 	case stocktransfer.FieldNotes:
 		return m.Notes()
 	case stocktransfer.FieldShippedAt:
@@ -73981,6 +74209,14 @@ func (m *StockTransferMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStatus(ctx)
 	case stocktransfer.FieldInitiatedBy:
 		return m.OldInitiatedBy(ctx)
+	case stocktransfer.FieldReferenceNo:
+		return m.OldReferenceNo(ctx)
+	case stocktransfer.FieldShippingCharges:
+		return m.OldShippingCharges(ctx)
+	case stocktransfer.FieldCarrier:
+		return m.OldCarrier(ctx)
+	case stocktransfer.FieldFreightNotes:
+		return m.OldFreightNotes(ctx)
 	case stocktransfer.FieldNotes:
 		return m.OldNotes(ctx)
 	case stocktransfer.FieldShippedAt:
@@ -74042,6 +74278,34 @@ func (m *StockTransferMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetInitiatedBy(v)
 		return nil
+	case stocktransfer.FieldReferenceNo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferenceNo(v)
+		return nil
+	case stocktransfer.FieldShippingCharges:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShippingCharges(v)
+		return nil
+	case stocktransfer.FieldCarrier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCarrier(v)
+		return nil
+	case stocktransfer.FieldFreightNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFreightNotes(v)
+		return nil
 	case stocktransfer.FieldNotes:
 		v, ok := value.(string)
 		if !ok {
@@ -74084,13 +74348,21 @@ func (m *StockTransferMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *StockTransferMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addshipping_charges != nil {
+		fields = append(fields, stocktransfer.FieldShippingCharges)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *StockTransferMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case stocktransfer.FieldShippingCharges:
+		return m.AddedShippingCharges()
+	}
 	return nil, false
 }
 
@@ -74099,6 +74371,13 @@ func (m *StockTransferMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *StockTransferMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case stocktransfer.FieldShippingCharges:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddShippingCharges(v)
+		return nil
 	}
 	return fmt.Errorf("unknown StockTransfer numeric field %s", name)
 }
@@ -74109,6 +74388,15 @@ func (m *StockTransferMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(stocktransfer.FieldInitiatedBy) {
 		fields = append(fields, stocktransfer.FieldInitiatedBy)
+	}
+	if m.FieldCleared(stocktransfer.FieldReferenceNo) {
+		fields = append(fields, stocktransfer.FieldReferenceNo)
+	}
+	if m.FieldCleared(stocktransfer.FieldCarrier) {
+		fields = append(fields, stocktransfer.FieldCarrier)
+	}
+	if m.FieldCleared(stocktransfer.FieldFreightNotes) {
+		fields = append(fields, stocktransfer.FieldFreightNotes)
 	}
 	if m.FieldCleared(stocktransfer.FieldNotes) {
 		fields = append(fields, stocktransfer.FieldNotes)
@@ -74135,6 +74423,15 @@ func (m *StockTransferMutation) ClearField(name string) error {
 	switch name {
 	case stocktransfer.FieldInitiatedBy:
 		m.ClearInitiatedBy()
+		return nil
+	case stocktransfer.FieldReferenceNo:
+		m.ClearReferenceNo()
+		return nil
+	case stocktransfer.FieldCarrier:
+		m.ClearCarrier()
+		return nil
+	case stocktransfer.FieldFreightNotes:
+		m.ClearFreightNotes()
 		return nil
 	case stocktransfer.FieldNotes:
 		m.ClearNotes()
@@ -74170,6 +74467,18 @@ func (m *StockTransferMutation) ResetField(name string) error {
 		return nil
 	case stocktransfer.FieldInitiatedBy:
 		m.ResetInitiatedBy()
+		return nil
+	case stocktransfer.FieldReferenceNo:
+		m.ResetReferenceNo()
+		return nil
+	case stocktransfer.FieldShippingCharges:
+		m.ResetShippingCharges()
+		return nil
+	case stocktransfer.FieldCarrier:
+		m.ResetCarrier()
+		return nil
+	case stocktransfer.FieldFreightNotes:
+		m.ResetFreightNotes()
 		return nil
 	case stocktransfer.FieldNotes:
 		m.ResetNotes()

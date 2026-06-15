@@ -30,6 +30,14 @@ type StockTransfer struct {
 	Status stocktransfer.Status `json:"status,omitempty"`
 	// User who initiated the transfer
 	InitiatedBy *uuid.UUID `json:"initiated_by,omitempty"`
+	// External/business reference number for the transfer (e.g. waybill, dispatch note)
+	ReferenceNo string `json:"reference_no,omitempty"`
+	// Freight/shipping cost for moving the stock; posted to treasury as an expense on completion
+	ShippingCharges float64 `json:"shipping_charges,omitempty"`
+	// Carrier/courier handling the transfer
+	Carrier string `json:"carrier,omitempty"`
+	// Notes about the shipment/freight (route, handling, seal references)
+	FreightNotes string `json:"freight_notes,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes string `json:"notes,omitempty"`
 	// ShippedAt holds the value of the "shipped_at" field.
@@ -71,7 +79,9 @@ func (*StockTransfer) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case stocktransfer.FieldInitiatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case stocktransfer.FieldTransferNumber, stocktransfer.FieldStatus, stocktransfer.FieldNotes:
+		case stocktransfer.FieldShippingCharges:
+			values[i] = new(sql.NullFloat64)
+		case stocktransfer.FieldTransferNumber, stocktransfer.FieldStatus, stocktransfer.FieldReferenceNo, stocktransfer.FieldCarrier, stocktransfer.FieldFreightNotes, stocktransfer.FieldNotes:
 			values[i] = new(sql.NullString)
 		case stocktransfer.FieldShippedAt, stocktransfer.FieldReceivedAt, stocktransfer.FieldCreatedAt, stocktransfer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -134,6 +144,30 @@ func (_m *StockTransfer) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.InitiatedBy = new(uuid.UUID)
 				*_m.InitiatedBy = *value.S.(*uuid.UUID)
+			}
+		case stocktransfer.FieldReferenceNo:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field reference_no", values[i])
+			} else if value.Valid {
+				_m.ReferenceNo = value.String
+			}
+		case stocktransfer.FieldShippingCharges:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field shipping_charges", values[i])
+			} else if value.Valid {
+				_m.ShippingCharges = value.Float64
+			}
+		case stocktransfer.FieldCarrier:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field carrier", values[i])
+			} else if value.Valid {
+				_m.Carrier = value.String
+			}
+		case stocktransfer.FieldFreightNotes:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field freight_notes", values[i])
+			} else if value.Valid {
+				_m.FreightNotes = value.String
 			}
 		case stocktransfer.FieldNotes:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -227,6 +261,18 @@ func (_m *StockTransfer) String() string {
 		builder.WriteString("initiated_by=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("reference_no=")
+	builder.WriteString(_m.ReferenceNo)
+	builder.WriteString(", ")
+	builder.WriteString("shipping_charges=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShippingCharges))
+	builder.WriteString(", ")
+	builder.WriteString("carrier=")
+	builder.WriteString(_m.Carrier)
+	builder.WriteString(", ")
+	builder.WriteString("freight_notes=")
+	builder.WriteString(_m.FreightNotes)
 	builder.WriteString(", ")
 	builder.WriteString("notes=")
 	builder.WriteString(_m.Notes)

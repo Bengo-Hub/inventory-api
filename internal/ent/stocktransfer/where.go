@@ -81,6 +81,26 @@ func InitiatedBy(v uuid.UUID) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldInitiatedBy, v))
 }
 
+// ReferenceNo applies equality check predicate on the "reference_no" field. It's identical to ReferenceNoEQ.
+func ReferenceNo(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldReferenceNo, v))
+}
+
+// ShippingCharges applies equality check predicate on the "shipping_charges" field. It's identical to ShippingChargesEQ.
+func ShippingCharges(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldShippingCharges, v))
+}
+
+// Carrier applies equality check predicate on the "carrier" field. It's identical to CarrierEQ.
+func Carrier(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldCarrier, v))
+}
+
+// FreightNotes applies equality check predicate on the "freight_notes" field. It's identical to FreightNotesEQ.
+func FreightNotes(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldFreightNotes, v))
+}
+
 // Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
 func Notes(v string) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldNotes, v))
@@ -359,6 +379,271 @@ func InitiatedByIsNil() predicate.StockTransfer {
 // InitiatedByNotNil applies the NotNil predicate on the "initiated_by" field.
 func InitiatedByNotNil() predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldNotNull(FieldInitiatedBy))
+}
+
+// ReferenceNoEQ applies the EQ predicate on the "reference_no" field.
+func ReferenceNoEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldReferenceNo, v))
+}
+
+// ReferenceNoNEQ applies the NEQ predicate on the "reference_no" field.
+func ReferenceNoNEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldReferenceNo, v))
+}
+
+// ReferenceNoIn applies the In predicate on the "reference_no" field.
+func ReferenceNoIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldReferenceNo, vs...))
+}
+
+// ReferenceNoNotIn applies the NotIn predicate on the "reference_no" field.
+func ReferenceNoNotIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldReferenceNo, vs...))
+}
+
+// ReferenceNoGT applies the GT predicate on the "reference_no" field.
+func ReferenceNoGT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldReferenceNo, v))
+}
+
+// ReferenceNoGTE applies the GTE predicate on the "reference_no" field.
+func ReferenceNoGTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldReferenceNo, v))
+}
+
+// ReferenceNoLT applies the LT predicate on the "reference_no" field.
+func ReferenceNoLT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldReferenceNo, v))
+}
+
+// ReferenceNoLTE applies the LTE predicate on the "reference_no" field.
+func ReferenceNoLTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldReferenceNo, v))
+}
+
+// ReferenceNoContains applies the Contains predicate on the "reference_no" field.
+func ReferenceNoContains(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContains(FieldReferenceNo, v))
+}
+
+// ReferenceNoHasPrefix applies the HasPrefix predicate on the "reference_no" field.
+func ReferenceNoHasPrefix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasPrefix(FieldReferenceNo, v))
+}
+
+// ReferenceNoHasSuffix applies the HasSuffix predicate on the "reference_no" field.
+func ReferenceNoHasSuffix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasSuffix(FieldReferenceNo, v))
+}
+
+// ReferenceNoIsNil applies the IsNil predicate on the "reference_no" field.
+func ReferenceNoIsNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIsNull(FieldReferenceNo))
+}
+
+// ReferenceNoNotNil applies the NotNil predicate on the "reference_no" field.
+func ReferenceNoNotNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotNull(FieldReferenceNo))
+}
+
+// ReferenceNoEqualFold applies the EqualFold predicate on the "reference_no" field.
+func ReferenceNoEqualFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEqualFold(FieldReferenceNo, v))
+}
+
+// ReferenceNoContainsFold applies the ContainsFold predicate on the "reference_no" field.
+func ReferenceNoContainsFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContainsFold(FieldReferenceNo, v))
+}
+
+// ShippingChargesEQ applies the EQ predicate on the "shipping_charges" field.
+func ShippingChargesEQ(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldShippingCharges, v))
+}
+
+// ShippingChargesNEQ applies the NEQ predicate on the "shipping_charges" field.
+func ShippingChargesNEQ(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldShippingCharges, v))
+}
+
+// ShippingChargesIn applies the In predicate on the "shipping_charges" field.
+func ShippingChargesIn(vs ...float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldShippingCharges, vs...))
+}
+
+// ShippingChargesNotIn applies the NotIn predicate on the "shipping_charges" field.
+func ShippingChargesNotIn(vs ...float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldShippingCharges, vs...))
+}
+
+// ShippingChargesGT applies the GT predicate on the "shipping_charges" field.
+func ShippingChargesGT(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldShippingCharges, v))
+}
+
+// ShippingChargesGTE applies the GTE predicate on the "shipping_charges" field.
+func ShippingChargesGTE(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldShippingCharges, v))
+}
+
+// ShippingChargesLT applies the LT predicate on the "shipping_charges" field.
+func ShippingChargesLT(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldShippingCharges, v))
+}
+
+// ShippingChargesLTE applies the LTE predicate on the "shipping_charges" field.
+func ShippingChargesLTE(v float64) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldShippingCharges, v))
+}
+
+// CarrierEQ applies the EQ predicate on the "carrier" field.
+func CarrierEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldCarrier, v))
+}
+
+// CarrierNEQ applies the NEQ predicate on the "carrier" field.
+func CarrierNEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldCarrier, v))
+}
+
+// CarrierIn applies the In predicate on the "carrier" field.
+func CarrierIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldCarrier, vs...))
+}
+
+// CarrierNotIn applies the NotIn predicate on the "carrier" field.
+func CarrierNotIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldCarrier, vs...))
+}
+
+// CarrierGT applies the GT predicate on the "carrier" field.
+func CarrierGT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldCarrier, v))
+}
+
+// CarrierGTE applies the GTE predicate on the "carrier" field.
+func CarrierGTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldCarrier, v))
+}
+
+// CarrierLT applies the LT predicate on the "carrier" field.
+func CarrierLT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldCarrier, v))
+}
+
+// CarrierLTE applies the LTE predicate on the "carrier" field.
+func CarrierLTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldCarrier, v))
+}
+
+// CarrierContains applies the Contains predicate on the "carrier" field.
+func CarrierContains(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContains(FieldCarrier, v))
+}
+
+// CarrierHasPrefix applies the HasPrefix predicate on the "carrier" field.
+func CarrierHasPrefix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasPrefix(FieldCarrier, v))
+}
+
+// CarrierHasSuffix applies the HasSuffix predicate on the "carrier" field.
+func CarrierHasSuffix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasSuffix(FieldCarrier, v))
+}
+
+// CarrierIsNil applies the IsNil predicate on the "carrier" field.
+func CarrierIsNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIsNull(FieldCarrier))
+}
+
+// CarrierNotNil applies the NotNil predicate on the "carrier" field.
+func CarrierNotNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotNull(FieldCarrier))
+}
+
+// CarrierEqualFold applies the EqualFold predicate on the "carrier" field.
+func CarrierEqualFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEqualFold(FieldCarrier, v))
+}
+
+// CarrierContainsFold applies the ContainsFold predicate on the "carrier" field.
+func CarrierContainsFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContainsFold(FieldCarrier, v))
+}
+
+// FreightNotesEQ applies the EQ predicate on the "freight_notes" field.
+func FreightNotesEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldFreightNotes, v))
+}
+
+// FreightNotesNEQ applies the NEQ predicate on the "freight_notes" field.
+func FreightNotesNEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldFreightNotes, v))
+}
+
+// FreightNotesIn applies the In predicate on the "freight_notes" field.
+func FreightNotesIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldFreightNotes, vs...))
+}
+
+// FreightNotesNotIn applies the NotIn predicate on the "freight_notes" field.
+func FreightNotesNotIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldFreightNotes, vs...))
+}
+
+// FreightNotesGT applies the GT predicate on the "freight_notes" field.
+func FreightNotesGT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldFreightNotes, v))
+}
+
+// FreightNotesGTE applies the GTE predicate on the "freight_notes" field.
+func FreightNotesGTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldFreightNotes, v))
+}
+
+// FreightNotesLT applies the LT predicate on the "freight_notes" field.
+func FreightNotesLT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldFreightNotes, v))
+}
+
+// FreightNotesLTE applies the LTE predicate on the "freight_notes" field.
+func FreightNotesLTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldFreightNotes, v))
+}
+
+// FreightNotesContains applies the Contains predicate on the "freight_notes" field.
+func FreightNotesContains(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContains(FieldFreightNotes, v))
+}
+
+// FreightNotesHasPrefix applies the HasPrefix predicate on the "freight_notes" field.
+func FreightNotesHasPrefix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasPrefix(FieldFreightNotes, v))
+}
+
+// FreightNotesHasSuffix applies the HasSuffix predicate on the "freight_notes" field.
+func FreightNotesHasSuffix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasSuffix(FieldFreightNotes, v))
+}
+
+// FreightNotesIsNil applies the IsNil predicate on the "freight_notes" field.
+func FreightNotesIsNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIsNull(FieldFreightNotes))
+}
+
+// FreightNotesNotNil applies the NotNil predicate on the "freight_notes" field.
+func FreightNotesNotNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotNull(FieldFreightNotes))
+}
+
+// FreightNotesEqualFold applies the EqualFold predicate on the "freight_notes" field.
+func FreightNotesEqualFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEqualFold(FieldFreightNotes, v))
+}
+
+// FreightNotesContainsFold applies the ContainsFold predicate on the "freight_notes" field.
+func FreightNotesContainsFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContainsFold(FieldFreightNotes, v))
 }
 
 // NotesEQ applies the EQ predicate on the "notes" field.

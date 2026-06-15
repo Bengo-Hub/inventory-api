@@ -28,6 +28,14 @@ const (
 	FieldStatus = "status"
 	// FieldInitiatedBy holds the string denoting the initiated_by field in the database.
 	FieldInitiatedBy = "initiated_by"
+	// FieldReferenceNo holds the string denoting the reference_no field in the database.
+	FieldReferenceNo = "reference_no"
+	// FieldShippingCharges holds the string denoting the shipping_charges field in the database.
+	FieldShippingCharges = "shipping_charges"
+	// FieldCarrier holds the string denoting the carrier field in the database.
+	FieldCarrier = "carrier"
+	// FieldFreightNotes holds the string denoting the freight_notes field in the database.
+	FieldFreightNotes = "freight_notes"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
 	// FieldShippedAt holds the string denoting the shipped_at field in the database.
@@ -60,6 +68,10 @@ var Columns = []string{
 	FieldTransferNumber,
 	FieldStatus,
 	FieldInitiatedBy,
+	FieldReferenceNo,
+	FieldShippingCharges,
+	FieldCarrier,
+	FieldFreightNotes,
 	FieldNotes,
 	FieldShippedAt,
 	FieldReceivedAt,
@@ -80,6 +92,8 @@ func ValidColumn(column string) bool {
 var (
 	// TransferNumberValidator is a validator for the "transfer_number" field. It is called by the builders before save.
 	TransferNumberValidator func(string) error
+	// DefaultShippingCharges holds the default value on creation for the "shipping_charges" field.
+	DefaultShippingCharges float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -154,6 +168,26 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByInitiatedBy orders the results by the initiated_by field.
 func ByInitiatedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInitiatedBy, opts...).ToFunc()
+}
+
+// ByReferenceNo orders the results by the reference_no field.
+func ByReferenceNo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferenceNo, opts...).ToFunc()
+}
+
+// ByShippingCharges orders the results by the shipping_charges field.
+func ByShippingCharges(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingCharges, opts...).ToFunc()
+}
+
+// ByCarrier orders the results by the carrier field.
+func ByCarrier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCarrier, opts...).ToFunc()
+}
+
+// ByFreightNotes orders the results by the freight_notes field.
+func ByFreightNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFreightNotes, opts...).ToFunc()
 }
 
 // ByNotes orders the results by the notes field.

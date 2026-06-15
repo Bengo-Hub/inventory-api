@@ -77,6 +77,62 @@ func (_c *StockTransferCreate) SetNillableInitiatedBy(v *uuid.UUID) *StockTransf
 	return _c
 }
 
+// SetReferenceNo sets the "reference_no" field.
+func (_c *StockTransferCreate) SetReferenceNo(v string) *StockTransferCreate {
+	_c.mutation.SetReferenceNo(v)
+	return _c
+}
+
+// SetNillableReferenceNo sets the "reference_no" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableReferenceNo(v *string) *StockTransferCreate {
+	if v != nil {
+		_c.SetReferenceNo(*v)
+	}
+	return _c
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (_c *StockTransferCreate) SetShippingCharges(v float64) *StockTransferCreate {
+	_c.mutation.SetShippingCharges(v)
+	return _c
+}
+
+// SetNillableShippingCharges sets the "shipping_charges" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableShippingCharges(v *float64) *StockTransferCreate {
+	if v != nil {
+		_c.SetShippingCharges(*v)
+	}
+	return _c
+}
+
+// SetCarrier sets the "carrier" field.
+func (_c *StockTransferCreate) SetCarrier(v string) *StockTransferCreate {
+	_c.mutation.SetCarrier(v)
+	return _c
+}
+
+// SetNillableCarrier sets the "carrier" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableCarrier(v *string) *StockTransferCreate {
+	if v != nil {
+		_c.SetCarrier(*v)
+	}
+	return _c
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (_c *StockTransferCreate) SetFreightNotes(v string) *StockTransferCreate {
+	_c.mutation.SetFreightNotes(v)
+	return _c
+}
+
+// SetNillableFreightNotes sets the "freight_notes" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableFreightNotes(v *string) *StockTransferCreate {
+	if v != nil {
+		_c.SetFreightNotes(*v)
+	}
+	return _c
+}
+
 // SetNotes sets the "notes" field.
 func (_c *StockTransferCreate) SetNotes(v string) *StockTransferCreate {
 	_c.mutation.SetNotes(v)
@@ -215,6 +271,10 @@ func (_c *StockTransferCreate) defaults() {
 		v := stocktransfer.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.ShippingCharges(); !ok {
+		v := stocktransfer.DefaultShippingCharges
+		_c.mutation.SetShippingCharges(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := stocktransfer.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -255,6 +315,9 @@ func (_c *StockTransferCreate) check() error {
 		if err := stocktransfer.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "StockTransfer.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.ShippingCharges(); !ok {
+		return &ValidationError{Name: "shipping_charges", err: errors.New(`ent: missing required field "StockTransfer.shipping_charges"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "StockTransfer.created_at"`)}
@@ -321,6 +384,22 @@ func (_c *StockTransferCreate) createSpec() (*StockTransfer, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.InitiatedBy(); ok {
 		_spec.SetField(stocktransfer.FieldInitiatedBy, field.TypeUUID, value)
 		_node.InitiatedBy = &value
+	}
+	if value, ok := _c.mutation.ReferenceNo(); ok {
+		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)
+		_node.ReferenceNo = value
+	}
+	if value, ok := _c.mutation.ShippingCharges(); ok {
+		_spec.SetField(stocktransfer.FieldShippingCharges, field.TypeFloat64, value)
+		_node.ShippingCharges = value
+	}
+	if value, ok := _c.mutation.Carrier(); ok {
+		_spec.SetField(stocktransfer.FieldCarrier, field.TypeString, value)
+		_node.Carrier = value
+	}
+	if value, ok := _c.mutation.FreightNotes(); ok {
+		_spec.SetField(stocktransfer.FieldFreightNotes, field.TypeString, value)
+		_node.FreightNotes = value
 	}
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(stocktransfer.FieldNotes, field.TypeString, value)
@@ -485,6 +564,78 @@ func (u *StockTransferUpsert) UpdateInitiatedBy() *StockTransferUpsert {
 // ClearInitiatedBy clears the value of the "initiated_by" field.
 func (u *StockTransferUpsert) ClearInitiatedBy() *StockTransferUpsert {
 	u.SetNull(stocktransfer.FieldInitiatedBy)
+	return u
+}
+
+// SetReferenceNo sets the "reference_no" field.
+func (u *StockTransferUpsert) SetReferenceNo(v string) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldReferenceNo, v)
+	return u
+}
+
+// UpdateReferenceNo sets the "reference_no" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateReferenceNo() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldReferenceNo)
+	return u
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (u *StockTransferUpsert) ClearReferenceNo() *StockTransferUpsert {
+	u.SetNull(stocktransfer.FieldReferenceNo)
+	return u
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (u *StockTransferUpsert) SetShippingCharges(v float64) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldShippingCharges, v)
+	return u
+}
+
+// UpdateShippingCharges sets the "shipping_charges" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateShippingCharges() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldShippingCharges)
+	return u
+}
+
+// AddShippingCharges adds v to the "shipping_charges" field.
+func (u *StockTransferUpsert) AddShippingCharges(v float64) *StockTransferUpsert {
+	u.Add(stocktransfer.FieldShippingCharges, v)
+	return u
+}
+
+// SetCarrier sets the "carrier" field.
+func (u *StockTransferUpsert) SetCarrier(v string) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldCarrier, v)
+	return u
+}
+
+// UpdateCarrier sets the "carrier" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateCarrier() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldCarrier)
+	return u
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (u *StockTransferUpsert) ClearCarrier() *StockTransferUpsert {
+	u.SetNull(stocktransfer.FieldCarrier)
+	return u
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (u *StockTransferUpsert) SetFreightNotes(v string) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldFreightNotes, v)
+	return u
+}
+
+// UpdateFreightNotes sets the "freight_notes" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateFreightNotes() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldFreightNotes)
+	return u
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (u *StockTransferUpsert) ClearFreightNotes() *StockTransferUpsert {
+	u.SetNull(stocktransfer.FieldFreightNotes)
 	return u
 }
 
@@ -693,6 +844,90 @@ func (u *StockTransferUpsertOne) UpdateInitiatedBy() *StockTransferUpsertOne {
 func (u *StockTransferUpsertOne) ClearInitiatedBy() *StockTransferUpsertOne {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearInitiatedBy()
+	})
+}
+
+// SetReferenceNo sets the "reference_no" field.
+func (u *StockTransferUpsertOne) SetReferenceNo(v string) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetReferenceNo(v)
+	})
+}
+
+// UpdateReferenceNo sets the "reference_no" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateReferenceNo() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateReferenceNo()
+	})
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (u *StockTransferUpsertOne) ClearReferenceNo() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearReferenceNo()
+	})
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (u *StockTransferUpsertOne) SetShippingCharges(v float64) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetShippingCharges(v)
+	})
+}
+
+// AddShippingCharges adds v to the "shipping_charges" field.
+func (u *StockTransferUpsertOne) AddShippingCharges(v float64) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.AddShippingCharges(v)
+	})
+}
+
+// UpdateShippingCharges sets the "shipping_charges" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateShippingCharges() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateShippingCharges()
+	})
+}
+
+// SetCarrier sets the "carrier" field.
+func (u *StockTransferUpsertOne) SetCarrier(v string) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetCarrier(v)
+	})
+}
+
+// UpdateCarrier sets the "carrier" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateCarrier() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateCarrier()
+	})
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (u *StockTransferUpsertOne) ClearCarrier() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearCarrier()
+	})
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (u *StockTransferUpsertOne) SetFreightNotes(v string) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetFreightNotes(v)
+	})
+}
+
+// UpdateFreightNotes sets the "freight_notes" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateFreightNotes() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateFreightNotes()
+	})
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (u *StockTransferUpsertOne) ClearFreightNotes() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearFreightNotes()
 	})
 }
 
@@ -1079,6 +1314,90 @@ func (u *StockTransferUpsertBulk) UpdateInitiatedBy() *StockTransferUpsertBulk {
 func (u *StockTransferUpsertBulk) ClearInitiatedBy() *StockTransferUpsertBulk {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearInitiatedBy()
+	})
+}
+
+// SetReferenceNo sets the "reference_no" field.
+func (u *StockTransferUpsertBulk) SetReferenceNo(v string) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetReferenceNo(v)
+	})
+}
+
+// UpdateReferenceNo sets the "reference_no" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateReferenceNo() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateReferenceNo()
+	})
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (u *StockTransferUpsertBulk) ClearReferenceNo() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearReferenceNo()
+	})
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (u *StockTransferUpsertBulk) SetShippingCharges(v float64) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetShippingCharges(v)
+	})
+}
+
+// AddShippingCharges adds v to the "shipping_charges" field.
+func (u *StockTransferUpsertBulk) AddShippingCharges(v float64) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.AddShippingCharges(v)
+	})
+}
+
+// UpdateShippingCharges sets the "shipping_charges" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateShippingCharges() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateShippingCharges()
+	})
+}
+
+// SetCarrier sets the "carrier" field.
+func (u *StockTransferUpsertBulk) SetCarrier(v string) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetCarrier(v)
+	})
+}
+
+// UpdateCarrier sets the "carrier" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateCarrier() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateCarrier()
+	})
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (u *StockTransferUpsertBulk) ClearCarrier() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearCarrier()
+	})
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (u *StockTransferUpsertBulk) SetFreightNotes(v string) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetFreightNotes(v)
+	})
+}
+
+// UpdateFreightNotes sets the "freight_notes" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateFreightNotes() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateFreightNotes()
+	})
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (u *StockTransferUpsertBulk) ClearFreightNotes() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearFreightNotes()
 	})
 }
 
