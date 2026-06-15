@@ -159,6 +159,7 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 			SetOutletID(outletID).
 			SetName(name).
 			SetCode(whCode).
+			SetUseCase(useCase).
 			SetIsDefault(isHQ).
 			SetIsActive(status != "archived").
 			Save(ctx)
@@ -170,11 +171,16 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 			zap.String("code", whCode),
 			zap.String("use_case", useCase))
 	} else {
-		wh, err = s.orm.Warehouse.UpdateOne(existing).
+		upd := s.orm.Warehouse.UpdateOne(existing).
 			SetName(name).
 			SetIsDefault(isHQ).
-			SetIsActive(status != "archived").
-			Save(ctx)
+			SetIsActive(status != "archived")
+		// Keep the use_case mirror current, but never clobber a known value with an
+		// empty one if a future event omits it.
+		if useCase != "" {
+			upd = upd.SetUseCase(useCase)
+		}
+		wh, err = upd.Save(ctx)
 		if err != nil {
 			return fmt.Errorf("update warehouse mirror: %w", err)
 		}

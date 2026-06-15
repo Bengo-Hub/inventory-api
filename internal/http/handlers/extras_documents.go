@@ -75,7 +75,7 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 		subtotal += l.TotalPrice
 		items = append(items, documents.DocLine{
 			Desc:   desc,
-			Qty:    fmt.Sprintf("%d", l.QuantityOrdered),
+			Qty:    fmt.Sprintf("%g", l.QuantityOrdered),
 			Rate:   formatMoney(l.UnitPrice),
 			Amount: formatMoney(l.TotalPrice),
 		})

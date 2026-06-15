@@ -114,7 +114,12 @@ type InventoryHandler struct {
 	authMW       *authclient.AuthMiddleware
 	auditSvc     *audit.Service
 	approvalSvc  *approvals.Service
+	orm          *ent.Client
 }
+
+// SetEntClient wires the Ent client used by route-level middleware (e.g. resolving an
+// outlet's use_case from its warehouse mirror for RequireOutletUseCase gating).
+func (h *InventoryHandler) SetEntClient(c *ent.Client) { h.orm = c }
 
 // SetAuditService wires the centralized audit trail for stock adjustments / write-offs.
 func (h *InventoryHandler) SetAuditService(a *audit.Service) { h.auditSvc = a }
@@ -231,7 +236,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.
 		inv.Group(func(rec chi.Router) {
-			rec.Use(invmiddleware.RequireOutletUseCase("hospitality", "quick_service", "warehouse", "manufacturing"))
+			rec.Use(invmiddleware.RequireOutletUseCase(h.orm, h.log, "hospitality", "quick_service", "warehouse", "manufacturing"))
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
 			rec.Get("/recipes/{recipeID}", h.GetRecipe)

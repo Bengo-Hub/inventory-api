@@ -103,6 +103,20 @@ func (_c *WarehouseCreate) SetNillableOutletID(v *uuid.UUID) *WarehouseCreate {
 	return _c
 }
 
+// SetUseCase sets the "use_case" field.
+func (_c *WarehouseCreate) SetUseCase(v string) *WarehouseCreate {
+	_c.mutation.SetUseCase(v)
+	return _c
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_c *WarehouseCreate) SetNillableUseCase(v *string) *WarehouseCreate {
+	if v != nil {
+		_c.SetUseCase(*v)
+	}
+	return _c
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_c *WarehouseCreate) SetIsDefault(v bool) *WarehouseCreate {
 	_c.mutation.SetIsDefault(v)
@@ -391,6 +405,10 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 		_spec.SetField(warehouse.FieldOutletID, field.TypeUUID, value)
 		_node.OutletID = &value
 	}
+	if value, ok := _c.mutation.UseCase(); ok {
+		_spec.SetField(warehouse.FieldUseCase, field.TypeString, value)
+		_node.UseCase = value
+	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
 		_node.IsDefault = value
@@ -660,6 +678,24 @@ func (u *WarehouseUpsert) ClearOutletID() *WarehouseUpsert {
 	return u
 }
 
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsert) SetUseCase(v string) *WarehouseUpsert {
+	u.Set(warehouse.FieldUseCase, v)
+	return u
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateUseCase() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldUseCase)
+	return u
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsert) ClearUseCase() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldUseCase)
+	return u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (u *WarehouseUpsert) SetIsDefault(v bool) *WarehouseUpsert {
 	u.Set(warehouse.FieldIsDefault, v)
@@ -884,6 +920,27 @@ func (u *WarehouseUpsertOne) UpdateOutletID() *WarehouseUpsertOne {
 func (u *WarehouseUpsertOne) ClearOutletID() *WarehouseUpsertOne {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearOutletID()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsertOne) SetUseCase(v string) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateUseCase() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsertOne) ClearUseCase() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearUseCase()
 	})
 }
 
@@ -1284,6 +1341,27 @@ func (u *WarehouseUpsertBulk) UpdateOutletID() *WarehouseUpsertBulk {
 func (u *WarehouseUpsertBulk) ClearOutletID() *WarehouseUpsertBulk {
 	return u.Update(func(s *WarehouseUpsert) {
 		s.ClearOutletID()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsertBulk) SetUseCase(v string) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateUseCase() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsertBulk) ClearUseCase() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearUseCase()
 	})
 }
 
