@@ -47,7 +47,7 @@ func (m *mockItemsSvc) EnsureDefaultPrice(ctx context.Context, tenantID, itemID 
 	return nil
 }
 
-func (m *mockItemsSvc) DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error {
+func (m *mockItemsSvc) DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error {
 	return nil
 }
 
