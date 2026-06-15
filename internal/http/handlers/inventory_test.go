@@ -47,6 +47,10 @@ func (m *mockItemsSvc) EnsureDefaultPrice(ctx context.Context, tenantID, itemID 
 	return nil
 }
 
+func (m *mockItemsSvc) DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error {
+	return nil
+}
+
 func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error) {
 	return nil, fmt.Errorf("not implemented")
 }

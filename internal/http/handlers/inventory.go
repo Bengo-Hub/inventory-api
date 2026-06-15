@@ -40,6 +40,7 @@ type ItemsServicer interface {
 	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
+	DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
@@ -1079,10 +1080,9 @@ func (h *InventoryHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Soft-delete: set is_active = false
-	deactivated := items.ItemDTO{IsActive: false}
-	_, err = h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, deactivated)
-	if err != nil {
+	// Soft-delete: set is_active = false only (a full UpdateItem with an empty DTO would
+	// blank required fields like name and fail validation).
+	if err = h.itemsSvc.DeactivateItem(r.Context(), tenantID, avail.ItemID); err != nil {
 		h.log.Error("delete item failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", err.Error())
 		return
