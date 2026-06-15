@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -425,6 +427,8 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		itemSKU := col(nil, "item_sku")
 		qtyStr  := col(nil, "quantity")
 		whName  := col(nil, "warehouse_name")
+		lotNumber := col(nil, "lot_number")
+		expiryStr := col(nil, "expiry_date")
 		if whName == "" {
 			whName = defaultWarehouse
 		}
@@ -447,10 +451,7 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		delta := qty - avail.OnHand
 		if delta == 0 {
 			res.Updated++ // already at target
-			continue
-		}
-
-		if _, adjErr := h.stockSvc.AdjustStock(r.Context(), tenantID, stock.AdjustStockRequest{
+		} else if _, adjErr := h.stockSvc.AdjustStock(r.Context(), tenantID, stock.AdjustStockRequest{
 			SKU:        itemSKU,
 			Adjustment: delta,
 			Reason:     "opening_balance",
@@ -458,8 +459,38 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		}); adjErr != nil {
 			res.Failed++
 			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: stock adjustment: %s", itemSKU, adjErr.Error()))
+			continue
 		} else {
 			res.Created++
+		}
+
+		// Capture the batch/lot + expiry when supplied (previously the InitialStock sheet
+		// documented these columns but dropped them). Idempotent on re-import. Falls back to
+		// the item's default shelf life when no explicit expiry is given.
+		if lotNumber != "" && h.orm != nil {
+			lotExists, _ := h.orm.InventoryLot.Query().
+				Where(
+					entinventorylot.TenantID(tenantID),
+					entinventorylot.ItemID(avail.ItemID),
+					entinventorylot.WarehouseID(avail.WarehouseID),
+					entinventorylot.LotNumber(lotNumber),
+				).Exist(r.Context())
+			if !lotExists {
+				lc := h.orm.InventoryLot.Create().
+					SetTenantID(tenantID).
+					SetItemID(avail.ItemID).
+					SetWarehouseID(avail.WarehouseID).
+					SetLotNumber(lotNumber).
+					SetQuantity(qty)
+				if exp := parseTimePtr(expiryStr); exp != nil {
+					lc = lc.SetExpiryDate(*exp)
+				} else if it, e := h.orm.Item.Get(r.Context(), avail.ItemID); e == nil && it.ShelfLifeDays != nil && *it.ShelfLifeDays > 0 {
+					lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *it.ShelfLifeDays))
+				}
+				if _, lerr := lc.Save(r.Context()); lerr != nil {
+					res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: lot create: %s", itemSKU, lerr.Error()))
+				}
+			}
 		}
 	}
 	return res
