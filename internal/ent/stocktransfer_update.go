@@ -120,6 +120,87 @@ func (_u *StockTransferUpdate) ClearInitiatedBy() *StockTransferUpdate {
 	return _u
 }
 
+// SetReferenceNo sets the "reference_no" field.
+func (_u *StockTransferUpdate) SetReferenceNo(v string) *StockTransferUpdate {
+	_u.mutation.SetReferenceNo(v)
+	return _u
+}
+
+// SetNillableReferenceNo sets the "reference_no" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableReferenceNo(v *string) *StockTransferUpdate {
+	if v != nil {
+		_u.SetReferenceNo(*v)
+	}
+	return _u
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (_u *StockTransferUpdate) ClearReferenceNo() *StockTransferUpdate {
+	_u.mutation.ClearReferenceNo()
+	return _u
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (_u *StockTransferUpdate) SetShippingCharges(v float64) *StockTransferUpdate {
+	_u.mutation.ResetShippingCharges()
+	_u.mutation.SetShippingCharges(v)
+	return _u
+}
+
+// SetNillableShippingCharges sets the "shipping_charges" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableShippingCharges(v *float64) *StockTransferUpdate {
+	if v != nil {
+		_u.SetShippingCharges(*v)
+	}
+	return _u
+}
+
+// AddShippingCharges adds value to the "shipping_charges" field.
+func (_u *StockTransferUpdate) AddShippingCharges(v float64) *StockTransferUpdate {
+	_u.mutation.AddShippingCharges(v)
+	return _u
+}
+
+// SetCarrier sets the "carrier" field.
+func (_u *StockTransferUpdate) SetCarrier(v string) *StockTransferUpdate {
+	_u.mutation.SetCarrier(v)
+	return _u
+}
+
+// SetNillableCarrier sets the "carrier" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableCarrier(v *string) *StockTransferUpdate {
+	if v != nil {
+		_u.SetCarrier(*v)
+	}
+	return _u
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (_u *StockTransferUpdate) ClearCarrier() *StockTransferUpdate {
+	_u.mutation.ClearCarrier()
+	return _u
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (_u *StockTransferUpdate) SetFreightNotes(v string) *StockTransferUpdate {
+	_u.mutation.SetFreightNotes(v)
+	return _u
+}
+
+// SetNillableFreightNotes sets the "freight_notes" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableFreightNotes(v *string) *StockTransferUpdate {
+	if v != nil {
+		_u.SetFreightNotes(*v)
+	}
+	return _u
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (_u *StockTransferUpdate) ClearFreightNotes() *StockTransferUpdate {
+	_u.mutation.ClearFreightNotes()
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *StockTransferUpdate) SetNotes(v string) *StockTransferUpdate {
 	_u.mutation.SetNotes(v)
@@ -311,6 +392,30 @@ func (_u *StockTransferUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.InitiatedByCleared() {
 		_spec.ClearField(stocktransfer.FieldInitiatedBy, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.ReferenceNo(); ok {
+		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)
+	}
+	if _u.mutation.ReferenceNoCleared() {
+		_spec.ClearField(stocktransfer.FieldReferenceNo, field.TypeString)
+	}
+	if value, ok := _u.mutation.ShippingCharges(); ok {
+		_spec.SetField(stocktransfer.FieldShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingCharges(); ok {
+		_spec.AddField(stocktransfer.FieldShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Carrier(); ok {
+		_spec.SetField(stocktransfer.FieldCarrier, field.TypeString, value)
+	}
+	if _u.mutation.CarrierCleared() {
+		_spec.ClearField(stocktransfer.FieldCarrier, field.TypeString)
+	}
+	if value, ok := _u.mutation.FreightNotes(); ok {
+		_spec.SetField(stocktransfer.FieldFreightNotes, field.TypeString, value)
+	}
+	if _u.mutation.FreightNotesCleared() {
+		_spec.ClearField(stocktransfer.FieldFreightNotes, field.TypeString)
+	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(stocktransfer.FieldNotes, field.TypeString, value)
 	}
@@ -484,6 +589,87 @@ func (_u *StockTransferUpdateOne) SetNillableInitiatedBy(v *uuid.UUID) *StockTra
 // ClearInitiatedBy clears the value of the "initiated_by" field.
 func (_u *StockTransferUpdateOne) ClearInitiatedBy() *StockTransferUpdateOne {
 	_u.mutation.ClearInitiatedBy()
+	return _u
+}
+
+// SetReferenceNo sets the "reference_no" field.
+func (_u *StockTransferUpdateOne) SetReferenceNo(v string) *StockTransferUpdateOne {
+	_u.mutation.SetReferenceNo(v)
+	return _u
+}
+
+// SetNillableReferenceNo sets the "reference_no" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableReferenceNo(v *string) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetReferenceNo(*v)
+	}
+	return _u
+}
+
+// ClearReferenceNo clears the value of the "reference_no" field.
+func (_u *StockTransferUpdateOne) ClearReferenceNo() *StockTransferUpdateOne {
+	_u.mutation.ClearReferenceNo()
+	return _u
+}
+
+// SetShippingCharges sets the "shipping_charges" field.
+func (_u *StockTransferUpdateOne) SetShippingCharges(v float64) *StockTransferUpdateOne {
+	_u.mutation.ResetShippingCharges()
+	_u.mutation.SetShippingCharges(v)
+	return _u
+}
+
+// SetNillableShippingCharges sets the "shipping_charges" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableShippingCharges(v *float64) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetShippingCharges(*v)
+	}
+	return _u
+}
+
+// AddShippingCharges adds value to the "shipping_charges" field.
+func (_u *StockTransferUpdateOne) AddShippingCharges(v float64) *StockTransferUpdateOne {
+	_u.mutation.AddShippingCharges(v)
+	return _u
+}
+
+// SetCarrier sets the "carrier" field.
+func (_u *StockTransferUpdateOne) SetCarrier(v string) *StockTransferUpdateOne {
+	_u.mutation.SetCarrier(v)
+	return _u
+}
+
+// SetNillableCarrier sets the "carrier" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableCarrier(v *string) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetCarrier(*v)
+	}
+	return _u
+}
+
+// ClearCarrier clears the value of the "carrier" field.
+func (_u *StockTransferUpdateOne) ClearCarrier() *StockTransferUpdateOne {
+	_u.mutation.ClearCarrier()
+	return _u
+}
+
+// SetFreightNotes sets the "freight_notes" field.
+func (_u *StockTransferUpdateOne) SetFreightNotes(v string) *StockTransferUpdateOne {
+	_u.mutation.SetFreightNotes(v)
+	return _u
+}
+
+// SetNillableFreightNotes sets the "freight_notes" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableFreightNotes(v *string) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetFreightNotes(*v)
+	}
+	return _u
+}
+
+// ClearFreightNotes clears the value of the "freight_notes" field.
+func (_u *StockTransferUpdateOne) ClearFreightNotes() *StockTransferUpdateOne {
+	_u.mutation.ClearFreightNotes()
 	return _u
 }
 
@@ -707,6 +893,30 @@ func (_u *StockTransferUpdateOne) sqlSave(ctx context.Context) (_node *StockTran
 	}
 	if _u.mutation.InitiatedByCleared() {
 		_spec.ClearField(stocktransfer.FieldInitiatedBy, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ReferenceNo(); ok {
+		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)
+	}
+	if _u.mutation.ReferenceNoCleared() {
+		_spec.ClearField(stocktransfer.FieldReferenceNo, field.TypeString)
+	}
+	if value, ok := _u.mutation.ShippingCharges(); ok {
+		_spec.SetField(stocktransfer.FieldShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingCharges(); ok {
+		_spec.AddField(stocktransfer.FieldShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Carrier(); ok {
+		_spec.SetField(stocktransfer.FieldCarrier, field.TypeString, value)
+	}
+	if _u.mutation.CarrierCleared() {
+		_spec.ClearField(stocktransfer.FieldCarrier, field.TypeString)
+	}
+	if value, ok := _u.mutation.FreightNotes(); ok {
+		_spec.SetField(stocktransfer.FieldFreightNotes, field.TypeString, value)
+	}
+	if _u.mutation.FreightNotesCleared() {
+		_spec.ClearField(stocktransfer.FieldFreightNotes, field.TypeString)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(stocktransfer.FieldNotes, field.TypeString, value)

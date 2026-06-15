@@ -12,6 +12,10 @@ type CreateTransferRequest struct {
 	DestinationWarehouseID uuid.UUID             `json:"destination_warehouse_id"`
 	Items                  []TransferLineRequest `json:"items"`
 	Notes                  string                `json:"notes,omitempty"`
+	ReferenceNo            string                `json:"reference_no,omitempty"`
+	ShippingCharges        float64               `json:"shipping_charges,omitempty"`
+	Carrier                string                `json:"carrier,omitempty"`
+	FreightNotes           string                `json:"freight_notes,omitempty"`
 }
 
 // TransferLineRequest represents a single line item on a transfer.
@@ -32,6 +36,10 @@ type TransferResponse struct {
 	DestinationWarehouse   WarehouseInfo          `json:"destination_warehouse"`
 	InitiatedBy            *uuid.UUID             `json:"initiated_by,omitempty"`
 	Notes                  string                 `json:"notes,omitempty"`
+	ReferenceNo            string                 `json:"reference_no,omitempty"`
+	ShippingCharges        float64                `json:"shipping_charges"`
+	Carrier                string                 `json:"carrier,omitempty"`
+	FreightNotes           string                 `json:"freight_notes,omitempty"`
 	ShippedAt              *time.Time             `json:"shipped_at,omitempty"`
 	ReceivedAt             *time.Time             `json:"received_at,omitempty"`
 	CreatedAt              time.Time              `json:"created_at"`
