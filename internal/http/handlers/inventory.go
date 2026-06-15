@@ -236,6 +236,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.
 		inv.Group(func(rec chi.Router) {
+			// Populate claims first (GET routes skip the group-level auth), then gate by
+			// the active outlet's use_case — so the read list is gated for non-HQ users too,
+			// not just the mutations.
+			rec.Use(h.requireAuthForFeatureGet())
 			rec.Use(invmiddleware.RequireOutletUseCase(h.orm, h.log, "hospitality", "quick_service", "warehouse", "manufacturing"))
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
