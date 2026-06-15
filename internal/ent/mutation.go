@@ -79817,6 +79817,7 @@ type TenantInventoryConfigMutation struct {
 	enable_expiry_notifications      *bool
 	notification_email               *string
 	default_warehouse_id             *string
+	costing_method                   *tenantinventoryconfig.CostingMethod
 	enable_lot_tracking              *bool
 	enable_expiry_tracking           *bool
 	purchase_order_approval_required *bool
@@ -80421,6 +80422,42 @@ func (m *TenantInventoryConfigMutation) DefaultWarehouseIDCleared() bool {
 func (m *TenantInventoryConfigMutation) ResetDefaultWarehouseID() {
 	m.default_warehouse_id = nil
 	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultWarehouseID)
+}
+
+// SetCostingMethod sets the "costing_method" field.
+func (m *TenantInventoryConfigMutation) SetCostingMethod(tm tenantinventoryconfig.CostingMethod) {
+	m.costing_method = &tm
+}
+
+// CostingMethod returns the value of the "costing_method" field in the mutation.
+func (m *TenantInventoryConfigMutation) CostingMethod() (r tenantinventoryconfig.CostingMethod, exists bool) {
+	v := m.costing_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostingMethod returns the old "costing_method" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldCostingMethod(ctx context.Context) (v tenantinventoryconfig.CostingMethod, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostingMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostingMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostingMethod: %w", err)
+	}
+	return oldValue.CostingMethod, nil
+}
+
+// ResetCostingMethod resets all changes to the "costing_method" field.
+func (m *TenantInventoryConfigMutation) ResetCostingMethod() {
+	m.costing_method = nil
 }
 
 // SetEnableLotTracking sets the "enable_lot_tracking" field.
@@ -81080,7 +81117,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -81110,6 +81147,9 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	}
 	if m.default_warehouse_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultWarehouseID)
+	}
+	if m.costing_method != nil {
+		fields = append(fields, tenantinventoryconfig.FieldCostingMethod)
 	}
 	if m.enable_lot_tracking != nil {
 		fields = append(fields, tenantinventoryconfig.FieldEnableLotTracking)
@@ -81187,6 +81227,8 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.NotificationEmail()
 	case tenantinventoryconfig.FieldDefaultWarehouseID:
 		return m.DefaultWarehouseID()
+	case tenantinventoryconfig.FieldCostingMethod:
+		return m.CostingMethod()
 	case tenantinventoryconfig.FieldEnableLotTracking:
 		return m.EnableLotTracking()
 	case tenantinventoryconfig.FieldEnableExpiryTracking:
@@ -81248,6 +81290,8 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldNotificationEmail(ctx)
 	case tenantinventoryconfig.FieldDefaultWarehouseID:
 		return m.OldDefaultWarehouseID(ctx)
+	case tenantinventoryconfig.FieldCostingMethod:
+		return m.OldCostingMethod(ctx)
 	case tenantinventoryconfig.FieldEnableLotTracking:
 		return m.OldEnableLotTracking(ctx)
 	case tenantinventoryconfig.FieldEnableExpiryTracking:
@@ -81358,6 +81402,13 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefaultWarehouseID(v)
+		return nil
+	case tenantinventoryconfig.FieldCostingMethod:
+		v, ok := value.(tenantinventoryconfig.CostingMethod)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostingMethod(v)
 		return nil
 	case tenantinventoryconfig.FieldEnableLotTracking:
 		v, ok := value.(bool)
@@ -81645,6 +81696,9 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultWarehouseID:
 		m.ResetDefaultWarehouseID()
+		return nil
+	case tenantinventoryconfig.FieldCostingMethod:
+		m.ResetCostingMethod()
 		return nil
 	case tenantinventoryconfig.FieldEnableLotTracking:
 		m.ResetEnableLotTracking()

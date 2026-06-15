@@ -39,6 +39,8 @@ type TenantInventoryConfig struct {
 	NotificationEmail *string `json:"notification_email,omitempty"`
 	// Default warehouse UUID for new operations
 	DefaultWarehouseID *string `json:"default_warehouse_id,omitempty"`
+	// Inventory costing/consumption method: wavg|fifo|lifo|fefo
+	CostingMethod tenantinventoryconfig.CostingMethod `json:"costing_method,omitempty"`
 	// Enable batch/lot number tracking on stock movements
 	EnableLotTracking bool `json:"enable_lot_tracking,omitempty"`
 	// Track expiry dates on items (required for pharmacy/FMCG)
@@ -87,7 +89,7 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case tenantinventoryconfig.FieldDefaultReorderLevel, tenantinventoryconfig.FieldExpiryWarningDays:
 			values[i] = new(sql.NullInt64)
-		case tenantinventoryconfig.FieldNotificationEmail, tenantinventoryconfig.FieldDefaultWarehouseID, tenantinventoryconfig.FieldDefaultTaxCode:
+		case tenantinventoryconfig.FieldNotificationEmail, tenantinventoryconfig.FieldDefaultWarehouseID, tenantinventoryconfig.FieldCostingMethod, tenantinventoryconfig.FieldDefaultTaxCode:
 			values[i] = new(sql.NullString)
 		case tenantinventoryconfig.FieldCreatedAt, tenantinventoryconfig.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -177,6 +179,12 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				_m.DefaultWarehouseID = new(string)
 				*_m.DefaultWarehouseID = value.String
+			}
+		case tenantinventoryconfig.FieldCostingMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field costing_method", values[i])
+			} else if value.Valid {
+				_m.CostingMethod = tenantinventoryconfig.CostingMethod(value.String)
 			}
 		case tenantinventoryconfig.FieldEnableLotTracking:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -344,6 +352,9 @@ func (_m *TenantInventoryConfig) String() string {
 		builder.WriteString("default_warehouse_id=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("costing_method=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CostingMethod))
 	builder.WriteString(", ")
 	builder.WriteString("enable_lot_tracking=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EnableLotTracking))

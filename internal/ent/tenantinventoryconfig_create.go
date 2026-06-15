@@ -148,6 +148,20 @@ func (_c *TenantInventoryConfigCreate) SetNillableDefaultWarehouseID(v *string) 
 	return _c
 }
 
+// SetCostingMethod sets the "costing_method" field.
+func (_c *TenantInventoryConfigCreate) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigCreate {
+	_c.mutation.SetCostingMethod(v)
+	return _c
+}
+
+// SetNillableCostingMethod sets the "costing_method" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableCostingMethod(v *tenantinventoryconfig.CostingMethod) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetCostingMethod(*v)
+	}
+	return _c
+}
+
 // SetEnableLotTracking sets the "enable_lot_tracking" field.
 func (_c *TenantInventoryConfigCreate) SetEnableLotTracking(v bool) *TenantInventoryConfigCreate {
 	_c.mutation.SetEnableLotTracking(v)
@@ -445,6 +459,10 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultEnableExpiryNotifications
 		_c.mutation.SetEnableExpiryNotifications(v)
 	}
+	if _, ok := _c.mutation.CostingMethod(); !ok {
+		v := tenantinventoryconfig.DefaultCostingMethod
+		_c.mutation.SetCostingMethod(v)
+	}
 	if _, ok := _c.mutation.EnableLotTracking(); !ok {
 		v := tenantinventoryconfig.DefaultEnableLotTracking
 		_c.mutation.SetEnableLotTracking(v)
@@ -533,6 +551,14 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.EnableExpiryNotifications(); !ok {
 		return &ValidationError{Name: "enable_expiry_notifications", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_expiry_notifications"`)}
+	}
+	if _, ok := _c.mutation.CostingMethod(); !ok {
+		return &ValidationError{Name: "costing_method", err: errors.New(`ent: missing required field "TenantInventoryConfig.costing_method"`)}
+	}
+	if v, ok := _c.mutation.CostingMethod(); ok {
+		if err := tenantinventoryconfig.CostingMethodValidator(v); err != nil {
+			return &ValidationError{Name: "costing_method", err: fmt.Errorf(`ent: validator failed for field "TenantInventoryConfig.costing_method": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.EnableLotTracking(); !ok {
 		return &ValidationError{Name: "enable_lot_tracking", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_lot_tracking"`)}
@@ -651,6 +677,10 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.DefaultWarehouseID(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultWarehouseID, field.TypeString, value)
 		_node.DefaultWarehouseID = &value
+	}
+	if value, ok := _c.mutation.CostingMethod(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldCostingMethod, field.TypeEnum, value)
+		_node.CostingMethod = value
 	}
 	if value, ok := _c.mutation.EnableLotTracking(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableLotTracking, field.TypeBool, value)
@@ -927,6 +957,18 @@ func (u *TenantInventoryConfigUpsert) UpdateDefaultWarehouseID() *TenantInventor
 // ClearDefaultWarehouseID clears the value of the "default_warehouse_id" field.
 func (u *TenantInventoryConfigUpsert) ClearDefaultWarehouseID() *TenantInventoryConfigUpsert {
 	u.SetNull(tenantinventoryconfig.FieldDefaultWarehouseID)
+	return u
+}
+
+// SetCostingMethod sets the "costing_method" field.
+func (u *TenantInventoryConfigUpsert) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldCostingMethod, v)
+	return u
+}
+
+// UpdateCostingMethod sets the "costing_method" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateCostingMethod() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldCostingMethod)
 	return u
 }
 
@@ -1365,6 +1407,20 @@ func (u *TenantInventoryConfigUpsertOne) UpdateDefaultWarehouseID() *TenantInven
 func (u *TenantInventoryConfigUpsertOne) ClearDefaultWarehouseID() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultWarehouseID()
+	})
+}
+
+// SetCostingMethod sets the "costing_method" field.
+func (u *TenantInventoryConfigUpsertOne) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetCostingMethod(v)
+	})
+}
+
+// UpdateCostingMethod sets the "costing_method" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateCostingMethod() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateCostingMethod()
 	})
 }
 
@@ -2003,6 +2059,20 @@ func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultWarehouseID() *TenantInve
 func (u *TenantInventoryConfigUpsertBulk) ClearDefaultWarehouseID() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultWarehouseID()
+	})
+}
+
+// SetCostingMethod sets the "costing_method" field.
+func (u *TenantInventoryConfigUpsertBulk) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetCostingMethod(v)
+	})
+}
+
+// UpdateCostingMethod sets the "costing_method" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateCostingMethod() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateCostingMethod()
 	})
 }
 
