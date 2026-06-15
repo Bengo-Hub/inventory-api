@@ -3,6 +3,7 @@
 package tenantinventoryconfig
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -34,6 +35,8 @@ const (
 	FieldNotificationEmail = "notification_email"
 	// FieldDefaultWarehouseID holds the string denoting the default_warehouse_id field in the database.
 	FieldDefaultWarehouseID = "default_warehouse_id"
+	// FieldCostingMethod holds the string denoting the costing_method field in the database.
+	FieldCostingMethod = "costing_method"
 	// FieldEnableLotTracking holds the string denoting the enable_lot_tracking field in the database.
 	FieldEnableLotTracking = "enable_lot_tracking"
 	// FieldEnableExpiryTracking holds the string denoting the enable_expiry_tracking field in the database.
@@ -83,6 +86,7 @@ var Columns = []string{
 	FieldEnableExpiryNotifications,
 	FieldNotificationEmail,
 	FieldDefaultWarehouseID,
+	FieldCostingMethod,
 	FieldEnableLotTracking,
 	FieldEnableExpiryTracking,
 	FieldPurchaseOrderApprovalRequired,
@@ -160,6 +164,34 @@ var (
 	DefaultID func() uuid.UUID
 )
 
+// CostingMethod defines the type for the "costing_method" enum field.
+type CostingMethod string
+
+// CostingMethodWavg is the default value of the CostingMethod enum.
+const DefaultCostingMethod = CostingMethodWavg
+
+// CostingMethod values.
+const (
+	CostingMethodWavg CostingMethod = "wavg"
+	CostingMethodFifo CostingMethod = "fifo"
+	CostingMethodLifo CostingMethod = "lifo"
+	CostingMethodFefo CostingMethod = "fefo"
+)
+
+func (cm CostingMethod) String() string {
+	return string(cm)
+}
+
+// CostingMethodValidator is a validator for the "costing_method" field enum values. It is called by the builders before save.
+func CostingMethodValidator(cm CostingMethod) error {
+	switch cm {
+	case CostingMethodWavg, CostingMethodFifo, CostingMethodLifo, CostingMethodFefo:
+		return nil
+	default:
+		return fmt.Errorf("tenantinventoryconfig: invalid enum value for costing_method field: %q", cm)
+	}
+}
+
 // OrderOption defines the ordering options for the TenantInventoryConfig queries.
 type OrderOption func(*sql.Selector)
 
@@ -211,6 +243,11 @@ func ByNotificationEmail(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultWarehouseID orders the results by the default_warehouse_id field.
 func ByDefaultWarehouseID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultWarehouseID, opts...).ToFunc()
+}
+
+// ByCostingMethod orders the results by the costing_method field.
+func ByCostingMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostingMethod, opts...).ToFunc()
 }
 
 // ByEnableLotTracking orders the results by the enable_lot_tracking field.

@@ -88,6 +88,7 @@ type inventorySettingsResponse struct {
 	EnableFacilityBooking    bool `json:"enable_facility_booking"`
 	EnableConferencePackages bool `json:"enable_conference_packages"`
 	// Costing & tax / compliance
+	CostingMethod              string   `json:"costing_method"` // wavg|fifo|lifo|fefo
 	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent"`
 	PricesInclusiveOfTax       bool     `json:"prices_inclusive_of_tax"`
 	DefaultTaxCode             string   `json:"default_tax_code"`
@@ -121,6 +122,7 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		EnableRoomPricing:             c.EnableRoomPricing,
 		EnableFacilityBooking:         c.EnableFacilityBooking,
 		EnableConferencePackages:      c.EnableConferencePackages,
+		CostingMethod:                 c.CostingMethod.String(),
 		DefaultTargetMarginPercent:    c.DefaultTargetMarginPercent,
 		PricesInclusiveOfTax:          c.PricesInclusiveOfTax,
 		DefaultTaxCode:                c.DefaultTaxCode,
@@ -180,6 +182,7 @@ type updateInventorySettingsInput struct {
 	DefaultTargetMarginPercent    *float64        `json:"default_target_margin_percent"`
 	PricesInclusiveOfTax          *bool           `json:"prices_inclusive_of_tax"`
 	DefaultTaxCode                *string         `json:"default_tax_code"`
+		CostingMethod                 *string         `json:"costing_method"`
 }
 
 // PutSettings handles PUT /{tenant}/inventory/settings
@@ -242,6 +245,9 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.AutoAdjustOnTransfer != nil {
 		upd = upd.SetAutoAdjustOnTransfer(*input.AutoAdjustOnTransfer)
+	}
+	if input.CostingMethod != nil {
+		upd = upd.SetCostingMethod(entconfig.CostingMethod(*input.CostingMethod))
 	}
 	if input.EnableRoomPricing != nil {
 		upd = upd.SetEnableRoomPricing(*input.EnableRoomPricing)

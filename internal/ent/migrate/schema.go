@@ -2919,6 +2919,7 @@ var (
 		{Name: "enable_expiry_notifications", Type: field.TypeBool, Default: true},
 		{Name: "notification_email", Type: field.TypeString, Nullable: true},
 		{Name: "default_warehouse_id", Type: field.TypeString, Nullable: true},
+		{Name: "costing_method", Type: field.TypeEnum, Enums: []string{"wavg", "fifo", "lifo", "fefo"}, Default: "wavg"},
 		{Name: "enable_lot_tracking", Type: field.TypeBool, Default: false},
 		{Name: "enable_expiry_tracking", Type: field.TypeBool, Default: false},
 		{Name: "purchase_order_approval_required", Type: field.TypeBool, Default: false},

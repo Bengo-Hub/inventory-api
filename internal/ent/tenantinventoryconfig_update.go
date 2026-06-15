@@ -207,6 +207,20 @@ func (_u *TenantInventoryConfigUpdate) ClearDefaultWarehouseID() *TenantInventor
 	return _u
 }
 
+// SetCostingMethod sets the "costing_method" field.
+func (_u *TenantInventoryConfigUpdate) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpdate {
+	_u.mutation.SetCostingMethod(v)
+	return _u
+}
+
+// SetNillableCostingMethod sets the "costing_method" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableCostingMethod(v *tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetCostingMethod(*v)
+	}
+	return _u
+}
+
 // SetEnableLotTracking sets the "enable_lot_tracking" field.
 func (_u *TenantInventoryConfigUpdate) SetEnableLotTracking(v bool) *TenantInventoryConfigUpdate {
 	_u.mutation.SetEnableLotTracking(v)
@@ -469,7 +483,20 @@ func (_u *TenantInventoryConfigUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *TenantInventoryConfigUpdate) check() error {
+	if v, ok := _u.mutation.CostingMethod(); ok {
+		if err := tenantinventoryconfig.CostingMethodValidator(v); err != nil {
+			return &ValidationError{Name: "costing_method", err: fmt.Errorf(`ent: validator failed for field "TenantInventoryConfig.costing_method": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(tenantinventoryconfig.Table, tenantinventoryconfig.Columns, sqlgraph.NewFieldSpec(tenantinventoryconfig.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -528,6 +555,9 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if _u.mutation.DefaultWarehouseIDCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultWarehouseID, field.TypeString)
+	}
+	if value, ok := _u.mutation.CostingMethod(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldCostingMethod, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.EnableLotTracking(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableLotTracking, field.TypeBool, value)
@@ -778,6 +808,20 @@ func (_u *TenantInventoryConfigUpdateOne) SetNillableDefaultWarehouseID(v *strin
 // ClearDefaultWarehouseID clears the value of the "default_warehouse_id" field.
 func (_u *TenantInventoryConfigUpdateOne) ClearDefaultWarehouseID() *TenantInventoryConfigUpdateOne {
 	_u.mutation.ClearDefaultWarehouseID()
+	return _u
+}
+
+// SetCostingMethod sets the "costing_method" field.
+func (_u *TenantInventoryConfigUpdateOne) SetCostingMethod(v tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetCostingMethod(v)
+	return _u
+}
+
+// SetNillableCostingMethod sets the "costing_method" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableCostingMethod(v *tenantinventoryconfig.CostingMethod) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetCostingMethod(*v)
+	}
 	return _u
 }
 
@@ -1056,7 +1100,20 @@ func (_u *TenantInventoryConfigUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *TenantInventoryConfigUpdateOne) check() error {
+	if v, ok := _u.mutation.CostingMethod(); ok {
+		if err := tenantinventoryconfig.CostingMethodValidator(v); err != nil {
+			return &ValidationError{Name: "costing_method", err: fmt.Errorf(`ent: validator failed for field "TenantInventoryConfig.costing_method": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *TenantInventoryConfig, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(tenantinventoryconfig.Table, tenantinventoryconfig.Columns, sqlgraph.NewFieldSpec(tenantinventoryconfig.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -1132,6 +1189,9 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if _u.mutation.DefaultWarehouseIDCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultWarehouseID, field.TypeString)
+	}
+	if value, ok := _u.mutation.CostingMethod(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldCostingMethod, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.EnableLotTracking(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableLotTracking, field.TypeBool, value)

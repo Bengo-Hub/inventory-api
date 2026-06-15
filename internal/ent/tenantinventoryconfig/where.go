@@ -560,6 +560,26 @@ func DefaultWarehouseIDContainsFold(v string) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldContainsFold(FieldDefaultWarehouseID, v))
 }
 
+// CostingMethodEQ applies the EQ predicate on the "costing_method" field.
+func CostingMethodEQ(v CostingMethod) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldCostingMethod, v))
+}
+
+// CostingMethodNEQ applies the NEQ predicate on the "costing_method" field.
+func CostingMethodNEQ(v CostingMethod) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldCostingMethod, v))
+}
+
+// CostingMethodIn applies the In predicate on the "costing_method" field.
+func CostingMethodIn(vs ...CostingMethod) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIn(FieldCostingMethod, vs...))
+}
+
+// CostingMethodNotIn applies the NotIn predicate on the "costing_method" field.
+func CostingMethodNotIn(vs ...CostingMethod) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotIn(FieldCostingMethod, vs...))
+}
+
 // EnableLotTrackingEQ applies the EQ predicate on the "enable_lot_tracking" field.
 func EnableLotTrackingEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableLotTracking, v))

@@ -52,6 +52,13 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Default warehouse UUID for new operations"),
+		// Costing / consumption ordering method. Drives which lot is consumed first AND how stock
+		// is valued: fifo=oldest received, lifo=newest received, fefo=earliest expiry, wavg=weighted
+		// average (no lot ordering — item-level cost).
+		field.Enum("costing_method").
+			Values("wavg", "fifo", "lifo", "fefo").
+			Default("wavg").
+			Comment("Inventory costing/consumption method: wavg|fifo|lifo|fefo"),
 		// Tracking toggles
 		field.Bool("enable_lot_tracking").
 			Default(false).

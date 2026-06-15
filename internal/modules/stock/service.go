@@ -13,12 +13,14 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -422,6 +424,68 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 
 // checkAndPublishLowStock checks if stock is at or below reorder level and publishes an event.
 // Also publishes a stock-out event when available reaches zero.
+// costingMethod returns the tenant's configured inventory costing/consumption method
+// (wavg|fifo|lifo|fefo). Defaults to "wavg" when no config row exists.
+func (s *Service) costingMethod(ctx context.Context, tenantID uuid.UUID) string {
+	cfg, err := s.client.TenantInventoryConfig.Query().
+		Where(enttenantcfg.TenantID(tenantID)).Only(ctx)
+	if err != nil || cfg == nil {
+		return "wavg"
+	}
+	return cfg.CostingMethod.String()
+}
+
+// consumeLots draws down a quantity across a warehouse's active InventoryLot rows for an item in
+// the order dictated by the costing method — fifo=oldest received first, lifo=newest first,
+// fefo=earliest expiry first. Decrements lot quantity and marks a lot depleted at zero. Best-effort:
+// errors are logged, not propagated (the balance is already the authoritative on-hand figure).
+func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qty float64, method string) {
+	if qty <= 0 {
+		return
+	}
+	q := tx.InventoryLot.Query().Where(
+		entlot.TenantID(tenantID),
+		entlot.ItemID(itemID),
+		entlot.WarehouseID(warehouseID),
+		entlot.StatusEQ(entlot.StatusActive),
+		entlot.QuantityGT(0),
+	)
+	switch method {
+	case "lifo":
+		q = q.Order(ent.Desc(entlot.FieldCreatedAt))
+	case "fefo":
+		// Earliest expiry first; lots without an expiry sort last (treated as far-future).
+		q = q.Order(ent.Asc(entlot.FieldExpiryDate), ent.Asc(entlot.FieldCreatedAt))
+	default: // fifo
+		q = q.Order(ent.Asc(entlot.FieldCreatedAt))
+	}
+	lots, err := q.All(ctx)
+	if err != nil {
+		s.log.Warn("consumeLots: query lots failed", zap.Error(err))
+		return
+	}
+	remaining := qty
+	for _, lot := range lots {
+		if remaining <= 0 {
+			break
+		}
+		take := lot.Quantity
+		if take > remaining {
+			take = remaining
+		}
+		newQty := lot.Quantity - take
+		upd := tx.InventoryLot.UpdateOne(lot).SetQuantity(newQty)
+		if newQty <= 0 {
+			upd = upd.SetStatus(entlot.StatusDepleted)
+		}
+		if _, e := upd.Save(ctx); e != nil {
+			s.log.Warn("consumeLots: update lot failed", zap.Error(e))
+			return
+		}
+		remaining -= take
+	}
+}
+
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	if bal.Available <= 0 {
@@ -957,6 +1021,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		}
 	}
 
+	method := s.costingMethod(ctx, tenantID)
 	consumptionItems := make([]entschema.ConsumptionItemJSON, len(flattened))
 	for i, cl := range flattened {
 		itm, err := tx.Item.Query().
@@ -985,6 +1050,13 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+		}
+
+		// Lot-ordered consumption: when a costing method other than weighted-average is configured,
+		// draw down InventoryLot rows in FIFO/LIFO/FEFO order so lot quantities, expiry and cost
+		// layers stay accurate. Best-effort — never fails the sale.
+		if method != "wavg" {
+			s.consumeLots(ctx, tx, tenantID, itm.ID, whID, cl.qty, method)
 		}
 
 		consumptionItems[i] = entschema.ConsumptionItemJSON{
