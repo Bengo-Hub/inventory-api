@@ -32,6 +32,8 @@ type purchaseOrderDTO struct {
 	TotalAmount   float64    `json:"total_amount"`
 	ExpectedDate  *time.Time `json:"expected_date"`
 	Notes         string     `json:"notes"`
+	PayTermDays               *int    `json:"pay_term_days"`
+	AdditionalShippingCharges float64 `json:"additional_shipping_charges"`
 	CreatedAt     time.Time  `json:"created_at"`
 }
 
@@ -92,6 +94,8 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 			Status:        o.Status.String(),
 			TotalAmount:   o.TotalAmount,
 			Notes:         o.Notes,
+			PayTermDays:               o.PayTermDays,
+			AdditionalShippingCharges: o.AdditionalShippingCharges,
 			CreatedAt:     o.CreatedAt,
 		}
 		if o.ExpectedDate != nil {
@@ -200,6 +204,8 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		Status:        po.Status.String(),
 		TotalAmount:   po.TotalAmount,
 		Notes:         po.Notes,
+		PayTermDays:               po.PayTermDays,
+		AdditionalShippingCharges: po.AdditionalShippingCharges,
 		CreatedAt:     po.CreatedAt,
 	}
 	if po.ExpectedDate != nil {
@@ -218,11 +224,13 @@ type createPOLineInput struct {
 }
 
 type createPOInput struct {
-	SupplierID   uuid.UUID           `json:"supplier_id"`
-	WarehouseID  uuid.UUID           `json:"warehouse_id"`
-	ExpectedDate *string             `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
-	Notes        string              `json:"notes"`
-	LineItems    []createPOLineInput `json:"line_items"`
+	SupplierID                uuid.UUID           `json:"supplier_id"`
+	WarehouseID               uuid.UUID           `json:"warehouse_id"`
+	ExpectedDate              *string             `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
+	Notes                     string              `json:"notes"`
+	PayTermDays               *int                `json:"pay_term_days"`
+	AdditionalShippingCharges float64             `json:"additional_shipping_charges"`
+	LineItems                 []createPOLineInput `json:"line_items"`
 }
 
 // CreatePurchaseOrder handles POST /inventory/purchase-orders.
@@ -284,7 +292,9 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		SetWarehouseID(req.WarehouseID).
 		SetPoNumber(poNumber).
 		SetTotalAmount(total).
-		SetNotes(req.Notes)
+		SetNotes(req.Notes).
+		SetNillablePayTermDays(req.PayTermDays).
+		SetAdditionalShippingCharges(req.AdditionalShippingCharges)
 	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
 		var expDate time.Time
 		// Accept both "YYYY-MM-DD" (from date inputs) and RFC3339
