@@ -96,7 +96,7 @@ type createRoleRequest struct {
 
 // CreateRole handles POST /rbac/roles — creates a tenant-scoped custom role.
 func (h *RBACHandler) CreateRole(w http.ResponseWriter, r *http.Request) {
-	tenantID, err := uuid.Parse(chi.URLParam(r, "tenant"))
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
@@ -154,7 +154,7 @@ type setRolePermissionsRequest struct {
 // SetRolePermissions handles PUT /rbac/roles/{roleID}/permissions — replaces
 // the role's permissions with the supplied set (the permission-matrix save).
 func (h *RBACHandler) SetRolePermissions(w http.ResponseWriter, r *http.Request) {
-	tenantID, err := uuid.Parse(chi.URLParam(r, "tenant"))
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
@@ -213,7 +213,7 @@ type updateUserStatusRequest struct {
 
 // UpdateUserStatus handles PUT /users/{userID}/status.
 func (h *RBACHandler) UpdateUserStatus(w http.ResponseWriter, r *http.Request) {
-	tenantID, err := uuid.Parse(chi.URLParam(r, "tenant"))
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
