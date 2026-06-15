@@ -68,6 +68,8 @@ const (
 	FieldTrackSerialNumbers = "track_serial_numbers"
 	// FieldTrackLots holds the string denoting the track_lots field in the database.
 	FieldTrackLots = "track_lots"
+	// FieldShelfLifeDays holds the string denoting the shelf_life_days field in the database.
+	FieldShelfLifeDays = "shelf_life_days"
 	// FieldWeightKg holds the string denoting the weight_kg field in the database.
 	FieldWeightKg = "weight_kg"
 	// FieldDimensionsCm holds the string denoting the dimensions_cm field in the database.
@@ -283,6 +285,7 @@ var Columns = []string{
 	FieldIsPerishable,
 	FieldTrackSerialNumbers,
 	FieldTrackLots,
+	FieldShelfLifeDays,
 	FieldWeightKg,
 	FieldDimensionsCm,
 	FieldDurationMinutes,
@@ -604,6 +607,11 @@ func ByTrackSerialNumbers(opts ...sql.OrderTermOption) OrderOption {
 // ByTrackLots orders the results by the track_lots field.
 func ByTrackLots(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTrackLots, opts...).ToFunc()
+}
+
+// ByShelfLifeDays orders the results by the shelf_life_days field.
+func ByShelfLifeDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShelfLifeDays, opts...).ToFunc()
 }
 
 // ByWeightKg orders the results by the weight_kg field.

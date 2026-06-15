@@ -380,6 +380,20 @@ func (_c *ItemCreate) SetNillableTrackLots(v *bool) *ItemCreate {
 	return _c
 }
 
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_c *ItemCreate) SetShelfLifeDays(v int) *ItemCreate {
+	_c.mutation.SetShelfLifeDays(v)
+	return _c
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableShelfLifeDays(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetShelfLifeDays(*v)
+	}
+	return _c
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_c *ItemCreate) SetWeightKg(v float64) *ItemCreate {
 	_c.mutation.SetWeightKg(v)
@@ -1211,6 +1225,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
 		_node.TrackLots = value
 	}
+	if value, ok := _c.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(item.FieldShelfLifeDays, field.TypeInt, value)
+		_node.ShelfLifeDays = &value
+	}
 	if value, ok := _c.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
 		_node.WeightKg = &value
@@ -2010,6 +2028,30 @@ func (u *ItemUpsert) SetTrackLots(v bool) *ItemUpsert {
 // UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateTrackLots() *ItemUpsert {
 	u.SetExcluded(item.FieldTrackLots)
+	return u
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsert) SetShelfLifeDays(v int) *ItemUpsert {
+	u.Set(item.FieldShelfLifeDays, v)
+	return u
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateShelfLifeDays() *ItemUpsert {
+	u.SetExcluded(item.FieldShelfLifeDays)
+	return u
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsert) AddShelfLifeDays(v int) *ItemUpsert {
+	u.Add(item.FieldShelfLifeDays, v)
+	return u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsert) ClearShelfLifeDays() *ItemUpsert {
+	u.SetNull(item.FieldShelfLifeDays)
 	return u
 }
 
@@ -2892,6 +2934,34 @@ func (u *ItemUpsertOne) SetTrackLots(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateTrackLots() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTrackLots()
+	})
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsertOne) SetShelfLifeDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShelfLifeDays(v)
+	})
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsertOne) AddShelfLifeDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddShelfLifeDays(v)
+	})
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateShelfLifeDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShelfLifeDays()
+	})
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsertOne) ClearShelfLifeDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShelfLifeDays()
 	})
 }
 
@@ -3999,6 +4069,34 @@ func (u *ItemUpsertBulk) SetTrackLots(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateTrackLots() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTrackLots()
+	})
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsertBulk) SetShelfLifeDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShelfLifeDays(v)
+	})
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsertBulk) AddShelfLifeDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddShelfLifeDays(v)
+	})
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateShelfLifeDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShelfLifeDays()
+	})
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsertBulk) ClearShelfLifeDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShelfLifeDays()
 	})
 }
 

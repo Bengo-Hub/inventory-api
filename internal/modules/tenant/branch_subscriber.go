@@ -33,6 +33,15 @@ var inventoryAcceptedUseCases = map[string]bool{
 
 const authStream = "auth"
 
+// IsInventoryApplicable reports whether an outlet of the given use_case is relevant to
+// inventory-api (i.e. it gets a warehouse mirror). Mirrors auth's ApplicableServices for
+// inventory-api. An empty use_case is treated as applicable (legacy/unknown — don't hide).
+// Used by the outlet event filter AND the /my-outlets listing so non-inventory outlets
+// (logistics, weighbridge, enforcement) never surface in inventory's select-outlet.
+func IsInventoryApplicable(useCase string) bool {
+	return useCase == "" || inventoryAcceptedUseCases[useCase]
+}
+
 // BranchSubscriber syncs auth.outlet.* events from auth-api into inventory
 // warehouses, keeping the per-outlet warehouse in sync automatically.
 type BranchSubscriber struct {

@@ -166,6 +166,11 @@ func TrackLots(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldTrackLots, v))
 }
 
+// ShelfLifeDays applies equality check predicate on the "shelf_life_days" field. It's identical to ShelfLifeDaysEQ.
+func ShelfLifeDays(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldShelfLifeDays, v))
+}
+
 // WeightKg applies equality check predicate on the "weight_kg" field. It's identical to WeightKgEQ.
 func WeightKg(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldWeightKg, v))
@@ -1254,6 +1259,56 @@ func TrackLotsEQ(v bool) predicate.Item {
 // TrackLotsNEQ applies the NEQ predicate on the "track_lots" field.
 func TrackLotsNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldTrackLots, v))
+}
+
+// ShelfLifeDaysEQ applies the EQ predicate on the "shelf_life_days" field.
+func ShelfLifeDaysEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysNEQ applies the NEQ predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNEQ(v int) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysIn applies the In predicate on the "shelf_life_days" field.
+func ShelfLifeDaysIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldShelfLifeDays, vs...))
+}
+
+// ShelfLifeDaysNotIn applies the NotIn predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNotIn(vs ...int) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldShelfLifeDays, vs...))
+}
+
+// ShelfLifeDaysGT applies the GT predicate on the "shelf_life_days" field.
+func ShelfLifeDaysGT(v int) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysGTE applies the GTE predicate on the "shelf_life_days" field.
+func ShelfLifeDaysGTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysLT applies the LT predicate on the "shelf_life_days" field.
+func ShelfLifeDaysLT(v int) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysLTE applies the LTE predicate on the "shelf_life_days" field.
+func ShelfLifeDaysLTE(v int) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysIsNil applies the IsNil predicate on the "shelf_life_days" field.
+func ShelfLifeDaysIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldShelfLifeDays))
+}
+
+// ShelfLifeDaysNotNil applies the NotNil predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldShelfLifeDays))
 }
 
 // WeightKgEQ applies the EQ predicate on the "weight_kg" field.

@@ -19,6 +19,7 @@ import (
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/modules/tenant"
 )
 
 // RegisterPrivateRoutes wires user-identity routes that always require auth
@@ -110,14 +111,24 @@ func (h *WarehouseHandler) MyOutlets(w http.ResponseWriter, r *http.Request) {
 		slug = claims.GetTenantSlug()
 	}
 
-	all, err := h.fetchTenantOutlets(r, slug)
+	fetched, err := h.fetchTenantOutlets(r, slug)
 	if err != nil {
 		h.log.Error("my-outlets: fetch tenant outlets failed", zap.Error(err))
 		writeError(w, http.StatusBadGateway, "PROXY_ERROR", "Failed to fetch outlets")
 		return
 	}
 
-	// HQ / platform owners see everything.
+	// Only outlets whose use_case is relevant to inventory (i.e. get a warehouse mirror)
+	// are ever surfaced — logistics hubs, weighbridges and enforcement stations belong to
+	// other services and must not appear in inventory's outlet picker.
+	all := make([]outletItem, 0, len(fetched))
+	for _, o := range fetched {
+		if tenant.IsInventoryApplicable(o.UseCase) {
+			all = append(all, o)
+		}
+	}
+
+	// HQ / platform owners see everything (inventory-applicable).
 	if claims.CanAccessAllOutlets() {
 		writeJSON(w, http.StatusOK, map[string]any{"data": all, "is_hq": true})
 		return

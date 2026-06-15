@@ -515,6 +515,33 @@ func (_u *ItemUpdate) SetNillableTrackLots(v *bool) *ItemUpdate {
 	return _u
 }
 
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_u *ItemUpdate) SetShelfLifeDays(v int) *ItemUpdate {
+	_u.mutation.ResetShelfLifeDays()
+	_u.mutation.SetShelfLifeDays(v)
+	return _u
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableShelfLifeDays(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetShelfLifeDays(*v)
+	}
+	return _u
+}
+
+// AddShelfLifeDays adds value to the "shelf_life_days" field.
+func (_u *ItemUpdate) AddShelfLifeDays(v int) *ItemUpdate {
+	_u.mutation.AddShelfLifeDays(v)
+	return _u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (_u *ItemUpdate) ClearShelfLifeDays() *ItemUpdate {
+	_u.mutation.ClearShelfLifeDays()
+	return _u
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_u *ItemUpdate) SetWeightKg(v float64) *ItemUpdate {
 	_u.mutation.ResetWeightKg()
@@ -1585,6 +1612,15 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.TrackLots(); ok {
 		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(item.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedShelfLifeDays(); ok {
+		_spec.AddField(item.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if _u.mutation.ShelfLifeDaysCleared() {
+		_spec.ClearField(item.FieldShelfLifeDays, field.TypeInt)
 	}
 	if value, ok := _u.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
@@ -2824,6 +2860,33 @@ func (_u *ItemUpdateOne) SetNillableTrackLots(v *bool) *ItemUpdateOne {
 	return _u
 }
 
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_u *ItemUpdateOne) SetShelfLifeDays(v int) *ItemUpdateOne {
+	_u.mutation.ResetShelfLifeDays()
+	_u.mutation.SetShelfLifeDays(v)
+	return _u
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableShelfLifeDays(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetShelfLifeDays(*v)
+	}
+	return _u
+}
+
+// AddShelfLifeDays adds value to the "shelf_life_days" field.
+func (_u *ItemUpdateOne) AddShelfLifeDays(v int) *ItemUpdateOne {
+	_u.mutation.AddShelfLifeDays(v)
+	return _u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (_u *ItemUpdateOne) ClearShelfLifeDays() *ItemUpdateOne {
+	_u.mutation.ClearShelfLifeDays()
+	return _u
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_u *ItemUpdateOne) SetWeightKg(v float64) *ItemUpdateOne {
 	_u.mutation.ResetWeightKg()
@@ -3924,6 +3987,15 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.TrackLots(); ok {
 		_spec.SetField(item.FieldTrackLots, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(item.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedShelfLifeDays(); ok {
+		_spec.AddField(item.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if _u.mutation.ShelfLifeDaysCleared() {
+		_spec.ClearField(item.FieldShelfLifeDays, field.TypeInt)
 	}
 	if value, ok := _u.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)

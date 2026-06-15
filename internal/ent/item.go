@@ -77,6 +77,8 @@ type Item struct {
 	TrackSerialNumbers bool `json:"track_serial_numbers,omitempty"`
 	// Pharma batches, food lots — require lot/expiry tracking
 	TrackLots bool `json:"track_lots,omitempty"`
+	// Default shelf life in days for perishables — seeds lot expiry_date at goods receipt
+	ShelfLifeDays *int `json:"shelf_life_days,omitempty"`
 	// Weight in kg for shipping/logistics pricing
 	WeightKg *float64 `json:"weight_kg,omitempty"`
 	// Physical dimensions {length, width, height} in cm
@@ -329,7 +331,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
+		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
 		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
@@ -521,6 +523,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field track_lots", values[i])
 			} else if value.Valid {
 				_m.TrackLots = value.Bool
+			}
+		case item.FieldShelfLifeDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field shelf_life_days", values[i])
+			} else if value.Valid {
+				_m.ShelfLifeDays = new(int)
+				*_m.ShelfLifeDays = int(value.Int64)
 			}
 		case item.FieldWeightKg:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -862,6 +871,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("track_lots=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TrackLots))
+	builder.WriteString(", ")
+	if v := _m.ShelfLifeDays; v != nil {
+		builder.WriteString("shelf_life_days=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.WeightKg; v != nil {
 		builder.WriteString("weight_kg=")
