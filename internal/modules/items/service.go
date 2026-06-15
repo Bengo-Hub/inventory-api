@@ -904,6 +904,23 @@ func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit,
 	return dtos, total, nil
 }
 
+// DeactivateItem soft-deletes an item by setting is_active=false. Unlike UpdateItem it
+// touches ONLY the is_active flag, so it never re-validates/overwrites other fields (a
+// full-DTO update with an empty name would fail the name validator).
+func (s *Service) DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error {
+	exists, err := s.client.Item.Query().Where(item.TenantID(tenantID), item.ID(id)).Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("items: query item: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("items: item not found")
+	}
+	if _, err := s.client.Item.UpdateOneID(id).SetIsActive(false).Save(ctx); err != nil {
+		return fmt.Errorf("items: deactivate item: %w", err)
+	}
+	return nil
+}
+
 // DeleteCategory soft-deletes a category (sets is_active=false).
 func (s *Service) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error {
 	existing, err := s.client.ItemCategory.Query().
@@ -1274,8 +1291,12 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
 		SetNillableShelfLifeDays(dto.ShelfLifeDays).
+		SetNillableWeightKg(dto.WeightKg).
 		SetNillableDurationMinutes(dto.DurationMinutes).
 		SetTaxInclusive(dto.TaxInclusive)
+	if len(dto.DimensionsCm) > 0 {
+		createBuilder = createBuilder.SetDimensionsCm(dto.DimensionsCm)
+	}
 	if dto.PurchaseUnit != "" {
 		createBuilder = createBuilder.SetPurchaseUnit(dto.PurchaseUnit)
 	}
@@ -1537,10 +1558,14 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
 		SetNillableShelfLifeDays(dto.ShelfLifeDays).
+		SetNillableWeightKg(dto.WeightKg).
 		SetNillableDurationMinutes(dto.DurationMinutes).
 		SetManufacturer(dto.Manufacturer).
 		SetModel(dto.Model).
 		SetTaxInclusive(dto.TaxInclusive)
+	if len(dto.DimensionsCm) > 0 {
+		updateBuilder = updateBuilder.SetDimensionsCm(dto.DimensionsCm)
+	}
 	if dto.PurchaseUnit != "" {
 		updateBuilder = updateBuilder.SetPurchaseUnit(dto.PurchaseUnit)
 	}
