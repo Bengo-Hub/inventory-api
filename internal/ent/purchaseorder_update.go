@@ -157,6 +157,94 @@ func (_u *PurchaseOrderUpdate) SetNillableCurrency(v *string) *PurchaseOrderUpda
 	return _u
 }
 
+// SetRequisitionID sets the "requisition_id" field.
+func (_u *PurchaseOrderUpdate) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpdate {
+	_u.mutation.SetRequisitionID(v)
+	return _u
+}
+
+// SetNillableRequisitionID sets the "requisition_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableRequisitionID(v *uuid.UUID) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetRequisitionID(*v)
+	}
+	return _u
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (_u *PurchaseOrderUpdate) ClearRequisitionID() *PurchaseOrderUpdate {
+	_u.mutation.ClearRequisitionID()
+	return _u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (_u *PurchaseOrderUpdate) SetRfqID(v uuid.UUID) *PurchaseOrderUpdate {
+	_u.mutation.SetRfqID(v)
+	return _u
+}
+
+// SetNillableRfqID sets the "rfq_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetRfqID(*v)
+	}
+	return _u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (_u *PurchaseOrderUpdate) ClearRfqID() *PurchaseOrderUpdate {
+	_u.mutation.ClearRfqID()
+	return _u
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (_u *PurchaseOrderUpdate) SetPayTermDays(v int) *PurchaseOrderUpdate {
+	_u.mutation.ResetPayTermDays()
+	_u.mutation.SetPayTermDays(v)
+	return _u
+}
+
+// SetNillablePayTermDays sets the "pay_term_days" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillablePayTermDays(v *int) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetPayTermDays(*v)
+	}
+	return _u
+}
+
+// AddPayTermDays adds value to the "pay_term_days" field.
+func (_u *PurchaseOrderUpdate) AddPayTermDays(v int) *PurchaseOrderUpdate {
+	_u.mutation.AddPayTermDays(v)
+	return _u
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (_u *PurchaseOrderUpdate) ClearPayTermDays() *PurchaseOrderUpdate {
+	_u.mutation.ClearPayTermDays()
+	return _u
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (_u *PurchaseOrderUpdate) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpdate {
+	_u.mutation.ResetAdditionalShippingCharges()
+	_u.mutation.SetAdditionalShippingCharges(v)
+	return _u
+}
+
+// SetNillableAdditionalShippingCharges sets the "additional_shipping_charges" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableAdditionalShippingCharges(v *float64) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetAdditionalShippingCharges(*v)
+	}
+	return _u
+}
+
+// AddAdditionalShippingCharges adds value to the "additional_shipping_charges" field.
+func (_u *PurchaseOrderUpdate) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpdate {
+	_u.mutation.AddAdditionalShippingCharges(v)
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *PurchaseOrderUpdate) SetNotes(v string) *PurchaseOrderUpdate {
 	_u.mutation.SetNotes(v)
@@ -358,6 +446,33 @@ func (_u *PurchaseOrderUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.Currency(); ok {
 		_spec.SetField(purchaseorder.FieldCurrency, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RequisitionID(); ok {
+		_spec.SetField(purchaseorder.FieldRequisitionID, field.TypeUUID, value)
+	}
+	if _u.mutation.RequisitionIDCleared() {
+		_spec.ClearField(purchaseorder.FieldRequisitionID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.RfqID(); ok {
+		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
+	}
+	if _u.mutation.RfqIDCleared() {
+		_spec.ClearField(purchaseorder.FieldRfqID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.PayTermDays(); ok {
+		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPayTermDays(); ok {
+		_spec.AddField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
+	}
+	if _u.mutation.PayTermDaysCleared() {
+		_spec.ClearField(purchaseorder.FieldPayTermDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AdditionalShippingCharges(); ok {
+		_spec.SetField(purchaseorder.FieldAdditionalShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAdditionalShippingCharges(); ok {
+		_spec.AddField(purchaseorder.FieldAdditionalShippingCharges, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(purchaseorder.FieldNotes, field.TypeString, value)
@@ -622,6 +737,94 @@ func (_u *PurchaseOrderUpdateOne) SetNillableCurrency(v *string) *PurchaseOrderU
 	return _u
 }
 
+// SetRequisitionID sets the "requisition_id" field.
+func (_u *PurchaseOrderUpdateOne) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpdateOne {
+	_u.mutation.SetRequisitionID(v)
+	return _u
+}
+
+// SetNillableRequisitionID sets the "requisition_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableRequisitionID(v *uuid.UUID) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetRequisitionID(*v)
+	}
+	return _u
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearRequisitionID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearRequisitionID()
+	return _u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (_u *PurchaseOrderUpdateOne) SetRfqID(v uuid.UUID) *PurchaseOrderUpdateOne {
+	_u.mutation.SetRfqID(v)
+	return _u
+}
+
+// SetNillableRfqID sets the "rfq_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetRfqID(*v)
+	}
+	return _u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearRfqID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearRfqID()
+	return _u
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (_u *PurchaseOrderUpdateOne) SetPayTermDays(v int) *PurchaseOrderUpdateOne {
+	_u.mutation.ResetPayTermDays()
+	_u.mutation.SetPayTermDays(v)
+	return _u
+}
+
+// SetNillablePayTermDays sets the "pay_term_days" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillablePayTermDays(v *int) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetPayTermDays(*v)
+	}
+	return _u
+}
+
+// AddPayTermDays adds value to the "pay_term_days" field.
+func (_u *PurchaseOrderUpdateOne) AddPayTermDays(v int) *PurchaseOrderUpdateOne {
+	_u.mutation.AddPayTermDays(v)
+	return _u
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (_u *PurchaseOrderUpdateOne) ClearPayTermDays() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearPayTermDays()
+	return _u
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (_u *PurchaseOrderUpdateOne) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpdateOne {
+	_u.mutation.ResetAdditionalShippingCharges()
+	_u.mutation.SetAdditionalShippingCharges(v)
+	return _u
+}
+
+// SetNillableAdditionalShippingCharges sets the "additional_shipping_charges" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableAdditionalShippingCharges(v *float64) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetAdditionalShippingCharges(*v)
+	}
+	return _u
+}
+
+// AddAdditionalShippingCharges adds value to the "additional_shipping_charges" field.
+func (_u *PurchaseOrderUpdateOne) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpdateOne {
+	_u.mutation.AddAdditionalShippingCharges(v)
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *PurchaseOrderUpdateOne) SetNotes(v string) *PurchaseOrderUpdateOne {
 	_u.mutation.SetNotes(v)
@@ -853,6 +1056,33 @@ func (_u *PurchaseOrderUpdateOne) sqlSave(ctx context.Context) (_node *PurchaseO
 	}
 	if value, ok := _u.mutation.Currency(); ok {
 		_spec.SetField(purchaseorder.FieldCurrency, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RequisitionID(); ok {
+		_spec.SetField(purchaseorder.FieldRequisitionID, field.TypeUUID, value)
+	}
+	if _u.mutation.RequisitionIDCleared() {
+		_spec.ClearField(purchaseorder.FieldRequisitionID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.RfqID(); ok {
+		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
+	}
+	if _u.mutation.RfqIDCleared() {
+		_spec.ClearField(purchaseorder.FieldRfqID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.PayTermDays(); ok {
+		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPayTermDays(); ok {
+		_spec.AddField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
+	}
+	if _u.mutation.PayTermDaysCleared() {
+		_spec.ClearField(purchaseorder.FieldPayTermDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AdditionalShippingCharges(); ok {
+		_spec.SetField(purchaseorder.FieldAdditionalShippingCharges, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAdditionalShippingCharges(); ok {
+		_spec.AddField(purchaseorder.FieldAdditionalShippingCharges, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(purchaseorder.FieldNotes, field.TypeString, value)

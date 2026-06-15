@@ -58,6 +58,26 @@ func (_u *ContractUpdate) SetNillableSupplierID(v *uuid.UUID) *ContractUpdate {
 	return _u
 }
 
+// SetRfqID sets the "rfq_id" field.
+func (_u *ContractUpdate) SetRfqID(v uuid.UUID) *ContractUpdate {
+	_u.mutation.SetRfqID(v)
+	return _u
+}
+
+// SetNillableRfqID sets the "rfq_id" field if the given value is not nil.
+func (_u *ContractUpdate) SetNillableRfqID(v *uuid.UUID) *ContractUpdate {
+	if v != nil {
+		_u.SetRfqID(*v)
+	}
+	return _u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (_u *ContractUpdate) ClearRfqID() *ContractUpdate {
+	_u.mutation.ClearRfqID()
+	return _u
+}
+
 // SetTitle sets the "title" field.
 func (_u *ContractUpdate) SetTitle(v string) *ContractUpdate {
 	_u.mutation.SetTitle(v)
@@ -271,6 +291,12 @@ func (_u *ContractUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.SupplierID(); ok {
 		_spec.SetField(contract.FieldSupplierID, field.TypeUUID, value)
 	}
+	if value, ok := _u.mutation.RfqID(); ok {
+		_spec.SetField(contract.FieldRfqID, field.TypeUUID, value)
+	}
+	if _u.mutation.RfqIDCleared() {
+		_spec.ClearField(contract.FieldRfqID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(contract.FieldTitle, field.TypeString, value)
 	}
@@ -388,6 +414,26 @@ func (_u *ContractUpdateOne) SetNillableSupplierID(v *uuid.UUID) *ContractUpdate
 	if v != nil {
 		_u.SetSupplierID(*v)
 	}
+	return _u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (_u *ContractUpdateOne) SetRfqID(v uuid.UUID) *ContractUpdateOne {
+	_u.mutation.SetRfqID(v)
+	return _u
+}
+
+// SetNillableRfqID sets the "rfq_id" field if the given value is not nil.
+func (_u *ContractUpdateOne) SetNillableRfqID(v *uuid.UUID) *ContractUpdateOne {
+	if v != nil {
+		_u.SetRfqID(*v)
+	}
+	return _u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (_u *ContractUpdateOne) ClearRfqID() *ContractUpdateOne {
+	_u.mutation.ClearRfqID()
 	return _u
 }
 
@@ -633,6 +679,12 @@ func (_u *ContractUpdateOne) sqlSave(ctx context.Context) (_node *Contract, err 
 	}
 	if value, ok := _u.mutation.SupplierID(); ok {
 		_spec.SetField(contract.FieldSupplierID, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.RfqID(); ok {
+		_spec.SetField(contract.FieldRfqID, field.TypeUUID, value)
+	}
+	if _u.mutation.RfqIDCleared() {
+		_spec.ClearField(contract.FieldRfqID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(contract.FieldTitle, field.TypeString, value)

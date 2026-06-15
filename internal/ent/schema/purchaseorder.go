@@ -43,6 +43,21 @@ func (PurchaseOrder) Fields() []ent.Field {
 			Comment("Sum of line totals"),
 		field.String("currency").
 			Default("KES"),
+		field.UUID("requisition_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Source requisition this PO was converted from (traceability)"),
+		field.UUID("rfq_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Source RFQ this PO was awarded from (traceability)"),
+		field.Int("pay_term_days").
+			Optional().
+			Nillable().
+			Comment("Supplier credit term in days — treasury computes the AP bill due date as receipt + pay_term_days"),
+		field.Float("additional_shipping_charges").
+			Default(0).
+			Comment("Freight/shipping added on the PO; posted as a treasury expense on receipt"),
 		field.Text("notes").
 			Optional(),
 		field.UUID("created_by", uuid.UUID{}).

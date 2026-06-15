@@ -674,6 +674,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "supplier_id", Type: field.TypeUUID},
+		{Name: "rfq_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "title", Type: field.TypeString},
 		{Name: "start_date", Type: field.TypeTime},
 		{Name: "end_date", Type: field.TypeTime},
@@ -697,7 +698,7 @@ var (
 			{
 				Name:    "contract_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[7]},
+				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[8]},
 			},
 		},
 	}
@@ -1807,6 +1808,10 @@ var (
 		{Name: "expected_date", Type: field.TypeTime, Nullable: true},
 		{Name: "total_amount", Type: field.TypeFloat64, Default: 0},
 		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "rfq_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "pay_term_days", Type: field.TypeInt, Nullable: true},
+		{Name: "additional_shipping_charges", Type: field.TypeFloat64, Default: 0},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -1822,13 +1827,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_orders_suppliers_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[11]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[15]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "purchase_orders_warehouses_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[12]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[16]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1847,7 +1852,7 @@ var (
 			{
 				Name:    "purchaseorder_tenant_id_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[11]},
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[15]},
 			},
 		},
 	}
@@ -2513,6 +2518,8 @@ var (
 		{Name: "start_date", Type: field.TypeTime},
 		{Name: "end_date", Type: field.TypeTime},
 		{Name: "deliverables", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"scheduled", "in_progress", "completed", "delayed"}, Default: "scheduled"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -2526,7 +2533,7 @@ var (
 			{
 				Name:    "servicedelivery_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ServiceDeliveriesColumns[1], ServiceDeliveriesColumns[7]},
+				Columns: []*schema.Column{ServiceDeliveriesColumns[1], ServiceDeliveriesColumns[9]},
 			},
 			{
 				Name:    "servicedelivery_requisition_line_id",

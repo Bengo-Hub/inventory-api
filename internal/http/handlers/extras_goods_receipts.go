@@ -335,10 +335,58 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		}
 	}
 
-	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.posted", map[string]any{
-		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": po.ID, "po_status": newStatus,
+	// Enriched goods_receipt.posted payload: treasury's per-GR vendor-bill subscriber needs
+	// goods_receipt_id/gr_number/po_id/supplier_*/received_amount + per-GR lines (it was getting
+	// none of these, so per-GR billing silently no-op'd). Unit price comes from the matching PO line.
+	unitPriceByItem := make(map[uuid.UUID]float64, len(poLines))
+	for _, pl := range poLines {
+		unitPriceByItem[pl.ItemID] = pl.UnitPrice
+	}
+	grItemIDs := make([]uuid.UUID, 0, len(grnLines))
+	for _, l := range grnLines {
+		grItemIDs = append(grItemIDs, l.ItemID)
+	}
+	grNames, grSkus := map[uuid.UUID]string{}, map[uuid.UUID]string{}
+	if items, e := h.orm.Item.Query().Where(entitem.IDIn(grItemIDs...)).All(r.Context()); e == nil {
+		for _, it := range items {
+			grNames[it.ID] = it.Name
+			grSkus[it.ID] = it.Sku
+		}
+	}
+	grLineArr := make([]map[string]any, 0, len(grnLines))
+	receivedAmount := 0.0
+	for _, l := range grnLines {
+		up := unitPriceByItem[l.ItemID]
+		receivedAmount += l.QuantityAccepted * up
+		grLineArr = append(grLineArr, map[string]any{
+			"item_id":           l.ItemID,
+			"sku":               grSkus[l.ItemID],
+			"name":              grNames[l.ItemID],
+			"quantity_received": l.QuantityAccepted,
+			"unit_price":        up,
+		})
+	}
+	grPayload := map[string]any{
+		"tenant_id":            tenantID,
+		"goods_receipt_id":     g.ID.String(),
+		"id":                   g.ID, // back-compat
+		"gr_number":            g.GrnNumber,
+		"grn_number":           g.GrnNumber, // back-compat
+		"po_id":                po.ID.String(),
+		"purchase_order_id":    po.ID, // back-compat
+		"po_number":            po.PoNumber,
+		"po_status":            newStatus,
+		"supplier_id":          po.SupplierID.String(),
+		"currency":             po.Currency,
+		"received_amount":      receivedAmount,
 		"total_rebate_accrued": totalRebate,
-	})
+		"pay_term_days":        derefInt(po.PayTermDays),
+		"lines":                grLineArr,
+	}
+	for k, v := range supplierPaymentFields(po) {
+		grPayload[k] = v
+	}
+	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.posted", grPayload)
 	// On full receipt, emit the enriched purchase_order.received event for treasury auto-payout.
 	if fully {
 		h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
@@ -348,28 +396,50 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 	writeJSON(w, http.StatusOK, grnToDTO(g, lines))
 }
 
+// derefInt returns the pointed-to int, or 0 when nil (for event payloads where treasury defaults).
+func derefInt(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
+
+// supplierPaymentFields returns the supplier contact/payment fields treasury needs on procurement
+// events (vendor bill + auto-payout). Shared by purchase_order.received and goods_receipt.posted so
+// both carry identical supplier data. Requires po loaded WithSupplier(); empty map otherwise.
+func supplierPaymentFields(po *ent.PurchaseOrder) map[string]any {
+	m := map[string]any{}
+	if po == nil || po.Edges.Supplier == nil {
+		return m
+	}
+	s := po.Edges.Supplier
+	m["supplier_name"] = s.Name
+	m["supplier_contact_email"] = s.ContactEmail
+	m["supplier_contact_phone"] = s.ContactPhone
+	m["supplier_payment_method"] = s.PaymentMethodType
+	m["supplier_mpesa_phone"] = s.MpesaPhone
+	m["supplier_mpesa_business_name"] = s.MpesaBusinessName
+	m["supplier_bank_account_number"] = s.BankAccountNumber
+	m["supplier_bank_name"] = s.BankName
+	m["supplier_tax_pin"] = s.TaxPin
+	m["supplier_paystack_recipient_code"] = s.PaystackRecipientCode
+	m["requires_invoice_before_payment"] = s.RequiresInvoiceBeforePayment
+	m["auto_pay_enabled"] = s.AutoPayEnabled
+	return m
+}
+
 // emitPurchaseOrderReceived writes the enriched purchase_order.received outbox
 // event (supplier payment details) that treasury consumes for auto-payout.
 func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder, totalRebate float64) {
 	payload := map[string]any{
 		"po_id": po.ID, "po_number": po.PoNumber, "tenant_id": tenantID,
 		"supplier_id": po.SupplierID, "total_amount": po.TotalAmount, "currency": po.Currency,
-		"total_rebate_accrued": totalRebate,
+		"total_rebate_accrued":        totalRebate,
+		"pay_term_days":               derefInt(po.PayTermDays),
+		"additional_shipping_charges": po.AdditionalShippingCharges,
 	}
-	if po.Edges.Supplier != nil {
-		s := po.Edges.Supplier
-		payload["supplier_name"] = s.Name
-		payload["supplier_contact_email"] = s.ContactEmail
-		payload["supplier_contact_phone"] = s.ContactPhone
-		payload["supplier_payment_method"] = s.PaymentMethodType
-		payload["supplier_mpesa_phone"] = s.MpesaPhone
-		payload["supplier_mpesa_business_name"] = s.MpesaBusinessName
-		payload["supplier_bank_account_number"] = s.BankAccountNumber
-		payload["supplier_bank_name"] = s.BankName
-		payload["supplier_tax_pin"] = s.TaxPin
-		payload["supplier_paystack_recipient_code"] = s.PaystackRecipientCode
-		payload["requires_invoice_before_payment"] = s.RequiresInvoiceBeforePayment
-		payload["auto_pay_enabled"] = s.AutoPayEnabled
+	for k, v := range supplierPaymentFields(po) {
+		payload[k] = v
 	}
 
 	// Itemize the receipt so treasury can build a line-level vendor bill: one entry per PO line

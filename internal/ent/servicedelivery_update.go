@@ -131,6 +131,41 @@ func (_u *ServiceDeliveryUpdate) ClearDeliverables() *ServiceDeliveryUpdate {
 	return _u
 }
 
+// SetAmount sets the "amount" field.
+func (_u *ServiceDeliveryUpdate) SetAmount(v float64) *ServiceDeliveryUpdate {
+	_u.mutation.ResetAmount()
+	_u.mutation.SetAmount(v)
+	return _u
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (_u *ServiceDeliveryUpdate) SetNillableAmount(v *float64) *ServiceDeliveryUpdate {
+	if v != nil {
+		_u.SetAmount(*v)
+	}
+	return _u
+}
+
+// AddAmount adds value to the "amount" field.
+func (_u *ServiceDeliveryUpdate) AddAmount(v float64) *ServiceDeliveryUpdate {
+	_u.mutation.AddAmount(v)
+	return _u
+}
+
+// SetCurrency sets the "currency" field.
+func (_u *ServiceDeliveryUpdate) SetCurrency(v string) *ServiceDeliveryUpdate {
+	_u.mutation.SetCurrency(v)
+	return _u
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_u *ServiceDeliveryUpdate) SetNillableCurrency(v *string) *ServiceDeliveryUpdate {
+	if v != nil {
+		_u.SetCurrency(*v)
+	}
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *ServiceDeliveryUpdate) SetStatus(v servicedelivery.Status) *ServiceDeliveryUpdate {
 	_u.mutation.SetStatus(v)
@@ -240,6 +275,15 @@ func (_u *ServiceDeliveryUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.DeliverablesCleared() {
 		_spec.ClearField(servicedelivery.FieldDeliverables, field.TypeString)
+	}
+	if value, ok := _u.mutation.Amount(); ok {
+		_spec.SetField(servicedelivery.FieldAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAmount(); ok {
+		_spec.AddField(servicedelivery.FieldAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Currency(); ok {
+		_spec.SetField(servicedelivery.FieldCurrency, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(servicedelivery.FieldStatus, field.TypeEnum, value)
@@ -366,6 +410,41 @@ func (_u *ServiceDeliveryUpdateOne) SetNillableDeliverables(v *string) *ServiceD
 // ClearDeliverables clears the value of the "deliverables" field.
 func (_u *ServiceDeliveryUpdateOne) ClearDeliverables() *ServiceDeliveryUpdateOne {
 	_u.mutation.ClearDeliverables()
+	return _u
+}
+
+// SetAmount sets the "amount" field.
+func (_u *ServiceDeliveryUpdateOne) SetAmount(v float64) *ServiceDeliveryUpdateOne {
+	_u.mutation.ResetAmount()
+	_u.mutation.SetAmount(v)
+	return _u
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (_u *ServiceDeliveryUpdateOne) SetNillableAmount(v *float64) *ServiceDeliveryUpdateOne {
+	if v != nil {
+		_u.SetAmount(*v)
+	}
+	return _u
+}
+
+// AddAmount adds value to the "amount" field.
+func (_u *ServiceDeliveryUpdateOne) AddAmount(v float64) *ServiceDeliveryUpdateOne {
+	_u.mutation.AddAmount(v)
+	return _u
+}
+
+// SetCurrency sets the "currency" field.
+func (_u *ServiceDeliveryUpdateOne) SetCurrency(v string) *ServiceDeliveryUpdateOne {
+	_u.mutation.SetCurrency(v)
+	return _u
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_u *ServiceDeliveryUpdateOne) SetNillableCurrency(v *string) *ServiceDeliveryUpdateOne {
+	if v != nil {
+		_u.SetCurrency(*v)
+	}
 	return _u
 }
 
@@ -508,6 +587,15 @@ func (_u *ServiceDeliveryUpdateOne) sqlSave(ctx context.Context) (_node *Service
 	}
 	if _u.mutation.DeliverablesCleared() {
 		_spec.ClearField(servicedelivery.FieldDeliverables, field.TypeString)
+	}
+	if value, ok := _u.mutation.Amount(); ok {
+		_spec.SetField(servicedelivery.FieldAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedAmount(); ok {
+		_spec.AddField(servicedelivery.FieldAmount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Currency(); ok {
+		_spec.SetField(servicedelivery.FieldCurrency, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(servicedelivery.FieldStatus, field.TypeEnum, value)

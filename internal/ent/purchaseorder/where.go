@@ -91,6 +91,26 @@ func Currency(v string) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldCurrency, v))
 }
 
+// RequisitionID applies equality check predicate on the "requisition_id" field. It's identical to RequisitionIDEQ.
+func RequisitionID(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldRequisitionID, v))
+}
+
+// RfqID applies equality check predicate on the "rfq_id" field. It's identical to RfqIDEQ.
+func RfqID(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldRfqID, v))
+}
+
+// PayTermDays applies equality check predicate on the "pay_term_days" field. It's identical to PayTermDaysEQ.
+func PayTermDays(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldPayTermDays, v))
+}
+
+// AdditionalShippingCharges applies equality check predicate on the "additional_shipping_charges" field. It's identical to AdditionalShippingChargesEQ.
+func AdditionalShippingCharges(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldAdditionalShippingCharges, v))
+}
+
 // Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
 func Notes(v string) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldNotes, v))
@@ -429,6 +449,196 @@ func CurrencyEqualFold(v string) predicate.PurchaseOrder {
 // CurrencyContainsFold applies the ContainsFold predicate on the "currency" field.
 func CurrencyContainsFold(v string) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldContainsFold(FieldCurrency, v))
+}
+
+// RequisitionIDEQ applies the EQ predicate on the "requisition_id" field.
+func RequisitionIDEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldRequisitionID, v))
+}
+
+// RequisitionIDNEQ applies the NEQ predicate on the "requisition_id" field.
+func RequisitionIDNEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldRequisitionID, v))
+}
+
+// RequisitionIDIn applies the In predicate on the "requisition_id" field.
+func RequisitionIDIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldRequisitionID, vs...))
+}
+
+// RequisitionIDNotIn applies the NotIn predicate on the "requisition_id" field.
+func RequisitionIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldRequisitionID, vs...))
+}
+
+// RequisitionIDGT applies the GT predicate on the "requisition_id" field.
+func RequisitionIDGT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldRequisitionID, v))
+}
+
+// RequisitionIDGTE applies the GTE predicate on the "requisition_id" field.
+func RequisitionIDGTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldRequisitionID, v))
+}
+
+// RequisitionIDLT applies the LT predicate on the "requisition_id" field.
+func RequisitionIDLT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldRequisitionID, v))
+}
+
+// RequisitionIDLTE applies the LTE predicate on the "requisition_id" field.
+func RequisitionIDLTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldRequisitionID, v))
+}
+
+// RequisitionIDIsNil applies the IsNil predicate on the "requisition_id" field.
+func RequisitionIDIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldRequisitionID))
+}
+
+// RequisitionIDNotNil applies the NotNil predicate on the "requisition_id" field.
+func RequisitionIDNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldRequisitionID))
+}
+
+// RfqIDEQ applies the EQ predicate on the "rfq_id" field.
+func RfqIDEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldRfqID, v))
+}
+
+// RfqIDNEQ applies the NEQ predicate on the "rfq_id" field.
+func RfqIDNEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldRfqID, v))
+}
+
+// RfqIDIn applies the In predicate on the "rfq_id" field.
+func RfqIDIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldRfqID, vs...))
+}
+
+// RfqIDNotIn applies the NotIn predicate on the "rfq_id" field.
+func RfqIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldRfqID, vs...))
+}
+
+// RfqIDGT applies the GT predicate on the "rfq_id" field.
+func RfqIDGT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldRfqID, v))
+}
+
+// RfqIDGTE applies the GTE predicate on the "rfq_id" field.
+func RfqIDGTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldRfqID, v))
+}
+
+// RfqIDLT applies the LT predicate on the "rfq_id" field.
+func RfqIDLT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldRfqID, v))
+}
+
+// RfqIDLTE applies the LTE predicate on the "rfq_id" field.
+func RfqIDLTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldRfqID, v))
+}
+
+// RfqIDIsNil applies the IsNil predicate on the "rfq_id" field.
+func RfqIDIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldRfqID))
+}
+
+// RfqIDNotNil applies the NotNil predicate on the "rfq_id" field.
+func RfqIDNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldRfqID))
+}
+
+// PayTermDaysEQ applies the EQ predicate on the "pay_term_days" field.
+func PayTermDaysEQ(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldPayTermDays, v))
+}
+
+// PayTermDaysNEQ applies the NEQ predicate on the "pay_term_days" field.
+func PayTermDaysNEQ(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldPayTermDays, v))
+}
+
+// PayTermDaysIn applies the In predicate on the "pay_term_days" field.
+func PayTermDaysIn(vs ...int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldPayTermDays, vs...))
+}
+
+// PayTermDaysNotIn applies the NotIn predicate on the "pay_term_days" field.
+func PayTermDaysNotIn(vs ...int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldPayTermDays, vs...))
+}
+
+// PayTermDaysGT applies the GT predicate on the "pay_term_days" field.
+func PayTermDaysGT(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldPayTermDays, v))
+}
+
+// PayTermDaysGTE applies the GTE predicate on the "pay_term_days" field.
+func PayTermDaysGTE(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldPayTermDays, v))
+}
+
+// PayTermDaysLT applies the LT predicate on the "pay_term_days" field.
+func PayTermDaysLT(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldPayTermDays, v))
+}
+
+// PayTermDaysLTE applies the LTE predicate on the "pay_term_days" field.
+func PayTermDaysLTE(v int) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldPayTermDays, v))
+}
+
+// PayTermDaysIsNil applies the IsNil predicate on the "pay_term_days" field.
+func PayTermDaysIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldPayTermDays))
+}
+
+// PayTermDaysNotNil applies the NotNil predicate on the "pay_term_days" field.
+func PayTermDaysNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldPayTermDays))
+}
+
+// AdditionalShippingChargesEQ applies the EQ predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesEQ(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldAdditionalShippingCharges, v))
+}
+
+// AdditionalShippingChargesNEQ applies the NEQ predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesNEQ(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldAdditionalShippingCharges, v))
+}
+
+// AdditionalShippingChargesIn applies the In predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesIn(vs ...float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldAdditionalShippingCharges, vs...))
+}
+
+// AdditionalShippingChargesNotIn applies the NotIn predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesNotIn(vs ...float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldAdditionalShippingCharges, vs...))
+}
+
+// AdditionalShippingChargesGT applies the GT predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesGT(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldAdditionalShippingCharges, v))
+}
+
+// AdditionalShippingChargesGTE applies the GTE predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesGTE(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldAdditionalShippingCharges, v))
+}
+
+// AdditionalShippingChargesLT applies the LT predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesLT(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldAdditionalShippingCharges, v))
+}
+
+// AdditionalShippingChargesLTE applies the LTE predicate on the "additional_shipping_charges" field.
+func AdditionalShippingChargesLTE(v float64) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldAdditionalShippingCharges, v))
 }
 
 // NotesEQ applies the EQ predicate on the "notes" field.

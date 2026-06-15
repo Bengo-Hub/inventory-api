@@ -27,6 +27,10 @@ const (
 	FieldEndDate = "end_date"
 	// FieldDeliverables holds the string denoting the deliverables field in the database.
 	FieldDeliverables = "deliverables"
+	// FieldAmount holds the string denoting the amount field in the database.
+	FieldAmount = "amount"
+	// FieldCurrency holds the string denoting the currency field in the database.
+	FieldCurrency = "currency"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -46,6 +50,8 @@ var Columns = []string{
 	FieldStartDate,
 	FieldEndDate,
 	FieldDeliverables,
+	FieldAmount,
+	FieldCurrency,
 	FieldStatus,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -62,6 +68,10 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultAmount holds the default value on creation for the "amount" field.
+	DefaultAmount float64
+	// DefaultCurrency holds the default value on creation for the "currency" field.
+	DefaultCurrency string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -136,6 +146,16 @@ func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
 // ByDeliverables orders the results by the deliverables field.
 func ByDeliverables(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeliverables, opts...).ToFunc()
+}
+
+// ByAmount orders the results by the amount field.
+func ByAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAmount, opts...).ToFunc()
+}
+
+// ByCurrency orders the results by the currency field.
+func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCurrency, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

@@ -32,6 +32,14 @@ const (
 	FieldTotalAmount = "total_amount"
 	// FieldCurrency holds the string denoting the currency field in the database.
 	FieldCurrency = "currency"
+	// FieldRequisitionID holds the string denoting the requisition_id field in the database.
+	FieldRequisitionID = "requisition_id"
+	// FieldRfqID holds the string denoting the rfq_id field in the database.
+	FieldRfqID = "rfq_id"
+	// FieldPayTermDays holds the string denoting the pay_term_days field in the database.
+	FieldPayTermDays = "pay_term_days"
+	// FieldAdditionalShippingCharges holds the string denoting the additional_shipping_charges field in the database.
+	FieldAdditionalShippingCharges = "additional_shipping_charges"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
 	// FieldCreatedBy holds the string denoting the created_by field in the database.
@@ -82,6 +90,10 @@ var Columns = []string{
 	FieldExpectedDate,
 	FieldTotalAmount,
 	FieldCurrency,
+	FieldRequisitionID,
+	FieldRfqID,
+	FieldPayTermDays,
+	FieldAdditionalShippingCharges,
 	FieldNotes,
 	FieldCreatedBy,
 	FieldCreatedAt,
@@ -105,6 +117,8 @@ var (
 	DefaultTotalAmount float64
 	// DefaultCurrency holds the default value on creation for the "currency" field.
 	DefaultCurrency string
+	// DefaultAdditionalShippingCharges holds the default value on creation for the "additional_shipping_charges" field.
+	DefaultAdditionalShippingCharges float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -190,6 +204,26 @@ func ByTotalAmount(opts ...sql.OrderTermOption) OrderOption {
 // ByCurrency orders the results by the currency field.
 func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCurrency, opts...).ToFunc()
+}
+
+// ByRequisitionID orders the results by the requisition_id field.
+func ByRequisitionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequisitionID, opts...).ToFunc()
+}
+
+// ByRfqID orders the results by the rfq_id field.
+func ByRfqID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRfqID, opts...).ToFunc()
+}
+
+// ByPayTermDays orders the results by the pay_term_days field.
+func ByPayTermDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPayTermDays, opts...).ToFunc()
+}
+
+// ByAdditionalShippingCharges orders the results by the additional_shipping_charges field.
+func ByAdditionalShippingCharges(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAdditionalShippingCharges, opts...).ToFunc()
 }
 
 // ByNotes orders the results by the notes field.

@@ -30,6 +30,10 @@ type ServiceDelivery struct {
 	EndDate time.Time `json:"end_date,omitempty"`
 	// Deliverables holds the value of the "deliverables" field.
 	Deliverables string `json:"deliverables,omitempty"`
+	// Agreed service cost — posted to treasury as a payable/expense
+	Amount float64 `json:"amount,omitempty"`
+	// Currency holds the value of the "currency" field.
+	Currency string `json:"currency,omitempty"`
 	// Status holds the value of the "status" field.
 	Status servicedelivery.Status `json:"status,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -46,7 +50,9 @@ func (*ServiceDelivery) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case servicedelivery.FieldRequisitionLineID, servicedelivery.FieldProviderID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case servicedelivery.FieldDeliverables, servicedelivery.FieldStatus:
+		case servicedelivery.FieldAmount:
+			values[i] = new(sql.NullFloat64)
+		case servicedelivery.FieldDeliverables, servicedelivery.FieldCurrency, servicedelivery.FieldStatus:
 			values[i] = new(sql.NullString)
 		case servicedelivery.FieldStartDate, servicedelivery.FieldEndDate, servicedelivery.FieldCreatedAt, servicedelivery.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -110,6 +116,18 @@ func (_m *ServiceDelivery) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field deliverables", values[i])
 			} else if value.Valid {
 				_m.Deliverables = value.String
+			}
+		case servicedelivery.FieldAmount:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field amount", values[i])
+			} else if value.Valid {
+				_m.Amount = value.Float64
+			}
+		case servicedelivery.FieldCurrency:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field currency", values[i])
+			} else if value.Valid {
+				_m.Currency = value.String
 			}
 		case servicedelivery.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -186,6 +204,12 @@ func (_m *ServiceDelivery) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("deliverables=")
 	builder.WriteString(_m.Deliverables)
+	builder.WriteString(", ")
+	builder.WriteString("amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
+	builder.WriteString(", ")
+	builder.WriteString("currency=")
+	builder.WriteString(_m.Currency)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

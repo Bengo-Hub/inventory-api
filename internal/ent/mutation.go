@@ -19663,6 +19663,7 @@ type ContractMutation struct {
 	id                 *uuid.UUID
 	tenant_id          *uuid.UUID
 	supplier_id        *uuid.UUID
+	rfq_id             *uuid.UUID
 	title              *string
 	start_date         *time.Time
 	end_date           *time.Time
@@ -19855,6 +19856,55 @@ func (m *ContractMutation) OldSupplierID(ctx context.Context) (v uuid.UUID, err 
 // ResetSupplierID resets all changes to the "supplier_id" field.
 func (m *ContractMutation) ResetSupplierID() {
 	m.supplier_id = nil
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (m *ContractMutation) SetRfqID(u uuid.UUID) {
+	m.rfq_id = &u
+}
+
+// RfqID returns the value of the "rfq_id" field in the mutation.
+func (m *ContractMutation) RfqID() (r uuid.UUID, exists bool) {
+	v := m.rfq_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqID returns the old "rfq_id" field's value of the Contract entity.
+// If the Contract object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContractMutation) OldRfqID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqID: %w", err)
+	}
+	return oldValue.RfqID, nil
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (m *ContractMutation) ClearRfqID() {
+	m.rfq_id = nil
+	m.clearedFields[contract.FieldRfqID] = struct{}{}
+}
+
+// RfqIDCleared returns if the "rfq_id" field was cleared in this mutation.
+func (m *ContractMutation) RfqIDCleared() bool {
+	_, ok := m.clearedFields[contract.FieldRfqID]
+	return ok
+}
+
+// ResetRfqID resets all changes to the "rfq_id" field.
+func (m *ContractMutation) ResetRfqID() {
+	m.rfq_id = nil
+	delete(m.clearedFields, contract.FieldRfqID)
 }
 
 // SetTitle sets the "title" field.
@@ -20266,12 +20316,15 @@ func (m *ContractMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContractMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.tenant_id != nil {
 		fields = append(fields, contract.FieldTenantID)
 	}
 	if m.supplier_id != nil {
 		fields = append(fields, contract.FieldSupplierID)
+	}
+	if m.rfq_id != nil {
+		fields = append(fields, contract.FieldRfqID)
 	}
 	if m.title != nil {
 		fields = append(fields, contract.FieldTitle)
@@ -20309,6 +20362,8 @@ func (m *ContractMutation) Field(name string) (ent.Value, bool) {
 		return m.TenantID()
 	case contract.FieldSupplierID:
 		return m.SupplierID()
+	case contract.FieldRfqID:
+		return m.RfqID()
 	case contract.FieldTitle:
 		return m.Title()
 	case contract.FieldStartDate:
@@ -20338,6 +20393,8 @@ func (m *ContractMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldTenantID(ctx)
 	case contract.FieldSupplierID:
 		return m.OldSupplierID(ctx)
+	case contract.FieldRfqID:
+		return m.OldRfqID(ctx)
 	case contract.FieldTitle:
 		return m.OldTitle(ctx)
 	case contract.FieldStartDate:
@@ -20376,6 +20433,13 @@ func (m *ContractMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSupplierID(v)
+		return nil
+	case contract.FieldRfqID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqID(v)
 		return nil
 	case contract.FieldTitle:
 		v, ok := value.(string)
@@ -20478,6 +20542,9 @@ func (m *ContractMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ContractMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(contract.FieldRfqID) {
+		fields = append(fields, contract.FieldRfqID)
+	}
 	if m.FieldCleared(contract.FieldTerms) {
 		fields = append(fields, contract.FieldTerms)
 	}
@@ -20495,6 +20562,9 @@ func (m *ContractMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ContractMutation) ClearField(name string) error {
 	switch name {
+	case contract.FieldRfqID:
+		m.ClearRfqID()
+		return nil
 	case contract.FieldTerms:
 		m.ClearTerms()
 		return nil
@@ -20511,6 +20581,9 @@ func (m *ContractMutation) ResetField(name string) error {
 		return nil
 	case contract.FieldSupplierID:
 		m.ResetSupplierID()
+		return nil
+	case contract.FieldRfqID:
+		m.ResetRfqID()
 		return nil
 	case contract.FieldTitle:
 		m.ResetTitle()
@@ -49936,31 +50009,37 @@ func (m *ProductionBatchMutation) ResetEdge(name string) error {
 // PurchaseOrderMutation represents an operation that mutates the PurchaseOrder nodes in the graph.
 type PurchaseOrderMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	tenant_id        *uuid.UUID
-	po_number        *string
-	status           *purchaseorder.Status
-	expected_date    *time.Time
-	total_amount     *float64
-	addtotal_amount  *float64
-	currency         *string
-	notes            *string
-	created_by       *uuid.UUID
-	created_at       *time.Time
-	updated_at       *time.Time
-	clearedFields    map[string]struct{}
-	supplier         *uuid.UUID
-	clearedsupplier  bool
-	warehouse        *uuid.UUID
-	clearedwarehouse bool
-	lines            map[uuid.UUID]struct{}
-	removedlines     map[uuid.UUID]struct{}
-	clearedlines     bool
-	done             bool
-	oldValue         func(context.Context) (*PurchaseOrder, error)
-	predicates       []predicate.PurchaseOrder
+	op                             Op
+	typ                            string
+	id                             *uuid.UUID
+	tenant_id                      *uuid.UUID
+	po_number                      *string
+	status                         *purchaseorder.Status
+	expected_date                  *time.Time
+	total_amount                   *float64
+	addtotal_amount                *float64
+	currency                       *string
+	requisition_id                 *uuid.UUID
+	rfq_id                         *uuid.UUID
+	pay_term_days                  *int
+	addpay_term_days               *int
+	additional_shipping_charges    *float64
+	addadditional_shipping_charges *float64
+	notes                          *string
+	created_by                     *uuid.UUID
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	clearedFields                  map[string]struct{}
+	supplier                       *uuid.UUID
+	clearedsupplier                bool
+	warehouse                      *uuid.UUID
+	clearedwarehouse               bool
+	lines                          map[uuid.UUID]struct{}
+	removedlines                   map[uuid.UUID]struct{}
+	clearedlines                   bool
+	done                           bool
+	oldValue                       func(context.Context) (*PurchaseOrder, error)
+	predicates                     []predicate.PurchaseOrder
 }
 
 var _ ent.Mutation = (*PurchaseOrderMutation)(nil)
@@ -50388,6 +50467,230 @@ func (m *PurchaseOrderMutation) ResetCurrency() {
 	m.currency = nil
 }
 
+// SetRequisitionID sets the "requisition_id" field.
+func (m *PurchaseOrderMutation) SetRequisitionID(u uuid.UUID) {
+	m.requisition_id = &u
+}
+
+// RequisitionID returns the value of the "requisition_id" field in the mutation.
+func (m *PurchaseOrderMutation) RequisitionID() (r uuid.UUID, exists bool) {
+	v := m.requisition_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequisitionID returns the old "requisition_id" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldRequisitionID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequisitionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequisitionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequisitionID: %w", err)
+	}
+	return oldValue.RequisitionID, nil
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (m *PurchaseOrderMutation) ClearRequisitionID() {
+	m.requisition_id = nil
+	m.clearedFields[purchaseorder.FieldRequisitionID] = struct{}{}
+}
+
+// RequisitionIDCleared returns if the "requisition_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) RequisitionIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldRequisitionID]
+	return ok
+}
+
+// ResetRequisitionID resets all changes to the "requisition_id" field.
+func (m *PurchaseOrderMutation) ResetRequisitionID() {
+	m.requisition_id = nil
+	delete(m.clearedFields, purchaseorder.FieldRequisitionID)
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (m *PurchaseOrderMutation) SetRfqID(u uuid.UUID) {
+	m.rfq_id = &u
+}
+
+// RfqID returns the value of the "rfq_id" field in the mutation.
+func (m *PurchaseOrderMutation) RfqID() (r uuid.UUID, exists bool) {
+	v := m.rfq_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRfqID returns the old "rfq_id" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldRfqID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRfqID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRfqID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRfqID: %w", err)
+	}
+	return oldValue.RfqID, nil
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (m *PurchaseOrderMutation) ClearRfqID() {
+	m.rfq_id = nil
+	m.clearedFields[purchaseorder.FieldRfqID] = struct{}{}
+}
+
+// RfqIDCleared returns if the "rfq_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) RfqIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldRfqID]
+	return ok
+}
+
+// ResetRfqID resets all changes to the "rfq_id" field.
+func (m *PurchaseOrderMutation) ResetRfqID() {
+	m.rfq_id = nil
+	delete(m.clearedFields, purchaseorder.FieldRfqID)
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (m *PurchaseOrderMutation) SetPayTermDays(i int) {
+	m.pay_term_days = &i
+	m.addpay_term_days = nil
+}
+
+// PayTermDays returns the value of the "pay_term_days" field in the mutation.
+func (m *PurchaseOrderMutation) PayTermDays() (r int, exists bool) {
+	v := m.pay_term_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayTermDays returns the old "pay_term_days" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldPayTermDays(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayTermDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayTermDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayTermDays: %w", err)
+	}
+	return oldValue.PayTermDays, nil
+}
+
+// AddPayTermDays adds i to the "pay_term_days" field.
+func (m *PurchaseOrderMutation) AddPayTermDays(i int) {
+	if m.addpay_term_days != nil {
+		*m.addpay_term_days += i
+	} else {
+		m.addpay_term_days = &i
+	}
+}
+
+// AddedPayTermDays returns the value that was added to the "pay_term_days" field in this mutation.
+func (m *PurchaseOrderMutation) AddedPayTermDays() (r int, exists bool) {
+	v := m.addpay_term_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (m *PurchaseOrderMutation) ClearPayTermDays() {
+	m.pay_term_days = nil
+	m.addpay_term_days = nil
+	m.clearedFields[purchaseorder.FieldPayTermDays] = struct{}{}
+}
+
+// PayTermDaysCleared returns if the "pay_term_days" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) PayTermDaysCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldPayTermDays]
+	return ok
+}
+
+// ResetPayTermDays resets all changes to the "pay_term_days" field.
+func (m *PurchaseOrderMutation) ResetPayTermDays() {
+	m.pay_term_days = nil
+	m.addpay_term_days = nil
+	delete(m.clearedFields, purchaseorder.FieldPayTermDays)
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (m *PurchaseOrderMutation) SetAdditionalShippingCharges(f float64) {
+	m.additional_shipping_charges = &f
+	m.addadditional_shipping_charges = nil
+}
+
+// AdditionalShippingCharges returns the value of the "additional_shipping_charges" field in the mutation.
+func (m *PurchaseOrderMutation) AdditionalShippingCharges() (r float64, exists bool) {
+	v := m.additional_shipping_charges
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdditionalShippingCharges returns the old "additional_shipping_charges" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldAdditionalShippingCharges(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdditionalShippingCharges is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdditionalShippingCharges requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdditionalShippingCharges: %w", err)
+	}
+	return oldValue.AdditionalShippingCharges, nil
+}
+
+// AddAdditionalShippingCharges adds f to the "additional_shipping_charges" field.
+func (m *PurchaseOrderMutation) AddAdditionalShippingCharges(f float64) {
+	if m.addadditional_shipping_charges != nil {
+		*m.addadditional_shipping_charges += f
+	} else {
+		m.addadditional_shipping_charges = &f
+	}
+}
+
+// AddedAdditionalShippingCharges returns the value that was added to the "additional_shipping_charges" field in this mutation.
+func (m *PurchaseOrderMutation) AddedAdditionalShippingCharges() (r float64, exists bool) {
+	v := m.addadditional_shipping_charges
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAdditionalShippingCharges resets all changes to the "additional_shipping_charges" field.
+func (m *PurchaseOrderMutation) ResetAdditionalShippingCharges() {
+	m.additional_shipping_charges = nil
+	m.addadditional_shipping_charges = nil
+}
+
 // SetNotes sets the "notes" field.
 func (m *PurchaseOrderMutation) SetNotes(s string) {
 	m.notes = &s
@@ -50700,7 +51003,7 @@ func (m *PurchaseOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 16)
 	if m.tenant_id != nil {
 		fields = append(fields, purchaseorder.FieldTenantID)
 	}
@@ -50724,6 +51027,18 @@ func (m *PurchaseOrderMutation) Fields() []string {
 	}
 	if m.currency != nil {
 		fields = append(fields, purchaseorder.FieldCurrency)
+	}
+	if m.requisition_id != nil {
+		fields = append(fields, purchaseorder.FieldRequisitionID)
+	}
+	if m.rfq_id != nil {
+		fields = append(fields, purchaseorder.FieldRfqID)
+	}
+	if m.pay_term_days != nil {
+		fields = append(fields, purchaseorder.FieldPayTermDays)
+	}
+	if m.additional_shipping_charges != nil {
+		fields = append(fields, purchaseorder.FieldAdditionalShippingCharges)
 	}
 	if m.notes != nil {
 		fields = append(fields, purchaseorder.FieldNotes)
@@ -50761,6 +51076,14 @@ func (m *PurchaseOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalAmount()
 	case purchaseorder.FieldCurrency:
 		return m.Currency()
+	case purchaseorder.FieldRequisitionID:
+		return m.RequisitionID()
+	case purchaseorder.FieldRfqID:
+		return m.RfqID()
+	case purchaseorder.FieldPayTermDays:
+		return m.PayTermDays()
+	case purchaseorder.FieldAdditionalShippingCharges:
+		return m.AdditionalShippingCharges()
 	case purchaseorder.FieldNotes:
 		return m.Notes()
 	case purchaseorder.FieldCreatedBy:
@@ -50794,6 +51117,14 @@ func (m *PurchaseOrderMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldTotalAmount(ctx)
 	case purchaseorder.FieldCurrency:
 		return m.OldCurrency(ctx)
+	case purchaseorder.FieldRequisitionID:
+		return m.OldRequisitionID(ctx)
+	case purchaseorder.FieldRfqID:
+		return m.OldRfqID(ctx)
+	case purchaseorder.FieldPayTermDays:
+		return m.OldPayTermDays(ctx)
+	case purchaseorder.FieldAdditionalShippingCharges:
+		return m.OldAdditionalShippingCharges(ctx)
 	case purchaseorder.FieldNotes:
 		return m.OldNotes(ctx)
 	case purchaseorder.FieldCreatedBy:
@@ -50867,6 +51198,34 @@ func (m *PurchaseOrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCurrency(v)
 		return nil
+	case purchaseorder.FieldRequisitionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequisitionID(v)
+		return nil
+	case purchaseorder.FieldRfqID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRfqID(v)
+		return nil
+	case purchaseorder.FieldPayTermDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayTermDays(v)
+		return nil
+	case purchaseorder.FieldAdditionalShippingCharges:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdditionalShippingCharges(v)
+		return nil
 	case purchaseorder.FieldNotes:
 		v, ok := value.(string)
 		if !ok {
@@ -50906,6 +51265,12 @@ func (m *PurchaseOrderMutation) AddedFields() []string {
 	if m.addtotal_amount != nil {
 		fields = append(fields, purchaseorder.FieldTotalAmount)
 	}
+	if m.addpay_term_days != nil {
+		fields = append(fields, purchaseorder.FieldPayTermDays)
+	}
+	if m.addadditional_shipping_charges != nil {
+		fields = append(fields, purchaseorder.FieldAdditionalShippingCharges)
+	}
 	return fields
 }
 
@@ -50916,6 +51281,10 @@ func (m *PurchaseOrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case purchaseorder.FieldTotalAmount:
 		return m.AddedTotalAmount()
+	case purchaseorder.FieldPayTermDays:
+		return m.AddedPayTermDays()
+	case purchaseorder.FieldAdditionalShippingCharges:
+		return m.AddedAdditionalShippingCharges()
 	}
 	return nil, false
 }
@@ -50932,6 +51301,20 @@ func (m *PurchaseOrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddTotalAmount(v)
 		return nil
+	case purchaseorder.FieldPayTermDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPayTermDays(v)
+		return nil
+	case purchaseorder.FieldAdditionalShippingCharges:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAdditionalShippingCharges(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrder numeric field %s", name)
 }
@@ -50942,6 +51325,15 @@ func (m *PurchaseOrderMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(purchaseorder.FieldExpectedDate) {
 		fields = append(fields, purchaseorder.FieldExpectedDate)
+	}
+	if m.FieldCleared(purchaseorder.FieldRequisitionID) {
+		fields = append(fields, purchaseorder.FieldRequisitionID)
+	}
+	if m.FieldCleared(purchaseorder.FieldRfqID) {
+		fields = append(fields, purchaseorder.FieldRfqID)
+	}
+	if m.FieldCleared(purchaseorder.FieldPayTermDays) {
+		fields = append(fields, purchaseorder.FieldPayTermDays)
 	}
 	if m.FieldCleared(purchaseorder.FieldNotes) {
 		fields = append(fields, purchaseorder.FieldNotes)
@@ -50965,6 +51357,15 @@ func (m *PurchaseOrderMutation) ClearField(name string) error {
 	switch name {
 	case purchaseorder.FieldExpectedDate:
 		m.ClearExpectedDate()
+		return nil
+	case purchaseorder.FieldRequisitionID:
+		m.ClearRequisitionID()
+		return nil
+	case purchaseorder.FieldRfqID:
+		m.ClearRfqID()
+		return nil
+	case purchaseorder.FieldPayTermDays:
+		m.ClearPayTermDays()
 		return nil
 	case purchaseorder.FieldNotes:
 		m.ClearNotes()
@@ -51003,6 +51404,18 @@ func (m *PurchaseOrderMutation) ResetField(name string) error {
 		return nil
 	case purchaseorder.FieldCurrency:
 		m.ResetCurrency()
+		return nil
+	case purchaseorder.FieldRequisitionID:
+		m.ResetRequisitionID()
+		return nil
+	case purchaseorder.FieldRfqID:
+		m.ResetRfqID()
+		return nil
+	case purchaseorder.FieldPayTermDays:
+		m.ResetPayTermDays()
+		return nil
+	case purchaseorder.FieldAdditionalShippingCharges:
+		m.ResetAdditionalShippingCharges()
 		return nil
 	case purchaseorder.FieldNotes:
 		m.ResetNotes()
@@ -67664,6 +68077,9 @@ type ServiceDeliveryMutation struct {
 	start_date          *time.Time
 	end_date            *time.Time
 	deliverables        *string
+	amount              *float64
+	addamount           *float64
+	currency            *string
 	status              *servicedelivery.Status
 	created_at          *time.Time
 	updated_at          *time.Time
@@ -68032,6 +68448,98 @@ func (m *ServiceDeliveryMutation) ResetDeliverables() {
 	delete(m.clearedFields, servicedelivery.FieldDeliverables)
 }
 
+// SetAmount sets the "amount" field.
+func (m *ServiceDeliveryMutation) SetAmount(f float64) {
+	m.amount = &f
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *ServiceDeliveryMutation) Amount() (r float64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the ServiceDelivery entity.
+// If the ServiceDelivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ServiceDeliveryMutation) OldAmount(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds f to the "amount" field.
+func (m *ServiceDeliveryMutation) AddAmount(f float64) {
+	if m.addamount != nil {
+		*m.addamount += f
+	} else {
+		m.addamount = &f
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *ServiceDeliveryMutation) AddedAmount() (r float64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *ServiceDeliveryMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetCurrency sets the "currency" field.
+func (m *ServiceDeliveryMutation) SetCurrency(s string) {
+	m.currency = &s
+}
+
+// Currency returns the value of the "currency" field in the mutation.
+func (m *ServiceDeliveryMutation) Currency() (r string, exists bool) {
+	v := m.currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrency returns the old "currency" field's value of the ServiceDelivery entity.
+// If the ServiceDelivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ServiceDeliveryMutation) OldCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrency: %w", err)
+	}
+	return oldValue.Currency, nil
+}
+
+// ResetCurrency resets all changes to the "currency" field.
+func (m *ServiceDeliveryMutation) ResetCurrency() {
+	m.currency = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *ServiceDeliveryMutation) SetStatus(s servicedelivery.Status) {
 	m.status = &s
@@ -68174,7 +68682,7 @@ func (m *ServiceDeliveryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ServiceDeliveryMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.tenant_id != nil {
 		fields = append(fields, servicedelivery.FieldTenantID)
 	}
@@ -68192,6 +68700,12 @@ func (m *ServiceDeliveryMutation) Fields() []string {
 	}
 	if m.deliverables != nil {
 		fields = append(fields, servicedelivery.FieldDeliverables)
+	}
+	if m.amount != nil {
+		fields = append(fields, servicedelivery.FieldAmount)
+	}
+	if m.currency != nil {
+		fields = append(fields, servicedelivery.FieldCurrency)
 	}
 	if m.status != nil {
 		fields = append(fields, servicedelivery.FieldStatus)
@@ -68222,6 +68736,10 @@ func (m *ServiceDeliveryMutation) Field(name string) (ent.Value, bool) {
 		return m.EndDate()
 	case servicedelivery.FieldDeliverables:
 		return m.Deliverables()
+	case servicedelivery.FieldAmount:
+		return m.Amount()
+	case servicedelivery.FieldCurrency:
+		return m.Currency()
 	case servicedelivery.FieldStatus:
 		return m.Status()
 	case servicedelivery.FieldCreatedAt:
@@ -68249,6 +68767,10 @@ func (m *ServiceDeliveryMutation) OldField(ctx context.Context, name string) (en
 		return m.OldEndDate(ctx)
 	case servicedelivery.FieldDeliverables:
 		return m.OldDeliverables(ctx)
+	case servicedelivery.FieldAmount:
+		return m.OldAmount(ctx)
+	case servicedelivery.FieldCurrency:
+		return m.OldCurrency(ctx)
 	case servicedelivery.FieldStatus:
 		return m.OldStatus(ctx)
 	case servicedelivery.FieldCreatedAt:
@@ -68306,6 +68828,20 @@ func (m *ServiceDeliveryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDeliverables(v)
 		return nil
+	case servicedelivery.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case servicedelivery.FieldCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrency(v)
+		return nil
 	case servicedelivery.FieldStatus:
 		v, ok := value.(servicedelivery.Status)
 		if !ok {
@@ -68334,13 +68870,21 @@ func (m *ServiceDeliveryMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *ServiceDeliveryMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addamount != nil {
+		fields = append(fields, servicedelivery.FieldAmount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *ServiceDeliveryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case servicedelivery.FieldAmount:
+		return m.AddedAmount()
+	}
 	return nil, false
 }
 
@@ -68349,6 +68893,13 @@ func (m *ServiceDeliveryMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ServiceDeliveryMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case servicedelivery.FieldAmount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ServiceDelivery numeric field %s", name)
 }
@@ -68414,6 +68965,12 @@ func (m *ServiceDeliveryMutation) ResetField(name string) error {
 		return nil
 	case servicedelivery.FieldDeliverables:
 		m.ResetDeliverables()
+		return nil
+	case servicedelivery.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case servicedelivery.FieldCurrency:
+		m.ResetCurrency()
 		return nil
 	case servicedelivery.FieldStatus:
 		m.ResetStatus()
