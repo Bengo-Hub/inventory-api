@@ -45,8 +45,8 @@ func RequireOutletUseCase(client *ent.Client, log *zap.Logger, allowed ...string
 				return
 			}
 
-			// HQ and platform owners bypass use-case gating
-			if claims.IsPlatformOwner || claims.CanAccessAllOutlets() {
+			// Service accounts (S2S) and HQ / platform owners bypass use-case gating.
+			if claims.IsService || claims.IsPlatformOwner || claims.CanAccessAllOutlets() {
 				next.ServeHTTP(w, r)
 				return
 			}
