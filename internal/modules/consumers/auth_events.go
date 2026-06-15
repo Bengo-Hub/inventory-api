@@ -10,21 +10,31 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/ent"
+	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
 
 const authEventsStream = "auth"
 
 // AuthEventsConsumer consumes auth-service user events for proactive user sync.
+//
+// Besides syncing the InventoryUser/RBAC shadow, it projects each user's outlet
+// assignments (carried on the auth.user event) into the local UserOutlet table.
+// UserOutlet is what /inventory/my-outlets uses to scope non-HQ users to the
+// outlets they may log in to — it is the inventory-side mirror of the outlet
+// memberships owned by auth-service.
 type AuthEventsConsumer struct {
 	log     *zap.Logger
 	rbacSvc *rbac.Service
+	orm     *ent.Client
 }
 
-func NewAuthEventsConsumer(log *zap.Logger, rbacSvc *rbac.Service) *AuthEventsConsumer {
+func NewAuthEventsConsumer(log *zap.Logger, rbacSvc *rbac.Service, orm *ent.Client) *AuthEventsConsumer {
 	return &AuthEventsConsumer{
 		log:     log.Named("consumers.auth_events"),
 		rbacSvc: rbacSvc,
+		orm:     orm,
 	}
 }
 
@@ -110,6 +120,10 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 		return fmt.Errorf("sync user from auth.user.created: %w", err)
 	}
 
+	if err := c.reconcileUserOutlets(ctx, evt.TenantID, userID, evt.Payload); err != nil {
+		return fmt.Errorf("reconcile outlets from auth.user.created: %w", err)
+	}
+
 	c.log.Info("user synced from auth.user.created",
 		zap.String("user_id", userID.String()),
 		zap.String("tenant_id", evt.TenantID.String()))
@@ -132,8 +146,104 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 		return fmt.Errorf("sync user from auth.user.updated: %w", err)
 	}
 
+	if err := c.reconcileUserOutlets(ctx, evt.TenantID, userID, evt.Payload); err != nil {
+		return fmt.Errorf("reconcile outlets from auth.user.updated: %w", err)
+	}
+
 	c.log.Info("user synced from auth.user.updated",
 		zap.String("user_id", userID.String()),
 		zap.String("tenant_id", evt.TenantID.String()))
 	return nil
+}
+
+// reconcileUserOutlets makes the user's UserOutlet rows match the outlet set carried
+// on the auth.user event, for the given tenant. The home outlet is the first entry.
+//
+// Idempotent and safe against partial events: when the payload carries NO outlet
+// information at all (e.g. a profile-only or pin_set update), assignments are left
+// untouched. An explicit empty assignment (outlet_id:"") clears them.
+func (c *AuthEventsConsumer) reconcileUserOutlets(ctx context.Context, tenantID, userID uuid.UUID, payload map[string]any) error {
+	if c.orm == nil {
+		return nil
+	}
+	desired, present := desiredOutletSet(payload)
+	if !present {
+		return nil // event carries no outlet assignment info — don't touch existing rows
+	}
+
+	existing, err := c.orm.UserOutlet.Query().
+		Where(entuseroutlet.TenantID(tenantID), entuseroutlet.UserID(userID)).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("load user outlets: %w", err)
+	}
+	existingByOutlet := make(map[uuid.UUID]*ent.UserOutlet, len(existing))
+	for _, a := range existing {
+		existingByOutlet[a.OutletID] = a
+	}
+	desiredSet := make(map[uuid.UUID]bool, len(desired))
+	for _, o := range desired {
+		desiredSet[o] = true
+	}
+
+	// Remove assignments that are no longer desired.
+	for outletID, row := range existingByOutlet {
+		if !desiredSet[outletID] {
+			if delErr := c.orm.UserOutlet.DeleteOne(row).Exec(ctx); delErr != nil && !ent.IsNotFound(delErr) {
+				return fmt.Errorf("remove stale user outlet: %w", delErr)
+			}
+		}
+	}
+
+	// Insert missing assignments. The first outlet in the list is the home outlet.
+	for i, outletID := range desired {
+		if _, ok := existingByOutlet[outletID]; ok {
+			continue
+		}
+		if _, createErr := c.orm.UserOutlet.Create().
+			SetTenantID(tenantID).
+			SetUserID(userID).
+			SetOutletID(outletID).
+			SetIsHomeOutlet(i == 0).
+			Save(ctx); createErr != nil && !ent.IsConstraintError(createErr) {
+			return fmt.Errorf("assign user outlet: %w", createErr)
+		}
+	}
+
+	c.log.Info("user-outlet assignments reconciled",
+		zap.String("user_id", userID.String()),
+		zap.String("tenant_id", tenantID.String()),
+		zap.Int("outlets", len(desired)))
+	return nil
+}
+
+// desiredOutletSet extracts the desired outlet assignment set from an auth.user
+// event payload. Returns (set, true) when the payload carries assignment info —
+// either outlet_ids (array, used by the seed/multi-outlet path) or outlet_id
+// (single, used by the admin member-management path; "" means clear). Returns
+// (nil, false) when no outlet key is present, signalling "leave assignments as-is".
+func desiredOutletSet(payload map[string]any) ([]uuid.UUID, bool) {
+	if raw, ok := payload["outlet_ids"]; ok {
+		arr, _ := raw.([]any)
+		out := make([]uuid.UUID, 0, len(arr))
+		for _, v := range arr {
+			if s, ok := v.(string); ok {
+				if id, err := uuid.Parse(s); err == nil {
+					out = append(out, id)
+				}
+			}
+		}
+		return out, true
+	}
+	if raw, ok := payload["outlet_id"]; ok {
+		s, _ := raw.(string)
+		if s == "" {
+			return nil, true // explicit clear
+		}
+		if id, err := uuid.Parse(s); err == nil {
+			return []uuid.UUID{id}, true
+		}
+		return nil, true
+	}
+	return nil, false
 }
