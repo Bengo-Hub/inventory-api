@@ -170,6 +170,26 @@ func (_u *WarehouseUpdate) ClearOutletID() *WarehouseUpdate {
 	return _u
 }
 
+// SetUseCase sets the "use_case" field.
+func (_u *WarehouseUpdate) SetUseCase(v string) *WarehouseUpdate {
+	_u.mutation.SetUseCase(v)
+	return _u
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_u *WarehouseUpdate) SetNillableUseCase(v *string) *WarehouseUpdate {
+	if v != nil {
+		_u.SetUseCase(*v)
+	}
+	return _u
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (_u *WarehouseUpdate) ClearUseCase() *WarehouseUpdate {
+	_u.mutation.ClearUseCase()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *WarehouseUpdate) SetIsDefault(v bool) *WarehouseUpdate {
 	_u.mutation.SetIsDefault(v)
@@ -465,6 +485,12 @@ func (_u *WarehouseUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OutletIDCleared() {
 		_spec.ClearField(warehouse.FieldOutletID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.UseCase(); ok {
+		_spec.SetField(warehouse.FieldUseCase, field.TypeString, value)
+	}
+	if _u.mutation.UseCaseCleared() {
+		_spec.ClearField(warehouse.FieldUseCase, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)
@@ -840,6 +866,26 @@ func (_u *WarehouseUpdateOne) ClearOutletID() *WarehouseUpdateOne {
 	return _u
 }
 
+// SetUseCase sets the "use_case" field.
+func (_u *WarehouseUpdateOne) SetUseCase(v string) *WarehouseUpdateOne {
+	_u.mutation.SetUseCase(v)
+	return _u
+}
+
+// SetNillableUseCase sets the "use_case" field if the given value is not nil.
+func (_u *WarehouseUpdateOne) SetNillableUseCase(v *string) *WarehouseUpdateOne {
+	if v != nil {
+		_u.SetUseCase(*v)
+	}
+	return _u
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (_u *WarehouseUpdateOne) ClearUseCase() *WarehouseUpdateOne {
+	_u.mutation.ClearUseCase()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *WarehouseUpdateOne) SetIsDefault(v bool) *WarehouseUpdateOne {
 	_u.mutation.SetIsDefault(v)
@@ -1165,6 +1211,12 @@ func (_u *WarehouseUpdateOne) sqlSave(ctx context.Context) (_node *Warehouse, er
 	}
 	if _u.mutation.OutletIDCleared() {
 		_spec.ClearField(warehouse.FieldOutletID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.UseCase(); ok {
+		_spec.SetField(warehouse.FieldUseCase, field.TypeString, value)
+	}
+	if _u.mutation.UseCaseCleared() {
+		_spec.ClearField(warehouse.FieldUseCase, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(warehouse.FieldIsDefault, field.TypeBool, value)

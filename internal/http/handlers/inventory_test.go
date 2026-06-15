@@ -43,6 +43,18 @@ func (m *mockItemsSvc) GetStockAvailability(ctx context.Context, tenantID uuid.U
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error {
+	return nil
+}
+
+func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockItemsSvc) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error) {
 	if m.bulkAvailFn != nil {
 		return m.bulkAvailFn(ctx, tenantID, skus)
@@ -141,6 +153,10 @@ func (m *mockStockSvc) CreateReservation(ctx context.Context, tenantID uuid.UUID
 	if m.createReservationFn != nil {
 		return m.createReservationFn(ctx, tenantID, req)
 	}
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockStockSvc) Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 

@@ -91,6 +91,11 @@ func OutletID(v uuid.UUID) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldOutletID, v))
 }
 
+// UseCase applies equality check predicate on the "use_case" field. It's identical to UseCaseEQ.
+func UseCase(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldUseCase, v))
+}
+
 // IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
 func IsDefault(v bool) predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldEQ(FieldIsDefault, v))
@@ -484,6 +489,81 @@ func OutletIDIsNil() predicate.Warehouse {
 // OutletIDNotNil applies the NotNil predicate on the "outlet_id" field.
 func OutletIDNotNil() predicate.Warehouse {
 	return predicate.Warehouse(sql.FieldNotNull(FieldOutletID))
+}
+
+// UseCaseEQ applies the EQ predicate on the "use_case" field.
+func UseCaseEQ(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEQ(FieldUseCase, v))
+}
+
+// UseCaseNEQ applies the NEQ predicate on the "use_case" field.
+func UseCaseNEQ(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNEQ(FieldUseCase, v))
+}
+
+// UseCaseIn applies the In predicate on the "use_case" field.
+func UseCaseIn(vs ...string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIn(FieldUseCase, vs...))
+}
+
+// UseCaseNotIn applies the NotIn predicate on the "use_case" field.
+func UseCaseNotIn(vs ...string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotIn(FieldUseCase, vs...))
+}
+
+// UseCaseGT applies the GT predicate on the "use_case" field.
+func UseCaseGT(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGT(FieldUseCase, v))
+}
+
+// UseCaseGTE applies the GTE predicate on the "use_case" field.
+func UseCaseGTE(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldGTE(FieldUseCase, v))
+}
+
+// UseCaseLT applies the LT predicate on the "use_case" field.
+func UseCaseLT(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLT(FieldUseCase, v))
+}
+
+// UseCaseLTE applies the LTE predicate on the "use_case" field.
+func UseCaseLTE(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldLTE(FieldUseCase, v))
+}
+
+// UseCaseContains applies the Contains predicate on the "use_case" field.
+func UseCaseContains(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldContains(FieldUseCase, v))
+}
+
+// UseCaseHasPrefix applies the HasPrefix predicate on the "use_case" field.
+func UseCaseHasPrefix(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldHasPrefix(FieldUseCase, v))
+}
+
+// UseCaseHasSuffix applies the HasSuffix predicate on the "use_case" field.
+func UseCaseHasSuffix(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldHasSuffix(FieldUseCase, v))
+}
+
+// UseCaseIsNil applies the IsNil predicate on the "use_case" field.
+func UseCaseIsNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldIsNull(FieldUseCase))
+}
+
+// UseCaseNotNil applies the NotNil predicate on the "use_case" field.
+func UseCaseNotNil() predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldNotNull(FieldUseCase))
+}
+
+// UseCaseEqualFold applies the EqualFold predicate on the "use_case" field.
+func UseCaseEqualFold(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldEqualFold(FieldUseCase, v))
+}
+
+// UseCaseContainsFold applies the ContainsFold predicate on the "use_case" field.
+func UseCaseContainsFold(v string) predicate.Warehouse {
+	return predicate.Warehouse(sql.FieldContainsFold(FieldUseCase, v))
 }
 
 // IsDefaultEQ applies the EQ predicate on the "is_default" field.

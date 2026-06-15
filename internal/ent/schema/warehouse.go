@@ -41,6 +41,9 @@ func (Warehouse) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Outlet this warehouse serves as default stock source; nil = shared/HQ"),
+		field.String("use_case").
+			Optional().
+			Comment("Mirror of the outlet's use_case (hospitality|retail|pharmacy|...), synced from auth.outlet events; drives backend per-use-case route gating"),
 		field.Bool("is_default").
 			Default(false).
 			Comment("Default warehouse for the tenant"),

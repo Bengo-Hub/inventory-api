@@ -33,6 +33,8 @@ type Warehouse struct {
 	Longitude *float64 `json:"longitude,omitempty"`
 	// Outlet this warehouse serves as default stock source; nil = shared/HQ
 	OutletID *uuid.UUID `json:"outlet_id,omitempty"`
+	// Mirror of the outlet's use_case (hospitality|retail|pharmacy|...), synced from auth.outlet events; drives backend per-use-case route gating
+	UseCase string `json:"use_case,omitempty"`
 	// Default warehouse for the tenant
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -122,7 +124,7 @@ func (*Warehouse) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case warehouse.FieldLatitude, warehouse.FieldLongitude:
 			values[i] = new(sql.NullFloat64)
-		case warehouse.FieldName, warehouse.FieldCode, warehouse.FieldAddress:
+		case warehouse.FieldName, warehouse.FieldCode, warehouse.FieldAddress, warehouse.FieldUseCase:
 			values[i] = new(sql.NullString)
 		case warehouse.FieldCreatedAt, warehouse.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -193,6 +195,12 @@ func (_m *Warehouse) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.OutletID = new(uuid.UUID)
 				*_m.OutletID = *value.S.(*uuid.UUID)
+			}
+		case warehouse.FieldUseCase:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field use_case", values[i])
+			} else if value.Valid {
+				_m.UseCase = value.String
 			}
 		case warehouse.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -305,6 +313,9 @@ func (_m *Warehouse) String() string {
 		builder.WriteString("outlet_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("use_case=")
+	builder.WriteString(_m.UseCase)
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))

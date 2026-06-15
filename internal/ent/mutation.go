@@ -85057,6 +85057,7 @@ type WarehouseMutation struct {
 	longitude              *float64
 	addlongitude           *float64
 	outlet_id              *uuid.UUID
+	use_case               *string
 	is_default             *bool
 	is_active              *bool
 	created_at             *time.Time
@@ -85531,6 +85532,55 @@ func (m *WarehouseMutation) ResetOutletID() {
 	delete(m.clearedFields, warehouse.FieldOutletID)
 }
 
+// SetUseCase sets the "use_case" field.
+func (m *WarehouseMutation) SetUseCase(s string) {
+	m.use_case = &s
+}
+
+// UseCase returns the value of the "use_case" field in the mutation.
+func (m *WarehouseMutation) UseCase() (r string, exists bool) {
+	v := m.use_case
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUseCase returns the old "use_case" field's value of the Warehouse entity.
+// If the Warehouse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WarehouseMutation) OldUseCase(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUseCase is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUseCase requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUseCase: %w", err)
+	}
+	return oldValue.UseCase, nil
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (m *WarehouseMutation) ClearUseCase() {
+	m.use_case = nil
+	m.clearedFields[warehouse.FieldUseCase] = struct{}{}
+}
+
+// UseCaseCleared returns if the "use_case" field was cleared in this mutation.
+func (m *WarehouseMutation) UseCaseCleared() bool {
+	_, ok := m.clearedFields[warehouse.FieldUseCase]
+	return ok
+}
+
+// ResetUseCase resets all changes to the "use_case" field.
+func (m *WarehouseMutation) ResetUseCase() {
+	m.use_case = nil
+	delete(m.clearedFields, warehouse.FieldUseCase)
+}
+
 // SetIsDefault sets the "is_default" field.
 func (m *WarehouseMutation) SetIsDefault(b bool) {
 	m.is_default = &b
@@ -85952,7 +86002,7 @@ func (m *WarehouseMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WarehouseMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.tenant != nil {
 		fields = append(fields, warehouse.FieldTenantID)
 	}
@@ -85973,6 +86023,9 @@ func (m *WarehouseMutation) Fields() []string {
 	}
 	if m.outlet_id != nil {
 		fields = append(fields, warehouse.FieldOutletID)
+	}
+	if m.use_case != nil {
+		fields = append(fields, warehouse.FieldUseCase)
 	}
 	if m.is_default != nil {
 		fields = append(fields, warehouse.FieldIsDefault)
@@ -86008,6 +86061,8 @@ func (m *WarehouseMutation) Field(name string) (ent.Value, bool) {
 		return m.Longitude()
 	case warehouse.FieldOutletID:
 		return m.OutletID()
+	case warehouse.FieldUseCase:
+		return m.UseCase()
 	case warehouse.FieldIsDefault:
 		return m.IsDefault()
 	case warehouse.FieldIsActive:
@@ -86039,6 +86094,8 @@ func (m *WarehouseMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLongitude(ctx)
 	case warehouse.FieldOutletID:
 		return m.OldOutletID(ctx)
+	case warehouse.FieldUseCase:
+		return m.OldUseCase(ctx)
 	case warehouse.FieldIsDefault:
 		return m.OldIsDefault(ctx)
 	case warehouse.FieldIsActive:
@@ -86104,6 +86161,13 @@ func (m *WarehouseMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOutletID(v)
+		return nil
+	case warehouse.FieldUseCase:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUseCase(v)
 		return nil
 	case warehouse.FieldIsDefault:
 		v, ok := value.(bool)
@@ -86202,6 +86266,9 @@ func (m *WarehouseMutation) ClearedFields() []string {
 	if m.FieldCleared(warehouse.FieldOutletID) {
 		fields = append(fields, warehouse.FieldOutletID)
 	}
+	if m.FieldCleared(warehouse.FieldUseCase) {
+		fields = append(fields, warehouse.FieldUseCase)
+	}
 	return fields
 }
 
@@ -86227,6 +86294,9 @@ func (m *WarehouseMutation) ClearField(name string) error {
 		return nil
 	case warehouse.FieldOutletID:
 		m.ClearOutletID()
+		return nil
+	case warehouse.FieldUseCase:
+		m.ClearUseCase()
 		return nil
 	}
 	return fmt.Errorf("unknown Warehouse nullable field %s", name)
@@ -86256,6 +86326,9 @@ func (m *WarehouseMutation) ResetField(name string) error {
 		return nil
 	case warehouse.FieldOutletID:
 		m.ResetOutletID()
+		return nil
+	case warehouse.FieldUseCase:
+		m.ResetUseCase()
 		return nil
 	case warehouse.FieldIsDefault:
 		m.ResetIsDefault()

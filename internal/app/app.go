@@ -172,6 +172,7 @@ func New(ctx context.Context) (*App, error) {
 	inventoryHandler.SetModifiersService(modifiersSvc)
 	inventoryHandler.SetTicketsService(ticketsSvc)
 	inventoryHandler.SetRBACService(rbacService)
+	inventoryHandler.SetEntClient(ormClient) // for RequireOutletUseCase warehouse use_case lookup
 	inventoryHandler.SetApprovalService(approvals.NewService(ormClient))
 	warehouseHandler := handlers.NewWarehouseHandler(log, ormClient, rbacService)
 	warehouseHandler.SetAuthURL(cfg.Auth.ServiceURL)
