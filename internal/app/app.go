@@ -30,6 +30,7 @@ import (
 	handlers "github.com/bengobox/inventory-service/internal/http/handlers"
 	router "github.com/bengobox/inventory-service/internal/http/router"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
+	backupmod "github.com/bengobox/inventory-service/internal/modules/backup"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -287,7 +288,16 @@ func New(ctx context.Context) (*App, error) {
 	inventorySettingsHandler.SetRBACService(rbacService)
 	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler)
+	// Tenant-scoped backups + daily 02:00 auto-backup scheduler + retention churn.
+	backupSvc := backupmod.NewService(sqlDB, ormClient, cfg.Backup.Dir, log)
+	backupsHandler := handlers.NewBackups(log, backupSvc, rbacService, cfg.Backup.RetentionDays)
+	backupmod.NewScheduler(backupSvc, backupmod.SchedulerConfig{
+		Enabled:       cfg.Backup.ScheduleEnabled,
+		Hour:          cfg.Backup.ScheduleHour,
+		RetentionDays: cfg.Backup.RetentionDays,
+	}, log).Start(ctx)
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

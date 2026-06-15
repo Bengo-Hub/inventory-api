@@ -85,8 +85,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // ListUsers returns all inventory users for the tenant.
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := chi.URLParam(r, "tenant")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
@@ -108,8 +107,7 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 // GetUser returns a single inventory user by ID.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := chi.URLParam(r, "tenant")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
