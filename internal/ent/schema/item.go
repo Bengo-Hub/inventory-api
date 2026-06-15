@@ -111,6 +111,10 @@ func (Item) Fields() []ent.Field {
 		field.Bool("track_lots").
 			Default(false).
 			Comment("Pharma batches, food lots — require lot/expiry tracking"),
+		field.Int("shelf_life_days").
+			Optional().
+			Nillable().
+			Comment("Default shelf life in days for perishables — seeds lot expiry_date at goods receipt"),
 		// Physical attributes (Phase 1.4) — shipping/logistics
 		field.Float("weight_kg").
 			Optional().

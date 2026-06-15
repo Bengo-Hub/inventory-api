@@ -31435,6 +31435,8 @@ type ItemMutation struct {
 	is_perishable              *bool
 	track_serial_numbers       *bool
 	track_lots                 *bool
+	shelf_life_days            *int
+	addshelf_life_days         *int
 	weight_kg                  *float64
 	addweight_kg               *float64
 	dimensions_cm              *map[string]float64
@@ -32794,6 +32796,76 @@ func (m *ItemMutation) OldTrackLots(ctx context.Context) (v bool, err error) {
 // ResetTrackLots resets all changes to the "track_lots" field.
 func (m *ItemMutation) ResetTrackLots() {
 	m.track_lots = nil
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (m *ItemMutation) SetShelfLifeDays(i int) {
+	m.shelf_life_days = &i
+	m.addshelf_life_days = nil
+}
+
+// ShelfLifeDays returns the value of the "shelf_life_days" field in the mutation.
+func (m *ItemMutation) ShelfLifeDays() (r int, exists bool) {
+	v := m.shelf_life_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShelfLifeDays returns the old "shelf_life_days" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldShelfLifeDays(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShelfLifeDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShelfLifeDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShelfLifeDays: %w", err)
+	}
+	return oldValue.ShelfLifeDays, nil
+}
+
+// AddShelfLifeDays adds i to the "shelf_life_days" field.
+func (m *ItemMutation) AddShelfLifeDays(i int) {
+	if m.addshelf_life_days != nil {
+		*m.addshelf_life_days += i
+	} else {
+		m.addshelf_life_days = &i
+	}
+}
+
+// AddedShelfLifeDays returns the value that was added to the "shelf_life_days" field in this mutation.
+func (m *ItemMutation) AddedShelfLifeDays() (r int, exists bool) {
+	v := m.addshelf_life_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (m *ItemMutation) ClearShelfLifeDays() {
+	m.shelf_life_days = nil
+	m.addshelf_life_days = nil
+	m.clearedFields[item.FieldShelfLifeDays] = struct{}{}
+}
+
+// ShelfLifeDaysCleared returns if the "shelf_life_days" field was cleared in this mutation.
+func (m *ItemMutation) ShelfLifeDaysCleared() bool {
+	_, ok := m.clearedFields[item.FieldShelfLifeDays]
+	return ok
+}
+
+// ResetShelfLifeDays resets all changes to the "shelf_life_days" field.
+func (m *ItemMutation) ResetShelfLifeDays() {
+	m.shelf_life_days = nil
+	m.addshelf_life_days = nil
+	delete(m.clearedFields, item.FieldShelfLifeDays)
 }
 
 // SetWeightKg sets the "weight_kg" field.
@@ -34644,7 +34716,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 45)
+	fields := make([]string, 0, 46)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -34722,6 +34794,9 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.track_lots != nil {
 		fields = append(fields, item.FieldTrackLots)
+	}
+	if m.shelf_life_days != nil {
+		fields = append(fields, item.FieldShelfLifeDays)
 	}
 	if m.weight_kg != nil {
 		fields = append(fields, item.FieldWeightKg)
@@ -34840,6 +34915,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.TrackSerialNumbers()
 	case item.FieldTrackLots:
 		return m.TrackLots()
+	case item.FieldShelfLifeDays:
+		return m.ShelfLifeDays()
 	case item.FieldWeightKg:
 		return m.WeightKg()
 	case item.FieldDimensionsCm:
@@ -34939,6 +35016,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTrackSerialNumbers(ctx)
 	case item.FieldTrackLots:
 		return m.OldTrackLots(ctx)
+	case item.FieldShelfLifeDays:
+		return m.OldShelfLifeDays(ctx)
 	case item.FieldWeightKg:
 		return m.OldWeightKg(ctx)
 	case item.FieldDimensionsCm:
@@ -35168,6 +35247,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTrackLots(v)
 		return nil
+	case item.FieldShelfLifeDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShelfLifeDays(v)
+		return nil
 	case item.FieldWeightKg:
 		v, ok := value.(float64)
 		if !ok {
@@ -35318,6 +35404,9 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addsingle_supplement != nil {
 		fields = append(fields, item.FieldSingleSupplement)
 	}
+	if m.addshelf_life_days != nil {
+		fields = append(fields, item.FieldShelfLifeDays)
+	}
 	if m.addweight_kg != nil {
 		fields = append(fields, item.FieldWeightKg)
 	}
@@ -35356,6 +35445,8 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedMaxChildren()
 	case item.FieldSingleSupplement:
 		return m.AddedSingleSupplement()
+	case item.FieldShelfLifeDays:
+		return m.AddedShelfLifeDays()
 	case item.FieldWeightKg:
 		return m.AddedWeightKg()
 	case item.FieldDurationMinutes:
@@ -35401,6 +35492,13 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSingleSupplement(v)
+		return nil
+	case item.FieldShelfLifeDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddShelfLifeDays(v)
 		return nil
 	case item.FieldWeightKg:
 		v, ok := value.(float64)
@@ -35508,6 +35606,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldBarcodeType) {
 		fields = append(fields, item.FieldBarcodeType)
 	}
+	if m.FieldCleared(item.FieldShelfLifeDays) {
+		fields = append(fields, item.FieldShelfLifeDays)
+	}
 	if m.FieldCleared(item.FieldWeightKg) {
 		fields = append(fields, item.FieldWeightKg)
 	}
@@ -35605,6 +35706,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldBarcodeType:
 		m.ClearBarcodeType()
+		return nil
+	case item.FieldShelfLifeDays:
+		m.ClearShelfLifeDays()
 		return nil
 	case item.FieldWeightKg:
 		m.ClearWeightKg()
@@ -35733,6 +35837,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldTrackLots:
 		m.ResetTrackLots()
+		return nil
+	case item.FieldShelfLifeDays:
+		m.ResetShelfLifeDays()
 		return nil
 	case item.FieldWeightKg:
 		m.ResetWeightKg()

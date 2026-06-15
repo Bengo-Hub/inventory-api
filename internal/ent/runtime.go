@@ -835,39 +835,39 @@ func init() {
 	// item.DefaultTrackLots holds the default value on creation for the track_lots field.
 	item.DefaultTrackLots = itemDescTrackLots.Default.(bool)
 	// itemDescTags is the schema descriptor for tags field.
-	itemDescTags := itemFields[30].Descriptor()
+	itemDescTags := itemFields[31].Descriptor()
 	// item.DefaultTags holds the default value on creation for the tags field.
 	item.DefaultTags = itemDescTags.Default.([]string)
 	// itemDescTaxInclusive is the schema descriptor for tax_inclusive field.
-	itemDescTaxInclusive := itemFields[32].Descriptor()
+	itemDescTaxInclusive := itemFields[33].Descriptor()
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescPurchaseUnit is the schema descriptor for purchase_unit field.
-	itemDescPurchaseUnit := itemFields[36].Descriptor()
+	itemDescPurchaseUnit := itemFields[37].Descriptor()
 	// item.PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
 	item.PurchaseUnitValidator = itemDescPurchaseUnit.Validators[0].(func(string) error)
 	// itemDescYieldPct is the schema descriptor for yield_pct field.
-	itemDescYieldPct := itemFields[37].Descriptor()
+	itemDescYieldPct := itemFields[38].Descriptor()
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[39].Descriptor()
+	itemDescBookedCapacity := itemFields[40].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[42].Descriptor()
+	itemDescEventVenue := itemFields[43].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[43].Descriptor()
+	itemDescMetadata := itemFields[44].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[44].Descriptor()
+	itemDescCreatedAt := itemFields[45].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[45].Descriptor()
+	itemDescUpdatedAt := itemFields[46].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

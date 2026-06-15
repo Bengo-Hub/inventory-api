@@ -144,11 +144,19 @@ func (h *InventoryExtrasHandler) CreateLot(w http.ResponseWriter, r *http.Reques
 		SetQuantity(req.Quantity).
 		SetSupplierReference(req.SupplierRef)
 
-	if req.ExpiryDate != nil {
-		create = create.SetExpiryDate(*req.ExpiryDate)
-	}
 	if req.ManufacturedDate != nil {
 		create = create.SetManufacturedDate(*req.ManufacturedDate)
+	}
+	if req.ExpiryDate != nil {
+		create = create.SetExpiryDate(*req.ExpiryDate)
+	} else if it, e := h.orm.Item.Get(r.Context(), req.ItemID); e == nil && it.ShelfLifeDays != nil && *it.ShelfLifeDays > 0 {
+		// No explicit expiry — derive it from the item's default shelf life, counted from the
+		// manufacture date when supplied, otherwise from receipt (now).
+		base := time.Now()
+		if req.ManufacturedDate != nil {
+			base = *req.ManufacturedDate
+		}
+		create = create.SetExpiryDate(base.AddDate(0, 0, *it.ShelfLifeDays))
 	}
 	if req.CostPrice > 0 {
 		create = create.SetCostPrice(req.CostPrice)

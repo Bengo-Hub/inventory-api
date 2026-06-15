@@ -85,11 +85,14 @@ type ItemDTO struct {
 	Barcode                 string             `json:"barcode,omitempty"`
 	BarcodeType             string             `json:"barcode_type,omitempty"`
 	RequiresAgeVerification bool               `json:"requires_age_verification"`
+	IsControlledSubstance   bool               `json:"is_controlled_substance"` // pharmacy: scheduled drugs
 	IsPerishable            bool               `json:"is_perishable"`
 	TrackLots               bool               `json:"track_lots"`
 	TrackSerialNumbers      bool               `json:"track_serial_numbers"`
+	ShelfLifeDays           *int               `json:"shelf_life_days,omitempty"` // default shelf life; seeds lot expiry at receipt
 	WeightKg                *float64           `json:"weight_kg,omitempty"`
 	DimensionsCm            map[string]float64 `json:"dimensions_cm,omitempty"`
+	DurationMinutes         *int               `json:"duration_minutes,omitempty"` // service duration (salon/barber)
 	// Cost / pricing fields
 	CostPrice *float64 `json:"cost_price,omitempty"`
 	// Effective customer-facing price + tax split — enriched at read time for the POS/ordering
@@ -566,11 +569,14 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		Barcode:                 i.Barcode,
 		BarcodeType:             i.BarcodeType,
 		RequiresAgeVerification: i.RequiresAgeVerification,
+		IsControlledSubstance:   i.IsControlledSubstance,
 		IsPerishable:            i.IsPerishable,
 		TrackLots:               i.TrackLots,
 		TrackSerialNumbers:      i.TrackSerialNumbers,
+		ShelfLifeDays:           i.ShelfLifeDays,
 		WeightKg:                i.WeightKg,
 		DimensionsCm:            i.DimensionsCm,
+		DurationMinutes:         i.DurationMinutes,
 		CostPrice:               i.CostPrice,
 		PurchasePrice:           i.PurchasePrice,
 		PurchasePackSize:        i.PurchasePackSize,
@@ -1263,9 +1269,12 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetNillablePurchasePackSize(dto.PurchasePackSize).
 		SetNillableYieldPct(dto.YieldPct).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
+		SetIsControlledSubstance(dto.IsControlledSubstance).
 		SetIsPerishable(dto.IsPerishable).
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
+		SetNillableShelfLifeDays(dto.ShelfLifeDays).
+		SetNillableDurationMinutes(dto.DurationMinutes).
 		SetTaxInclusive(dto.TaxInclusive)
 	if dto.PurchaseUnit != "" {
 		createBuilder = createBuilder.SetPurchaseUnit(dto.PurchaseUnit)
@@ -1523,9 +1532,12 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetNillablePurchasePackSize(dto.PurchasePackSize).
 		SetNillableYieldPct(dto.YieldPct).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
+		SetIsControlledSubstance(dto.IsControlledSubstance).
 		SetIsPerishable(dto.IsPerishable).
 		SetTrackLots(dto.TrackLots).
 		SetTrackSerialNumbers(dto.TrackSerialNumbers).
+		SetNillableShelfLifeDays(dto.ShelfLifeDays).
+		SetNillableDurationMinutes(dto.DurationMinutes).
 		SetManufacturer(dto.Manufacturer).
 		SetModel(dto.Model).
 		SetTaxInclusive(dto.TaxInclusive)
