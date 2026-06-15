@@ -492,6 +492,34 @@ var (
 			},
 		},
 	}
+	// BackupsColumns holds the columns for the "backups" table.
+	BackupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "path", Type: field.TypeString},
+		{Name: "size_bytes", Type: field.TypeInt64, Default: 0},
+		{Name: "status", Type: field.TypeString, Default: "completed"},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// BackupsTable holds the schema information for the "backups" table.
+	BackupsTable = &schema.Table{
+		Name:       "backups",
+		Columns:    BackupsColumns,
+		PrimaryKey: []*schema.Column{BackupsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "backup_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{BackupsColumns[1], BackupsColumns[6]},
+			},
+			{
+				Name:    "backup_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{BackupsColumns[6]},
+			},
+		},
+	}
 	// BatchRawMaterialsColumns holds the columns for the "batch_raw_materials" table.
 	BatchRawMaterialsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3272,6 +3300,7 @@ var (
 		AssetReservationsTable,
 		AssetTransfersTable,
 		AuditLogsTable,
+		BackupsTable,
 		BatchRawMaterialsTable,
 		BundlesTable,
 		BundleComponentsTable,

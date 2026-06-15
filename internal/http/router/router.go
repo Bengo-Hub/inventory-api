@@ -46,6 +46,7 @@ func New(
 	redisClient *redis.Client,
 	ormClient *ent.Client,
 	stockCountHandler *handlers.StockCountHandler,
+	backupsHandler *handlers.Backups,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -206,6 +207,10 @@ func New(
 				}
 				if inventorySettingsHandler != nil {
 					inventorySettingsHandler.RegisterRoutes(private)
+				}
+				// Tenant-scoped backups (this tenant's data only) — settings-gated.
+				if backupsHandler != nil {
+					backupsHandler.RegisterRoutes(private)
 				}
 			})
 
