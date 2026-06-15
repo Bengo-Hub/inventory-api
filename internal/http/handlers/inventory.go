@@ -40,7 +40,7 @@ type ItemsServicer interface {
 	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error
+	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
@@ -1074,15 +1074,14 @@ func (h *InventoryHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	avail, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, sku)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
-		return
-	}
-
-	// Soft-delete: set is_active = false only (a full UpdateItem with an empty DTO would
-	// blank required fields like name and fail validation).
-	if err = h.itemsSvc.DeactivateItem(r.Context(), tenantID, avail.ItemID); err != nil {
+	// Soft-delete: resolve by SKU and set is_active=false only. Resolving directly (not via
+	// stock-availability) means items with no balance row are still deletable; setting only the
+	// flag avoids the empty-DTO UpdateItem path that blanked required fields like name.
+	if err = h.itemsSvc.DeactivateItemBySKU(r.Context(), tenantID, sku); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+			return
+		}
 		h.log.Error("delete item failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "DELETE_FAILED", err.Error())
 		return

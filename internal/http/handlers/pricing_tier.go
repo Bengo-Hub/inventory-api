@@ -450,16 +450,21 @@ func (h *PricingTierHandler) publishPricingUpdatedEvent(ctx context.Context, ten
 	}
 }
 
-// bulkItemPriceDTO is a flattened price entry used by downstream services.
+// bulkItemPriceDTO is a flattened price entry used by downstream services (e.g. pos-api).
+// `Price`/`TierCode` carry the DEFAULT tier (back-compat); `Prices` carries EVERY active tier's
+// price keyed by tier code (e.g. {"RETAIL":320,"WHOLESALE":290}) so the POS terminal can switch
+// pricing profiles client-side without a per-item round-trip.
 type bulkItemPriceDTO struct {
-	ItemID   uuid.UUID `json:"item_id"`
-	Price    float64   `json:"price"`
-	Currency string    `json:"currency"`
-	TierCode string    `json:"tier_code"`
+	ItemID   uuid.UUID          `json:"item_id"`
+	Price    float64            `json:"price"`
+	Currency string             `json:"currency"`
+	TierCode string             `json:"tier_code"`
+	Prices   map[string]float64 `json:"prices"`
 }
 
-// ListAllItemPricing returns the default-tier price for every item in the tenant.
-// Falls back to the first active pricing entry when no default tier exists.
+// ListAllItemPricing returns the default-tier price for every item in the tenant, plus the full
+// per-tier price map for each item. Falls back to the first active pricing entry when no default
+// tier exists.
 // GET /v1/{slug}/inventory/items/pricing
 func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -498,25 +503,34 @@ func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// For each item keep the default-tier entry; fall back to first found.
+	// For each item keep the default-tier entry (fall back to first found) AND accumulate every
+	// tier's price into a per-item code→price map.
 	type entry struct {
 		price     float64
 		currency  string
 		tierCode  string
 		isDefault bool
+		prices    map[string]float64
 	}
 	best := make(map[uuid.UUID]entry, len(pricings))
 	for _, p := range pricings {
 		meta := tierMeta[p.PricingTierID]
 		prev, exists := best[p.ItemID]
-		if !exists || (!prev.isDefault && meta.isDefault) {
-			best[p.ItemID] = entry{
-				price:     p.Price,
-				currency:  p.Currency,
-				tierCode:  meta.code,
-				isDefault: meta.isDefault,
-			}
+		if !exists {
+			prev = entry{prices: map[string]float64{}}
 		}
+		// Record this tier's price in the per-item map (skip blank codes).
+		if meta.code != "" {
+			prev.prices[meta.code] = p.Price
+		}
+		// Promote to the default-tier entry when this is the default (or the first seen).
+		if !exists || (!prev.isDefault && meta.isDefault) {
+			prev.price = p.Price
+			prev.currency = p.Currency
+			prev.tierCode = meta.code
+			prev.isDefault = meta.isDefault
+		}
+		best[p.ItemID] = prev
 	}
 
 	out := make([]bulkItemPriceDTO, 0, len(best))
@@ -526,6 +540,7 @@ func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.R
 			Price:    e.price,
 			Currency: e.currency,
 			TierCode: e.tierCode,
+			Prices:   e.prices,
 		})
 	}
 	writeJSON(w, http.StatusOK, out)

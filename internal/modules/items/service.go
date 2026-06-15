@@ -904,19 +904,20 @@ func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit,
 	return dtos, total, nil
 }
 
-// DeactivateItem soft-deletes an item by setting is_active=false. Unlike UpdateItem it
-// touches ONLY the is_active flag, so it never re-validates/overwrites other fields (a
-// full-DTO update with an empty name would fail the name validator).
-func (s *Service) DeactivateItem(ctx context.Context, tenantID, id uuid.UUID) error {
-	exists, err := s.client.Item.Query().Where(item.TenantID(tenantID), item.ID(id)).Exist(ctx)
+// DeactivateItemBySKU soft-deletes an item by setting is_active=false, resolving it directly
+// by SKU. Unlike UpdateItem it touches ONLY the is_active flag (a full-DTO update with an empty
+// name would fail the name validator), and unlike resolving via stock-availability it works for
+// items that have no balance row yet. Returns a not-found error when the SKU doesn't exist.
+func (s *Service) DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error {
+	n, err := s.client.Item.Update().
+		Where(item.TenantID(tenantID), item.Sku(sku)).
+		SetIsActive(false).
+		Save(ctx)
 	if err != nil {
-		return fmt.Errorf("items: query item: %w", err)
-	}
-	if !exists {
-		return fmt.Errorf("items: item not found")
-	}
-	if _, err := s.client.Item.UpdateOneID(id).SetIsActive(false).Save(ctx); err != nil {
 		return fmt.Errorf("items: deactivate item: %w", err)
+	}
+	if n == 0 {
+		return fmt.Errorf("items: item not found")
 	}
 	return nil
 }
