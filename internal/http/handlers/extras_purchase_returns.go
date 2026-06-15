@@ -220,9 +220,24 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 			h.log.Warn("purchase return: stock-out failed", zap.Error(err))
 		}
 	}
-	h.publishOutbox(r.Context(), tenantID, "purchase_return", updated.ID, "inventory.purchase_return.approved", map[string]any{
-		"id": updated.ID, "return_number": updated.ReturnNumber, "items": items,
-	})
+	// Enriched payload so treasury can raise a vendor CREDIT NOTE that nets the supplier payable
+	// (return of received goods reduces what we owe). Needs tenant_id/supplier_id/return_amount.
+	retPayload := map[string]any{
+		"tenant_id":          tenantID,
+		"purchase_return_id": updated.ID.String(),
+		"id":                 updated.ID,
+		"return_number":      updated.ReturnNumber,
+		"return_amount":      updated.ReturnAmount,
+		"currency":           "KES",
+		"items":              items,
+	}
+	if updated.SupplierID != nil {
+		retPayload["supplier_id"] = updated.SupplierID.String()
+	}
+	if updated.PurchaseOrderID != nil {
+		retPayload["purchase_order_id"] = updated.PurchaseOrderID.String()
+	}
+	h.publishOutbox(r.Context(), tenantID, "purchase_return", updated.ID, "inventory.purchase_return.approved", retPayload)
 	writeJSON(w, http.StatusOK, purchaseReturnToDTO(updated))
 }
 
