@@ -4,8 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/google/uuid"
 
+	"github.com/bengobox/inventory-service/internal/ent"
 	entstockadjustment "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 )
 
@@ -26,13 +28,18 @@ func (h *InventoryExtrasHandler) ListActivity(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	adjustments, err := h.orm.StockAdjustment.Query().
-		Where(entstockadjustment.TenantID(tenantID)).
-		Order(entstockadjustment.ByAdjustedAt()).
-		Limit(10).
+	p := pagination.Parse(r)
+	q := h.orm.StockAdjustment.Query().Where(entstockadjustment.TenantID(tenantID))
+	total, _ := q.Clone().Count(r.Context())
+
+	// Most-recent first (this is the "recent activity" feed).
+	adjustments, err := q.
+		Order(ent.Desc(entstockadjustment.FieldAdjustedAt)).
+		Limit(p.Limit).
+		Offset(p.Offset).
 		All(r.Context())
 	if err != nil {
-		writeJSON(w, http.StatusOK, []activityItemDTO{})
+		writeJSON(w, http.StatusOK, pagination.NewResponse([]activityItemDTO{}, 0, p))
 		return
 	}
 
@@ -51,5 +58,5 @@ func (h *InventoryExtrasHandler) ListActivity(w http.ResponseWriter, r *http.Req
 			Delta:       &delta,
 		})
 	}
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
 }
