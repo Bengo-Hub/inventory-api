@@ -48,6 +48,9 @@ type AuditLog func(*sql.Selector)
 // Backup is the predicate function for backup builders.
 type Backup func(*sql.Selector)
 
+// BackupSetting is the predicate function for backupsetting builders.
+type BackupSetting func(*sql.Selector)
+
 // BatchRawMaterial is the predicate function for batchrawmaterial builders.
 type BatchRawMaterial func(*sql.Selector)
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,10 +45,55 @@ func (h *Backups) RegisterRoutes(r chi.Router) {
 	r.Route("/backups", func(br chi.Router) {
 		br.With(h.perm(rbac.PermSettingsView)).Get("/", h.List)
 		br.With(h.perm(rbac.PermSettingsManage)).Post("/", h.Create)
+		br.With(h.perm(rbac.PermSettingsView)).Get("/settings", h.GetSettings)
+		br.With(h.perm(rbac.PermSettingsManage)).Put("/settings", h.UpdateSettings)
 		br.With(h.perm(rbac.PermSettingsManage)).Post("/churn", h.Churn)
 		br.With(h.perm(rbac.PermSettingsView)).Get("/{name}/download", h.Download)
 		br.With(h.perm(rbac.PermSettingsManage)).Delete("/{name}", h.Delete)
 	})
+}
+
+// GetSettings returns the tenant's auto-backup settings (auto_enabled defaults to false).
+func (h *Backups) GetSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := ResolveTenantForRequest(r)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "tenant_required", "tenant context required")
+		return
+	}
+	settings, err := h.svc.GetSettings(r.Context(), tenantID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to load backup settings")
+		return
+	}
+	writeJSON(w, http.StatusOK, settings)
+}
+
+type backupSettingsBody struct {
+	AutoEnabled   bool `json:"auto_enabled"`
+	ScheduleHour  int  `json:"schedule_hour"`
+	RetentionDays int  `json:"retention_days"`
+}
+
+// UpdateSettings activates/deactivates auto-backup + sets schedule hour + retention.
+func (h *Backups) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := ResolveTenantForRequest(r)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "tenant_required", "tenant context required")
+		return
+	}
+	var b backupSettingsBody
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+		return
+	}
+	settings, err := h.svc.UpsertSettings(r.Context(), tenantID, backup.Settings{
+		AutoEnabled: b.AutoEnabled, ScheduleHour: b.ScheduleHour, RetentionDays: b.RetentionDays,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "save_failed", "failed to save backup settings")
+		return
+	}
+	writeJSON(w, http.StatusOK, settings)
 }
 
 func (h *Backups) List(w http.ResponseWriter, r *http.Request) {

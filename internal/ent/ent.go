@@ -26,6 +26,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
 	"github.com/bengobox/inventory-service/internal/ent/auditlog"
 	"github.com/bengobox/inventory-service/internal/ent/backup"
+	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
@@ -167,6 +168,7 @@ func checkColumn(t, c string) error {
 			assettransfer.Table:          assettransfer.ValidColumn,
 			auditlog.Table:               auditlog.ValidColumn,
 			backup.Table:                 backup.ValidColumn,
+			backupsetting.Table:          backupsetting.ValidColumn,
 			batchrawmaterial.Table:       batchrawmaterial.ValidColumn,
 			bundle.Table:                 bundle.ValidColumn,
 			bundlecomponent.Table:        bundlecomponent.ValidColumn,
