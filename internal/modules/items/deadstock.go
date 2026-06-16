@@ -35,27 +35,52 @@ type DeadstockReport struct {
 	Items          []DeadstockItem `json:"items"`
 }
 
-// StockDeadstock lists on-hand items whose SKU has NOT been sold (consumption reason="sale") within
-// the last `days` days — i.e. capital tied up in non-moving stock. Value = on_hand × cost_price.
-// Returns the top 100 items by tied-up value.
+// usageReasons are the consumption reasons that count as genuine outbound MOVEMENT of stock — i.e.
+// the item is actually being used up, not sitting idle. This deliberately spans BOTH demand channels:
+//   - sale / pos_sale       → finished goods sold to a customer
+//   - production            → raw materials / ingredients issued to a manufacturing batch (BOM)
+//   - conference_meal       → ingredients drawn down for conference/event meal cards
+//
+// Raw materials are NEVER "sold", so a sales-only definition wrongly flags every ingredient as
+// deadstock even when it is heavily consumed in production. Reasons like opening_balance /
+// initial_count (stock-in) and purchase_return (reversal) are intentionally excluded — they are not
+// demand-driven usage.
+var usageReasons = []string{"sale", "pos_sale", "production", "conference_meal"}
+
+// StockDeadstock lists on-hand items whose SKU has had NO outbound movement (see usageReasons) within
+// the last `days` days — i.e. capital tied up in non-moving stock. This counts production/recipe
+// consumption as movement, so actively-used raw materials are NOT misreported as deadstock.
+// Value = on_hand × cost_price. Returns the top 100 items by tied-up value.
 func (s *Service) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*DeadstockReport, error) {
 	if days <= 0 {
 		days = 90
 	}
 	cutoff := time.Now().AddDate(0, 0, -days)
 
-	// Sale-type consumptions count as "movement". The pos→inventory backflush records reason
-	// "pos_sale"; other flows may use "sale" — match both so deadstock means genuinely not selling.
+	// Pull usage-type consumptions so we can both gate on the window AND surface a truthful "last used"
+	// date for genuinely dead items. Bounded to a 2-year lookback so the scan stays cheap on long-lived
+	// tenants — anything not used in 2 years falls back to the balance's last-change date anyway.
+	queryFloor := time.Now().AddDate(-2, 0, 0)
 	cons, err := s.client.Consumption.Query().
-		Where(consumption.TenantID(tenantID), consumption.ReasonIn("sale", "pos_sale"), consumption.CreatedAtGTE(cutoff)).
+		Where(consumption.TenantID(tenantID), consumption.ReasonIn(usageReasons...), consumption.CreatedAtGTE(queryFloor)).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("deadstock: query consumptions: %w", err)
 	}
-	soldRecently := make(map[string]bool)
+	movedRecently := make(map[string]bool)    // SKU → moved within the window
+	lastUsedBySKU := make(map[string]time.Time) // SKU → most recent outbound movement (any time)
 	for _, c := range cons {
 		for _, it := range c.Items {
-			soldRecently[strings.ToUpper(strings.TrimSpace(it.SKU))] = true
+			sku := strings.ToUpper(strings.TrimSpace(it.SKU))
+			if sku == "" {
+				continue
+			}
+			if c.CreatedAt.After(cutoff) {
+				movedRecently[sku] = true
+			}
+			if c.CreatedAt.After(lastUsedBySKU[sku]) {
+				lastUsedBySKU[sku] = c.CreatedAt
+			}
 		}
 	}
 
@@ -85,8 +110,9 @@ func (s *Service) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days i
 		if it == nil {
 			continue
 		}
-		if soldRecently[strings.ToUpper(it.Sku)] {
-			continue // sold within the window — not deadstock
+		skuKey := strings.ToUpper(strings.TrimSpace(it.Sku))
+		if movedRecently[skuKey] {
+			continue // moved (sold or consumed in production) within the window — not deadstock
 		}
 		a := per[it.ID]
 		if a == nil {
@@ -98,13 +124,16 @@ func (s *Service) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days i
 			if it.CategoryID != nil {
 				cn = catName[*it.CategoryID]
 			}
-			a = &agg{cost: cost, sku: it.Sku, name: it.Name, cat: cn, last: b.UpdatedAt}
+			// Show the genuine last-usage date when the item has ever moved; fall back to the
+			// balance's last change (e.g. last receipt) only when it has never had an outbound movement.
+			last := b.UpdatedAt
+			if lu, ok := lastUsedBySKU[skuKey]; ok {
+				last = lu
+			}
+			a = &agg{cost: cost, sku: it.Sku, name: it.Name, cat: cn, last: last}
 			per[it.ID] = a
 		}
 		a.onHand += b.OnHand
-		if b.UpdatedAt.After(a.last) {
-			a.last = b.UpdatedAt
-		}
 	}
 
 	rep := &DeadstockReport{Days: days, Currency: "KES"}
