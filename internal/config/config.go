@@ -22,6 +22,16 @@ type Config struct {
 	Media     MediaConfig
 	Services  ServicesConfig
 	Backup    BackupConfig
+	Subscriptions SubscriptionsConfig
+}
+
+// SubscriptionsConfig holds configuration for the subscriptions S2S client used to gate
+// cross-service NATS data sync by tenant entitlement. APIKey reuses the shared
+// INTERNAL_SERVICE_KEY (same value other inventory S2S clients use).
+type SubscriptionsConfig struct {
+	ServiceURL     string        `envconfig:"SUBSCRIPTIONS_SERVICE_URL" default:"https://pricingapi.codevertexitsolutions.com"`
+	RequestTimeout time.Duration `envconfig:"SUBSCRIPTIONS_REQUEST_TIMEOUT" default:"10s"`
+	APIKey         string        `envconfig:"INTERNAL_SERVICE_KEY" default:""`
 }
 
 // BackupConfig controls the tenant-scoped backup scheduler + retention churn. Artifacts are
