@@ -47,6 +47,7 @@ func New(
 	ormClient *ent.Client,
 	stockCountHandler *handlers.StockCountHandler,
 	backupsHandler *handlers.Backups,
+	backupDestHandler *handlers.BackupDestinationHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -158,6 +159,10 @@ func New(
 			if warehouseHandler != nil {
 				warehouseHandler.RegisterAdminRoutes(admin)
 			}
+			// Platform-default backup destination (OneDrive/GDrive/S3/WebDAV/SFTP/SMB).
+			if backupDestHandler != nil {
+				backupDestHandler.RegisterPlatformRoutes(admin)
+			}
 		})
 
 		api.Route("/{tenant}", func(tenant chi.Router) {
@@ -211,6 +216,11 @@ func New(
 				// Tenant-scoped backups (this tenant's data only) — settings-gated.
 				if backupsHandler != nil {
 					backupsHandler.RegisterRoutes(private)
+				}
+				// Per-tenant backup-destination override (mirrors backups off the PVC)
+				// — same settings permission gate as the tenant backups routes.
+				if backupDestHandler != nil {
+					backupDestHandler.RegisterRoutes(private)
 				}
 			})
 
