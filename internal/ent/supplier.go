@@ -31,8 +31,28 @@ type Supplier struct {
 	ContactEmail string `json:"contact_email,omitempty"`
 	// ContactPhone holds the value of the "contact_phone" field.
 	ContactPhone string `json:"contact_phone,omitempty"`
-	// Address holds the value of the "address" field.
+	// Legacy single-line address; structured parts below are preferred
 	Address string `json:"address,omitempty"`
+	// AddressLine1 holds the value of the "address_line1" field.
+	AddressLine1 string `json:"address_line1,omitempty"`
+	// AddressLine2 holds the value of the "address_line2" field.
+	AddressLine2 string `json:"address_line2,omitempty"`
+	// City holds the value of the "city" field.
+	City string `json:"city,omitempty"`
+	// State / county / province
+	AddressState string `json:"address_state,omitempty"`
+	// AddressPostalCode holds the value of the "address_postal_code" field.
+	AddressPostalCode string `json:"address_postal_code,omitempty"`
+	// ISO country name or code
+	Country string `json:"country,omitempty"`
+	// Industry holds the value of the "industry" field.
+	Industry string `json:"industry,omitempty"`
+	// Website holds the value of the "website" field.
+	Website string `json:"website,omitempty"`
+	// Notes holds the value of the "notes" field.
+	Notes string `json:"notes,omitempty"`
+	// LogoURL holds the value of the "logo_url" field.
+	LogoURL string `json:"logo_url,omitempty"`
 	// Net30, Net60, COD, etc.
 	PaymentTerms string `json:"payment_terms,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -45,12 +65,20 @@ type Supplier struct {
 	MpesaBusinessName string `json:"mpesa_business_name,omitempty"`
 	// BankAccountNumber holds the value of the "bank_account_number" field.
 	BankAccountNumber string `json:"bank_account_number,omitempty"`
+	// Name on the bank account
+	BankAccountName string `json:"bank_account_name,omitempty"`
 	// BankName holds the value of the "bank_name" field.
 	BankName string `json:"bank_name,omitempty"`
 	// BankBranch holds the value of the "bank_branch" field.
 	BankBranch string `json:"bank_branch,omitempty"`
+	// SWIFT / BIC code for international transfers
+	SwiftBic string `json:"swift_bic,omitempty"`
+	// Default transaction currency, e.g. KES
+	Currency string `json:"currency,omitempty"`
 	// KRA PIN for WHT calculation on supplier payments
 	TaxPin string `json:"tax_pin,omitempty"`
+	// VAT registration number (if distinct from KRA PIN)
+	VatNumber string `json:"vat_number,omitempty"`
 	// RequiresInvoiceBeforePayment holds the value of the "requires_invoice_before_payment" field.
 	RequiresInvoiceBeforePayment bool `json:"requires_invoice_before_payment,omitempty"`
 	// When true, treasury auto-disburses payment to supplier on PO receipt confirmation
@@ -104,7 +132,7 @@ func (*Supplier) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case supplier.FieldPaymentTermsDays:
 			values[i] = new(sql.NullInt64)
-		case supplier.FieldName, supplier.FieldCode, supplier.FieldContactName, supplier.FieldContactEmail, supplier.FieldContactPhone, supplier.FieldAddress, supplier.FieldPaymentTerms, supplier.FieldPaymentMethodType, supplier.FieldMpesaPhone, supplier.FieldMpesaBusinessName, supplier.FieldBankAccountNumber, supplier.FieldBankName, supplier.FieldBankBranch, supplier.FieldTaxPin, supplier.FieldPaystackRecipientCode:
+		case supplier.FieldName, supplier.FieldCode, supplier.FieldContactName, supplier.FieldContactEmail, supplier.FieldContactPhone, supplier.FieldAddress, supplier.FieldAddressLine1, supplier.FieldAddressLine2, supplier.FieldCity, supplier.FieldAddressState, supplier.FieldAddressPostalCode, supplier.FieldCountry, supplier.FieldIndustry, supplier.FieldWebsite, supplier.FieldNotes, supplier.FieldLogoURL, supplier.FieldPaymentTerms, supplier.FieldPaymentMethodType, supplier.FieldMpesaPhone, supplier.FieldMpesaBusinessName, supplier.FieldBankAccountNumber, supplier.FieldBankAccountName, supplier.FieldBankName, supplier.FieldBankBranch, supplier.FieldSwiftBic, supplier.FieldCurrency, supplier.FieldTaxPin, supplier.FieldVatNumber, supplier.FieldPaystackRecipientCode:
 			values[i] = new(sql.NullString)
 		case supplier.FieldCreatedAt, supplier.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -173,6 +201,66 @@ func (_m *Supplier) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Address = value.String
 			}
+		case supplier.FieldAddressLine1:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field address_line1", values[i])
+			} else if value.Valid {
+				_m.AddressLine1 = value.String
+			}
+		case supplier.FieldAddressLine2:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field address_line2", values[i])
+			} else if value.Valid {
+				_m.AddressLine2 = value.String
+			}
+		case supplier.FieldCity:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field city", values[i])
+			} else if value.Valid {
+				_m.City = value.String
+			}
+		case supplier.FieldAddressState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field address_state", values[i])
+			} else if value.Valid {
+				_m.AddressState = value.String
+			}
+		case supplier.FieldAddressPostalCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field address_postal_code", values[i])
+			} else if value.Valid {
+				_m.AddressPostalCode = value.String
+			}
+		case supplier.FieldCountry:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field country", values[i])
+			} else if value.Valid {
+				_m.Country = value.String
+			}
+		case supplier.FieldIndustry:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field industry", values[i])
+			} else if value.Valid {
+				_m.Industry = value.String
+			}
+		case supplier.FieldWebsite:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field website", values[i])
+			} else if value.Valid {
+				_m.Website = value.String
+			}
+		case supplier.FieldNotes:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field notes", values[i])
+			} else if value.Valid {
+				_m.Notes = value.String
+			}
+		case supplier.FieldLogoURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field logo_url", values[i])
+			} else if value.Valid {
+				_m.LogoURL = value.String
+			}
 		case supplier.FieldPaymentTerms:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field payment_terms", values[i])
@@ -209,6 +297,12 @@ func (_m *Supplier) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.BankAccountNumber = value.String
 			}
+		case supplier.FieldBankAccountName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field bank_account_name", values[i])
+			} else if value.Valid {
+				_m.BankAccountName = value.String
+			}
 		case supplier.FieldBankName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field bank_name", values[i])
@@ -221,11 +315,29 @@ func (_m *Supplier) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.BankBranch = value.String
 			}
+		case supplier.FieldSwiftBic:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field swift_bic", values[i])
+			} else if value.Valid {
+				_m.SwiftBic = value.String
+			}
+		case supplier.FieldCurrency:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field currency", values[i])
+			} else if value.Valid {
+				_m.Currency = value.String
+			}
 		case supplier.FieldTaxPin:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field tax_pin", values[i])
 			} else if value.Valid {
 				_m.TaxPin = value.String
+			}
+		case supplier.FieldVatNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field vat_number", values[i])
+			} else if value.Valid {
+				_m.VatNumber = value.String
 			}
 		case supplier.FieldRequiresInvoiceBeforePayment:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -339,6 +451,36 @@ func (_m *Supplier) String() string {
 	builder.WriteString("address=")
 	builder.WriteString(_m.Address)
 	builder.WriteString(", ")
+	builder.WriteString("address_line1=")
+	builder.WriteString(_m.AddressLine1)
+	builder.WriteString(", ")
+	builder.WriteString("address_line2=")
+	builder.WriteString(_m.AddressLine2)
+	builder.WriteString(", ")
+	builder.WriteString("city=")
+	builder.WriteString(_m.City)
+	builder.WriteString(", ")
+	builder.WriteString("address_state=")
+	builder.WriteString(_m.AddressState)
+	builder.WriteString(", ")
+	builder.WriteString("address_postal_code=")
+	builder.WriteString(_m.AddressPostalCode)
+	builder.WriteString(", ")
+	builder.WriteString("country=")
+	builder.WriteString(_m.Country)
+	builder.WriteString(", ")
+	builder.WriteString("industry=")
+	builder.WriteString(_m.Industry)
+	builder.WriteString(", ")
+	builder.WriteString("website=")
+	builder.WriteString(_m.Website)
+	builder.WriteString(", ")
+	builder.WriteString("notes=")
+	builder.WriteString(_m.Notes)
+	builder.WriteString(", ")
+	builder.WriteString("logo_url=")
+	builder.WriteString(_m.LogoURL)
+	builder.WriteString(", ")
 	builder.WriteString("payment_terms=")
 	builder.WriteString(_m.PaymentTerms)
 	builder.WriteString(", ")
@@ -357,14 +499,26 @@ func (_m *Supplier) String() string {
 	builder.WriteString("bank_account_number=")
 	builder.WriteString(_m.BankAccountNumber)
 	builder.WriteString(", ")
+	builder.WriteString("bank_account_name=")
+	builder.WriteString(_m.BankAccountName)
+	builder.WriteString(", ")
 	builder.WriteString("bank_name=")
 	builder.WriteString(_m.BankName)
 	builder.WriteString(", ")
 	builder.WriteString("bank_branch=")
 	builder.WriteString(_m.BankBranch)
 	builder.WriteString(", ")
+	builder.WriteString("swift_bic=")
+	builder.WriteString(_m.SwiftBic)
+	builder.WriteString(", ")
+	builder.WriteString("currency=")
+	builder.WriteString(_m.Currency)
+	builder.WriteString(", ")
 	builder.WriteString("tax_pin=")
 	builder.WriteString(_m.TaxPin)
+	builder.WriteString(", ")
+	builder.WriteString("vat_number=")
+	builder.WriteString(_m.VatNumber)
 	builder.WriteString(", ")
 	builder.WriteString("requires_invoice_before_payment=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequiresInvoiceBeforePayment))

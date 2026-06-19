@@ -26,14 +26,28 @@ type supplierDTO struct {
 	Email                        string    `json:"email"`
 	Phone                        string    `json:"phone"`
 	Address                      string    `json:"address"`
+	AddressLine1                 string    `json:"address_line1"`
+	AddressLine2                 string    `json:"address_line2"`
+	City                         string    `json:"city"`
+	AddressState                 string    `json:"address_state"`
+	AddressPostalCode            string    `json:"address_postal_code"`
+	Country                      string    `json:"country"`
+	Industry                     string    `json:"industry"`
+	Website                      string    `json:"website"`
+	Notes                        string    `json:"notes"`
+	LogoURL                      string    `json:"logo_url"`
 	IsActive                     bool      `json:"is_active"`
 	PaymentMethodType            string    `json:"payment_method_type"`
 	MpesaPhone                   string    `json:"mpesa_phone"`
 	MpesaBusinessName            string    `json:"mpesa_business_name"`
 	BankAccountNumber            string    `json:"bank_account_number"`
+	BankAccountName              string    `json:"bank_account_name"`
 	BankName                     string    `json:"bank_name"`
 	BankBranch                   string    `json:"bank_branch"`
+	SwiftBic                     string    `json:"swift_bic"`
+	Currency                     string    `json:"currency"`
 	TaxPin                       string    `json:"tax_pin"`
+	VatNumber                    string    `json:"vat_number"`
 	RequiresInvoiceBeforePayment bool      `json:"requires_invoice_before_payment"`
 	AutoPayEnabled               bool      `json:"auto_pay_enabled"`
 	PaymentTermsDays             int       `json:"payment_terms_days"`
@@ -47,13 +61,27 @@ type supplierPayload struct {
 	Email                        string  `json:"email"`
 	Phone                        string  `json:"phone"`
 	Address                      string  `json:"address"`
+	AddressLine1                 string  `json:"address_line1"`
+	AddressLine2                 string  `json:"address_line2"`
+	City                         string  `json:"city"`
+	AddressState                 string  `json:"address_state"`
+	AddressPostalCode            string  `json:"address_postal_code"`
+	Country                      string  `json:"country"`
+	Industry                     string  `json:"industry"`
+	Website                      string  `json:"website"`
+	Notes                        string  `json:"notes"`
+	LogoURL                      string  `json:"logo_url"`
 	PaymentMethodType            string  `json:"payment_method_type"`
 	MpesaPhone                   string  `json:"mpesa_phone"`
 	MpesaBusinessName            string  `json:"mpesa_business_name"`
 	BankAccountNumber            string  `json:"bank_account_number"`
+	BankAccountName              string  `json:"bank_account_name"`
 	BankName                     string  `json:"bank_name"`
 	BankBranch                   string  `json:"bank_branch"`
+	SwiftBic                     string  `json:"swift_bic"`
+	Currency                     string  `json:"currency"`
 	TaxPin                       string  `json:"tax_pin"`
+	VatNumber                    string  `json:"vat_number"`
 	RequiresInvoiceBeforePayment bool    `json:"requires_invoice_before_payment"`
 	AutoPayEnabled               bool    `json:"auto_pay_enabled"`
 	PaymentTermsDays             int     `json:"payment_terms_days"`
@@ -69,14 +97,28 @@ func supplierToDTO(s *ent.Supplier) supplierDTO {
 		Email:                        s.ContactEmail,
 		Phone:                        s.ContactPhone,
 		Address:                      s.Address,
+		AddressLine1:                 s.AddressLine1,
+		AddressLine2:                 s.AddressLine2,
+		City:                         s.City,
+		AddressState:                 s.AddressState,
+		AddressPostalCode:            s.AddressPostalCode,
+		Country:                      s.Country,
+		Industry:                     s.Industry,
+		Website:                      s.Website,
+		Notes:                        s.Notes,
+		LogoURL:                      s.LogoURL,
 		IsActive:                     s.IsActive,
 		PaymentMethodType:            string(s.PaymentMethodType),
 		MpesaPhone:                   s.MpesaPhone,
 		MpesaBusinessName:            s.MpesaBusinessName,
 		BankAccountNumber:            s.BankAccountNumber,
+		BankAccountName:              s.BankAccountName,
 		BankName:                     s.BankName,
 		BankBranch:                   s.BankBranch,
+		SwiftBic:                     s.SwiftBic,
+		Currency:                     s.Currency,
 		TaxPin:                       s.TaxPin,
+		VatNumber:                    s.VatNumber,
 		RequiresInvoiceBeforePayment: s.RequiresInvoiceBeforePayment,
 		AutoPayEnabled:               s.AutoPayEnabled,
 		PaymentTermsDays:             s.PaymentTermsDays,
@@ -161,15 +203,29 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		SetContactEmail(req.Email).
 		SetContactPhone(req.Phone).
 		SetAddress(req.Address).
+		SetAddressLine1(req.AddressLine1).
+		SetAddressLine2(req.AddressLine2).
+		SetCity(req.City).
+		SetAddressState(req.AddressState).
+		SetAddressPostalCode(req.AddressPostalCode).
+		SetCountry(req.Country).
+		SetIndustry(req.Industry).
+		SetWebsite(req.Website).
+		SetNotes(req.Notes).
+		SetLogoURL(req.LogoURL).
 		SetRequiresInvoiceBeforePayment(req.RequiresInvoiceBeforePayment).
 		SetAutoPayEnabled(req.AutoPayEnabled).
 		SetPaymentTermsDays(req.PaymentTermsDays).
 		SetMpesaPhone(req.MpesaPhone).
 		SetMpesaBusinessName(req.MpesaBusinessName).
 		SetBankAccountNumber(req.BankAccountNumber).
+		SetBankAccountName(req.BankAccountName).
 		SetBankName(req.BankName).
 		SetBankBranch(req.BankBranch).
-		SetTaxPin(req.TaxPin)
+		SetSwiftBic(req.SwiftBic).
+		SetCurrency(req.Currency).
+		SetTaxPin(req.TaxPin).
+		SetVatNumber(req.VatNumber)
 
 	if req.PaymentMethodType != "" {
 		create = create.SetPaymentMethodType(entsupplier.PaymentMethodType(req.PaymentMethodType))
@@ -239,15 +295,29 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		SetContactEmail(req.Email).
 		SetContactPhone(req.Phone).
 		SetAddress(req.Address).
+		SetAddressLine1(req.AddressLine1).
+		SetAddressLine2(req.AddressLine2).
+		SetCity(req.City).
+		SetAddressState(req.AddressState).
+		SetAddressPostalCode(req.AddressPostalCode).
+		SetCountry(req.Country).
+		SetIndustry(req.Industry).
+		SetWebsite(req.Website).
+		SetNotes(req.Notes).
+		SetLogoURL(req.LogoURL).
 		SetRequiresInvoiceBeforePayment(req.RequiresInvoiceBeforePayment).
 		SetAutoPayEnabled(req.AutoPayEnabled).
 		SetPaymentTermsDays(req.PaymentTermsDays).
 		SetMpesaPhone(req.MpesaPhone).
 		SetMpesaBusinessName(req.MpesaBusinessName).
 		SetBankAccountNumber(req.BankAccountNumber).
+		SetBankAccountName(req.BankAccountName).
 		SetBankName(req.BankName).
 		SetBankBranch(req.BankBranch).
-		SetTaxPin(req.TaxPin)
+		SetSwiftBic(req.SwiftBic).
+		SetCurrency(req.Currency).
+		SetTaxPin(req.TaxPin).
+		SetVatNumber(req.VatNumber)
 
 	if req.Name != "" {
 		update = update.SetName(req.Name)

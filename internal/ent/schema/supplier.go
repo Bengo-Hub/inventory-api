@@ -36,7 +36,20 @@ func (Supplier) Fields() []ent.Field {
 		field.String("contact_phone").
 			Optional(),
 		field.Text("address").
-			Optional(),
+			Optional().
+			Comment("Legacy single-line address; structured parts below are preferred"),
+		// Structured address (preferred over the legacy flat `address` text).
+		field.String("address_line1").Optional(),
+		field.String("address_line2").Optional(),
+		field.String("city").Optional(),
+		field.String("address_state").Optional().Comment("State / county / province"),
+		field.String("address_postal_code").Optional(),
+		field.String("country").Optional().Comment("ISO country name or code"),
+		// Business profile (vendor onboarding).
+		field.String("industry").Optional(),
+		field.String("website").Optional(),
+		field.Text("notes").Optional(),
+		field.String("logo_url").Optional(),
 		field.String("payment_terms").
 			Optional().
 			Comment("Net30, Net60, COD, etc."),
@@ -54,13 +67,25 @@ func (Supplier) Fields() []ent.Field {
 			Comment("M-Pesa business name for B2B paybill payments"),
 		field.String("bank_account_number").
 			Optional(),
+		field.String("bank_account_name").
+			Optional().
+			Comment("Name on the bank account"),
 		field.String("bank_name").
 			Optional(),
 		field.String("bank_branch").
 			Optional(),
+		field.String("swift_bic").
+			Optional().
+			Comment("SWIFT / BIC code for international transfers"),
+		field.String("currency").
+			Optional().
+			Comment("Default transaction currency, e.g. KES"),
 		field.String("tax_pin").
 			Optional().
 			Comment("KRA PIN for WHT calculation on supplier payments"),
+		field.String("vat_number").
+			Optional().
+			Comment("VAT registration number (if distinct from KRA PIN)"),
 		field.Bool("requires_invoice_before_payment").
 			Default(false),
 		field.Bool("auto_pay_enabled").

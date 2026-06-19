@@ -152,6 +152,206 @@ func (_u *SupplierUpdate) ClearAddress() *SupplierUpdate {
 	return _u
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (_u *SupplierUpdate) SetAddressLine1(v string) *SupplierUpdate {
+	_u.mutation.SetAddressLine1(v)
+	return _u
+}
+
+// SetNillableAddressLine1 sets the "address_line1" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableAddressLine1(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetAddressLine1(*v)
+	}
+	return _u
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (_u *SupplierUpdate) ClearAddressLine1() *SupplierUpdate {
+	_u.mutation.ClearAddressLine1()
+	return _u
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (_u *SupplierUpdate) SetAddressLine2(v string) *SupplierUpdate {
+	_u.mutation.SetAddressLine2(v)
+	return _u
+}
+
+// SetNillableAddressLine2 sets the "address_line2" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableAddressLine2(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetAddressLine2(*v)
+	}
+	return _u
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (_u *SupplierUpdate) ClearAddressLine2() *SupplierUpdate {
+	_u.mutation.ClearAddressLine2()
+	return _u
+}
+
+// SetCity sets the "city" field.
+func (_u *SupplierUpdate) SetCity(v string) *SupplierUpdate {
+	_u.mutation.SetCity(v)
+	return _u
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableCity(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetCity(*v)
+	}
+	return _u
+}
+
+// ClearCity clears the value of the "city" field.
+func (_u *SupplierUpdate) ClearCity() *SupplierUpdate {
+	_u.mutation.ClearCity()
+	return _u
+}
+
+// SetAddressState sets the "address_state" field.
+func (_u *SupplierUpdate) SetAddressState(v string) *SupplierUpdate {
+	_u.mutation.SetAddressState(v)
+	return _u
+}
+
+// SetNillableAddressState sets the "address_state" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableAddressState(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetAddressState(*v)
+	}
+	return _u
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (_u *SupplierUpdate) ClearAddressState() *SupplierUpdate {
+	_u.mutation.ClearAddressState()
+	return _u
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (_u *SupplierUpdate) SetAddressPostalCode(v string) *SupplierUpdate {
+	_u.mutation.SetAddressPostalCode(v)
+	return _u
+}
+
+// SetNillableAddressPostalCode sets the "address_postal_code" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableAddressPostalCode(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetAddressPostalCode(*v)
+	}
+	return _u
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (_u *SupplierUpdate) ClearAddressPostalCode() *SupplierUpdate {
+	_u.mutation.ClearAddressPostalCode()
+	return _u
+}
+
+// SetCountry sets the "country" field.
+func (_u *SupplierUpdate) SetCountry(v string) *SupplierUpdate {
+	_u.mutation.SetCountry(v)
+	return _u
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableCountry(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetCountry(*v)
+	}
+	return _u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (_u *SupplierUpdate) ClearCountry() *SupplierUpdate {
+	_u.mutation.ClearCountry()
+	return _u
+}
+
+// SetIndustry sets the "industry" field.
+func (_u *SupplierUpdate) SetIndustry(v string) *SupplierUpdate {
+	_u.mutation.SetIndustry(v)
+	return _u
+}
+
+// SetNillableIndustry sets the "industry" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableIndustry(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetIndustry(*v)
+	}
+	return _u
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (_u *SupplierUpdate) ClearIndustry() *SupplierUpdate {
+	_u.mutation.ClearIndustry()
+	return _u
+}
+
+// SetWebsite sets the "website" field.
+func (_u *SupplierUpdate) SetWebsite(v string) *SupplierUpdate {
+	_u.mutation.SetWebsite(v)
+	return _u
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableWebsite(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetWebsite(*v)
+	}
+	return _u
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (_u *SupplierUpdate) ClearWebsite() *SupplierUpdate {
+	_u.mutation.ClearWebsite()
+	return _u
+}
+
+// SetNotes sets the "notes" field.
+func (_u *SupplierUpdate) SetNotes(v string) *SupplierUpdate {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableNotes(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (_u *SupplierUpdate) ClearNotes() *SupplierUpdate {
+	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (_u *SupplierUpdate) SetLogoURL(v string) *SupplierUpdate {
+	_u.mutation.SetLogoURL(v)
+	return _u
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableLogoURL(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetLogoURL(*v)
+	}
+	return _u
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (_u *SupplierUpdate) ClearLogoURL() *SupplierUpdate {
+	_u.mutation.ClearLogoURL()
+	return _u
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (_u *SupplierUpdate) SetPaymentTerms(v string) *SupplierUpdate {
 	_u.mutation.SetPaymentTerms(v)
@@ -266,6 +466,26 @@ func (_u *SupplierUpdate) ClearBankAccountNumber() *SupplierUpdate {
 	return _u
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (_u *SupplierUpdate) SetBankAccountName(v string) *SupplierUpdate {
+	_u.mutation.SetBankAccountName(v)
+	return _u
+}
+
+// SetNillableBankAccountName sets the "bank_account_name" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableBankAccountName(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetBankAccountName(*v)
+	}
+	return _u
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (_u *SupplierUpdate) ClearBankAccountName() *SupplierUpdate {
+	_u.mutation.ClearBankAccountName()
+	return _u
+}
+
 // SetBankName sets the "bank_name" field.
 func (_u *SupplierUpdate) SetBankName(v string) *SupplierUpdate {
 	_u.mutation.SetBankName(v)
@@ -306,6 +526,46 @@ func (_u *SupplierUpdate) ClearBankBranch() *SupplierUpdate {
 	return _u
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (_u *SupplierUpdate) SetSwiftBic(v string) *SupplierUpdate {
+	_u.mutation.SetSwiftBic(v)
+	return _u
+}
+
+// SetNillableSwiftBic sets the "swift_bic" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableSwiftBic(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetSwiftBic(*v)
+	}
+	return _u
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (_u *SupplierUpdate) ClearSwiftBic() *SupplierUpdate {
+	_u.mutation.ClearSwiftBic()
+	return _u
+}
+
+// SetCurrency sets the "currency" field.
+func (_u *SupplierUpdate) SetCurrency(v string) *SupplierUpdate {
+	_u.mutation.SetCurrency(v)
+	return _u
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableCurrency(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetCurrency(*v)
+	}
+	return _u
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (_u *SupplierUpdate) ClearCurrency() *SupplierUpdate {
+	_u.mutation.ClearCurrency()
+	return _u
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (_u *SupplierUpdate) SetTaxPin(v string) *SupplierUpdate {
 	_u.mutation.SetTaxPin(v)
@@ -323,6 +583,26 @@ func (_u *SupplierUpdate) SetNillableTaxPin(v *string) *SupplierUpdate {
 // ClearTaxPin clears the value of the "tax_pin" field.
 func (_u *SupplierUpdate) ClearTaxPin() *SupplierUpdate {
 	_u.mutation.ClearTaxPin()
+	return _u
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (_u *SupplierUpdate) SetVatNumber(v string) *SupplierUpdate {
+	_u.mutation.SetVatNumber(v)
+	return _u
+}
+
+// SetNillableVatNumber sets the "vat_number" field if the given value is not nil.
+func (_u *SupplierUpdate) SetNillableVatNumber(v *string) *SupplierUpdate {
+	if v != nil {
+		_u.SetVatNumber(*v)
+	}
+	return _u
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (_u *SupplierUpdate) ClearVatNumber() *SupplierUpdate {
+	_u.mutation.ClearVatNumber()
 	return _u
 }
 
@@ -576,6 +856,66 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.AddressCleared() {
 		_spec.ClearField(supplier.FieldAddress, field.TypeString)
 	}
+	if value, ok := _u.mutation.AddressLine1(); ok {
+		_spec.SetField(supplier.FieldAddressLine1, field.TypeString, value)
+	}
+	if _u.mutation.AddressLine1Cleared() {
+		_spec.ClearField(supplier.FieldAddressLine1, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressLine2(); ok {
+		_spec.SetField(supplier.FieldAddressLine2, field.TypeString, value)
+	}
+	if _u.mutation.AddressLine2Cleared() {
+		_spec.ClearField(supplier.FieldAddressLine2, field.TypeString)
+	}
+	if value, ok := _u.mutation.City(); ok {
+		_spec.SetField(supplier.FieldCity, field.TypeString, value)
+	}
+	if _u.mutation.CityCleared() {
+		_spec.ClearField(supplier.FieldCity, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressState(); ok {
+		_spec.SetField(supplier.FieldAddressState, field.TypeString, value)
+	}
+	if _u.mutation.AddressStateCleared() {
+		_spec.ClearField(supplier.FieldAddressState, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressPostalCode(); ok {
+		_spec.SetField(supplier.FieldAddressPostalCode, field.TypeString, value)
+	}
+	if _u.mutation.AddressPostalCodeCleared() {
+		_spec.ClearField(supplier.FieldAddressPostalCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.Country(); ok {
+		_spec.SetField(supplier.FieldCountry, field.TypeString, value)
+	}
+	if _u.mutation.CountryCleared() {
+		_spec.ClearField(supplier.FieldCountry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Industry(); ok {
+		_spec.SetField(supplier.FieldIndustry, field.TypeString, value)
+	}
+	if _u.mutation.IndustryCleared() {
+		_spec.ClearField(supplier.FieldIndustry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Website(); ok {
+		_spec.SetField(supplier.FieldWebsite, field.TypeString, value)
+	}
+	if _u.mutation.WebsiteCleared() {
+		_spec.ClearField(supplier.FieldWebsite, field.TypeString)
+	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(supplier.FieldNotes, field.TypeString, value)
+	}
+	if _u.mutation.NotesCleared() {
+		_spec.ClearField(supplier.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.LogoURL(); ok {
+		_spec.SetField(supplier.FieldLogoURL, field.TypeString, value)
+	}
+	if _u.mutation.LogoURLCleared() {
+		_spec.ClearField(supplier.FieldLogoURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.PaymentTerms(); ok {
 		_spec.SetField(supplier.FieldPaymentTerms, field.TypeString, value)
 	}
@@ -609,6 +949,12 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.BankAccountNumberCleared() {
 		_spec.ClearField(supplier.FieldBankAccountNumber, field.TypeString)
 	}
+	if value, ok := _u.mutation.BankAccountName(); ok {
+		_spec.SetField(supplier.FieldBankAccountName, field.TypeString, value)
+	}
+	if _u.mutation.BankAccountNameCleared() {
+		_spec.ClearField(supplier.FieldBankAccountName, field.TypeString)
+	}
 	if value, ok := _u.mutation.BankName(); ok {
 		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
 	}
@@ -621,11 +967,29 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.BankBranchCleared() {
 		_spec.ClearField(supplier.FieldBankBranch, field.TypeString)
 	}
+	if value, ok := _u.mutation.SwiftBic(); ok {
+		_spec.SetField(supplier.FieldSwiftBic, field.TypeString, value)
+	}
+	if _u.mutation.SwiftBicCleared() {
+		_spec.ClearField(supplier.FieldSwiftBic, field.TypeString)
+	}
+	if value, ok := _u.mutation.Currency(); ok {
+		_spec.SetField(supplier.FieldCurrency, field.TypeString, value)
+	}
+	if _u.mutation.CurrencyCleared() {
+		_spec.ClearField(supplier.FieldCurrency, field.TypeString)
+	}
 	if value, ok := _u.mutation.TaxPin(); ok {
 		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
 	}
 	if _u.mutation.TaxPinCleared() {
 		_spec.ClearField(supplier.FieldTaxPin, field.TypeString)
+	}
+	if value, ok := _u.mutation.VatNumber(); ok {
+		_spec.SetField(supplier.FieldVatNumber, field.TypeString, value)
+	}
+	if _u.mutation.VatNumberCleared() {
+		_spec.ClearField(supplier.FieldVatNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
@@ -847,6 +1211,206 @@ func (_u *SupplierUpdateOne) ClearAddress() *SupplierUpdateOne {
 	return _u
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (_u *SupplierUpdateOne) SetAddressLine1(v string) *SupplierUpdateOne {
+	_u.mutation.SetAddressLine1(v)
+	return _u
+}
+
+// SetNillableAddressLine1 sets the "address_line1" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableAddressLine1(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetAddressLine1(*v)
+	}
+	return _u
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (_u *SupplierUpdateOne) ClearAddressLine1() *SupplierUpdateOne {
+	_u.mutation.ClearAddressLine1()
+	return _u
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (_u *SupplierUpdateOne) SetAddressLine2(v string) *SupplierUpdateOne {
+	_u.mutation.SetAddressLine2(v)
+	return _u
+}
+
+// SetNillableAddressLine2 sets the "address_line2" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableAddressLine2(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetAddressLine2(*v)
+	}
+	return _u
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (_u *SupplierUpdateOne) ClearAddressLine2() *SupplierUpdateOne {
+	_u.mutation.ClearAddressLine2()
+	return _u
+}
+
+// SetCity sets the "city" field.
+func (_u *SupplierUpdateOne) SetCity(v string) *SupplierUpdateOne {
+	_u.mutation.SetCity(v)
+	return _u
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableCity(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetCity(*v)
+	}
+	return _u
+}
+
+// ClearCity clears the value of the "city" field.
+func (_u *SupplierUpdateOne) ClearCity() *SupplierUpdateOne {
+	_u.mutation.ClearCity()
+	return _u
+}
+
+// SetAddressState sets the "address_state" field.
+func (_u *SupplierUpdateOne) SetAddressState(v string) *SupplierUpdateOne {
+	_u.mutation.SetAddressState(v)
+	return _u
+}
+
+// SetNillableAddressState sets the "address_state" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableAddressState(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetAddressState(*v)
+	}
+	return _u
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (_u *SupplierUpdateOne) ClearAddressState() *SupplierUpdateOne {
+	_u.mutation.ClearAddressState()
+	return _u
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (_u *SupplierUpdateOne) SetAddressPostalCode(v string) *SupplierUpdateOne {
+	_u.mutation.SetAddressPostalCode(v)
+	return _u
+}
+
+// SetNillableAddressPostalCode sets the "address_postal_code" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableAddressPostalCode(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetAddressPostalCode(*v)
+	}
+	return _u
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (_u *SupplierUpdateOne) ClearAddressPostalCode() *SupplierUpdateOne {
+	_u.mutation.ClearAddressPostalCode()
+	return _u
+}
+
+// SetCountry sets the "country" field.
+func (_u *SupplierUpdateOne) SetCountry(v string) *SupplierUpdateOne {
+	_u.mutation.SetCountry(v)
+	return _u
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableCountry(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetCountry(*v)
+	}
+	return _u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (_u *SupplierUpdateOne) ClearCountry() *SupplierUpdateOne {
+	_u.mutation.ClearCountry()
+	return _u
+}
+
+// SetIndustry sets the "industry" field.
+func (_u *SupplierUpdateOne) SetIndustry(v string) *SupplierUpdateOne {
+	_u.mutation.SetIndustry(v)
+	return _u
+}
+
+// SetNillableIndustry sets the "industry" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableIndustry(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetIndustry(*v)
+	}
+	return _u
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (_u *SupplierUpdateOne) ClearIndustry() *SupplierUpdateOne {
+	_u.mutation.ClearIndustry()
+	return _u
+}
+
+// SetWebsite sets the "website" field.
+func (_u *SupplierUpdateOne) SetWebsite(v string) *SupplierUpdateOne {
+	_u.mutation.SetWebsite(v)
+	return _u
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableWebsite(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetWebsite(*v)
+	}
+	return _u
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (_u *SupplierUpdateOne) ClearWebsite() *SupplierUpdateOne {
+	_u.mutation.ClearWebsite()
+	return _u
+}
+
+// SetNotes sets the "notes" field.
+func (_u *SupplierUpdateOne) SetNotes(v string) *SupplierUpdateOne {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableNotes(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (_u *SupplierUpdateOne) ClearNotes() *SupplierUpdateOne {
+	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (_u *SupplierUpdateOne) SetLogoURL(v string) *SupplierUpdateOne {
+	_u.mutation.SetLogoURL(v)
+	return _u
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableLogoURL(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetLogoURL(*v)
+	}
+	return _u
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (_u *SupplierUpdateOne) ClearLogoURL() *SupplierUpdateOne {
+	_u.mutation.ClearLogoURL()
+	return _u
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (_u *SupplierUpdateOne) SetPaymentTerms(v string) *SupplierUpdateOne {
 	_u.mutation.SetPaymentTerms(v)
@@ -961,6 +1525,26 @@ func (_u *SupplierUpdateOne) ClearBankAccountNumber() *SupplierUpdateOne {
 	return _u
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (_u *SupplierUpdateOne) SetBankAccountName(v string) *SupplierUpdateOne {
+	_u.mutation.SetBankAccountName(v)
+	return _u
+}
+
+// SetNillableBankAccountName sets the "bank_account_name" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableBankAccountName(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetBankAccountName(*v)
+	}
+	return _u
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (_u *SupplierUpdateOne) ClearBankAccountName() *SupplierUpdateOne {
+	_u.mutation.ClearBankAccountName()
+	return _u
+}
+
 // SetBankName sets the "bank_name" field.
 func (_u *SupplierUpdateOne) SetBankName(v string) *SupplierUpdateOne {
 	_u.mutation.SetBankName(v)
@@ -1001,6 +1585,46 @@ func (_u *SupplierUpdateOne) ClearBankBranch() *SupplierUpdateOne {
 	return _u
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (_u *SupplierUpdateOne) SetSwiftBic(v string) *SupplierUpdateOne {
+	_u.mutation.SetSwiftBic(v)
+	return _u
+}
+
+// SetNillableSwiftBic sets the "swift_bic" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableSwiftBic(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetSwiftBic(*v)
+	}
+	return _u
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (_u *SupplierUpdateOne) ClearSwiftBic() *SupplierUpdateOne {
+	_u.mutation.ClearSwiftBic()
+	return _u
+}
+
+// SetCurrency sets the "currency" field.
+func (_u *SupplierUpdateOne) SetCurrency(v string) *SupplierUpdateOne {
+	_u.mutation.SetCurrency(v)
+	return _u
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableCurrency(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetCurrency(*v)
+	}
+	return _u
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (_u *SupplierUpdateOne) ClearCurrency() *SupplierUpdateOne {
+	_u.mutation.ClearCurrency()
+	return _u
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (_u *SupplierUpdateOne) SetTaxPin(v string) *SupplierUpdateOne {
 	_u.mutation.SetTaxPin(v)
@@ -1018,6 +1642,26 @@ func (_u *SupplierUpdateOne) SetNillableTaxPin(v *string) *SupplierUpdateOne {
 // ClearTaxPin clears the value of the "tax_pin" field.
 func (_u *SupplierUpdateOne) ClearTaxPin() *SupplierUpdateOne {
 	_u.mutation.ClearTaxPin()
+	return _u
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (_u *SupplierUpdateOne) SetVatNumber(v string) *SupplierUpdateOne {
+	_u.mutation.SetVatNumber(v)
+	return _u
+}
+
+// SetNillableVatNumber sets the "vat_number" field if the given value is not nil.
+func (_u *SupplierUpdateOne) SetNillableVatNumber(v *string) *SupplierUpdateOne {
+	if v != nil {
+		_u.SetVatNumber(*v)
+	}
+	return _u
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (_u *SupplierUpdateOne) ClearVatNumber() *SupplierUpdateOne {
+	_u.mutation.ClearVatNumber()
 	return _u
 }
 
@@ -1301,6 +1945,66 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 	if _u.mutation.AddressCleared() {
 		_spec.ClearField(supplier.FieldAddress, field.TypeString)
 	}
+	if value, ok := _u.mutation.AddressLine1(); ok {
+		_spec.SetField(supplier.FieldAddressLine1, field.TypeString, value)
+	}
+	if _u.mutation.AddressLine1Cleared() {
+		_spec.ClearField(supplier.FieldAddressLine1, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressLine2(); ok {
+		_spec.SetField(supplier.FieldAddressLine2, field.TypeString, value)
+	}
+	if _u.mutation.AddressLine2Cleared() {
+		_spec.ClearField(supplier.FieldAddressLine2, field.TypeString)
+	}
+	if value, ok := _u.mutation.City(); ok {
+		_spec.SetField(supplier.FieldCity, field.TypeString, value)
+	}
+	if _u.mutation.CityCleared() {
+		_spec.ClearField(supplier.FieldCity, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressState(); ok {
+		_spec.SetField(supplier.FieldAddressState, field.TypeString, value)
+	}
+	if _u.mutation.AddressStateCleared() {
+		_spec.ClearField(supplier.FieldAddressState, field.TypeString)
+	}
+	if value, ok := _u.mutation.AddressPostalCode(); ok {
+		_spec.SetField(supplier.FieldAddressPostalCode, field.TypeString, value)
+	}
+	if _u.mutation.AddressPostalCodeCleared() {
+		_spec.ClearField(supplier.FieldAddressPostalCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.Country(); ok {
+		_spec.SetField(supplier.FieldCountry, field.TypeString, value)
+	}
+	if _u.mutation.CountryCleared() {
+		_spec.ClearField(supplier.FieldCountry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Industry(); ok {
+		_spec.SetField(supplier.FieldIndustry, field.TypeString, value)
+	}
+	if _u.mutation.IndustryCleared() {
+		_spec.ClearField(supplier.FieldIndustry, field.TypeString)
+	}
+	if value, ok := _u.mutation.Website(); ok {
+		_spec.SetField(supplier.FieldWebsite, field.TypeString, value)
+	}
+	if _u.mutation.WebsiteCleared() {
+		_spec.ClearField(supplier.FieldWebsite, field.TypeString)
+	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(supplier.FieldNotes, field.TypeString, value)
+	}
+	if _u.mutation.NotesCleared() {
+		_spec.ClearField(supplier.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.LogoURL(); ok {
+		_spec.SetField(supplier.FieldLogoURL, field.TypeString, value)
+	}
+	if _u.mutation.LogoURLCleared() {
+		_spec.ClearField(supplier.FieldLogoURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.PaymentTerms(); ok {
 		_spec.SetField(supplier.FieldPaymentTerms, field.TypeString, value)
 	}
@@ -1334,6 +2038,12 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 	if _u.mutation.BankAccountNumberCleared() {
 		_spec.ClearField(supplier.FieldBankAccountNumber, field.TypeString)
 	}
+	if value, ok := _u.mutation.BankAccountName(); ok {
+		_spec.SetField(supplier.FieldBankAccountName, field.TypeString, value)
+	}
+	if _u.mutation.BankAccountNameCleared() {
+		_spec.ClearField(supplier.FieldBankAccountName, field.TypeString)
+	}
 	if value, ok := _u.mutation.BankName(); ok {
 		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
 	}
@@ -1346,11 +2056,29 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 	if _u.mutation.BankBranchCleared() {
 		_spec.ClearField(supplier.FieldBankBranch, field.TypeString)
 	}
+	if value, ok := _u.mutation.SwiftBic(); ok {
+		_spec.SetField(supplier.FieldSwiftBic, field.TypeString, value)
+	}
+	if _u.mutation.SwiftBicCleared() {
+		_spec.ClearField(supplier.FieldSwiftBic, field.TypeString)
+	}
+	if value, ok := _u.mutation.Currency(); ok {
+		_spec.SetField(supplier.FieldCurrency, field.TypeString, value)
+	}
+	if _u.mutation.CurrencyCleared() {
+		_spec.ClearField(supplier.FieldCurrency, field.TypeString)
+	}
 	if value, ok := _u.mutation.TaxPin(); ok {
 		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
 	}
 	if _u.mutation.TaxPinCleared() {
 		_spec.ClearField(supplier.FieldTaxPin, field.TypeString)
+	}
+	if value, ok := _u.mutation.VatNumber(); ok {
+		_spec.SetField(supplier.FieldVatNumber, field.TypeString, value)
+	}
+	if _u.mutation.VatNumberCleared() {
+		_spec.ClearField(supplier.FieldVatNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)

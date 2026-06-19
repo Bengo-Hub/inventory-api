@@ -30,6 +30,26 @@ const (
 	FieldContactPhone = "contact_phone"
 	// FieldAddress holds the string denoting the address field in the database.
 	FieldAddress = "address"
+	// FieldAddressLine1 holds the string denoting the address_line1 field in the database.
+	FieldAddressLine1 = "address_line1"
+	// FieldAddressLine2 holds the string denoting the address_line2 field in the database.
+	FieldAddressLine2 = "address_line2"
+	// FieldCity holds the string denoting the city field in the database.
+	FieldCity = "city"
+	// FieldAddressState holds the string denoting the address_state field in the database.
+	FieldAddressState = "address_state"
+	// FieldAddressPostalCode holds the string denoting the address_postal_code field in the database.
+	FieldAddressPostalCode = "address_postal_code"
+	// FieldCountry holds the string denoting the country field in the database.
+	FieldCountry = "country"
+	// FieldIndustry holds the string denoting the industry field in the database.
+	FieldIndustry = "industry"
+	// FieldWebsite holds the string denoting the website field in the database.
+	FieldWebsite = "website"
+	// FieldNotes holds the string denoting the notes field in the database.
+	FieldNotes = "notes"
+	// FieldLogoURL holds the string denoting the logo_url field in the database.
+	FieldLogoURL = "logo_url"
 	// FieldPaymentTerms holds the string denoting the payment_terms field in the database.
 	FieldPaymentTerms = "payment_terms"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -42,12 +62,20 @@ const (
 	FieldMpesaBusinessName = "mpesa_business_name"
 	// FieldBankAccountNumber holds the string denoting the bank_account_number field in the database.
 	FieldBankAccountNumber = "bank_account_number"
+	// FieldBankAccountName holds the string denoting the bank_account_name field in the database.
+	FieldBankAccountName = "bank_account_name"
 	// FieldBankName holds the string denoting the bank_name field in the database.
 	FieldBankName = "bank_name"
 	// FieldBankBranch holds the string denoting the bank_branch field in the database.
 	FieldBankBranch = "bank_branch"
+	// FieldSwiftBic holds the string denoting the swift_bic field in the database.
+	FieldSwiftBic = "swift_bic"
+	// FieldCurrency holds the string denoting the currency field in the database.
+	FieldCurrency = "currency"
 	// FieldTaxPin holds the string denoting the tax_pin field in the database.
 	FieldTaxPin = "tax_pin"
+	// FieldVatNumber holds the string denoting the vat_number field in the database.
+	FieldVatNumber = "vat_number"
 	// FieldRequiresInvoiceBeforePayment holds the string denoting the requires_invoice_before_payment field in the database.
 	FieldRequiresInvoiceBeforePayment = "requires_invoice_before_payment"
 	// FieldAutoPayEnabled holds the string denoting the auto_pay_enabled field in the database.
@@ -87,15 +115,29 @@ var Columns = []string{
 	FieldContactEmail,
 	FieldContactPhone,
 	FieldAddress,
+	FieldAddressLine1,
+	FieldAddressLine2,
+	FieldCity,
+	FieldAddressState,
+	FieldAddressPostalCode,
+	FieldCountry,
+	FieldIndustry,
+	FieldWebsite,
+	FieldNotes,
+	FieldLogoURL,
 	FieldPaymentTerms,
 	FieldIsActive,
 	FieldPaymentMethodType,
 	FieldMpesaPhone,
 	FieldMpesaBusinessName,
 	FieldBankAccountNumber,
+	FieldBankAccountName,
 	FieldBankName,
 	FieldBankBranch,
+	FieldSwiftBic,
+	FieldCurrency,
 	FieldTaxPin,
+	FieldVatNumber,
 	FieldRequiresInvoiceBeforePayment,
 	FieldAutoPayEnabled,
 	FieldPaymentTermsDays,
@@ -210,6 +252,56 @@ func ByAddress(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAddress, opts...).ToFunc()
 }
 
+// ByAddressLine1 orders the results by the address_line1 field.
+func ByAddressLine1(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddressLine1, opts...).ToFunc()
+}
+
+// ByAddressLine2 orders the results by the address_line2 field.
+func ByAddressLine2(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddressLine2, opts...).ToFunc()
+}
+
+// ByCity orders the results by the city field.
+func ByCity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCity, opts...).ToFunc()
+}
+
+// ByAddressState orders the results by the address_state field.
+func ByAddressState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddressState, opts...).ToFunc()
+}
+
+// ByAddressPostalCode orders the results by the address_postal_code field.
+func ByAddressPostalCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddressPostalCode, opts...).ToFunc()
+}
+
+// ByCountry orders the results by the country field.
+func ByCountry(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCountry, opts...).ToFunc()
+}
+
+// ByIndustry orders the results by the industry field.
+func ByIndustry(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIndustry, opts...).ToFunc()
+}
+
+// ByWebsite orders the results by the website field.
+func ByWebsite(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWebsite, opts...).ToFunc()
+}
+
+// ByNotes orders the results by the notes field.
+func ByNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByLogoURL orders the results by the logo_url field.
+func ByLogoURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLogoURL, opts...).ToFunc()
+}
+
 // ByPaymentTerms orders the results by the payment_terms field.
 func ByPaymentTerms(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaymentTerms, opts...).ToFunc()
@@ -240,6 +332,11 @@ func ByBankAccountNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBankAccountNumber, opts...).ToFunc()
 }
 
+// ByBankAccountName orders the results by the bank_account_name field.
+func ByBankAccountName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBankAccountName, opts...).ToFunc()
+}
+
 // ByBankName orders the results by the bank_name field.
 func ByBankName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBankName, opts...).ToFunc()
@@ -250,9 +347,24 @@ func ByBankBranch(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBankBranch, opts...).ToFunc()
 }
 
+// BySwiftBic orders the results by the swift_bic field.
+func BySwiftBic(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSwiftBic, opts...).ToFunc()
+}
+
+// ByCurrency orders the results by the currency field.
+func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCurrency, opts...).ToFunc()
+}
+
 // ByTaxPin orders the results by the tax_pin field.
 func ByTaxPin(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTaxPin, opts...).ToFunc()
+}
+
+// ByVatNumber orders the results by the vat_number field.
+func ByVatNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVatNumber, opts...).ToFunc()
 }
 
 // ByRequiresInvoiceBeforePayment orders the results by the requires_invoice_before_payment field.

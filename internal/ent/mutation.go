@@ -75948,15 +75948,29 @@ type SupplierMutation struct {
 	contact_email                   *string
 	contact_phone                   *string
 	address                         *string
+	address_line1                   *string
+	address_line2                   *string
+	city                            *string
+	address_state                   *string
+	address_postal_code             *string
+	country                         *string
+	industry                        *string
+	website                         *string
+	notes                           *string
+	logo_url                        *string
 	payment_terms                   *string
 	is_active                       *bool
 	payment_method_type             *supplier.PaymentMethodType
 	mpesa_phone                     *string
 	mpesa_business_name             *string
 	bank_account_number             *string
+	bank_account_name               *string
 	bank_name                       *string
 	bank_branch                     *string
+	swift_bic                       *string
+	currency                        *string
 	tax_pin                         *string
+	vat_number                      *string
 	requires_invoice_before_payment *bool
 	auto_pay_enabled                *bool
 	payment_terms_days              *int
@@ -76384,6 +76398,496 @@ func (m *SupplierMutation) ResetAddress() {
 	delete(m.clearedFields, supplier.FieldAddress)
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (m *SupplierMutation) SetAddressLine1(s string) {
+	m.address_line1 = &s
+}
+
+// AddressLine1 returns the value of the "address_line1" field in the mutation.
+func (m *SupplierMutation) AddressLine1() (r string, exists bool) {
+	v := m.address_line1
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddressLine1 returns the old "address_line1" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldAddressLine1(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddressLine1 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddressLine1 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddressLine1: %w", err)
+	}
+	return oldValue.AddressLine1, nil
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (m *SupplierMutation) ClearAddressLine1() {
+	m.address_line1 = nil
+	m.clearedFields[supplier.FieldAddressLine1] = struct{}{}
+}
+
+// AddressLine1Cleared returns if the "address_line1" field was cleared in this mutation.
+func (m *SupplierMutation) AddressLine1Cleared() bool {
+	_, ok := m.clearedFields[supplier.FieldAddressLine1]
+	return ok
+}
+
+// ResetAddressLine1 resets all changes to the "address_line1" field.
+func (m *SupplierMutation) ResetAddressLine1() {
+	m.address_line1 = nil
+	delete(m.clearedFields, supplier.FieldAddressLine1)
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (m *SupplierMutation) SetAddressLine2(s string) {
+	m.address_line2 = &s
+}
+
+// AddressLine2 returns the value of the "address_line2" field in the mutation.
+func (m *SupplierMutation) AddressLine2() (r string, exists bool) {
+	v := m.address_line2
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddressLine2 returns the old "address_line2" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldAddressLine2(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddressLine2 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddressLine2 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddressLine2: %w", err)
+	}
+	return oldValue.AddressLine2, nil
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (m *SupplierMutation) ClearAddressLine2() {
+	m.address_line2 = nil
+	m.clearedFields[supplier.FieldAddressLine2] = struct{}{}
+}
+
+// AddressLine2Cleared returns if the "address_line2" field was cleared in this mutation.
+func (m *SupplierMutation) AddressLine2Cleared() bool {
+	_, ok := m.clearedFields[supplier.FieldAddressLine2]
+	return ok
+}
+
+// ResetAddressLine2 resets all changes to the "address_line2" field.
+func (m *SupplierMutation) ResetAddressLine2() {
+	m.address_line2 = nil
+	delete(m.clearedFields, supplier.FieldAddressLine2)
+}
+
+// SetCity sets the "city" field.
+func (m *SupplierMutation) SetCity(s string) {
+	m.city = &s
+}
+
+// City returns the value of the "city" field in the mutation.
+func (m *SupplierMutation) City() (r string, exists bool) {
+	v := m.city
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCity returns the old "city" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldCity(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCity: %w", err)
+	}
+	return oldValue.City, nil
+}
+
+// ClearCity clears the value of the "city" field.
+func (m *SupplierMutation) ClearCity() {
+	m.city = nil
+	m.clearedFields[supplier.FieldCity] = struct{}{}
+}
+
+// CityCleared returns if the "city" field was cleared in this mutation.
+func (m *SupplierMutation) CityCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldCity]
+	return ok
+}
+
+// ResetCity resets all changes to the "city" field.
+func (m *SupplierMutation) ResetCity() {
+	m.city = nil
+	delete(m.clearedFields, supplier.FieldCity)
+}
+
+// SetAddressState sets the "address_state" field.
+func (m *SupplierMutation) SetAddressState(s string) {
+	m.address_state = &s
+}
+
+// AddressState returns the value of the "address_state" field in the mutation.
+func (m *SupplierMutation) AddressState() (r string, exists bool) {
+	v := m.address_state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddressState returns the old "address_state" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldAddressState(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddressState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddressState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddressState: %w", err)
+	}
+	return oldValue.AddressState, nil
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (m *SupplierMutation) ClearAddressState() {
+	m.address_state = nil
+	m.clearedFields[supplier.FieldAddressState] = struct{}{}
+}
+
+// AddressStateCleared returns if the "address_state" field was cleared in this mutation.
+func (m *SupplierMutation) AddressStateCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldAddressState]
+	return ok
+}
+
+// ResetAddressState resets all changes to the "address_state" field.
+func (m *SupplierMutation) ResetAddressState() {
+	m.address_state = nil
+	delete(m.clearedFields, supplier.FieldAddressState)
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (m *SupplierMutation) SetAddressPostalCode(s string) {
+	m.address_postal_code = &s
+}
+
+// AddressPostalCode returns the value of the "address_postal_code" field in the mutation.
+func (m *SupplierMutation) AddressPostalCode() (r string, exists bool) {
+	v := m.address_postal_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddressPostalCode returns the old "address_postal_code" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldAddressPostalCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddressPostalCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddressPostalCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddressPostalCode: %w", err)
+	}
+	return oldValue.AddressPostalCode, nil
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (m *SupplierMutation) ClearAddressPostalCode() {
+	m.address_postal_code = nil
+	m.clearedFields[supplier.FieldAddressPostalCode] = struct{}{}
+}
+
+// AddressPostalCodeCleared returns if the "address_postal_code" field was cleared in this mutation.
+func (m *SupplierMutation) AddressPostalCodeCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldAddressPostalCode]
+	return ok
+}
+
+// ResetAddressPostalCode resets all changes to the "address_postal_code" field.
+func (m *SupplierMutation) ResetAddressPostalCode() {
+	m.address_postal_code = nil
+	delete(m.clearedFields, supplier.FieldAddressPostalCode)
+}
+
+// SetCountry sets the "country" field.
+func (m *SupplierMutation) SetCountry(s string) {
+	m.country = &s
+}
+
+// Country returns the value of the "country" field in the mutation.
+func (m *SupplierMutation) Country() (r string, exists bool) {
+	v := m.country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "country" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldCountry(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ClearCountry clears the value of the "country" field.
+func (m *SupplierMutation) ClearCountry() {
+	m.country = nil
+	m.clearedFields[supplier.FieldCountry] = struct{}{}
+}
+
+// CountryCleared returns if the "country" field was cleared in this mutation.
+func (m *SupplierMutation) CountryCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldCountry]
+	return ok
+}
+
+// ResetCountry resets all changes to the "country" field.
+func (m *SupplierMutation) ResetCountry() {
+	m.country = nil
+	delete(m.clearedFields, supplier.FieldCountry)
+}
+
+// SetIndustry sets the "industry" field.
+func (m *SupplierMutation) SetIndustry(s string) {
+	m.industry = &s
+}
+
+// Industry returns the value of the "industry" field in the mutation.
+func (m *SupplierMutation) Industry() (r string, exists bool) {
+	v := m.industry
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndustry returns the old "industry" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldIndustry(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIndustry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIndustry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndustry: %w", err)
+	}
+	return oldValue.Industry, nil
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (m *SupplierMutation) ClearIndustry() {
+	m.industry = nil
+	m.clearedFields[supplier.FieldIndustry] = struct{}{}
+}
+
+// IndustryCleared returns if the "industry" field was cleared in this mutation.
+func (m *SupplierMutation) IndustryCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldIndustry]
+	return ok
+}
+
+// ResetIndustry resets all changes to the "industry" field.
+func (m *SupplierMutation) ResetIndustry() {
+	m.industry = nil
+	delete(m.clearedFields, supplier.FieldIndustry)
+}
+
+// SetWebsite sets the "website" field.
+func (m *SupplierMutation) SetWebsite(s string) {
+	m.website = &s
+}
+
+// Website returns the value of the "website" field in the mutation.
+func (m *SupplierMutation) Website() (r string, exists bool) {
+	v := m.website
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebsite returns the old "website" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldWebsite(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebsite is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebsite requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebsite: %w", err)
+	}
+	return oldValue.Website, nil
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (m *SupplierMutation) ClearWebsite() {
+	m.website = nil
+	m.clearedFields[supplier.FieldWebsite] = struct{}{}
+}
+
+// WebsiteCleared returns if the "website" field was cleared in this mutation.
+func (m *SupplierMutation) WebsiteCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldWebsite]
+	return ok
+}
+
+// ResetWebsite resets all changes to the "website" field.
+func (m *SupplierMutation) ResetWebsite() {
+	m.website = nil
+	delete(m.clearedFields, supplier.FieldWebsite)
+}
+
+// SetNotes sets the "notes" field.
+func (m *SupplierMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *SupplierMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *SupplierMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[supplier.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *SupplierMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *SupplierMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, supplier.FieldNotes)
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (m *SupplierMutation) SetLogoURL(s string) {
+	m.logo_url = &s
+}
+
+// LogoURL returns the value of the "logo_url" field in the mutation.
+func (m *SupplierMutation) LogoURL() (r string, exists bool) {
+	v := m.logo_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogoURL returns the old "logo_url" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldLogoURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogoURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogoURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogoURL: %w", err)
+	}
+	return oldValue.LogoURL, nil
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (m *SupplierMutation) ClearLogoURL() {
+	m.logo_url = nil
+	m.clearedFields[supplier.FieldLogoURL] = struct{}{}
+}
+
+// LogoURLCleared returns if the "logo_url" field was cleared in this mutation.
+func (m *SupplierMutation) LogoURLCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldLogoURL]
+	return ok
+}
+
+// ResetLogoURL resets all changes to the "logo_url" field.
+func (m *SupplierMutation) ResetLogoURL() {
+	m.logo_url = nil
+	delete(m.clearedFields, supplier.FieldLogoURL)
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (m *SupplierMutation) SetPaymentTerms(s string) {
 	m.payment_terms = &s
@@ -76665,6 +77169,55 @@ func (m *SupplierMutation) ResetBankAccountNumber() {
 	delete(m.clearedFields, supplier.FieldBankAccountNumber)
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (m *SupplierMutation) SetBankAccountName(s string) {
+	m.bank_account_name = &s
+}
+
+// BankAccountName returns the value of the "bank_account_name" field in the mutation.
+func (m *SupplierMutation) BankAccountName() (r string, exists bool) {
+	v := m.bank_account_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBankAccountName returns the old "bank_account_name" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldBankAccountName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBankAccountName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBankAccountName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBankAccountName: %w", err)
+	}
+	return oldValue.BankAccountName, nil
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (m *SupplierMutation) ClearBankAccountName() {
+	m.bank_account_name = nil
+	m.clearedFields[supplier.FieldBankAccountName] = struct{}{}
+}
+
+// BankAccountNameCleared returns if the "bank_account_name" field was cleared in this mutation.
+func (m *SupplierMutation) BankAccountNameCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldBankAccountName]
+	return ok
+}
+
+// ResetBankAccountName resets all changes to the "bank_account_name" field.
+func (m *SupplierMutation) ResetBankAccountName() {
+	m.bank_account_name = nil
+	delete(m.clearedFields, supplier.FieldBankAccountName)
+}
+
 // SetBankName sets the "bank_name" field.
 func (m *SupplierMutation) SetBankName(s string) {
 	m.bank_name = &s
@@ -76763,6 +77316,104 @@ func (m *SupplierMutation) ResetBankBranch() {
 	delete(m.clearedFields, supplier.FieldBankBranch)
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (m *SupplierMutation) SetSwiftBic(s string) {
+	m.swift_bic = &s
+}
+
+// SwiftBic returns the value of the "swift_bic" field in the mutation.
+func (m *SupplierMutation) SwiftBic() (r string, exists bool) {
+	v := m.swift_bic
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSwiftBic returns the old "swift_bic" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldSwiftBic(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSwiftBic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSwiftBic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSwiftBic: %w", err)
+	}
+	return oldValue.SwiftBic, nil
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (m *SupplierMutation) ClearSwiftBic() {
+	m.swift_bic = nil
+	m.clearedFields[supplier.FieldSwiftBic] = struct{}{}
+}
+
+// SwiftBicCleared returns if the "swift_bic" field was cleared in this mutation.
+func (m *SupplierMutation) SwiftBicCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldSwiftBic]
+	return ok
+}
+
+// ResetSwiftBic resets all changes to the "swift_bic" field.
+func (m *SupplierMutation) ResetSwiftBic() {
+	m.swift_bic = nil
+	delete(m.clearedFields, supplier.FieldSwiftBic)
+}
+
+// SetCurrency sets the "currency" field.
+func (m *SupplierMutation) SetCurrency(s string) {
+	m.currency = &s
+}
+
+// Currency returns the value of the "currency" field in the mutation.
+func (m *SupplierMutation) Currency() (r string, exists bool) {
+	v := m.currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrency returns the old "currency" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrency: %w", err)
+	}
+	return oldValue.Currency, nil
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (m *SupplierMutation) ClearCurrency() {
+	m.currency = nil
+	m.clearedFields[supplier.FieldCurrency] = struct{}{}
+}
+
+// CurrencyCleared returns if the "currency" field was cleared in this mutation.
+func (m *SupplierMutation) CurrencyCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldCurrency]
+	return ok
+}
+
+// ResetCurrency resets all changes to the "currency" field.
+func (m *SupplierMutation) ResetCurrency() {
+	m.currency = nil
+	delete(m.clearedFields, supplier.FieldCurrency)
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (m *SupplierMutation) SetTaxPin(s string) {
 	m.tax_pin = &s
@@ -76810,6 +77461,55 @@ func (m *SupplierMutation) TaxPinCleared() bool {
 func (m *SupplierMutation) ResetTaxPin() {
 	m.tax_pin = nil
 	delete(m.clearedFields, supplier.FieldTaxPin)
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (m *SupplierMutation) SetVatNumber(s string) {
+	m.vat_number = &s
+}
+
+// VatNumber returns the value of the "vat_number" field in the mutation.
+func (m *SupplierMutation) VatNumber() (r string, exists bool) {
+	v := m.vat_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVatNumber returns the old "vat_number" field's value of the Supplier entity.
+// If the Supplier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierMutation) OldVatNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVatNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVatNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVatNumber: %w", err)
+	}
+	return oldValue.VatNumber, nil
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (m *SupplierMutation) ClearVatNumber() {
+	m.vat_number = nil
+	m.clearedFields[supplier.FieldVatNumber] = struct{}{}
+}
+
+// VatNumberCleared returns if the "vat_number" field was cleared in this mutation.
+func (m *SupplierMutation) VatNumberCleared() bool {
+	_, ok := m.clearedFields[supplier.FieldVatNumber]
+	return ok
+}
+
+// ResetVatNumber resets all changes to the "vat_number" field.
+func (m *SupplierMutation) ResetVatNumber() {
+	m.vat_number = nil
+	delete(m.clearedFields, supplier.FieldVatNumber)
 }
 
 // SetRequiresInvoiceBeforePayment sets the "requires_invoice_before_payment" field.
@@ -77255,7 +77955,7 @@ func (m *SupplierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 38)
 	if m.tenant_id != nil {
 		fields = append(fields, supplier.FieldTenantID)
 	}
@@ -77277,6 +77977,36 @@ func (m *SupplierMutation) Fields() []string {
 	if m.address != nil {
 		fields = append(fields, supplier.FieldAddress)
 	}
+	if m.address_line1 != nil {
+		fields = append(fields, supplier.FieldAddressLine1)
+	}
+	if m.address_line2 != nil {
+		fields = append(fields, supplier.FieldAddressLine2)
+	}
+	if m.city != nil {
+		fields = append(fields, supplier.FieldCity)
+	}
+	if m.address_state != nil {
+		fields = append(fields, supplier.FieldAddressState)
+	}
+	if m.address_postal_code != nil {
+		fields = append(fields, supplier.FieldAddressPostalCode)
+	}
+	if m.country != nil {
+		fields = append(fields, supplier.FieldCountry)
+	}
+	if m.industry != nil {
+		fields = append(fields, supplier.FieldIndustry)
+	}
+	if m.website != nil {
+		fields = append(fields, supplier.FieldWebsite)
+	}
+	if m.notes != nil {
+		fields = append(fields, supplier.FieldNotes)
+	}
+	if m.logo_url != nil {
+		fields = append(fields, supplier.FieldLogoURL)
+	}
 	if m.payment_terms != nil {
 		fields = append(fields, supplier.FieldPaymentTerms)
 	}
@@ -77295,14 +78025,26 @@ func (m *SupplierMutation) Fields() []string {
 	if m.bank_account_number != nil {
 		fields = append(fields, supplier.FieldBankAccountNumber)
 	}
+	if m.bank_account_name != nil {
+		fields = append(fields, supplier.FieldBankAccountName)
+	}
 	if m.bank_name != nil {
 		fields = append(fields, supplier.FieldBankName)
 	}
 	if m.bank_branch != nil {
 		fields = append(fields, supplier.FieldBankBranch)
 	}
+	if m.swift_bic != nil {
+		fields = append(fields, supplier.FieldSwiftBic)
+	}
+	if m.currency != nil {
+		fields = append(fields, supplier.FieldCurrency)
+	}
 	if m.tax_pin != nil {
 		fields = append(fields, supplier.FieldTaxPin)
+	}
+	if m.vat_number != nil {
+		fields = append(fields, supplier.FieldVatNumber)
 	}
 	if m.requires_invoice_before_payment != nil {
 		fields = append(fields, supplier.FieldRequiresInvoiceBeforePayment)
@@ -77350,6 +78092,26 @@ func (m *SupplierMutation) Field(name string) (ent.Value, bool) {
 		return m.ContactPhone()
 	case supplier.FieldAddress:
 		return m.Address()
+	case supplier.FieldAddressLine1:
+		return m.AddressLine1()
+	case supplier.FieldAddressLine2:
+		return m.AddressLine2()
+	case supplier.FieldCity:
+		return m.City()
+	case supplier.FieldAddressState:
+		return m.AddressState()
+	case supplier.FieldAddressPostalCode:
+		return m.AddressPostalCode()
+	case supplier.FieldCountry:
+		return m.Country()
+	case supplier.FieldIndustry:
+		return m.Industry()
+	case supplier.FieldWebsite:
+		return m.Website()
+	case supplier.FieldNotes:
+		return m.Notes()
+	case supplier.FieldLogoURL:
+		return m.LogoURL()
 	case supplier.FieldPaymentTerms:
 		return m.PaymentTerms()
 	case supplier.FieldIsActive:
@@ -77362,12 +78124,20 @@ func (m *SupplierMutation) Field(name string) (ent.Value, bool) {
 		return m.MpesaBusinessName()
 	case supplier.FieldBankAccountNumber:
 		return m.BankAccountNumber()
+	case supplier.FieldBankAccountName:
+		return m.BankAccountName()
 	case supplier.FieldBankName:
 		return m.BankName()
 	case supplier.FieldBankBranch:
 		return m.BankBranch()
+	case supplier.FieldSwiftBic:
+		return m.SwiftBic()
+	case supplier.FieldCurrency:
+		return m.Currency()
 	case supplier.FieldTaxPin:
 		return m.TaxPin()
+	case supplier.FieldVatNumber:
+		return m.VatNumber()
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		return m.RequiresInvoiceBeforePayment()
 	case supplier.FieldAutoPayEnabled:
@@ -77407,6 +78177,26 @@ func (m *SupplierMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldContactPhone(ctx)
 	case supplier.FieldAddress:
 		return m.OldAddress(ctx)
+	case supplier.FieldAddressLine1:
+		return m.OldAddressLine1(ctx)
+	case supplier.FieldAddressLine2:
+		return m.OldAddressLine2(ctx)
+	case supplier.FieldCity:
+		return m.OldCity(ctx)
+	case supplier.FieldAddressState:
+		return m.OldAddressState(ctx)
+	case supplier.FieldAddressPostalCode:
+		return m.OldAddressPostalCode(ctx)
+	case supplier.FieldCountry:
+		return m.OldCountry(ctx)
+	case supplier.FieldIndustry:
+		return m.OldIndustry(ctx)
+	case supplier.FieldWebsite:
+		return m.OldWebsite(ctx)
+	case supplier.FieldNotes:
+		return m.OldNotes(ctx)
+	case supplier.FieldLogoURL:
+		return m.OldLogoURL(ctx)
 	case supplier.FieldPaymentTerms:
 		return m.OldPaymentTerms(ctx)
 	case supplier.FieldIsActive:
@@ -77419,12 +78209,20 @@ func (m *SupplierMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldMpesaBusinessName(ctx)
 	case supplier.FieldBankAccountNumber:
 		return m.OldBankAccountNumber(ctx)
+	case supplier.FieldBankAccountName:
+		return m.OldBankAccountName(ctx)
 	case supplier.FieldBankName:
 		return m.OldBankName(ctx)
 	case supplier.FieldBankBranch:
 		return m.OldBankBranch(ctx)
+	case supplier.FieldSwiftBic:
+		return m.OldSwiftBic(ctx)
+	case supplier.FieldCurrency:
+		return m.OldCurrency(ctx)
 	case supplier.FieldTaxPin:
 		return m.OldTaxPin(ctx)
+	case supplier.FieldVatNumber:
+		return m.OldVatNumber(ctx)
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		return m.OldRequiresInvoiceBeforePayment(ctx)
 	case supplier.FieldAutoPayEnabled:
@@ -77499,6 +78297,76 @@ func (m *SupplierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAddress(v)
 		return nil
+	case supplier.FieldAddressLine1:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddressLine1(v)
+		return nil
+	case supplier.FieldAddressLine2:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddressLine2(v)
+		return nil
+	case supplier.FieldCity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCity(v)
+		return nil
+	case supplier.FieldAddressState:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddressState(v)
+		return nil
+	case supplier.FieldAddressPostalCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddressPostalCode(v)
+		return nil
+	case supplier.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
+	case supplier.FieldIndustry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndustry(v)
+		return nil
+	case supplier.FieldWebsite:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebsite(v)
+		return nil
+	case supplier.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case supplier.FieldLogoURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogoURL(v)
+		return nil
 	case supplier.FieldPaymentTerms:
 		v, ok := value.(string)
 		if !ok {
@@ -77541,6 +78409,13 @@ func (m *SupplierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBankAccountNumber(v)
 		return nil
+	case supplier.FieldBankAccountName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBankAccountName(v)
+		return nil
 	case supplier.FieldBankName:
 		v, ok := value.(string)
 		if !ok {
@@ -77555,12 +78430,33 @@ func (m *SupplierMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBankBranch(v)
 		return nil
+	case supplier.FieldSwiftBic:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSwiftBic(v)
+		return nil
+	case supplier.FieldCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrency(v)
+		return nil
 	case supplier.FieldTaxPin:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTaxPin(v)
+		return nil
+	case supplier.FieldVatNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVatNumber(v)
 		return nil
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		v, ok := value.(bool)
@@ -77687,6 +78583,36 @@ func (m *SupplierMutation) ClearedFields() []string {
 	if m.FieldCleared(supplier.FieldAddress) {
 		fields = append(fields, supplier.FieldAddress)
 	}
+	if m.FieldCleared(supplier.FieldAddressLine1) {
+		fields = append(fields, supplier.FieldAddressLine1)
+	}
+	if m.FieldCleared(supplier.FieldAddressLine2) {
+		fields = append(fields, supplier.FieldAddressLine2)
+	}
+	if m.FieldCleared(supplier.FieldCity) {
+		fields = append(fields, supplier.FieldCity)
+	}
+	if m.FieldCleared(supplier.FieldAddressState) {
+		fields = append(fields, supplier.FieldAddressState)
+	}
+	if m.FieldCleared(supplier.FieldAddressPostalCode) {
+		fields = append(fields, supplier.FieldAddressPostalCode)
+	}
+	if m.FieldCleared(supplier.FieldCountry) {
+		fields = append(fields, supplier.FieldCountry)
+	}
+	if m.FieldCleared(supplier.FieldIndustry) {
+		fields = append(fields, supplier.FieldIndustry)
+	}
+	if m.FieldCleared(supplier.FieldWebsite) {
+		fields = append(fields, supplier.FieldWebsite)
+	}
+	if m.FieldCleared(supplier.FieldNotes) {
+		fields = append(fields, supplier.FieldNotes)
+	}
+	if m.FieldCleared(supplier.FieldLogoURL) {
+		fields = append(fields, supplier.FieldLogoURL)
+	}
 	if m.FieldCleared(supplier.FieldPaymentTerms) {
 		fields = append(fields, supplier.FieldPaymentTerms)
 	}
@@ -77702,14 +78628,26 @@ func (m *SupplierMutation) ClearedFields() []string {
 	if m.FieldCleared(supplier.FieldBankAccountNumber) {
 		fields = append(fields, supplier.FieldBankAccountNumber)
 	}
+	if m.FieldCleared(supplier.FieldBankAccountName) {
+		fields = append(fields, supplier.FieldBankAccountName)
+	}
 	if m.FieldCleared(supplier.FieldBankName) {
 		fields = append(fields, supplier.FieldBankName)
 	}
 	if m.FieldCleared(supplier.FieldBankBranch) {
 		fields = append(fields, supplier.FieldBankBranch)
 	}
+	if m.FieldCleared(supplier.FieldSwiftBic) {
+		fields = append(fields, supplier.FieldSwiftBic)
+	}
+	if m.FieldCleared(supplier.FieldCurrency) {
+		fields = append(fields, supplier.FieldCurrency)
+	}
 	if m.FieldCleared(supplier.FieldTaxPin) {
 		fields = append(fields, supplier.FieldTaxPin)
+	}
+	if m.FieldCleared(supplier.FieldVatNumber) {
+		fields = append(fields, supplier.FieldVatNumber)
 	}
 	if m.FieldCleared(supplier.FieldCreditLimit) {
 		fields = append(fields, supplier.FieldCreditLimit)
@@ -77743,6 +78681,36 @@ func (m *SupplierMutation) ClearField(name string) error {
 	case supplier.FieldAddress:
 		m.ClearAddress()
 		return nil
+	case supplier.FieldAddressLine1:
+		m.ClearAddressLine1()
+		return nil
+	case supplier.FieldAddressLine2:
+		m.ClearAddressLine2()
+		return nil
+	case supplier.FieldCity:
+		m.ClearCity()
+		return nil
+	case supplier.FieldAddressState:
+		m.ClearAddressState()
+		return nil
+	case supplier.FieldAddressPostalCode:
+		m.ClearAddressPostalCode()
+		return nil
+	case supplier.FieldCountry:
+		m.ClearCountry()
+		return nil
+	case supplier.FieldIndustry:
+		m.ClearIndustry()
+		return nil
+	case supplier.FieldWebsite:
+		m.ClearWebsite()
+		return nil
+	case supplier.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case supplier.FieldLogoURL:
+		m.ClearLogoURL()
+		return nil
 	case supplier.FieldPaymentTerms:
 		m.ClearPaymentTerms()
 		return nil
@@ -77758,14 +78726,26 @@ func (m *SupplierMutation) ClearField(name string) error {
 	case supplier.FieldBankAccountNumber:
 		m.ClearBankAccountNumber()
 		return nil
+	case supplier.FieldBankAccountName:
+		m.ClearBankAccountName()
+		return nil
 	case supplier.FieldBankName:
 		m.ClearBankName()
 		return nil
 	case supplier.FieldBankBranch:
 		m.ClearBankBranch()
 		return nil
+	case supplier.FieldSwiftBic:
+		m.ClearSwiftBic()
+		return nil
+	case supplier.FieldCurrency:
+		m.ClearCurrency()
+		return nil
 	case supplier.FieldTaxPin:
 		m.ClearTaxPin()
+		return nil
+	case supplier.FieldVatNumber:
+		m.ClearVatNumber()
 		return nil
 	case supplier.FieldCreditLimit:
 		m.ClearCreditLimit()
@@ -77802,6 +78782,36 @@ func (m *SupplierMutation) ResetField(name string) error {
 	case supplier.FieldAddress:
 		m.ResetAddress()
 		return nil
+	case supplier.FieldAddressLine1:
+		m.ResetAddressLine1()
+		return nil
+	case supplier.FieldAddressLine2:
+		m.ResetAddressLine2()
+		return nil
+	case supplier.FieldCity:
+		m.ResetCity()
+		return nil
+	case supplier.FieldAddressState:
+		m.ResetAddressState()
+		return nil
+	case supplier.FieldAddressPostalCode:
+		m.ResetAddressPostalCode()
+		return nil
+	case supplier.FieldCountry:
+		m.ResetCountry()
+		return nil
+	case supplier.FieldIndustry:
+		m.ResetIndustry()
+		return nil
+	case supplier.FieldWebsite:
+		m.ResetWebsite()
+		return nil
+	case supplier.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case supplier.FieldLogoURL:
+		m.ResetLogoURL()
+		return nil
 	case supplier.FieldPaymentTerms:
 		m.ResetPaymentTerms()
 		return nil
@@ -77820,14 +78830,26 @@ func (m *SupplierMutation) ResetField(name string) error {
 	case supplier.FieldBankAccountNumber:
 		m.ResetBankAccountNumber()
 		return nil
+	case supplier.FieldBankAccountName:
+		m.ResetBankAccountName()
+		return nil
 	case supplier.FieldBankName:
 		m.ResetBankName()
 		return nil
 	case supplier.FieldBankBranch:
 		m.ResetBankBranch()
 		return nil
+	case supplier.FieldSwiftBic:
+		m.ResetSwiftBic()
+		return nil
+	case supplier.FieldCurrency:
+		m.ResetCurrency()
+		return nil
 	case supplier.FieldTaxPin:
 		m.ResetTaxPin()
+		return nil
+	case supplier.FieldVatNumber:
+		m.ResetVatNumber()
 		return nil
 	case supplier.FieldRequiresInvoiceBeforePayment:
 		m.ResetRequiresInvoiceBeforePayment()

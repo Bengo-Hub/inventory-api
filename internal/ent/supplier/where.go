@@ -91,6 +91,56 @@ func Address(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldAddress, v))
 }
 
+// AddressLine1 applies equality check predicate on the "address_line1" field. It's identical to AddressLine1EQ.
+func AddressLine1(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressLine1, v))
+}
+
+// AddressLine2 applies equality check predicate on the "address_line2" field. It's identical to AddressLine2EQ.
+func AddressLine2(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressLine2, v))
+}
+
+// City applies equality check predicate on the "city" field. It's identical to CityEQ.
+func City(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCity, v))
+}
+
+// AddressState applies equality check predicate on the "address_state" field. It's identical to AddressStateEQ.
+func AddressState(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressState, v))
+}
+
+// AddressPostalCode applies equality check predicate on the "address_postal_code" field. It's identical to AddressPostalCodeEQ.
+func AddressPostalCode(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressPostalCode, v))
+}
+
+// Country applies equality check predicate on the "country" field. It's identical to CountryEQ.
+func Country(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCountry, v))
+}
+
+// Industry applies equality check predicate on the "industry" field. It's identical to IndustryEQ.
+func Industry(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldIndustry, v))
+}
+
+// Website applies equality check predicate on the "website" field. It's identical to WebsiteEQ.
+func Website(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldWebsite, v))
+}
+
+// Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
+func Notes(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldNotes, v))
+}
+
+// LogoURL applies equality check predicate on the "logo_url" field. It's identical to LogoURLEQ.
+func LogoURL(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldLogoURL, v))
+}
+
 // PaymentTerms applies equality check predicate on the "payment_terms" field. It's identical to PaymentTermsEQ.
 func PaymentTerms(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldPaymentTerms, v))
@@ -116,6 +166,11 @@ func BankAccountNumber(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldBankAccountNumber, v))
 }
 
+// BankAccountName applies equality check predicate on the "bank_account_name" field. It's identical to BankAccountNameEQ.
+func BankAccountName(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankAccountName, v))
+}
+
 // BankName applies equality check predicate on the "bank_name" field. It's identical to BankNameEQ.
 func BankName(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldBankName, v))
@@ -126,9 +181,24 @@ func BankBranch(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldBankBranch, v))
 }
 
+// SwiftBic applies equality check predicate on the "swift_bic" field. It's identical to SwiftBicEQ.
+func SwiftBic(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldSwiftBic, v))
+}
+
+// Currency applies equality check predicate on the "currency" field. It's identical to CurrencyEQ.
+func Currency(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCurrency, v))
+}
+
 // TaxPin applies equality check predicate on the "tax_pin" field. It's identical to TaxPinEQ.
 func TaxPin(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldTaxPin, v))
+}
+
+// VatNumber applies equality check predicate on the "vat_number" field. It's identical to VatNumberEQ.
+func VatNumber(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldVatNumber, v))
 }
 
 // RequiresInvoiceBeforePayment applies equality check predicate on the "requires_invoice_before_payment" field. It's identical to RequiresInvoiceBeforePaymentEQ.
@@ -636,6 +706,756 @@ func AddressContainsFold(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldContainsFold(FieldAddress, v))
 }
 
+// AddressLine1EQ applies the EQ predicate on the "address_line1" field.
+func AddressLine1EQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressLine1, v))
+}
+
+// AddressLine1NEQ applies the NEQ predicate on the "address_line1" field.
+func AddressLine1NEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldAddressLine1, v))
+}
+
+// AddressLine1In applies the In predicate on the "address_line1" field.
+func AddressLine1In(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldAddressLine1, vs...))
+}
+
+// AddressLine1NotIn applies the NotIn predicate on the "address_line1" field.
+func AddressLine1NotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldAddressLine1, vs...))
+}
+
+// AddressLine1GT applies the GT predicate on the "address_line1" field.
+func AddressLine1GT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldAddressLine1, v))
+}
+
+// AddressLine1GTE applies the GTE predicate on the "address_line1" field.
+func AddressLine1GTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldAddressLine1, v))
+}
+
+// AddressLine1LT applies the LT predicate on the "address_line1" field.
+func AddressLine1LT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldAddressLine1, v))
+}
+
+// AddressLine1LTE applies the LTE predicate on the "address_line1" field.
+func AddressLine1LTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldAddressLine1, v))
+}
+
+// AddressLine1Contains applies the Contains predicate on the "address_line1" field.
+func AddressLine1Contains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldAddressLine1, v))
+}
+
+// AddressLine1HasPrefix applies the HasPrefix predicate on the "address_line1" field.
+func AddressLine1HasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldAddressLine1, v))
+}
+
+// AddressLine1HasSuffix applies the HasSuffix predicate on the "address_line1" field.
+func AddressLine1HasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldAddressLine1, v))
+}
+
+// AddressLine1IsNil applies the IsNil predicate on the "address_line1" field.
+func AddressLine1IsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldAddressLine1))
+}
+
+// AddressLine1NotNil applies the NotNil predicate on the "address_line1" field.
+func AddressLine1NotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldAddressLine1))
+}
+
+// AddressLine1EqualFold applies the EqualFold predicate on the "address_line1" field.
+func AddressLine1EqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldAddressLine1, v))
+}
+
+// AddressLine1ContainsFold applies the ContainsFold predicate on the "address_line1" field.
+func AddressLine1ContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldAddressLine1, v))
+}
+
+// AddressLine2EQ applies the EQ predicate on the "address_line2" field.
+func AddressLine2EQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressLine2, v))
+}
+
+// AddressLine2NEQ applies the NEQ predicate on the "address_line2" field.
+func AddressLine2NEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldAddressLine2, v))
+}
+
+// AddressLine2In applies the In predicate on the "address_line2" field.
+func AddressLine2In(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldAddressLine2, vs...))
+}
+
+// AddressLine2NotIn applies the NotIn predicate on the "address_line2" field.
+func AddressLine2NotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldAddressLine2, vs...))
+}
+
+// AddressLine2GT applies the GT predicate on the "address_line2" field.
+func AddressLine2GT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldAddressLine2, v))
+}
+
+// AddressLine2GTE applies the GTE predicate on the "address_line2" field.
+func AddressLine2GTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldAddressLine2, v))
+}
+
+// AddressLine2LT applies the LT predicate on the "address_line2" field.
+func AddressLine2LT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldAddressLine2, v))
+}
+
+// AddressLine2LTE applies the LTE predicate on the "address_line2" field.
+func AddressLine2LTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldAddressLine2, v))
+}
+
+// AddressLine2Contains applies the Contains predicate on the "address_line2" field.
+func AddressLine2Contains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldAddressLine2, v))
+}
+
+// AddressLine2HasPrefix applies the HasPrefix predicate on the "address_line2" field.
+func AddressLine2HasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldAddressLine2, v))
+}
+
+// AddressLine2HasSuffix applies the HasSuffix predicate on the "address_line2" field.
+func AddressLine2HasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldAddressLine2, v))
+}
+
+// AddressLine2IsNil applies the IsNil predicate on the "address_line2" field.
+func AddressLine2IsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldAddressLine2))
+}
+
+// AddressLine2NotNil applies the NotNil predicate on the "address_line2" field.
+func AddressLine2NotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldAddressLine2))
+}
+
+// AddressLine2EqualFold applies the EqualFold predicate on the "address_line2" field.
+func AddressLine2EqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldAddressLine2, v))
+}
+
+// AddressLine2ContainsFold applies the ContainsFold predicate on the "address_line2" field.
+func AddressLine2ContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldAddressLine2, v))
+}
+
+// CityEQ applies the EQ predicate on the "city" field.
+func CityEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCity, v))
+}
+
+// CityNEQ applies the NEQ predicate on the "city" field.
+func CityNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldCity, v))
+}
+
+// CityIn applies the In predicate on the "city" field.
+func CityIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldCity, vs...))
+}
+
+// CityNotIn applies the NotIn predicate on the "city" field.
+func CityNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldCity, vs...))
+}
+
+// CityGT applies the GT predicate on the "city" field.
+func CityGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldCity, v))
+}
+
+// CityGTE applies the GTE predicate on the "city" field.
+func CityGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldCity, v))
+}
+
+// CityLT applies the LT predicate on the "city" field.
+func CityLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldCity, v))
+}
+
+// CityLTE applies the LTE predicate on the "city" field.
+func CityLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldCity, v))
+}
+
+// CityContains applies the Contains predicate on the "city" field.
+func CityContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldCity, v))
+}
+
+// CityHasPrefix applies the HasPrefix predicate on the "city" field.
+func CityHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldCity, v))
+}
+
+// CityHasSuffix applies the HasSuffix predicate on the "city" field.
+func CityHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldCity, v))
+}
+
+// CityIsNil applies the IsNil predicate on the "city" field.
+func CityIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldCity))
+}
+
+// CityNotNil applies the NotNil predicate on the "city" field.
+func CityNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldCity))
+}
+
+// CityEqualFold applies the EqualFold predicate on the "city" field.
+func CityEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldCity, v))
+}
+
+// CityContainsFold applies the ContainsFold predicate on the "city" field.
+func CityContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldCity, v))
+}
+
+// AddressStateEQ applies the EQ predicate on the "address_state" field.
+func AddressStateEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressState, v))
+}
+
+// AddressStateNEQ applies the NEQ predicate on the "address_state" field.
+func AddressStateNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldAddressState, v))
+}
+
+// AddressStateIn applies the In predicate on the "address_state" field.
+func AddressStateIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldAddressState, vs...))
+}
+
+// AddressStateNotIn applies the NotIn predicate on the "address_state" field.
+func AddressStateNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldAddressState, vs...))
+}
+
+// AddressStateGT applies the GT predicate on the "address_state" field.
+func AddressStateGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldAddressState, v))
+}
+
+// AddressStateGTE applies the GTE predicate on the "address_state" field.
+func AddressStateGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldAddressState, v))
+}
+
+// AddressStateLT applies the LT predicate on the "address_state" field.
+func AddressStateLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldAddressState, v))
+}
+
+// AddressStateLTE applies the LTE predicate on the "address_state" field.
+func AddressStateLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldAddressState, v))
+}
+
+// AddressStateContains applies the Contains predicate on the "address_state" field.
+func AddressStateContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldAddressState, v))
+}
+
+// AddressStateHasPrefix applies the HasPrefix predicate on the "address_state" field.
+func AddressStateHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldAddressState, v))
+}
+
+// AddressStateHasSuffix applies the HasSuffix predicate on the "address_state" field.
+func AddressStateHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldAddressState, v))
+}
+
+// AddressStateIsNil applies the IsNil predicate on the "address_state" field.
+func AddressStateIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldAddressState))
+}
+
+// AddressStateNotNil applies the NotNil predicate on the "address_state" field.
+func AddressStateNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldAddressState))
+}
+
+// AddressStateEqualFold applies the EqualFold predicate on the "address_state" field.
+func AddressStateEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldAddressState, v))
+}
+
+// AddressStateContainsFold applies the ContainsFold predicate on the "address_state" field.
+func AddressStateContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldAddressState, v))
+}
+
+// AddressPostalCodeEQ applies the EQ predicate on the "address_postal_code" field.
+func AddressPostalCodeEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeNEQ applies the NEQ predicate on the "address_postal_code" field.
+func AddressPostalCodeNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeIn applies the In predicate on the "address_postal_code" field.
+func AddressPostalCodeIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldAddressPostalCode, vs...))
+}
+
+// AddressPostalCodeNotIn applies the NotIn predicate on the "address_postal_code" field.
+func AddressPostalCodeNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldAddressPostalCode, vs...))
+}
+
+// AddressPostalCodeGT applies the GT predicate on the "address_postal_code" field.
+func AddressPostalCodeGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeGTE applies the GTE predicate on the "address_postal_code" field.
+func AddressPostalCodeGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeLT applies the LT predicate on the "address_postal_code" field.
+func AddressPostalCodeLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeLTE applies the LTE predicate on the "address_postal_code" field.
+func AddressPostalCodeLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeContains applies the Contains predicate on the "address_postal_code" field.
+func AddressPostalCodeContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeHasPrefix applies the HasPrefix predicate on the "address_postal_code" field.
+func AddressPostalCodeHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeHasSuffix applies the HasSuffix predicate on the "address_postal_code" field.
+func AddressPostalCodeHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeIsNil applies the IsNil predicate on the "address_postal_code" field.
+func AddressPostalCodeIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldAddressPostalCode))
+}
+
+// AddressPostalCodeNotNil applies the NotNil predicate on the "address_postal_code" field.
+func AddressPostalCodeNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldAddressPostalCode))
+}
+
+// AddressPostalCodeEqualFold applies the EqualFold predicate on the "address_postal_code" field.
+func AddressPostalCodeEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldAddressPostalCode, v))
+}
+
+// AddressPostalCodeContainsFold applies the ContainsFold predicate on the "address_postal_code" field.
+func AddressPostalCodeContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldAddressPostalCode, v))
+}
+
+// CountryEQ applies the EQ predicate on the "country" field.
+func CountryEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCountry, v))
+}
+
+// CountryNEQ applies the NEQ predicate on the "country" field.
+func CountryNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldCountry, v))
+}
+
+// CountryIn applies the In predicate on the "country" field.
+func CountryIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldCountry, vs...))
+}
+
+// CountryNotIn applies the NotIn predicate on the "country" field.
+func CountryNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldCountry, vs...))
+}
+
+// CountryGT applies the GT predicate on the "country" field.
+func CountryGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldCountry, v))
+}
+
+// CountryGTE applies the GTE predicate on the "country" field.
+func CountryGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldCountry, v))
+}
+
+// CountryLT applies the LT predicate on the "country" field.
+func CountryLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldCountry, v))
+}
+
+// CountryLTE applies the LTE predicate on the "country" field.
+func CountryLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldCountry, v))
+}
+
+// CountryContains applies the Contains predicate on the "country" field.
+func CountryContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldCountry, v))
+}
+
+// CountryHasPrefix applies the HasPrefix predicate on the "country" field.
+func CountryHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldCountry, v))
+}
+
+// CountryHasSuffix applies the HasSuffix predicate on the "country" field.
+func CountryHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldCountry, v))
+}
+
+// CountryIsNil applies the IsNil predicate on the "country" field.
+func CountryIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldCountry))
+}
+
+// CountryNotNil applies the NotNil predicate on the "country" field.
+func CountryNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldCountry))
+}
+
+// CountryEqualFold applies the EqualFold predicate on the "country" field.
+func CountryEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldCountry, v))
+}
+
+// CountryContainsFold applies the ContainsFold predicate on the "country" field.
+func CountryContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldCountry, v))
+}
+
+// IndustryEQ applies the EQ predicate on the "industry" field.
+func IndustryEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldIndustry, v))
+}
+
+// IndustryNEQ applies the NEQ predicate on the "industry" field.
+func IndustryNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldIndustry, v))
+}
+
+// IndustryIn applies the In predicate on the "industry" field.
+func IndustryIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldIndustry, vs...))
+}
+
+// IndustryNotIn applies the NotIn predicate on the "industry" field.
+func IndustryNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldIndustry, vs...))
+}
+
+// IndustryGT applies the GT predicate on the "industry" field.
+func IndustryGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldIndustry, v))
+}
+
+// IndustryGTE applies the GTE predicate on the "industry" field.
+func IndustryGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldIndustry, v))
+}
+
+// IndustryLT applies the LT predicate on the "industry" field.
+func IndustryLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldIndustry, v))
+}
+
+// IndustryLTE applies the LTE predicate on the "industry" field.
+func IndustryLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldIndustry, v))
+}
+
+// IndustryContains applies the Contains predicate on the "industry" field.
+func IndustryContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldIndustry, v))
+}
+
+// IndustryHasPrefix applies the HasPrefix predicate on the "industry" field.
+func IndustryHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldIndustry, v))
+}
+
+// IndustryHasSuffix applies the HasSuffix predicate on the "industry" field.
+func IndustryHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldIndustry, v))
+}
+
+// IndustryIsNil applies the IsNil predicate on the "industry" field.
+func IndustryIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldIndustry))
+}
+
+// IndustryNotNil applies the NotNil predicate on the "industry" field.
+func IndustryNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldIndustry))
+}
+
+// IndustryEqualFold applies the EqualFold predicate on the "industry" field.
+func IndustryEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldIndustry, v))
+}
+
+// IndustryContainsFold applies the ContainsFold predicate on the "industry" field.
+func IndustryContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldIndustry, v))
+}
+
+// WebsiteEQ applies the EQ predicate on the "website" field.
+func WebsiteEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldWebsite, v))
+}
+
+// WebsiteNEQ applies the NEQ predicate on the "website" field.
+func WebsiteNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldWebsite, v))
+}
+
+// WebsiteIn applies the In predicate on the "website" field.
+func WebsiteIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldWebsite, vs...))
+}
+
+// WebsiteNotIn applies the NotIn predicate on the "website" field.
+func WebsiteNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldWebsite, vs...))
+}
+
+// WebsiteGT applies the GT predicate on the "website" field.
+func WebsiteGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldWebsite, v))
+}
+
+// WebsiteGTE applies the GTE predicate on the "website" field.
+func WebsiteGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldWebsite, v))
+}
+
+// WebsiteLT applies the LT predicate on the "website" field.
+func WebsiteLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldWebsite, v))
+}
+
+// WebsiteLTE applies the LTE predicate on the "website" field.
+func WebsiteLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldWebsite, v))
+}
+
+// WebsiteContains applies the Contains predicate on the "website" field.
+func WebsiteContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldWebsite, v))
+}
+
+// WebsiteHasPrefix applies the HasPrefix predicate on the "website" field.
+func WebsiteHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldWebsite, v))
+}
+
+// WebsiteHasSuffix applies the HasSuffix predicate on the "website" field.
+func WebsiteHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldWebsite, v))
+}
+
+// WebsiteIsNil applies the IsNil predicate on the "website" field.
+func WebsiteIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldWebsite))
+}
+
+// WebsiteNotNil applies the NotNil predicate on the "website" field.
+func WebsiteNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldWebsite))
+}
+
+// WebsiteEqualFold applies the EqualFold predicate on the "website" field.
+func WebsiteEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldWebsite, v))
+}
+
+// WebsiteContainsFold applies the ContainsFold predicate on the "website" field.
+func WebsiteContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldWebsite, v))
+}
+
+// NotesEQ applies the EQ predicate on the "notes" field.
+func NotesEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldNotes, v))
+}
+
+// NotesNEQ applies the NEQ predicate on the "notes" field.
+func NotesNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldNotes, v))
+}
+
+// NotesIn applies the In predicate on the "notes" field.
+func NotesIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldNotes, vs...))
+}
+
+// NotesNotIn applies the NotIn predicate on the "notes" field.
+func NotesNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldNotes, vs...))
+}
+
+// NotesGT applies the GT predicate on the "notes" field.
+func NotesGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldNotes, v))
+}
+
+// NotesGTE applies the GTE predicate on the "notes" field.
+func NotesGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldNotes, v))
+}
+
+// NotesLT applies the LT predicate on the "notes" field.
+func NotesLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldNotes, v))
+}
+
+// NotesLTE applies the LTE predicate on the "notes" field.
+func NotesLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldNotes, v))
+}
+
+// NotesContains applies the Contains predicate on the "notes" field.
+func NotesContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldNotes, v))
+}
+
+// NotesHasPrefix applies the HasPrefix predicate on the "notes" field.
+func NotesHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldNotes, v))
+}
+
+// NotesHasSuffix applies the HasSuffix predicate on the "notes" field.
+func NotesHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldNotes, v))
+}
+
+// NotesIsNil applies the IsNil predicate on the "notes" field.
+func NotesIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldNotes))
+}
+
+// NotesNotNil applies the NotNil predicate on the "notes" field.
+func NotesNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldNotes))
+}
+
+// NotesEqualFold applies the EqualFold predicate on the "notes" field.
+func NotesEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldNotes, v))
+}
+
+// NotesContainsFold applies the ContainsFold predicate on the "notes" field.
+func NotesContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldNotes, v))
+}
+
+// LogoURLEQ applies the EQ predicate on the "logo_url" field.
+func LogoURLEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldLogoURL, v))
+}
+
+// LogoURLNEQ applies the NEQ predicate on the "logo_url" field.
+func LogoURLNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldLogoURL, v))
+}
+
+// LogoURLIn applies the In predicate on the "logo_url" field.
+func LogoURLIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldLogoURL, vs...))
+}
+
+// LogoURLNotIn applies the NotIn predicate on the "logo_url" field.
+func LogoURLNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldLogoURL, vs...))
+}
+
+// LogoURLGT applies the GT predicate on the "logo_url" field.
+func LogoURLGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldLogoURL, v))
+}
+
+// LogoURLGTE applies the GTE predicate on the "logo_url" field.
+func LogoURLGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldLogoURL, v))
+}
+
+// LogoURLLT applies the LT predicate on the "logo_url" field.
+func LogoURLLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldLogoURL, v))
+}
+
+// LogoURLLTE applies the LTE predicate on the "logo_url" field.
+func LogoURLLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldLogoURL, v))
+}
+
+// LogoURLContains applies the Contains predicate on the "logo_url" field.
+func LogoURLContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldLogoURL, v))
+}
+
+// LogoURLHasPrefix applies the HasPrefix predicate on the "logo_url" field.
+func LogoURLHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldLogoURL, v))
+}
+
+// LogoURLHasSuffix applies the HasSuffix predicate on the "logo_url" field.
+func LogoURLHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldLogoURL, v))
+}
+
+// LogoURLIsNil applies the IsNil predicate on the "logo_url" field.
+func LogoURLIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldLogoURL))
+}
+
+// LogoURLNotNil applies the NotNil predicate on the "logo_url" field.
+func LogoURLNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldLogoURL))
+}
+
+// LogoURLEqualFold applies the EqualFold predicate on the "logo_url" field.
+func LogoURLEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldLogoURL, v))
+}
+
+// LogoURLContainsFold applies the ContainsFold predicate on the "logo_url" field.
+func LogoURLContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldLogoURL, v))
+}
+
 // PaymentTermsEQ applies the EQ predicate on the "payment_terms" field.
 func PaymentTermsEQ(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldPaymentTerms, v))
@@ -976,6 +1796,81 @@ func BankAccountNumberContainsFold(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldContainsFold(FieldBankAccountNumber, v))
 }
 
+// BankAccountNameEQ applies the EQ predicate on the "bank_account_name" field.
+func BankAccountNameEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldBankAccountName, v))
+}
+
+// BankAccountNameNEQ applies the NEQ predicate on the "bank_account_name" field.
+func BankAccountNameNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldBankAccountName, v))
+}
+
+// BankAccountNameIn applies the In predicate on the "bank_account_name" field.
+func BankAccountNameIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldBankAccountName, vs...))
+}
+
+// BankAccountNameNotIn applies the NotIn predicate on the "bank_account_name" field.
+func BankAccountNameNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldBankAccountName, vs...))
+}
+
+// BankAccountNameGT applies the GT predicate on the "bank_account_name" field.
+func BankAccountNameGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldBankAccountName, v))
+}
+
+// BankAccountNameGTE applies the GTE predicate on the "bank_account_name" field.
+func BankAccountNameGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldBankAccountName, v))
+}
+
+// BankAccountNameLT applies the LT predicate on the "bank_account_name" field.
+func BankAccountNameLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldBankAccountName, v))
+}
+
+// BankAccountNameLTE applies the LTE predicate on the "bank_account_name" field.
+func BankAccountNameLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldBankAccountName, v))
+}
+
+// BankAccountNameContains applies the Contains predicate on the "bank_account_name" field.
+func BankAccountNameContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldBankAccountName, v))
+}
+
+// BankAccountNameHasPrefix applies the HasPrefix predicate on the "bank_account_name" field.
+func BankAccountNameHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldBankAccountName, v))
+}
+
+// BankAccountNameHasSuffix applies the HasSuffix predicate on the "bank_account_name" field.
+func BankAccountNameHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldBankAccountName, v))
+}
+
+// BankAccountNameIsNil applies the IsNil predicate on the "bank_account_name" field.
+func BankAccountNameIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldBankAccountName))
+}
+
+// BankAccountNameNotNil applies the NotNil predicate on the "bank_account_name" field.
+func BankAccountNameNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldBankAccountName))
+}
+
+// BankAccountNameEqualFold applies the EqualFold predicate on the "bank_account_name" field.
+func BankAccountNameEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldBankAccountName, v))
+}
+
+// BankAccountNameContainsFold applies the ContainsFold predicate on the "bank_account_name" field.
+func BankAccountNameContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldBankAccountName, v))
+}
+
 // BankNameEQ applies the EQ predicate on the "bank_name" field.
 func BankNameEQ(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldBankName, v))
@@ -1126,6 +2021,156 @@ func BankBranchContainsFold(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldContainsFold(FieldBankBranch, v))
 }
 
+// SwiftBicEQ applies the EQ predicate on the "swift_bic" field.
+func SwiftBicEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldSwiftBic, v))
+}
+
+// SwiftBicNEQ applies the NEQ predicate on the "swift_bic" field.
+func SwiftBicNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldSwiftBic, v))
+}
+
+// SwiftBicIn applies the In predicate on the "swift_bic" field.
+func SwiftBicIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldSwiftBic, vs...))
+}
+
+// SwiftBicNotIn applies the NotIn predicate on the "swift_bic" field.
+func SwiftBicNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldSwiftBic, vs...))
+}
+
+// SwiftBicGT applies the GT predicate on the "swift_bic" field.
+func SwiftBicGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldSwiftBic, v))
+}
+
+// SwiftBicGTE applies the GTE predicate on the "swift_bic" field.
+func SwiftBicGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldSwiftBic, v))
+}
+
+// SwiftBicLT applies the LT predicate on the "swift_bic" field.
+func SwiftBicLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldSwiftBic, v))
+}
+
+// SwiftBicLTE applies the LTE predicate on the "swift_bic" field.
+func SwiftBicLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldSwiftBic, v))
+}
+
+// SwiftBicContains applies the Contains predicate on the "swift_bic" field.
+func SwiftBicContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldSwiftBic, v))
+}
+
+// SwiftBicHasPrefix applies the HasPrefix predicate on the "swift_bic" field.
+func SwiftBicHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldSwiftBic, v))
+}
+
+// SwiftBicHasSuffix applies the HasSuffix predicate on the "swift_bic" field.
+func SwiftBicHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldSwiftBic, v))
+}
+
+// SwiftBicIsNil applies the IsNil predicate on the "swift_bic" field.
+func SwiftBicIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldSwiftBic))
+}
+
+// SwiftBicNotNil applies the NotNil predicate on the "swift_bic" field.
+func SwiftBicNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldSwiftBic))
+}
+
+// SwiftBicEqualFold applies the EqualFold predicate on the "swift_bic" field.
+func SwiftBicEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldSwiftBic, v))
+}
+
+// SwiftBicContainsFold applies the ContainsFold predicate on the "swift_bic" field.
+func SwiftBicContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldSwiftBic, v))
+}
+
+// CurrencyEQ applies the EQ predicate on the "currency" field.
+func CurrencyEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldCurrency, v))
+}
+
+// CurrencyNEQ applies the NEQ predicate on the "currency" field.
+func CurrencyNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldCurrency, v))
+}
+
+// CurrencyIn applies the In predicate on the "currency" field.
+func CurrencyIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldCurrency, vs...))
+}
+
+// CurrencyNotIn applies the NotIn predicate on the "currency" field.
+func CurrencyNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldCurrency, vs...))
+}
+
+// CurrencyGT applies the GT predicate on the "currency" field.
+func CurrencyGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldCurrency, v))
+}
+
+// CurrencyGTE applies the GTE predicate on the "currency" field.
+func CurrencyGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldCurrency, v))
+}
+
+// CurrencyLT applies the LT predicate on the "currency" field.
+func CurrencyLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldCurrency, v))
+}
+
+// CurrencyLTE applies the LTE predicate on the "currency" field.
+func CurrencyLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldCurrency, v))
+}
+
+// CurrencyContains applies the Contains predicate on the "currency" field.
+func CurrencyContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldCurrency, v))
+}
+
+// CurrencyHasPrefix applies the HasPrefix predicate on the "currency" field.
+func CurrencyHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldCurrency, v))
+}
+
+// CurrencyHasSuffix applies the HasSuffix predicate on the "currency" field.
+func CurrencyHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldCurrency, v))
+}
+
+// CurrencyIsNil applies the IsNil predicate on the "currency" field.
+func CurrencyIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldCurrency))
+}
+
+// CurrencyNotNil applies the NotNil predicate on the "currency" field.
+func CurrencyNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldCurrency))
+}
+
+// CurrencyEqualFold applies the EqualFold predicate on the "currency" field.
+func CurrencyEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldCurrency, v))
+}
+
+// CurrencyContainsFold applies the ContainsFold predicate on the "currency" field.
+func CurrencyContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldCurrency, v))
+}
+
 // TaxPinEQ applies the EQ predicate on the "tax_pin" field.
 func TaxPinEQ(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldEQ(FieldTaxPin, v))
@@ -1199,6 +2244,81 @@ func TaxPinEqualFold(v string) predicate.Supplier {
 // TaxPinContainsFold applies the ContainsFold predicate on the "tax_pin" field.
 func TaxPinContainsFold(v string) predicate.Supplier {
 	return predicate.Supplier(sql.FieldContainsFold(FieldTaxPin, v))
+}
+
+// VatNumberEQ applies the EQ predicate on the "vat_number" field.
+func VatNumberEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEQ(FieldVatNumber, v))
+}
+
+// VatNumberNEQ applies the NEQ predicate on the "vat_number" field.
+func VatNumberNEQ(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNEQ(FieldVatNumber, v))
+}
+
+// VatNumberIn applies the In predicate on the "vat_number" field.
+func VatNumberIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldIn(FieldVatNumber, vs...))
+}
+
+// VatNumberNotIn applies the NotIn predicate on the "vat_number" field.
+func VatNumberNotIn(vs ...string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotIn(FieldVatNumber, vs...))
+}
+
+// VatNumberGT applies the GT predicate on the "vat_number" field.
+func VatNumberGT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGT(FieldVatNumber, v))
+}
+
+// VatNumberGTE applies the GTE predicate on the "vat_number" field.
+func VatNumberGTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldGTE(FieldVatNumber, v))
+}
+
+// VatNumberLT applies the LT predicate on the "vat_number" field.
+func VatNumberLT(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLT(FieldVatNumber, v))
+}
+
+// VatNumberLTE applies the LTE predicate on the "vat_number" field.
+func VatNumberLTE(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldLTE(FieldVatNumber, v))
+}
+
+// VatNumberContains applies the Contains predicate on the "vat_number" field.
+func VatNumberContains(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContains(FieldVatNumber, v))
+}
+
+// VatNumberHasPrefix applies the HasPrefix predicate on the "vat_number" field.
+func VatNumberHasPrefix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasPrefix(FieldVatNumber, v))
+}
+
+// VatNumberHasSuffix applies the HasSuffix predicate on the "vat_number" field.
+func VatNumberHasSuffix(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldHasSuffix(FieldVatNumber, v))
+}
+
+// VatNumberIsNil applies the IsNil predicate on the "vat_number" field.
+func VatNumberIsNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldIsNull(FieldVatNumber))
+}
+
+// VatNumberNotNil applies the NotNil predicate on the "vat_number" field.
+func VatNumberNotNil() predicate.Supplier {
+	return predicate.Supplier(sql.FieldNotNull(FieldVatNumber))
+}
+
+// VatNumberEqualFold applies the EqualFold predicate on the "vat_number" field.
+func VatNumberEqualFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldEqualFold(FieldVatNumber, v))
+}
+
+// VatNumberContainsFold applies the ContainsFold predicate on the "vat_number" field.
+func VatNumberContainsFold(v string) predicate.Supplier {
+	return predicate.Supplier(sql.FieldContainsFold(FieldVatNumber, v))
 }
 
 // RequiresInvoiceBeforePaymentEQ applies the EQ predicate on the "requires_invoice_before_payment" field.
