@@ -99,6 +99,146 @@ func (_c *SupplierCreate) SetNillableAddress(v *string) *SupplierCreate {
 	return _c
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (_c *SupplierCreate) SetAddressLine1(v string) *SupplierCreate {
+	_c.mutation.SetAddressLine1(v)
+	return _c
+}
+
+// SetNillableAddressLine1 sets the "address_line1" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableAddressLine1(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetAddressLine1(*v)
+	}
+	return _c
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (_c *SupplierCreate) SetAddressLine2(v string) *SupplierCreate {
+	_c.mutation.SetAddressLine2(v)
+	return _c
+}
+
+// SetNillableAddressLine2 sets the "address_line2" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableAddressLine2(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetAddressLine2(*v)
+	}
+	return _c
+}
+
+// SetCity sets the "city" field.
+func (_c *SupplierCreate) SetCity(v string) *SupplierCreate {
+	_c.mutation.SetCity(v)
+	return _c
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableCity(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetCity(*v)
+	}
+	return _c
+}
+
+// SetAddressState sets the "address_state" field.
+func (_c *SupplierCreate) SetAddressState(v string) *SupplierCreate {
+	_c.mutation.SetAddressState(v)
+	return _c
+}
+
+// SetNillableAddressState sets the "address_state" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableAddressState(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetAddressState(*v)
+	}
+	return _c
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (_c *SupplierCreate) SetAddressPostalCode(v string) *SupplierCreate {
+	_c.mutation.SetAddressPostalCode(v)
+	return _c
+}
+
+// SetNillableAddressPostalCode sets the "address_postal_code" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableAddressPostalCode(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetAddressPostalCode(*v)
+	}
+	return _c
+}
+
+// SetCountry sets the "country" field.
+func (_c *SupplierCreate) SetCountry(v string) *SupplierCreate {
+	_c.mutation.SetCountry(v)
+	return _c
+}
+
+// SetNillableCountry sets the "country" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableCountry(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetCountry(*v)
+	}
+	return _c
+}
+
+// SetIndustry sets the "industry" field.
+func (_c *SupplierCreate) SetIndustry(v string) *SupplierCreate {
+	_c.mutation.SetIndustry(v)
+	return _c
+}
+
+// SetNillableIndustry sets the "industry" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableIndustry(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetIndustry(*v)
+	}
+	return _c
+}
+
+// SetWebsite sets the "website" field.
+func (_c *SupplierCreate) SetWebsite(v string) *SupplierCreate {
+	_c.mutation.SetWebsite(v)
+	return _c
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableWebsite(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetWebsite(*v)
+	}
+	return _c
+}
+
+// SetNotes sets the "notes" field.
+func (_c *SupplierCreate) SetNotes(v string) *SupplierCreate {
+	_c.mutation.SetNotes(v)
+	return _c
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableNotes(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetNotes(*v)
+	}
+	return _c
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (_c *SupplierCreate) SetLogoURL(v string) *SupplierCreate {
+	_c.mutation.SetLogoURL(v)
+	return _c
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableLogoURL(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetLogoURL(*v)
+	}
+	return _c
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (_c *SupplierCreate) SetPaymentTerms(v string) *SupplierCreate {
 	_c.mutation.SetPaymentTerms(v)
@@ -183,6 +323,20 @@ func (_c *SupplierCreate) SetNillableBankAccountNumber(v *string) *SupplierCreat
 	return _c
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (_c *SupplierCreate) SetBankAccountName(v string) *SupplierCreate {
+	_c.mutation.SetBankAccountName(v)
+	return _c
+}
+
+// SetNillableBankAccountName sets the "bank_account_name" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableBankAccountName(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetBankAccountName(*v)
+	}
+	return _c
+}
+
 // SetBankName sets the "bank_name" field.
 func (_c *SupplierCreate) SetBankName(v string) *SupplierCreate {
 	_c.mutation.SetBankName(v)
@@ -211,6 +365,34 @@ func (_c *SupplierCreate) SetNillableBankBranch(v *string) *SupplierCreate {
 	return _c
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (_c *SupplierCreate) SetSwiftBic(v string) *SupplierCreate {
+	_c.mutation.SetSwiftBic(v)
+	return _c
+}
+
+// SetNillableSwiftBic sets the "swift_bic" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableSwiftBic(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetSwiftBic(*v)
+	}
+	return _c
+}
+
+// SetCurrency sets the "currency" field.
+func (_c *SupplierCreate) SetCurrency(v string) *SupplierCreate {
+	_c.mutation.SetCurrency(v)
+	return _c
+}
+
+// SetNillableCurrency sets the "currency" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableCurrency(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetCurrency(*v)
+	}
+	return _c
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (_c *SupplierCreate) SetTaxPin(v string) *SupplierCreate {
 	_c.mutation.SetTaxPin(v)
@@ -221,6 +403,20 @@ func (_c *SupplierCreate) SetTaxPin(v string) *SupplierCreate {
 func (_c *SupplierCreate) SetNillableTaxPin(v *string) *SupplierCreate {
 	if v != nil {
 		_c.SetTaxPin(*v)
+	}
+	return _c
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (_c *SupplierCreate) SetVatNumber(v string) *SupplierCreate {
+	_c.mutation.SetVatNumber(v)
+	return _c
+}
+
+// SetNillableVatNumber sets the "vat_number" field if the given value is not nil.
+func (_c *SupplierCreate) SetNillableVatNumber(v *string) *SupplierCreate {
+	if v != nil {
+		_c.SetVatNumber(*v)
 	}
 	return _c
 }
@@ -538,6 +734,46 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 		_spec.SetField(supplier.FieldAddress, field.TypeString, value)
 		_node.Address = value
 	}
+	if value, ok := _c.mutation.AddressLine1(); ok {
+		_spec.SetField(supplier.FieldAddressLine1, field.TypeString, value)
+		_node.AddressLine1 = value
+	}
+	if value, ok := _c.mutation.AddressLine2(); ok {
+		_spec.SetField(supplier.FieldAddressLine2, field.TypeString, value)
+		_node.AddressLine2 = value
+	}
+	if value, ok := _c.mutation.City(); ok {
+		_spec.SetField(supplier.FieldCity, field.TypeString, value)
+		_node.City = value
+	}
+	if value, ok := _c.mutation.AddressState(); ok {
+		_spec.SetField(supplier.FieldAddressState, field.TypeString, value)
+		_node.AddressState = value
+	}
+	if value, ok := _c.mutation.AddressPostalCode(); ok {
+		_spec.SetField(supplier.FieldAddressPostalCode, field.TypeString, value)
+		_node.AddressPostalCode = value
+	}
+	if value, ok := _c.mutation.Country(); ok {
+		_spec.SetField(supplier.FieldCountry, field.TypeString, value)
+		_node.Country = value
+	}
+	if value, ok := _c.mutation.Industry(); ok {
+		_spec.SetField(supplier.FieldIndustry, field.TypeString, value)
+		_node.Industry = value
+	}
+	if value, ok := _c.mutation.Website(); ok {
+		_spec.SetField(supplier.FieldWebsite, field.TypeString, value)
+		_node.Website = value
+	}
+	if value, ok := _c.mutation.Notes(); ok {
+		_spec.SetField(supplier.FieldNotes, field.TypeString, value)
+		_node.Notes = value
+	}
+	if value, ok := _c.mutation.LogoURL(); ok {
+		_spec.SetField(supplier.FieldLogoURL, field.TypeString, value)
+		_node.LogoURL = value
+	}
 	if value, ok := _c.mutation.PaymentTerms(); ok {
 		_spec.SetField(supplier.FieldPaymentTerms, field.TypeString, value)
 		_node.PaymentTerms = value
@@ -562,6 +798,10 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 		_spec.SetField(supplier.FieldBankAccountNumber, field.TypeString, value)
 		_node.BankAccountNumber = value
 	}
+	if value, ok := _c.mutation.BankAccountName(); ok {
+		_spec.SetField(supplier.FieldBankAccountName, field.TypeString, value)
+		_node.BankAccountName = value
+	}
 	if value, ok := _c.mutation.BankName(); ok {
 		_spec.SetField(supplier.FieldBankName, field.TypeString, value)
 		_node.BankName = value
@@ -570,9 +810,21 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 		_spec.SetField(supplier.FieldBankBranch, field.TypeString, value)
 		_node.BankBranch = value
 	}
+	if value, ok := _c.mutation.SwiftBic(); ok {
+		_spec.SetField(supplier.FieldSwiftBic, field.TypeString, value)
+		_node.SwiftBic = value
+	}
+	if value, ok := _c.mutation.Currency(); ok {
+		_spec.SetField(supplier.FieldCurrency, field.TypeString, value)
+		_node.Currency = value
+	}
 	if value, ok := _c.mutation.TaxPin(); ok {
 		_spec.SetField(supplier.FieldTaxPin, field.TypeString, value)
 		_node.TaxPin = value
+	}
+	if value, ok := _c.mutation.VatNumber(); ok {
+		_spec.SetField(supplier.FieldVatNumber, field.TypeString, value)
+		_node.VatNumber = value
 	}
 	if value, ok := _c.mutation.RequiresInvoiceBeforePayment(); ok {
 		_spec.SetField(supplier.FieldRequiresInvoiceBeforePayment, field.TypeBool, value)
@@ -782,6 +1034,186 @@ func (u *SupplierUpsert) ClearAddress() *SupplierUpsert {
 	return u
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (u *SupplierUpsert) SetAddressLine1(v string) *SupplierUpsert {
+	u.Set(supplier.FieldAddressLine1, v)
+	return u
+}
+
+// UpdateAddressLine1 sets the "address_line1" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateAddressLine1() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldAddressLine1)
+	return u
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (u *SupplierUpsert) ClearAddressLine1() *SupplierUpsert {
+	u.SetNull(supplier.FieldAddressLine1)
+	return u
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (u *SupplierUpsert) SetAddressLine2(v string) *SupplierUpsert {
+	u.Set(supplier.FieldAddressLine2, v)
+	return u
+}
+
+// UpdateAddressLine2 sets the "address_line2" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateAddressLine2() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldAddressLine2)
+	return u
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (u *SupplierUpsert) ClearAddressLine2() *SupplierUpsert {
+	u.SetNull(supplier.FieldAddressLine2)
+	return u
+}
+
+// SetCity sets the "city" field.
+func (u *SupplierUpsert) SetCity(v string) *SupplierUpsert {
+	u.Set(supplier.FieldCity, v)
+	return u
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateCity() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldCity)
+	return u
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *SupplierUpsert) ClearCity() *SupplierUpsert {
+	u.SetNull(supplier.FieldCity)
+	return u
+}
+
+// SetAddressState sets the "address_state" field.
+func (u *SupplierUpsert) SetAddressState(v string) *SupplierUpsert {
+	u.Set(supplier.FieldAddressState, v)
+	return u
+}
+
+// UpdateAddressState sets the "address_state" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateAddressState() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldAddressState)
+	return u
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (u *SupplierUpsert) ClearAddressState() *SupplierUpsert {
+	u.SetNull(supplier.FieldAddressState)
+	return u
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (u *SupplierUpsert) SetAddressPostalCode(v string) *SupplierUpsert {
+	u.Set(supplier.FieldAddressPostalCode, v)
+	return u
+}
+
+// UpdateAddressPostalCode sets the "address_postal_code" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateAddressPostalCode() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldAddressPostalCode)
+	return u
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (u *SupplierUpsert) ClearAddressPostalCode() *SupplierUpsert {
+	u.SetNull(supplier.FieldAddressPostalCode)
+	return u
+}
+
+// SetCountry sets the "country" field.
+func (u *SupplierUpsert) SetCountry(v string) *SupplierUpsert {
+	u.Set(supplier.FieldCountry, v)
+	return u
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateCountry() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldCountry)
+	return u
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *SupplierUpsert) ClearCountry() *SupplierUpsert {
+	u.SetNull(supplier.FieldCountry)
+	return u
+}
+
+// SetIndustry sets the "industry" field.
+func (u *SupplierUpsert) SetIndustry(v string) *SupplierUpsert {
+	u.Set(supplier.FieldIndustry, v)
+	return u
+}
+
+// UpdateIndustry sets the "industry" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateIndustry() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldIndustry)
+	return u
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (u *SupplierUpsert) ClearIndustry() *SupplierUpsert {
+	u.SetNull(supplier.FieldIndustry)
+	return u
+}
+
+// SetWebsite sets the "website" field.
+func (u *SupplierUpsert) SetWebsite(v string) *SupplierUpsert {
+	u.Set(supplier.FieldWebsite, v)
+	return u
+}
+
+// UpdateWebsite sets the "website" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateWebsite() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldWebsite)
+	return u
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (u *SupplierUpsert) ClearWebsite() *SupplierUpsert {
+	u.SetNull(supplier.FieldWebsite)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *SupplierUpsert) SetNotes(v string) *SupplierUpsert {
+	u.Set(supplier.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateNotes() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *SupplierUpsert) ClearNotes() *SupplierUpsert {
+	u.SetNull(supplier.FieldNotes)
+	return u
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *SupplierUpsert) SetLogoURL(v string) *SupplierUpsert {
+	u.Set(supplier.FieldLogoURL, v)
+	return u
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateLogoURL() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldLogoURL)
+	return u
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (u *SupplierUpsert) ClearLogoURL() *SupplierUpsert {
+	u.SetNull(supplier.FieldLogoURL)
+	return u
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (u *SupplierUpsert) SetPaymentTerms(v string) *SupplierUpsert {
 	u.Set(supplier.FieldPaymentTerms, v)
@@ -884,6 +1316,24 @@ func (u *SupplierUpsert) ClearBankAccountNumber() *SupplierUpsert {
 	return u
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (u *SupplierUpsert) SetBankAccountName(v string) *SupplierUpsert {
+	u.Set(supplier.FieldBankAccountName, v)
+	return u
+}
+
+// UpdateBankAccountName sets the "bank_account_name" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateBankAccountName() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldBankAccountName)
+	return u
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (u *SupplierUpsert) ClearBankAccountName() *SupplierUpsert {
+	u.SetNull(supplier.FieldBankAccountName)
+	return u
+}
+
 // SetBankName sets the "bank_name" field.
 func (u *SupplierUpsert) SetBankName(v string) *SupplierUpsert {
 	u.Set(supplier.FieldBankName, v)
@@ -920,6 +1370,42 @@ func (u *SupplierUpsert) ClearBankBranch() *SupplierUpsert {
 	return u
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (u *SupplierUpsert) SetSwiftBic(v string) *SupplierUpsert {
+	u.Set(supplier.FieldSwiftBic, v)
+	return u
+}
+
+// UpdateSwiftBic sets the "swift_bic" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateSwiftBic() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldSwiftBic)
+	return u
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (u *SupplierUpsert) ClearSwiftBic() *SupplierUpsert {
+	u.SetNull(supplier.FieldSwiftBic)
+	return u
+}
+
+// SetCurrency sets the "currency" field.
+func (u *SupplierUpsert) SetCurrency(v string) *SupplierUpsert {
+	u.Set(supplier.FieldCurrency, v)
+	return u
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateCurrency() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldCurrency)
+	return u
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (u *SupplierUpsert) ClearCurrency() *SupplierUpsert {
+	u.SetNull(supplier.FieldCurrency)
+	return u
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (u *SupplierUpsert) SetTaxPin(v string) *SupplierUpsert {
 	u.Set(supplier.FieldTaxPin, v)
@@ -935,6 +1421,24 @@ func (u *SupplierUpsert) UpdateTaxPin() *SupplierUpsert {
 // ClearTaxPin clears the value of the "tax_pin" field.
 func (u *SupplierUpsert) ClearTaxPin() *SupplierUpsert {
 	u.SetNull(supplier.FieldTaxPin)
+	return u
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (u *SupplierUpsert) SetVatNumber(v string) *SupplierUpsert {
+	u.Set(supplier.FieldVatNumber, v)
+	return u
+}
+
+// UpdateVatNumber sets the "vat_number" field to the value that was provided on create.
+func (u *SupplierUpsert) UpdateVatNumber() *SupplierUpsert {
+	u.SetExcluded(supplier.FieldVatNumber)
+	return u
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (u *SupplierUpsert) ClearVatNumber() *SupplierUpsert {
+	u.SetNull(supplier.FieldVatNumber)
 	return u
 }
 
@@ -1223,6 +1727,216 @@ func (u *SupplierUpsertOne) ClearAddress() *SupplierUpsertOne {
 	})
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (u *SupplierUpsertOne) SetAddressLine1(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressLine1(v)
+	})
+}
+
+// UpdateAddressLine1 sets the "address_line1" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateAddressLine1() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressLine1()
+	})
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (u *SupplierUpsertOne) ClearAddressLine1() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressLine1()
+	})
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (u *SupplierUpsertOne) SetAddressLine2(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressLine2(v)
+	})
+}
+
+// UpdateAddressLine2 sets the "address_line2" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateAddressLine2() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressLine2()
+	})
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (u *SupplierUpsertOne) ClearAddressLine2() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressLine2()
+	})
+}
+
+// SetCity sets the "city" field.
+func (u *SupplierUpsertOne) SetCity(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCity(v)
+	})
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateCity() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCity()
+	})
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *SupplierUpsertOne) ClearCity() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCity()
+	})
+}
+
+// SetAddressState sets the "address_state" field.
+func (u *SupplierUpsertOne) SetAddressState(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressState(v)
+	})
+}
+
+// UpdateAddressState sets the "address_state" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateAddressState() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressState()
+	})
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (u *SupplierUpsertOne) ClearAddressState() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressState()
+	})
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (u *SupplierUpsertOne) SetAddressPostalCode(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressPostalCode(v)
+	})
+}
+
+// UpdateAddressPostalCode sets the "address_postal_code" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateAddressPostalCode() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressPostalCode()
+	})
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (u *SupplierUpsertOne) ClearAddressPostalCode() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressPostalCode()
+	})
+}
+
+// SetCountry sets the "country" field.
+func (u *SupplierUpsertOne) SetCountry(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCountry(v)
+	})
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateCountry() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCountry()
+	})
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *SupplierUpsertOne) ClearCountry() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCountry()
+	})
+}
+
+// SetIndustry sets the "industry" field.
+func (u *SupplierUpsertOne) SetIndustry(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetIndustry(v)
+	})
+}
+
+// UpdateIndustry sets the "industry" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateIndustry() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateIndustry()
+	})
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (u *SupplierUpsertOne) ClearIndustry() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearIndustry()
+	})
+}
+
+// SetWebsite sets the "website" field.
+func (u *SupplierUpsertOne) SetWebsite(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetWebsite(v)
+	})
+}
+
+// UpdateWebsite sets the "website" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateWebsite() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateWebsite()
+	})
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (u *SupplierUpsertOne) ClearWebsite() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearWebsite()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *SupplierUpsertOne) SetNotes(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateNotes() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *SupplierUpsertOne) ClearNotes() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *SupplierUpsertOne) SetLogoURL(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetLogoURL(v)
+	})
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateLogoURL() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateLogoURL()
+	})
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (u *SupplierUpsertOne) ClearLogoURL() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearLogoURL()
+	})
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (u *SupplierUpsertOne) SetPaymentTerms(v string) *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
@@ -1342,6 +2056,27 @@ func (u *SupplierUpsertOne) ClearBankAccountNumber() *SupplierUpsertOne {
 	})
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (u *SupplierUpsertOne) SetBankAccountName(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankAccountName(v)
+	})
+}
+
+// UpdateBankAccountName sets the "bank_account_name" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateBankAccountName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankAccountName()
+	})
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (u *SupplierUpsertOne) ClearBankAccountName() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankAccountName()
+	})
+}
+
 // SetBankName sets the "bank_name" field.
 func (u *SupplierUpsertOne) SetBankName(v string) *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
@@ -1384,6 +2119,48 @@ func (u *SupplierUpsertOne) ClearBankBranch() *SupplierUpsertOne {
 	})
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (u *SupplierUpsertOne) SetSwiftBic(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetSwiftBic(v)
+	})
+}
+
+// UpdateSwiftBic sets the "swift_bic" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateSwiftBic() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateSwiftBic()
+	})
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (u *SupplierUpsertOne) ClearSwiftBic() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearSwiftBic()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *SupplierUpsertOne) SetCurrency(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateCurrency() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (u *SupplierUpsertOne) ClearCurrency() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCurrency()
+	})
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (u *SupplierUpsertOne) SetTaxPin(v string) *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
@@ -1402,6 +2179,27 @@ func (u *SupplierUpsertOne) UpdateTaxPin() *SupplierUpsertOne {
 func (u *SupplierUpsertOne) ClearTaxPin() *SupplierUpsertOne {
 	return u.Update(func(s *SupplierUpsert) {
 		s.ClearTaxPin()
+	})
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (u *SupplierUpsertOne) SetVatNumber(v string) *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetVatNumber(v)
+	})
+}
+
+// UpdateVatNumber sets the "vat_number" field to the value that was provided on create.
+func (u *SupplierUpsertOne) UpdateVatNumber() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateVatNumber()
+	})
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (u *SupplierUpsertOne) ClearVatNumber() *SupplierUpsertOne {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearVatNumber()
 	})
 }
 
@@ -1875,6 +2673,216 @@ func (u *SupplierUpsertBulk) ClearAddress() *SupplierUpsertBulk {
 	})
 }
 
+// SetAddressLine1 sets the "address_line1" field.
+func (u *SupplierUpsertBulk) SetAddressLine1(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressLine1(v)
+	})
+}
+
+// UpdateAddressLine1 sets the "address_line1" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateAddressLine1() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressLine1()
+	})
+}
+
+// ClearAddressLine1 clears the value of the "address_line1" field.
+func (u *SupplierUpsertBulk) ClearAddressLine1() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressLine1()
+	})
+}
+
+// SetAddressLine2 sets the "address_line2" field.
+func (u *SupplierUpsertBulk) SetAddressLine2(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressLine2(v)
+	})
+}
+
+// UpdateAddressLine2 sets the "address_line2" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateAddressLine2() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressLine2()
+	})
+}
+
+// ClearAddressLine2 clears the value of the "address_line2" field.
+func (u *SupplierUpsertBulk) ClearAddressLine2() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressLine2()
+	})
+}
+
+// SetCity sets the "city" field.
+func (u *SupplierUpsertBulk) SetCity(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCity(v)
+	})
+}
+
+// UpdateCity sets the "city" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateCity() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCity()
+	})
+}
+
+// ClearCity clears the value of the "city" field.
+func (u *SupplierUpsertBulk) ClearCity() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCity()
+	})
+}
+
+// SetAddressState sets the "address_state" field.
+func (u *SupplierUpsertBulk) SetAddressState(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressState(v)
+	})
+}
+
+// UpdateAddressState sets the "address_state" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateAddressState() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressState()
+	})
+}
+
+// ClearAddressState clears the value of the "address_state" field.
+func (u *SupplierUpsertBulk) ClearAddressState() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressState()
+	})
+}
+
+// SetAddressPostalCode sets the "address_postal_code" field.
+func (u *SupplierUpsertBulk) SetAddressPostalCode(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetAddressPostalCode(v)
+	})
+}
+
+// UpdateAddressPostalCode sets the "address_postal_code" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateAddressPostalCode() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateAddressPostalCode()
+	})
+}
+
+// ClearAddressPostalCode clears the value of the "address_postal_code" field.
+func (u *SupplierUpsertBulk) ClearAddressPostalCode() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearAddressPostalCode()
+	})
+}
+
+// SetCountry sets the "country" field.
+func (u *SupplierUpsertBulk) SetCountry(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCountry(v)
+	})
+}
+
+// UpdateCountry sets the "country" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateCountry() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCountry()
+	})
+}
+
+// ClearCountry clears the value of the "country" field.
+func (u *SupplierUpsertBulk) ClearCountry() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCountry()
+	})
+}
+
+// SetIndustry sets the "industry" field.
+func (u *SupplierUpsertBulk) SetIndustry(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetIndustry(v)
+	})
+}
+
+// UpdateIndustry sets the "industry" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateIndustry() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateIndustry()
+	})
+}
+
+// ClearIndustry clears the value of the "industry" field.
+func (u *SupplierUpsertBulk) ClearIndustry() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearIndustry()
+	})
+}
+
+// SetWebsite sets the "website" field.
+func (u *SupplierUpsertBulk) SetWebsite(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetWebsite(v)
+	})
+}
+
+// UpdateWebsite sets the "website" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateWebsite() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateWebsite()
+	})
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (u *SupplierUpsertBulk) ClearWebsite() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearWebsite()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *SupplierUpsertBulk) SetNotes(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateNotes() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *SupplierUpsertBulk) ClearNotes() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *SupplierUpsertBulk) SetLogoURL(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetLogoURL(v)
+	})
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateLogoURL() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateLogoURL()
+	})
+}
+
+// ClearLogoURL clears the value of the "logo_url" field.
+func (u *SupplierUpsertBulk) ClearLogoURL() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearLogoURL()
+	})
+}
+
 // SetPaymentTerms sets the "payment_terms" field.
 func (u *SupplierUpsertBulk) SetPaymentTerms(v string) *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
@@ -1994,6 +3002,27 @@ func (u *SupplierUpsertBulk) ClearBankAccountNumber() *SupplierUpsertBulk {
 	})
 }
 
+// SetBankAccountName sets the "bank_account_name" field.
+func (u *SupplierUpsertBulk) SetBankAccountName(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetBankAccountName(v)
+	})
+}
+
+// UpdateBankAccountName sets the "bank_account_name" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateBankAccountName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateBankAccountName()
+	})
+}
+
+// ClearBankAccountName clears the value of the "bank_account_name" field.
+func (u *SupplierUpsertBulk) ClearBankAccountName() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearBankAccountName()
+	})
+}
+
 // SetBankName sets the "bank_name" field.
 func (u *SupplierUpsertBulk) SetBankName(v string) *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
@@ -2036,6 +3065,48 @@ func (u *SupplierUpsertBulk) ClearBankBranch() *SupplierUpsertBulk {
 	})
 }
 
+// SetSwiftBic sets the "swift_bic" field.
+func (u *SupplierUpsertBulk) SetSwiftBic(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetSwiftBic(v)
+	})
+}
+
+// UpdateSwiftBic sets the "swift_bic" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateSwiftBic() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateSwiftBic()
+	})
+}
+
+// ClearSwiftBic clears the value of the "swift_bic" field.
+func (u *SupplierUpsertBulk) ClearSwiftBic() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearSwiftBic()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *SupplierUpsertBulk) SetCurrency(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateCurrency() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// ClearCurrency clears the value of the "currency" field.
+func (u *SupplierUpsertBulk) ClearCurrency() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearCurrency()
+	})
+}
+
 // SetTaxPin sets the "tax_pin" field.
 func (u *SupplierUpsertBulk) SetTaxPin(v string) *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
@@ -2054,6 +3125,27 @@ func (u *SupplierUpsertBulk) UpdateTaxPin() *SupplierUpsertBulk {
 func (u *SupplierUpsertBulk) ClearTaxPin() *SupplierUpsertBulk {
 	return u.Update(func(s *SupplierUpsert) {
 		s.ClearTaxPin()
+	})
+}
+
+// SetVatNumber sets the "vat_number" field.
+func (u *SupplierUpsertBulk) SetVatNumber(v string) *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.SetVatNumber(v)
+	})
+}
+
+// UpdateVatNumber sets the "vat_number" field to the value that was provided on create.
+func (u *SupplierUpsertBulk) UpdateVatNumber() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.UpdateVatNumber()
+	})
+}
+
+// ClearVatNumber clears the value of the "vat_number" field.
+func (u *SupplierUpsertBulk) ClearVatNumber() *SupplierUpsertBulk {
+	return u.Update(func(s *SupplierUpsert) {
+		s.ClearVatNumber()
 	})
 }
 
