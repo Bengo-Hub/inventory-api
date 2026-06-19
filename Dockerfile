@@ -13,6 +13,8 @@ RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-migrate ./cmd/migr
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-seed ./cmd/seed
 
 FROM alpine:3.20
+# rclone powers the best-effort remote backup-destination mirror (PVC stays primary).
+RUN apk add --no-cache rclone
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=builder /out/inventory /usr/local/bin/inventory

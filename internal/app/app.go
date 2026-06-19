@@ -31,6 +31,7 @@ import (
 	router "github.com/bengobox/inventory-service/internal/http/router"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	backupmod "github.com/bengobox/inventory-service/internal/modules/backup"
+	"github.com/bengobox/inventory-service/internal/modules/backup/destination"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -290,6 +291,11 @@ func New(ctx context.Context) (*App, error) {
 
 	// Tenant-scoped backups + daily 02:00 auto-backup scheduler + retention churn.
 	backupSvc := backupmod.NewService(sqlDB, ormClient, cfg.Backup.Dir, log)
+	// Pluggable backup destination (PVC primary + best-effort rclone remote mirror).
+	// Secret backend params are encrypted at rest with a SECRET_KEY-derived AES key.
+	backupDestHandler := handlers.NewBackupDestinationHandler(ormClient, destination.NewSecretKeyCipher(), rbacService, log)
+	// Mirror every freshly-written PVC backup to the resolved remote, best-effort.
+	backupSvc = backupSvc.WithMirrorer(backupDestHandler.Uploader())
 	backupsHandler := handlers.NewBackups(log, backupSvc, rbacService, cfg.Backup.RetentionDays)
 	backupmod.NewScheduler(backupSvc, backupmod.SchedulerConfig{
 		Enabled:       cfg.Backup.ScheduleEnabled,
@@ -297,7 +303,7 @@ func New(ctx context.Context) (*App, error) {
 		RetentionDays: cfg.Backup.RetentionDays,
 	}, log).Start(ctx)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
