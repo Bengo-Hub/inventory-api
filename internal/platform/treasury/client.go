@@ -113,6 +113,52 @@ func (c *Client) fetchTaxCodes(ctx context.Context, tenantID uuid.UUID) ([]TaxCo
 	return out.TaxCodes, nil
 }
 
+// VATActive reports whether the tenant should charge VAT (treasury tax profile). Defaults
+// TRUE on any error / when unconfigured so we never silently stop a registered business from
+// charging VAT; returns false only when treasury affirmatively says the business is not
+// VAT-registered. Cached ~10m.
+func (c *Client) VATActive(ctx context.Context, tenantID uuid.UUID) bool {
+	if !c.Enabled() {
+		return true
+	}
+	fetch := func(ctx context.Context) (bool, error) {
+		url := fmt.Sprintf("%s/api/v1/s2s/%s/tax-profile", c.baseURL, tenantID.String())
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return true, err
+		}
+		req.Header.Set("X-API-Key", c.apiKey)
+		resp, err := c.http.Do(req)
+		if err != nil {
+			return true, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return true, fmt.Errorf("treasury: tax-profile status %d", resp.StatusCode)
+		}
+		var out struct {
+			VATActive bool `json:"vat_active"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+			return true, err
+		}
+		return out.VATActive, nil
+	}
+	if c.cache != nil {
+		key := sharedcache.Key("inventory", "treasury", "vatactive", tenantID.String())
+		v, err := sharedcache.GetOrSet(ctx, c.cache, key, taxCodesTTL, fetch)
+		if err != nil {
+			return true
+		}
+		return v
+	}
+	v, err := fetch(ctx)
+	if err != nil {
+		return true
+	}
+	return v
+}
+
 // ResolveVATRate returns the VAT rate (percent) and the tax code used, selecting by:
 // preferred code → is_default → first tax_type=="vat". ok=false when treasury is
 // unavailable or no VAT code exists (caller should apply its own fallback).

@@ -35,6 +35,9 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		defaultTaxCode = cfg.DefaultTaxCode
 	}
 	rate, rateCode := s.resolveVATRate(ctx, tenantID, defaultTaxCode)
+	// A business that isn't VAT-registered must not charge VAT — suppress the rate entirely
+	// (including the inclusive-price DefaultVATRate fallback) so no tax is split out.
+	suppressVAT := s.vatSuppressed(ctx, tenantID)
 
 	for i := range dtos {
 		d := &dtos[i]
@@ -47,11 +50,13 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 
 		inclusive := inclusiveDefault || d.TaxInclusive
 		effRate := rate
-		if effRate <= 0 && inclusive {
+		if suppressVAT {
+			effRate = 0
+		} else if effRate <= 0 && inclusive {
 			effRate = DefaultVATRate // must still back-compute when treasury is unreachable
 		}
 		if effRate <= 0 {
-			continue // exclusive item with no known rate → leave tax fields unset
+			continue // no VAT (exclusive w/ no rate, or suppressed) → leave tax fields unset
 		}
 		split := ComputeTaxSplit(price, effRate, inclusive)
 		net, tax, r := split.Net, split.Tax, split.Rate
@@ -209,6 +214,21 @@ func (s *Service) defaultTierPrices(ctx context.Context, tenantID uuid.UUID, ite
 
 // resolveVATRate resolves the VAT rate (%) + code via the treasury resolver; (0, preferredCode)
 // when no resolver is configured or treasury is unavailable.
+// vatSuppressed reports whether VAT must NOT be charged because the business isn't
+// VAT-registered. Permissive: false (charge VAT) unless the resolver affirmatively says
+// the tenant is not VAT-active. Uses an optional interface so resolver mocks need not change.
+func (s *Service) vatSuppressed(ctx context.Context, tenantID uuid.UUID) bool {
+	if s.taxResolver == nil {
+		return false
+	}
+	if va, ok := s.taxResolver.(interface {
+		VATActive(context.Context, uuid.UUID) bool
+	}); ok {
+		return !va.VATActive(ctx, tenantID)
+	}
+	return false
+}
+
 func (s *Service) resolveVATRate(ctx context.Context, tenantID uuid.UUID, preferredCode string) (float64, string) {
 	if s.taxResolver == nil {
 		return 0, preferredCode
