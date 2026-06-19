@@ -34,6 +34,11 @@ type OrderEventsConsumer struct {
 	log      *zap.Logger
 	stockSvc *stock.Service
 	orm      *ent.Client
+	// hasFeature gates cross-service stock sync by subscription entitlement. When set,
+	// reservations are only consumed/released for tenants entitled to basic_inventory_access
+	// (the cross-service inventory-access feature auto-injected into POS/ordering plans — the
+	// same code the POS→inventory direction gates on). Nil → no gating (fail open).
+	hasFeature func(ctx context.Context, tenantID, feature string) bool
 }
 
 // NewOrderEventsConsumer creates a new consumer.
@@ -43,6 +48,20 @@ func NewOrderEventsConsumer(log *zap.Logger, stockSvc *stock.Service, orm *ent.C
 		stockSvc: stockSvc,
 		orm:      orm,
 	}
+}
+
+// SetFeatureGate wires the subscription entitlement check used to gate stock sync.
+func (c *OrderEventsConsumer) SetFeatureGate(fn func(ctx context.Context, tenantID, feature string) bool) {
+	c.hasFeature = fn
+}
+
+// entitled reports whether the tenant may have ordering events drive its inventory stock.
+// Fails open when no gate is wired.
+func (c *OrderEventsConsumer) entitled(ctx context.Context, tenantID uuid.UUID) bool {
+	if c.hasFeature == nil {
+		return true
+	}
+	return c.hasFeature(ctx, tenantID.String(), "basic_inventory_access")
 }
 
 // Start begins listening for ordering events via JetStream durable consumer.
@@ -107,6 +126,15 @@ func (c *OrderEventsConsumer) handleMessage(msg *nats.Msg) {
 	orderID, err := uuid.Parse(envelope.Payload.OrderID)
 	if err != nil {
 		c.log.Warn("order events: invalid order_id", zap.String("raw", envelope.Payload.OrderID))
+		_ = msg.Ack()
+		return
+	}
+
+	// Gate cross-service stock sync by subscription entitlement (fails open if no gate
+	// wired / subscriptions-api down). Ack + skip when the tenant lacks basic_inventory_access.
+	if !c.entitled(ctx, tenantID) {
+		c.log.Debug("order events: tenant lacks basic_inventory_access — skipping reservation sync",
+			zap.String("tenant_id", tenantID.String()), zap.String("order_id", orderID.String()))
 		_ = msg.Ack()
 		return
 	}

@@ -208,11 +208,25 @@ func New(ctx context.Context) (*App, error) {
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api
 
+	// Subscriptions S2S client + gate: restrict cross-service stock sync (ordering/POS →
+	// inventory) to tenants entitled to basic_inventory_access. Cached per tenant; fails open
+	// on a subscriptions-api outage so a downtime never silently halts stock movements.
+	subsClient := subscriptions.NewClient(subscriptions.Config{
+		ServiceURL:     cfg.Subscriptions.ServiceURL,
+		APIKey:         cfg.Subscriptions.APIKey,
+		RequestTimeout: cfg.Subscriptions.RequestTimeout,
+	})
+	consumerFeatureGate := func(ctx context.Context, tenantID, feature string) bool {
+		return subsClient.ConsumerHasFeature(ctx, tenantID, feature)
+	}
+
 	// Order events consumer — auto-consume/release reservations on order lifecycle
 	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
+	orderConsumer.SetFeatureGate(consumerFeatureGate)
 
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
+	posSaleConsumer.SetFeatureGate(consumerFeatureGate)
 	conferenceConsumer := consumers.NewConferenceEventsConsumer(log, stockSvc, ormClient)
 	ticketConsumer := consumers.NewTicketIssuanceConsumer(log, ticketsSvc, ormClient)
 
