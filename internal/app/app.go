@@ -70,6 +70,7 @@ type App struct {
 	stockConsumer       *consumers.StockEventsConsumer
 	ticketConsumer      *consumers.TicketIssuanceConsumer
 	treasuryTaxConsumer *consumers.TreasuryTaxEventsConsumer
+	tenantPurgeConsumer *consumers.TenantPurgeConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -243,6 +244,11 @@ func New(ctx context.Context) (*App, error) {
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
 
+	// Tenant purge consumer — on platform-owner-confirmed dormancy purge (tenant.purge),
+	// IRREVERSIBLY deletes ALL of the tenant's inventory data. Uses the raw *sql.DB for
+	// FK-order-independent, transactional deletes.
+	tenantPurgeConsumer := consumers.NewTenantPurgeConsumer(log, sqlDB)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -349,6 +355,7 @@ func New(ctx context.Context) (*App, error) {
 		stockConsumer:       stockConsumer,
 		ticketConsumer:      ticketConsumer,
 		treasuryTaxConsumer: treasuryTaxConsumer,
+		tenantPurgeConsumer: tenantPurgeConsumer,
 	}, nil
 }
 
@@ -438,6 +445,17 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("treasury tax events consumer started")
+			}
+
+			// Start tenant purge consumer — IRREVERSIBLY deletes a tenant's data on a
+			// platform-owner-confirmed dormancy purge (tenant.purge).
+			if a.tenantPurgeConsumer != nil {
+				go func() {
+					if err := a.tenantPurgeConsumer.Start(ctx, js); err != nil {
+						a.log.Error("tenant purge consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("tenant purge consumer started")
 			}
 		}
 	}
