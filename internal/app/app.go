@@ -54,21 +54,22 @@ import (
 )
 
 type App struct {
-	cfg                *config.Config
-	log                *zap.Logger
-	httpServer         *http.Server
-	db                 *pgxpool.Pool
-	cache              *redis.Client
-	events             *nats.Conn
-	orm                *ent.Client
-	outboxPublisher    *eventslib.OutboxPoller
-	orderConsumer      *consumers.OrderEventsConsumer
-	posSaleConsumer    *consumers.POSSaleEventsConsumer
-	conferenceConsumer *consumers.ConferenceEventsConsumer
-	authConsumer       *consumers.AuthEventsConsumer
-	returnConsumer     *consumers.ReturnEventsConsumer
-	stockConsumer      *consumers.StockEventsConsumer
-	ticketConsumer     *consumers.TicketIssuanceConsumer
+	cfg                 *config.Config
+	log                 *zap.Logger
+	httpServer          *http.Server
+	db                  *pgxpool.Pool
+	cache               *redis.Client
+	events              *nats.Conn
+	orm                 *ent.Client
+	outboxPublisher     *eventslib.OutboxPoller
+	orderConsumer       *consumers.OrderEventsConsumer
+	posSaleConsumer     *consumers.POSSaleEventsConsumer
+	conferenceConsumer  *consumers.ConferenceEventsConsumer
+	authConsumer        *consumers.AuthEventsConsumer
+	returnConsumer      *consumers.ReturnEventsConsumer
+	stockConsumer       *consumers.StockEventsConsumer
+	ticketConsumer      *consumers.TicketIssuanceConsumer
+	treasuryTaxConsumer *consumers.TreasuryTaxEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -239,6 +240,9 @@ func New(ctx context.Context) (*App, error) {
 	// Stock low events consumer — auto-creates draft POs when auto_reorder_enabled
 	stockConsumer := consumers.NewStockEventsConsumer(log, ormClient)
 
+	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
+	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -329,21 +333,22 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:                cfg,
-		log:                log,
-		httpServer:         httpServer,
-		db:                 dbPool,
-		cache:              redisClient,
-		events:             natsConn,
-		orm:                ormClient,
-		outboxPublisher:    outboxPublisher,
-		orderConsumer:      orderConsumer,
-		posSaleConsumer:    posSaleConsumer,
-		conferenceConsumer: conferenceConsumer,
-		authConsumer:       authConsumer,
-		returnConsumer:     returnConsumer,
-		stockConsumer:      stockConsumer,
-		ticketConsumer:     ticketConsumer,
+		cfg:                 cfg,
+		log:                 log,
+		httpServer:          httpServer,
+		db:                  dbPool,
+		cache:               redisClient,
+		events:              natsConn,
+		orm:                 ormClient,
+		outboxPublisher:     outboxPublisher,
+		orderConsumer:       orderConsumer,
+		posSaleConsumer:     posSaleConsumer,
+		conferenceConsumer:  conferenceConsumer,
+		authConsumer:        authConsumer,
+		returnConsumer:      returnConsumer,
+		stockConsumer:       stockConsumer,
+		ticketConsumer:      ticketConsumer,
+		treasuryTaxConsumer: treasuryTaxConsumer,
 	}, nil
 }
 
@@ -423,6 +428,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("stock events consumer started")
+			}
+
+			// Start treasury tax-code change consumer — invalidates cached treasury tax data
+			if a.treasuryTaxConsumer != nil {
+				go func() {
+					if err := a.treasuryTaxConsumer.Start(ctx, js); err != nil {
+						a.log.Error("treasury tax events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("treasury tax events consumer started")
 			}
 		}
 	}
