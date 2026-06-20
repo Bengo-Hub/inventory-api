@@ -159,6 +159,21 @@ func (c *Client) VATActive(ctx context.Context, tenantID uuid.UUID) bool {
 	return v
 }
 
+// InvalidateTaxCache deletes the cached treasury tax data for a tenant (the tax-code
+// list and the VAT-active switch). Call it when treasury publishes a tax-code change so
+// fresh rates propagate immediately instead of waiting for the cache TTL. Safe no-op when
+// caching is disabled. The cache keys are kept in sync with GetTaxCodes / VATActive.
+func (c *Client) InvalidateTaxCache(ctx context.Context, tenantID uuid.UUID) {
+	if c.cache == nil {
+		return
+	}
+	c.cache.Invalidate(ctx,
+		sharedcache.Key("inventory", "treasury", "taxcodes", tenantID.String()),
+		sharedcache.Key("inventory", "treasury", "vatactive", tenantID.String()),
+	)
+	c.log.Debug("invalidated treasury tax cache", zap.String("tenant", tenantID.String()))
+}
+
 // ResolveVATRate returns the VAT rate (percent) and the tax code used, selecting by:
 // preferred code → is_default → first tax_type=="vat". ok=false when treasury is
 // unavailable or no VAT code exists (caller should apply its own fallback).
