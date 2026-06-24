@@ -532,6 +532,48 @@ func (_c *ItemCreate) SetNillableYieldPct(v *float64) *ItemCreate {
 	return _c
 }
 
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (_c *ItemCreate) SetMinSellingPrice(v float64) *ItemCreate {
+	_c.mutation.SetMinSellingPrice(v)
+	return _c
+}
+
+// SetNillableMinSellingPrice sets the "min_selling_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMinSellingPrice(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetMinSellingPrice(*v)
+	}
+	return _c
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (_c *ItemCreate) SetMaxSellingPrice(v float64) *ItemCreate {
+	_c.mutation.SetMaxSellingPrice(v)
+	return _c
+}
+
+// SetNillableMaxSellingPrice sets the "max_selling_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMaxSellingPrice(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetMaxSellingPrice(*v)
+	}
+	return _c
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_c *ItemCreate) SetTargetMarginPercent(v float64) *ItemCreate {
+	_c.mutation.SetTargetMarginPercent(v)
+	return _c
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableTargetMarginPercent(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetTargetMarginPercent(*v)
+	}
+	return _c
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_c *ItemCreate) SetTotalCapacity(v int) *ItemCreate {
 	_c.mutation.SetTotalCapacity(v)
@@ -1272,6 +1314,18 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.YieldPct(); ok {
 		_spec.SetField(item.FieldYieldPct, field.TypeFloat64, value)
 		_node.YieldPct = &value
+	}
+	if value, ok := _c.mutation.MinSellingPrice(); ok {
+		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
+		_node.MinSellingPrice = &value
+	}
+	if value, ok := _c.mutation.MaxSellingPrice(); ok {
+		_spec.SetField(item.FieldMaxSellingPrice, field.TypeFloat64, value)
+		_node.MaxSellingPrice = &value
+	}
+	if value, ok := _c.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(item.FieldTargetMarginPercent, field.TypeFloat64, value)
+		_node.TargetMarginPercent = &value
 	}
 	if value, ok := _c.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
@@ -2277,6 +2331,78 @@ func (u *ItemUpsert) ClearYieldPct() *ItemUpsert {
 	return u
 }
 
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsert) SetMinSellingPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldMinSellingPrice, v)
+	return u
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMinSellingPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldMinSellingPrice)
+	return u
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsert) AddMinSellingPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldMinSellingPrice, v)
+	return u
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsert) ClearMinSellingPrice() *ItemUpsert {
+	u.SetNull(item.FieldMinSellingPrice)
+	return u
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsert) SetMaxSellingPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldMaxSellingPrice, v)
+	return u
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxSellingPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxSellingPrice)
+	return u
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsert) AddMaxSellingPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldMaxSellingPrice, v)
+	return u
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsert) ClearMaxSellingPrice() *ItemUpsert {
+	u.SetNull(item.FieldMaxSellingPrice)
+	return u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsert) SetTargetMarginPercent(v float64) *ItemUpsert {
+	u.Set(item.FieldTargetMarginPercent, v)
+	return u
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTargetMarginPercent() *ItemUpsert {
+	u.SetExcluded(item.FieldTargetMarginPercent)
+	return u
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsert) AddTargetMarginPercent(v float64) *ItemUpsert {
+	u.Add(item.FieldTargetMarginPercent, v)
+	return u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsert) ClearTargetMarginPercent() *ItemUpsert {
+	u.SetNull(item.FieldTargetMarginPercent)
+	return u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (u *ItemUpsert) SetTotalCapacity(v int) *ItemUpsert {
 	u.Set(item.FieldTotalCapacity, v)
@@ -3221,6 +3347,90 @@ func (u *ItemUpsertOne) UpdateYieldPct() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearYieldPct() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearYieldPct()
+	})
+}
+
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsertOne) SetMinSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMinSellingPrice(v)
+	})
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsertOne) AddMinSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMinSellingPrice(v)
+	})
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMinSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMinSellingPrice()
+	})
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsertOne) ClearMinSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMinSellingPrice()
+	})
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsertOne) SetMaxSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxSellingPrice(v)
+	})
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsertOne) AddMaxSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxSellingPrice(v)
+	})
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxSellingPrice()
+	})
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsertOne) ClearMaxSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxSellingPrice()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsertOne) SetTargetMarginPercent(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsertOne) AddTargetMarginPercent(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTargetMarginPercent() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsertOne) ClearTargetMarginPercent() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTargetMarginPercent()
 	})
 }
 
@@ -4356,6 +4566,90 @@ func (u *ItemUpsertBulk) UpdateYieldPct() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearYieldPct() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearYieldPct()
+	})
+}
+
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsertBulk) SetMinSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMinSellingPrice(v)
+	})
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsertBulk) AddMinSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMinSellingPrice(v)
+	})
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMinSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMinSellingPrice()
+	})
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsertBulk) ClearMinSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMinSellingPrice()
+	})
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsertBulk) SetMaxSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxSellingPrice(v)
+	})
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsertBulk) AddMaxSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxSellingPrice(v)
+	})
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxSellingPrice()
+	})
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsertBulk) ClearMaxSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxSellingPrice()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsertBulk) SetTargetMarginPercent(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsertBulk) AddTargetMarginPercent(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTargetMarginPercent() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsertBulk) ClearTargetMarginPercent() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTargetMarginPercent()
 	})
 }
 

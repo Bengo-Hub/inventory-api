@@ -106,6 +106,10 @@ type ItemDTO struct {
 	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
 	PurchaseUnit     string   `json:"purchase_unit,omitempty"`
 	YieldPct         *float64 `json:"yield_pct,omitempty"` // 0 < y <= 1; default 1.0
+	// Selling-price guardrails + goods margin (Phase 4).
+	MinSellingPrice     *float64 `json:"min_selling_price,omitempty"`     // hard floor enforced at price upsert & POS
+	MaxSellingPrice     *float64 `json:"max_selling_price,omitempty"`     // hard ceiling enforced at price upsert & POS
+	TargetMarginPercent *float64 `json:"target_margin_percent,omitempty"` // GOODS auto-pricing margin %
 	// KRA eTIMS tax fields
 	TaxCodeID    string `json:"tax_code_id,omitempty"`
 	TaxInclusive bool   `json:"tax_inclusive"`
@@ -582,6 +586,9 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		PurchasePackSize:        i.PurchasePackSize,
 		PurchaseUnit:            i.PurchaseUnit,
 		YieldPct:                i.YieldPct,
+		MinSellingPrice:         i.MinSellingPrice,
+		MaxSellingPrice:         i.MaxSellingPrice,
+		TargetMarginPercent:     i.TargetMarginPercent,
 		TaxCodeID:               i.TaxCodeID,
 		TaxInclusive:            i.TaxInclusive,
 		TotalCapacity:           i.TotalCapacity,
@@ -793,8 +800,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				dto.Available = &bs.available
 				dto.OnHand = &bs.onHand
 			}
-			if cfg != nil && it.CostPrice != nil && *it.CostPrice > 0 && cfg.DefaultTargetMarginPercent != nil {
-				m := *cfg.DefaultTargetMarginPercent
+			// Cost-plus-margin suggested price for GOODS: prefer the item's own
+			// target_margin_percent, falling back to the tenant default. price = cost/(1-m).
+			if it.CostPrice != nil && *it.CostPrice > 0 {
+				var m float64
+				if it.TargetMarginPercent != nil && *it.TargetMarginPercent > 0 && *it.TargetMarginPercent < 100 {
+					m = *it.TargetMarginPercent
+				} else if cfg != nil && cfg.DefaultTargetMarginPercent != nil {
+					m = *cfg.DefaultTargetMarginPercent
+				}
 				if m > 0 && m < 100 {
 					sp := *it.CostPrice / (1 - m/100)
 					dto.SuggestedPrice = &sp
@@ -1176,6 +1190,21 @@ func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryI
 // resolveEPCost auto-computes cost_price (EP unit cost) from purchase fields when all three
 // are present and cost_price was not explicitly provided.
 // Formula: cost_price = purchase_price / purchase_pack_size / yield_pct
+// validatePriceBand enforces a coherent selling-price guardrail: min must not exceed max.
+// Returned errors are surfaced as 400s by the handlers.
+func validatePriceBand(dto *ItemDTO) error {
+	if dto.MinSellingPrice != nil && *dto.MinSellingPrice < 0 {
+		return fmt.Errorf("min_selling_price cannot be negative")
+	}
+	if dto.MaxSellingPrice != nil && *dto.MaxSellingPrice < 0 {
+		return fmt.Errorf("max_selling_price cannot be negative")
+	}
+	if dto.MinSellingPrice != nil && dto.MaxSellingPrice != nil && *dto.MinSellingPrice > *dto.MaxSellingPrice {
+		return fmt.Errorf("min_selling_price (%.2f) cannot exceed max_selling_price (%.2f)", *dto.MinSellingPrice, *dto.MaxSellingPrice)
+	}
+	return nil
+}
+
 func resolveEPCost(dto *ItemDTO) {
 	if dto.CostPrice != nil {
 		return // caller provided cost_price explicitly — respect it
@@ -1241,6 +1270,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		}
 		dto.SKU = sku
 	}
+	if err := validatePriceBand(&dto); err != nil {
+		return nil, fmt.Errorf("items: %w", err)
+	}
 	// Auto-compute EP cost from purchase fields when not explicitly set.
 	resolveEPCost(&dto)
 
@@ -1286,6 +1318,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetNillablePurchasePrice(dto.PurchasePrice).
 		SetNillablePurchasePackSize(dto.PurchasePackSize).
 		SetNillableYieldPct(dto.YieldPct).
+		SetNillableMinSellingPrice(dto.MinSellingPrice).
+		SetNillableMaxSellingPrice(dto.MaxSellingPrice).
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
 		SetIsControlledSubstance(dto.IsControlledSubstance).
 		SetIsPerishable(dto.IsPerishable).
@@ -1534,6 +1569,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		updateTags = []string{}
 	}
 
+	if err = validatePriceBand(&dto); err != nil {
+		return nil, fmt.Errorf("items: %w", err)
+	}
 	// Auto-compute EP cost from purchase fields if not explicitly provided.
 	resolveEPCost(&dto)
 
@@ -1553,6 +1591,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetNillablePurchasePrice(dto.PurchasePrice).
 		SetNillablePurchasePackSize(dto.PurchasePackSize).
 		SetNillableYieldPct(dto.YieldPct).
+		SetNillableMinSellingPrice(dto.MinSellingPrice).
+		SetNillableMaxSellingPrice(dto.MaxSellingPrice).
+		SetNillableTargetMarginPercent(dto.TargetMarginPercent).
 		SetRequiresAgeVerification(dto.RequiresAgeVerification).
 		SetIsControlledSubstance(dto.IsControlledSubstance).
 		SetIsPerishable(dto.IsPerishable).

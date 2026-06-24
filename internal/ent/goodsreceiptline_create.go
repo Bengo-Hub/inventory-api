@@ -127,6 +127,12 @@ func (_c *GoodsReceiptLineCreate) SetNillableRejectionReason(v *string) *GoodsRe
 	return _c
 }
 
+// SetSerials sets the "serials" field.
+func (_c *GoodsReceiptLineCreate) SetSerials(v []string) *GoodsReceiptLineCreate {
+	_c.mutation.SetSerials(v)
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *GoodsReceiptLineCreate) SetCreatedAt(v time.Time) *GoodsReceiptLineCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -317,6 +323,10 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 	if value, ok := _c.mutation.RejectionReason(); ok {
 		_spec.SetField(goodsreceiptline.FieldRejectionReason, field.TypeString, value)
 		_node.RejectionReason = value
+	}
+	if value, ok := _c.mutation.Serials(); ok {
+		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
+		_node.Serials = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(goodsreceiptline.FieldCreatedAt, field.TypeTime, value)
@@ -532,6 +542,24 @@ func (u *GoodsReceiptLineUpsert) UpdateRejectionReason() *GoodsReceiptLineUpsert
 // ClearRejectionReason clears the value of the "rejection_reason" field.
 func (u *GoodsReceiptLineUpsert) ClearRejectionReason() *GoodsReceiptLineUpsert {
 	u.SetNull(goodsreceiptline.FieldRejectionReason)
+	return u
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsert) SetSerials(v []string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldSerials, v)
+	return u
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateSerials() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldSerials)
+	return u
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsert) ClearSerials() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldSerials)
 	return u
 }
 
@@ -751,6 +779,27 @@ func (u *GoodsReceiptLineUpsertOne) UpdateRejectionReason() *GoodsReceiptLineUps
 func (u *GoodsReceiptLineUpsertOne) ClearRejectionReason() *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearRejectionReason()
+	})
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsertOne) SetSerials(v []string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetSerials(v)
+	})
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateSerials() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateSerials()
+	})
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsertOne) ClearSerials() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearSerials()
 	})
 }
 
@@ -1137,6 +1186,27 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateRejectionReason() *GoodsReceiptLineUp
 func (u *GoodsReceiptLineUpsertBulk) ClearRejectionReason() *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearRejectionReason()
+	})
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsertBulk) SetSerials(v []string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetSerials(v)
+	})
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateSerials() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateSerials()
+	})
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearSerials() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearSerials()
 	})
 }
 

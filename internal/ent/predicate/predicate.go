@@ -99,6 +99,9 @@ type InventoryPermission func(*sql.Selector)
 // InventoryRole is the predicate function for inventoryrole builders.
 type InventoryRole func(*sql.Selector)
 
+// InventorySerial is the predicate function for inventoryserial builders.
+type InventorySerial func(*sql.Selector)
+
 // InventoryUser is the predicate function for inventoryuser builders.
 type InventoryUser func(*sql.Selector)
 

@@ -26,6 +26,7 @@ func (GoodsReceiptLine) Fields() []ent.Field {
 		field.Float("quantity_rejected").Default(0),
 		field.Float("unit_cost").Default(0),
 		field.Text("rejection_reason").Optional(),
+		field.JSON("serials", []string{}).Optional().Comment("Serial numbers received on this line (serial-tracked items): one per unit accepted"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }

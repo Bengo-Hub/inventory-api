@@ -782,6 +782,87 @@ func (_u *ItemUpdate) ClearYieldPct() *ItemUpdate {
 	return _u
 }
 
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (_u *ItemUpdate) SetMinSellingPrice(v float64) *ItemUpdate {
+	_u.mutation.ResetMinSellingPrice()
+	_u.mutation.SetMinSellingPrice(v)
+	return _u
+}
+
+// SetNillableMinSellingPrice sets the "min_selling_price" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMinSellingPrice(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetMinSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddMinSellingPrice adds value to the "min_selling_price" field.
+func (_u *ItemUpdate) AddMinSellingPrice(v float64) *ItemUpdate {
+	_u.mutation.AddMinSellingPrice(v)
+	return _u
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (_u *ItemUpdate) ClearMinSellingPrice() *ItemUpdate {
+	_u.mutation.ClearMinSellingPrice()
+	return _u
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (_u *ItemUpdate) SetMaxSellingPrice(v float64) *ItemUpdate {
+	_u.mutation.ResetMaxSellingPrice()
+	_u.mutation.SetMaxSellingPrice(v)
+	return _u
+}
+
+// SetNillableMaxSellingPrice sets the "max_selling_price" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMaxSellingPrice(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetMaxSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddMaxSellingPrice adds value to the "max_selling_price" field.
+func (_u *ItemUpdate) AddMaxSellingPrice(v float64) *ItemUpdate {
+	_u.mutation.AddMaxSellingPrice(v)
+	return _u
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (_u *ItemUpdate) ClearMaxSellingPrice() *ItemUpdate {
+	_u.mutation.ClearMaxSellingPrice()
+	return _u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_u *ItemUpdate) SetTargetMarginPercent(v float64) *ItemUpdate {
+	_u.mutation.ResetTargetMarginPercent()
+	_u.mutation.SetTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableTargetMarginPercent(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddTargetMarginPercent adds value to the "target_margin_percent" field.
+func (_u *ItemUpdate) AddTargetMarginPercent(v float64) *ItemUpdate {
+	_u.mutation.AddTargetMarginPercent(v)
+	return _u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (_u *ItemUpdate) ClearTargetMarginPercent() *ItemUpdate {
+	_u.mutation.ClearTargetMarginPercent()
+	return _u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_u *ItemUpdate) SetTotalCapacity(v int) *ItemUpdate {
 	_u.mutation.ResetTotalCapacity()
@@ -1704,6 +1785,33 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.YieldPctCleared() {
 		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MinSellingPrice(); ok {
+		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMinSellingPrice(); ok {
+		_spec.AddField(item.FieldMinSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.MinSellingPriceCleared() {
+		_spec.ClearField(item.FieldMinSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MaxSellingPrice(); ok {
+		_spec.SetField(item.FieldMaxSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMaxSellingPrice(); ok {
+		_spec.AddField(item.FieldMaxSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.MaxSellingPriceCleared() {
+		_spec.ClearField(item.FieldMaxSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(item.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetMarginPercent(); ok {
+		_spec.AddField(item.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetMarginPercentCleared() {
+		_spec.ClearField(item.FieldTargetMarginPercent, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)
@@ -3127,6 +3235,87 @@ func (_u *ItemUpdateOne) ClearYieldPct() *ItemUpdateOne {
 	return _u
 }
 
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (_u *ItemUpdateOne) SetMinSellingPrice(v float64) *ItemUpdateOne {
+	_u.mutation.ResetMinSellingPrice()
+	_u.mutation.SetMinSellingPrice(v)
+	return _u
+}
+
+// SetNillableMinSellingPrice sets the "min_selling_price" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMinSellingPrice(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMinSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddMinSellingPrice adds value to the "min_selling_price" field.
+func (_u *ItemUpdateOne) AddMinSellingPrice(v float64) *ItemUpdateOne {
+	_u.mutation.AddMinSellingPrice(v)
+	return _u
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (_u *ItemUpdateOne) ClearMinSellingPrice() *ItemUpdateOne {
+	_u.mutation.ClearMinSellingPrice()
+	return _u
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (_u *ItemUpdateOne) SetMaxSellingPrice(v float64) *ItemUpdateOne {
+	_u.mutation.ResetMaxSellingPrice()
+	_u.mutation.SetMaxSellingPrice(v)
+	return _u
+}
+
+// SetNillableMaxSellingPrice sets the "max_selling_price" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMaxSellingPrice(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMaxSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddMaxSellingPrice adds value to the "max_selling_price" field.
+func (_u *ItemUpdateOne) AddMaxSellingPrice(v float64) *ItemUpdateOne {
+	_u.mutation.AddMaxSellingPrice(v)
+	return _u
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (_u *ItemUpdateOne) ClearMaxSellingPrice() *ItemUpdateOne {
+	_u.mutation.ClearMaxSellingPrice()
+	return _u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (_u *ItemUpdateOne) SetTargetMarginPercent(v float64) *ItemUpdateOne {
+	_u.mutation.ResetTargetMarginPercent()
+	_u.mutation.SetTargetMarginPercent(v)
+	return _u
+}
+
+// SetNillableTargetMarginPercent sets the "target_margin_percent" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableTargetMarginPercent(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetTargetMarginPercent(*v)
+	}
+	return _u
+}
+
+// AddTargetMarginPercent adds value to the "target_margin_percent" field.
+func (_u *ItemUpdateOne) AddTargetMarginPercent(v float64) *ItemUpdateOne {
+	_u.mutation.AddTargetMarginPercent(v)
+	return _u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (_u *ItemUpdateOne) ClearTargetMarginPercent() *ItemUpdateOne {
+	_u.mutation.ClearTargetMarginPercent()
+	return _u
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (_u *ItemUpdateOne) SetTotalCapacity(v int) *ItemUpdateOne {
 	_u.mutation.ResetTotalCapacity()
@@ -4079,6 +4268,33 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.YieldPctCleared() {
 		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MinSellingPrice(); ok {
+		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMinSellingPrice(); ok {
+		_spec.AddField(item.FieldMinSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.MinSellingPriceCleared() {
+		_spec.ClearField(item.FieldMinSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MaxSellingPrice(); ok {
+		_spec.SetField(item.FieldMaxSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedMaxSellingPrice(); ok {
+		_spec.AddField(item.FieldMaxSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.MaxSellingPriceCleared() {
+		_spec.ClearField(item.FieldMaxSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.TargetMarginPercent(); ok {
+		_spec.SetField(item.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetMarginPercent(); ok {
+		_spec.AddField(item.FieldTargetMarginPercent, field.TypeFloat64, value)
+	}
+	if _u.mutation.TargetMarginPercentCleared() {
+		_spec.ClearField(item.FieldTargetMarginPercent, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.TotalCapacity(); ok {
 		_spec.SetField(item.FieldTotalCapacity, field.TypeInt, value)

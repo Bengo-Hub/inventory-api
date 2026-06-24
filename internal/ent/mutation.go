@@ -43,6 +43,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
@@ -139,6 +140,7 @@ const (
 	TypeInventoryLot           = "InventoryLot"
 	TypeInventoryPermission    = "InventoryPermission"
 	TypeInventoryRole          = "InventoryRole"
+	TypeInventorySerial        = "InventorySerial"
 	TypeInventoryUser          = "InventoryUser"
 	TypeItem                   = "Item"
 	TypeItemAsset              = "ItemAsset"
@@ -26689,6 +26691,8 @@ type GoodsReceiptLineMutation struct {
 	unit_cost              *float64
 	addunit_cost           *float64
 	rejection_reason       *string
+	serials                *[]string
+	appendserials          []string
 	created_at             *time.Time
 	clearedFields          map[string]struct{}
 	goods_receipt          *uuid.UUID
@@ -27232,6 +27236,71 @@ func (m *GoodsReceiptLineMutation) ResetRejectionReason() {
 	delete(m.clearedFields, goodsreceiptline.FieldRejectionReason)
 }
 
+// SetSerials sets the "serials" field.
+func (m *GoodsReceiptLineMutation) SetSerials(s []string) {
+	m.serials = &s
+	m.appendserials = nil
+}
+
+// Serials returns the value of the "serials" field in the mutation.
+func (m *GoodsReceiptLineMutation) Serials() (r []string, exists bool) {
+	v := m.serials
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSerials returns the old "serials" field's value of the GoodsReceiptLine entity.
+// If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoodsReceiptLineMutation) OldSerials(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSerials is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSerials requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSerials: %w", err)
+	}
+	return oldValue.Serials, nil
+}
+
+// AppendSerials adds s to the "serials" field.
+func (m *GoodsReceiptLineMutation) AppendSerials(s []string) {
+	m.appendserials = append(m.appendserials, s...)
+}
+
+// AppendedSerials returns the list of values that were appended to the "serials" field in this mutation.
+func (m *GoodsReceiptLineMutation) AppendedSerials() ([]string, bool) {
+	if len(m.appendserials) == 0 {
+		return nil, false
+	}
+	return m.appendserials, true
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (m *GoodsReceiptLineMutation) ClearSerials() {
+	m.serials = nil
+	m.appendserials = nil
+	m.clearedFields[goodsreceiptline.FieldSerials] = struct{}{}
+}
+
+// SerialsCleared returns if the "serials" field was cleared in this mutation.
+func (m *GoodsReceiptLineMutation) SerialsCleared() bool {
+	_, ok := m.clearedFields[goodsreceiptline.FieldSerials]
+	return ok
+}
+
+// ResetSerials resets all changes to the "serials" field.
+func (m *GoodsReceiptLineMutation) ResetSerials() {
+	m.serials = nil
+	m.appendserials = nil
+	delete(m.clearedFields, goodsreceiptline.FieldSerials)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *GoodsReceiptLineMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -27329,7 +27398,7 @@ func (m *GoodsReceiptLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoodsReceiptLineMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.tenant_id != nil {
 		fields = append(fields, goodsreceiptline.FieldTenantID)
 	}
@@ -27356,6 +27425,9 @@ func (m *GoodsReceiptLineMutation) Fields() []string {
 	}
 	if m.rejection_reason != nil {
 		fields = append(fields, goodsreceiptline.FieldRejectionReason)
+	}
+	if m.serials != nil {
+		fields = append(fields, goodsreceiptline.FieldSerials)
 	}
 	if m.created_at != nil {
 		fields = append(fields, goodsreceiptline.FieldCreatedAt)
@@ -27386,6 +27458,8 @@ func (m *GoodsReceiptLineMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitCost()
 	case goodsreceiptline.FieldRejectionReason:
 		return m.RejectionReason()
+	case goodsreceiptline.FieldSerials:
+		return m.Serials()
 	case goodsreceiptline.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -27415,6 +27489,8 @@ func (m *GoodsReceiptLineMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUnitCost(ctx)
 	case goodsreceiptline.FieldRejectionReason:
 		return m.OldRejectionReason(ctx)
+	case goodsreceiptline.FieldSerials:
+		return m.OldSerials(ctx)
 	case goodsreceiptline.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -27488,6 +27564,13 @@ func (m *GoodsReceiptLineMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRejectionReason(v)
+		return nil
+	case goodsreceiptline.FieldSerials:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSerials(v)
 		return nil
 	case goodsreceiptline.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -27583,6 +27666,9 @@ func (m *GoodsReceiptLineMutation) ClearedFields() []string {
 	if m.FieldCleared(goodsreceiptline.FieldRejectionReason) {
 		fields = append(fields, goodsreceiptline.FieldRejectionReason)
 	}
+	if m.FieldCleared(goodsreceiptline.FieldSerials) {
+		fields = append(fields, goodsreceiptline.FieldSerials)
+	}
 	return fields
 }
 
@@ -27602,6 +27688,9 @@ func (m *GoodsReceiptLineMutation) ClearField(name string) error {
 		return nil
 	case goodsreceiptline.FieldRejectionReason:
 		m.ClearRejectionReason()
+		return nil
+	case goodsreceiptline.FieldSerials:
+		m.ClearSerials()
 		return nil
 	}
 	return fmt.Errorf("unknown GoodsReceiptLine nullable field %s", name)
@@ -27637,6 +27726,9 @@ func (m *GoodsReceiptLineMutation) ResetField(name string) error {
 		return nil
 	case goodsreceiptline.FieldRejectionReason:
 		m.ResetRejectionReason()
+		return nil
+	case goodsreceiptline.FieldSerials:
+		m.ResetSerials()
 		return nil
 	case goodsreceiptline.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -32058,6 +32150,1030 @@ func (m *InventoryRoleMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown InventoryRole edge %s", name)
 }
 
+// InventorySerialMutation represents an operation that mutates the InventorySerial nodes in the graph.
+type InventorySerialMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	tenant_id             *uuid.UUID
+	item_id               *uuid.UUID
+	warehouse_id          *uuid.UUID
+	serial_number         *string
+	status                *inventoryserial.Status
+	received_at           *time.Time
+	goods_receipt_line_id *uuid.UUID
+	sold_at               *time.Time
+	pos_order_line_id     *string
+	notes                 *string
+	created_at            *time.Time
+	updated_at            *time.Time
+	clearedFields         map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*InventorySerial, error)
+	predicates            []predicate.InventorySerial
+}
+
+var _ ent.Mutation = (*InventorySerialMutation)(nil)
+
+// inventoryserialOption allows management of the mutation configuration using functional options.
+type inventoryserialOption func(*InventorySerialMutation)
+
+// newInventorySerialMutation creates new mutation for the InventorySerial entity.
+func newInventorySerialMutation(c config, op Op, opts ...inventoryserialOption) *InventorySerialMutation {
+	m := &InventorySerialMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeInventorySerial,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withInventorySerialID sets the ID field of the mutation.
+func withInventorySerialID(id uuid.UUID) inventoryserialOption {
+	return func(m *InventorySerialMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *InventorySerial
+		)
+		m.oldValue = func(ctx context.Context) (*InventorySerial, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().InventorySerial.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withInventorySerial sets the old InventorySerial of the mutation.
+func withInventorySerial(node *InventorySerial) inventoryserialOption {
+	return func(m *InventorySerialMutation) {
+		m.oldValue = func(context.Context) (*InventorySerial, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m InventorySerialMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m InventorySerialMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of InventorySerial entities.
+func (m *InventorySerialMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *InventorySerialMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *InventorySerialMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().InventorySerial.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *InventorySerialMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *InventorySerialMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *InventorySerialMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *InventorySerialMutation) SetItemID(u uuid.UUID) {
+	m.item_id = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *InventorySerialMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *InventorySerialMutation) ResetItemID() {
+	m.item_id = nil
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (m *InventorySerialMutation) SetWarehouseID(u uuid.UUID) {
+	m.warehouse_id = &u
+}
+
+// WarehouseID returns the value of the "warehouse_id" field in the mutation.
+func (m *InventorySerialMutation) WarehouseID() (r uuid.UUID, exists bool) {
+	v := m.warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWarehouseID returns the old "warehouse_id" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldWarehouseID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWarehouseID: %w", err)
+	}
+	return oldValue.WarehouseID, nil
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (m *InventorySerialMutation) ClearWarehouseID() {
+	m.warehouse_id = nil
+	m.clearedFields[inventoryserial.FieldWarehouseID] = struct{}{}
+}
+
+// WarehouseIDCleared returns if the "warehouse_id" field was cleared in this mutation.
+func (m *InventorySerialMutation) WarehouseIDCleared() bool {
+	_, ok := m.clearedFields[inventoryserial.FieldWarehouseID]
+	return ok
+}
+
+// ResetWarehouseID resets all changes to the "warehouse_id" field.
+func (m *InventorySerialMutation) ResetWarehouseID() {
+	m.warehouse_id = nil
+	delete(m.clearedFields, inventoryserial.FieldWarehouseID)
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (m *InventorySerialMutation) SetSerialNumber(s string) {
+	m.serial_number = &s
+}
+
+// SerialNumber returns the value of the "serial_number" field in the mutation.
+func (m *InventorySerialMutation) SerialNumber() (r string, exists bool) {
+	v := m.serial_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSerialNumber returns the old "serial_number" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldSerialNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSerialNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSerialNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSerialNumber: %w", err)
+	}
+	return oldValue.SerialNumber, nil
+}
+
+// ResetSerialNumber resets all changes to the "serial_number" field.
+func (m *InventorySerialMutation) ResetSerialNumber() {
+	m.serial_number = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *InventorySerialMutation) SetStatus(i inventoryserial.Status) {
+	m.status = &i
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *InventorySerialMutation) Status() (r inventoryserial.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldStatus(ctx context.Context) (v inventoryserial.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *InventorySerialMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (m *InventorySerialMutation) SetReceivedAt(t time.Time) {
+	m.received_at = &t
+}
+
+// ReceivedAt returns the value of the "received_at" field in the mutation.
+func (m *InventorySerialMutation) ReceivedAt() (r time.Time, exists bool) {
+	v := m.received_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReceivedAt returns the old "received_at" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldReceivedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReceivedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReceivedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReceivedAt: %w", err)
+	}
+	return oldValue.ReceivedAt, nil
+}
+
+// ResetReceivedAt resets all changes to the "received_at" field.
+func (m *InventorySerialMutation) ResetReceivedAt() {
+	m.received_at = nil
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (m *InventorySerialMutation) SetGoodsReceiptLineID(u uuid.UUID) {
+	m.goods_receipt_line_id = &u
+}
+
+// GoodsReceiptLineID returns the value of the "goods_receipt_line_id" field in the mutation.
+func (m *InventorySerialMutation) GoodsReceiptLineID() (r uuid.UUID, exists bool) {
+	v := m.goods_receipt_line_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoodsReceiptLineID returns the old "goods_receipt_line_id" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldGoodsReceiptLineID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoodsReceiptLineID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoodsReceiptLineID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoodsReceiptLineID: %w", err)
+	}
+	return oldValue.GoodsReceiptLineID, nil
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (m *InventorySerialMutation) ClearGoodsReceiptLineID() {
+	m.goods_receipt_line_id = nil
+	m.clearedFields[inventoryserial.FieldGoodsReceiptLineID] = struct{}{}
+}
+
+// GoodsReceiptLineIDCleared returns if the "goods_receipt_line_id" field was cleared in this mutation.
+func (m *InventorySerialMutation) GoodsReceiptLineIDCleared() bool {
+	_, ok := m.clearedFields[inventoryserial.FieldGoodsReceiptLineID]
+	return ok
+}
+
+// ResetGoodsReceiptLineID resets all changes to the "goods_receipt_line_id" field.
+func (m *InventorySerialMutation) ResetGoodsReceiptLineID() {
+	m.goods_receipt_line_id = nil
+	delete(m.clearedFields, inventoryserial.FieldGoodsReceiptLineID)
+}
+
+// SetSoldAt sets the "sold_at" field.
+func (m *InventorySerialMutation) SetSoldAt(t time.Time) {
+	m.sold_at = &t
+}
+
+// SoldAt returns the value of the "sold_at" field in the mutation.
+func (m *InventorySerialMutation) SoldAt() (r time.Time, exists bool) {
+	v := m.sold_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSoldAt returns the old "sold_at" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldSoldAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSoldAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSoldAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSoldAt: %w", err)
+	}
+	return oldValue.SoldAt, nil
+}
+
+// ClearSoldAt clears the value of the "sold_at" field.
+func (m *InventorySerialMutation) ClearSoldAt() {
+	m.sold_at = nil
+	m.clearedFields[inventoryserial.FieldSoldAt] = struct{}{}
+}
+
+// SoldAtCleared returns if the "sold_at" field was cleared in this mutation.
+func (m *InventorySerialMutation) SoldAtCleared() bool {
+	_, ok := m.clearedFields[inventoryserial.FieldSoldAt]
+	return ok
+}
+
+// ResetSoldAt resets all changes to the "sold_at" field.
+func (m *InventorySerialMutation) ResetSoldAt() {
+	m.sold_at = nil
+	delete(m.clearedFields, inventoryserial.FieldSoldAt)
+}
+
+// SetPosOrderLineID sets the "pos_order_line_id" field.
+func (m *InventorySerialMutation) SetPosOrderLineID(s string) {
+	m.pos_order_line_id = &s
+}
+
+// PosOrderLineID returns the value of the "pos_order_line_id" field in the mutation.
+func (m *InventorySerialMutation) PosOrderLineID() (r string, exists bool) {
+	v := m.pos_order_line_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPosOrderLineID returns the old "pos_order_line_id" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldPosOrderLineID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPosOrderLineID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPosOrderLineID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPosOrderLineID: %w", err)
+	}
+	return oldValue.PosOrderLineID, nil
+}
+
+// ClearPosOrderLineID clears the value of the "pos_order_line_id" field.
+func (m *InventorySerialMutation) ClearPosOrderLineID() {
+	m.pos_order_line_id = nil
+	m.clearedFields[inventoryserial.FieldPosOrderLineID] = struct{}{}
+}
+
+// PosOrderLineIDCleared returns if the "pos_order_line_id" field was cleared in this mutation.
+func (m *InventorySerialMutation) PosOrderLineIDCleared() bool {
+	_, ok := m.clearedFields[inventoryserial.FieldPosOrderLineID]
+	return ok
+}
+
+// ResetPosOrderLineID resets all changes to the "pos_order_line_id" field.
+func (m *InventorySerialMutation) ResetPosOrderLineID() {
+	m.pos_order_line_id = nil
+	delete(m.clearedFields, inventoryserial.FieldPosOrderLineID)
+}
+
+// SetNotes sets the "notes" field.
+func (m *InventorySerialMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *InventorySerialMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *InventorySerialMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[inventoryserial.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *InventorySerialMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[inventoryserial.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *InventorySerialMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, inventoryserial.FieldNotes)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *InventorySerialMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *InventorySerialMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *InventorySerialMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *InventorySerialMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *InventorySerialMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the InventorySerial entity.
+// If the InventorySerial object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventorySerialMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *InventorySerialMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the InventorySerialMutation builder.
+func (m *InventorySerialMutation) Where(ps ...predicate.InventorySerial) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the InventorySerialMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *InventorySerialMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.InventorySerial, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *InventorySerialMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *InventorySerialMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (InventorySerial).
+func (m *InventorySerialMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *InventorySerialMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.tenant_id != nil {
+		fields = append(fields, inventoryserial.FieldTenantID)
+	}
+	if m.item_id != nil {
+		fields = append(fields, inventoryserial.FieldItemID)
+	}
+	if m.warehouse_id != nil {
+		fields = append(fields, inventoryserial.FieldWarehouseID)
+	}
+	if m.serial_number != nil {
+		fields = append(fields, inventoryserial.FieldSerialNumber)
+	}
+	if m.status != nil {
+		fields = append(fields, inventoryserial.FieldStatus)
+	}
+	if m.received_at != nil {
+		fields = append(fields, inventoryserial.FieldReceivedAt)
+	}
+	if m.goods_receipt_line_id != nil {
+		fields = append(fields, inventoryserial.FieldGoodsReceiptLineID)
+	}
+	if m.sold_at != nil {
+		fields = append(fields, inventoryserial.FieldSoldAt)
+	}
+	if m.pos_order_line_id != nil {
+		fields = append(fields, inventoryserial.FieldPosOrderLineID)
+	}
+	if m.notes != nil {
+		fields = append(fields, inventoryserial.FieldNotes)
+	}
+	if m.created_at != nil {
+		fields = append(fields, inventoryserial.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, inventoryserial.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *InventorySerialMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case inventoryserial.FieldTenantID:
+		return m.TenantID()
+	case inventoryserial.FieldItemID:
+		return m.ItemID()
+	case inventoryserial.FieldWarehouseID:
+		return m.WarehouseID()
+	case inventoryserial.FieldSerialNumber:
+		return m.SerialNumber()
+	case inventoryserial.FieldStatus:
+		return m.Status()
+	case inventoryserial.FieldReceivedAt:
+		return m.ReceivedAt()
+	case inventoryserial.FieldGoodsReceiptLineID:
+		return m.GoodsReceiptLineID()
+	case inventoryserial.FieldSoldAt:
+		return m.SoldAt()
+	case inventoryserial.FieldPosOrderLineID:
+		return m.PosOrderLineID()
+	case inventoryserial.FieldNotes:
+		return m.Notes()
+	case inventoryserial.FieldCreatedAt:
+		return m.CreatedAt()
+	case inventoryserial.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *InventorySerialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case inventoryserial.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case inventoryserial.FieldItemID:
+		return m.OldItemID(ctx)
+	case inventoryserial.FieldWarehouseID:
+		return m.OldWarehouseID(ctx)
+	case inventoryserial.FieldSerialNumber:
+		return m.OldSerialNumber(ctx)
+	case inventoryserial.FieldStatus:
+		return m.OldStatus(ctx)
+	case inventoryserial.FieldReceivedAt:
+		return m.OldReceivedAt(ctx)
+	case inventoryserial.FieldGoodsReceiptLineID:
+		return m.OldGoodsReceiptLineID(ctx)
+	case inventoryserial.FieldSoldAt:
+		return m.OldSoldAt(ctx)
+	case inventoryserial.FieldPosOrderLineID:
+		return m.OldPosOrderLineID(ctx)
+	case inventoryserial.FieldNotes:
+		return m.OldNotes(ctx)
+	case inventoryserial.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case inventoryserial.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown InventorySerial field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InventorySerialMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case inventoryserial.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case inventoryserial.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case inventoryserial.FieldWarehouseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWarehouseID(v)
+		return nil
+	case inventoryserial.FieldSerialNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSerialNumber(v)
+		return nil
+	case inventoryserial.FieldStatus:
+		v, ok := value.(inventoryserial.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case inventoryserial.FieldReceivedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReceivedAt(v)
+		return nil
+	case inventoryserial.FieldGoodsReceiptLineID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoodsReceiptLineID(v)
+		return nil
+	case inventoryserial.FieldSoldAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSoldAt(v)
+		return nil
+	case inventoryserial.FieldPosOrderLineID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPosOrderLineID(v)
+		return nil
+	case inventoryserial.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case inventoryserial.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case inventoryserial.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown InventorySerial field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *InventorySerialMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *InventorySerialMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InventorySerialMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown InventorySerial numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *InventorySerialMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(inventoryserial.FieldWarehouseID) {
+		fields = append(fields, inventoryserial.FieldWarehouseID)
+	}
+	if m.FieldCleared(inventoryserial.FieldGoodsReceiptLineID) {
+		fields = append(fields, inventoryserial.FieldGoodsReceiptLineID)
+	}
+	if m.FieldCleared(inventoryserial.FieldSoldAt) {
+		fields = append(fields, inventoryserial.FieldSoldAt)
+	}
+	if m.FieldCleared(inventoryserial.FieldPosOrderLineID) {
+		fields = append(fields, inventoryserial.FieldPosOrderLineID)
+	}
+	if m.FieldCleared(inventoryserial.FieldNotes) {
+		fields = append(fields, inventoryserial.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *InventorySerialMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *InventorySerialMutation) ClearField(name string) error {
+	switch name {
+	case inventoryserial.FieldWarehouseID:
+		m.ClearWarehouseID()
+		return nil
+	case inventoryserial.FieldGoodsReceiptLineID:
+		m.ClearGoodsReceiptLineID()
+		return nil
+	case inventoryserial.FieldSoldAt:
+		m.ClearSoldAt()
+		return nil
+	case inventoryserial.FieldPosOrderLineID:
+		m.ClearPosOrderLineID()
+		return nil
+	case inventoryserial.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown InventorySerial nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *InventorySerialMutation) ResetField(name string) error {
+	switch name {
+	case inventoryserial.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case inventoryserial.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case inventoryserial.FieldWarehouseID:
+		m.ResetWarehouseID()
+		return nil
+	case inventoryserial.FieldSerialNumber:
+		m.ResetSerialNumber()
+		return nil
+	case inventoryserial.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case inventoryserial.FieldReceivedAt:
+		m.ResetReceivedAt()
+		return nil
+	case inventoryserial.FieldGoodsReceiptLineID:
+		m.ResetGoodsReceiptLineID()
+		return nil
+	case inventoryserial.FieldSoldAt:
+		m.ResetSoldAt()
+		return nil
+	case inventoryserial.FieldPosOrderLineID:
+		m.ResetPosOrderLineID()
+		return nil
+	case inventoryserial.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case inventoryserial.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case inventoryserial.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown InventorySerial field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *InventorySerialMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *InventorySerialMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *InventorySerialMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *InventorySerialMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *InventorySerialMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *InventorySerialMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *InventorySerialMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown InventorySerial unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *InventorySerialMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown InventorySerial edge %s", name)
+}
+
 // InventoryUserMutation represents an operation that mutates the InventoryUser nodes in the graph.
 type InventoryUserMutation struct {
 	config
@@ -32841,6 +33957,12 @@ type ItemMutation struct {
 	purchase_unit              *string
 	yield_pct                  *float64
 	addyield_pct               *float64
+	min_selling_price          *float64
+	addmin_selling_price       *float64
+	max_selling_price          *float64
+	addmax_selling_price       *float64
+	target_margin_percent      *float64
+	addtarget_margin_percent   *float64
 	total_capacity             *int
 	addtotal_capacity          *int
 	booked_capacity            *int
@@ -34908,6 +36030,216 @@ func (m *ItemMutation) ResetYieldPct() {
 	delete(m.clearedFields, item.FieldYieldPct)
 }
 
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (m *ItemMutation) SetMinSellingPrice(f float64) {
+	m.min_selling_price = &f
+	m.addmin_selling_price = nil
+}
+
+// MinSellingPrice returns the value of the "min_selling_price" field in the mutation.
+func (m *ItemMutation) MinSellingPrice() (r float64, exists bool) {
+	v := m.min_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinSellingPrice returns the old "min_selling_price" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMinSellingPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinSellingPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinSellingPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinSellingPrice: %w", err)
+	}
+	return oldValue.MinSellingPrice, nil
+}
+
+// AddMinSellingPrice adds f to the "min_selling_price" field.
+func (m *ItemMutation) AddMinSellingPrice(f float64) {
+	if m.addmin_selling_price != nil {
+		*m.addmin_selling_price += f
+	} else {
+		m.addmin_selling_price = &f
+	}
+}
+
+// AddedMinSellingPrice returns the value that was added to the "min_selling_price" field in this mutation.
+func (m *ItemMutation) AddedMinSellingPrice() (r float64, exists bool) {
+	v := m.addmin_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (m *ItemMutation) ClearMinSellingPrice() {
+	m.min_selling_price = nil
+	m.addmin_selling_price = nil
+	m.clearedFields[item.FieldMinSellingPrice] = struct{}{}
+}
+
+// MinSellingPriceCleared returns if the "min_selling_price" field was cleared in this mutation.
+func (m *ItemMutation) MinSellingPriceCleared() bool {
+	_, ok := m.clearedFields[item.FieldMinSellingPrice]
+	return ok
+}
+
+// ResetMinSellingPrice resets all changes to the "min_selling_price" field.
+func (m *ItemMutation) ResetMinSellingPrice() {
+	m.min_selling_price = nil
+	m.addmin_selling_price = nil
+	delete(m.clearedFields, item.FieldMinSellingPrice)
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (m *ItemMutation) SetMaxSellingPrice(f float64) {
+	m.max_selling_price = &f
+	m.addmax_selling_price = nil
+}
+
+// MaxSellingPrice returns the value of the "max_selling_price" field in the mutation.
+func (m *ItemMutation) MaxSellingPrice() (r float64, exists bool) {
+	v := m.max_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxSellingPrice returns the old "max_selling_price" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMaxSellingPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxSellingPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxSellingPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxSellingPrice: %w", err)
+	}
+	return oldValue.MaxSellingPrice, nil
+}
+
+// AddMaxSellingPrice adds f to the "max_selling_price" field.
+func (m *ItemMutation) AddMaxSellingPrice(f float64) {
+	if m.addmax_selling_price != nil {
+		*m.addmax_selling_price += f
+	} else {
+		m.addmax_selling_price = &f
+	}
+}
+
+// AddedMaxSellingPrice returns the value that was added to the "max_selling_price" field in this mutation.
+func (m *ItemMutation) AddedMaxSellingPrice() (r float64, exists bool) {
+	v := m.addmax_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (m *ItemMutation) ClearMaxSellingPrice() {
+	m.max_selling_price = nil
+	m.addmax_selling_price = nil
+	m.clearedFields[item.FieldMaxSellingPrice] = struct{}{}
+}
+
+// MaxSellingPriceCleared returns if the "max_selling_price" field was cleared in this mutation.
+func (m *ItemMutation) MaxSellingPriceCleared() bool {
+	_, ok := m.clearedFields[item.FieldMaxSellingPrice]
+	return ok
+}
+
+// ResetMaxSellingPrice resets all changes to the "max_selling_price" field.
+func (m *ItemMutation) ResetMaxSellingPrice() {
+	m.max_selling_price = nil
+	m.addmax_selling_price = nil
+	delete(m.clearedFields, item.FieldMaxSellingPrice)
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (m *ItemMutation) SetTargetMarginPercent(f float64) {
+	m.target_margin_percent = &f
+	m.addtarget_margin_percent = nil
+}
+
+// TargetMarginPercent returns the value of the "target_margin_percent" field in the mutation.
+func (m *ItemMutation) TargetMarginPercent() (r float64, exists bool) {
+	v := m.target_margin_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetMarginPercent returns the old "target_margin_percent" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldTargetMarginPercent(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetMarginPercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetMarginPercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetMarginPercent: %w", err)
+	}
+	return oldValue.TargetMarginPercent, nil
+}
+
+// AddTargetMarginPercent adds f to the "target_margin_percent" field.
+func (m *ItemMutation) AddTargetMarginPercent(f float64) {
+	if m.addtarget_margin_percent != nil {
+		*m.addtarget_margin_percent += f
+	} else {
+		m.addtarget_margin_percent = &f
+	}
+}
+
+// AddedTargetMarginPercent returns the value that was added to the "target_margin_percent" field in this mutation.
+func (m *ItemMutation) AddedTargetMarginPercent() (r float64, exists bool) {
+	v := m.addtarget_margin_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (m *ItemMutation) ClearTargetMarginPercent() {
+	m.target_margin_percent = nil
+	m.addtarget_margin_percent = nil
+	m.clearedFields[item.FieldTargetMarginPercent] = struct{}{}
+}
+
+// TargetMarginPercentCleared returns if the "target_margin_percent" field was cleared in this mutation.
+func (m *ItemMutation) TargetMarginPercentCleared() bool {
+	_, ok := m.clearedFields[item.FieldTargetMarginPercent]
+	return ok
+}
+
+// ResetTargetMarginPercent resets all changes to the "target_margin_percent" field.
+func (m *ItemMutation) ResetTargetMarginPercent() {
+	m.target_margin_percent = nil
+	m.addtarget_margin_percent = nil
+	delete(m.clearedFields, item.FieldTargetMarginPercent)
+}
+
 // SetTotalCapacity sets the "total_capacity" field.
 func (m *ItemMutation) SetTotalCapacity(i int) {
 	m.total_capacity = &i
@@ -36102,7 +37434,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 46)
+	fields := make([]string, 0, 49)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -36217,6 +37549,15 @@ func (m *ItemMutation) Fields() []string {
 	if m.yield_pct != nil {
 		fields = append(fields, item.FieldYieldPct)
 	}
+	if m.min_selling_price != nil {
+		fields = append(fields, item.FieldMinSellingPrice)
+	}
+	if m.max_selling_price != nil {
+		fields = append(fields, item.FieldMaxSellingPrice)
+	}
+	if m.target_margin_percent != nil {
+		fields = append(fields, item.FieldTargetMarginPercent)
+	}
 	if m.total_capacity != nil {
 		fields = append(fields, item.FieldTotalCapacity)
 	}
@@ -36325,6 +37666,12 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchaseUnit()
 	case item.FieldYieldPct:
 		return m.YieldPct()
+	case item.FieldMinSellingPrice:
+		return m.MinSellingPrice()
+	case item.FieldMaxSellingPrice:
+		return m.MaxSellingPrice()
+	case item.FieldTargetMarginPercent:
+		return m.TargetMarginPercent()
 	case item.FieldTotalCapacity:
 		return m.TotalCapacity()
 	case item.FieldBookedCapacity:
@@ -36426,6 +37773,12 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPurchaseUnit(ctx)
 	case item.FieldYieldPct:
 		return m.OldYieldPct(ctx)
+	case item.FieldMinSellingPrice:
+		return m.OldMinSellingPrice(ctx)
+	case item.FieldMaxSellingPrice:
+		return m.OldMaxSellingPrice(ctx)
+	case item.FieldTargetMarginPercent:
+		return m.OldTargetMarginPercent(ctx)
 	case item.FieldTotalCapacity:
 		return m.OldTotalCapacity(ctx)
 	case item.FieldBookedCapacity:
@@ -36717,6 +38070,27 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetYieldPct(v)
 		return nil
+	case item.FieldMinSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinSellingPrice(v)
+		return nil
+	case item.FieldMaxSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxSellingPrice(v)
+		return nil
+	case item.FieldTargetMarginPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetMarginPercent(v)
+		return nil
 	case item.FieldTotalCapacity:
 		v, ok := value.(int)
 		if !ok {
@@ -36811,6 +38185,15 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addyield_pct != nil {
 		fields = append(fields, item.FieldYieldPct)
 	}
+	if m.addmin_selling_price != nil {
+		fields = append(fields, item.FieldMinSellingPrice)
+	}
+	if m.addmax_selling_price != nil {
+		fields = append(fields, item.FieldMaxSellingPrice)
+	}
+	if m.addtarget_margin_percent != nil {
+		fields = append(fields, item.FieldTargetMarginPercent)
+	}
 	if m.addtotal_capacity != nil {
 		fields = append(fields, item.FieldTotalCapacity)
 	}
@@ -36845,6 +38228,12 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPurchasePackSize()
 	case item.FieldYieldPct:
 		return m.AddedYieldPct()
+	case item.FieldMinSellingPrice:
+		return m.AddedMinSellingPrice()
+	case item.FieldMaxSellingPrice:
+		return m.AddedMaxSellingPrice()
+	case item.FieldTargetMarginPercent:
+		return m.AddedTargetMarginPercent()
 	case item.FieldTotalCapacity:
 		return m.AddedTotalCapacity()
 	case item.FieldBookedCapacity:
@@ -36927,6 +38316,27 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddYieldPct(v)
+		return nil
+	case item.FieldMinSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinSellingPrice(v)
+		return nil
+	case item.FieldMaxSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxSellingPrice(v)
+		return nil
+	case item.FieldTargetMarginPercent:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetMarginPercent(v)
 		return nil
 	case item.FieldTotalCapacity:
 		v, ok := value.(int)
@@ -37021,6 +38431,15 @@ func (m *ItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(item.FieldYieldPct) {
 		fields = append(fields, item.FieldYieldPct)
+	}
+	if m.FieldCleared(item.FieldMinSellingPrice) {
+		fields = append(fields, item.FieldMinSellingPrice)
+	}
+	if m.FieldCleared(item.FieldMaxSellingPrice) {
+		fields = append(fields, item.FieldMaxSellingPrice)
+	}
+	if m.FieldCleared(item.FieldTargetMarginPercent) {
+		fields = append(fields, item.FieldTargetMarginPercent)
 	}
 	if m.FieldCleared(item.FieldTotalCapacity) {
 		fields = append(fields, item.FieldTotalCapacity)
@@ -37122,6 +38541,15 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldYieldPct:
 		m.ClearYieldPct()
+		return nil
+	case item.FieldMinSellingPrice:
+		m.ClearMinSellingPrice()
+		return nil
+	case item.FieldMaxSellingPrice:
+		m.ClearMaxSellingPrice()
+		return nil
+	case item.FieldTargetMarginPercent:
+		m.ClearTargetMarginPercent()
 		return nil
 	case item.FieldTotalCapacity:
 		m.ClearTotalCapacity()
@@ -37259,6 +38687,15 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldYieldPct:
 		m.ResetYieldPct()
+		return nil
+	case item.FieldMinSellingPrice:
+		m.ResetMinSellingPrice()
+		return nil
+	case item.FieldMaxSellingPrice:
+		m.ResetMaxSellingPrice()
+		return nil
+	case item.FieldTargetMarginPercent:
+		m.ResetTargetMarginPercent()
 		return nil
 	case item.FieldTotalCapacity:
 		m.ResetTotalCapacity()

@@ -189,4 +189,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Approval matrix (rules + requests) gating purchase orders and requisitions
 	h.registerApprovalRoutes(r, perm)
+
+	// Per-unit serial registry (read)
+	h.registerSerialRoutes(r)
 }

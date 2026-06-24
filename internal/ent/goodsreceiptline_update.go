@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
@@ -195,6 +196,24 @@ func (_u *GoodsReceiptLineUpdate) ClearRejectionReason() *GoodsReceiptLineUpdate
 	return _u
 }
 
+// SetSerials sets the "serials" field.
+func (_u *GoodsReceiptLineUpdate) SetSerials(v []string) *GoodsReceiptLineUpdate {
+	_u.mutation.SetSerials(v)
+	return _u
+}
+
+// AppendSerials appends value to the "serials" field.
+func (_u *GoodsReceiptLineUpdate) AppendSerials(v []string) *GoodsReceiptLineUpdate {
+	_u.mutation.AppendSerials(v)
+	return _u
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (_u *GoodsReceiptLineUpdate) ClearSerials() *GoodsReceiptLineUpdate {
+	_u.mutation.ClearSerials()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdate) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdate {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -299,6 +318,17 @@ func (_u *GoodsReceiptLineUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.RejectionReasonCleared() {
 		_spec.ClearField(goodsreceiptline.FieldRejectionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.Serials(); ok {
+		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedSerials(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, goodsreceiptline.FieldSerials, value)
+		})
+	}
+	if _u.mutation.SerialsCleared() {
+		_spec.ClearField(goodsreceiptline.FieldSerials, field.TypeJSON)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -515,6 +545,24 @@ func (_u *GoodsReceiptLineUpdateOne) ClearRejectionReason() *GoodsReceiptLineUpd
 	return _u
 }
 
+// SetSerials sets the "serials" field.
+func (_u *GoodsReceiptLineUpdateOne) SetSerials(v []string) *GoodsReceiptLineUpdateOne {
+	_u.mutation.SetSerials(v)
+	return _u
+}
+
+// AppendSerials appends value to the "serials" field.
+func (_u *GoodsReceiptLineUpdateOne) AppendSerials(v []string) *GoodsReceiptLineUpdateOne {
+	_u.mutation.AppendSerials(v)
+	return _u
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (_u *GoodsReceiptLineUpdateOne) ClearSerials() *GoodsReceiptLineUpdateOne {
+	_u.mutation.ClearSerials()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdateOne) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdateOne {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -649,6 +697,17 @@ func (_u *GoodsReceiptLineUpdateOne) sqlSave(ctx context.Context) (_node *GoodsR
 	}
 	if _u.mutation.RejectionReasonCleared() {
 		_spec.ClearField(goodsreceiptline.FieldRejectionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.Serials(); ok {
+		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedSerials(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, goodsreceiptline.FieldSerials, value)
+		})
+	}
+	if _u.mutation.SerialsCleared() {
+		_spec.ClearField(goodsreceiptline.FieldSerials, field.TypeJSON)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{

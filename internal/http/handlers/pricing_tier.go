@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +16,7 @@ import (
 
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entip "github.com/bengobox/inventory-service/internal/ent/itempricing"
 	entpt "github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -47,6 +50,10 @@ func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
 		pt.With(perm(rbac.PermItemsAdd)).Post("/", h.CreateTier)
 		pt.With(perm(rbac.PermItemsChange)).Put("/{tierID}", h.UpdateTier)
 		pt.With(perm(rbac.PermItemsDelete)).Delete("/{tierID}", h.DeactivateTier)
+		// Bulk-generate every item's price for this tier from the default tier (× factor) or
+		// from cost + margin — so a Wholesale tier can be populated in one click instead of
+		// item-by-item. Generated prices are clamped to each item's min/max band.
+		pt.With(perm(rbac.PermItemsChange)).Post("/{tierID}/generate", h.GenerateTierPricing)
 	})
 
 	r.Route("/inventory/items/{itemID}/pricing", func(ip chi.Router) {
@@ -340,6 +347,29 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Load the item's selling-price guardrails once and reject any out-of-band tier price.
+	// Hard floor/ceiling — keeps catalog/POS prices coherent with the item's configured band.
+	itm, err := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.ID(itemID)).
+		Select(entitem.FieldMinSellingPrice, entitem.FieldMaxSellingPrice).
+		First(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found")
+		return
+	}
+	for _, entry := range entries {
+		if itm.MinSellingPrice != nil && entry.Price < *itm.MinSellingPrice {
+			writeError(w, http.StatusUnprocessableEntity, "PRICE_BELOW_MIN",
+				fmt.Sprintf("price %.2f is below the item minimum %.2f", entry.Price, *itm.MinSellingPrice))
+			return
+		}
+		if itm.MaxSellingPrice != nil && entry.Price > *itm.MaxSellingPrice {
+			writeError(w, http.StatusUnprocessableEntity, "PRICE_ABOVE_MAX",
+				fmt.Sprintf("price %.2f is above the item maximum %.2f", entry.Price, *itm.MaxSellingPrice))
+			return
+		}
+	}
+
 	results := make([]itemPricingDTO, 0, len(entries))
 	for _, entry := range entries {
 		q := h.orm.ItemPricing.Query().
@@ -409,6 +439,155 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, http.StatusOK, results)
+}
+
+type generateTierPricingReq struct {
+	// Source basis: "default_tier" (price = default tier price × factor) or
+	// "cost_margin" (price = cost_price / (1 - margin_percent/100)).
+	Source        string  `json:"source"`
+	Factor        float64 `json:"factor"`         // multiplier for default_tier (e.g. 0.9 = 10% off)
+	MarginPercent float64 `json:"margin_percent"` // margin for cost_margin (0 < m < 100)
+	Overwrite     bool    `json:"overwrite"`      // replace existing prices on this tier
+}
+
+type generateTierPricingResp struct {
+	Generated int      `json:"generated"`
+	Skipped   int      `json:"skipped"`
+	Clamped   int      `json:"clamped"`
+	Warnings  []string `json:"warnings,omitempty"`
+}
+
+// GenerateTierPricing bulk-populates a pricing tier's per-item prices.
+// POST /inventory/pricing-tiers/{tierID}/generate
+func (h *PricingTierHandler) GenerateTierPricing(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	tierID, err := uuid.Parse(chi.URLParam(r, "tierID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TIER", "Invalid tier ID")
+		return
+	}
+	var req generateTierPricingReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if req.Source == "" {
+		req.Source = "default_tier"
+	}
+	if req.Source == "default_tier" && req.Factor <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_FACTOR", "factor must be > 0 for default_tier source")
+		return
+	}
+	if req.Source == "cost_margin" && (req.MarginPercent <= 0 || req.MarginPercent >= 100) {
+		writeError(w, http.StatusBadRequest, "INVALID_MARGIN", "margin_percent must be between 0 and 100")
+		return
+	}
+
+	// Validate the target tier belongs to the tenant and is active.
+	tier, err := h.orm.PricingTier.Query().Where(entpt.ID(tierID), entpt.TenantID(tenantID), entpt.IsActive(true)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "TIER_NOT_FOUND", "Pricing tier not found")
+		return
+	}
+
+	// Default-tier price per item (source=default_tier) — built from active default-tier pricings.
+	defaultPrices := map[uuid.UUID]float64{}
+	if req.Source == "default_tier" {
+		defTier, derr := h.orm.PricingTier.Query().Where(entpt.TenantID(tenantID), entpt.IsActive(true), entpt.IsDefault(true)).First(r.Context())
+		if derr != nil {
+			writeError(w, http.StatusUnprocessableEntity, "NO_DEFAULT_TIER", "No default pricing tier to derive from")
+			return
+		}
+		dps, _ := h.orm.ItemPricing.Query().
+			Where(entip.TenantID(tenantID), entip.IsActive(true), entip.PricingTierID(defTier.ID), entip.OutletIDIsNil()).
+			All(r.Context())
+		for _, p := range dps {
+			defaultPrices[p.ItemID] = p.Price
+		}
+	}
+
+	// Existing target-tier prices (to honor overwrite=false).
+	existing := map[uuid.UUID]bool{}
+	{
+		eps, _ := h.orm.ItemPricing.Query().
+			Where(entip.TenantID(tenantID), entip.PricingTierID(tierID), entip.OutletIDIsNil()).
+			All(r.Context())
+		for _, p := range eps {
+			existing[p.ItemID] = true
+		}
+	}
+
+	items, err := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
+		Select(entitem.FieldID, entitem.FieldCostPrice, entitem.FieldMinSellingPrice, entitem.FieldMaxSellingPrice).
+		All(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "LIST_FAILED", "Failed to load items")
+		return
+	}
+
+	resp := generateTierPricingResp{}
+	for _, it := range items {
+		if existing[it.ID] && !req.Overwrite {
+			resp.Skipped++
+			continue
+		}
+		var base float64
+		switch req.Source {
+		case "default_tier":
+			base = defaultPrices[it.ID]
+			if base <= 0 {
+				resp.Skipped++
+				continue
+			}
+			base = base * req.Factor
+		case "cost_margin":
+			if it.CostPrice == nil || *it.CostPrice <= 0 {
+				resp.Skipped++
+				continue
+			}
+			base = *it.CostPrice / (1 - req.MarginPercent/100)
+		default:
+			writeError(w, http.StatusBadRequest, "INVALID_SOURCE", "source must be default_tier or cost_margin")
+			return
+		}
+		price := math.Ceil(base)
+		// Clamp into the item's configured selling-price band.
+		if it.MinSellingPrice != nil && price < *it.MinSellingPrice {
+			price = *it.MinSellingPrice
+			resp.Clamped++
+		}
+		if it.MaxSellingPrice != nil && price > *it.MaxSellingPrice {
+			price = *it.MaxSellingPrice
+			resp.Clamped++
+		}
+		saved, uerr := h.upsertTierPrice(r.Context(), tenantID, it.ID, tierID, price)
+		if uerr != nil {
+			resp.Warnings = append(resp.Warnings, fmt.Sprintf("item %s: %v", it.ID, uerr))
+			continue
+		}
+		resp.Generated++
+		go h.publishPricingUpdatedEvent(context.Background(), tenantID, it.ID, saved)
+	}
+	h.log.Info("generated tier pricing", zap.String("tier", tier.Code), zap.Int("generated", resp.Generated), zap.Int("skipped", resp.Skipped))
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// upsertTierPrice creates or updates the (tenant,item,tier) all-outlets pricing row at the given price.
+func (h *PricingTierHandler) upsertTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) (*ent.ItemPricing, error) {
+	existing, err := h.orm.ItemPricing.Query().
+		Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(tierID), entip.OutletIDIsNil()).
+		First(ctx)
+	if err == nil {
+		return h.orm.ItemPricing.UpdateOneID(existing.ID).SetPrice(price).SetIsActive(true).SetEffectiveFrom(time.Now()).Save(ctx)
+	}
+	return h.orm.ItemPricing.Create().
+		SetTenantID(tenantID).SetItemID(itemID).SetPricingTierID(tierID).
+		SetPrice(price).SetCurrency("KES").SetEffectiveFrom(time.Now()).Save(ctx)
 }
 
 // publishPricingUpdatedEvent writes an inventory.item.pricing_updated outbox event.

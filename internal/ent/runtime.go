@@ -36,6 +36,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
@@ -699,7 +700,7 @@ func init() {
 	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
 	goodsreceiptline.DefaultUnitCost = goodsreceiptlineDescUnitCost.Default.(float64)
 	// goodsreceiptlineDescCreatedAt is the schema descriptor for created_at field.
-	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[10].Descriptor()
+	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[11].Descriptor()
 	// goodsreceiptline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goodsreceiptline.DefaultCreatedAt = goodsreceiptlineDescCreatedAt.Default.(func() time.Time)
 	// goodsreceiptlineDescID is the schema descriptor for id field.
@@ -824,6 +825,30 @@ func init() {
 	inventoryroleDescID := inventoryroleFields[0].Descriptor()
 	// inventoryrole.DefaultID holds the default value on creation for the id field.
 	inventoryrole.DefaultID = inventoryroleDescID.Default.(func() uuid.UUID)
+	inventoryserialFields := schema.InventorySerial{}.Fields()
+	_ = inventoryserialFields
+	// inventoryserialDescSerialNumber is the schema descriptor for serial_number field.
+	inventoryserialDescSerialNumber := inventoryserialFields[4].Descriptor()
+	// inventoryserial.SerialNumberValidator is a validator for the "serial_number" field. It is called by the builders before save.
+	inventoryserial.SerialNumberValidator = inventoryserialDescSerialNumber.Validators[0].(func(string) error)
+	// inventoryserialDescReceivedAt is the schema descriptor for received_at field.
+	inventoryserialDescReceivedAt := inventoryserialFields[6].Descriptor()
+	// inventoryserial.DefaultReceivedAt holds the default value on creation for the received_at field.
+	inventoryserial.DefaultReceivedAt = inventoryserialDescReceivedAt.Default.(func() time.Time)
+	// inventoryserialDescCreatedAt is the schema descriptor for created_at field.
+	inventoryserialDescCreatedAt := inventoryserialFields[11].Descriptor()
+	// inventoryserial.DefaultCreatedAt holds the default value on creation for the created_at field.
+	inventoryserial.DefaultCreatedAt = inventoryserialDescCreatedAt.Default.(func() time.Time)
+	// inventoryserialDescUpdatedAt is the schema descriptor for updated_at field.
+	inventoryserialDescUpdatedAt := inventoryserialFields[12].Descriptor()
+	// inventoryserial.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	inventoryserial.DefaultUpdatedAt = inventoryserialDescUpdatedAt.Default.(func() time.Time)
+	// inventoryserial.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	inventoryserial.UpdateDefaultUpdatedAt = inventoryserialDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// inventoryserialDescID is the schema descriptor for id field.
+	inventoryserialDescID := inventoryserialFields[0].Descriptor()
+	// inventoryserial.DefaultID holds the default value on creation for the id field.
+	inventoryserial.DefaultID = inventoryserialDescID.Default.(func() uuid.UUID)
 	inventoryuserFields := schema.InventoryUser{}.Fields()
 	_ = inventoryuserFields
 	// inventoryuserDescEmail is the schema descriptor for email field.
@@ -907,23 +932,23 @@ func init() {
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[40].Descriptor()
+	itemDescBookedCapacity := itemFields[43].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[43].Descriptor()
+	itemDescEventVenue := itemFields[46].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[44].Descriptor()
+	itemDescMetadata := itemFields[47].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[45].Descriptor()
+	itemDescCreatedAt := itemFields[48].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[46].Descriptor()
+	itemDescUpdatedAt := itemFields[49].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

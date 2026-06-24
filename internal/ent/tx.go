@@ -74,6 +74,8 @@ type Tx struct {
 	InventoryPermission *InventoryPermissionClient
 	// InventoryRole is the client for interacting with the InventoryRole builders.
 	InventoryRole *InventoryRoleClient
+	// InventorySerial is the client for interacting with the InventorySerial builders.
+	InventorySerial *InventorySerialClient
 	// InventoryUser is the client for interacting with the InventoryUser builders.
 	InventoryUser *InventoryUserClient
 	// Item is the client for interacting with the Item builders.
@@ -338,6 +340,7 @@ func (tx *Tx) init() {
 	tx.InventoryLot = NewInventoryLotClient(tx.config)
 	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)
 	tx.InventoryRole = NewInventoryRoleClient(tx.config)
+	tx.InventorySerial = NewInventorySerialClient(tx.config)
 	tx.InventoryUser = NewInventoryUserClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemAsset = NewItemAssetClient(tx.config)

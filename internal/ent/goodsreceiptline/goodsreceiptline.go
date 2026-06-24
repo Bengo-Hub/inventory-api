@@ -33,6 +33,8 @@ const (
 	FieldUnitCost = "unit_cost"
 	// FieldRejectionReason holds the string denoting the rejection_reason field in the database.
 	FieldRejectionReason = "rejection_reason"
+	// FieldSerials holds the string denoting the serials field in the database.
+	FieldSerials = "serials"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeGoodsReceipt holds the string denoting the goods_receipt edge name in mutations.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldQuantityRejected,
 	FieldUnitCost,
 	FieldRejectionReason,
+	FieldSerials,
 	FieldCreatedAt,
 }
 

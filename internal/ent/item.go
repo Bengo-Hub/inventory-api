@@ -101,6 +101,12 @@ type Item struct {
 	PurchaseUnit string `json:"purchase_unit,omitempty"`
 	// Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct
 	YieldPct *float64 `json:"yield_pct,omitempty"`
+	// Hard minimum selling price (KES). Prices below this are rejected at price upsert and require manager approval at POS
+	MinSellingPrice *float64 `json:"min_selling_price,omitempty"`
+	// Hard maximum selling price (KES). Prices above this are rejected at price upsert and require manager approval at POS
+	MaxSellingPrice *float64 `json:"max_selling_price,omitempty"`
+	// Desired profit margin % for GOODS auto-pricing — suggested_price = cost_price / (1 - margin/100)
+	TargetMarginPercent *float64 `json:"target_margin_percent,omitempty"`
 	// Total seats/tickets for SERVICE-type event items
 	TotalCapacity *int `json:"total_capacity,omitempty"`
 	// Confirmed bookings against total_capacity
@@ -329,7 +335,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
-		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct:
+		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
@@ -606,6 +612,27 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.YieldPct = new(float64)
 				*_m.YieldPct = value.Float64
+			}
+		case item.FieldMinSellingPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field min_selling_price", values[i])
+			} else if value.Valid {
+				_m.MinSellingPrice = new(float64)
+				*_m.MinSellingPrice = value.Float64
+			}
+		case item.FieldMaxSellingPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_selling_price", values[i])
+			} else if value.Valid {
+				_m.MaxSellingPrice = new(float64)
+				*_m.MaxSellingPrice = value.Float64
+			}
+		case item.FieldTargetMarginPercent:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field target_margin_percent", values[i])
+			} else if value.Valid {
+				_m.TargetMarginPercent = new(float64)
+				*_m.TargetMarginPercent = value.Float64
 			}
 		case item.FieldTotalCapacity:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -919,6 +946,21 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	if v := _m.YieldPct; v != nil {
 		builder.WriteString("yield_pct=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.MinSellingPrice; v != nil {
+		builder.WriteString("min_selling_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.MaxSellingPrice; v != nil {
+		builder.WriteString("max_selling_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.TargetMarginPercent; v != nil {
+		builder.WriteString("target_margin_percent=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
