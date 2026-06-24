@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 
 	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
@@ -30,6 +32,9 @@ type posSaleItem struct {
 	SKU      string  `json:"sku"`
 	Quantity float64 `json:"quantity"`
 	UOMCode  string  `json:"uom_code"`
+	// Serials are the specific unit serial numbers sold on this line (serial-tracked items).
+	// Each is flipped from "available" to "sold" in the InventorySerial registry.
+	Serials []string `json:"serials,omitempty"`
 	// Modifiers is the field pos-api currently emits (pos.sale.finalized items[].modifiers).
 	Modifiers []posModifierOption `json:"modifiers,omitempty"`
 	// ModifierOptions is a legacy alias kept for backward compatibility.
@@ -224,6 +229,12 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 			})
 		}
 
+		// Flip any sold serials to "sold" in the per-unit registry (best-effort, in addition to
+		// the aggregate quantity decrement above). Only meaningful for serial-tracked items.
+		if itm.TrackSerialNumbers && len(si.Serials) > 0 {
+			c.markSerialsSold(ctx, tenantID, itm.ID, si.Serials, orderID)
+		}
+
 		// Add stock draw for selected modifiers. pos-api sends the inventory modifier-option
 		// id; resolve it to the option's consumable SKU, then explode/deduct like any item
 		// (one modifier application per sold unit → scale by line quantity).
@@ -269,6 +280,39 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		zap.Int("consumption_items", len(consumptionItems)),
 	)
 	return nil
+}
+
+// markSerialsSold transitions the given serials from "available" to "sold" for a serial-tracked
+// item. Best-effort: a serial that's missing or already non-available is logged, not fatal, so a
+// serial mismatch never blocks the sale's stock consumption.
+func (c *POSSaleEventsConsumer) markSerialsSold(ctx context.Context, tenantID, itemID uuid.UUID, serials []string, orderID uuid.UUID) {
+	now := time.Now()
+	for _, sn := range serials {
+		sn = strings.TrimSpace(sn)
+		if sn == "" {
+			continue
+		}
+		n, err := c.orm.InventorySerial.Update().
+			Where(
+				inventoryserial.TenantID(tenantID),
+				inventoryserial.ItemID(itemID),
+				inventoryserial.SerialNumber(sn),
+				inventoryserial.StatusEQ(inventoryserial.StatusAvailable),
+			).
+			SetStatus(inventoryserial.StatusSold).
+			SetSoldAt(now).
+			SetPosOrderLineID(orderID.String()).
+			ClearWarehouseID().
+			Save(ctx)
+		if err != nil {
+			c.log.Warn("mark serial sold failed", zap.String("serial", sn), zap.Error(err))
+			continue
+		}
+		if n == 0 {
+			c.log.Warn("serial not available to sell (missing or already sold)",
+				zap.String("serial", sn), zap.String("item_id", itemID.String()))
+		}
+	}
 }
 
 // resolveConsumption returns the stock-consumption items for a single SKU and quantity:

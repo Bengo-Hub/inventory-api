@@ -37,6 +37,9 @@ type grnLinePayload struct {
 	QuantityRejected    float64    `json:"quantity_rejected"`
 	UnitCost            float64    `json:"unit_cost"`
 	RejectionReason     string     `json:"rejection_reason"`
+	// Serials are captured for serial-tracked items: one serial per accepted unit. Each becomes
+	// an InventorySerial row (status=available) when the GRN is posted.
+	Serials []string `json:"serials,omitempty"`
 }
 
 type grnPayload struct {
@@ -55,6 +58,7 @@ type grnLineDTO struct {
 	QuantityRejected    float64    `json:"quantity_rejected"`
 	UnitCost            float64    `json:"unit_cost"`
 	RejectionReason     string     `json:"rejection_reason"`
+	Serials             []string   `json:"serials,omitempty"`
 }
 
 type grnDTO struct {
@@ -80,6 +84,7 @@ func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 			ID: l.ID, PurchaseOrderLineID: l.PurchaseOrderLineID, ItemID: l.ItemID,
 			QuantityReceived: l.QuantityReceived, QuantityAccepted: l.QuantityAccepted,
 			QuantityRejected: l.QuantityRejected, UnitCost: l.UnitCost, RejectionReason: l.RejectionReason,
+			Serials: l.Serials,
 		})
 	}
 	return dto
@@ -91,6 +96,28 @@ func (h *InventoryExtrasHandler) registerGoodsReceiptRoutes(r chi.Router, perm f
 	r.With(perm(add)).Post("/inventory/purchase-orders/{poID}/goods-receipts", h.CreateGoodsReceipt)
 	r.With(perm(change)).Post("/inventory/goods-receipts/{grnID}/post", h.PostGoodsReceipt)
 	r.Get("/inventory/purchase-orders/{poID}/match", h.MatchPurchaseOrder)
+}
+
+// dedupeNonEmpty trims, drops empties, and removes duplicate serial strings (case-sensitive),
+// preserving order. Keeps serial capture clean before persistence.
+func dedupeNonEmpty(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(in))
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		if _, ok := seen[s]; ok {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	return out
 }
 
 // applyStockIn upserts a warehouse-scoped InventoryBalance, incrementing on_hand
@@ -221,15 +248,37 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create goods receipt")
 		return
 	}
+	// Which of the received items are serial-tracked (require one serial per accepted unit).
+	lineItemIDs := make([]uuid.UUID, 0, len(req.Lines))
+	for _, l := range req.Lines {
+		lineItemIDs = append(lineItemIDs, l.ItemID)
+	}
+	serialTracked := map[uuid.UUID]bool{}
+	if items, e := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.IDIn(lineItemIDs...), entitem.TrackSerialNumbers(true)).
+		Select(entitem.FieldID).All(r.Context()); e == nil {
+		for _, it := range items {
+			serialTracked[it.ID] = true
+		}
+	}
 	for _, l := range req.Lines {
 		accepted := l.QuantityAccepted
 		if accepted == 0 && l.QuantityRejected == 0 {
 			accepted = l.QuantityReceived // default: all received are accepted
 		}
+		// Serial-tracked items must carry exactly one serial per accepted unit.
+		serials := dedupeNonEmpty(l.Serials)
+		if serialTracked[l.ItemID] && float64(len(serials)) != accepted {
+			_, _ = h.orm.GoodsReceipt.Delete().Where(entgr.ID(g.ID)).Exec(r.Context())
+			writeError(w, http.StatusUnprocessableEntity, "SERIAL_COUNT_MISMATCH",
+				"serial-tracked item requires one unique serial per accepted unit")
+			return
+		}
 		lc := h.orm.GoodsReceiptLine.Create().
 			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(l.ItemID).
 			SetQuantityReceived(l.QuantityReceived).SetQuantityAccepted(accepted).
-			SetQuantityRejected(l.QuantityRejected).SetUnitCost(l.UnitCost).SetRejectionReason(l.RejectionReason)
+			SetQuantityRejected(l.QuantityRejected).SetUnitCost(l.UnitCost).SetRejectionReason(l.RejectionReason).
+			SetSerials(serials)
 		if l.PurchaseOrderLineID != nil {
 			lc = lc.SetPurchaseOrderLineID(*l.PurchaseOrderLineID)
 		}
@@ -286,6 +335,17 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 			_ = tx.Rollback()
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update inventory balance")
 			return
+		}
+		// Register each captured serial as an available unit. Idempotent on re-post via the
+		// unique (tenant,item,serial) index — duplicates are skipped, not fatal.
+		for _, sn := range l.Serials {
+			lineID := l.ID
+			if _, e := tx.InventorySerial.Create().
+				SetTenantID(tenantID).SetItemID(l.ItemID).SetWarehouseID(warehouseID).
+				SetSerialNumber(sn).SetStatus("available").SetGoodsReceiptLineID(lineID).
+				Save(r.Context()); e != nil {
+				h.log.Warn("register inventory serial failed", zap.String("serial", sn), zap.Error(e))
+			}
 		}
 		if l.PurchaseOrderLineID != nil {
 			if _, err = tx.PurchaseOrderLine.UpdateOneID(*l.PurchaseOrderLineID).AddQuantityReceived(l.QuantityAccepted).Save(r.Context()); err != nil {

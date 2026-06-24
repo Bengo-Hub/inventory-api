@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -37,6 +38,8 @@ type GoodsReceiptLine struct {
 	UnitCost float64 `json:"unit_cost,omitempty"`
 	// RejectionReason holds the value of the "rejection_reason" field.
 	RejectionReason string `json:"rejection_reason,omitempty"`
+	// Serial numbers received on this line (serial-tracked items): one per unit accepted
+	Serials []string `json:"serials,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -72,6 +75,8 @@ func (*GoodsReceiptLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case goodsreceiptline.FieldPurchaseOrderLineID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case goodsreceiptline.FieldSerials:
+			values[i] = new([]byte)
 		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost:
 			values[i] = new(sql.NullFloat64)
 		case goodsreceiptline.FieldRejectionReason:
@@ -156,6 +161,14 @@ func (_m *GoodsReceiptLine) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RejectionReason = value.String
 			}
+		case goodsreceiptline.FieldSerials:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field serials", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Serials); err != nil {
+					return fmt.Errorf("unmarshal field serials: %w", err)
+				}
+			}
 		case goodsreceiptline.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -231,6 +244,9 @@ func (_m *GoodsReceiptLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("rejection_reason=")
 	builder.WriteString(_m.RejectionReason)
+	builder.WriteString(", ")
+	builder.WriteString("serials=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Serials))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

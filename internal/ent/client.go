@@ -47,6 +47,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
@@ -167,6 +168,8 @@ type Client struct {
 	InventoryPermission *InventoryPermissionClient
 	// InventoryRole is the client for interacting with the InventoryRole builders.
 	InventoryRole *InventoryRoleClient
+	// InventorySerial is the client for interacting with the InventorySerial builders.
+	InventorySerial *InventorySerialClient
 	// InventoryUser is the client for interacting with the InventoryUser builders.
 	InventoryUser *InventoryUserClient
 	// Item is the client for interacting with the Item builders.
@@ -311,6 +314,7 @@ func (c *Client) init() {
 	c.InventoryLot = NewInventoryLotClient(c.config)
 	c.InventoryPermission = NewInventoryPermissionClient(c.config)
 	c.InventoryRole = NewInventoryRoleClient(c.config)
+	c.InventorySerial = NewInventorySerialClient(c.config)
 	c.InventoryUser = NewInventoryUserClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.ItemAsset = NewItemAssetClient(c.config)
@@ -485,6 +489,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		InventoryLot:           NewInventoryLotClient(cfg),
 		InventoryPermission:    NewInventoryPermissionClient(cfg),
 		InventoryRole:          NewInventoryRoleClient(cfg),
+		InventorySerial:        NewInventorySerialClient(cfg),
 		InventoryUser:          NewInventoryUserClient(cfg),
 		Item:                   NewItemClient(cfg),
 		ItemAsset:              NewItemAssetClient(cfg),
@@ -586,6 +591,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		InventoryLot:           NewInventoryLotClient(cfg),
 		InventoryPermission:    NewInventoryPermissionClient(cfg),
 		InventoryRole:          NewInventoryRoleClient(cfg),
+		InventorySerial:        NewInventorySerialClient(cfg),
 		InventoryUser:          NewInventoryUserClient(cfg),
 		Item:                   NewItemClient(cfg),
 		ItemAsset:              NewItemAssetClient(cfg),
@@ -673,8 +679,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Consumption, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
 		c.CustomFieldValue, c.DocumentSequence, c.FoodCostVariance, c.GoodsReceipt,
 		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand,
-		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
 		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
 		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
 		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
@@ -701,8 +707,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Consumption, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
 		c.CustomFieldValue, c.DocumentSequence, c.FoodCostVariance, c.GoodsReceipt,
 		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand,
-		c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
 		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
 		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
 		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
@@ -783,6 +789,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.InventoryPermission.mutate(ctx, m)
 	case *InventoryRoleMutation:
 		return c.InventoryRole.mutate(ctx, m)
+	case *InventorySerialMutation:
+		return c.InventorySerial.mutate(ctx, m)
 	case *InventoryUserMutation:
 		return c.InventoryUser.mutate(ctx, m)
 	case *ItemMutation:
@@ -5442,6 +5450,139 @@ func (c *InventoryRoleClient) mutate(ctx context.Context, m *InventoryRoleMutati
 		return (&InventoryRoleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown InventoryRole mutation op: %q", m.Op())
+	}
+}
+
+// InventorySerialClient is a client for the InventorySerial schema.
+type InventorySerialClient struct {
+	config
+}
+
+// NewInventorySerialClient returns a client for the InventorySerial from the given config.
+func NewInventorySerialClient(c config) *InventorySerialClient {
+	return &InventorySerialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `inventoryserial.Hooks(f(g(h())))`.
+func (c *InventorySerialClient) Use(hooks ...Hook) {
+	c.hooks.InventorySerial = append(c.hooks.InventorySerial, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `inventoryserial.Intercept(f(g(h())))`.
+func (c *InventorySerialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InventorySerial = append(c.inters.InventorySerial, interceptors...)
+}
+
+// Create returns a builder for creating a InventorySerial entity.
+func (c *InventorySerialClient) Create() *InventorySerialCreate {
+	mutation := newInventorySerialMutation(c.config, OpCreate)
+	return &InventorySerialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InventorySerial entities.
+func (c *InventorySerialClient) CreateBulk(builders ...*InventorySerialCreate) *InventorySerialCreateBulk {
+	return &InventorySerialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InventorySerialClient) MapCreateBulk(slice any, setFunc func(*InventorySerialCreate, int)) *InventorySerialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InventorySerialCreateBulk{err: fmt.Errorf("calling to InventorySerialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InventorySerialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InventorySerialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InventorySerial.
+func (c *InventorySerialClient) Update() *InventorySerialUpdate {
+	mutation := newInventorySerialMutation(c.config, OpUpdate)
+	return &InventorySerialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InventorySerialClient) UpdateOne(_m *InventorySerial) *InventorySerialUpdateOne {
+	mutation := newInventorySerialMutation(c.config, OpUpdateOne, withInventorySerial(_m))
+	return &InventorySerialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InventorySerialClient) UpdateOneID(id uuid.UUID) *InventorySerialUpdateOne {
+	mutation := newInventorySerialMutation(c.config, OpUpdateOne, withInventorySerialID(id))
+	return &InventorySerialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InventorySerial.
+func (c *InventorySerialClient) Delete() *InventorySerialDelete {
+	mutation := newInventorySerialMutation(c.config, OpDelete)
+	return &InventorySerialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InventorySerialClient) DeleteOne(_m *InventorySerial) *InventorySerialDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InventorySerialClient) DeleteOneID(id uuid.UUID) *InventorySerialDeleteOne {
+	builder := c.Delete().Where(inventoryserial.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InventorySerialDeleteOne{builder}
+}
+
+// Query returns a query builder for InventorySerial.
+func (c *InventorySerialClient) Query() *InventorySerialQuery {
+	return &InventorySerialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInventorySerial},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InventorySerial entity by its id.
+func (c *InventorySerialClient) Get(ctx context.Context, id uuid.UUID) (*InventorySerial, error) {
+	return c.Query().Where(inventoryserial.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InventorySerialClient) GetX(ctx context.Context, id uuid.UUID) *InventorySerial {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InventorySerialClient) Hooks() []Hook {
+	return c.hooks.InventorySerial
+}
+
+// Interceptors returns the client interceptors.
+func (c *InventorySerialClient) Interceptors() []Interceptor {
+	return c.inters.InventorySerial
+}
+
+func (c *InventorySerialClient) mutate(ctx context.Context, m *InventorySerialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InventorySerialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InventorySerialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InventorySerialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InventorySerialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InventorySerial mutation op: %q", m.Op())
 	}
 }
 
@@ -13373,17 +13514,18 @@ type (
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
 		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
 		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, InventoryBalance,
-		InventoryLot, InventoryPermission, InventoryRole, InventoryUser, Item,
-		ItemAsset, ItemBrand, ItemCategory, ItemPricing, ItemTranslation, ItemVariant,
-		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute, Warehouse,
-		WarehouseLocation, Warranty []ent.Hook
+		InventoryLot, InventoryPermission, InventoryRole, InventorySerial,
+		InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockTransfer, StockTransferLine, Supplier, SupplierPerformance,
+		SupplierResponse, Tenant, TenantInventoryConfig, Ticket, Unit, UserOutlet,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -13392,16 +13534,17 @@ type (
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
 		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
 		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, InventoryBalance,
-		InventoryLot, InventoryPermission, InventoryRole, InventoryUser, Item,
-		ItemAsset, ItemBrand, ItemCategory, ItemPricing, ItemTranslation, ItemVariant,
-		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute, Warehouse,
-		WarehouseLocation, Warranty []ent.Interceptor
+		InventoryLot, InventoryPermission, InventoryRole, InventorySerial,
+		InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory, ItemPricing,
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockTransfer, StockTransferLine, Supplier, SupplierPerformance,
+		SupplierResponse, Tenant, TenantInventoryConfig, Ticket, Unit, UserOutlet,
+		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )

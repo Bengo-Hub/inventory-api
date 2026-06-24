@@ -943,6 +943,7 @@ var (
 		{Name: "quantity_rejected", Type: field.TypeFloat64, Default: 0},
 		{Name: "unit_cost", Type: field.TypeFloat64, Default: 0},
 		{Name: "rejection_reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "serials", Type: field.TypeJSON, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "goods_receipt_id", Type: field.TypeUUID},
 	}
@@ -954,7 +955,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goods_receipt_lines_goods_receipts_lines",
-				Columns:    []*schema.Column{GoodsReceiptLinesColumns[10]},
+				Columns:    []*schema.Column{GoodsReceiptLinesColumns[11]},
 				RefColumns: []*schema.Column{GoodsReceiptsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -963,7 +964,7 @@ var (
 			{
 				Name:    "goodsreceiptline_tenant_id_goods_receipt_id",
 				Unique:  false,
-				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[10]},
+				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[11]},
 			},
 			{
 				Name:    "goodsreceiptline_item_id",
@@ -1163,6 +1164,45 @@ var (
 			},
 		},
 	}
+	// InventorySerialsColumns holds the columns for the "inventory_serials" table.
+	InventorySerialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "serial_number", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"available", "reserved", "sold", "returned", "defective"}, Default: "available"},
+		{Name: "received_at", Type: field.TypeTime},
+		{Name: "goods_receipt_line_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "sold_at", Type: field.TypeTime, Nullable: true},
+		{Name: "pos_order_line_id", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// InventorySerialsTable holds the schema information for the "inventory_serials" table.
+	InventorySerialsTable = &schema.Table{
+		Name:       "inventory_serials",
+		Columns:    InventorySerialsColumns,
+		PrimaryKey: []*schema.Column{InventorySerialsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inventoryserial_tenant_id_item_id_serial_number",
+				Unique:  true,
+				Columns: []*schema.Column{InventorySerialsColumns[1], InventorySerialsColumns[2], InventorySerialsColumns[4]},
+			},
+			{
+				Name:    "inventoryserial_tenant_id_item_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{InventorySerialsColumns[1], InventorySerialsColumns[2], InventorySerialsColumns[5]},
+			},
+			{
+				Name:    "inventoryserial_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{InventorySerialsColumns[1], InventorySerialsColumns[5]},
+			},
+		},
+	}
 	// InventoryUsersColumns holds the columns for the "inventory_users" table.
 	InventoryUsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1245,6 +1285,9 @@ var (
 		{Name: "purchase_pack_size", Type: field.TypeFloat64, Nullable: true},
 		{Name: "purchase_unit", Type: field.TypeString, Nullable: true, Size: 50},
 		{Name: "yield_pct", Type: field.TypeFloat64, Nullable: true, Default: 1},
+		{Name: "min_selling_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "max_selling_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "target_margin_percent", Type: field.TypeFloat64, Nullable: true},
 		{Name: "total_capacity", Type: field.TypeInt, Nullable: true},
 		{Name: "booked_capacity", Type: field.TypeInt, Nullable: true, Default: 0},
 		{Name: "event_start_at", Type: field.TypeTime, Nullable: true},
@@ -1266,25 +1309,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[43]},
+				Columns:    []*schema.Column{ItemsColumns[46]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_brands_items",
-				Columns:    []*schema.Column{ItemsColumns[44]},
+				Columns:    []*schema.Column{ItemsColumns[47]},
 				RefColumns: []*schema.Column{ItemBrandsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[45]},
+				Columns:    []*schema.Column{ItemsColumns[48]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[46]},
+				Columns:    []*schema.Column{ItemsColumns[49]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1293,37 +1336,37 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[45]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[48]},
 			},
 			{
 				Name:    "item_tenant_id_brand_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[44]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[47]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[14]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[14]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[16]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[16]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[41]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[44]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[46], ItemsColumns[43]},
+				Columns: []*schema.Column{ItemsColumns[49], ItemsColumns[46]},
 			},
 		},
 	}
@@ -3360,6 +3403,7 @@ var (
 		InventoryLotsTable,
 		InventoryPermissionsTable,
 		InventoryRolesTable,
+		InventorySerialsTable,
 		InventoryUsersTable,
 		ItemsTable,
 		ItemAssetsTable,

@@ -491,6 +491,16 @@ func RejectionReasonContainsFold(v string) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldContainsFold(FieldRejectionReason, v))
 }
 
+// SerialsIsNil applies the IsNil predicate on the "serials" field.
+func SerialsIsNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIsNull(FieldSerials))
+}
+
+// SerialsNotNil applies the NotNil predicate on the "serials" field.
+func SerialsNotNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldSerials))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldCreatedAt, v))

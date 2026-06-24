@@ -43,6 +43,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryrole"
+	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
@@ -185,6 +186,7 @@ func checkColumn(t, c string) error {
 			inventorylot.Table:           inventorylot.ValidColumn,
 			inventorypermission.Table:    inventorypermission.ValidColumn,
 			inventoryrole.Table:          inventoryrole.ValidColumn,
+			inventoryserial.Table:        inventoryserial.ValidColumn,
 			inventoryuser.Table:          inventoryuser.ValidColumn,
 			item.Table:                   item.ValidColumn,
 			itemasset.Table:              itemasset.ValidColumn,

@@ -92,6 +92,12 @@ const (
 	FieldPurchaseUnit = "purchase_unit"
 	// FieldYieldPct holds the string denoting the yield_pct field in the database.
 	FieldYieldPct = "yield_pct"
+	// FieldMinSellingPrice holds the string denoting the min_selling_price field in the database.
+	FieldMinSellingPrice = "min_selling_price"
+	// FieldMaxSellingPrice holds the string denoting the max_selling_price field in the database.
+	FieldMaxSellingPrice = "max_selling_price"
+	// FieldTargetMarginPercent holds the string denoting the target_margin_percent field in the database.
+	FieldTargetMarginPercent = "target_margin_percent"
 	// FieldTotalCapacity holds the string denoting the total_capacity field in the database.
 	FieldTotalCapacity = "total_capacity"
 	// FieldBookedCapacity holds the string denoting the booked_capacity field in the database.
@@ -297,6 +303,9 @@ var Columns = []string{
 	FieldPurchasePackSize,
 	FieldPurchaseUnit,
 	FieldYieldPct,
+	FieldMinSellingPrice,
+	FieldMaxSellingPrice,
+	FieldTargetMarginPercent,
 	FieldTotalCapacity,
 	FieldBookedCapacity,
 	FieldEventStartAt,
@@ -657,6 +666,21 @@ func ByPurchaseUnit(opts ...sql.OrderTermOption) OrderOption {
 // ByYieldPct orders the results by the yield_pct field.
 func ByYieldPct(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldYieldPct, opts...).ToFunc()
+}
+
+// ByMinSellingPrice orders the results by the min_selling_price field.
+func ByMinSellingPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMinSellingPrice, opts...).ToFunc()
+}
+
+// ByMaxSellingPrice orders the results by the max_selling_price field.
+func ByMaxSellingPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxSellingPrice, opts...).ToFunc()
+}
+
+// ByTargetMarginPercent orders the results by the target_margin_percent field.
+func ByTargetMarginPercent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTargetMarginPercent, opts...).ToFunc()
 }
 
 // ByTotalCapacity orders the results by the total_capacity field.

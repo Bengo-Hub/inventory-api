@@ -160,6 +160,19 @@ func (Item) Fields() []ent.Field {
 			Nillable().
 			Default(1.0).
 			Comment("Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct"),
+		// Selling-price guardrails (Phase 4) — hard floor/ceiling enforced at price upsert AND POS sale.
+		field.Float("min_selling_price").
+			Optional().
+			Nillable().
+			Comment("Hard minimum selling price (KES). Prices below this are rejected at price upsert and require manager approval at POS"),
+		field.Float("max_selling_price").
+			Optional().
+			Nillable().
+			Comment("Hard maximum selling price (KES). Prices above this are rejected at price upsert and require manager approval at POS"),
+		field.Float("target_margin_percent").
+			Optional().
+			Nillable().
+			Comment("Desired profit margin % for GOODS auto-pricing — suggested_price = cost_price / (1 - margin/100)"),
 		// Event capacity fields (Phase 2) — SERVICE-type items only
 		field.Int("total_capacity").
 			Optional().

@@ -381,6 +381,18 @@ func (f InventoryRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InventoryRoleMutation", m)
 }
 
+// The InventorySerialFunc type is an adapter to allow the use of ordinary
+// function as InventorySerial mutator.
+type InventorySerialFunc func(context.Context, *ent.InventorySerialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InventorySerialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InventorySerialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InventorySerialMutation", m)
+}
+
 // The InventoryUserFunc type is an adapter to allow the use of ordinary
 // function as InventoryUser mutator.
 type InventoryUserFunc func(context.Context, *ent.InventoryUserMutation) (ent.Value, error)

@@ -216,6 +216,21 @@ func YieldPct(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
 }
 
+// MinSellingPrice applies equality check predicate on the "min_selling_price" field. It's identical to MinSellingPriceEQ.
+func MinSellingPrice(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMinSellingPrice, v))
+}
+
+// MaxSellingPrice applies equality check predicate on the "max_selling_price" field. It's identical to MaxSellingPriceEQ.
+func MaxSellingPrice(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxSellingPrice, v))
+}
+
+// TargetMarginPercent applies equality check predicate on the "target_margin_percent" field. It's identical to TargetMarginPercentEQ.
+func TargetMarginPercent(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTargetMarginPercent, v))
+}
+
 // TotalCapacity applies equality check predicate on the "total_capacity" field. It's identical to TotalCapacityEQ.
 func TotalCapacity(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldTotalCapacity, v))
@@ -1779,6 +1794,156 @@ func YieldPctIsNil() predicate.Item {
 // YieldPctNotNil applies the NotNil predicate on the "yield_pct" field.
 func YieldPctNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldYieldPct))
+}
+
+// MinSellingPriceEQ applies the EQ predicate on the "min_selling_price" field.
+func MinSellingPriceEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceNEQ applies the NEQ predicate on the "min_selling_price" field.
+func MinSellingPriceNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceIn applies the In predicate on the "min_selling_price" field.
+func MinSellingPriceIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMinSellingPrice, vs...))
+}
+
+// MinSellingPriceNotIn applies the NotIn predicate on the "min_selling_price" field.
+func MinSellingPriceNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMinSellingPrice, vs...))
+}
+
+// MinSellingPriceGT applies the GT predicate on the "min_selling_price" field.
+func MinSellingPriceGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceGTE applies the GTE predicate on the "min_selling_price" field.
+func MinSellingPriceGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceLT applies the LT predicate on the "min_selling_price" field.
+func MinSellingPriceLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceLTE applies the LTE predicate on the "min_selling_price" field.
+func MinSellingPriceLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldMinSellingPrice, v))
+}
+
+// MinSellingPriceIsNil applies the IsNil predicate on the "min_selling_price" field.
+func MinSellingPriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldMinSellingPrice))
+}
+
+// MinSellingPriceNotNil applies the NotNil predicate on the "min_selling_price" field.
+func MinSellingPriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldMinSellingPrice))
+}
+
+// MaxSellingPriceEQ applies the EQ predicate on the "max_selling_price" field.
+func MaxSellingPriceEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceNEQ applies the NEQ predicate on the "max_selling_price" field.
+func MaxSellingPriceNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceIn applies the In predicate on the "max_selling_price" field.
+func MaxSellingPriceIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldMaxSellingPrice, vs...))
+}
+
+// MaxSellingPriceNotIn applies the NotIn predicate on the "max_selling_price" field.
+func MaxSellingPriceNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldMaxSellingPrice, vs...))
+}
+
+// MaxSellingPriceGT applies the GT predicate on the "max_selling_price" field.
+func MaxSellingPriceGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceGTE applies the GTE predicate on the "max_selling_price" field.
+func MaxSellingPriceGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceLT applies the LT predicate on the "max_selling_price" field.
+func MaxSellingPriceLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceLTE applies the LTE predicate on the "max_selling_price" field.
+func MaxSellingPriceLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldMaxSellingPrice, v))
+}
+
+// MaxSellingPriceIsNil applies the IsNil predicate on the "max_selling_price" field.
+func MaxSellingPriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldMaxSellingPrice))
+}
+
+// MaxSellingPriceNotNil applies the NotNil predicate on the "max_selling_price" field.
+func MaxSellingPriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldMaxSellingPrice))
+}
+
+// TargetMarginPercentEQ applies the EQ predicate on the "target_margin_percent" field.
+func TargetMarginPercentEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentNEQ applies the NEQ predicate on the "target_margin_percent" field.
+func TargetMarginPercentNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentIn applies the In predicate on the "target_margin_percent" field.
+func TargetMarginPercentIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldTargetMarginPercent, vs...))
+}
+
+// TargetMarginPercentNotIn applies the NotIn predicate on the "target_margin_percent" field.
+func TargetMarginPercentNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldTargetMarginPercent, vs...))
+}
+
+// TargetMarginPercentGT applies the GT predicate on the "target_margin_percent" field.
+func TargetMarginPercentGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentGTE applies the GTE predicate on the "target_margin_percent" field.
+func TargetMarginPercentGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentLT applies the LT predicate on the "target_margin_percent" field.
+func TargetMarginPercentLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentLTE applies the LTE predicate on the "target_margin_percent" field.
+func TargetMarginPercentLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldTargetMarginPercent, v))
+}
+
+// TargetMarginPercentIsNil applies the IsNil predicate on the "target_margin_percent" field.
+func TargetMarginPercentIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldTargetMarginPercent))
+}
+
+// TargetMarginPercentNotNil applies the NotNil predicate on the "target_margin_percent" field.
+func TargetMarginPercentNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldTargetMarginPercent))
 }
 
 // TotalCapacityEQ applies the EQ predicate on the "total_capacity" field.
