@@ -61,8 +61,52 @@ func (s *Service) GetBranding(ctx context.Context, tenantID uuid.UUID) Branding 
 	b.Email = td.ContactEmail
 	b.Phone = td.ContactPhone
 	b.Website = td.Website
-	if td.Country != "" {
-		b.Address = append(b.Address, td.Country)
-	}
+	// Build a human address block from tenant metadata (street, city, postal, country),
+	// falling back to the country code so the document always shows a location.
+	b.Address = addressLines(td.Metadata, td.Country)
 	return b
+}
+
+// addressLines assembles up to three display lines from tenant metadata:
+//   line 1: street address
+//   line 2: postal · city
+//   line 3: country (prefers a human country_name over the ISO code)
+func addressLines(meta map[string]any, country string) []string {
+	get := func(k string) string {
+		if meta == nil {
+			return ""
+		}
+		if v, ok := meta[k].(string); ok {
+			return v
+		}
+		return ""
+	}
+	var lines []string
+	if street := get("address"); street != "" {
+		lines = append(lines, street)
+	}
+	cityLine := joinNonEmpty("  ·  ", get("postal_code"), get("city"))
+	if cityLine != "" {
+		lines = append(lines, cityLine)
+	}
+	if cn := get("country_name"); cn != "" {
+		lines = append(lines, cn)
+	} else if country != "" {
+		lines = append(lines, country)
+	}
+	return lines
+}
+
+func joinNonEmpty(sep string, parts ...string) string {
+	out := ""
+	for _, p := range parts {
+		if p == "" {
+			continue
+		}
+		if out != "" {
+			out += sep
+		}
+		out += p
+	}
+	return out
 }

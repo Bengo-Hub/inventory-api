@@ -49,6 +49,22 @@ func (p *painter) text(x, y float64, s, font string, sz float64, c rgb) {
 	p.pdf.Text(x, y+sz*0.3528*0.82, p.tr(s))
 }
 
+// textFit draws a string that auto-shrinks its font size (down to minSz) so it never overflows
+// maxW. Used for variable-length values like the document number that must stay inside a cell.
+func (p *painter) textFit(x, y, maxW float64, s, font string, sz, minSz float64, c rgb) {
+	p.setText(c)
+	size := sz
+	for size > minSz {
+		p.pdf.SetFont("Helvetica", font, size)
+		if p.pdf.GetStringWidth(p.tr(s)) <= maxW {
+			break
+		}
+		size -= 0.25
+	}
+	p.pdf.SetFont("Helvetica", font, size)
+	p.pdf.Text(x, y+size*0.3528*0.82, p.tr(s))
+}
+
 // textR draws a right-aligned string ending at rx.
 func (p *painter) textR(rx, y float64, s, font string, sz float64, c rgb) {
 	p.pdf.SetFont("Helvetica", font, sz)

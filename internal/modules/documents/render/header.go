@@ -69,7 +69,8 @@ func (p *painter) drawMetaAndCompany(d *PurchaseOrderDoc, ruleY float64) float64
 			p.hline(mbX, ry, mbX+mbW)
 		}
 		p.text(mbX+2.5, ry+2.1, strings.ToUpper(r[0]), "B", 7.5, p.pal.blue)
-		p.text(mbX+keyW+2.5, ry+2.1, r[1], "B", 8.0, p.pal.navy)
+		// Auto-shrink the value so long values (e.g. the PO number) never overflow the cell.
+		p.textFit(mbX+keyW+2.5, ry+2.1, mbW-keyW-4.5, r[1], "B", 8.0, 5.5, p.pal.navy)
 	}
 	p.box(mbX, y, mbW, mbH)
 
