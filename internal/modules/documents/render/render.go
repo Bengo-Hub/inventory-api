@@ -14,20 +14,22 @@ import (
 func Render(doc *PurchaseOrderDoc, logo []byte, logoType string) ([]byte, error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(margin, 12, margin)
-	pdf.SetAutoPageBreak(true, 14)
+	pdf.SetAutoPageBreak(true, 10)
 	pdf.AddPage()
 
 	p := newPainter(pdf, newPalette(doc.Branding.PrimaryColor))
 
+	// Vertical rhythm is intentionally compact so a typical purchase order (a handful of
+	// lines) renders on a single A4 page instead of spilling a few blocks onto page two.
 	y := p.drawHeader(doc, logo, logoType)
 	y = p.drawMetaAndCompany(doc, y)
-	y = p.drawParties(doc, y+6.0)
-	y = p.drawBanner(doc, y+6.0)
-	y = p.drawItems(doc, y+6.0)
+	y = p.drawParties(doc, y+5.0)
+	y = p.drawBanner(doc, y+4.0)
+	y = p.drawItems(doc, y+5.0)
 	y = p.drawTotals(doc, y+4.0)
-	y = p.drawLowerBlocks(doc, y+6.0)
-	y = p.drawSignatures(doc, y+16.0)
-	p.drawFooter(doc, y+10.0)
+	y = p.drawLowerBlocks(doc, y+5.0)
+	y = p.drawSignatures(doc, y+10.0)
+	p.drawFooter(doc, y+6.0)
 
 	var buf bytes.Buffer
 	if err := pdf.Output(&buf); err != nil {
