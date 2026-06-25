@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -214,6 +215,46 @@ func (_u *GoodsReceiptLineUpdate) ClearSerials() *GoodsReceiptLineUpdate {
 	return _u
 }
 
+// SetLotNumber sets the "lot_number" field.
+func (_u *GoodsReceiptLineUpdate) SetLotNumber(v string) *GoodsReceiptLineUpdate {
+	_u.mutation.SetLotNumber(v)
+	return _u
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdate) SetNillableLotNumber(v *string) *GoodsReceiptLineUpdate {
+	if v != nil {
+		_u.SetLotNumber(*v)
+	}
+	return _u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (_u *GoodsReceiptLineUpdate) ClearLotNumber() *GoodsReceiptLineUpdate {
+	_u.mutation.ClearLotNumber()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *GoodsReceiptLineUpdate) SetExpiryDate(v time.Time) *GoodsReceiptLineUpdate {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdate) SetNillableExpiryDate(v *time.Time) *GoodsReceiptLineUpdate {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *GoodsReceiptLineUpdate) ClearExpiryDate() *GoodsReceiptLineUpdate {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdate) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdate {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -329,6 +370,18 @@ func (_u *GoodsReceiptLineUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.SerialsCleared() {
 		_spec.ClearField(goodsreceiptline.FieldSerials, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.LotNumber(); ok {
+		_spec.SetField(goodsreceiptline.FieldLotNumber, field.TypeString, value)
+	}
+	if _u.mutation.LotNumberCleared() {
+		_spec.ClearField(goodsreceiptline.FieldLotNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(goodsreceiptline.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(goodsreceiptline.FieldExpiryDate, field.TypeTime)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -563,6 +616,46 @@ func (_u *GoodsReceiptLineUpdateOne) ClearSerials() *GoodsReceiptLineUpdateOne {
 	return _u
 }
 
+// SetLotNumber sets the "lot_number" field.
+func (_u *GoodsReceiptLineUpdateOne) SetLotNumber(v string) *GoodsReceiptLineUpdateOne {
+	_u.mutation.SetLotNumber(v)
+	return _u
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdateOne) SetNillableLotNumber(v *string) *GoodsReceiptLineUpdateOne {
+	if v != nil {
+		_u.SetLotNumber(*v)
+	}
+	return _u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (_u *GoodsReceiptLineUpdateOne) ClearLotNumber() *GoodsReceiptLineUpdateOne {
+	_u.mutation.ClearLotNumber()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *GoodsReceiptLineUpdateOne) SetExpiryDate(v time.Time) *GoodsReceiptLineUpdateOne {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdateOne) SetNillableExpiryDate(v *time.Time) *GoodsReceiptLineUpdateOne {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *GoodsReceiptLineUpdateOne) ClearExpiryDate() *GoodsReceiptLineUpdateOne {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdateOne) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdateOne {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -708,6 +801,18 @@ func (_u *GoodsReceiptLineUpdateOne) sqlSave(ctx context.Context) (_node *GoodsR
 	}
 	if _u.mutation.SerialsCleared() {
 		_spec.ClearField(goodsreceiptline.FieldSerials, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.LotNumber(); ok {
+		_spec.SetField(goodsreceiptline.FieldLotNumber, field.TypeString, value)
+	}
+	if _u.mutation.LotNumberCleared() {
+		_spec.ClearField(goodsreceiptline.FieldLotNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(goodsreceiptline.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(goodsreceiptline.FieldExpiryDate, field.TypeTime)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{

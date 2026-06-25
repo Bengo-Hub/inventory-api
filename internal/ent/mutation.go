@@ -26693,6 +26693,8 @@ type GoodsReceiptLineMutation struct {
 	rejection_reason       *string
 	serials                *[]string
 	appendserials          []string
+	lot_number             *string
+	expiry_date            *time.Time
 	created_at             *time.Time
 	clearedFields          map[string]struct{}
 	goods_receipt          *uuid.UUID
@@ -27301,6 +27303,104 @@ func (m *GoodsReceiptLineMutation) ResetSerials() {
 	delete(m.clearedFields, goodsreceiptline.FieldSerials)
 }
 
+// SetLotNumber sets the "lot_number" field.
+func (m *GoodsReceiptLineMutation) SetLotNumber(s string) {
+	m.lot_number = &s
+}
+
+// LotNumber returns the value of the "lot_number" field in the mutation.
+func (m *GoodsReceiptLineMutation) LotNumber() (r string, exists bool) {
+	v := m.lot_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLotNumber returns the old "lot_number" field's value of the GoodsReceiptLine entity.
+// If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoodsReceiptLineMutation) OldLotNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLotNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLotNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLotNumber: %w", err)
+	}
+	return oldValue.LotNumber, nil
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (m *GoodsReceiptLineMutation) ClearLotNumber() {
+	m.lot_number = nil
+	m.clearedFields[goodsreceiptline.FieldLotNumber] = struct{}{}
+}
+
+// LotNumberCleared returns if the "lot_number" field was cleared in this mutation.
+func (m *GoodsReceiptLineMutation) LotNumberCleared() bool {
+	_, ok := m.clearedFields[goodsreceiptline.FieldLotNumber]
+	return ok
+}
+
+// ResetLotNumber resets all changes to the "lot_number" field.
+func (m *GoodsReceiptLineMutation) ResetLotNumber() {
+	m.lot_number = nil
+	delete(m.clearedFields, goodsreceiptline.FieldLotNumber)
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (m *GoodsReceiptLineMutation) SetExpiryDate(t time.Time) {
+	m.expiry_date = &t
+}
+
+// ExpiryDate returns the value of the "expiry_date" field in the mutation.
+func (m *GoodsReceiptLineMutation) ExpiryDate() (r time.Time, exists bool) {
+	v := m.expiry_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryDate returns the old "expiry_date" field's value of the GoodsReceiptLine entity.
+// If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoodsReceiptLineMutation) OldExpiryDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryDate: %w", err)
+	}
+	return oldValue.ExpiryDate, nil
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (m *GoodsReceiptLineMutation) ClearExpiryDate() {
+	m.expiry_date = nil
+	m.clearedFields[goodsreceiptline.FieldExpiryDate] = struct{}{}
+}
+
+// ExpiryDateCleared returns if the "expiry_date" field was cleared in this mutation.
+func (m *GoodsReceiptLineMutation) ExpiryDateCleared() bool {
+	_, ok := m.clearedFields[goodsreceiptline.FieldExpiryDate]
+	return ok
+}
+
+// ResetExpiryDate resets all changes to the "expiry_date" field.
+func (m *GoodsReceiptLineMutation) ResetExpiryDate() {
+	m.expiry_date = nil
+	delete(m.clearedFields, goodsreceiptline.FieldExpiryDate)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *GoodsReceiptLineMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -27398,7 +27498,7 @@ func (m *GoodsReceiptLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoodsReceiptLineMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, goodsreceiptline.FieldTenantID)
 	}
@@ -27428,6 +27528,12 @@ func (m *GoodsReceiptLineMutation) Fields() []string {
 	}
 	if m.serials != nil {
 		fields = append(fields, goodsreceiptline.FieldSerials)
+	}
+	if m.lot_number != nil {
+		fields = append(fields, goodsreceiptline.FieldLotNumber)
+	}
+	if m.expiry_date != nil {
+		fields = append(fields, goodsreceiptline.FieldExpiryDate)
 	}
 	if m.created_at != nil {
 		fields = append(fields, goodsreceiptline.FieldCreatedAt)
@@ -27460,6 +27566,10 @@ func (m *GoodsReceiptLineMutation) Field(name string) (ent.Value, bool) {
 		return m.RejectionReason()
 	case goodsreceiptline.FieldSerials:
 		return m.Serials()
+	case goodsreceiptline.FieldLotNumber:
+		return m.LotNumber()
+	case goodsreceiptline.FieldExpiryDate:
+		return m.ExpiryDate()
 	case goodsreceiptline.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -27491,6 +27601,10 @@ func (m *GoodsReceiptLineMutation) OldField(ctx context.Context, name string) (e
 		return m.OldRejectionReason(ctx)
 	case goodsreceiptline.FieldSerials:
 		return m.OldSerials(ctx)
+	case goodsreceiptline.FieldLotNumber:
+		return m.OldLotNumber(ctx)
+	case goodsreceiptline.FieldExpiryDate:
+		return m.OldExpiryDate(ctx)
 	case goodsreceiptline.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -27571,6 +27685,20 @@ func (m *GoodsReceiptLineMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSerials(v)
+		return nil
+	case goodsreceiptline.FieldLotNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLotNumber(v)
+		return nil
+	case goodsreceiptline.FieldExpiryDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryDate(v)
 		return nil
 	case goodsreceiptline.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -27669,6 +27797,12 @@ func (m *GoodsReceiptLineMutation) ClearedFields() []string {
 	if m.FieldCleared(goodsreceiptline.FieldSerials) {
 		fields = append(fields, goodsreceiptline.FieldSerials)
 	}
+	if m.FieldCleared(goodsreceiptline.FieldLotNumber) {
+		fields = append(fields, goodsreceiptline.FieldLotNumber)
+	}
+	if m.FieldCleared(goodsreceiptline.FieldExpiryDate) {
+		fields = append(fields, goodsreceiptline.FieldExpiryDate)
+	}
 	return fields
 }
 
@@ -27691,6 +27825,12 @@ func (m *GoodsReceiptLineMutation) ClearField(name string) error {
 		return nil
 	case goodsreceiptline.FieldSerials:
 		m.ClearSerials()
+		return nil
+	case goodsreceiptline.FieldLotNumber:
+		m.ClearLotNumber()
+		return nil
+	case goodsreceiptline.FieldExpiryDate:
+		m.ClearExpiryDate()
 		return nil
 	}
 	return fmt.Errorf("unknown GoodsReceiptLine nullable field %s", name)
@@ -27729,6 +27869,12 @@ func (m *GoodsReceiptLineMutation) ResetField(name string) error {
 		return nil
 	case goodsreceiptline.FieldSerials:
 		m.ResetSerials()
+		return nil
+	case goodsreceiptline.FieldLotNumber:
+		m.ResetLotNumber()
+		return nil
+	case goodsreceiptline.FieldExpiryDate:
+		m.ResetExpiryDate()
 		return nil
 	case goodsreceiptline.FieldCreatedAt:
 		m.ResetCreatedAt()

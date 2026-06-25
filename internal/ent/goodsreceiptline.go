@@ -40,6 +40,10 @@ type GoodsReceiptLine struct {
 	RejectionReason string `json:"rejection_reason,omitempty"`
 	// Serial numbers received on this line (serial-tracked items): one per unit accepted
 	Serials []string `json:"serials,omitempty"`
+	// Batch/lot number for lot-tracked items received on this line
+	LotNumber string `json:"lot_number,omitempty"`
+	// Lot expiry; seeded from item.shelf_life_days when blank for perishables
+	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -79,9 +83,9 @@ func (*GoodsReceiptLine) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost:
 			values[i] = new(sql.NullFloat64)
-		case goodsreceiptline.FieldRejectionReason:
+		case goodsreceiptline.FieldRejectionReason, goodsreceiptline.FieldLotNumber:
 			values[i] = new(sql.NullString)
-		case goodsreceiptline.FieldCreatedAt:
+		case goodsreceiptline.FieldExpiryDate, goodsreceiptline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case goodsreceiptline.FieldID, goodsreceiptline.FieldTenantID, goodsreceiptline.FieldGoodsReceiptID, goodsreceiptline.FieldItemID:
 			values[i] = new(uuid.UUID)
@@ -169,6 +173,19 @@ func (_m *GoodsReceiptLine) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field serials: %w", err)
 				}
 			}
+		case goodsreceiptline.FieldLotNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field lot_number", values[i])
+			} else if value.Valid {
+				_m.LotNumber = value.String
+			}
+		case goodsreceiptline.FieldExpiryDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_date", values[i])
+			} else if value.Valid {
+				_m.ExpiryDate = new(time.Time)
+				*_m.ExpiryDate = value.Time
+			}
 		case goodsreceiptline.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -247,6 +264,14 @@ func (_m *GoodsReceiptLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("serials=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Serials))
+	builder.WriteString(", ")
+	builder.WriteString("lot_number=")
+	builder.WriteString(_m.LotNumber)
+	builder.WriteString(", ")
+	if v := _m.ExpiryDate; v != nil {
+		builder.WriteString("expiry_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

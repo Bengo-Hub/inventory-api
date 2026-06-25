@@ -133,6 +133,34 @@ func (_c *GoodsReceiptLineCreate) SetSerials(v []string) *GoodsReceiptLineCreate
 	return _c
 }
 
+// SetLotNumber sets the "lot_number" field.
+func (_c *GoodsReceiptLineCreate) SetLotNumber(v string) *GoodsReceiptLineCreate {
+	_c.mutation.SetLotNumber(v)
+	return _c
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_c *GoodsReceiptLineCreate) SetNillableLotNumber(v *string) *GoodsReceiptLineCreate {
+	if v != nil {
+		_c.SetLotNumber(*v)
+	}
+	return _c
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_c *GoodsReceiptLineCreate) SetExpiryDate(v time.Time) *GoodsReceiptLineCreate {
+	_c.mutation.SetExpiryDate(v)
+	return _c
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_c *GoodsReceiptLineCreate) SetNillableExpiryDate(v *time.Time) *GoodsReceiptLineCreate {
+	if v != nil {
+		_c.SetExpiryDate(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *GoodsReceiptLineCreate) SetCreatedAt(v time.Time) *GoodsReceiptLineCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -327,6 +355,14 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 	if value, ok := _c.mutation.Serials(); ok {
 		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
 		_node.Serials = value
+	}
+	if value, ok := _c.mutation.LotNumber(); ok {
+		_spec.SetField(goodsreceiptline.FieldLotNumber, field.TypeString, value)
+		_node.LotNumber = value
+	}
+	if value, ok := _c.mutation.ExpiryDate(); ok {
+		_spec.SetField(goodsreceiptline.FieldExpiryDate, field.TypeTime, value)
+		_node.ExpiryDate = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(goodsreceiptline.FieldCreatedAt, field.TypeTime, value)
@@ -560,6 +596,42 @@ func (u *GoodsReceiptLineUpsert) UpdateSerials() *GoodsReceiptLineUpsert {
 // ClearSerials clears the value of the "serials" field.
 func (u *GoodsReceiptLineUpsert) ClearSerials() *GoodsReceiptLineUpsert {
 	u.SetNull(goodsreceiptline.FieldSerials)
+	return u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsert) SetLotNumber(v string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldLotNumber, v)
+	return u
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateLotNumber() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldLotNumber)
+	return u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsert) ClearLotNumber() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldLotNumber)
+	return u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsert) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldExpiryDate, v)
+	return u
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateExpiryDate() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldExpiryDate)
+	return u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsert) ClearExpiryDate() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldExpiryDate)
 	return u
 }
 
@@ -800,6 +872,48 @@ func (u *GoodsReceiptLineUpsertOne) UpdateSerials() *GoodsReceiptLineUpsertOne {
 func (u *GoodsReceiptLineUpsertOne) ClearSerials() *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearSerials()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsertOne) SetLotNumber(v string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateLotNumber() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsertOne) ClearLotNumber() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertOne) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateExpiryDate() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertOne) ClearExpiryDate() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearExpiryDate()
 	})
 }
 
@@ -1207,6 +1321,48 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateSerials() *GoodsReceiptLineUpsertBulk
 func (u *GoodsReceiptLineUpsertBulk) ClearSerials() *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearSerials()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsertBulk) SetLotNumber(v string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateLotNumber() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearLotNumber() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertBulk) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateExpiryDate() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearExpiryDate() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearExpiryDate()
 	})
 }
 

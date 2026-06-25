@@ -41,6 +41,10 @@ type grnLinePayload struct {
 	// Serials are captured for serial-tracked items: one serial per accepted unit. Each becomes
 	// an InventorySerial row (status=available) when the GRN is posted.
 	Serials []string `json:"serials,omitempty"`
+	// Lot/batch capture for lot-tracked items: a lot number + optional expiry. Becomes an
+	// InventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.
+	LotNumber  string     `json:"lot_number,omitempty"`
+	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
 }
 
 type grnPayload struct {
@@ -284,7 +288,7 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(l.ItemID).
 			SetQuantityReceived(l.QuantityReceived).SetQuantityAccepted(accepted).
 			SetQuantityRejected(l.QuantityRejected).SetUnitCost(l.UnitCost).SetRejectionReason(l.RejectionReason).
-			SetSerials(serials)
+			SetSerials(serials).SetLotNumber(strings.TrimSpace(l.LotNumber)).SetNillableExpiryDate(l.ExpiryDate)
 		if l.PurchaseOrderLineID != nil {
 			lc = lc.SetPurchaseOrderLineID(*l.PurchaseOrderLineID)
 		}
@@ -331,6 +335,29 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		warehouseID = *g.WarehouseID
 	}
 
+	// Lot-tracking + shelf-life per received item, so we can create FIFO/FEFO lot layers on post.
+	lotInfo := map[uuid.UUID]struct {
+		track bool
+		shelf *int
+	}{}
+	{
+		ids := make([]uuid.UUID, 0, len(grnLines))
+		for _, l := range grnLines {
+			ids = append(ids, l.ItemID)
+		}
+		if items, e := h.orm.Item.Query().
+			Where(entitem.TenantID(tenantID), entitem.IDIn(ids...)).
+			Select(entitem.FieldID, entitem.FieldTrackLots, entitem.FieldIsPerishable, entitem.FieldShelfLifeDays).
+			All(r.Context()); e == nil {
+			for _, it := range items {
+				lotInfo[it.ID] = struct {
+					track bool
+					shelf *int
+				}{track: it.TrackLots || it.IsPerishable, shelf: it.ShelfLifeDays}
+			}
+		}
+	}
+
 	tx, err := h.orm.Tx(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
@@ -341,6 +368,30 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 			_ = tx.Rollback()
 			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update inventory balance")
 			return
+		}
+		// Create a FIFO/FEFO lot layer for lot-tracked / perishable items (or when a lot number
+		// was captured), so consumeLots has procurement layers + costing. Expiry seeds from the
+		// line, else from the item's shelf_life_days.
+		if info := lotInfo[l.ItemID]; (info.track || strings.TrimSpace(l.LotNumber) != "") && l.QuantityAccepted > 0 {
+			lotNo := strings.TrimSpace(l.LotNumber)
+			if lotNo == "" {
+				lotNo = g.GrnNumber + "-" + l.ItemID.String()[:8]
+			}
+			lc := tx.InventoryLot.Create().
+				SetTenantID(tenantID).SetItemID(l.ItemID).SetWarehouseID(warehouseID).
+				SetLotNumber(lotNo).SetQuantity(l.QuantityAccepted).SetStatus("active").
+				SetSupplierReference(g.GrnNumber)
+			if l.UnitCost > 0 {
+				lc = lc.SetCostPrice(l.UnitCost)
+			}
+			if l.ExpiryDate != nil {
+				lc = lc.SetExpiryDate(*l.ExpiryDate)
+			} else if info.shelf != nil && *info.shelf > 0 {
+				lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *info.shelf))
+			}
+			if _, e := lc.Save(r.Context()); e != nil {
+				h.log.Warn("create inventory lot on GRN failed", zap.String("lot", lotNo), zap.Error(e))
+			}
 		}
 		// Register each captured serial as an available unit. Idempotent on re-post via the
 		// unique (tenant,item,serial) index — duplicates are skipped, not fatal.

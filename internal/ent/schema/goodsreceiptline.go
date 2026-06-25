@@ -27,6 +27,8 @@ func (GoodsReceiptLine) Fields() []ent.Field {
 		field.Float("unit_cost").Default(0),
 		field.Text("rejection_reason").Optional(),
 		field.JSON("serials", []string{}).Optional().Comment("Serial numbers received on this line (serial-tracked items): one per unit accepted"),
+		field.String("lot_number").Optional().Comment("Batch/lot number for lot-tracked items received on this line"),
+		field.Time("expiry_date").Optional().Nillable().Comment("Lot expiry; seeded from item.shelf_life_days when blank for perishables"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
