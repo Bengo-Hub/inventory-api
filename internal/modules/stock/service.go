@@ -1163,6 +1163,7 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.U
 			continue
 		}
 
+		qty := ri.Quantity // fractional-capable restock
 		bal, err := tx.InventoryBalance.Query().
 			Where(
 				inventorybalance.TenantID(tenantID),
@@ -1170,18 +1171,24 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.U
 				inventorybalance.WarehouseID(whID),
 			).
 			First(ctx)
-		if err != nil {
-			s.log.Warn("restock: no balance row, skipping", zap.String("sku", ri.SKU))
-			continue
-		}
-
-		qty := ri.Quantity // fractional-capable restock
-		_, err = tx.InventoryBalance.UpdateOne(bal).
-			SetOnHand(bal.OnHand + qty).
-			SetAvailable(bal.Available + qty).
-			Save(ctx)
-		if err != nil {
-			return fmt.Errorf("stock: restock balance sku=%s: %w", ri.SKU, err)
+		if ent.IsNotFound(err) {
+			// First-time stock-in (e.g. a make-to-stock product completing its first production
+			// batch, or a return of an item never previously stocked here) — CREATE the balance
+			// row instead of silently dropping the stock. Mirrors the GRN applyStockIn path.
+			if _, cerr := tx.InventoryBalance.Create().
+				SetTenantID(tenantID).SetItemID(itm.ID).SetWarehouseID(whID).
+				SetOnHand(qty).SetAvailable(qty).SetReserved(0).Save(ctx); cerr != nil {
+				return fmt.Errorf("stock: create restock balance sku=%s: %w", ri.SKU, cerr)
+			}
+		} else if err != nil {
+			return fmt.Errorf("stock: query restock balance sku=%s: %w", ri.SKU, err)
+		} else {
+			if _, uerr := tx.InventoryBalance.UpdateOne(bal).
+				SetOnHand(bal.OnHand + qty).
+				SetAvailable(bal.Available + qty).
+				Save(ctx); uerr != nil {
+				return fmt.Errorf("stock: restock balance sku=%s: %w", ri.SKU, uerr)
+			}
 		}
 
 		// Cascade: unblock recipe items when all their ingredients are back in stock.
