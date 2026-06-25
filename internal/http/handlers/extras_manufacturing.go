@@ -16,11 +16,13 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entbrm "github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	entib "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	entpb "github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	entqc "github.com/bengobox/inventory-service/internal/ent/qualitycheck"
 	entrmu "github.com/bengobox/inventory-service/internal/ent/rawmaterialusage"
 	entrecipe "github.com/bengobox/inventory-service/internal/ent/recipe"
 	entri "github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	entwh "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -45,6 +47,16 @@ func (h *InventoryExtrasHandler) computeMaterialShortages(ctx context.Context, t
 		ratio = plannedQty / recipe.OutputQty
 	}
 	ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(ctx)
+	// Scope availability to the warehouse production actually consumes from (the tenant's default
+	// active warehouse — the same one stock consumption resolves to when no warehouse is given).
+	// A tenant-wide sum let a batch start when stock sat in OTHER warehouses, then over-drew the
+	// default warehouse to negative on consumption.
+	var whFilter []predicate.InventoryBalance
+	if defWh, whErr := h.orm.Warehouse.Query().
+		Where(entwh.TenantID(tenantID), entwh.IsDefault(true), entwh.IsActive(true)).
+		First(ctx); whErr == nil {
+		whFilter = append(whFilter, entib.WarehouseID(defWh.ID))
+	}
 	shortages := make([]matShortage, 0)
 	for _, ing := range ings {
 		required := ing.Quantity * ratio
@@ -52,7 +64,7 @@ func (h *InventoryExtrasHandler) computeMaterialShortages(ctx context.Context, t
 			Sum int `json:"sum"`
 		}
 		_ = h.orm.InventoryBalance.Query().
-			Where(entib.TenantID(tenantID), entib.ItemID(ing.ItemID)).
+			Where(append([]predicate.InventoryBalance{entib.TenantID(tenantID), entib.ItemID(ing.ItemID)}, whFilter...)...).
 			Aggregate(ent.Sum(entib.FieldAvailable)).Scan(ctx, &agg)
 		avail := 0
 		if len(agg) > 0 {

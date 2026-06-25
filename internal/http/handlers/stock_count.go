@@ -214,6 +214,7 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 		Where(entcountline.StockCountID(countID), entcountline.Posted(false)).
 		All(ctx)
 	posted, totalVar := 0, 0.0
+	failed := make([]string, 0)
 	for _, ln := range lines {
 		if ln.CountedQty == nil || ln.Variance == nil || *ln.Variance == 0 {
 			continue
@@ -221,7 +222,7 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 		_, adjErr := h.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
 			SKU:         ln.Sku,
 			Adjustment:  *ln.Variance,
-			Reason:      "initial_count",
+			Reason:      "count_variance",
 			Reference:   "stock-count:" + countID.String(),
 			Notes:       "cycle count variance",
 			AdjustedBy:  approver,
@@ -229,11 +230,27 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 		})
 		if adjErr != nil {
 			h.log.Warn("post count variance failed", zap.String("sku", ln.Sku), zap.Error(adjErr))
+			failed = append(failed, ln.Sku)
 			continue
 		}
 		_, _ = ln.Update().SetPosted(true).Save(ctx)
 		posted++
 		totalVar += *ln.Variance
+	}
+
+	// All-or-nothing: only mark the count approved once EVERY variance line has posted. Posted lines
+	// are flagged Posted(true), so re-invoking Approve is idempotent (it skips them) — the operator
+	// fixes the failed SKUs and re-approves to post the remainder, instead of the count being marked
+	// approved with some variances silently dropped.
+	if len(failed) > 0 {
+		writeJSON(w, http.StatusAccepted, map[string]any{
+			"status":        "partial",
+			"posted_lines":  posted,
+			"failed_skus":   failed,
+			"total_variance": totalVar,
+			"message":       "Some variance lines could not post; resolve them and approve again to finish.",
+		})
+		return
 	}
 
 	updated, err := count.Update().
