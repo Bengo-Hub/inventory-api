@@ -28,6 +28,9 @@ func Render(doc *PurchaseOrderDoc, logo []byte, logoType string) ([]byte, error)
 	y = p.drawItems(doc, y+5.0)
 	y = p.drawTotals(doc, y+4.0)
 	y = p.drawLowerBlocks(doc, y+5.0)
+	// The signature + footer blocks are deliberately bottom-pinned; turn off the auto page break
+	// so their fixed positions (footer pins to ~282mm) can't trip a spill onto a near-empty page 2.
+	pdf.SetAutoPageBreak(false, 0)
 	y = p.drawSignatures(doc, y+10.0)
 	p.drawFooter(doc, y+6.0)
 
