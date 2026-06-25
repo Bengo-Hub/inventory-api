@@ -124,6 +124,10 @@ func (m *mockItemsSvc) UpdateCategory(ctx context.Context, tenantID, id uuid.UUI
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, _ bool) ([]items.CategoryDTO, error) {
+	return m.ListCategories(ctx, tenantID)
+}
+
 func (m *mockItemsSvc) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error) {
 	if m.listCategoriesFn != nil {
 		return m.listCategoriesFn(ctx, tenantID)

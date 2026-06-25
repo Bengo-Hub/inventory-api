@@ -47,6 +47,7 @@ type ItemsServicer interface {
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
+	ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, hasItems bool) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
@@ -1323,7 +1324,11 @@ func (h *InventoryHandler) ListCategories(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	results, err := h.itemsSvc.ListCategories(r.Context(), tenantID)
+	// has_items=true → only categories with at least one active item linked
+	// (used by selection surfaces so a picked category never yields an empty set).
+	hasItems := strings.EqualFold(r.URL.Query().Get("has_items"), "true") || r.URL.Query().Get("has_items") == "1"
+
+	results, err := h.itemsSvc.ListCategoriesFiltered(r.Context(), tenantID, hasItems)
 	if err != nil {
 		h.log.Error("list categories failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list categories")

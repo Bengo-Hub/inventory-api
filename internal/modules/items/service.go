@@ -1092,6 +1092,58 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 
 // ListCategories returns all item categories for a tenant (cached 5 min).
 func (s *Service) ListCategories(ctx context.Context, tenantID uuid.UUID) ([]CategoryDTO, error) {
+	return s.ListCategoriesFiltered(ctx, tenantID, false)
+}
+
+// ListCategoriesFiltered returns item categories for a tenant. When hasItems is
+// true, only categories with at least one active item linked to them are
+// returned — selection surfaces (label printing, the POS/ordering catalog
+// proxies) use this so a chosen category can never resolve to an empty
+// selection / an empty storefront aisle.
+func (s *Service) ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, hasItems bool) ([]CategoryDTO, error) {
+	all, err := s.listCategoriesAll(ctx, tenantID)
+	if err != nil || !hasItems {
+		return all, err
+	}
+	withItems, err := s.categoryIDsWithItems(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]CategoryDTO, 0, len(all))
+	for _, c := range all {
+		if _, ok := withItems[c.ID]; ok {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
+}
+
+// categoryIDsWithItems returns the set of category IDs that have at least one
+// active item linked. Cheap GROUP BY on the (tenant_id, category_id) index.
+func (s *Service) categoryIDsWithItems(ctx context.Context, tenantID uuid.UUID) (map[uuid.UUID]struct{}, error) {
+	var rows []struct {
+		CategoryID uuid.UUID `json:"category_id"`
+	}
+	err := s.client.Item.Query().
+		Where(
+			item.TenantID(tenantID),
+			item.IsActive(true),
+			item.CategoryIDNotNil(),
+		).
+		GroupBy(item.FieldCategoryID).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, fmt.Errorf("items: category-item linkage: %w", err)
+	}
+	set := make(map[uuid.UUID]struct{}, len(rows))
+	for _, r := range rows {
+		set[r.CategoryID] = struct{}{}
+	}
+	return set, nil
+}
+
+// listCategoriesAll returns every active category for a tenant (cached 5 min).
+func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]CategoryDTO, error) {
 	key := sharedcache.Key("inv", "categories", tenantID.String())
 	fetch := func(ctx context.Context) ([]CategoryDTO, error) {
 		cats, err := s.client.ItemCategory.Query().
