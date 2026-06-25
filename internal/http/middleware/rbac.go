@@ -25,14 +25,21 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 				return
 			}
 
-			// Platform owners and superusers bypass all permission checks (JWT source of truth).
-			if claims.IsPlatformOwner || claims.IsSuperuser() {
+			// Platform owners (the platform tenant) bypass all permission checks
+			// unconditionally — this is the only blanket bypass kept under strict RBAC.
+			if claims.IsPlatformOwner {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Tenant admins bypass all permission checks (JWT source of truth — no DB round-trip needed).
-			if claims.IsAdmin() {
+			// Legacy bypass (SEC-1): a tenant superuser/admin used to be auto-permitted just
+			// for carrying the global superuser/admin role, with no explicit inventory role.
+			// Under strict RBAC (the default) we DROP that bypass: such users must now hold a
+			// real inventory role, which JIT provisioning grants them below
+			// (superuser/admin -> inventory_admin via assignDefaultRoleFromJWT). The blanket
+			// bypass is only restored when INVENTORY_STRICT_RBAC is disabled.
+			strict := svc != nil && svc.StrictRBAC()
+			if !strict && (claims.IsSuperuser() || claims.IsAdmin()) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -54,7 +61,9 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 			}
 
 			// JIT-provision the user and assign their default inventory role from the JWT.
-			// This runs after RequireAuth so claims are always present here.
+			// This runs after RequireAuth so claims are always present here. For a tenant
+			// superuser/admin this grants the explicit inventory_admin role, so the HasRole
+			// check below permits them via REAL RBAC (not a bypass) — no access loss.
 			if svc != nil {
 				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
 			}
@@ -99,13 +108,17 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
-			if claims.IsPlatformOwner || claims.IsSuperuser() {
+			// Platform owners bypass unconditionally — the only blanket bypass under strict RBAC.
+			if claims.IsPlatformOwner {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Tenant admins bypass all permission checks via JWT (source of truth).
-			if claims.IsAdmin() {
+			// Legacy superuser/admin blanket bypass (SEC-1) — only when strict RBAC is disabled.
+			// Under strict mode these users go through real RBAC; JIT provisioning below grants
+			// them the explicit inventory_admin role so they retain access without a bypass.
+			strict := svc != nil && svc.StrictRBAC()
+			if !strict && (claims.IsSuperuser() || claims.IsAdmin()) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -126,7 +139,8 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 				return
 			}
 
-			// JIT-provision after auth so claims are always present.
+			// JIT-provision after auth so claims are always present. For superuser/admin this
+			// grants the explicit inventory_admin role (real RBAC, not a bypass).
 			if svc != nil {
 				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
 			}
