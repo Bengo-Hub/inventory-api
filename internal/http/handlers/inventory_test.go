@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -140,6 +141,26 @@ func (m *mockItemsSvc) ListBrands(ctx context.Context, tenantID uuid.UUID) ([]it
 
 func (m *mockItemsSvc) CreateBrand(ctx context.Context, tenantID uuid.UUID, dto items.BrandDTO) (*items.BrandDTO, error) {
 	return &items.BrandDTO{ID: uuid.New(), Name: dto.Name, Code: dto.Code, IsActive: true}, nil
+}
+
+func (m *mockItemsSvc) CountItemImages(ctx context.Context, tenantID, itemID uuid.UUID) (int, error) {
+	return 0, nil
+}
+
+func (m *mockItemsSvc) ListItemImages(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.ItemImageDTO, error) {
+	return []items.ItemImageDTO{}, nil
+}
+
+func (m *mockItemsSvc) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, file multipart.File, header *multipart.FileHeader, setPrimary bool) (*items.ItemImageDTO, error) {
+	return &items.ItemImageDTO{ID: uuid.New(), IsPrimary: setPrimary}, nil
+}
+
+func (m *mockItemsSvc) UpdateItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID, in items.UpdateItemImageInput) (*items.ItemImageDTO, error) {
+	return &items.ItemImageDTO{ID: imageID}, nil
+}
+
+func (m *mockItemsSvc) DeleteItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID) error {
+	return nil
 }
 
 type mockStockSvc struct {
