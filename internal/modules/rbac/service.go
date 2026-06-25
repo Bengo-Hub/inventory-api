@@ -3,6 +3,8 @@ package rbac
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,6 +17,16 @@ type Service struct {
 	repo         Repository
 	logger       *zap.Logger
 	tenantSyncer *tenant.Syncer
+
+	// strictRBAC, when true (the default), makes the permission middleware treat tenant
+	// superusers/admins as ordinary RBAC subjects: they must hold an EXPLICIT inventory role
+	// (granted via JIT provisioning, see assignDefaultRoleFromJWT) rather than silently
+	// bypassing permission checks just for carrying the global superuser/admin role.
+	// Only IsPlatformOwner (the platform tenant) bypasses unconditionally.
+	//
+	// Escape hatch: set INVENTORY_STRICT_RBAC=false to restore the legacy blanket
+	// superuser/admin bypass if the role-grant migration ever fails to cover a live user.
+	strictRBAC bool
 }
 
 // NewService creates a new RBAC service.
@@ -23,7 +35,31 @@ func NewService(repo Repository, logger *zap.Logger, tenantSyncer *tenant.Syncer
 		repo:         repo,
 		logger:       logger,
 		tenantSyncer: tenantSyncer,
+		strictRBAC:   strictRBACEnabled(),
 	}
+}
+
+// strictRBACEnabled reads INVENTORY_STRICT_RBAC. It defaults to true (strict); only an
+// explicit falsy value ("false", "0", "no", "off") disables strict mode.
+func strictRBACEnabled() bool {
+	v := os.Getenv("INVENTORY_STRICT_RBAC")
+	if v == "" {
+		return true
+	}
+	if b, err := strconv.ParseBool(v); err == nil {
+		return b
+	}
+	switch v {
+	case "no", "No", "NO", "off", "Off", "OFF":
+		return false
+	}
+	return true
+}
+
+// StrictRBAC reports whether strict inventory RBAC is enabled (the default). When false,
+// the legacy superuser/admin blanket bypass is restored.
+func (s *Service) StrictRBAC() bool {
+	return s.strictRBAC
 }
 
 // EnsureUserFromToken handles JIT provisioning of a user derived from an SSO token.

@@ -74,21 +74,30 @@ All RBAC endpoints are under `/{tenant}/` and require authentication:
 | `GET`  | `/{tenant}/users/me/roles` | Get current user's roles |
 | `GET`  | `/{tenant}/users/me/permissions` | Get current user's permissions |
 
-## RBAC Bypass — HQ Roles
+## RBAC Bypass — strict RBAC (SEC-1)
 
-The `RequirePermission` and `RequireAnyPermission` middleware short-circuit the DB permission check for the following roles, granting full access to all guarded endpoints:
+The `RequirePermission` / `RequireAnyPermission` middleware grant full access (short-circuit the DB permission check) for:
 
-| Role | Notes |
-|------|-------|
-| `inventory_admin` | Original bypass role |
-| `admin` | HQ/tenant admin (auth-service role synced to inventory) |
-| `manager` | Senior manager with full inventory access |
-| `super_admin` | Platform superuser |
-| `store_manager` | Store-level manager |
+| Subject | How |
+|---------|-----|
+| **Platform owner** (`claims.IsPlatformOwner` — the platform tenant, slug `codevertex`/`demo`) | Unconditional bypass. This is the **only** blanket bypass and is never gated by the flag below. |
+| Local `inventory_admin` role | Real RBAC grant in `user_role_assignments`. A user holding this role bypasses per-route permission checks. |
+| Any user holding the specific permission for the route | Normal RBAC. |
 
-This means any user assigned one of these roles via `POST /{tenant}/rbac/assignments` will bypass per-endpoint RBAC without needing explicit permission assignments. Downstream roles (`warehouse_manager`, `stock_clerk`, `viewer`) still require explicit grants.
+### Strict mode and tenant superusers/admins
 
-**Why:** The demo tenant admin account uses the `admin` role (not `inventory_admin`), which previously caused 403 on all guarded endpoints.
+Historically a tenant **superuser/admin** (`claims.IsSuperuser()` / `claims.IsAdmin()`, which is *not* `IsPlatformOwner`) was auto-permitted on every guarded endpoint **just for carrying the global role**, with no explicit inventory role — a silent bypass (SEC-1).
+
+Under **strict RBAC (the default)** that silent bypass is removed. Such users now go through real RBAC. To avoid any lockout, the same middleware **JIT-provisions** them first: `EnsureUserFromToken` → `assignDefaultRoleFromJWT` maps `superuser`/`admin`/`tenant_admin`/`owner` → an explicit `inventory_admin` role grant, and the immediately-following `HasRole(inventory_admin)` check then permits the request. The migration is therefore automatic and happens within the very request that previously bypassed — **zero lockout window**, and access becomes auditable real RBAC instead of an invisible bypass.
+
+### Escape hatch — `INVENTORY_STRICT_RBAC`
+
+| Value | Effect |
+|-------|--------|
+| unset / empty / `true` / `1` (default) | **Strict** — tenant superusers/admins must hold a real inventory role (granted by JIT). Only platform owners bypass. |
+| `false` / `0` / `off` / `no` | **Legacy** — restores the blanket superuser/admin bypass. Use only if a live user is ever locked out. |
+
+The flag is read once at `rbac.NewService` construction. Platform-owner bypass is **not** affected by the flag.
 
 ---
 
