@@ -25,6 +25,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
@@ -1387,10 +1388,12 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		return nil, fmt.Errorf("items: create item: %w", err)
 	}
 
-	// Create initial balance if initial_quantity > 0
+	// Opening stock defaults to 0 — a brand-new item has no stock until it's received or counted
+	// in. (Previously this forced 1, seeding phantom stock on every item.) A real opening quantity
+	// is recorded with an opening_balance audit adjustment below so it doesn't bypass the ledger.
 	initialQty := float64(dto.InitialQuantity)
-	if initialQty <= 0 {
-		initialQty = 1
+	if initialQty < 0 {
+		initialQty = 0
 	}
 
 	// Auto-seed reorder level from tenant unit defaults when not explicitly provided.
@@ -1432,6 +1435,23 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			Save(ctx)
 		if err != nil {
 			s.log.Warn("items: create initial balance failed", zap.Error(err), zap.String("sku", dto.SKU))
+		} else if initialQty > 0 {
+			// Record a real opening quantity in the audit ledger instead of silently writing the
+			// balance, so opening stock has a StockAdjustment trail like any other movement.
+			if _, aerr := tx.StockAdjustment.Create().
+				SetTenantID(tenantID).
+				SetItemID(i.ID).
+				SetWarehouseID(wh.ID).
+				SetQuantityBefore(0).
+				SetQuantityChange(initialQty).
+				SetQuantityAfter(initialQty).
+				SetReason(stockadjustment.ReasonOpeningBalance).
+				SetReference(dto.SKU).
+				SetNotes("Opening balance at item creation").
+				SetAdjustedBy(uuid.Nil).
+				Save(ctx); aerr != nil {
+				s.log.Warn("items: opening-balance adjustment failed", zap.Error(aerr), zap.String("sku", dto.SKU))
+			}
 		}
 
 		// If "add to all outlets" is requested, create balances for all other active warehouses
