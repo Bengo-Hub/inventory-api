@@ -62,7 +62,6 @@ type App struct {
 	events              *nats.Conn
 	orm                 *ent.Client
 	outboxPublisher     *eventslib.OutboxPoller
-	orderConsumer       *consumers.OrderEventsConsumer
 	posSaleConsumer     *consumers.POSSaleEventsConsumer
 	conferenceConsumer  *consumers.ConferenceEventsConsumer
 	authConsumer        *consumers.AuthEventsConsumer
@@ -222,10 +221,6 @@ func New(ctx context.Context) (*App, error) {
 		return subsClient.ConsumerHasFeature(ctx, tenantID, feature)
 	}
 
-	// Order events consumer — auto-consume/release reservations on order lifecycle
-	orderConsumer := consumers.NewOrderEventsConsumer(log, stockSvc, ormClient)
-	orderConsumer.SetFeatureGate(consumerFeatureGate)
-
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)
 	posSaleConsumer.SetFeatureGate(consumerFeatureGate)
@@ -347,7 +342,6 @@ func New(ctx context.Context) (*App, error) {
 		events:              natsConn,
 		orm:                 ormClient,
 		outboxPublisher:     outboxPublisher,
-		orderConsumer:       orderConsumer,
 		posSaleConsumer:     posSaleConsumer,
 		conferenceConsumer:  conferenceConsumer,
 		authConsumer:        authConsumer,
@@ -369,19 +363,16 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}
 
-	// Start order events consumer for auto-consumption/release of stock reservations
-	if a.orderConsumer != nil && a.events != nil {
+	// Ordering->inventory stock is reconciled via direct S2S calls (consumeOrderReservation on
+	// completion / releaseOrderReservation on cancellation in ordering-backend — the single,
+	// intended deduction path), NOT via order lifecycle events. There is deliberately no
+	// event-based order consumer: it never received events (ordering writes its order_events to a
+	// DB audit table, not NATS) and, if wired, would double-deduct against the S2S path.
+	if a.events != nil {
 		js, err := a.events.JetStream()
 		if err != nil {
-			a.log.Warn("jetstream unavailable, order events consumer not started", zap.Error(err))
+			a.log.Warn("jetstream unavailable, downstream event consumers not started", zap.Error(err))
 		} else {
-			go func() {
-				if err := a.orderConsumer.Start(ctx, js); err != nil {
-					a.log.Error("order events consumer stopped", zap.Error(err))
-				}
-			}()
-			a.log.Info("order events consumer started")
-
 			// Start POS sale events consumer
 			if a.posSaleConsumer != nil {
 				go func() {
