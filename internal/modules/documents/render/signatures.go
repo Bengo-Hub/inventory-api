@@ -1,10 +1,14 @@
 package render
 
-// drawSignatures renders the Prepared By / Approved By signature lines.
+// drawSignatures renders the Prepared By line, and the Approved By line ONLY when the document
+// actually went through an approval (an approver was captured) — documents that never required
+// approval don't show an empty "Approved By" slot.
 func (p *painter) drawSignatures(d *PurchaseOrderDoc, sY float64) float64 {
 	sigW := 80.0
 	p.drawSig(leftX, sY, sigW, "Prepared By", d.PreparedBy)
-	p.drawSig(rightX-sigW, sY, sigW, "Approved By", d.ApprovedBy)
+	if d.ApprovedBy != "" {
+		p.drawSig(rightX-sigW, sY, sigW, "Approved By", d.ApprovedBy)
+	}
 	return sY
 }
 

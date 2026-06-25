@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,6 +11,9 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 
+	invent "github.com/bengobox/inventory-service/internal/ent"
+	entapprovalaction "github.com/bengobox/inventory-service/internal/ent/approvalaction"
+	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpodoc "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpolinedoc "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
@@ -106,6 +110,18 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 		doc.ExpectedDate = po.ExpectedDate.Format("02 January 2006")
 	}
 
+	// Prepared/Approved capture. PreparedBy = the PO creator. ApprovedBy is set ONLY when the PO
+	// actually passed an approval (per the approval rules/steps) — naming the final approver — so
+	// documents that never required approval don't show an empty "Approved By" slot.
+	doc.PreparedBy = h.resolveUserLabel(ctx, tenantID, po.CreatedBy, "")
+	if appr, _ := h.approvals().Latest(ctx, tenantID, po.ID); appr != nil && string(appr.Status) == "approved" {
+		if act, e := h.orm.ApprovalAction.Query().
+			Where(entapprovalaction.RequestID(appr.ID), entapprovalaction.StatusEQ(entapprovalaction.StatusApproved)).
+			Order(invent.Desc(entapprovalaction.FieldSequence)).First(ctx); e == nil {
+			doc.ApprovedBy = h.resolveUserLabel(ctx, tenantID, act.ActedBy, act.ApproverRole)
+		}
+	}
+
 	pdfBytes, err := documents.RenderPurchaseOrderPDF(doc)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render purchase order PDF")
@@ -116,6 +132,21 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(pdfBytes)
+}
+
+// resolveUserLabel maps an auth-service user id to a human label (the local InventoryUser email)
+// for the signature lines, falling back to the supplied label (e.g. the approver role) when the
+// user can't be resolved or no id is set.
+func (h *InventoryExtrasHandler) resolveUserLabel(ctx context.Context, tenantID uuid.UUID, userID *uuid.UUID, fallback string) string {
+	if userID == nil || *userID == uuid.Nil {
+		return fallback
+	}
+	if u, e := h.orm.InventoryUser.Query().
+		Where(entinvuser.TenantID(tenantID), entinvuser.AuthServiceUserID(*userID)).
+		Only(ctx); e == nil && u.Email != "" {
+		return u.Email
+	}
+	return fallback
 }
 
 // formatMoney formats a float with thousands separators and 2 decimals (e.g. 26,540.70).
