@@ -21,6 +21,14 @@ func maxF(a, b float64) float64 {
 	return b
 }
 
+// maxInt returns the larger of two ints.
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // money joins a currency prefix with a pre-formatted amount, e.g. "KES 1,234.56".
 // Both parts degrade gracefully when empty.
 func money(currency, amount string) string {

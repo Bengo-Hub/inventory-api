@@ -7,13 +7,20 @@ func (p *painter) drawLowerBlocks(d *PurchaseOrderDoc, lY float64) float64 {
 	if len(notes) == 0 {
 		return lY
 	}
-	// Compact block (smaller fonts) so the item listing keeps the bulk of the page.
-	lowH := 22.0
+	// Compact, content-fitting block (smaller fonts) so the item listing keeps the bulk of the
+	// page while the card height flexes to however many note lines wrap.
+	innerW := contentW - 6.0
+	const lineH = 3.4
+	lines := 0
+	for _, n := range notes {
+		lines += p.measureLines("•  "+n, "", 7.3, innerW)
+	}
+	lowH := maxF(float64(lines)*lineH+8.0, 14.0)
 	p.box(leftX, lY, contentW, lowH)
 	p.text(leftX+3, lY+2.6, "NOTES & TERMS", "B", 6.8, p.pal.blue)
-	y := lY + 6.4
+	y := lY + 6.0
 	for _, n := range notes {
-		y = p.multiCell(leftX+3, y, contentW-6, 3.2, "•  "+n, "", 7.3, p.pal.grey) + 0.7
+		y = p.multiCell(leftX+3, y, innerW, lineH, "•  "+n, "", 7.3, p.pal.grey)
 	}
 	return lY + lowH
 }

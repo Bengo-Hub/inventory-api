@@ -108,6 +108,17 @@ func (p *painter) kv(x, y float64, k, v string) {
 	p.text(x+24, y, v, "B", 9, p.pal.navy)
 }
 
+// measureLines returns how many wrapped lines `s` occupies at width w for the given font/size,
+// so callers can size a card to its content before drawing the (filled) box behind it.
+func (p *painter) measureLines(s, font string, sz, w float64) int {
+	p.pdf.SetFont("Helvetica", font, sz)
+	n := len(p.pdf.SplitText(p.tr(s), w))
+	if n < 1 {
+		return 1
+	}
+	return n
+}
+
 // multiCell wraps text at the given x/width using the given font/size/color and
 // returns the y just below the wrapped block.
 func (p *painter) multiCell(x, y, w, lineH float64, s, font string, sz float64, c rgb) float64 {
