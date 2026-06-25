@@ -48,6 +48,44 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 	}
 }
 
+// EmitStockInCascade fires the same downstream cascade as an upward stock adjustment for a
+// stock-in that was applied OUTSIDE the stock service (e.g. a goods-receipt line that wrote the
+// InventoryBalance directly): it publishes stock.updated, rechecks low-stock, and — when the item
+// crossed back above zero — re-enables any recipes its depletion had gated. Without this, received
+// stock never re-enabled sold-out recipes or cleared low-stock alerts. Best-effort: errors are
+// logged inside the helpers; the caller's transaction is never aborted.
+func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64) {
+	itm, err := tx.Item.Get(ctx, itemID)
+	if err != nil {
+		return
+	}
+	bal, _ := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
+		First(ctx)
+	onHand, available := qtyAfter, qtyAfter
+	if bal != nil {
+		onHand, available = bal.OnHand, bal.Available
+	}
+	s.writeOutboxEvent(ctx, tx, tenantID, itemID, "inventory", "stock.updated", map[string]any{
+		"tenant_id":       tenantID.String(),
+		"item_id":         itemID.String(),
+		"sku":             itm.Sku,
+		"warehouse_id":    warehouseID.String(),
+		"quantity_before": qtyBefore,
+		"quantity_change": qtyAfter - qtyBefore,
+		"quantity_after":  qtyAfter,
+		"reason":          "goods_receipt",
+		"on_hand":         onHand,
+		"available":       available,
+	})
+	if bal != nil {
+		s.checkAndPublishLowStock(ctx, tx, tenantID, itm, bal, warehouseID)
+	}
+	if qtyBefore <= 0 && qtyAfter > 0 {
+		s.cascadeIngredientRestocked(ctx, tx, tenantID, itemID, warehouseID)
+	}
+}
+
 // cascadeIngredientRestocked publishes stock.in for any RECIPE-type items whose
 // recipe is now fully producible because itemID (an ingredient) was restocked.
 // Best-effort: errors are logged, the parent transaction is never aborted.
