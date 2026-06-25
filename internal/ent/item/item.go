@@ -32,6 +32,32 @@ const (
 	FieldManufacturer = "manufacturer"
 	// FieldModel holds the string denoting the model field in the database.
 	FieldModel = "model"
+	// FieldGtin holds the string denoting the gtin field in the database.
+	FieldGtin = "gtin"
+	// FieldMpn holds the string denoting the mpn field in the database.
+	FieldMpn = "mpn"
+	// FieldCondition holds the string denoting the condition field in the database.
+	FieldCondition = "condition"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
+	// FieldShortDescription holds the string denoting the short_description field in the database.
+	FieldShortDescription = "short_description"
+	// FieldMetaTitle holds the string denoting the meta_title field in the database.
+	FieldMetaTitle = "meta_title"
+	// FieldMetaDescription holds the string denoting the meta_description field in the database.
+	FieldMetaDescription = "meta_description"
+	// FieldCountryOfOrigin holds the string denoting the country_of_origin field in the database.
+	FieldCountryOfOrigin = "country_of_origin"
+	// FieldHsCode holds the string denoting the hs_code field in the database.
+	FieldHsCode = "hs_code"
+	// FieldIsReturnable holds the string denoting the is_returnable field in the database.
+	FieldIsReturnable = "is_returnable"
+	// FieldReturnWindowDays holds the string denoting the return_window_days field in the database.
+	FieldReturnWindowDays = "return_window_days"
+	// FieldAllowBackorder holds the string denoting the allow_backorder field in the database.
+	FieldAllowBackorder = "allow_backorder"
+	// FieldIsDiscontinued holds the string denoting the is_discontinued field in the database.
+	FieldIsDiscontinued = "is_discontinued"
 	// FieldUnitID holds the string denoting the unit_id field in the database.
 	FieldUnitID = "unit_id"
 	// FieldType holds the string denoting the type field in the database.
@@ -273,6 +299,19 @@ var Columns = []string{
 	FieldBrandID,
 	FieldManufacturer,
 	FieldModel,
+	FieldGtin,
+	FieldMpn,
+	FieldCondition,
+	FieldSlug,
+	FieldShortDescription,
+	FieldMetaTitle,
+	FieldMetaDescription,
+	FieldCountryOfOrigin,
+	FieldHsCode,
+	FieldIsReturnable,
+	FieldReturnWindowDays,
+	FieldAllowBackorder,
+	FieldIsDiscontinued,
 	FieldUnitID,
 	FieldType,
 	FieldUseCase,
@@ -331,6 +370,12 @@ var (
 	SkuValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultIsReturnable holds the default value on creation for the "is_returnable" field.
+	DefaultIsReturnable bool
+	// DefaultAllowBackorder holds the default value on creation for the "allow_backorder" field.
+	DefaultAllowBackorder bool
+	// DefaultIsDiscontinued holds the default value on creation for the "is_discontinued" field.
+	DefaultIsDiscontinued bool
 	// DefaultExtraBedAllowed holds the default value on creation for the "extra_bed_allowed" field.
 	DefaultExtraBedAllowed bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
@@ -368,6 +413,34 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Condition defines the type for the "condition" enum field.
+type Condition string
+
+// ConditionNEW is the default value of the Condition enum.
+const DefaultCondition = ConditionNEW
+
+// Condition values.
+const (
+	ConditionNEW         Condition = "NEW"
+	ConditionREFURBISHED Condition = "REFURBISHED"
+	ConditionUSED        Condition = "USED"
+	ConditionOPEN_BOX    Condition = "OPEN_BOX"
+)
+
+func (c Condition) String() string {
+	return string(c)
+}
+
+// ConditionValidator is a validator for the "condition" field enum values. It is called by the builders before save.
+func ConditionValidator(c Condition) error {
+	switch c {
+	case ConditionNEW, ConditionREFURBISHED, ConditionUSED, ConditionOPEN_BOX:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for condition field: %q", c)
+	}
+}
 
 // Type defines the type for the "type" enum field.
 type Type string
@@ -526,6 +599,71 @@ func ByManufacturer(opts ...sql.OrderTermOption) OrderOption {
 // ByModel orders the results by the model field.
 func ByModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldModel, opts...).ToFunc()
+}
+
+// ByGtin orders the results by the gtin field.
+func ByGtin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGtin, opts...).ToFunc()
+}
+
+// ByMpn orders the results by the mpn field.
+func ByMpn(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMpn, opts...).ToFunc()
+}
+
+// ByCondition orders the results by the condition field.
+func ByCondition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCondition, opts...).ToFunc()
+}
+
+// BySlug orders the results by the slug field.
+func BySlug(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSlug, opts...).ToFunc()
+}
+
+// ByShortDescription orders the results by the short_description field.
+func ByShortDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShortDescription, opts...).ToFunc()
+}
+
+// ByMetaTitle orders the results by the meta_title field.
+func ByMetaTitle(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMetaTitle, opts...).ToFunc()
+}
+
+// ByMetaDescription orders the results by the meta_description field.
+func ByMetaDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMetaDescription, opts...).ToFunc()
+}
+
+// ByCountryOfOrigin orders the results by the country_of_origin field.
+func ByCountryOfOrigin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCountryOfOrigin, opts...).ToFunc()
+}
+
+// ByHsCode orders the results by the hs_code field.
+func ByHsCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHsCode, opts...).ToFunc()
+}
+
+// ByIsReturnable orders the results by the is_returnable field.
+func ByIsReturnable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsReturnable, opts...).ToFunc()
+}
+
+// ByReturnWindowDays orders the results by the return_window_days field.
+func ByReturnWindowDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReturnWindowDays, opts...).ToFunc()
+}
+
+// ByAllowBackorder orders the results by the allow_backorder field.
+func ByAllowBackorder(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowBackorder, opts...).ToFunc()
+}
+
+// ByIsDiscontinued orders the results by the is_discontinued field.
+func ByIsDiscontinued(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsDiscontinued, opts...).ToFunc()
 }
 
 // ByUnitID orders the results by the unit_id field.

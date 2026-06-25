@@ -44,6 +44,48 @@ func (Item) Fields() []ent.Field {
 		field.String("model").
 			Optional().
 			Comment("Product/item model — retail only"),
+		// E-commerce / online-store attributes (additive; safe for online auto-migrate).
+		field.String("gtin").
+			Optional().
+			Comment("Global Trade Item Number (GTIN-8/12/13/14) for marketplace feeds"),
+		field.String("mpn").
+			Optional().
+			Comment("Manufacturer Part Number — identifies a product across suppliers"),
+		field.Enum("condition").
+			Values("NEW", "REFURBISHED", "USED", "OPEN_BOX").
+			Default("NEW").
+			Comment("Product condition for e-commerce listings"),
+		field.String("slug").
+			Optional().
+			Comment("URL-friendly identifier for storefront product pages / SEO"),
+		field.Text("short_description").
+			Optional().
+			Comment("Short product-card description (long-form lives in `description`)"),
+		field.String("meta_title").
+			Optional().
+			Comment("SEO meta title"),
+		field.Text("meta_description").
+			Optional().
+			Comment("SEO meta description"),
+		field.String("country_of_origin").
+			Optional().
+			Comment("ISO country of origin — customs / marketplace compliance"),
+		field.String("hs_code").
+			Optional().
+			Comment("Harmonised System tariff code for customs"),
+		field.Bool("is_returnable").
+			Default(true).
+			Comment("Whether the item can be returned by a customer"),
+		field.Int("return_window_days").
+			Optional().
+			Nillable().
+			Comment("Days after purchase a return is accepted (nil = tenant default)"),
+		field.Bool("allow_backorder").
+			Default(false).
+			Comment("Allow ordering when out of stock (e-commerce pre-order)"),
+		field.Bool("is_discontinued").
+			Default(false).
+			Comment("Hidden from new listings but remaining stock still sellable"),
 		field.UUID("unit_id", uuid.UUID{}).
 			Optional().
 			Nillable().

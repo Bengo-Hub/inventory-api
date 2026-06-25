@@ -34136,6 +34136,20 @@ type ItemMutation struct {
 	description                *string
 	manufacturer               *string
 	model                      *string
+	gtin                       *string
+	mpn                        *string
+	condition                  *item.Condition
+	slug                       *string
+	short_description          *string
+	meta_title                 *string
+	meta_description           *string
+	country_of_origin          *string
+	hs_code                    *string
+	is_returnable              *bool
+	return_window_days         *int
+	addreturn_window_days      *int
+	allow_backorder            *bool
+	is_discontinued            *bool
 	_type                      *item.Type
 	use_case                   *item.UseCase
 	meal_plan                  *item.MealPlan
@@ -34695,6 +34709,612 @@ func (m *ItemMutation) ModelCleared() bool {
 func (m *ItemMutation) ResetModel() {
 	m.model = nil
 	delete(m.clearedFields, item.FieldModel)
+}
+
+// SetGtin sets the "gtin" field.
+func (m *ItemMutation) SetGtin(s string) {
+	m.gtin = &s
+}
+
+// Gtin returns the value of the "gtin" field in the mutation.
+func (m *ItemMutation) Gtin() (r string, exists bool) {
+	v := m.gtin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGtin returns the old "gtin" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldGtin(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGtin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGtin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGtin: %w", err)
+	}
+	return oldValue.Gtin, nil
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (m *ItemMutation) ClearGtin() {
+	m.gtin = nil
+	m.clearedFields[item.FieldGtin] = struct{}{}
+}
+
+// GtinCleared returns if the "gtin" field was cleared in this mutation.
+func (m *ItemMutation) GtinCleared() bool {
+	_, ok := m.clearedFields[item.FieldGtin]
+	return ok
+}
+
+// ResetGtin resets all changes to the "gtin" field.
+func (m *ItemMutation) ResetGtin() {
+	m.gtin = nil
+	delete(m.clearedFields, item.FieldGtin)
+}
+
+// SetMpn sets the "mpn" field.
+func (m *ItemMutation) SetMpn(s string) {
+	m.mpn = &s
+}
+
+// Mpn returns the value of the "mpn" field in the mutation.
+func (m *ItemMutation) Mpn() (r string, exists bool) {
+	v := m.mpn
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMpn returns the old "mpn" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMpn(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMpn is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMpn requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMpn: %w", err)
+	}
+	return oldValue.Mpn, nil
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (m *ItemMutation) ClearMpn() {
+	m.mpn = nil
+	m.clearedFields[item.FieldMpn] = struct{}{}
+}
+
+// MpnCleared returns if the "mpn" field was cleared in this mutation.
+func (m *ItemMutation) MpnCleared() bool {
+	_, ok := m.clearedFields[item.FieldMpn]
+	return ok
+}
+
+// ResetMpn resets all changes to the "mpn" field.
+func (m *ItemMutation) ResetMpn() {
+	m.mpn = nil
+	delete(m.clearedFields, item.FieldMpn)
+}
+
+// SetCondition sets the "condition" field.
+func (m *ItemMutation) SetCondition(i item.Condition) {
+	m.condition = &i
+}
+
+// Condition returns the value of the "condition" field in the mutation.
+func (m *ItemMutation) Condition() (r item.Condition, exists bool) {
+	v := m.condition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCondition returns the old "condition" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldCondition(ctx context.Context) (v item.Condition, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCondition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
+	}
+	return oldValue.Condition, nil
+}
+
+// ResetCondition resets all changes to the "condition" field.
+func (m *ItemMutation) ResetCondition() {
+	m.condition = nil
+}
+
+// SetSlug sets the "slug" field.
+func (m *ItemMutation) SetSlug(s string) {
+	m.slug = &s
+}
+
+// Slug returns the value of the "slug" field in the mutation.
+func (m *ItemMutation) Slug() (r string, exists bool) {
+	v := m.slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlug returns the old "slug" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+	}
+	return oldValue.Slug, nil
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (m *ItemMutation) ClearSlug() {
+	m.slug = nil
+	m.clearedFields[item.FieldSlug] = struct{}{}
+}
+
+// SlugCleared returns if the "slug" field was cleared in this mutation.
+func (m *ItemMutation) SlugCleared() bool {
+	_, ok := m.clearedFields[item.FieldSlug]
+	return ok
+}
+
+// ResetSlug resets all changes to the "slug" field.
+func (m *ItemMutation) ResetSlug() {
+	m.slug = nil
+	delete(m.clearedFields, item.FieldSlug)
+}
+
+// SetShortDescription sets the "short_description" field.
+func (m *ItemMutation) SetShortDescription(s string) {
+	m.short_description = &s
+}
+
+// ShortDescription returns the value of the "short_description" field in the mutation.
+func (m *ItemMutation) ShortDescription() (r string, exists bool) {
+	v := m.short_description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShortDescription returns the old "short_description" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldShortDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShortDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShortDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShortDescription: %w", err)
+	}
+	return oldValue.ShortDescription, nil
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (m *ItemMutation) ClearShortDescription() {
+	m.short_description = nil
+	m.clearedFields[item.FieldShortDescription] = struct{}{}
+}
+
+// ShortDescriptionCleared returns if the "short_description" field was cleared in this mutation.
+func (m *ItemMutation) ShortDescriptionCleared() bool {
+	_, ok := m.clearedFields[item.FieldShortDescription]
+	return ok
+}
+
+// ResetShortDescription resets all changes to the "short_description" field.
+func (m *ItemMutation) ResetShortDescription() {
+	m.short_description = nil
+	delete(m.clearedFields, item.FieldShortDescription)
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (m *ItemMutation) SetMetaTitle(s string) {
+	m.meta_title = &s
+}
+
+// MetaTitle returns the value of the "meta_title" field in the mutation.
+func (m *ItemMutation) MetaTitle() (r string, exists bool) {
+	v := m.meta_title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetaTitle returns the old "meta_title" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMetaTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetaTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetaTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetaTitle: %w", err)
+	}
+	return oldValue.MetaTitle, nil
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (m *ItemMutation) ClearMetaTitle() {
+	m.meta_title = nil
+	m.clearedFields[item.FieldMetaTitle] = struct{}{}
+}
+
+// MetaTitleCleared returns if the "meta_title" field was cleared in this mutation.
+func (m *ItemMutation) MetaTitleCleared() bool {
+	_, ok := m.clearedFields[item.FieldMetaTitle]
+	return ok
+}
+
+// ResetMetaTitle resets all changes to the "meta_title" field.
+func (m *ItemMutation) ResetMetaTitle() {
+	m.meta_title = nil
+	delete(m.clearedFields, item.FieldMetaTitle)
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (m *ItemMutation) SetMetaDescription(s string) {
+	m.meta_description = &s
+}
+
+// MetaDescription returns the value of the "meta_description" field in the mutation.
+func (m *ItemMutation) MetaDescription() (r string, exists bool) {
+	v := m.meta_description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetaDescription returns the old "meta_description" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldMetaDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetaDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetaDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetaDescription: %w", err)
+	}
+	return oldValue.MetaDescription, nil
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (m *ItemMutation) ClearMetaDescription() {
+	m.meta_description = nil
+	m.clearedFields[item.FieldMetaDescription] = struct{}{}
+}
+
+// MetaDescriptionCleared returns if the "meta_description" field was cleared in this mutation.
+func (m *ItemMutation) MetaDescriptionCleared() bool {
+	_, ok := m.clearedFields[item.FieldMetaDescription]
+	return ok
+}
+
+// ResetMetaDescription resets all changes to the "meta_description" field.
+func (m *ItemMutation) ResetMetaDescription() {
+	m.meta_description = nil
+	delete(m.clearedFields, item.FieldMetaDescription)
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (m *ItemMutation) SetCountryOfOrigin(s string) {
+	m.country_of_origin = &s
+}
+
+// CountryOfOrigin returns the value of the "country_of_origin" field in the mutation.
+func (m *ItemMutation) CountryOfOrigin() (r string, exists bool) {
+	v := m.country_of_origin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountryOfOrigin returns the old "country_of_origin" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldCountryOfOrigin(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountryOfOrigin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountryOfOrigin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountryOfOrigin: %w", err)
+	}
+	return oldValue.CountryOfOrigin, nil
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (m *ItemMutation) ClearCountryOfOrigin() {
+	m.country_of_origin = nil
+	m.clearedFields[item.FieldCountryOfOrigin] = struct{}{}
+}
+
+// CountryOfOriginCleared returns if the "country_of_origin" field was cleared in this mutation.
+func (m *ItemMutation) CountryOfOriginCleared() bool {
+	_, ok := m.clearedFields[item.FieldCountryOfOrigin]
+	return ok
+}
+
+// ResetCountryOfOrigin resets all changes to the "country_of_origin" field.
+func (m *ItemMutation) ResetCountryOfOrigin() {
+	m.country_of_origin = nil
+	delete(m.clearedFields, item.FieldCountryOfOrigin)
+}
+
+// SetHsCode sets the "hs_code" field.
+func (m *ItemMutation) SetHsCode(s string) {
+	m.hs_code = &s
+}
+
+// HsCode returns the value of the "hs_code" field in the mutation.
+func (m *ItemMutation) HsCode() (r string, exists bool) {
+	v := m.hs_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHsCode returns the old "hs_code" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldHsCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHsCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHsCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHsCode: %w", err)
+	}
+	return oldValue.HsCode, nil
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (m *ItemMutation) ClearHsCode() {
+	m.hs_code = nil
+	m.clearedFields[item.FieldHsCode] = struct{}{}
+}
+
+// HsCodeCleared returns if the "hs_code" field was cleared in this mutation.
+func (m *ItemMutation) HsCodeCleared() bool {
+	_, ok := m.clearedFields[item.FieldHsCode]
+	return ok
+}
+
+// ResetHsCode resets all changes to the "hs_code" field.
+func (m *ItemMutation) ResetHsCode() {
+	m.hs_code = nil
+	delete(m.clearedFields, item.FieldHsCode)
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (m *ItemMutation) SetIsReturnable(b bool) {
+	m.is_returnable = &b
+}
+
+// IsReturnable returns the value of the "is_returnable" field in the mutation.
+func (m *ItemMutation) IsReturnable() (r bool, exists bool) {
+	v := m.is_returnable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsReturnable returns the old "is_returnable" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldIsReturnable(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsReturnable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsReturnable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsReturnable: %w", err)
+	}
+	return oldValue.IsReturnable, nil
+}
+
+// ResetIsReturnable resets all changes to the "is_returnable" field.
+func (m *ItemMutation) ResetIsReturnable() {
+	m.is_returnable = nil
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (m *ItemMutation) SetReturnWindowDays(i int) {
+	m.return_window_days = &i
+	m.addreturn_window_days = nil
+}
+
+// ReturnWindowDays returns the value of the "return_window_days" field in the mutation.
+func (m *ItemMutation) ReturnWindowDays() (r int, exists bool) {
+	v := m.return_window_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReturnWindowDays returns the old "return_window_days" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldReturnWindowDays(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReturnWindowDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReturnWindowDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReturnWindowDays: %w", err)
+	}
+	return oldValue.ReturnWindowDays, nil
+}
+
+// AddReturnWindowDays adds i to the "return_window_days" field.
+func (m *ItemMutation) AddReturnWindowDays(i int) {
+	if m.addreturn_window_days != nil {
+		*m.addreturn_window_days += i
+	} else {
+		m.addreturn_window_days = &i
+	}
+}
+
+// AddedReturnWindowDays returns the value that was added to the "return_window_days" field in this mutation.
+func (m *ItemMutation) AddedReturnWindowDays() (r int, exists bool) {
+	v := m.addreturn_window_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (m *ItemMutation) ClearReturnWindowDays() {
+	m.return_window_days = nil
+	m.addreturn_window_days = nil
+	m.clearedFields[item.FieldReturnWindowDays] = struct{}{}
+}
+
+// ReturnWindowDaysCleared returns if the "return_window_days" field was cleared in this mutation.
+func (m *ItemMutation) ReturnWindowDaysCleared() bool {
+	_, ok := m.clearedFields[item.FieldReturnWindowDays]
+	return ok
+}
+
+// ResetReturnWindowDays resets all changes to the "return_window_days" field.
+func (m *ItemMutation) ResetReturnWindowDays() {
+	m.return_window_days = nil
+	m.addreturn_window_days = nil
+	delete(m.clearedFields, item.FieldReturnWindowDays)
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (m *ItemMutation) SetAllowBackorder(b bool) {
+	m.allow_backorder = &b
+}
+
+// AllowBackorder returns the value of the "allow_backorder" field in the mutation.
+func (m *ItemMutation) AllowBackorder() (r bool, exists bool) {
+	v := m.allow_backorder
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowBackorder returns the old "allow_backorder" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldAllowBackorder(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowBackorder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowBackorder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowBackorder: %w", err)
+	}
+	return oldValue.AllowBackorder, nil
+}
+
+// ResetAllowBackorder resets all changes to the "allow_backorder" field.
+func (m *ItemMutation) ResetAllowBackorder() {
+	m.allow_backorder = nil
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (m *ItemMutation) SetIsDiscontinued(b bool) {
+	m.is_discontinued = &b
+}
+
+// IsDiscontinued returns the value of the "is_discontinued" field in the mutation.
+func (m *ItemMutation) IsDiscontinued() (r bool, exists bool) {
+	v := m.is_discontinued
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsDiscontinued returns the old "is_discontinued" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldIsDiscontinued(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsDiscontinued is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsDiscontinued requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsDiscontinued: %w", err)
+	}
+	return oldValue.IsDiscontinued, nil
+}
+
+// ResetIsDiscontinued resets all changes to the "is_discontinued" field.
+func (m *ItemMutation) ResetIsDiscontinued() {
+	m.is_discontinued = nil
 }
 
 // SetUnitID sets the "unit_id" field.
@@ -37653,7 +38273,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 49)
+	fields := make([]string, 0, 62)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -37677,6 +38297,45 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.model != nil {
 		fields = append(fields, item.FieldModel)
+	}
+	if m.gtin != nil {
+		fields = append(fields, item.FieldGtin)
+	}
+	if m.mpn != nil {
+		fields = append(fields, item.FieldMpn)
+	}
+	if m.condition != nil {
+		fields = append(fields, item.FieldCondition)
+	}
+	if m.slug != nil {
+		fields = append(fields, item.FieldSlug)
+	}
+	if m.short_description != nil {
+		fields = append(fields, item.FieldShortDescription)
+	}
+	if m.meta_title != nil {
+		fields = append(fields, item.FieldMetaTitle)
+	}
+	if m.meta_description != nil {
+		fields = append(fields, item.FieldMetaDescription)
+	}
+	if m.country_of_origin != nil {
+		fields = append(fields, item.FieldCountryOfOrigin)
+	}
+	if m.hs_code != nil {
+		fields = append(fields, item.FieldHsCode)
+	}
+	if m.is_returnable != nil {
+		fields = append(fields, item.FieldIsReturnable)
+	}
+	if m.return_window_days != nil {
+		fields = append(fields, item.FieldReturnWindowDays)
+	}
+	if m.allow_backorder != nil {
+		fields = append(fields, item.FieldAllowBackorder)
+	}
+	if m.is_discontinued != nil {
+		fields = append(fields, item.FieldIsDiscontinued)
 	}
 	if m.units != nil {
 		fields = append(fields, item.FieldUnitID)
@@ -37825,6 +38484,32 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.Manufacturer()
 	case item.FieldModel:
 		return m.Model()
+	case item.FieldGtin:
+		return m.Gtin()
+	case item.FieldMpn:
+		return m.Mpn()
+	case item.FieldCondition:
+		return m.Condition()
+	case item.FieldSlug:
+		return m.Slug()
+	case item.FieldShortDescription:
+		return m.ShortDescription()
+	case item.FieldMetaTitle:
+		return m.MetaTitle()
+	case item.FieldMetaDescription:
+		return m.MetaDescription()
+	case item.FieldCountryOfOrigin:
+		return m.CountryOfOrigin()
+	case item.FieldHsCode:
+		return m.HsCode()
+	case item.FieldIsReturnable:
+		return m.IsReturnable()
+	case item.FieldReturnWindowDays:
+		return m.ReturnWindowDays()
+	case item.FieldAllowBackorder:
+		return m.AllowBackorder()
+	case item.FieldIsDiscontinued:
+		return m.IsDiscontinued()
 	case item.FieldUnitID:
 		return m.UnitID()
 	case item.FieldType:
@@ -37932,6 +38617,32 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldManufacturer(ctx)
 	case item.FieldModel:
 		return m.OldModel(ctx)
+	case item.FieldGtin:
+		return m.OldGtin(ctx)
+	case item.FieldMpn:
+		return m.OldMpn(ctx)
+	case item.FieldCondition:
+		return m.OldCondition(ctx)
+	case item.FieldSlug:
+		return m.OldSlug(ctx)
+	case item.FieldShortDescription:
+		return m.OldShortDescription(ctx)
+	case item.FieldMetaTitle:
+		return m.OldMetaTitle(ctx)
+	case item.FieldMetaDescription:
+		return m.OldMetaDescription(ctx)
+	case item.FieldCountryOfOrigin:
+		return m.OldCountryOfOrigin(ctx)
+	case item.FieldHsCode:
+		return m.OldHsCode(ctx)
+	case item.FieldIsReturnable:
+		return m.OldIsReturnable(ctx)
+	case item.FieldReturnWindowDays:
+		return m.OldReturnWindowDays(ctx)
+	case item.FieldAllowBackorder:
+		return m.OldAllowBackorder(ctx)
+	case item.FieldIsDiscontinued:
+		return m.OldIsDiscontinued(ctx)
 	case item.FieldUnitID:
 		return m.OldUnitID(ctx)
 	case item.FieldType:
@@ -38078,6 +38789,97 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetModel(v)
+		return nil
+	case item.FieldGtin:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGtin(v)
+		return nil
+	case item.FieldMpn:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMpn(v)
+		return nil
+	case item.FieldCondition:
+		v, ok := value.(item.Condition)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCondition(v)
+		return nil
+	case item.FieldSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlug(v)
+		return nil
+	case item.FieldShortDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShortDescription(v)
+		return nil
+	case item.FieldMetaTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetaTitle(v)
+		return nil
+	case item.FieldMetaDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetaDescription(v)
+		return nil
+	case item.FieldCountryOfOrigin:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountryOfOrigin(v)
+		return nil
+	case item.FieldHsCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHsCode(v)
+		return nil
+	case item.FieldIsReturnable:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsReturnable(v)
+		return nil
+	case item.FieldReturnWindowDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReturnWindowDays(v)
+		return nil
+	case item.FieldAllowBackorder:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowBackorder(v)
+		return nil
+	case item.FieldIsDiscontinued:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsDiscontinued(v)
 		return nil
 	case item.FieldUnitID:
 		v, ok := value.(uuid.UUID)
@@ -38374,6 +39176,9 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ItemMutation) AddedFields() []string {
 	var fields []string
+	if m.addreturn_window_days != nil {
+		fields = append(fields, item.FieldReturnWindowDays)
+	}
 	if m.addmax_adults != nil {
 		fields = append(fields, item.FieldMaxAdults)
 	}
@@ -38427,6 +39232,8 @@ func (m *ItemMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case item.FieldReturnWindowDays:
+		return m.AddedReturnWindowDays()
 	case item.FieldMaxAdults:
 		return m.AddedMaxAdults()
 	case item.FieldMaxChildren:
@@ -38466,6 +39273,13 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ItemMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case item.FieldReturnWindowDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReturnWindowDays(v)
+		return nil
 	case item.FieldMaxAdults:
 		v, ok := value.(int)
 		if !ok {
@@ -38594,6 +39408,33 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldModel) {
 		fields = append(fields, item.FieldModel)
 	}
+	if m.FieldCleared(item.FieldGtin) {
+		fields = append(fields, item.FieldGtin)
+	}
+	if m.FieldCleared(item.FieldMpn) {
+		fields = append(fields, item.FieldMpn)
+	}
+	if m.FieldCleared(item.FieldSlug) {
+		fields = append(fields, item.FieldSlug)
+	}
+	if m.FieldCleared(item.FieldShortDescription) {
+		fields = append(fields, item.FieldShortDescription)
+	}
+	if m.FieldCleared(item.FieldMetaTitle) {
+		fields = append(fields, item.FieldMetaTitle)
+	}
+	if m.FieldCleared(item.FieldMetaDescription) {
+		fields = append(fields, item.FieldMetaDescription)
+	}
+	if m.FieldCleared(item.FieldCountryOfOrigin) {
+		fields = append(fields, item.FieldCountryOfOrigin)
+	}
+	if m.FieldCleared(item.FieldHsCode) {
+		fields = append(fields, item.FieldHsCode)
+	}
+	if m.FieldCleared(item.FieldReturnWindowDays) {
+		fields = append(fields, item.FieldReturnWindowDays)
+	}
 	if m.FieldCleared(item.FieldUnitID) {
 		fields = append(fields, item.FieldUnitID)
 	}
@@ -38703,6 +39544,33 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldModel:
 		m.ClearModel()
+		return nil
+	case item.FieldGtin:
+		m.ClearGtin()
+		return nil
+	case item.FieldMpn:
+		m.ClearMpn()
+		return nil
+	case item.FieldSlug:
+		m.ClearSlug()
+		return nil
+	case item.FieldShortDescription:
+		m.ClearShortDescription()
+		return nil
+	case item.FieldMetaTitle:
+		m.ClearMetaTitle()
+		return nil
+	case item.FieldMetaDescription:
+		m.ClearMetaDescription()
+		return nil
+	case item.FieldCountryOfOrigin:
+		m.ClearCountryOfOrigin()
+		return nil
+	case item.FieldHsCode:
+		m.ClearHsCode()
+		return nil
+	case item.FieldReturnWindowDays:
+		m.ClearReturnWindowDays()
 		return nil
 	case item.FieldUnitID:
 		m.ClearUnitID()
@@ -38816,6 +39684,45 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldModel:
 		m.ResetModel()
+		return nil
+	case item.FieldGtin:
+		m.ResetGtin()
+		return nil
+	case item.FieldMpn:
+		m.ResetMpn()
+		return nil
+	case item.FieldCondition:
+		m.ResetCondition()
+		return nil
+	case item.FieldSlug:
+		m.ResetSlug()
+		return nil
+	case item.FieldShortDescription:
+		m.ResetShortDescription()
+		return nil
+	case item.FieldMetaTitle:
+		m.ResetMetaTitle()
+		return nil
+	case item.FieldMetaDescription:
+		m.ResetMetaDescription()
+		return nil
+	case item.FieldCountryOfOrigin:
+		m.ResetCountryOfOrigin()
+		return nil
+	case item.FieldHsCode:
+		m.ResetHsCode()
+		return nil
+	case item.FieldIsReturnable:
+		m.ResetIsReturnable()
+		return nil
+	case item.FieldReturnWindowDays:
+		m.ResetReturnWindowDays()
+		return nil
+	case item.FieldAllowBackorder:
+		m.ResetAllowBackorder()
+		return nil
+	case item.FieldIsDiscontinued:
+		m.ResetIsDiscontinued()
 		return nil
 	case item.FieldUnitID:
 		m.ResetUnitID()
