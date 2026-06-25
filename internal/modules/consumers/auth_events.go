@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	sharedevents "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
@@ -28,13 +29,15 @@ type AuthEventsConsumer struct {
 	log     *zap.Logger
 	rbacSvc *rbac.Service
 	orm     *ent.Client
+	cache   *sharedcache.Aside
 }
 
-func NewAuthEventsConsumer(log *zap.Logger, rbacSvc *rbac.Service, orm *ent.Client) *AuthEventsConsumer {
+func NewAuthEventsConsumer(log *zap.Logger, rbacSvc *rbac.Service, orm *ent.Client, cache *sharedcache.Aside) *AuthEventsConsumer {
 	return &AuthEventsConsumer{
 		log:     log.Named("consumers.auth_events"),
 		rbacSvc: rbacSvc,
 		orm:     orm,
+		cache:   cache,
 	}
 }
 
@@ -71,6 +74,11 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 	subs := []sub{
 		{"auth.user.created", "inv-auth-user-created", c.handleUserCreated},
 		{"auth.user.updated", "inv-auth-user-updated", c.handleUserUpdated},
+		// Branding cache invalidation: tenant edits in auth must drop the cached tenant:{slug}
+		// entry, otherwise document generation keeps serving stale company name/address/KRA PIN
+		// for up to the 6h TTL.
+		{"auth.tenant.updated", "inv-auth-tenant-updated", c.handleTenantChanged},
+		{"auth.tenant.created", "inv-auth-tenant-created", c.handleTenantChanged},
 	}
 
 	for _, s := range subs {
@@ -99,8 +107,8 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 		)
 	}
 
-	c.log.Info("auth user event subscriptions active",
-		zap.String("subjects", "auth.user.created, auth.user.updated"))
+	c.log.Info("auth event subscriptions active",
+		zap.String("subjects", "auth.user.created, auth.user.updated, auth.tenant.created, auth.tenant.updated"))
 	return nil
 }
 
@@ -155,6 +163,22 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	c.log.Info("user synced from auth.user.updated",
 		zap.String("user_id", userID.String()),
 		zap.String("tenant_id", evt.TenantID.String()))
+	return nil
+}
+
+// handleTenantChanged invalidates the cached tenant branding (tenant:{slug}) when a tenant's
+// profile changes in auth, so generated documents pick up the new company name / address / KRA PIN
+// immediately instead of serving the 6h-TTL cached copy.
+func (c *AuthEventsConsumer) handleTenantChanged(ctx context.Context, evt *sharedevents.Event) error {
+	if c.cache == nil {
+		return nil
+	}
+	slug, _ := evt.Payload["slug"].(string)
+	if slug == "" {
+		return nil
+	}
+	c.cache.Invalidate(ctx, sharedcache.TenantCacheKey(slug))
+	c.log.Info("invalidated tenant branding cache on auth.tenant change", zap.String("slug", slug))
 	return nil
 }
 
