@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -82,6 +84,10 @@ type ItemDTO struct {
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
 	HasVariants bool         `json:"has_variants"`
 	Variants    []VariantDTO `json:"variants,omitempty"`
+	// Images surfaces the item's IMAGE assets (multi-image gallery). Populated when the
+	// `assets` edge is eager-loaded; primary first. ImageURL above remains the primary
+	// image URL for backward compatibility with single-image clients.
+	Images []ItemImageDTO `json:"images,omitempty"`
 	// Extended fields for POS, logistics, compliance
 	Barcode                 string             `json:"barcode,omitempty"`
 	BarcodeType             string             `json:"barcode_type,omitempty"`
@@ -180,7 +186,8 @@ type Service struct {
 	client       *ent.Client
 	cache        *sharedcache.Aside
 	log          *zap.Logger
-	mediaURLBase string // public base URL for resolving relative /media/ paths
+	mediaURLBase string      // public base URL for resolving relative /media/ paths
+	mediaRoot    string      // filesystem root for persisting uploaded item images (MEDIA_ROOT)
 	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
 }
 
@@ -626,6 +633,40 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		}
 		dto.HasVariants = len(dto.Variants) > 0
 	}
+	// Surface the multi-image gallery when the assets edge has been eager-loaded. Only IMAGE
+	// assets are exposed; primary first, then by display_order. When no explicit image_url is
+	// set on the item, fall back to the primary asset URL so legacy single-image reads still work.
+	if assets, err := i.Edges.AssetsOrErr(); err == nil {
+		imgs := make([]ItemImageDTO, 0, len(assets))
+		for _, a := range assets {
+			if a.AssetType != AssetTypeImage {
+				continue
+			}
+			imgs = append(imgs, s.mapAssetToDTO(a))
+		}
+		// Stable order: primary first, then display_order, then created_at.
+		sort.SliceStable(imgs, func(x, y int) bool {
+			if imgs[x].IsPrimary != imgs[y].IsPrimary {
+				return imgs[x].IsPrimary
+			}
+			if imgs[x].DisplayOrder != imgs[y].DisplayOrder {
+				return imgs[x].DisplayOrder < imgs[y].DisplayOrder
+			}
+			return imgs[x].CreatedAt.Before(imgs[y].CreatedAt)
+		})
+		dto.Images = imgs
+		if dto.ImageURL == "" && len(imgs) > 0 {
+			for _, im := range imgs {
+				if im.IsPrimary {
+					dto.ImageURL = im.URL
+					break
+				}
+			}
+			if dto.ImageURL == "" {
+				dto.ImageURL = imgs[0].URL
+			}
+		}
+	}
 	return dto
 }
 
@@ -831,6 +872,11 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		return []ItemDTO{}, 0, nil
 	}
 	listQuery := buildQuery().Order(ent.Asc(item.FieldSku)).Limit(limit).Offset(offset)
+	// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
+	listQuery = listQuery.WithAssets(func(aq *ent.ItemAssetQuery) {
+		aq.Where(itemasset.AssetType(AssetTypeImage)).
+			Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
+	})
 	if includeVariants(ctx) {
 		// Eager-load active variants so mapToDTO can surface them inline.
 		listQuery = listQuery.WithVariants(func(vq *ent.ItemVariantQuery) {

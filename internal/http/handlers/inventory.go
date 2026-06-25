@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,11 +19,11 @@ import (
 	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
-	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
-	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
@@ -51,6 +52,12 @@ type ItemsServicer interface {
 	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
 	ListBrands(ctx context.Context, tenantID uuid.UUID) ([]items.BrandDTO, error)
 	CreateBrand(ctx context.Context, tenantID uuid.UUID, dto items.BrandDTO) (*items.BrandDTO, error)
+	// Multi-image (ItemAsset) management.
+	CountItemImages(ctx context.Context, tenantID, itemID uuid.UUID) (int, error)
+	ListItemImages(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.ItemImageDTO, error)
+	AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, file multipart.File, header *multipart.FileHeader, setPrimary bool) (*items.ItemImageDTO, error)
+	UpdateItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID, in items.UpdateItemImageInput) (*items.ItemImageDTO, error)
+	DeleteItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID) error
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.
@@ -199,6 +206,14 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
+
+		// Item images (multi-image gallery via ItemAsset). List is open (read); mutations
+		// require items.change. Upload additionally enforces the multi-image feature + per-item
+		// image cap inside the handler (returns 403/402 on lock/overage).
+		inv.Get("/items/{itemID}/images", h.ListItemImages)
+		inv.With(perm(rbac.PermItemsChange)).Post("/items/{itemID}/images", h.UploadItemImage)
+		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{itemID}/images/{imageID}", h.UpdateItemImage)
+		inv.With(perm(rbac.PermItemsChange)).Delete("/items/{itemID}/images/{imageID}", h.DeleteItemImage)
 
 		// Availability
 		inv.Post("/availability", h.BulkAvailability)

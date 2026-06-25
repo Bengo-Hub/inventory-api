@@ -161,6 +161,7 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
 	itemsSvc.SetCache(cacheAside)
+	itemsSvc.SetMediaRoot(cfg.Media.Root) // persist multi-image uploads under MEDIA_ROOT
 	// Treasury is the source of truth for tax codes/rates; resolve + cache VAT rates for item
 	// enrichment, and expose the cached tax-code list to inventory-ui for the tax-code picker.
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)
