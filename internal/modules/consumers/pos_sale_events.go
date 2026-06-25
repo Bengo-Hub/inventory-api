@@ -190,10 +190,10 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 	var consumptionItems []stock.ConsumptionItem
 
 	for _, si := range saleItems {
-		// Look up the item to determine its type
-		itm, err := c.orm.Item.Query().
-			Where(item.TenantID(tenantID), item.Sku(si.SKU), item.IsActive(true)).
-			Only(ctx)
+		// Look up the item to determine its type. A variant SKU is NOT on Item (it lives on
+		// ItemVariant with its own sku) — ResolveItemBySKU falls back to ItemVariant→parent
+		// so variant sales deduct the PARENT item's stock/BOM instead of silently skipping.
+		itm, err := c.stockSvc.ResolveItemBySKU(ctx, tenantID, si.SKU)
 		if err != nil {
 			if ent.IsNotFound(err) {
 				c.log.Warn("pos sale events: item not found, skipping",
@@ -204,18 +204,21 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 			}
 			return fmt.Errorf("query item sku=%s: %w", si.SKU, err)
 		}
+		// Variants share the parent's recipe + balance, so explode/consume against the
+		// PARENT item's SKU (itm.Sku), not the raw variant SKU.
+		stockSKU := itm.Sku
 
 		if itm.Type == item.TypeRECIPE {
 			// BOM explosion: look up recipe by SKU, get ingredients, multiply by quantity
-			ingredients, err := c.explodeBOM(ctx, tenantID, si.SKU, si.Quantity)
+			ingredients, err := c.explodeBOM(ctx, tenantID, stockSKU, si.Quantity)
 			if err != nil {
 				c.log.Error("pos sale events: BOM explosion failed, falling back to direct consumption",
 					zap.Error(err),
-					zap.String("sku", si.SKU),
+					zap.String("sku", stockSKU),
 				)
 				// Fall back to direct consumption of the recipe item itself
 				consumptionItems = append(consumptionItems, stock.ConsumptionItem{
-					SKU:      si.SKU,
+					SKU:      stockSKU,
 					Quantity: si.Quantity,
 				})
 				continue
@@ -224,7 +227,7 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		} else {
 			// Direct consumption for non-RECIPE items
 			consumptionItems = append(consumptionItems, stock.ConsumptionItem{
-				SKU:      si.SKU,
+				SKU:      stockSKU,
 				Quantity: si.Quantity,
 			})
 		}
@@ -319,15 +322,18 @@ func (c *POSSaleEventsConsumer) markSerialsSold(ctx context.Context, tenantID, i
 // a RECIPE explodes into its ingredient BOM; anything else (or unknown) consumes directly.
 // Used for modifier-option draws so modifier ingredients are no longer leaked.
 func (c *POSSaleEventsConsumer) resolveConsumption(ctx context.Context, tenantID uuid.UUID, sku string, qty float64) []stock.ConsumptionItem {
-	itm, err := c.orm.Item.Query().
-		Where(item.TenantID(tenantID), item.Sku(sku), item.IsActive(true)).
-		Only(ctx)
-	if err == nil && itm.Type == item.TypeRECIPE {
-		if ings, e := c.explodeBOM(ctx, tenantID, sku, qty); e == nil {
+	// Resolve via Item-then-variant so a modifier option that points at a variant SKU
+	// still deducts the parent item's stock/BOM. Deduct against the resolved parent SKU.
+	itm, err := c.stockSvc.ResolveItemBySKU(ctx, tenantID, sku)
+	if err != nil {
+		return []stock.ConsumptionItem{{SKU: sku, Quantity: qty}}
+	}
+	if itm.Type == item.TypeRECIPE {
+		if ings, e := c.explodeBOM(ctx, tenantID, itm.Sku, qty); e == nil {
 			return ings
 		}
 	}
-	return []stock.ConsumptionItem{{SKU: sku, Quantity: qty}}
+	return []stock.ConsumptionItem{{SKU: itm.Sku, Quantity: qty}}
 }
 
 // explodeBOM looks up a recipe by SKU and returns the ingredient consumption items

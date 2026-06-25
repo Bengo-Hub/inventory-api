@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
@@ -38,6 +39,20 @@ type ReservationRequest struct {
 type ReservationItem struct {
 	SKU      string  `json:"sku"`
 	Quantity float64 `json:"quantity"`
+	// Modifiers are selected modifier options on this line whose stock must also be
+	// reserved (e.g. "Extra Cheese"). Mirrors the pos.sale.finalized modifiers contract
+	// so ordering S2S reservations deduct modifier stock the same way POS sales do.
+	Modifiers []ModifierLine `json:"modifiers,omitempty"`
+}
+
+// ModifierLine is a selected modifier option carried on a reservation/consumption line.
+// The caller may send the inventory modifier-option id (preferred — inventory owns the
+// option→SKU mapping) and/or a direct sku. Quantity is per single unit of the parent
+// line and is scaled by the line quantity.
+type ModifierLine struct {
+	SKU                       string  `json:"sku,omitempty"`
+	InventoryModifierOptionID string  `json:"inventory_modifier_option_id,omitempty"`
+	Quantity                  float64 `json:"quantity,omitempty"`
 }
 
 // ReservationResponse matches the ordering-backend client DTO.
@@ -75,6 +90,9 @@ type ConsumptionRequest struct {
 type ConsumptionItem struct {
 	SKU      string  `json:"sku"`
 	Quantity float64 `json:"quantity"`
+	// Modifiers are selected modifier options whose stock must also be consumed.
+	// Mirrors the pos.sale.finalized modifiers contract.
+	Modifiers []ModifierLine `json:"modifiers,omitempty"`
 }
 
 // ConsumptionResponse matches the ordering-backend client DTO.
@@ -551,6 +569,112 @@ func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID 
 	return wh.ID, nil
 }
 
+// ResolveItemBySKU resolves a sale/cart SKU to its stock-bearing parent Item.
+//
+// It looks the SKU up against Item first (the common case). If that misses, it
+// falls back to ItemVariant: a variant carries its OWN sku (unique per item_id)
+// but has NO own InventoryBalance and NO own recipe/BOM — it SHARES the parent
+// Item's stock and BOM. So a variant SKU resolves to its parent Item, and all
+// downstream stock/BOM logic operates on the parent. Returns ent.NotFound when
+// neither an item nor a variant matches.
+func (s *Service) ResolveItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*ent.Item, error) {
+	itm, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(sku), item.IsActive(true)).
+		Only(ctx)
+	if err == nil {
+		return itm, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
+	// Fall back to a variant SKU → parent item. ItemVariant has no tenant_id of its
+	// own (it's keyed by item_id); scope the tenant via the parent Item edge.
+	v, verr := s.client.ItemVariant.Query().
+		Where(
+			itemvariant.Sku(sku),
+			itemvariant.IsActive(true),
+			itemvariant.HasItemWith(item.TenantID(tenantID)),
+		).
+		WithItem().
+		Only(ctx)
+	if verr != nil {
+		return nil, err // surface the original item-not-found
+	}
+	if v.Edges.Item != nil {
+		return v.Edges.Item, nil
+	}
+	return s.client.Item.Get(ctx, v.ItemID)
+}
+
+// resolveStockSKU maps a sale/cart SKU to the SKU that actually keys stock/BOM:
+// the SKU itself for a real Item, or the PARENT item's SKU for a variant SKU.
+// Variants share the parent's recipe + balance, so BOM explosion and balance
+// lookups must run against the parent SKU. Unknown SKUs pass through unchanged
+// so existing "item not found" handling downstream is preserved.
+func (s *Service) resolveStockSKU(ctx context.Context, tenantID uuid.UUID, sku string) string {
+	// Fast path: a real item with this SKU needs no remapping.
+	exists, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(sku)).
+		Exist(ctx)
+	if err == nil && exists {
+		return sku
+	}
+	v, verr := s.client.ItemVariant.Query().
+		Where(
+			itemvariant.Sku(sku),
+			itemvariant.IsActive(true),
+			itemvariant.HasItemWith(item.TenantID(tenantID)),
+		).
+		WithItem().
+		Only(ctx)
+	if verr != nil {
+		return sku
+	}
+	if v.Edges.Item != nil {
+		return v.Edges.Item.Sku
+	}
+	if parent, perr := s.client.Item.Get(ctx, v.ItemID); perr == nil {
+		return parent.Sku
+	}
+	return sku
+}
+
+// modifierConsumption expands the selected modifier options on a line into stock-consumption
+// lines, scaled by the line quantity. Each modifier option resolves to a consumable SKU (its
+// own sku, or — when only the option id is sent — looked up from the ModifierOption table,
+// since inventory owns the option→SKU mapping). The resolved SKU is then run through the same
+// variant→parent + BOM explosion as any item, so a modifier that is itself a recipe explodes.
+// Best-effort per modifier: an option without a SKU (price-only, e.g. "No Sauce") is skipped.
+func (s *Service) modifierConsumption(ctx context.Context, tenantID uuid.UUID, mods []ModifierLine, lineQty float64) []explodedIngredient {
+	var out []explodedIngredient
+	for _, m := range mods {
+		sku := m.SKU
+		if sku == "" && m.InventoryModifierOptionID != "" {
+			if oid, perr := uuid.Parse(m.InventoryModifierOptionID); perr == nil {
+				if opt, oerr := s.client.ModifierOption.Get(ctx, oid); oerr == nil {
+					sku = opt.Sku
+				}
+			}
+		}
+		if sku == "" {
+			continue
+		}
+		// One modifier application per sold unit of the parent line.
+		perUnit := m.Quantity
+		if perUnit <= 0 {
+			perUnit = 1
+		}
+		qty := perUnit * lineQty
+		stockSKU := s.resolveStockSKU(ctx, tenantID, sku)
+		if ings, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, qty); isBOM {
+			out = append(out, ings...)
+		} else {
+			out = append(out, explodedIngredient{SKU: stockSKU, Quantity: qty})
+		}
+	}
+	return out
+}
+
 // explodedIngredient holds a single resolved ingredient SKU + quantity.
 type explodedIngredient struct {
 	SKU      string
@@ -561,6 +685,9 @@ type explodedIngredient struct {
 // If the SKU has no recipe or the recipe has no ingredients, returns the original SKU × qty.
 // portionsRequested is the number of portions of the menu item to produce.
 func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string, portionsRequested float64) ([]explodedIngredient, bool) {
+	// A variant SKU has no recipe of its own — it shares the parent item's BOM. Resolve
+	// to the parent's SKU so the recipe lookup hits (a real-item SKU passes through).
+	sku = s.resolveStockSKU(ctx, tenantID, sku)
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.Sku(sku), recipe.IsActive(true)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
@@ -587,6 +714,52 @@ func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string
 		ingredients = append(ingredients, explodedIngredient{SKU: ing.ItemSku, Quantity: qty})
 	}
 	return ingredients, true
+}
+
+// reserveIngredient reserves a single resolved ingredient SKU in a warehouse, decrementing
+// available + incrementing reserved (capped at on-hand). Returns the qty actually reserved,
+// the available qty seen, and whether the request was fully satisfied. Shared by the parent
+// line and modifier reservation so both go through identical balance handling.
+func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, whID uuid.UUID, ing explodedIngredient) (reservedQty, availableQty float64, fullyReserved bool, err error) {
+	itm, qerr := tx.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(ing.SKU), item.IsActive(true)).
+		Only(ctx)
+	if qerr != nil {
+		s.log.Warn("ingredient item not found during reservation",
+			zap.String("sku", ing.SKU), zap.Error(qerr))
+		return 0, 0, false, nil
+	}
+
+	bal, berr := tx.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.ItemID(itm.ID),
+			inventorybalance.WarehouseID(whID),
+		).
+		First(ctx)
+	if berr != nil {
+		if ent.IsNotFound(berr) {
+			return 0, 0, false, nil
+		}
+		return 0, 0, false, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, berr)
+	}
+
+	availableQty = bal.Available
+	reserveQty := ing.Quantity
+	fullyReserved = true
+	if reserveQty > availableQty {
+		reserveQty = availableQty
+		fullyReserved = false
+	}
+	if reserveQty > 0 {
+		if _, uerr := tx.InventoryBalance.UpdateOne(bal).
+			SetAvailable(bal.Available - reserveQty).
+			SetReserved(bal.Reserved + reserveQty).
+			Save(ctx); uerr != nil {
+			return 0, 0, false, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, uerr)
+		}
+	}
+	return reserveQty, availableQty, fullyReserved, nil
 }
 
 // CreateReservation reserves stock for an order within a transaction.
@@ -620,60 +793,25 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 	reservedItems := make([]entschema.ReservedItemJSON, 0, len(req.Items))
 
 	for _, ri := range req.Items {
-		// Expand recipe/BOM into raw ingredients before reserving.
-		// If the SKU has no recipe, falls back to direct reservation.
-		ingredientsToReserve, isBOM := s.explodeBOM(ctx, tenantID, ri.SKU, ri.Quantity)
+		// Resolve a variant SKU to its stock-bearing parent SKU (real items pass through),
+		// then expand recipe/BOM into raw ingredients before reserving. If the SKU has no
+		// recipe, falls back to a direct reservation against the resolved (parent) SKU.
+		stockSKU := s.resolveStockSKU(ctx, tenantID, ri.SKU)
+		ingredientsToReserve, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, ri.Quantity)
 		if !isBOM {
-			ingredientsToReserve = []explodedIngredient{{SKU: ri.SKU, Quantity: ri.Quantity}}
+			ingredientsToReserve = []explodedIngredient{{SKU: stockSKU, Quantity: ri.Quantity}}
 		}
 
 		totalReservedQty := 0.0
 		fullyReserved := true
 
 		for _, ing := range ingredientsToReserve {
-			itm, err := tx.Item.Query().
-				Where(item.TenantID(tenantID), item.Sku(ing.SKU), item.IsActive(true)).
-				Only(ctx)
-			if err != nil {
-				s.log.Warn("ingredient item not found during BOM explosion",
-					zap.String("sku", ing.SKU), zap.Error(err))
+			reserveQty, availableQty, ingFully, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ing)
+			if rerr != nil {
+				return nil, rerr
+			}
+			if !ingFully {
 				fullyReserved = false
-				continue
-			}
-
-			bal, err := tx.InventoryBalance.Query().
-				Where(
-					inventorybalance.TenantID(tenantID),
-					inventorybalance.ItemID(itm.ID),
-					inventorybalance.WarehouseID(whID),
-				).
-				First(ctx)
-
-			var availableQty float64
-			if err != nil {
-				if ent.IsNotFound(err) {
-					availableQty = 0
-				} else {
-					return nil, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, err)
-				}
-			} else {
-				availableQty = bal.Available
-			}
-
-			reserveQty := ing.Quantity
-			if reserveQty > availableQty {
-				reserveQty = availableQty
-				fullyReserved = false
-			}
-
-			if bal != nil && reserveQty > 0 {
-				_, err = tx.InventoryBalance.UpdateOne(bal).
-					SetAvailable(bal.Available - reserveQty).
-					SetReserved(bal.Reserved + reserveQty).
-					Save(ctx)
-				if err != nil {
-					return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, err)
-				}
 			}
 
 			// For BOM items, only count ingredient reservations proportionally.
@@ -693,6 +831,26 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 					IsFullyReserved: reserveQty >= ing.Quantity,
 				})
 			}
+		}
+
+		// Reserve selected modifier stock (e.g. "Extra Cheese") as additional ingredient
+		// lines, so ordering S2S reservations deduct modifier stock the same way POS sales
+		// do. Recorded as their own reserved-item entries for audit/release.
+		for _, ming := range s.modifierConsumption(ctx, tenantID, ri.Modifiers, ri.Quantity) {
+			reserveQty, availableQty, ingFully, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ming)
+			if rerr != nil {
+				return nil, rerr
+			}
+			if !ingFully {
+				fullyReserved = false
+			}
+			reservedItems = append(reservedItems, entschema.ReservedItemJSON{
+				SKU:             ming.SKU,
+				RequestedQty:    ming.Quantity,
+				ReservedQty:     reserveQty,
+				AvailableQty:    availableQty,
+				IsFullyReserved: reserveQty >= ming.Quantity,
+			})
 		}
 
 		if !isBOM {
@@ -1011,13 +1169,21 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 	}
 	flattened := make([]consumeLine, 0, len(req.Items))
 	for _, ci := range req.Items {
-		ingredients, isBOM := s.explodeBOM(ctx, tenantID, ci.SKU, ci.Quantity)
+		// Map a variant SKU to its parent (real items unchanged) so both the BOM
+		// explosion and the direct fallback deduct the parent item's balance.
+		stockSKU := s.resolveStockSKU(ctx, tenantID, ci.SKU)
+		ingredients, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, ci.Quantity)
 		if !isBOM {
-			flattened = append(flattened, consumeLine{sku: ci.SKU, qty: ci.Quantity})
-			continue
+			flattened = append(flattened, consumeLine{sku: stockSKU, qty: ci.Quantity})
+		} else {
+			for _, ing := range ingredients {
+				flattened = append(flattened, consumeLine{sku: ing.SKU, qty: ing.Quantity})
+			}
 		}
-		for _, ing := range ingredients {
-			flattened = append(flattened, consumeLine{sku: ing.SKU, qty: ing.Quantity})
+		// Consume selected modifier stock as additional lines (mirrors POS sale backflush
+		// and the reservation path), so ordering S2S consumption deducts modifier stock.
+		for _, ming := range s.modifierConsumption(ctx, tenantID, ci.Modifiers, ci.Quantity) {
+			flattened = append(flattened, consumeLine{sku: ming.SKU, qty: ming.Quantity})
 		}
 	}
 
