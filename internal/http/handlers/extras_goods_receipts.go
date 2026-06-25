@@ -21,6 +21,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
 // ─── Goods Receipt Notes (GRN) + 3-way match (procurement) ──────────────────
@@ -232,6 +233,11 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		return
 	}
 	grnNumber := "GRN-" + strings.ToUpper(uuid.New().String()[:8])
+	if h.docSvc != nil {
+		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeGRN); derr == nil && n != "" {
+			grnNumber = n
+		}
+	}
 	warehouseID := po.WarehouseID
 	if req.WarehouseID != nil {
 		warehouseID = *req.WarehouseID

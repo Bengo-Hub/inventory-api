@@ -192,4 +192,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Per-unit serial registry (read)
 	h.registerSerialRoutes(r)
+
+	// Document numbering settings (PO/GRN/... sequence config)
+	h.registerDocumentSequenceRoutes(r, perm, rbac.PermSettingsManage)
 }

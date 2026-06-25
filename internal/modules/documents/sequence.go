@@ -82,6 +82,78 @@ func (s *SequenceService) GenerateNumber(ctx context.Context, tenantID uuid.UUID
 	return "", fmt.Errorf("generate document number after retries: %w", lastErr)
 }
 
+// SeqConfigDTO is the editable + derived view of a document-sequence configuration.
+type SeqConfigDTO struct {
+	DocType    string `json:"doc_type"`
+	Prefix     string `json:"prefix"`
+	Separator  string `json:"separator"`
+	DateFormat string `json:"date_format"`
+	Padding    int    `json:"padding"`
+	ResetFreq  string `json:"reset_freq"`
+	CurrentVal int64  `json:"current_val"`
+	NextNumber string `json:"next_number"`
+}
+
+// configuredDocTypes is the set of inventory document types that carry a configurable sequence.
+var configuredDocTypes = []string{DocTypePurchaseOrder, DocTypeGRN, DocTypePurchaseReturn, DocTypeEventTicket}
+
+func toSeqDTO(row *ent.DocumentSequence) SeqConfigDTO {
+	return SeqConfigDTO{
+		DocType: row.DocType, Prefix: row.Prefix, Separator: row.Separator,
+		DateFormat: row.DateFormat, Padding: row.Padding, ResetFreq: row.ResetFreq,
+		CurrentVal: row.CurrentVal, NextNumber: formatNumber(row, row.CurrentVal+1, time.Now()),
+	}
+}
+
+// ListConfigs returns the configuration (auto-seeding defaults) for every inventory doc type.
+func (s *SequenceService) ListConfigs(ctx context.Context, tenantID uuid.UUID) ([]SeqConfigDTO, error) {
+	out := make([]SeqConfigDTO, 0, len(configuredDocTypes))
+	for _, dt := range configuredDocTypes {
+		row, err := s.getOrCreate(ctx, tenantID, dt)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, toSeqDTO(row))
+	}
+	return out, nil
+}
+
+// PreviewNext returns the next document number without consuming the counter.
+func (s *SequenceService) PreviewNext(ctx context.Context, tenantID uuid.UUID, docType string) (string, error) {
+	row, err := s.getOrCreate(ctx, tenantID, docType)
+	if err != nil {
+		return "", err
+	}
+	return formatNumber(row, row.CurrentVal+1, time.Now()), nil
+}
+
+// UpdateConfig updates the format fields (never the counter) for a doc type's sequence.
+func (s *SequenceService) UpdateConfig(ctx context.Context, tenantID uuid.UUID, docType string, cfg SeqConfigDTO) (SeqConfigDTO, error) {
+	row, err := s.getOrCreate(ctx, tenantID, docType)
+	if err != nil {
+		return SeqConfigDTO{}, err
+	}
+	padding := cfg.Padding
+	if padding <= 0 || padding > 12 {
+		padding = row.Padding
+	}
+	sep := cfg.Separator
+	if sep == "" {
+		sep = "-"
+	}
+	updated, err := s.ent.DocumentSequence.UpdateOneID(row.ID).
+		SetPrefix(strings.TrimSpace(cfg.Prefix)).
+		SetSeparator(sep).
+		SetDateFormat(strings.ToUpper(strings.TrimSpace(cfg.DateFormat))).
+		SetPadding(padding).
+		SetResetFreq(cfg.ResetFreq).
+		Save(ctx)
+	if err != nil {
+		return SeqConfigDTO{}, err
+	}
+	return toSeqDTO(updated), nil
+}
+
 func (s *SequenceService) getOrCreate(ctx context.Context, tenantID uuid.UUID, docType string) (*ent.DocumentSequence, error) {
 	row, err := s.ent.DocumentSequence.Query().
 		Where(entdocseq.TenantID(tenantID), entdocseq.DocType(docType)).
