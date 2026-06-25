@@ -700,7 +700,7 @@ func init() {
 	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
 	goodsreceiptline.DefaultUnitCost = goodsreceiptlineDescUnitCost.Default.(float64)
 	// goodsreceiptlineDescCreatedAt is the schema descriptor for created_at field.
-	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[11].Descriptor()
+	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[13].Descriptor()
 	// goodsreceiptline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goodsreceiptline.DefaultCreatedAt = goodsreceiptlineDescCreatedAt.Default.(func() time.Time)
 	// goodsreceiptlineDescID is the schema descriptor for id field.

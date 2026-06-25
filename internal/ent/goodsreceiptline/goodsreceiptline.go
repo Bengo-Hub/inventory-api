@@ -35,6 +35,10 @@ const (
 	FieldRejectionReason = "rejection_reason"
 	// FieldSerials holds the string denoting the serials field in the database.
 	FieldSerials = "serials"
+	// FieldLotNumber holds the string denoting the lot_number field in the database.
+	FieldLotNumber = "lot_number"
+	// FieldExpiryDate holds the string denoting the expiry_date field in the database.
+	FieldExpiryDate = "expiry_date"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeGoodsReceipt holds the string denoting the goods_receipt edge name in mutations.
@@ -63,6 +67,8 @@ var Columns = []string{
 	FieldUnitCost,
 	FieldRejectionReason,
 	FieldSerials,
+	FieldLotNumber,
+	FieldExpiryDate,
 	FieldCreatedAt,
 }
 
@@ -142,6 +148,16 @@ func ByUnitCost(opts ...sql.OrderTermOption) OrderOption {
 // ByRejectionReason orders the results by the rejection_reason field.
 func ByRejectionReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRejectionReason, opts...).ToFunc()
+}
+
+// ByLotNumber orders the results by the lot_number field.
+func ByLotNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLotNumber, opts...).ToFunc()
+}
+
+// ByExpiryDate orders the results by the expiry_date field.
+func ByExpiryDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryDate, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

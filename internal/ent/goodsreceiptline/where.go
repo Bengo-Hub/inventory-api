@@ -101,6 +101,16 @@ func RejectionReason(v string) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldRejectionReason, v))
 }
 
+// LotNumber applies equality check predicate on the "lot_number" field. It's identical to LotNumberEQ.
+func LotNumber(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldLotNumber, v))
+}
+
+// ExpiryDate applies equality check predicate on the "expiry_date" field. It's identical to ExpiryDateEQ.
+func ExpiryDate(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldExpiryDate, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldCreatedAt, v))
@@ -499,6 +509,131 @@ func SerialsIsNil() predicate.GoodsReceiptLine {
 // SerialsNotNil applies the NotNil predicate on the "serials" field.
 func SerialsNotNil() predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldSerials))
+}
+
+// LotNumberEQ applies the EQ predicate on the "lot_number" field.
+func LotNumberEQ(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldLotNumber, v))
+}
+
+// LotNumberNEQ applies the NEQ predicate on the "lot_number" field.
+func LotNumberNEQ(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldLotNumber, v))
+}
+
+// LotNumberIn applies the In predicate on the "lot_number" field.
+func LotNumberIn(vs ...string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIn(FieldLotNumber, vs...))
+}
+
+// LotNumberNotIn applies the NotIn predicate on the "lot_number" field.
+func LotNumberNotIn(vs ...string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldLotNumber, vs...))
+}
+
+// LotNumberGT applies the GT predicate on the "lot_number" field.
+func LotNumberGT(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGT(FieldLotNumber, v))
+}
+
+// LotNumberGTE applies the GTE predicate on the "lot_number" field.
+func LotNumberGTE(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldLotNumber, v))
+}
+
+// LotNumberLT applies the LT predicate on the "lot_number" field.
+func LotNumberLT(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLT(FieldLotNumber, v))
+}
+
+// LotNumberLTE applies the LTE predicate on the "lot_number" field.
+func LotNumberLTE(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldLotNumber, v))
+}
+
+// LotNumberContains applies the Contains predicate on the "lot_number" field.
+func LotNumberContains(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldContains(FieldLotNumber, v))
+}
+
+// LotNumberHasPrefix applies the HasPrefix predicate on the "lot_number" field.
+func LotNumberHasPrefix(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldHasPrefix(FieldLotNumber, v))
+}
+
+// LotNumberHasSuffix applies the HasSuffix predicate on the "lot_number" field.
+func LotNumberHasSuffix(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldHasSuffix(FieldLotNumber, v))
+}
+
+// LotNumberIsNil applies the IsNil predicate on the "lot_number" field.
+func LotNumberIsNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIsNull(FieldLotNumber))
+}
+
+// LotNumberNotNil applies the NotNil predicate on the "lot_number" field.
+func LotNumberNotNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldLotNumber))
+}
+
+// LotNumberEqualFold applies the EqualFold predicate on the "lot_number" field.
+func LotNumberEqualFold(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEqualFold(FieldLotNumber, v))
+}
+
+// LotNumberContainsFold applies the ContainsFold predicate on the "lot_number" field.
+func LotNumberContainsFold(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldContainsFold(FieldLotNumber, v))
+}
+
+// ExpiryDateEQ applies the EQ predicate on the "expiry_date" field.
+func ExpiryDateEQ(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateNEQ applies the NEQ predicate on the "expiry_date" field.
+func ExpiryDateNEQ(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateIn applies the In predicate on the "expiry_date" field.
+func ExpiryDateIn(vs ...time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateNotIn applies the NotIn predicate on the "expiry_date" field.
+func ExpiryDateNotIn(vs ...time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateGT applies the GT predicate on the "expiry_date" field.
+func ExpiryDateGT(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGT(FieldExpiryDate, v))
+}
+
+// ExpiryDateGTE applies the GTE predicate on the "expiry_date" field.
+func ExpiryDateGTE(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateLT applies the LT predicate on the "expiry_date" field.
+func ExpiryDateLT(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLT(FieldExpiryDate, v))
+}
+
+// ExpiryDateLTE applies the LTE predicate on the "expiry_date" field.
+func ExpiryDateLTE(v time.Time) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateIsNil applies the IsNil predicate on the "expiry_date" field.
+func ExpiryDateIsNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIsNull(FieldExpiryDate))
+}
+
+// ExpiryDateNotNil applies the NotNil predicate on the "expiry_date" field.
+func ExpiryDateNotNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldExpiryDate))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
