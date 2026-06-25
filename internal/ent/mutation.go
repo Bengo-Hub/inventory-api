@@ -33329,6 +33329,7 @@ type InventoryUserMutation struct {
 	tenant_id            *uuid.UUID
 	auth_service_user_id *uuid.UUID
 	email                *string
+	name                 *string
 	status               *string
 	sync_status          *string
 	last_sync_at         *time.Time
@@ -33550,6 +33551,55 @@ func (m *InventoryUserMutation) OldEmail(ctx context.Context) (v string, err err
 // ResetEmail resets all changes to the "email" field.
 func (m *InventoryUserMutation) ResetEmail() {
 	m.email = nil
+}
+
+// SetName sets the "name" field.
+func (m *InventoryUserMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *InventoryUserMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *InventoryUserMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[inventoryuser.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *InventoryUserMutation) NameCleared() bool {
+	_, ok := m.clearedFields[inventoryuser.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *InventoryUserMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, inventoryuser.FieldName)
 }
 
 // SetStatus sets the "status" field.
@@ -33779,7 +33829,7 @@ func (m *InventoryUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryUserMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.tenant_id != nil {
 		fields = append(fields, inventoryuser.FieldTenantID)
 	}
@@ -33788,6 +33838,9 @@ func (m *InventoryUserMutation) Fields() []string {
 	}
 	if m.email != nil {
 		fields = append(fields, inventoryuser.FieldEmail)
+	}
+	if m.name != nil {
+		fields = append(fields, inventoryuser.FieldName)
 	}
 	if m.status != nil {
 		fields = append(fields, inventoryuser.FieldStatus)
@@ -33818,6 +33871,8 @@ func (m *InventoryUserMutation) Field(name string) (ent.Value, bool) {
 		return m.AuthServiceUserID()
 	case inventoryuser.FieldEmail:
 		return m.Email()
+	case inventoryuser.FieldName:
+		return m.Name()
 	case inventoryuser.FieldStatus:
 		return m.Status()
 	case inventoryuser.FieldSyncStatus:
@@ -33843,6 +33898,8 @@ func (m *InventoryUserMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldAuthServiceUserID(ctx)
 	case inventoryuser.FieldEmail:
 		return m.OldEmail(ctx)
+	case inventoryuser.FieldName:
+		return m.OldName(ctx)
 	case inventoryuser.FieldStatus:
 		return m.OldStatus(ctx)
 	case inventoryuser.FieldSyncStatus:
@@ -33882,6 +33939,13 @@ func (m *InventoryUserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEmail(v)
+		return nil
+	case inventoryuser.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	case inventoryuser.FieldStatus:
 		v, ok := value.(string)
@@ -33948,6 +34012,9 @@ func (m *InventoryUserMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *InventoryUserMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(inventoryuser.FieldName) {
+		fields = append(fields, inventoryuser.FieldName)
+	}
 	if m.FieldCleared(inventoryuser.FieldLastSyncAt) {
 		fields = append(fields, inventoryuser.FieldLastSyncAt)
 	}
@@ -33965,6 +34032,9 @@ func (m *InventoryUserMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *InventoryUserMutation) ClearField(name string) error {
 	switch name {
+	case inventoryuser.FieldName:
+		m.ClearName()
+		return nil
 	case inventoryuser.FieldLastSyncAt:
 		m.ClearLastSyncAt()
 		return nil
@@ -33984,6 +34054,9 @@ func (m *InventoryUserMutation) ResetField(name string) error {
 		return nil
 	case inventoryuser.FieldEmail:
 		m.ResetEmail()
+		return nil
+	case inventoryuser.FieldName:
+		m.ResetName()
 		return nil
 	case inventoryuser.FieldStatus:
 		m.ResetStatus()

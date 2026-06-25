@@ -71,6 +71,26 @@ func (_u *InventoryUserUpdate) SetNillableEmail(v *string) *InventoryUserUpdate 
 	return _u
 }
 
+// SetName sets the "name" field.
+func (_u *InventoryUserUpdate) SetName(v string) *InventoryUserUpdate {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *InventoryUserUpdate) SetNillableName(v *string) *InventoryUserUpdate {
+	if v != nil {
+		_u.SetName(*v)
+	}
+	return _u
+}
+
+// ClearName clears the value of the "name" field.
+func (_u *InventoryUserUpdate) ClearName() *InventoryUserUpdate {
+	_u.mutation.ClearName()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *InventoryUserUpdate) SetStatus(v string) *InventoryUserUpdate {
 	_u.mutation.SetStatus(v)
@@ -197,6 +217,12 @@ func (_u *InventoryUserUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(inventoryuser.FieldEmail, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(inventoryuser.FieldName, field.TypeString, value)
+	}
+	if _u.mutation.NameCleared() {
+		_spec.ClearField(inventoryuser.FieldName, field.TypeString)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(inventoryuser.FieldStatus, field.TypeString, value)
 	}
@@ -271,6 +297,26 @@ func (_u *InventoryUserUpdateOne) SetNillableEmail(v *string) *InventoryUserUpda
 	if v != nil {
 		_u.SetEmail(*v)
 	}
+	return _u
+}
+
+// SetName sets the "name" field.
+func (_u *InventoryUserUpdateOne) SetName(v string) *InventoryUserUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *InventoryUserUpdateOne) SetNillableName(v *string) *InventoryUserUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
+	}
+	return _u
+}
+
+// ClearName clears the value of the "name" field.
+func (_u *InventoryUserUpdateOne) ClearName() *InventoryUserUpdateOne {
+	_u.mutation.ClearName()
 	return _u
 }
 
@@ -429,6 +475,12 @@ func (_u *InventoryUserUpdateOne) sqlSave(ctx context.Context) (_node *Inventory
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(inventoryuser.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(inventoryuser.FieldName, field.TypeString, value)
+	}
+	if _u.mutation.NameCleared() {
+		_spec.ClearField(inventoryuser.FieldName, field.TypeString)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(inventoryuser.FieldStatus, field.TypeString, value)

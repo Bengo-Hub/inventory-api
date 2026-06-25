@@ -107,6 +107,7 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharedevents.Event) error {
 	userIDStr, _ := evt.Payload["user_id"].(string)
 	email, _ := evt.Payload["email"].(string)
+	name, _ := evt.Payload["full_name"].(string)
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
@@ -116,7 +117,7 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 		return fmt.Errorf("missing tenant_id in auth.user.created event")
 	}
 
-	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email); err != nil {
+	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
 		return fmt.Errorf("sync user from auth.user.created: %w", err)
 	}
 
@@ -133,6 +134,7 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharedevents.Event) error {
 	userIDStr, _ := evt.Payload["user_id"].(string)
 	email, _ := evt.Payload["email"].(string)
+	name, _ := evt.Payload["full_name"].(string)
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
@@ -142,7 +144,7 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 		return fmt.Errorf("missing tenant_id in auth.user.updated event")
 	}
 
-	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email); err != nil {
+	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
 		return fmt.Errorf("sync user from auth.user.updated: %w", err)
 	}
 

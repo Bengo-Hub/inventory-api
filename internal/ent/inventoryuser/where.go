@@ -70,6 +70,11 @@ func Email(v string) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldEQ(FieldEmail, v))
 }
 
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEQ(FieldName, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldEQ(FieldStatus, v))
@@ -238,6 +243,81 @@ func EmailEqualFold(v string) predicate.InventoryUser {
 // EmailContainsFold applies the ContainsFold predicate on the "email" field.
 func EmailContainsFold(v string) predicate.InventoryUser {
 	return predicate.InventoryUser(sql.FieldContainsFold(FieldEmail, v))
+}
+
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEQ(FieldName, v))
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNEQ(FieldName, v))
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldIn(FieldName, vs...))
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNotIn(FieldName, vs...))
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldGT(FieldName, v))
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldGTE(FieldName, v))
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldLT(FieldName, v))
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldLTE(FieldName, v))
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldContains(FieldName, v))
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldHasPrefix(FieldName, v))
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldHasSuffix(FieldName, v))
+}
+
+// NameIsNil applies the IsNil predicate on the "name" field.
+func NameIsNil() predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldIsNull(FieldName))
+}
+
+// NameNotNil applies the NotNil predicate on the "name" field.
+func NameNotNil() predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldNotNull(FieldName))
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldEqualFold(FieldName, v))
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.InventoryUser {
+	return predicate.InventoryUser(sql.FieldContainsFold(FieldName, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

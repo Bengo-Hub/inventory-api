@@ -856,19 +856,19 @@ func init() {
 	// inventoryuser.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	inventoryuser.EmailValidator = inventoryuserDescEmail.Validators[0].(func(string) error)
 	// inventoryuserDescStatus is the schema descriptor for status field.
-	inventoryuserDescStatus := inventoryuserFields[4].Descriptor()
+	inventoryuserDescStatus := inventoryuserFields[5].Descriptor()
 	// inventoryuser.DefaultStatus holds the default value on creation for the status field.
 	inventoryuser.DefaultStatus = inventoryuserDescStatus.Default.(string)
 	// inventoryuserDescSyncStatus is the schema descriptor for sync_status field.
-	inventoryuserDescSyncStatus := inventoryuserFields[5].Descriptor()
+	inventoryuserDescSyncStatus := inventoryuserFields[6].Descriptor()
 	// inventoryuser.DefaultSyncStatus holds the default value on creation for the sync_status field.
 	inventoryuser.DefaultSyncStatus = inventoryuserDescSyncStatus.Default.(string)
 	// inventoryuserDescCreatedAt is the schema descriptor for created_at field.
-	inventoryuserDescCreatedAt := inventoryuserFields[7].Descriptor()
+	inventoryuserDescCreatedAt := inventoryuserFields[8].Descriptor()
 	// inventoryuser.DefaultCreatedAt holds the default value on creation for the created_at field.
 	inventoryuser.DefaultCreatedAt = inventoryuserDescCreatedAt.Default.(func() time.Time)
 	// inventoryuserDescUpdatedAt is the schema descriptor for updated_at field.
-	inventoryuserDescUpdatedAt := inventoryuserFields[8].Descriptor()
+	inventoryuserDescUpdatedAt := inventoryuserFields[9].Descriptor()
 	// inventoryuser.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventoryuser.DefaultUpdatedAt = inventoryuserDescUpdatedAt.Default.(func() time.Time)
 	// inventoryuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

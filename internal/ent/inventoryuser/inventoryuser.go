@@ -20,6 +20,8 @@ const (
 	FieldAuthServiceUserID = "auth_service_user_id"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldSyncStatus holds the string denoting the sync_status field in the database.
@@ -40,6 +42,7 @@ var Columns = []string{
 	FieldTenantID,
 	FieldAuthServiceUserID,
 	FieldEmail,
+	FieldName,
 	FieldStatus,
 	FieldSyncStatus,
 	FieldLastSyncAt,
@@ -95,6 +98,11 @@ func ByAuthServiceUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByEmail orders the results by the email field.
 func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
