@@ -207,6 +207,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
 
+		// Barcode + label printing (single-item PNG read + bulk label-print job).
+		h.registerBarcodeRoutes(inv, perm)
+
 		// Item images (multi-image gallery via ItemAsset). List is open (read); mutations
 		// require items.change. Upload additionally enforces the multi-image feature + per-item
 		// image cap inside the handler (returns 403/402 on lock/overage).
