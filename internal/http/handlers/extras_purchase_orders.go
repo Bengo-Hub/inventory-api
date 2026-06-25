@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
@@ -305,6 +306,12 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		SetNotes(req.Notes).
 		SetNillablePayTermDays(req.PayTermDays).
 		SetAdditionalShippingCharges(req.AdditionalShippingCharges)
+	// Stamp the creator (the "Prepared By" on the PO document) from the authenticated user.
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok && claims.Subject != "" {
+		if uid, perr := uuid.Parse(claims.Subject); perr == nil {
+			poCreate.SetCreatedBy(uid)
+		}
+	}
 	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
 		var expDate time.Time
 		// Accept both "YYYY-MM-DD" (from date inputs) and RFC3339
