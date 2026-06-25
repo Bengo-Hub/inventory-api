@@ -78,6 +78,13 @@ func (h *RBACHandler) canManageRBAC(w http.ResponseWriter, r *http.Request, tena
 		respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid user ID"})
 		return false
 	}
+	// Platform owner and tenant admins/superusers may always manage their own tenant's RBAC.
+	// These RBAC routes are not behind the permission middleware (which is what JIT-provisions
+	// the local inventory_admin role), so relying solely on a local role assignment 403s a
+	// legitimate tenant admin who simply hasn't been provisioned a local role yet.
+	if claims.IsPlatformOwner || claims.IsAdmin() {
+		return true
+	}
 	for _, role := range []string{rbac.RoleInventoryAdmin, rbac.RoleWarehouseManager} {
 		if has, _ := h.rbacService.HasRole(r.Context(), tenantID, uid, role); has {
 			return true
