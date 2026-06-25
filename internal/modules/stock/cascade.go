@@ -2,6 +2,7 @@ package stock
 
 import (
 	"context"
+	"math"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -112,6 +113,10 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 			"warehouse_id": warehouseID.String(),
 			"outlet_id":    outletID,
 			"reason":       "ingredient_restocked",
+			// Quantity-aware projection (STK-5): how many portions of this recipe its
+			// ingredients can currently produce, so the catalog reflects a real stock
+			// level, not just a sold-out boolean.
+			"available": s.produciblePortions(ctx, tx, tenantID, r, warehouseID),
 		})
 		s.log.Info("cascade stock.in: recipe item unblocked",
 			zap.String("recipe_sku", recipeItem.Sku),
@@ -150,6 +155,46 @@ func (s *Service) recipesUsingIngredient(ctx context.Context, tx *ent.Tx, itemID
 		}
 	}
 	return ids
+}
+
+// produciblePortions returns how many whole portions of a recipe can be produced from current
+// ingredient availability in a warehouse: the minimum over ingredients of
+// floor(ingredient.available / per-portion need). Used to make the catalog availability
+// projection quantity-aware (STK-5) rather than a sold-out boolean. Recipe edges must be
+// pre-loaded (WithIngredients). Returns 0 when any ingredient is missing/depleted.
+func (s *Service) produciblePortions(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, r *ent.Recipe, warehouseID uuid.UUID) float64 {
+	if r == nil || len(r.Edges.Ingredients) == 0 {
+		return 0
+	}
+	outputQty := r.OutputQty
+	if outputQty <= 0 {
+		outputQty = 1
+	}
+	min := -1.0
+	for _, ing := range r.Edges.Ingredients {
+		perPortion := ing.Quantity / outputQty
+		if perPortion <= 0 {
+			continue // free/zero-need ingredient never constrains the count
+		}
+		bal, err := tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(ing.ItemID),
+				inventorybalance.WarehouseID(warehouseID),
+			).
+			First(ctx)
+		if err != nil || bal.Available <= 0 {
+			return 0
+		}
+		portions := math.Floor(bal.Available / perPortion)
+		if min < 0 || portions < min {
+			min = portions
+		}
+	}
+	if min < 0 {
+		return 0
+	}
+	return min
 }
 
 // allIngredientsAvailable returns true only if every ingredient in the recipe
