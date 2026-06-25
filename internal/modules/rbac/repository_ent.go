@@ -35,6 +35,7 @@ func (r *EntRepository) CreateUser(ctx context.Context, tenantID uuid.UUID, user
 		SetTenantID(tenantID).
 		SetAuthServiceUserID(user.AuthServiceUserID).
 		SetEmail(user.Email).
+		SetName(user.Name).
 		SetStatus(user.Status).
 		SetSyncStatus(user.SyncStatus)
 
@@ -115,6 +116,9 @@ func (r *EntRepository) UpdateUser(ctx context.Context, tenantID uuid.UUID, user
 	}
 	if updates.SyncStatus != nil {
 		builder.SetSyncStatus(*updates.SyncStatus)
+	}
+	if updates.Name != nil {
+		builder.SetName(*updates.Name)
 	}
 
 	_, err := builder.Save(ctx)
@@ -485,6 +489,7 @@ func mapEntUser(entUser *ent.InventoryUser) *InventoryUser {
 		TenantID:          entUser.TenantID,
 		AuthServiceUserID: entUser.AuthServiceUserID,
 		Email:             entUser.Email,
+		Name:              entUser.Name,
 		Status:            entUser.Status,
 		SyncStatus:        entUser.SyncStatus,
 		CreatedAt:         entUser.CreatedAt,

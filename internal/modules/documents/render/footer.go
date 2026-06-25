@@ -12,17 +12,20 @@ func (p *painter) drawFooter(d *PurchaseOrderDoc, fY float64) {
 	p.pdf.SetLineWidth(0.2)
 	p.pdf.Line(leftX, fY, rightX, fY)
 
-	// Footnote-sized so the body keeps maximum room for the item listing.
+	// Footnote-sized so the body keeps maximum room for the item listing. Both lines use a centered
+	// MultiCell so a long contact/meta line wraps within the content width instead of overflowing
+	// (and clipping) the page edges. Auto page break is already disabled before the footer, so a
+	// wrapped second line stays on page one.
 	name := ifEmpty(d.Branding.CompanyName, "the issuer")
 	p.pdf.SetFont("Helvetica", "", 6.6)
 	p.setText(p.pal.muted)
 	p.pdf.SetXY(leftX, fY+1.6)
-	p.pdf.CellFormat(contentW, 3.2,
+	p.pdf.MultiCell(contentW, 3.2,
 		p.tr("This purchase order is issued by "+name+" and is subject to the terms stated above."),
-		"", 1, "C", false, 0, "")
+		"", "C", false)
 	if meta := footerMeta(d.Branding); meta != "" {
 		p.pdf.SetX(leftX)
-		p.pdf.CellFormat(contentW, 3.2, p.tr(meta), "", 1, "C", false, 0, "")
+		p.pdf.MultiCell(contentW, 3.2, p.tr(meta), "", "C", false)
 	}
 }
 
@@ -36,9 +39,6 @@ func footerMeta(b Branding) string {
 	}
 	if b.Email != "" {
 		parts = append(parts, b.Email)
-	}
-	if b.Phone != "" {
-		parts = append(parts, b.Phone)
 	}
 	if b.Website != "" {
 		parts = append(parts, b.Website)

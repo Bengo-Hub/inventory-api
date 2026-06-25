@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/contract"
@@ -22,7 +20,6 @@ type ContractOrderLinkCreate struct {
 	config
 	mutation *ContractOrderLinkMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -169,7 +166,6 @@ func (_c *ContractOrderLinkCreate) createSpec() (*ContractOrderLink, *sqlgraph.C
 		_node = &ContractOrderLink{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(contractorderlink.Table, sqlgraph.NewFieldSpec(contractorderlink.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -206,228 +202,11 @@ func (_c *ContractOrderLinkCreate) createSpec() (*ContractOrderLink, *sqlgraph.C
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.ContractOrderLink.Create().
-//		SetTenantID(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.ContractOrderLinkUpsert) {
-//			SetTenantID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *ContractOrderLinkCreate) OnConflict(opts ...sql.ConflictOption) *ContractOrderLinkUpsertOne {
-	_c.conflict = opts
-	return &ContractOrderLinkUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *ContractOrderLinkCreate) OnConflictColumns(columns ...string) *ContractOrderLinkUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &ContractOrderLinkUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// ContractOrderLinkUpsertOne is the builder for "upsert"-ing
-	//  one ContractOrderLink node.
-	ContractOrderLinkUpsertOne struct {
-		create *ContractOrderLinkCreate
-	}
-
-	// ContractOrderLinkUpsert is the "OnConflict" setter.
-	ContractOrderLinkUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetTenantID sets the "tenant_id" field.
-func (u *ContractOrderLinkUpsert) SetTenantID(v uuid.UUID) *ContractOrderLinkUpsert {
-	u.Set(contractorderlink.FieldTenantID, v)
-	return u
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsert) UpdateTenantID() *ContractOrderLinkUpsert {
-	u.SetExcluded(contractorderlink.FieldTenantID)
-	return u
-}
-
-// SetContractID sets the "contract_id" field.
-func (u *ContractOrderLinkUpsert) SetContractID(v uuid.UUID) *ContractOrderLinkUpsert {
-	u.Set(contractorderlink.FieldContractID, v)
-	return u
-}
-
-// UpdateContractID sets the "contract_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsert) UpdateContractID() *ContractOrderLinkUpsert {
-	u.SetExcluded(contractorderlink.FieldContractID)
-	return u
-}
-
-// SetPurchaseOrderID sets the "purchase_order_id" field.
-func (u *ContractOrderLinkUpsert) SetPurchaseOrderID(v uuid.UUID) *ContractOrderLinkUpsert {
-	u.Set(contractorderlink.FieldPurchaseOrderID, v)
-	return u
-}
-
-// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsert) UpdatePurchaseOrderID() *ContractOrderLinkUpsert {
-	u.SetExcluded(contractorderlink.FieldPurchaseOrderID)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(contractorderlink.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *ContractOrderLinkUpsertOne) UpdateNewValues() *ContractOrderLinkUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(contractorderlink.FieldID)
-		}
-		if _, exists := u.create.mutation.CreatedAt(); exists {
-			s.SetIgnore(contractorderlink.FieldCreatedAt)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *ContractOrderLinkUpsertOne) Ignore() *ContractOrderLinkUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *ContractOrderLinkUpsertOne) DoNothing() *ContractOrderLinkUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the ContractOrderLinkCreate.OnConflict
-// documentation for more info.
-func (u *ContractOrderLinkUpsertOne) Update(set func(*ContractOrderLinkUpsert)) *ContractOrderLinkUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&ContractOrderLinkUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetTenantID sets the "tenant_id" field.
-func (u *ContractOrderLinkUpsertOne) SetTenantID(v uuid.UUID) *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetTenantID(v)
-	})
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertOne) UpdateTenantID() *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdateTenantID()
-	})
-}
-
-// SetContractID sets the "contract_id" field.
-func (u *ContractOrderLinkUpsertOne) SetContractID(v uuid.UUID) *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetContractID(v)
-	})
-}
-
-// UpdateContractID sets the "contract_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertOne) UpdateContractID() *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdateContractID()
-	})
-}
-
-// SetPurchaseOrderID sets the "purchase_order_id" field.
-func (u *ContractOrderLinkUpsertOne) SetPurchaseOrderID(v uuid.UUID) *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetPurchaseOrderID(v)
-	})
-}
-
-// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertOne) UpdatePurchaseOrderID() *ContractOrderLinkUpsertOne {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdatePurchaseOrderID()
-	})
-}
-
-// Exec executes the query.
-func (u *ContractOrderLinkUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for ContractOrderLinkCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *ContractOrderLinkUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *ContractOrderLinkUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: ContractOrderLinkUpsertOne.ID is not supported by MySQL driver. Use ContractOrderLinkUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *ContractOrderLinkUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // ContractOrderLinkCreateBulk is the builder for creating many ContractOrderLink entities in bulk.
 type ContractOrderLinkCreateBulk struct {
 	config
 	err      error
 	builders []*ContractOrderLinkCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the ContractOrderLink entities in the database.
@@ -457,7 +236,6 @@ func (_c *ContractOrderLinkCreateBulk) Save(ctx context.Context) ([]*ContractOrd
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -504,165 +282,6 @@ func (_c *ContractOrderLinkCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ContractOrderLinkCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.ContractOrderLink.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.ContractOrderLinkUpsert) {
-//			SetTenantID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *ContractOrderLinkCreateBulk) OnConflict(opts ...sql.ConflictOption) *ContractOrderLinkUpsertBulk {
-	_c.conflict = opts
-	return &ContractOrderLinkUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *ContractOrderLinkCreateBulk) OnConflictColumns(columns ...string) *ContractOrderLinkUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &ContractOrderLinkUpsertBulk{
-		create: _c,
-	}
-}
-
-// ContractOrderLinkUpsertBulk is the builder for "upsert"-ing
-// a bulk of ContractOrderLink nodes.
-type ContractOrderLinkUpsertBulk struct {
-	create *ContractOrderLinkCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(contractorderlink.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *ContractOrderLinkUpsertBulk) UpdateNewValues() *ContractOrderLinkUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(contractorderlink.FieldID)
-			}
-			if _, exists := b.mutation.CreatedAt(); exists {
-				s.SetIgnore(contractorderlink.FieldCreatedAt)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.ContractOrderLink.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *ContractOrderLinkUpsertBulk) Ignore() *ContractOrderLinkUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *ContractOrderLinkUpsertBulk) DoNothing() *ContractOrderLinkUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the ContractOrderLinkCreateBulk.OnConflict
-// documentation for more info.
-func (u *ContractOrderLinkUpsertBulk) Update(set func(*ContractOrderLinkUpsert)) *ContractOrderLinkUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&ContractOrderLinkUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetTenantID sets the "tenant_id" field.
-func (u *ContractOrderLinkUpsertBulk) SetTenantID(v uuid.UUID) *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetTenantID(v)
-	})
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertBulk) UpdateTenantID() *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdateTenantID()
-	})
-}
-
-// SetContractID sets the "contract_id" field.
-func (u *ContractOrderLinkUpsertBulk) SetContractID(v uuid.UUID) *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetContractID(v)
-	})
-}
-
-// UpdateContractID sets the "contract_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertBulk) UpdateContractID() *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdateContractID()
-	})
-}
-
-// SetPurchaseOrderID sets the "purchase_order_id" field.
-func (u *ContractOrderLinkUpsertBulk) SetPurchaseOrderID(v uuid.UUID) *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.SetPurchaseOrderID(v)
-	})
-}
-
-// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
-func (u *ContractOrderLinkUpsertBulk) UpdatePurchaseOrderID() *ContractOrderLinkUpsertBulk {
-	return u.Update(func(s *ContractOrderLinkUpsert) {
-		s.UpdatePurchaseOrderID()
-	})
-}
-
-// Exec executes the query.
-func (u *ContractOrderLinkUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ContractOrderLinkCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for ContractOrderLinkCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *ContractOrderLinkUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

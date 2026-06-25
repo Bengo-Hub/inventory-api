@@ -24,6 +24,8 @@ type InventoryUser struct {
 	AuthServiceUserID uuid.UUID `json:"auth_service_user_id,omitempty"`
 	// Denormalized email for convenience
 	Email string `json:"email,omitempty"`
+	// Denormalized full name (from the auth user profile) for display, e.g. document signatures
+	Name string `json:"name,omitempty"`
 	// Status: active, inactive, suspended
 	Status string `json:"status,omitempty"`
 	// Sync status: synced, pending, failed
@@ -42,7 +44,7 @@ func (*InventoryUser) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventoryuser.FieldEmail, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus:
+		case inventoryuser.FieldEmail, inventoryuser.FieldName, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus:
 			values[i] = new(sql.NullString)
 		case inventoryuser.FieldLastSyncAt, inventoryuser.FieldCreatedAt, inventoryuser.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -86,6 +88,12 @@ func (_m *InventoryUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
 			} else if value.Valid {
 				_m.Email = value.String
+			}
+		case inventoryuser.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				_m.Name = value.String
 			}
 		case inventoryuser.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -161,6 +169,9 @@ func (_m *InventoryUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(_m.Email)
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)

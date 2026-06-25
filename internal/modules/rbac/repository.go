@@ -44,6 +44,7 @@ type Repository interface {
 type UserUpdates struct {
 	Status     *string
 	SyncStatus *string
+	Name       *string
 }
 
 // PermissionFilters for listing permissions.

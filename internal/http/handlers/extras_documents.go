@@ -134,17 +134,22 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	_, _ = w.Write(pdfBytes)
 }
 
-// resolveUserLabel maps an auth-service user id to a human label (the local InventoryUser email)
-// for the signature lines, falling back to the supplied label (e.g. the approver role) when the
-// user can't be resolved or no id is set.
+// resolveUserLabel maps an auth-service user id to a human label for the signature lines:
+// the local InventoryUser's full name when known, else their email, else the supplied fallback
+// (e.g. the approver role) when the user can't be resolved or no id is set.
 func (h *InventoryExtrasHandler) resolveUserLabel(ctx context.Context, tenantID uuid.UUID, userID *uuid.UUID, fallback string) string {
 	if userID == nil || *userID == uuid.Nil {
 		return fallback
 	}
 	if u, e := h.orm.InventoryUser.Query().
 		Where(entinvuser.TenantID(tenantID), entinvuser.AuthServiceUserID(*userID)).
-		Only(ctx); e == nil && u.Email != "" {
-		return u.Email
+		Only(ctx); e == nil {
+		if u.Name != "" {
+			return u.Name
+		}
+		if u.Email != "" {
+			return u.Email
+		}
 	}
 	return fallback
 }

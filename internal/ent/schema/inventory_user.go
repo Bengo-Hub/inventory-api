@@ -28,6 +28,9 @@ func (InventoryUser) Fields() []ent.Field {
 		field.String("email").
 			NotEmpty().
 			Comment("Denormalized email for convenience"),
+		field.String("name").
+			Optional().
+			Comment("Denormalized full name (from the auth user profile) for display, e.g. document signatures"),
 		field.String("status").
 			Default("active").
 			Comment("Status: active, inactive, suspended"),

@@ -45,8 +45,9 @@ func (s *Service) EnsureUserFromToken(ctx context.Context, tenantID uuid.UUID, u
 		}
 	}
 
-	// 3. Create the user (reusing SyncUser logic)
-	user, err = s.SyncUser(ctx, tenantID, userID, email)
+	// 3. Create the user (reusing SyncUser logic). The display name is backfilled later by the
+	// auth.user event consumer (which carries full_name); not available from the token here.
+	user, err = s.SyncUser(ctx, tenantID, userID, email, "")
 	if err != nil {
 		return nil, err
 	}
@@ -151,13 +152,17 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 }
 
 // SyncUser syncs a user from auth-service.
-func (s *Service) SyncUser(ctx context.Context, tenantID uuid.UUID, authServiceUserID uuid.UUID, email string) (*InventoryUser, error) {
+func (s *Service) SyncUser(ctx context.Context, tenantID uuid.UUID, authServiceUserID uuid.UUID, email, name string) (*InventoryUser, error) {
 	// Check if user already exists
 	user, err := s.repo.GetUserByAuthServiceID(ctx, tenantID, authServiceUserID)
 	if err == nil {
-		// User exists, update sync status
+		// User exists, update sync status (and refresh the display name when supplied).
 		updates := &UserUpdates{
 			SyncStatus: stringPtr("synced"),
+		}
+		if name != "" {
+			updates.Name = &name
+			user.Name = name
 		}
 		if err := s.repo.UpdateUser(ctx, tenantID, user.ID, updates); err != nil {
 			s.logger.Warn("failed to update user sync status", zap.Error(err))
@@ -171,6 +176,7 @@ func (s *Service) SyncUser(ctx context.Context, tenantID uuid.UUID, authServiceU
 		TenantID:          tenantID,
 		AuthServiceUserID: authServiceUserID,
 		Email:             email,
+		Name:              name,
 		Status:            "active",
 		SyncStatus:        "synced",
 	}

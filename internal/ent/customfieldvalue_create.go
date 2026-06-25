@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
@@ -23,7 +21,6 @@ type CustomFieldValueCreate struct {
 	config
 	mutation *CustomFieldValueMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetItemID sets the "item_id" field.
@@ -205,7 +202,6 @@ func (_c *CustomFieldValueCreate) createSpec() (*CustomFieldValue, *sqlgraph.Cre
 		_node = &CustomFieldValue{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(customfieldvalue.Table, sqlgraph.NewFieldSpec(customfieldvalue.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -259,254 +255,11 @@ func (_c *CustomFieldValueCreate) createSpec() (*CustomFieldValue, *sqlgraph.Cre
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.CustomFieldValue.Create().
-//		SetItemID(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.CustomFieldValueUpsert) {
-//			SetItemID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *CustomFieldValueCreate) OnConflict(opts ...sql.ConflictOption) *CustomFieldValueUpsertOne {
-	_c.conflict = opts
-	return &CustomFieldValueUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *CustomFieldValueCreate) OnConflictColumns(columns ...string) *CustomFieldValueUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &CustomFieldValueUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// CustomFieldValueUpsertOne is the builder for "upsert"-ing
-	//  one CustomFieldValue node.
-	CustomFieldValueUpsertOne struct {
-		create *CustomFieldValueCreate
-	}
-
-	// CustomFieldValueUpsert is the "OnConflict" setter.
-	CustomFieldValueUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetItemID sets the "item_id" field.
-func (u *CustomFieldValueUpsert) SetItemID(v uuid.UUID) *CustomFieldValueUpsert {
-	u.Set(customfieldvalue.FieldItemID, v)
-	return u
-}
-
-// UpdateItemID sets the "item_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsert) UpdateItemID() *CustomFieldValueUpsert {
-	u.SetExcluded(customfieldvalue.FieldItemID)
-	return u
-}
-
-// SetFieldDefinitionID sets the "field_definition_id" field.
-func (u *CustomFieldValueUpsert) SetFieldDefinitionID(v uuid.UUID) *CustomFieldValueUpsert {
-	u.Set(customfieldvalue.FieldFieldDefinitionID, v)
-	return u
-}
-
-// UpdateFieldDefinitionID sets the "field_definition_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsert) UpdateFieldDefinitionID() *CustomFieldValueUpsert {
-	u.SetExcluded(customfieldvalue.FieldFieldDefinitionID)
-	return u
-}
-
-// SetValue sets the "value" field.
-func (u *CustomFieldValueUpsert) SetValue(v string) *CustomFieldValueUpsert {
-	u.Set(customfieldvalue.FieldValue, v)
-	return u
-}
-
-// UpdateValue sets the "value" field to the value that was provided on create.
-func (u *CustomFieldValueUpsert) UpdateValue() *CustomFieldValueUpsert {
-	u.SetExcluded(customfieldvalue.FieldValue)
-	return u
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *CustomFieldValueUpsert) SetUpdatedAt(v time.Time) *CustomFieldValueUpsert {
-	u.Set(customfieldvalue.FieldUpdatedAt, v)
-	return u
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *CustomFieldValueUpsert) UpdateUpdatedAt() *CustomFieldValueUpsert {
-	u.SetExcluded(customfieldvalue.FieldUpdatedAt)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(customfieldvalue.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *CustomFieldValueUpsertOne) UpdateNewValues() *CustomFieldValueUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(customfieldvalue.FieldID)
-		}
-		if _, exists := u.create.mutation.CreatedAt(); exists {
-			s.SetIgnore(customfieldvalue.FieldCreatedAt)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *CustomFieldValueUpsertOne) Ignore() *CustomFieldValueUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *CustomFieldValueUpsertOne) DoNothing() *CustomFieldValueUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the CustomFieldValueCreate.OnConflict
-// documentation for more info.
-func (u *CustomFieldValueUpsertOne) Update(set func(*CustomFieldValueUpsert)) *CustomFieldValueUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&CustomFieldValueUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetItemID sets the "item_id" field.
-func (u *CustomFieldValueUpsertOne) SetItemID(v uuid.UUID) *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetItemID(v)
-	})
-}
-
-// UpdateItemID sets the "item_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertOne) UpdateItemID() *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateItemID()
-	})
-}
-
-// SetFieldDefinitionID sets the "field_definition_id" field.
-func (u *CustomFieldValueUpsertOne) SetFieldDefinitionID(v uuid.UUID) *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetFieldDefinitionID(v)
-	})
-}
-
-// UpdateFieldDefinitionID sets the "field_definition_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertOne) UpdateFieldDefinitionID() *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateFieldDefinitionID()
-	})
-}
-
-// SetValue sets the "value" field.
-func (u *CustomFieldValueUpsertOne) SetValue(v string) *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetValue(v)
-	})
-}
-
-// UpdateValue sets the "value" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertOne) UpdateValue() *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateValue()
-	})
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *CustomFieldValueUpsertOne) SetUpdatedAt(v time.Time) *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetUpdatedAt(v)
-	})
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertOne) UpdateUpdatedAt() *CustomFieldValueUpsertOne {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateUpdatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *CustomFieldValueUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for CustomFieldValueCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *CustomFieldValueUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *CustomFieldValueUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: CustomFieldValueUpsertOne.ID is not supported by MySQL driver. Use CustomFieldValueUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *CustomFieldValueUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // CustomFieldValueCreateBulk is the builder for creating many CustomFieldValue entities in bulk.
 type CustomFieldValueCreateBulk struct {
 	config
 	err      error
 	builders []*CustomFieldValueCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the CustomFieldValue entities in the database.
@@ -536,7 +289,6 @@ func (_c *CustomFieldValueCreateBulk) Save(ctx context.Context) ([]*CustomFieldV
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -583,179 +335,6 @@ func (_c *CustomFieldValueCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *CustomFieldValueCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.CustomFieldValue.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.CustomFieldValueUpsert) {
-//			SetItemID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *CustomFieldValueCreateBulk) OnConflict(opts ...sql.ConflictOption) *CustomFieldValueUpsertBulk {
-	_c.conflict = opts
-	return &CustomFieldValueUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *CustomFieldValueCreateBulk) OnConflictColumns(columns ...string) *CustomFieldValueUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &CustomFieldValueUpsertBulk{
-		create: _c,
-	}
-}
-
-// CustomFieldValueUpsertBulk is the builder for "upsert"-ing
-// a bulk of CustomFieldValue nodes.
-type CustomFieldValueUpsertBulk struct {
-	create *CustomFieldValueCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(customfieldvalue.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *CustomFieldValueUpsertBulk) UpdateNewValues() *CustomFieldValueUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(customfieldvalue.FieldID)
-			}
-			if _, exists := b.mutation.CreatedAt(); exists {
-				s.SetIgnore(customfieldvalue.FieldCreatedAt)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.CustomFieldValue.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *CustomFieldValueUpsertBulk) Ignore() *CustomFieldValueUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *CustomFieldValueUpsertBulk) DoNothing() *CustomFieldValueUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the CustomFieldValueCreateBulk.OnConflict
-// documentation for more info.
-func (u *CustomFieldValueUpsertBulk) Update(set func(*CustomFieldValueUpsert)) *CustomFieldValueUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&CustomFieldValueUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetItemID sets the "item_id" field.
-func (u *CustomFieldValueUpsertBulk) SetItemID(v uuid.UUID) *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetItemID(v)
-	})
-}
-
-// UpdateItemID sets the "item_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertBulk) UpdateItemID() *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateItemID()
-	})
-}
-
-// SetFieldDefinitionID sets the "field_definition_id" field.
-func (u *CustomFieldValueUpsertBulk) SetFieldDefinitionID(v uuid.UUID) *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetFieldDefinitionID(v)
-	})
-}
-
-// UpdateFieldDefinitionID sets the "field_definition_id" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertBulk) UpdateFieldDefinitionID() *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateFieldDefinitionID()
-	})
-}
-
-// SetValue sets the "value" field.
-func (u *CustomFieldValueUpsertBulk) SetValue(v string) *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetValue(v)
-	})
-}
-
-// UpdateValue sets the "value" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertBulk) UpdateValue() *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateValue()
-	})
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *CustomFieldValueUpsertBulk) SetUpdatedAt(v time.Time) *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.SetUpdatedAt(v)
-	})
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *CustomFieldValueUpsertBulk) UpdateUpdatedAt() *CustomFieldValueUpsertBulk {
-	return u.Update(func(s *CustomFieldValueUpsert) {
-		s.UpdateUpdatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *CustomFieldValueUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CustomFieldValueCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for CustomFieldValueCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *CustomFieldValueUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

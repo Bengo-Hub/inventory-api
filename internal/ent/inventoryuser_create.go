@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryuser"
@@ -21,7 +19,6 @@ type InventoryUserCreate struct {
 	config
 	mutation *InventoryUserMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -39,6 +36,20 @@ func (_c *InventoryUserCreate) SetAuthServiceUserID(v uuid.UUID) *InventoryUserC
 // SetEmail sets the "email" field.
 func (_c *InventoryUserCreate) SetEmail(v string) *InventoryUserCreate {
 	_c.mutation.SetEmail(v)
+	return _c
+}
+
+// SetName sets the "name" field.
+func (_c *InventoryUserCreate) SetName(v string) *InventoryUserCreate {
+	_c.mutation.SetName(v)
+	return _c
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillableName(v *string) *InventoryUserCreate {
+	if v != nil {
+		_c.SetName(*v)
+	}
 	return _c
 }
 
@@ -242,7 +253,6 @@ func (_c *InventoryUserCreate) createSpec() (*InventoryUser, *sqlgraph.CreateSpe
 		_node = &InventoryUser{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(inventoryuser.Table, sqlgraph.NewFieldSpec(inventoryuser.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -258,6 +268,10 @@ func (_c *InventoryUserCreate) createSpec() (*InventoryUser, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(inventoryuser.FieldEmail, field.TypeString, value)
 		_node.Email = value
+	}
+	if value, ok := _c.mutation.Name(); ok {
+		_spec.SetField(inventoryuser.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(inventoryuser.FieldStatus, field.TypeString, value)
@@ -282,345 +296,11 @@ func (_c *InventoryUserCreate) createSpec() (*InventoryUser, *sqlgraph.CreateSpe
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.InventoryUser.Create().
-//		SetTenantID(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.InventoryUserUpsert) {
-//			SetTenantID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *InventoryUserCreate) OnConflict(opts ...sql.ConflictOption) *InventoryUserUpsertOne {
-	_c.conflict = opts
-	return &InventoryUserUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *InventoryUserCreate) OnConflictColumns(columns ...string) *InventoryUserUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &InventoryUserUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// InventoryUserUpsertOne is the builder for "upsert"-ing
-	//  one InventoryUser node.
-	InventoryUserUpsertOne struct {
-		create *InventoryUserCreate
-	}
-
-	// InventoryUserUpsert is the "OnConflict" setter.
-	InventoryUserUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetTenantID sets the "tenant_id" field.
-func (u *InventoryUserUpsert) SetTenantID(v uuid.UUID) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldTenantID, v)
-	return u
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateTenantID() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldTenantID)
-	return u
-}
-
-// SetAuthServiceUserID sets the "auth_service_user_id" field.
-func (u *InventoryUserUpsert) SetAuthServiceUserID(v uuid.UUID) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldAuthServiceUserID, v)
-	return u
-}
-
-// UpdateAuthServiceUserID sets the "auth_service_user_id" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateAuthServiceUserID() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldAuthServiceUserID)
-	return u
-}
-
-// SetEmail sets the "email" field.
-func (u *InventoryUserUpsert) SetEmail(v string) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldEmail, v)
-	return u
-}
-
-// UpdateEmail sets the "email" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateEmail() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldEmail)
-	return u
-}
-
-// SetStatus sets the "status" field.
-func (u *InventoryUserUpsert) SetStatus(v string) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldStatus, v)
-	return u
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateStatus() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldStatus)
-	return u
-}
-
-// SetSyncStatus sets the "sync_status" field.
-func (u *InventoryUserUpsert) SetSyncStatus(v string) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldSyncStatus, v)
-	return u
-}
-
-// UpdateSyncStatus sets the "sync_status" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateSyncStatus() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldSyncStatus)
-	return u
-}
-
-// SetLastSyncAt sets the "last_sync_at" field.
-func (u *InventoryUserUpsert) SetLastSyncAt(v time.Time) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldLastSyncAt, v)
-	return u
-}
-
-// UpdateLastSyncAt sets the "last_sync_at" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateLastSyncAt() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldLastSyncAt)
-	return u
-}
-
-// ClearLastSyncAt clears the value of the "last_sync_at" field.
-func (u *InventoryUserUpsert) ClearLastSyncAt() *InventoryUserUpsert {
-	u.SetNull(inventoryuser.FieldLastSyncAt)
-	return u
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *InventoryUserUpsert) SetUpdatedAt(v time.Time) *InventoryUserUpsert {
-	u.Set(inventoryuser.FieldUpdatedAt, v)
-	return u
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *InventoryUserUpsert) UpdateUpdatedAt() *InventoryUserUpsert {
-	u.SetExcluded(inventoryuser.FieldUpdatedAt)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(inventoryuser.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *InventoryUserUpsertOne) UpdateNewValues() *InventoryUserUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(inventoryuser.FieldID)
-		}
-		if _, exists := u.create.mutation.CreatedAt(); exists {
-			s.SetIgnore(inventoryuser.FieldCreatedAt)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *InventoryUserUpsertOne) Ignore() *InventoryUserUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *InventoryUserUpsertOne) DoNothing() *InventoryUserUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the InventoryUserCreate.OnConflict
-// documentation for more info.
-func (u *InventoryUserUpsertOne) Update(set func(*InventoryUserUpsert)) *InventoryUserUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&InventoryUserUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetTenantID sets the "tenant_id" field.
-func (u *InventoryUserUpsertOne) SetTenantID(v uuid.UUID) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetTenantID(v)
-	})
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateTenantID() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateTenantID()
-	})
-}
-
-// SetAuthServiceUserID sets the "auth_service_user_id" field.
-func (u *InventoryUserUpsertOne) SetAuthServiceUserID(v uuid.UUID) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetAuthServiceUserID(v)
-	})
-}
-
-// UpdateAuthServiceUserID sets the "auth_service_user_id" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateAuthServiceUserID() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateAuthServiceUserID()
-	})
-}
-
-// SetEmail sets the "email" field.
-func (u *InventoryUserUpsertOne) SetEmail(v string) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetEmail(v)
-	})
-}
-
-// UpdateEmail sets the "email" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateEmail() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateEmail()
-	})
-}
-
-// SetStatus sets the "status" field.
-func (u *InventoryUserUpsertOne) SetStatus(v string) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetStatus(v)
-	})
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateStatus() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateStatus()
-	})
-}
-
-// SetSyncStatus sets the "sync_status" field.
-func (u *InventoryUserUpsertOne) SetSyncStatus(v string) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetSyncStatus(v)
-	})
-}
-
-// UpdateSyncStatus sets the "sync_status" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateSyncStatus() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateSyncStatus()
-	})
-}
-
-// SetLastSyncAt sets the "last_sync_at" field.
-func (u *InventoryUserUpsertOne) SetLastSyncAt(v time.Time) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetLastSyncAt(v)
-	})
-}
-
-// UpdateLastSyncAt sets the "last_sync_at" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateLastSyncAt() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateLastSyncAt()
-	})
-}
-
-// ClearLastSyncAt clears the value of the "last_sync_at" field.
-func (u *InventoryUserUpsertOne) ClearLastSyncAt() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.ClearLastSyncAt()
-	})
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *InventoryUserUpsertOne) SetUpdatedAt(v time.Time) *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetUpdatedAt(v)
-	})
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *InventoryUserUpsertOne) UpdateUpdatedAt() *InventoryUserUpsertOne {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateUpdatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *InventoryUserUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for InventoryUserCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *InventoryUserUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *InventoryUserUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: InventoryUserUpsertOne.ID is not supported by MySQL driver. Use InventoryUserUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *InventoryUserUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // InventoryUserCreateBulk is the builder for creating many InventoryUser entities in bulk.
 type InventoryUserCreateBulk struct {
 	config
 	err      error
 	builders []*InventoryUserCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the InventoryUser entities in the database.
@@ -650,7 +330,6 @@ func (_c *InventoryUserCreateBulk) Save(ctx context.Context) ([]*InventoryUser, 
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -697,228 +376,6 @@ func (_c *InventoryUserCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *InventoryUserCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.InventoryUser.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.InventoryUserUpsert) {
-//			SetTenantID(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *InventoryUserCreateBulk) OnConflict(opts ...sql.ConflictOption) *InventoryUserUpsertBulk {
-	_c.conflict = opts
-	return &InventoryUserUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *InventoryUserCreateBulk) OnConflictColumns(columns ...string) *InventoryUserUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &InventoryUserUpsertBulk{
-		create: _c,
-	}
-}
-
-// InventoryUserUpsertBulk is the builder for "upsert"-ing
-// a bulk of InventoryUser nodes.
-type InventoryUserUpsertBulk struct {
-	create *InventoryUserCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(inventoryuser.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *InventoryUserUpsertBulk) UpdateNewValues() *InventoryUserUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(inventoryuser.FieldID)
-			}
-			if _, exists := b.mutation.CreatedAt(); exists {
-				s.SetIgnore(inventoryuser.FieldCreatedAt)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.InventoryUser.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *InventoryUserUpsertBulk) Ignore() *InventoryUserUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *InventoryUserUpsertBulk) DoNothing() *InventoryUserUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the InventoryUserCreateBulk.OnConflict
-// documentation for more info.
-func (u *InventoryUserUpsertBulk) Update(set func(*InventoryUserUpsert)) *InventoryUserUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&InventoryUserUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetTenantID sets the "tenant_id" field.
-func (u *InventoryUserUpsertBulk) SetTenantID(v uuid.UUID) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetTenantID(v)
-	})
-}
-
-// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateTenantID() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateTenantID()
-	})
-}
-
-// SetAuthServiceUserID sets the "auth_service_user_id" field.
-func (u *InventoryUserUpsertBulk) SetAuthServiceUserID(v uuid.UUID) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetAuthServiceUserID(v)
-	})
-}
-
-// UpdateAuthServiceUserID sets the "auth_service_user_id" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateAuthServiceUserID() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateAuthServiceUserID()
-	})
-}
-
-// SetEmail sets the "email" field.
-func (u *InventoryUserUpsertBulk) SetEmail(v string) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetEmail(v)
-	})
-}
-
-// UpdateEmail sets the "email" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateEmail() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateEmail()
-	})
-}
-
-// SetStatus sets the "status" field.
-func (u *InventoryUserUpsertBulk) SetStatus(v string) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetStatus(v)
-	})
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateStatus() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateStatus()
-	})
-}
-
-// SetSyncStatus sets the "sync_status" field.
-func (u *InventoryUserUpsertBulk) SetSyncStatus(v string) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetSyncStatus(v)
-	})
-}
-
-// UpdateSyncStatus sets the "sync_status" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateSyncStatus() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateSyncStatus()
-	})
-}
-
-// SetLastSyncAt sets the "last_sync_at" field.
-func (u *InventoryUserUpsertBulk) SetLastSyncAt(v time.Time) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetLastSyncAt(v)
-	})
-}
-
-// UpdateLastSyncAt sets the "last_sync_at" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateLastSyncAt() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateLastSyncAt()
-	})
-}
-
-// ClearLastSyncAt clears the value of the "last_sync_at" field.
-func (u *InventoryUserUpsertBulk) ClearLastSyncAt() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.ClearLastSyncAt()
-	})
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (u *InventoryUserUpsertBulk) SetUpdatedAt(v time.Time) *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.SetUpdatedAt(v)
-	})
-}
-
-// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *InventoryUserUpsertBulk) UpdateUpdatedAt() *InventoryUserUpsertBulk {
-	return u.Update(func(s *InventoryUserUpsert) {
-		s.UpdateUpdatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *InventoryUserUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the InventoryUserCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for InventoryUserCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *InventoryUserUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
