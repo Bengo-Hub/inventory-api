@@ -64,7 +64,21 @@ func (s *Service) GetBranding(ctx context.Context, tenantID uuid.UUID) Branding 
 	// Build a human address block from tenant metadata (street, city, postal, country),
 	// falling back to the country code so the document always shows a location.
 	b.Address = addressLines(td.Metadata, td.Country)
+	// Tagline + KRA PIN come from tenant metadata (the cache lib doesn't expose tax_pin directly).
+	b.Tagline = metaString(td.Metadata, "tagline")
+	b.KRAPIN = metaString(td.Metadata, "kra_pin")
 	return b
+}
+
+// metaString reads a string value from a tenant metadata map (empty when absent).
+func metaString(meta map[string]any, key string) string {
+	if meta == nil {
+		return ""
+	}
+	if v, ok := meta[key].(string); ok {
+		return v
+	}
+	return ""
 }
 
 // addressLines assembles up to three display lines from tenant metadata:

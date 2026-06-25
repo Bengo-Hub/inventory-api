@@ -7,12 +7,13 @@ func (p *painter) drawLowerBlocks(d *PurchaseOrderDoc, lY float64) float64 {
 	if len(notes) == 0 {
 		return lY
 	}
-	lowH := 28.0
+	// Compact block (smaller fonts) so the item listing keeps the bulk of the page.
+	lowH := 22.0
 	p.box(leftX, lY, contentW, lowH)
-	p.text(leftX+3, lY+3.0, "NOTES & TERMS", "B", 8, p.pal.blue)
-	y := lY + 7.5
+	p.text(leftX+3, lY+2.6, "NOTES & TERMS", "B", 6.8, p.pal.blue)
+	y := lY + 6.4
 	for _, n := range notes {
-		y = p.multiCell(leftX+3, y, contentW-6, 3.8, "•  "+n, "", 8.6, p.pal.grey) + 1.0
+		y = p.multiCell(leftX+3, y, contentW-6, 3.2, "•  "+n, "", 7.3, p.pal.grey) + 0.7
 	}
 	return lY + lowH
 }

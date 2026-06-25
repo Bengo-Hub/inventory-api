@@ -19,10 +19,14 @@ import (
 
 // Doc type constants — must match DocumentSequence.doc_type values.
 const (
-	DocTypePurchaseOrder  = "purchase_order"
-	DocTypeGRN            = "grn"
-	DocTypePurchaseReturn = "purchase_return"
-	DocTypeEventTicket    = "event_ticket"
+	DocTypePurchaseOrder   = "purchase_order"
+	DocTypeGRN             = "grn"
+	DocTypePurchaseReturn  = "purchase_return"
+	DocTypeRFQ             = "rfq"
+	DocTypeRequisition     = "requisition"
+	DocTypeStockTransfer   = "stock_transfer"
+	DocTypeStockAdjustment = "stock_adjustment"
+	DocTypeEventTicket     = "event_ticket"
 )
 
 type seqConfig struct {
@@ -34,10 +38,14 @@ type seqConfig struct {
 }
 
 var seqDefaults = map[string]seqConfig{
-	DocTypePurchaseOrder:  {Prefix: "PO", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeGRN:            {Prefix: "GRN", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypePurchaseReturn: {Prefix: "PRET", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeEventTicket:    {Prefix: "TKT", Separator: "-", DateFormat: "YYMMDD", Padding: 8, ResetFreq: "never"},
+	DocTypePurchaseOrder:   {Prefix: "PO", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeGRN:             {Prefix: "GRN", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypePurchaseReturn:  {Prefix: "PRET", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeRFQ:             {Prefix: "RFQ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeRequisition:     {Prefix: "REQ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeStockTransfer:   {Prefix: "TRF", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeStockAdjustment: {Prefix: "ADJ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
+	DocTypeEventTicket:     {Prefix: "TKT", Separator: "-", DateFormat: "YYMMDD", Padding: 8, ResetFreq: "never"},
 }
 
 // SequenceService generates per-tenant atomic document numbers using optimistic
@@ -94,8 +102,12 @@ type SeqConfigDTO struct {
 	NextNumber string `json:"next_number"`
 }
 
-// configuredDocTypes is the set of inventory document types that carry a configurable sequence.
-var configuredDocTypes = []string{DocTypePurchaseOrder, DocTypeGRN, DocTypePurchaseReturn, DocTypeEventTicket}
+// configuredDocTypes is the set of inventory document types that carry a configurable sequence,
+// surfaced in the Settings → Documents tab. LPO=purchase_order.
+var configuredDocTypes = []string{
+	DocTypePurchaseOrder, DocTypeGRN, DocTypeRFQ, DocTypeRequisition,
+	DocTypePurchaseReturn, DocTypeStockTransfer, DocTypeStockAdjustment, DocTypeEventTicket,
+}
 
 func toSeqDTO(row *ent.DocumentSequence) SeqConfigDTO {
 	return SeqConfigDTO{

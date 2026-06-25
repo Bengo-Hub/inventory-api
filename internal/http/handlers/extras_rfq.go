@@ -225,8 +225,8 @@ func (h *InventoryExtrasHandler) CreateRFQ(w http.ResponseWriter, r *http.Reques
 	}
 	rfqNumber := "RFQ-" + strings.ToUpper(uuid.New().String()[:8])
 	if h.docSvc != nil {
-		if n, e := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypePurchaseOrder); e == nil && n != "" {
-			rfqNumber = strings.Replace(n, "PO-", "RFQ-", 1)
+		if n, e := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeRFQ); e == nil && n != "" {
+			rfqNumber = n
 		}
 	}
 	create := h.orm.RFQ.Create().

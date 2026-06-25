@@ -239,6 +239,11 @@ func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *htt
 		return
 	}
 	ref := "REQ-" + strings.ToUpper(uuid.New().String()[:8])
+	if h.docSvc != nil {
+		if n, e := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeRequisition); e == nil && n != "" {
+			ref = n
+		}
+	}
 	create := h.orm.Requisition.Create().
 		SetTenantID(tenantID).
 		SetReferenceNumber(ref).
