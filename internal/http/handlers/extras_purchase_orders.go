@@ -17,6 +17,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
 // ─── Purchase Orders ──────────────────────────────────────────────────────────
@@ -285,7 +286,16 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		total += float64(l.Quantity) * l.UnitCost
 	}
 
+	// Configurable per-tenant document number (e.g. PO-260625-000001). Falls back to the legacy
+	// timestamp form only if the sequence service is unavailable, so creation never fails on it.
 	poNumber := "PO-" + strings.ToUpper(tenantID.String()[:8]) + "-" + time.Now().Format("20060102150405")
+	if h.docSvc != nil {
+		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypePurchaseOrder); derr == nil && n != "" {
+			poNumber = n
+		} else if derr != nil {
+			h.log.Warn("PO number sequence failed, using fallback", zap.Error(derr))
+		}
+	}
 	poCreate := tx.PurchaseOrder.Create().
 		SetTenantID(tenantID).
 		SetSupplierID(req.SupplierID).

@@ -1,6 +1,25 @@
 package render
 
-import "github.com/go-pdf/fpdf"
+import (
+	"strings"
+
+	"github.com/go-pdf/fpdf"
+)
+
+// smartPunct maps common Unicode punctuation (curly quotes, em/en dashes, bullets) to ASCII so
+// the latin1 core-font translator renders them properly instead of dropping them to ".".
+var smartPunct = strings.NewReplacer(
+	"—", "-", // em dash —
+	"–", "-", // en dash –
+	"‘", "'", // left single quote ‘
+	"’", "'", // right single quote ’
+	"“", "\"", // left double quote “
+	"”", "\"", // right double quote ”
+	"•", "-", // bullet •
+	"·", "-", // middle dot ·
+	"…", "...", // ellipsis …
+	" ", " ", // non-breaking space
+)
 
 // Page geometry (A4 portrait, mm).
 const (
@@ -20,7 +39,10 @@ type painter struct {
 }
 
 func newPainter(pdf *fpdf.Fpdf, pal palette) *painter {
-	return &painter{pdf: pdf, tr: pdf.UnicodeTranslatorFromDescriptor(""), pal: pal}
+	base := pdf.UnicodeTranslatorFromDescriptor("")
+	// Sanitize smart punctuation before the latin1 translator so dashes/quotes/bullets render.
+	tr := func(s string) string { return base(smartPunct.Replace(s)) }
+	return &painter{pdf: pdf, tr: tr, pal: pal}
 }
 
 func (p *painter) setFill(c rgb) { p.pdf.SetFillColor(c.r, c.g, c.b) }
