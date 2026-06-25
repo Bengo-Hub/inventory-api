@@ -134,17 +134,30 @@ func (h *InventoryExtrasHandler) applyStockIn(ctx context.Context, tx *ent.Tx, t
 	bal, err := tx.InventoryBalance.Query().
 		Where(entib.TenantID(tenantID), entib.ItemID(itemID), entib.WarehouseID(warehouseID)).
 		First(ctx)
+	var before float64
 	if ent.IsNotFound(err) {
-		_, e := tx.InventoryBalance.Create().
+		before = 0
+		if _, e := tx.InventoryBalance.Create().
 			SetTenantID(tenantID).SetItemID(itemID).SetWarehouseID(warehouseID).
-			SetOnHand(qty).SetAvailable(qty).SetReserved(0).Save(ctx)
-		return e
+			SetOnHand(qty).SetAvailable(qty).SetReserved(0).Save(ctx); e != nil {
+			return e
+		}
 	} else if err != nil {
 		return err
+	} else {
+		before = bal.OnHand
+		if _, e := tx.InventoryBalance.UpdateOneID(bal.ID).
+			SetOnHand(bal.OnHand + qty).SetAvailable(bal.Available + qty).Save(ctx); e != nil {
+			return e
+		}
 	}
-	_, e := tx.InventoryBalance.UpdateOneID(bal.ID).
-		SetOnHand(bal.OnHand + qty).SetAvailable(bal.Available + qty).Save(ctx)
-	return e
+	// Fire stock.updated + low-stock recheck + recipe re-enable cascade. Goods-receipt stock-in
+	// previously wrote the balance directly and skipped this, so received stock never re-enabled
+	// sold-out recipes or cleared low-stock alerts.
+	if h.stockSvc != nil {
+		h.stockSvc.EmitStockInCascade(ctx, tx, tenantID, itemID, warehouseID, before, before+qty)
+	}
+	return nil
 }
 
 // ListGoodsReceipts handles GET /inventory/goods-receipts.
