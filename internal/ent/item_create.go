@@ -125,6 +125,188 @@ func (_c *ItemCreate) SetNillableModel(v *string) *ItemCreate {
 	return _c
 }
 
+// SetGtin sets the "gtin" field.
+func (_c *ItemCreate) SetGtin(v string) *ItemCreate {
+	_c.mutation.SetGtin(v)
+	return _c
+}
+
+// SetNillableGtin sets the "gtin" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableGtin(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetGtin(*v)
+	}
+	return _c
+}
+
+// SetMpn sets the "mpn" field.
+func (_c *ItemCreate) SetMpn(v string) *ItemCreate {
+	_c.mutation.SetMpn(v)
+	return _c
+}
+
+// SetNillableMpn sets the "mpn" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMpn(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetMpn(*v)
+	}
+	return _c
+}
+
+// SetCondition sets the "condition" field.
+func (_c *ItemCreate) SetCondition(v item.Condition) *ItemCreate {
+	_c.mutation.SetCondition(v)
+	return _c
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableCondition(v *item.Condition) *ItemCreate {
+	if v != nil {
+		_c.SetCondition(*v)
+	}
+	return _c
+}
+
+// SetSlug sets the "slug" field.
+func (_c *ItemCreate) SetSlug(v string) *ItemCreate {
+	_c.mutation.SetSlug(v)
+	return _c
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableSlug(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetSlug(*v)
+	}
+	return _c
+}
+
+// SetShortDescription sets the "short_description" field.
+func (_c *ItemCreate) SetShortDescription(v string) *ItemCreate {
+	_c.mutation.SetShortDescription(v)
+	return _c
+}
+
+// SetNillableShortDescription sets the "short_description" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableShortDescription(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetShortDescription(*v)
+	}
+	return _c
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (_c *ItemCreate) SetMetaTitle(v string) *ItemCreate {
+	_c.mutation.SetMetaTitle(v)
+	return _c
+}
+
+// SetNillableMetaTitle sets the "meta_title" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMetaTitle(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetMetaTitle(*v)
+	}
+	return _c
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (_c *ItemCreate) SetMetaDescription(v string) *ItemCreate {
+	_c.mutation.SetMetaDescription(v)
+	return _c
+}
+
+// SetNillableMetaDescription sets the "meta_description" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMetaDescription(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetMetaDescription(*v)
+	}
+	return _c
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (_c *ItemCreate) SetCountryOfOrigin(v string) *ItemCreate {
+	_c.mutation.SetCountryOfOrigin(v)
+	return _c
+}
+
+// SetNillableCountryOfOrigin sets the "country_of_origin" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableCountryOfOrigin(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetCountryOfOrigin(*v)
+	}
+	return _c
+}
+
+// SetHsCode sets the "hs_code" field.
+func (_c *ItemCreate) SetHsCode(v string) *ItemCreate {
+	_c.mutation.SetHsCode(v)
+	return _c
+}
+
+// SetNillableHsCode sets the "hs_code" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableHsCode(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetHsCode(*v)
+	}
+	return _c
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (_c *ItemCreate) SetIsReturnable(v bool) *ItemCreate {
+	_c.mutation.SetIsReturnable(v)
+	return _c
+}
+
+// SetNillableIsReturnable sets the "is_returnable" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsReturnable(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsReturnable(*v)
+	}
+	return _c
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (_c *ItemCreate) SetReturnWindowDays(v int) *ItemCreate {
+	_c.mutation.SetReturnWindowDays(v)
+	return _c
+}
+
+// SetNillableReturnWindowDays sets the "return_window_days" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableReturnWindowDays(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetReturnWindowDays(*v)
+	}
+	return _c
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (_c *ItemCreate) SetAllowBackorder(v bool) *ItemCreate {
+	_c.mutation.SetAllowBackorder(v)
+	return _c
+}
+
+// SetNillableAllowBackorder sets the "allow_backorder" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableAllowBackorder(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetAllowBackorder(*v)
+	}
+	return _c
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (_c *ItemCreate) SetIsDiscontinued(v bool) *ItemCreate {
+	_c.mutation.SetIsDiscontinued(v)
+	return _c
+}
+
+// SetNillableIsDiscontinued sets the "is_discontinued" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableIsDiscontinued(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetIsDiscontinued(*v)
+	}
+	return _c
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_c *ItemCreate) SetUnitID(v uuid.UUID) *ItemCreate {
 	_c.mutation.SetUnitID(v)
@@ -974,6 +1156,22 @@ func (_c *ItemCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *ItemCreate) defaults() {
+	if _, ok := _c.mutation.Condition(); !ok {
+		v := item.DefaultCondition
+		_c.mutation.SetCondition(v)
+	}
+	if _, ok := _c.mutation.IsReturnable(); !ok {
+		v := item.DefaultIsReturnable
+		_c.mutation.SetIsReturnable(v)
+	}
+	if _, ok := _c.mutation.AllowBackorder(); !ok {
+		v := item.DefaultAllowBackorder
+		_c.mutation.SetAllowBackorder(v)
+	}
+	if _, ok := _c.mutation.IsDiscontinued(); !ok {
+		v := item.DefaultIsDiscontinued
+		_c.mutation.SetIsDiscontinued(v)
+	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		v := item.DefaultType
 		_c.mutation.SetType(v)
@@ -1064,6 +1262,23 @@ func (_c *ItemCreate) check() error {
 		if err := item.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Condition(); !ok {
+		return &ValidationError{Name: "condition", err: errors.New(`ent: missing required field "Item.condition"`)}
+	}
+	if v, ok := _c.mutation.Condition(); ok {
+		if err := item.ConditionValidator(v); err != nil {
+			return &ValidationError{Name: "condition", err: fmt.Errorf(`ent: validator failed for field "Item.condition": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.IsReturnable(); !ok {
+		return &ValidationError{Name: "is_returnable", err: errors.New(`ent: missing required field "Item.is_returnable"`)}
+	}
+	if _, ok := _c.mutation.AllowBackorder(); !ok {
+		return &ValidationError{Name: "allow_backorder", err: errors.New(`ent: missing required field "Item.allow_backorder"`)}
+	}
+	if _, ok := _c.mutation.IsDiscontinued(); !ok {
+		return &ValidationError{Name: "is_discontinued", err: errors.New(`ent: missing required field "Item.is_discontinued"`)}
 	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Item.type"`)}
@@ -1194,6 +1409,58 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Model(); ok {
 		_spec.SetField(item.FieldModel, field.TypeString, value)
 		_node.Model = value
+	}
+	if value, ok := _c.mutation.Gtin(); ok {
+		_spec.SetField(item.FieldGtin, field.TypeString, value)
+		_node.Gtin = value
+	}
+	if value, ok := _c.mutation.Mpn(); ok {
+		_spec.SetField(item.FieldMpn, field.TypeString, value)
+		_node.Mpn = value
+	}
+	if value, ok := _c.mutation.Condition(); ok {
+		_spec.SetField(item.FieldCondition, field.TypeEnum, value)
+		_node.Condition = value
+	}
+	if value, ok := _c.mutation.Slug(); ok {
+		_spec.SetField(item.FieldSlug, field.TypeString, value)
+		_node.Slug = value
+	}
+	if value, ok := _c.mutation.ShortDescription(); ok {
+		_spec.SetField(item.FieldShortDescription, field.TypeString, value)
+		_node.ShortDescription = value
+	}
+	if value, ok := _c.mutation.MetaTitle(); ok {
+		_spec.SetField(item.FieldMetaTitle, field.TypeString, value)
+		_node.MetaTitle = value
+	}
+	if value, ok := _c.mutation.MetaDescription(); ok {
+		_spec.SetField(item.FieldMetaDescription, field.TypeString, value)
+		_node.MetaDescription = value
+	}
+	if value, ok := _c.mutation.CountryOfOrigin(); ok {
+		_spec.SetField(item.FieldCountryOfOrigin, field.TypeString, value)
+		_node.CountryOfOrigin = value
+	}
+	if value, ok := _c.mutation.HsCode(); ok {
+		_spec.SetField(item.FieldHsCode, field.TypeString, value)
+		_node.HsCode = value
+	}
+	if value, ok := _c.mutation.IsReturnable(); ok {
+		_spec.SetField(item.FieldIsReturnable, field.TypeBool, value)
+		_node.IsReturnable = value
+	}
+	if value, ok := _c.mutation.ReturnWindowDays(); ok {
+		_spec.SetField(item.FieldReturnWindowDays, field.TypeInt, value)
+		_node.ReturnWindowDays = &value
+	}
+	if value, ok := _c.mutation.AllowBackorder(); ok {
+		_spec.SetField(item.FieldAllowBackorder, field.TypeBool, value)
+		_node.AllowBackorder = value
+	}
+	if value, ok := _c.mutation.IsDiscontinued(); ok {
+		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
+		_node.IsDiscontinued = value
 	}
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)

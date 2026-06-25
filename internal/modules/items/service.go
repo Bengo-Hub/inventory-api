@@ -79,6 +79,20 @@ type ItemDTO struct {
 	// Item-attribute fields (retail / pharmacy)
 	Manufacturer string `json:"manufacturer,omitempty"` // retail/pharmacy
 	Model        string `json:"model,omitempty"`        // retail only
+	// E-commerce / online-store attributes
+	GTIN             string `json:"gtin,omitempty"`               // GTIN-8/12/13/14 for marketplace feeds
+	MPN              string `json:"mpn,omitempty"`                // manufacturer part number
+	Condition        string `json:"condition,omitempty"`          // NEW | REFURBISHED | USED | OPEN_BOX
+	Slug             string `json:"slug,omitempty"`               // storefront URL slug / SEO
+	ShortDescription string `json:"short_description,omitempty"`   // product-card description
+	MetaTitle        string `json:"meta_title,omitempty"`         // SEO
+	MetaDescription  string `json:"meta_description,omitempty"`    // SEO
+	CountryOfOrigin  string `json:"country_of_origin,omitempty"`  // customs / marketplace compliance
+	HSCode           string `json:"hs_code,omitempty"`            // customs tariff code
+	IsReturnable     bool   `json:"is_returnable"`                // customer return allowed
+	ReturnWindowDays *int   `json:"return_window_days,omitempty"` // nil = tenant default
+	AllowBackorder   bool   `json:"allow_backorder"`              // order when out of stock
+	IsDiscontinued   bool   `json:"is_discontinued"`              // hidden from new listings, stock still sellable
 	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
 	// HasVariants is always populated; Variants is populated when variants are eager-loaded
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
@@ -575,6 +589,19 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		IsActive:                i.IsActive,
 		Manufacturer:            i.Manufacturer,
 		Model:                   i.Model,
+		GTIN:                    i.Gtin,
+		MPN:                     i.Mpn,
+		Condition:               string(i.Condition),
+		Slug:                    i.Slug,
+		ShortDescription:        i.ShortDescription,
+		MetaTitle:               i.MetaTitle,
+		MetaDescription:         i.MetaDescription,
+		CountryOfOrigin:         i.CountryOfOrigin,
+		HSCode:                  i.HsCode,
+		IsReturnable:            i.IsReturnable,
+		ReturnWindowDays:        i.ReturnWindowDays,
+		AllowBackorder:          i.AllowBackorder,
+		IsDiscontinued:          i.IsDiscontinued,
 		ImageURL:                s.resolveMediaURL(i.ImageURL),
 		Tags:                    i.Tags,
 		Metadata:                i.Metadata,
@@ -1441,6 +1468,39 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.Model != "" {
 		createBuilder = createBuilder.SetModel(dto.Model)
 	}
+	// E-commerce attributes (optional). is_returnable is intentionally NOT set here so the
+	// schema default (true) applies — a `bool` DTO can't distinguish "unset" from false.
+	if dto.GTIN != "" {
+		createBuilder = createBuilder.SetGtin(dto.GTIN)
+	}
+	if dto.MPN != "" {
+		createBuilder = createBuilder.SetMpn(dto.MPN)
+	}
+	if dto.Condition != "" {
+		createBuilder = createBuilder.SetCondition(item.Condition(dto.Condition))
+	}
+	if dto.Slug != "" {
+		createBuilder = createBuilder.SetSlug(dto.Slug)
+	}
+	if dto.ShortDescription != "" {
+		createBuilder = createBuilder.SetShortDescription(dto.ShortDescription)
+	}
+	if dto.MetaTitle != "" {
+		createBuilder = createBuilder.SetMetaTitle(dto.MetaTitle)
+	}
+	if dto.MetaDescription != "" {
+		createBuilder = createBuilder.SetMetaDescription(dto.MetaDescription)
+	}
+	if dto.CountryOfOrigin != "" {
+		createBuilder = createBuilder.SetCountryOfOrigin(dto.CountryOfOrigin)
+	}
+	if dto.HSCode != "" {
+		createBuilder = createBuilder.SetHsCode(dto.HSCode)
+	}
+	createBuilder = createBuilder.
+		SetNillableReturnWindowDays(dto.ReturnWindowDays).
+		SetAllowBackorder(dto.AllowBackorder).
+		SetIsDiscontinued(dto.IsDiscontinued)
 	if dto.Barcode != "" {
 		createBuilder = createBuilder.SetBarcode(dto.Barcode)
 	}
@@ -1729,6 +1789,38 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	if dto.PurchaseUnit != "" {
 		updateBuilder = updateBuilder.SetPurchaseUnit(dto.PurchaseUnit)
 	}
+	// E-commerce attributes — set only when present so a partial update (e.g. an
+	// edit form that doesn't yet carry these) never clobbers existing values. The
+	// boolean flags (is_returnable/allow_backorder/is_discontinued) are deliberately
+	// omitted from the update path for the same reason until the edit UI sends them.
+	if dto.GTIN != "" {
+		updateBuilder = updateBuilder.SetGtin(dto.GTIN)
+	}
+	if dto.MPN != "" {
+		updateBuilder = updateBuilder.SetMpn(dto.MPN)
+	}
+	if dto.Condition != "" {
+		updateBuilder = updateBuilder.SetCondition(item.Condition(dto.Condition))
+	}
+	if dto.Slug != "" {
+		updateBuilder = updateBuilder.SetSlug(dto.Slug)
+	}
+	if dto.ShortDescription != "" {
+		updateBuilder = updateBuilder.SetShortDescription(dto.ShortDescription)
+	}
+	if dto.MetaTitle != "" {
+		updateBuilder = updateBuilder.SetMetaTitle(dto.MetaTitle)
+	}
+	if dto.MetaDescription != "" {
+		updateBuilder = updateBuilder.SetMetaDescription(dto.MetaDescription)
+	}
+	if dto.CountryOfOrigin != "" {
+		updateBuilder = updateBuilder.SetCountryOfOrigin(dto.CountryOfOrigin)
+	}
+	if dto.HSCode != "" {
+		updateBuilder = updateBuilder.SetHsCode(dto.HSCode)
+	}
+	updateBuilder = updateBuilder.SetNillableReturnWindowDays(dto.ReturnWindowDays)
 	if dto.Barcode != "" {
 		updateBuilder = updateBuilder.SetBarcode(dto.Barcode)
 	}

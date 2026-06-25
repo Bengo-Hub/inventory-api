@@ -41,6 +41,32 @@ type Item struct {
 	Manufacturer string `json:"manufacturer,omitempty"`
 	// Product/item model — retail only
 	Model string `json:"model,omitempty"`
+	// Global Trade Item Number (GTIN-8/12/13/14) for marketplace feeds
+	Gtin string `json:"gtin,omitempty"`
+	// Manufacturer Part Number — identifies a product across suppliers
+	Mpn string `json:"mpn,omitempty"`
+	// Product condition for e-commerce listings
+	Condition item.Condition `json:"condition,omitempty"`
+	// URL-friendly identifier for storefront product pages / SEO
+	Slug string `json:"slug,omitempty"`
+	// Short product-card description (long-form lives in `description`)
+	ShortDescription string `json:"short_description,omitempty"`
+	// SEO meta title
+	MetaTitle string `json:"meta_title,omitempty"`
+	// SEO meta description
+	MetaDescription string `json:"meta_description,omitempty"`
+	// ISO country of origin — customs / marketplace compliance
+	CountryOfOrigin string `json:"country_of_origin,omitempty"`
+	// Harmonised System tariff code for customs
+	HsCode string `json:"hs_code,omitempty"`
+	// Whether the item can be returned by a customer
+	IsReturnable bool `json:"is_returnable,omitempty"`
+	// Days after purchase a return is accepted (nil = tenant default)
+	ReturnWindowDays *int `json:"return_window_days,omitempty"`
+	// Allow ordering when out of stock (e-commerce pre-order)
+	AllowBackorder bool `json:"allow_backorder,omitempty"`
+	// Hidden from new listings but remaining stock still sellable
+	IsDiscontinued bool `json:"is_discontinued,omitempty"`
 	// Reference to Unit
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
@@ -333,13 +359,13 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
+		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
 		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
-		case item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
+		case item.FieldReturnWindowDays, item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -415,6 +441,85 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field model", values[i])
 			} else if value.Valid {
 				_m.Model = value.String
+			}
+		case item.FieldGtin:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field gtin", values[i])
+			} else if value.Valid {
+				_m.Gtin = value.String
+			}
+		case item.FieldMpn:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mpn", values[i])
+			} else if value.Valid {
+				_m.Mpn = value.String
+			}
+		case item.FieldCondition:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field condition", values[i])
+			} else if value.Valid {
+				_m.Condition = item.Condition(value.String)
+			}
+		case item.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				_m.Slug = value.String
+			}
+		case item.FieldShortDescription:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field short_description", values[i])
+			} else if value.Valid {
+				_m.ShortDescription = value.String
+			}
+		case item.FieldMetaTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field meta_title", values[i])
+			} else if value.Valid {
+				_m.MetaTitle = value.String
+			}
+		case item.FieldMetaDescription:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field meta_description", values[i])
+			} else if value.Valid {
+				_m.MetaDescription = value.String
+			}
+		case item.FieldCountryOfOrigin:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field country_of_origin", values[i])
+			} else if value.Valid {
+				_m.CountryOfOrigin = value.String
+			}
+		case item.FieldHsCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field hs_code", values[i])
+			} else if value.Valid {
+				_m.HsCode = value.String
+			}
+		case item.FieldIsReturnable:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_returnable", values[i])
+			} else if value.Valid {
+				_m.IsReturnable = value.Bool
+			}
+		case item.FieldReturnWindowDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field return_window_days", values[i])
+			} else if value.Valid {
+				_m.ReturnWindowDays = new(int)
+				*_m.ReturnWindowDays = int(value.Int64)
+			}
+		case item.FieldAllowBackorder:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_backorder", values[i])
+			} else if value.Valid {
+				_m.AllowBackorder = value.Bool
+			}
+		case item.FieldIsDiscontinued:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_discontinued", values[i])
+			} else if value.Valid {
+				_m.IsDiscontinued = value.Bool
 			}
 		case item.FieldUnitID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -832,6 +937,47 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("model=")
 	builder.WriteString(_m.Model)
+	builder.WriteString(", ")
+	builder.WriteString("gtin=")
+	builder.WriteString(_m.Gtin)
+	builder.WriteString(", ")
+	builder.WriteString("mpn=")
+	builder.WriteString(_m.Mpn)
+	builder.WriteString(", ")
+	builder.WriteString("condition=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Condition))
+	builder.WriteString(", ")
+	builder.WriteString("slug=")
+	builder.WriteString(_m.Slug)
+	builder.WriteString(", ")
+	builder.WriteString("short_description=")
+	builder.WriteString(_m.ShortDescription)
+	builder.WriteString(", ")
+	builder.WriteString("meta_title=")
+	builder.WriteString(_m.MetaTitle)
+	builder.WriteString(", ")
+	builder.WriteString("meta_description=")
+	builder.WriteString(_m.MetaDescription)
+	builder.WriteString(", ")
+	builder.WriteString("country_of_origin=")
+	builder.WriteString(_m.CountryOfOrigin)
+	builder.WriteString(", ")
+	builder.WriteString("hs_code=")
+	builder.WriteString(_m.HsCode)
+	builder.WriteString(", ")
+	builder.WriteString("is_returnable=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsReturnable))
+	builder.WriteString(", ")
+	if v := _m.ReturnWindowDays; v != nil {
+		builder.WriteString("return_window_days=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("allow_backorder=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowBackorder))
+	builder.WriteString(", ")
+	builder.WriteString("is_discontinued=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsDiscontinued))
 	builder.WriteString(", ")
 	if v := _m.UnitID; v != nil {
 		builder.WriteString("unit_id=")

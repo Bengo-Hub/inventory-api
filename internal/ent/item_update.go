@@ -188,6 +188,249 @@ func (_u *ItemUpdate) ClearModel() *ItemUpdate {
 	return _u
 }
 
+// SetGtin sets the "gtin" field.
+func (_u *ItemUpdate) SetGtin(v string) *ItemUpdate {
+	_u.mutation.SetGtin(v)
+	return _u
+}
+
+// SetNillableGtin sets the "gtin" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableGtin(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetGtin(*v)
+	}
+	return _u
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (_u *ItemUpdate) ClearGtin() *ItemUpdate {
+	_u.mutation.ClearGtin()
+	return _u
+}
+
+// SetMpn sets the "mpn" field.
+func (_u *ItemUpdate) SetMpn(v string) *ItemUpdate {
+	_u.mutation.SetMpn(v)
+	return _u
+}
+
+// SetNillableMpn sets the "mpn" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMpn(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetMpn(*v)
+	}
+	return _u
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (_u *ItemUpdate) ClearMpn() *ItemUpdate {
+	_u.mutation.ClearMpn()
+	return _u
+}
+
+// SetCondition sets the "condition" field.
+func (_u *ItemUpdate) SetCondition(v item.Condition) *ItemUpdate {
+	_u.mutation.SetCondition(v)
+	return _u
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableCondition(v *item.Condition) *ItemUpdate {
+	if v != nil {
+		_u.SetCondition(*v)
+	}
+	return _u
+}
+
+// SetSlug sets the "slug" field.
+func (_u *ItemUpdate) SetSlug(v string) *ItemUpdate {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableSlug(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (_u *ItemUpdate) ClearSlug() *ItemUpdate {
+	_u.mutation.ClearSlug()
+	return _u
+}
+
+// SetShortDescription sets the "short_description" field.
+func (_u *ItemUpdate) SetShortDescription(v string) *ItemUpdate {
+	_u.mutation.SetShortDescription(v)
+	return _u
+}
+
+// SetNillableShortDescription sets the "short_description" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableShortDescription(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetShortDescription(*v)
+	}
+	return _u
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (_u *ItemUpdate) ClearShortDescription() *ItemUpdate {
+	_u.mutation.ClearShortDescription()
+	return _u
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (_u *ItemUpdate) SetMetaTitle(v string) *ItemUpdate {
+	_u.mutation.SetMetaTitle(v)
+	return _u
+}
+
+// SetNillableMetaTitle sets the "meta_title" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMetaTitle(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetMetaTitle(*v)
+	}
+	return _u
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (_u *ItemUpdate) ClearMetaTitle() *ItemUpdate {
+	_u.mutation.ClearMetaTitle()
+	return _u
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (_u *ItemUpdate) SetMetaDescription(v string) *ItemUpdate {
+	_u.mutation.SetMetaDescription(v)
+	return _u
+}
+
+// SetNillableMetaDescription sets the "meta_description" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMetaDescription(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetMetaDescription(*v)
+	}
+	return _u
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (_u *ItemUpdate) ClearMetaDescription() *ItemUpdate {
+	_u.mutation.ClearMetaDescription()
+	return _u
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (_u *ItemUpdate) SetCountryOfOrigin(v string) *ItemUpdate {
+	_u.mutation.SetCountryOfOrigin(v)
+	return _u
+}
+
+// SetNillableCountryOfOrigin sets the "country_of_origin" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableCountryOfOrigin(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetCountryOfOrigin(*v)
+	}
+	return _u
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (_u *ItemUpdate) ClearCountryOfOrigin() *ItemUpdate {
+	_u.mutation.ClearCountryOfOrigin()
+	return _u
+}
+
+// SetHsCode sets the "hs_code" field.
+func (_u *ItemUpdate) SetHsCode(v string) *ItemUpdate {
+	_u.mutation.SetHsCode(v)
+	return _u
+}
+
+// SetNillableHsCode sets the "hs_code" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableHsCode(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetHsCode(*v)
+	}
+	return _u
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (_u *ItemUpdate) ClearHsCode() *ItemUpdate {
+	_u.mutation.ClearHsCode()
+	return _u
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (_u *ItemUpdate) SetIsReturnable(v bool) *ItemUpdate {
+	_u.mutation.SetIsReturnable(v)
+	return _u
+}
+
+// SetNillableIsReturnable sets the "is_returnable" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableIsReturnable(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetIsReturnable(*v)
+	}
+	return _u
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (_u *ItemUpdate) SetReturnWindowDays(v int) *ItemUpdate {
+	_u.mutation.ResetReturnWindowDays()
+	_u.mutation.SetReturnWindowDays(v)
+	return _u
+}
+
+// SetNillableReturnWindowDays sets the "return_window_days" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableReturnWindowDays(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetReturnWindowDays(*v)
+	}
+	return _u
+}
+
+// AddReturnWindowDays adds value to the "return_window_days" field.
+func (_u *ItemUpdate) AddReturnWindowDays(v int) *ItemUpdate {
+	_u.mutation.AddReturnWindowDays(v)
+	return _u
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (_u *ItemUpdate) ClearReturnWindowDays() *ItemUpdate {
+	_u.mutation.ClearReturnWindowDays()
+	return _u
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (_u *ItemUpdate) SetAllowBackorder(v bool) *ItemUpdate {
+	_u.mutation.SetAllowBackorder(v)
+	return _u
+}
+
+// SetNillableAllowBackorder sets the "allow_backorder" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableAllowBackorder(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetAllowBackorder(*v)
+	}
+	return _u
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (_u *ItemUpdate) SetIsDiscontinued(v bool) *ItemUpdate {
+	_u.mutation.SetIsDiscontinued(v)
+	return _u
+}
+
+// SetNillableIsDiscontinued sets the "is_discontinued" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableIsDiscontinued(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetIsDiscontinued(*v)
+	}
+	return _u
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_u *ItemUpdate) SetUnitID(v uuid.UUID) *ItemUpdate {
 	_u.mutation.SetUnitID(v)
@@ -1538,6 +1781,11 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Condition(); ok {
+		if err := item.ConditionValidator(v); err != nil {
+			return &ValidationError{Name: "condition", err: fmt.Errorf(`ent: validator failed for field "Item.condition": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.GetType(); ok {
 		if err := item.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
@@ -1609,6 +1857,75 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ModelCleared() {
 		_spec.ClearField(item.FieldModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.Gtin(); ok {
+		_spec.SetField(item.FieldGtin, field.TypeString, value)
+	}
+	if _u.mutation.GtinCleared() {
+		_spec.ClearField(item.FieldGtin, field.TypeString)
+	}
+	if value, ok := _u.mutation.Mpn(); ok {
+		_spec.SetField(item.FieldMpn, field.TypeString, value)
+	}
+	if _u.mutation.MpnCleared() {
+		_spec.ClearField(item.FieldMpn, field.TypeString)
+	}
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(item.FieldCondition, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(item.FieldSlug, field.TypeString, value)
+	}
+	if _u.mutation.SlugCleared() {
+		_spec.ClearField(item.FieldSlug, field.TypeString)
+	}
+	if value, ok := _u.mutation.ShortDescription(); ok {
+		_spec.SetField(item.FieldShortDescription, field.TypeString, value)
+	}
+	if _u.mutation.ShortDescriptionCleared() {
+		_spec.ClearField(item.FieldShortDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.MetaTitle(); ok {
+		_spec.SetField(item.FieldMetaTitle, field.TypeString, value)
+	}
+	if _u.mutation.MetaTitleCleared() {
+		_spec.ClearField(item.FieldMetaTitle, field.TypeString)
+	}
+	if value, ok := _u.mutation.MetaDescription(); ok {
+		_spec.SetField(item.FieldMetaDescription, field.TypeString, value)
+	}
+	if _u.mutation.MetaDescriptionCleared() {
+		_spec.ClearField(item.FieldMetaDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.CountryOfOrigin(); ok {
+		_spec.SetField(item.FieldCountryOfOrigin, field.TypeString, value)
+	}
+	if _u.mutation.CountryOfOriginCleared() {
+		_spec.ClearField(item.FieldCountryOfOrigin, field.TypeString)
+	}
+	if value, ok := _u.mutation.HsCode(); ok {
+		_spec.SetField(item.FieldHsCode, field.TypeString, value)
+	}
+	if _u.mutation.HsCodeCleared() {
+		_spec.ClearField(item.FieldHsCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsReturnable(); ok {
+		_spec.SetField(item.FieldIsReturnable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ReturnWindowDays(); ok {
+		_spec.SetField(item.FieldReturnWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReturnWindowDays(); ok {
+		_spec.AddField(item.FieldReturnWindowDays, field.TypeInt, value)
+	}
+	if _u.mutation.ReturnWindowDaysCleared() {
+		_spec.ClearField(item.FieldReturnWindowDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AllowBackorder(); ok {
+		_spec.SetField(item.FieldAllowBackorder, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsDiscontinued(); ok {
+		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
@@ -2638,6 +2955,249 @@ func (_u *ItemUpdateOne) SetNillableModel(v *string) *ItemUpdateOne {
 // ClearModel clears the value of the "model" field.
 func (_u *ItemUpdateOne) ClearModel() *ItemUpdateOne {
 	_u.mutation.ClearModel()
+	return _u
+}
+
+// SetGtin sets the "gtin" field.
+func (_u *ItemUpdateOne) SetGtin(v string) *ItemUpdateOne {
+	_u.mutation.SetGtin(v)
+	return _u
+}
+
+// SetNillableGtin sets the "gtin" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableGtin(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetGtin(*v)
+	}
+	return _u
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (_u *ItemUpdateOne) ClearGtin() *ItemUpdateOne {
+	_u.mutation.ClearGtin()
+	return _u
+}
+
+// SetMpn sets the "mpn" field.
+func (_u *ItemUpdateOne) SetMpn(v string) *ItemUpdateOne {
+	_u.mutation.SetMpn(v)
+	return _u
+}
+
+// SetNillableMpn sets the "mpn" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMpn(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMpn(*v)
+	}
+	return _u
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (_u *ItemUpdateOne) ClearMpn() *ItemUpdateOne {
+	_u.mutation.ClearMpn()
+	return _u
+}
+
+// SetCondition sets the "condition" field.
+func (_u *ItemUpdateOne) SetCondition(v item.Condition) *ItemUpdateOne {
+	_u.mutation.SetCondition(v)
+	return _u
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableCondition(v *item.Condition) *ItemUpdateOne {
+	if v != nil {
+		_u.SetCondition(*v)
+	}
+	return _u
+}
+
+// SetSlug sets the "slug" field.
+func (_u *ItemUpdateOne) SetSlug(v string) *ItemUpdateOne {
+	_u.mutation.SetSlug(v)
+	return _u
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableSlug(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetSlug(*v)
+	}
+	return _u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (_u *ItemUpdateOne) ClearSlug() *ItemUpdateOne {
+	_u.mutation.ClearSlug()
+	return _u
+}
+
+// SetShortDescription sets the "short_description" field.
+func (_u *ItemUpdateOne) SetShortDescription(v string) *ItemUpdateOne {
+	_u.mutation.SetShortDescription(v)
+	return _u
+}
+
+// SetNillableShortDescription sets the "short_description" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableShortDescription(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetShortDescription(*v)
+	}
+	return _u
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (_u *ItemUpdateOne) ClearShortDescription() *ItemUpdateOne {
+	_u.mutation.ClearShortDescription()
+	return _u
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (_u *ItemUpdateOne) SetMetaTitle(v string) *ItemUpdateOne {
+	_u.mutation.SetMetaTitle(v)
+	return _u
+}
+
+// SetNillableMetaTitle sets the "meta_title" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMetaTitle(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMetaTitle(*v)
+	}
+	return _u
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (_u *ItemUpdateOne) ClearMetaTitle() *ItemUpdateOne {
+	_u.mutation.ClearMetaTitle()
+	return _u
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (_u *ItemUpdateOne) SetMetaDescription(v string) *ItemUpdateOne {
+	_u.mutation.SetMetaDescription(v)
+	return _u
+}
+
+// SetNillableMetaDescription sets the "meta_description" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMetaDescription(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMetaDescription(*v)
+	}
+	return _u
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (_u *ItemUpdateOne) ClearMetaDescription() *ItemUpdateOne {
+	_u.mutation.ClearMetaDescription()
+	return _u
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (_u *ItemUpdateOne) SetCountryOfOrigin(v string) *ItemUpdateOne {
+	_u.mutation.SetCountryOfOrigin(v)
+	return _u
+}
+
+// SetNillableCountryOfOrigin sets the "country_of_origin" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableCountryOfOrigin(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetCountryOfOrigin(*v)
+	}
+	return _u
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (_u *ItemUpdateOne) ClearCountryOfOrigin() *ItemUpdateOne {
+	_u.mutation.ClearCountryOfOrigin()
+	return _u
+}
+
+// SetHsCode sets the "hs_code" field.
+func (_u *ItemUpdateOne) SetHsCode(v string) *ItemUpdateOne {
+	_u.mutation.SetHsCode(v)
+	return _u
+}
+
+// SetNillableHsCode sets the "hs_code" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableHsCode(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetHsCode(*v)
+	}
+	return _u
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (_u *ItemUpdateOne) ClearHsCode() *ItemUpdateOne {
+	_u.mutation.ClearHsCode()
+	return _u
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (_u *ItemUpdateOne) SetIsReturnable(v bool) *ItemUpdateOne {
+	_u.mutation.SetIsReturnable(v)
+	return _u
+}
+
+// SetNillableIsReturnable sets the "is_returnable" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableIsReturnable(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetIsReturnable(*v)
+	}
+	return _u
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (_u *ItemUpdateOne) SetReturnWindowDays(v int) *ItemUpdateOne {
+	_u.mutation.ResetReturnWindowDays()
+	_u.mutation.SetReturnWindowDays(v)
+	return _u
+}
+
+// SetNillableReturnWindowDays sets the "return_window_days" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableReturnWindowDays(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetReturnWindowDays(*v)
+	}
+	return _u
+}
+
+// AddReturnWindowDays adds value to the "return_window_days" field.
+func (_u *ItemUpdateOne) AddReturnWindowDays(v int) *ItemUpdateOne {
+	_u.mutation.AddReturnWindowDays(v)
+	return _u
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (_u *ItemUpdateOne) ClearReturnWindowDays() *ItemUpdateOne {
+	_u.mutation.ClearReturnWindowDays()
+	return _u
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (_u *ItemUpdateOne) SetAllowBackorder(v bool) *ItemUpdateOne {
+	_u.mutation.SetAllowBackorder(v)
+	return _u
+}
+
+// SetNillableAllowBackorder sets the "allow_backorder" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableAllowBackorder(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetAllowBackorder(*v)
+	}
+	return _u
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (_u *ItemUpdateOne) SetIsDiscontinued(v bool) *ItemUpdateOne {
+	_u.mutation.SetIsDiscontinued(v)
+	return _u
+}
+
+// SetNillableIsDiscontinued sets the "is_discontinued" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableIsDiscontinued(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetIsDiscontinued(*v)
+	}
 	return _u
 }
 
@@ -4004,6 +4564,11 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Condition(); ok {
+		if err := item.ConditionValidator(v); err != nil {
+			return &ValidationError{Name: "condition", err: fmt.Errorf(`ent: validator failed for field "Item.condition": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.GetType(); ok {
 		if err := item.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Item.type": %w`, err)}
@@ -4092,6 +4657,75 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.ModelCleared() {
 		_spec.ClearField(item.FieldModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.Gtin(); ok {
+		_spec.SetField(item.FieldGtin, field.TypeString, value)
+	}
+	if _u.mutation.GtinCleared() {
+		_spec.ClearField(item.FieldGtin, field.TypeString)
+	}
+	if value, ok := _u.mutation.Mpn(); ok {
+		_spec.SetField(item.FieldMpn, field.TypeString, value)
+	}
+	if _u.mutation.MpnCleared() {
+		_spec.ClearField(item.FieldMpn, field.TypeString)
+	}
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(item.FieldCondition, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Slug(); ok {
+		_spec.SetField(item.FieldSlug, field.TypeString, value)
+	}
+	if _u.mutation.SlugCleared() {
+		_spec.ClearField(item.FieldSlug, field.TypeString)
+	}
+	if value, ok := _u.mutation.ShortDescription(); ok {
+		_spec.SetField(item.FieldShortDescription, field.TypeString, value)
+	}
+	if _u.mutation.ShortDescriptionCleared() {
+		_spec.ClearField(item.FieldShortDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.MetaTitle(); ok {
+		_spec.SetField(item.FieldMetaTitle, field.TypeString, value)
+	}
+	if _u.mutation.MetaTitleCleared() {
+		_spec.ClearField(item.FieldMetaTitle, field.TypeString)
+	}
+	if value, ok := _u.mutation.MetaDescription(); ok {
+		_spec.SetField(item.FieldMetaDescription, field.TypeString, value)
+	}
+	if _u.mutation.MetaDescriptionCleared() {
+		_spec.ClearField(item.FieldMetaDescription, field.TypeString)
+	}
+	if value, ok := _u.mutation.CountryOfOrigin(); ok {
+		_spec.SetField(item.FieldCountryOfOrigin, field.TypeString, value)
+	}
+	if _u.mutation.CountryOfOriginCleared() {
+		_spec.ClearField(item.FieldCountryOfOrigin, field.TypeString)
+	}
+	if value, ok := _u.mutation.HsCode(); ok {
+		_spec.SetField(item.FieldHsCode, field.TypeString, value)
+	}
+	if _u.mutation.HsCodeCleared() {
+		_spec.ClearField(item.FieldHsCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsReturnable(); ok {
+		_spec.SetField(item.FieldIsReturnable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ReturnWindowDays(); ok {
+		_spec.SetField(item.FieldReturnWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedReturnWindowDays(); ok {
+		_spec.AddField(item.FieldReturnWindowDays, field.TypeInt, value)
+	}
+	if _u.mutation.ReturnWindowDaysCleared() {
+		_spec.ClearField(item.FieldReturnWindowDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.AllowBackorder(); ok {
+		_spec.SetField(item.FieldAllowBackorder, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.IsDiscontinued(); ok {
+		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
