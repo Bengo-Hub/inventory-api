@@ -228,7 +228,7 @@ func New(ctx context.Context) (*App, error) {
 	ticketConsumer := consumers.NewTicketIssuanceConsumer(log, ticketsSvc, ormClient)
 
 	// Auth events consumer — proactive user sync + UserOutlet assignment projection from auth-service
-	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService, ormClient)
+	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService, ormClient, cacheAside)
 
 	// Return events consumer — restock inventory on pos.return.completed + ordering.return.approved
 	returnConsumer := consumers.NewReturnEventsConsumer(log, stockSvc)
