@@ -1482,11 +1482,11 @@ func init() {
 	// rfq.RfqNumberValidator is a validator for the "rfq_number" field. It is called by the builders before save.
 	rfq.RfqNumberValidator = rfqDescRfqNumber.Validators[0].(func(string) error)
 	// rfqDescCreatedAt is the schema descriptor for created_at field.
-	rfqDescCreatedAt := rfqFields[10].Descriptor()
+	rfqDescCreatedAt := rfqFields[11].Descriptor()
 	// rfq.DefaultCreatedAt holds the default value on creation for the created_at field.
 	rfq.DefaultCreatedAt = rfqDescCreatedAt.Default.(func() time.Time)
 	// rfqDescUpdatedAt is the schema descriptor for updated_at field.
-	rfqDescUpdatedAt := rfqFields[11].Descriptor()
+	rfqDescUpdatedAt := rfqFields[12].Descriptor()
 	// rfq.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	rfq.DefaultUpdatedAt = rfqDescUpdatedAt.Default.(func() time.Time)
 	// rfq.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -24,6 +24,9 @@ func (RFQ) Fields() []ent.Field {
 		field.String("title").Optional(),
 		field.Enum("status").Values("draft", "sent", "closed", "awarded", "cancelled").Default("draft"),
 		field.UUID("requisition_id", uuid.UUID{}).Optional().Nillable().Comment("Originating requisition, if any"),
+		// project_id flows from the originating requisition so awarded POs (and their costs) stay
+		// attributed to the project through the whole Requisition → RFQ → award → PO chain.
+		field.UUID("project_id", uuid.UUID{}).Optional().Nillable().Comment("projects-service project id (from the requisition)"),
 		field.UUID("warehouse_id", uuid.UUID{}).Optional().Nillable().Comment("Destination warehouse for resulting POs"),
 		field.Text("notes").Optional(),
 		field.Time("due_date").Optional().Nillable().Comment("Quote submission deadline"),
@@ -45,5 +48,6 @@ func (RFQ) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "rfq_number").Unique(),
 		index.Fields("tenant_id", "status"),
+		index.Fields("tenant_id", "project_id"),
 	}
 }

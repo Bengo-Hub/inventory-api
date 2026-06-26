@@ -64,18 +64,18 @@ type rfqAwardDTO struct {
 }
 
 type rfqDTO struct {
-	ID             uuid.UUID             `json:"id"`
-	RFQNumber      string                `json:"rfq_number"`
-	Title          string                `json:"title"`
-	Status         string                `json:"status"`
-	RequisitionID  *uuid.UUID            `json:"requisition_id,omitempty"`
-	WarehouseID    *uuid.UUID            `json:"warehouse_id,omitempty"`
-	Notes          string                `json:"notes,omitempty"`
-	DueDate        *time.Time            `json:"due_date,omitempty"`
-	CreatedAt      time.Time             `json:"created_at"`
-	Lines          []rfqLineDTO          `json:"lines,omitempty"`
-	Responses      []supplierResponseDTO `json:"responses,omitempty"`
-	Awards         []rfqAwardDTO         `json:"awards,omitempty"`
+	ID            uuid.UUID             `json:"id"`
+	RFQNumber     string                `json:"rfq_number"`
+	Title         string                `json:"title"`
+	Status        string                `json:"status"`
+	RequisitionID *uuid.UUID            `json:"requisition_id,omitempty"`
+	WarehouseID   *uuid.UUID            `json:"warehouse_id,omitempty"`
+	Notes         string                `json:"notes,omitempty"`
+	DueDate       *time.Time            `json:"due_date,omitempty"`
+	CreatedAt     time.Time             `json:"created_at"`
+	Lines         []rfqLineDTO          `json:"lines,omitempty"`
+	Responses     []supplierResponseDTO `json:"responses,omitempty"`
+	Awards        []rfqAwardDTO         `json:"awards,omitempty"`
 }
 
 // ─── Name resolution helpers ─────────────────────────────────────────────────
@@ -151,7 +151,7 @@ func (h *InventoryExtrasHandler) rfqToDTO(ctx context.Context, tenantID uuid.UUI
 		dto.Awards = append(dto.Awards, rfqAwardDTO{
 			ID: a.ID, RFQLineID: a.RfqLineID, SupplierID: a.SupplierID,
 			SupplierName: h.supplierName(ctx, tenantID, a.SupplierID, supCache),
-			UnitPrice: a.UnitPrice, Quantity: a.Quantity, POID: a.PoID,
+			UnitPrice:    a.UnitPrice, Quantity: a.Quantity, POID: a.PoID,
 		})
 	}
 	return dto
@@ -236,6 +236,10 @@ func (h *InventoryExtrasHandler) CreateRFQ(w http.ResponseWriter, r *http.Reques
 		SetNotes(p.Notes)
 	if p.RequisitionID != nil {
 		create = create.SetRequisitionID(*p.RequisitionID)
+		// Inherit the originating requisition's project so the chain stays project-attributed.
+		if req, rerr := h.orm.Requisition.Get(r.Context(), *p.RequisitionID); rerr == nil && req.ProjectID != nil {
+			create = create.SetProjectID(*req.ProjectID)
+		}
 	}
 	if p.WarehouseID != nil {
 		create = create.SetWarehouseID(*p.WarehouseID)
@@ -789,7 +793,9 @@ func (h *InventoryExtrasHandler) ConvertRFQToPOs(w http.ResponseWriter, r *http.
 		}
 		po, err := h.orm.PurchaseOrder.Create().
 			SetTenantID(tenantID).SetSupplierID(sid).SetWarehouseID(*warehouseID).
-			SetPoNumber(poNumber).SetRfqID(rfqID).SetNotes("From RFQ " + rfq.RfqNumber).Save(r.Context())
+			SetPoNumber(poNumber).SetRfqID(rfqID).SetNillableProjectID(rfq.ProjectID). // carry the project to the awarded PO
+			SetNillableRequisitionID(rfq.RequisitionID).
+			SetNotes("From RFQ " + rfq.RfqNumber).Save(r.Context())
 		if err != nil {
 			h.log.Warn("convert RFQ: create PO failed", zap.Error(err))
 			continue

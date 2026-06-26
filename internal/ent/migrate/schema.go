@@ -2079,6 +2079,7 @@ var (
 		{Name: "title", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "sent", "closed", "awarded", "cancelled"}, Default: "draft"},
 		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "project_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "due_date", Type: field.TypeTime, Nullable: true},
@@ -2101,6 +2102,11 @@ var (
 				Name:    "rfq_tenant_id_status",
 				Unique:  false,
 				Columns: []*schema.Column{RfQsColumns[1], RfQsColumns[4]},
+			},
+			{
+				Name:    "rfq_tenant_id_project_id",
+				Unique:  false,
+				Columns: []*schema.Column{RfQsColumns[1], RfQsColumns[6]},
 			},
 		},
 	}

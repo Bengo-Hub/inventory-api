@@ -114,6 +114,26 @@ func (_u *RFQUpdate) ClearRequisitionID() *RFQUpdate {
 	return _u
 }
 
+// SetProjectID sets the "project_id" field.
+func (_u *RFQUpdate) SetProjectID(v uuid.UUID) *RFQUpdate {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *RFQUpdate) SetNillableProjectID(v *uuid.UUID) *RFQUpdate {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *RFQUpdate) ClearProjectID() *RFQUpdate {
+	_u.mutation.ClearProjectID()
+	return _u
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_u *RFQUpdate) SetWarehouseID(v uuid.UUID) *RFQUpdate {
 	_u.mutation.SetWarehouseID(v)
@@ -397,6 +417,12 @@ func (_u *RFQUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.RequisitionIDCleared() {
 		_spec.ClearField(rfq.FieldRequisitionID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(rfq.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(rfq.FieldProjectID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.WarehouseID(); ok {
 		_spec.SetField(rfq.FieldWarehouseID, field.TypeUUID, value)
 	}
@@ -658,6 +684,26 @@ func (_u *RFQUpdateOne) SetNillableRequisitionID(v *uuid.UUID) *RFQUpdateOne {
 // ClearRequisitionID clears the value of the "requisition_id" field.
 func (_u *RFQUpdateOne) ClearRequisitionID() *RFQUpdateOne {
 	_u.mutation.ClearRequisitionID()
+	return _u
+}
+
+// SetProjectID sets the "project_id" field.
+func (_u *RFQUpdateOne) SetProjectID(v uuid.UUID) *RFQUpdateOne {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *RFQUpdateOne) SetNillableProjectID(v *uuid.UUID) *RFQUpdateOne {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *RFQUpdateOne) ClearProjectID() *RFQUpdateOne {
+	_u.mutation.ClearProjectID()
 	return _u
 }
 
@@ -973,6 +1019,12 @@ func (_u *RFQUpdateOne) sqlSave(ctx context.Context) (_node *RFQ, err error) {
 	}
 	if _u.mutation.RequisitionIDCleared() {
 		_spec.ClearField(rfq.FieldRequisitionID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(rfq.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(rfq.FieldProjectID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.WarehouseID(); ok {
 		_spec.SetField(rfq.FieldWarehouseID, field.TypeUUID, value)
