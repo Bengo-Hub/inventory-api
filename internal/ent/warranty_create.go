@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -20,6 +22,7 @@ type WarrantyCreate struct {
 	config
 	mutation *WarrantyMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -273,6 +276,7 @@ func (_c *WarrantyCreate) createSpec() (*Warranty, *sqlgraph.CreateSpec) {
 		_node = &Warranty{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(warranty.Table, sqlgraph.NewFieldSpec(warranty.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -337,11 +341,436 @@ func (_c *WarrantyCreate) createSpec() (*Warranty, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Warranty.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.WarrantyUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *WarrantyCreate) OnConflict(opts ...sql.ConflictOption) *WarrantyUpsertOne {
+	_c.conflict = opts
+	return &WarrantyUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *WarrantyCreate) OnConflictColumns(columns ...string) *WarrantyUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &WarrantyUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// WarrantyUpsertOne is the builder for "upsert"-ing
+	//  one Warranty node.
+	WarrantyUpsertOne struct {
+		create *WarrantyCreate
+	}
+
+	// WarrantyUpsert is the "OnConflict" setter.
+	WarrantyUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarrantyUpsert) SetTenantID(v uuid.UUID) *WarrantyUpsert {
+	u.Set(warranty.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateTenantID() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldTenantID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *WarrantyUpsert) SetItemID(v uuid.UUID) *WarrantyUpsert {
+	u.Set(warranty.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateItemID() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldItemID)
+	return u
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *WarrantyUpsert) SetSerialNumber(v string) *WarrantyUpsert {
+	u.Set(warranty.FieldSerialNumber, v)
+	return u
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateSerialNumber() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldSerialNumber)
+	return u
+}
+
+// SetCustomerID sets the "customer_id" field.
+func (u *WarrantyUpsert) SetCustomerID(v uuid.UUID) *WarrantyUpsert {
+	u.Set(warranty.FieldCustomerID, v)
+	return u
+}
+
+// UpdateCustomerID sets the "customer_id" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateCustomerID() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldCustomerID)
+	return u
+}
+
+// ClearCustomerID clears the value of the "customer_id" field.
+func (u *WarrantyUpsert) ClearCustomerID() *WarrantyUpsert {
+	u.SetNull(warranty.FieldCustomerID)
+	return u
+}
+
+// SetPurchaseDate sets the "purchase_date" field.
+func (u *WarrantyUpsert) SetPurchaseDate(v time.Time) *WarrantyUpsert {
+	u.Set(warranty.FieldPurchaseDate, v)
+	return u
+}
+
+// UpdatePurchaseDate sets the "purchase_date" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdatePurchaseDate() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldPurchaseDate)
+	return u
+}
+
+// SetWarrantyStart sets the "warranty_start" field.
+func (u *WarrantyUpsert) SetWarrantyStart(v time.Time) *WarrantyUpsert {
+	u.Set(warranty.FieldWarrantyStart, v)
+	return u
+}
+
+// UpdateWarrantyStart sets the "warranty_start" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateWarrantyStart() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldWarrantyStart)
+	return u
+}
+
+// SetWarrantyEnd sets the "warranty_end" field.
+func (u *WarrantyUpsert) SetWarrantyEnd(v time.Time) *WarrantyUpsert {
+	u.Set(warranty.FieldWarrantyEnd, v)
+	return u
+}
+
+// UpdateWarrantyEnd sets the "warranty_end" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateWarrantyEnd() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldWarrantyEnd)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *WarrantyUpsert) SetStatus(v warranty.Status) *WarrantyUpsert {
+	u.Set(warranty.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateStatus() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldStatus)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *WarrantyUpsert) SetNotes(v string) *WarrantyUpsert {
+	u.Set(warranty.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateNotes() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *WarrantyUpsert) ClearNotes() *WarrantyUpsert {
+	u.SetNull(warranty.FieldNotes)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarrantyUpsert) SetUpdatedAt(v time.Time) *WarrantyUpsert {
+	u.Set(warranty.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarrantyUpsert) UpdateUpdatedAt() *WarrantyUpsert {
+	u.SetExcluded(warranty.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(warranty.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *WarrantyUpsertOne) UpdateNewValues() *WarrantyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(warranty.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(warranty.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *WarrantyUpsertOne) Ignore() *WarrantyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *WarrantyUpsertOne) DoNothing() *WarrantyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the WarrantyCreate.OnConflict
+// documentation for more info.
+func (u *WarrantyUpsertOne) Update(set func(*WarrantyUpsert)) *WarrantyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&WarrantyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarrantyUpsertOne) SetTenantID(v uuid.UUID) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateTenantID() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *WarrantyUpsertOne) SetItemID(v uuid.UUID) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateItemID() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *WarrantyUpsertOne) SetSerialNumber(v string) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetSerialNumber(v)
+	})
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateSerialNumber() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateSerialNumber()
+	})
+}
+
+// SetCustomerID sets the "customer_id" field.
+func (u *WarrantyUpsertOne) SetCustomerID(v uuid.UUID) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetCustomerID(v)
+	})
+}
+
+// UpdateCustomerID sets the "customer_id" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateCustomerID() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateCustomerID()
+	})
+}
+
+// ClearCustomerID clears the value of the "customer_id" field.
+func (u *WarrantyUpsertOne) ClearCustomerID() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.ClearCustomerID()
+	})
+}
+
+// SetPurchaseDate sets the "purchase_date" field.
+func (u *WarrantyUpsertOne) SetPurchaseDate(v time.Time) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetPurchaseDate(v)
+	})
+}
+
+// UpdatePurchaseDate sets the "purchase_date" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdatePurchaseDate() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdatePurchaseDate()
+	})
+}
+
+// SetWarrantyStart sets the "warranty_start" field.
+func (u *WarrantyUpsertOne) SetWarrantyStart(v time.Time) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetWarrantyStart(v)
+	})
+}
+
+// UpdateWarrantyStart sets the "warranty_start" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateWarrantyStart() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateWarrantyStart()
+	})
+}
+
+// SetWarrantyEnd sets the "warranty_end" field.
+func (u *WarrantyUpsertOne) SetWarrantyEnd(v time.Time) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetWarrantyEnd(v)
+	})
+}
+
+// UpdateWarrantyEnd sets the "warranty_end" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateWarrantyEnd() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateWarrantyEnd()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *WarrantyUpsertOne) SetStatus(v warranty.Status) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateStatus() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *WarrantyUpsertOne) SetNotes(v string) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateNotes() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *WarrantyUpsertOne) ClearNotes() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarrantyUpsertOne) SetUpdatedAt(v time.Time) *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarrantyUpsertOne) UpdateUpdatedAt() *WarrantyUpsertOne {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *WarrantyUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for WarrantyCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *WarrantyUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *WarrantyUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: WarrantyUpsertOne.ID is not supported by MySQL driver. Use WarrantyUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *WarrantyUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // WarrantyCreateBulk is the builder for creating many Warranty entities in bulk.
 type WarrantyCreateBulk struct {
 	config
 	err      error
 	builders []*WarrantyCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Warranty entities in the database.
@@ -371,6 +800,7 @@ func (_c *WarrantyCreateBulk) Save(ctx context.Context) ([]*Warranty, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -417,6 +847,277 @@ func (_c *WarrantyCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *WarrantyCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Warranty.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.WarrantyUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *WarrantyCreateBulk) OnConflict(opts ...sql.ConflictOption) *WarrantyUpsertBulk {
+	_c.conflict = opts
+	return &WarrantyUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *WarrantyCreateBulk) OnConflictColumns(columns ...string) *WarrantyUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &WarrantyUpsertBulk{
+		create: _c,
+	}
+}
+
+// WarrantyUpsertBulk is the builder for "upsert"-ing
+// a bulk of Warranty nodes.
+type WarrantyUpsertBulk struct {
+	create *WarrantyCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(warranty.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *WarrantyUpsertBulk) UpdateNewValues() *WarrantyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(warranty.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(warranty.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Warranty.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *WarrantyUpsertBulk) Ignore() *WarrantyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *WarrantyUpsertBulk) DoNothing() *WarrantyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the WarrantyCreateBulk.OnConflict
+// documentation for more info.
+func (u *WarrantyUpsertBulk) Update(set func(*WarrantyUpsert)) *WarrantyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&WarrantyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarrantyUpsertBulk) SetTenantID(v uuid.UUID) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateTenantID() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *WarrantyUpsertBulk) SetItemID(v uuid.UUID) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateItemID() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *WarrantyUpsertBulk) SetSerialNumber(v string) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetSerialNumber(v)
+	})
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateSerialNumber() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateSerialNumber()
+	})
+}
+
+// SetCustomerID sets the "customer_id" field.
+func (u *WarrantyUpsertBulk) SetCustomerID(v uuid.UUID) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetCustomerID(v)
+	})
+}
+
+// UpdateCustomerID sets the "customer_id" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateCustomerID() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateCustomerID()
+	})
+}
+
+// ClearCustomerID clears the value of the "customer_id" field.
+func (u *WarrantyUpsertBulk) ClearCustomerID() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.ClearCustomerID()
+	})
+}
+
+// SetPurchaseDate sets the "purchase_date" field.
+func (u *WarrantyUpsertBulk) SetPurchaseDate(v time.Time) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetPurchaseDate(v)
+	})
+}
+
+// UpdatePurchaseDate sets the "purchase_date" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdatePurchaseDate() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdatePurchaseDate()
+	})
+}
+
+// SetWarrantyStart sets the "warranty_start" field.
+func (u *WarrantyUpsertBulk) SetWarrantyStart(v time.Time) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetWarrantyStart(v)
+	})
+}
+
+// UpdateWarrantyStart sets the "warranty_start" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateWarrantyStart() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateWarrantyStart()
+	})
+}
+
+// SetWarrantyEnd sets the "warranty_end" field.
+func (u *WarrantyUpsertBulk) SetWarrantyEnd(v time.Time) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetWarrantyEnd(v)
+	})
+}
+
+// UpdateWarrantyEnd sets the "warranty_end" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateWarrantyEnd() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateWarrantyEnd()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *WarrantyUpsertBulk) SetStatus(v warranty.Status) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateStatus() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *WarrantyUpsertBulk) SetNotes(v string) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateNotes() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *WarrantyUpsertBulk) ClearNotes() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarrantyUpsertBulk) SetUpdatedAt(v time.Time) *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarrantyUpsertBulk) UpdateUpdatedAt() *WarrantyUpsertBulk {
+	return u.Update(func(s *WarrantyUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *WarrantyUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the WarrantyCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for WarrantyCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *WarrantyUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

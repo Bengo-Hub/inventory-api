@@ -66,6 +66,11 @@ func OutletID(v uuid.UUID) predicate.Requisition {
 	return predicate.Requisition(sql.FieldEQ(FieldOutletID, v))
 }
 
+// ProjectID applies equality check predicate on the "project_id" field. It's identical to ProjectIDEQ.
+func ProjectID(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldEQ(FieldProjectID, v))
+}
+
 // ReferenceNumber applies equality check predicate on the "reference_number" field. It's identical to ReferenceNumberEQ.
 func ReferenceNumber(v string) predicate.Requisition {
 	return predicate.Requisition(sql.FieldEQ(FieldReferenceNumber, v))
@@ -189,6 +194,56 @@ func OutletIDIsNil() predicate.Requisition {
 // OutletIDNotNil applies the NotNil predicate on the "outlet_id" field.
 func OutletIDNotNil() predicate.Requisition {
 	return predicate.Requisition(sql.FieldNotNull(FieldOutletID))
+}
+
+// ProjectIDEQ applies the EQ predicate on the "project_id" field.
+func ProjectIDEQ(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldEQ(FieldProjectID, v))
+}
+
+// ProjectIDNEQ applies the NEQ predicate on the "project_id" field.
+func ProjectIDNEQ(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldNEQ(FieldProjectID, v))
+}
+
+// ProjectIDIn applies the In predicate on the "project_id" field.
+func ProjectIDIn(vs ...uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldIn(FieldProjectID, vs...))
+}
+
+// ProjectIDNotIn applies the NotIn predicate on the "project_id" field.
+func ProjectIDNotIn(vs ...uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldNotIn(FieldProjectID, vs...))
+}
+
+// ProjectIDGT applies the GT predicate on the "project_id" field.
+func ProjectIDGT(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldGT(FieldProjectID, v))
+}
+
+// ProjectIDGTE applies the GTE predicate on the "project_id" field.
+func ProjectIDGTE(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldGTE(FieldProjectID, v))
+}
+
+// ProjectIDLT applies the LT predicate on the "project_id" field.
+func ProjectIDLT(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldLT(FieldProjectID, v))
+}
+
+// ProjectIDLTE applies the LTE predicate on the "project_id" field.
+func ProjectIDLTE(v uuid.UUID) predicate.Requisition {
+	return predicate.Requisition(sql.FieldLTE(FieldProjectID, v))
+}
+
+// ProjectIDIsNil applies the IsNil predicate on the "project_id" field.
+func ProjectIDIsNil() predicate.Requisition {
+	return predicate.Requisition(sql.FieldIsNull(FieldProjectID))
+}
+
+// ProjectIDNotNil applies the NotNil predicate on the "project_id" field.
+func ProjectIDNotNil() predicate.Requisition {
+	return predicate.Requisition(sql.FieldNotNull(FieldProjectID))
 }
 
 // ReferenceNumberEQ applies the EQ predicate on the "reference_number" field.

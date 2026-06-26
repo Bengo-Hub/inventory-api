@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
@@ -19,6 +21,7 @@ type DocumentSequenceCreate struct {
 	config
 	mutation *DocumentSequenceMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -300,6 +303,7 @@ func (_c *DocumentSequenceCreate) createSpec() (*DocumentSequence, *sqlgraph.Cre
 		_node = &DocumentSequence{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(documentsequence.Table, sqlgraph.NewFieldSpec(documentsequence.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -351,11 +355,475 @@ func (_c *DocumentSequenceCreate) createSpec() (*DocumentSequence, *sqlgraph.Cre
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DocumentSequence.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DocumentSequenceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DocumentSequenceCreate) OnConflict(opts ...sql.ConflictOption) *DocumentSequenceUpsertOne {
+	_c.conflict = opts
+	return &DocumentSequenceUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DocumentSequenceCreate) OnConflictColumns(columns ...string) *DocumentSequenceUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DocumentSequenceUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// DocumentSequenceUpsertOne is the builder for "upsert"-ing
+	//  one DocumentSequence node.
+	DocumentSequenceUpsertOne struct {
+		create *DocumentSequenceCreate
+	}
+
+	// DocumentSequenceUpsert is the "OnConflict" setter.
+	DocumentSequenceUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *DocumentSequenceUpsert) SetTenantID(v uuid.UUID) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateTenantID() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldTenantID)
+	return u
+}
+
+// SetDocType sets the "doc_type" field.
+func (u *DocumentSequenceUpsert) SetDocType(v string) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldDocType, v)
+	return u
+}
+
+// UpdateDocType sets the "doc_type" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateDocType() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldDocType)
+	return u
+}
+
+// SetPrefix sets the "prefix" field.
+func (u *DocumentSequenceUpsert) SetPrefix(v string) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldPrefix, v)
+	return u
+}
+
+// UpdatePrefix sets the "prefix" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdatePrefix() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldPrefix)
+	return u
+}
+
+// ClearPrefix clears the value of the "prefix" field.
+func (u *DocumentSequenceUpsert) ClearPrefix() *DocumentSequenceUpsert {
+	u.SetNull(documentsequence.FieldPrefix)
+	return u
+}
+
+// SetSeparator sets the "separator" field.
+func (u *DocumentSequenceUpsert) SetSeparator(v string) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldSeparator, v)
+	return u
+}
+
+// UpdateSeparator sets the "separator" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateSeparator() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldSeparator)
+	return u
+}
+
+// SetDateFormat sets the "date_format" field.
+func (u *DocumentSequenceUpsert) SetDateFormat(v string) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldDateFormat, v)
+	return u
+}
+
+// UpdateDateFormat sets the "date_format" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateDateFormat() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldDateFormat)
+	return u
+}
+
+// ClearDateFormat clears the value of the "date_format" field.
+func (u *DocumentSequenceUpsert) ClearDateFormat() *DocumentSequenceUpsert {
+	u.SetNull(documentsequence.FieldDateFormat)
+	return u
+}
+
+// SetPadding sets the "padding" field.
+func (u *DocumentSequenceUpsert) SetPadding(v int) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldPadding, v)
+	return u
+}
+
+// UpdatePadding sets the "padding" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdatePadding() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldPadding)
+	return u
+}
+
+// AddPadding adds v to the "padding" field.
+func (u *DocumentSequenceUpsert) AddPadding(v int) *DocumentSequenceUpsert {
+	u.Add(documentsequence.FieldPadding, v)
+	return u
+}
+
+// SetResetFreq sets the "reset_freq" field.
+func (u *DocumentSequenceUpsert) SetResetFreq(v string) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldResetFreq, v)
+	return u
+}
+
+// UpdateResetFreq sets the "reset_freq" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateResetFreq() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldResetFreq)
+	return u
+}
+
+// SetCurrentVal sets the "current_val" field.
+func (u *DocumentSequenceUpsert) SetCurrentVal(v int64) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldCurrentVal, v)
+	return u
+}
+
+// UpdateCurrentVal sets the "current_val" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateCurrentVal() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldCurrentVal)
+	return u
+}
+
+// AddCurrentVal adds v to the "current_val" field.
+func (u *DocumentSequenceUpsert) AddCurrentVal(v int64) *DocumentSequenceUpsert {
+	u.Add(documentsequence.FieldCurrentVal, v)
+	return u
+}
+
+// SetLastReset sets the "last_reset" field.
+func (u *DocumentSequenceUpsert) SetLastReset(v time.Time) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldLastReset, v)
+	return u
+}
+
+// UpdateLastReset sets the "last_reset" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateLastReset() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldLastReset)
+	return u
+}
+
+// ClearLastReset clears the value of the "last_reset" field.
+func (u *DocumentSequenceUpsert) ClearLastReset() *DocumentSequenceUpsert {
+	u.SetNull(documentsequence.FieldLastReset)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DocumentSequenceUpsert) SetUpdatedAt(v time.Time) *DocumentSequenceUpsert {
+	u.Set(documentsequence.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DocumentSequenceUpsert) UpdateUpdatedAt() *DocumentSequenceUpsert {
+	u.SetExcluded(documentsequence.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(documentsequence.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DocumentSequenceUpsertOne) UpdateNewValues() *DocumentSequenceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(documentsequence.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(documentsequence.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *DocumentSequenceUpsertOne) Ignore() *DocumentSequenceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DocumentSequenceUpsertOne) DoNothing() *DocumentSequenceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DocumentSequenceCreate.OnConflict
+// documentation for more info.
+func (u *DocumentSequenceUpsertOne) Update(set func(*DocumentSequenceUpsert)) *DocumentSequenceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DocumentSequenceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *DocumentSequenceUpsertOne) SetTenantID(v uuid.UUID) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateTenantID() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetDocType sets the "doc_type" field.
+func (u *DocumentSequenceUpsertOne) SetDocType(v string) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetDocType(v)
+	})
+}
+
+// UpdateDocType sets the "doc_type" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateDocType() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateDocType()
+	})
+}
+
+// SetPrefix sets the "prefix" field.
+func (u *DocumentSequenceUpsertOne) SetPrefix(v string) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetPrefix(v)
+	})
+}
+
+// UpdatePrefix sets the "prefix" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdatePrefix() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdatePrefix()
+	})
+}
+
+// ClearPrefix clears the value of the "prefix" field.
+func (u *DocumentSequenceUpsertOne) ClearPrefix() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearPrefix()
+	})
+}
+
+// SetSeparator sets the "separator" field.
+func (u *DocumentSequenceUpsertOne) SetSeparator(v string) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetSeparator(v)
+	})
+}
+
+// UpdateSeparator sets the "separator" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateSeparator() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateSeparator()
+	})
+}
+
+// SetDateFormat sets the "date_format" field.
+func (u *DocumentSequenceUpsertOne) SetDateFormat(v string) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetDateFormat(v)
+	})
+}
+
+// UpdateDateFormat sets the "date_format" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateDateFormat() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateDateFormat()
+	})
+}
+
+// ClearDateFormat clears the value of the "date_format" field.
+func (u *DocumentSequenceUpsertOne) ClearDateFormat() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearDateFormat()
+	})
+}
+
+// SetPadding sets the "padding" field.
+func (u *DocumentSequenceUpsertOne) SetPadding(v int) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetPadding(v)
+	})
+}
+
+// AddPadding adds v to the "padding" field.
+func (u *DocumentSequenceUpsertOne) AddPadding(v int) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.AddPadding(v)
+	})
+}
+
+// UpdatePadding sets the "padding" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdatePadding() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdatePadding()
+	})
+}
+
+// SetResetFreq sets the "reset_freq" field.
+func (u *DocumentSequenceUpsertOne) SetResetFreq(v string) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetResetFreq(v)
+	})
+}
+
+// UpdateResetFreq sets the "reset_freq" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateResetFreq() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateResetFreq()
+	})
+}
+
+// SetCurrentVal sets the "current_val" field.
+func (u *DocumentSequenceUpsertOne) SetCurrentVal(v int64) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetCurrentVal(v)
+	})
+}
+
+// AddCurrentVal adds v to the "current_val" field.
+func (u *DocumentSequenceUpsertOne) AddCurrentVal(v int64) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.AddCurrentVal(v)
+	})
+}
+
+// UpdateCurrentVal sets the "current_val" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateCurrentVal() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateCurrentVal()
+	})
+}
+
+// SetLastReset sets the "last_reset" field.
+func (u *DocumentSequenceUpsertOne) SetLastReset(v time.Time) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetLastReset(v)
+	})
+}
+
+// UpdateLastReset sets the "last_reset" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateLastReset() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateLastReset()
+	})
+}
+
+// ClearLastReset clears the value of the "last_reset" field.
+func (u *DocumentSequenceUpsertOne) ClearLastReset() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearLastReset()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DocumentSequenceUpsertOne) SetUpdatedAt(v time.Time) *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertOne) UpdateUpdatedAt() *DocumentSequenceUpsertOne {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *DocumentSequenceUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DocumentSequenceCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DocumentSequenceUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *DocumentSequenceUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: DocumentSequenceUpsertOne.ID is not supported by MySQL driver. Use DocumentSequenceUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *DocumentSequenceUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // DocumentSequenceCreateBulk is the builder for creating many DocumentSequence entities in bulk.
 type DocumentSequenceCreateBulk struct {
 	config
 	err      error
 	builders []*DocumentSequenceCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the DocumentSequence entities in the database.
@@ -385,6 +853,7 @@ func (_c *DocumentSequenceCreateBulk) Save(ctx context.Context) ([]*DocumentSequ
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -431,6 +900,298 @@ func (_c *DocumentSequenceCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *DocumentSequenceCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.DocumentSequence.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.DocumentSequenceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *DocumentSequenceCreateBulk) OnConflict(opts ...sql.ConflictOption) *DocumentSequenceUpsertBulk {
+	_c.conflict = opts
+	return &DocumentSequenceUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *DocumentSequenceCreateBulk) OnConflictColumns(columns ...string) *DocumentSequenceUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &DocumentSequenceUpsertBulk{
+		create: _c,
+	}
+}
+
+// DocumentSequenceUpsertBulk is the builder for "upsert"-ing
+// a bulk of DocumentSequence nodes.
+type DocumentSequenceUpsertBulk struct {
+	create *DocumentSequenceCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(documentsequence.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *DocumentSequenceUpsertBulk) UpdateNewValues() *DocumentSequenceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(documentsequence.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(documentsequence.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.DocumentSequence.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *DocumentSequenceUpsertBulk) Ignore() *DocumentSequenceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *DocumentSequenceUpsertBulk) DoNothing() *DocumentSequenceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the DocumentSequenceCreateBulk.OnConflict
+// documentation for more info.
+func (u *DocumentSequenceUpsertBulk) Update(set func(*DocumentSequenceUpsert)) *DocumentSequenceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&DocumentSequenceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *DocumentSequenceUpsertBulk) SetTenantID(v uuid.UUID) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateTenantID() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetDocType sets the "doc_type" field.
+func (u *DocumentSequenceUpsertBulk) SetDocType(v string) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetDocType(v)
+	})
+}
+
+// UpdateDocType sets the "doc_type" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateDocType() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateDocType()
+	})
+}
+
+// SetPrefix sets the "prefix" field.
+func (u *DocumentSequenceUpsertBulk) SetPrefix(v string) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetPrefix(v)
+	})
+}
+
+// UpdatePrefix sets the "prefix" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdatePrefix() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdatePrefix()
+	})
+}
+
+// ClearPrefix clears the value of the "prefix" field.
+func (u *DocumentSequenceUpsertBulk) ClearPrefix() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearPrefix()
+	})
+}
+
+// SetSeparator sets the "separator" field.
+func (u *DocumentSequenceUpsertBulk) SetSeparator(v string) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetSeparator(v)
+	})
+}
+
+// UpdateSeparator sets the "separator" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateSeparator() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateSeparator()
+	})
+}
+
+// SetDateFormat sets the "date_format" field.
+func (u *DocumentSequenceUpsertBulk) SetDateFormat(v string) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetDateFormat(v)
+	})
+}
+
+// UpdateDateFormat sets the "date_format" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateDateFormat() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateDateFormat()
+	})
+}
+
+// ClearDateFormat clears the value of the "date_format" field.
+func (u *DocumentSequenceUpsertBulk) ClearDateFormat() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearDateFormat()
+	})
+}
+
+// SetPadding sets the "padding" field.
+func (u *DocumentSequenceUpsertBulk) SetPadding(v int) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetPadding(v)
+	})
+}
+
+// AddPadding adds v to the "padding" field.
+func (u *DocumentSequenceUpsertBulk) AddPadding(v int) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.AddPadding(v)
+	})
+}
+
+// UpdatePadding sets the "padding" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdatePadding() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdatePadding()
+	})
+}
+
+// SetResetFreq sets the "reset_freq" field.
+func (u *DocumentSequenceUpsertBulk) SetResetFreq(v string) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetResetFreq(v)
+	})
+}
+
+// UpdateResetFreq sets the "reset_freq" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateResetFreq() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateResetFreq()
+	})
+}
+
+// SetCurrentVal sets the "current_val" field.
+func (u *DocumentSequenceUpsertBulk) SetCurrentVal(v int64) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetCurrentVal(v)
+	})
+}
+
+// AddCurrentVal adds v to the "current_val" field.
+func (u *DocumentSequenceUpsertBulk) AddCurrentVal(v int64) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.AddCurrentVal(v)
+	})
+}
+
+// UpdateCurrentVal sets the "current_val" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateCurrentVal() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateCurrentVal()
+	})
+}
+
+// SetLastReset sets the "last_reset" field.
+func (u *DocumentSequenceUpsertBulk) SetLastReset(v time.Time) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetLastReset(v)
+	})
+}
+
+// UpdateLastReset sets the "last_reset" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateLastReset() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateLastReset()
+	})
+}
+
+// ClearLastReset clears the value of the "last_reset" field.
+func (u *DocumentSequenceUpsertBulk) ClearLastReset() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.ClearLastReset()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *DocumentSequenceUpsertBulk) SetUpdatedAt(v time.Time) *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *DocumentSequenceUpsertBulk) UpdateUpdatedAt() *DocumentSequenceUpsertBulk {
+	return u.Update(func(s *DocumentSequenceUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *DocumentSequenceUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the DocumentSequenceCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for DocumentSequenceCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *DocumentSequenceUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -177,6 +177,26 @@ func (_u *PurchaseOrderUpdate) ClearRequisitionID() *PurchaseOrderUpdate {
 	return _u
 }
 
+// SetProjectID sets the "project_id" field.
+func (_u *PurchaseOrderUpdate) SetProjectID(v uuid.UUID) *PurchaseOrderUpdate {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableProjectID(v *uuid.UUID) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *PurchaseOrderUpdate) ClearProjectID() *PurchaseOrderUpdate {
+	_u.mutation.ClearProjectID()
+	return _u
+}
+
 // SetRfqID sets the "rfq_id" field.
 func (_u *PurchaseOrderUpdate) SetRfqID(v uuid.UUID) *PurchaseOrderUpdate {
 	_u.mutation.SetRfqID(v)
@@ -452,6 +472,12 @@ func (_u *PurchaseOrderUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.RequisitionIDCleared() {
 		_spec.ClearField(purchaseorder.FieldRequisitionID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(purchaseorder.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(purchaseorder.FieldProjectID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.RfqID(); ok {
 		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
@@ -754,6 +780,26 @@ func (_u *PurchaseOrderUpdateOne) SetNillableRequisitionID(v *uuid.UUID) *Purcha
 // ClearRequisitionID clears the value of the "requisition_id" field.
 func (_u *PurchaseOrderUpdateOne) ClearRequisitionID() *PurchaseOrderUpdateOne {
 	_u.mutation.ClearRequisitionID()
+	return _u
+}
+
+// SetProjectID sets the "project_id" field.
+func (_u *PurchaseOrderUpdateOne) SetProjectID(v uuid.UUID) *PurchaseOrderUpdateOne {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableProjectID(v *uuid.UUID) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearProjectID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearProjectID()
 	return _u
 }
 
@@ -1062,6 +1108,12 @@ func (_u *PurchaseOrderUpdateOne) sqlSave(ctx context.Context) (_node *PurchaseO
 	}
 	if _u.mutation.RequisitionIDCleared() {
 		_spec.ClearField(purchaseorder.FieldRequisitionID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(purchaseorder.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(purchaseorder.FieldProjectID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.RfqID(); ok {
 		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)

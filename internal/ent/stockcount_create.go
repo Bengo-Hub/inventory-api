@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
@@ -19,6 +21,7 @@ type StockCountCreate struct {
 	config
 	mutation *StockCountMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -265,6 +268,7 @@ func (_c *StockCountCreate) createSpec() (*StockCount, *sqlgraph.CreateSpec) {
 		_node = &StockCount{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(stockcount.Table, sqlgraph.NewFieldSpec(stockcount.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -312,11 +316,449 @@ func (_c *StockCountCreate) createSpec() (*StockCount, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockCount.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockCountUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockCountCreate) OnConflict(opts ...sql.ConflictOption) *StockCountUpsertOne {
+	_c.conflict = opts
+	return &StockCountUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockCountCreate) OnConflictColumns(columns ...string) *StockCountUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockCountUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// StockCountUpsertOne is the builder for "upsert"-ing
+	//  one StockCount node.
+	StockCountUpsertOne struct {
+		create *StockCountCreate
+	}
+
+	// StockCountUpsert is the "OnConflict" setter.
+	StockCountUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockCountUpsert) SetTenantID(v uuid.UUID) *StockCountUpsert {
+	u.Set(stockcount.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateTenantID() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldTenantID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockCountUpsert) SetWarehouseID(v uuid.UUID) *StockCountUpsert {
+	u.Set(stockcount.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateWarehouseID() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldWarehouseID)
+	return u
+}
+
+// SetReference sets the "reference" field.
+func (u *StockCountUpsert) SetReference(v string) *StockCountUpsert {
+	u.Set(stockcount.FieldReference, v)
+	return u
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateReference() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldReference)
+	return u
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockCountUpsert) ClearReference() *StockCountUpsert {
+	u.SetNull(stockcount.FieldReference)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *StockCountUpsert) SetStatus(v stockcount.Status) *StockCountUpsert {
+	u.Set(stockcount.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateStatus() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldStatus)
+	return u
+}
+
+// SetCountedBy sets the "counted_by" field.
+func (u *StockCountUpsert) SetCountedBy(v uuid.UUID) *StockCountUpsert {
+	u.Set(stockcount.FieldCountedBy, v)
+	return u
+}
+
+// UpdateCountedBy sets the "counted_by" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateCountedBy() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldCountedBy)
+	return u
+}
+
+// ClearCountedBy clears the value of the "counted_by" field.
+func (u *StockCountUpsert) ClearCountedBy() *StockCountUpsert {
+	u.SetNull(stockcount.FieldCountedBy)
+	return u
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *StockCountUpsert) SetApprovedBy(v uuid.UUID) *StockCountUpsert {
+	u.Set(stockcount.FieldApprovedBy, v)
+	return u
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateApprovedBy() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldApprovedBy)
+	return u
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *StockCountUpsert) ClearApprovedBy() *StockCountUpsert {
+	u.SetNull(stockcount.FieldApprovedBy)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockCountUpsert) SetNotes(v string) *StockCountUpsert {
+	u.Set(stockcount.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateNotes() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockCountUpsert) ClearNotes() *StockCountUpsert {
+	u.SetNull(stockcount.FieldNotes)
+	return u
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *StockCountUpsert) SetApprovedAt(v time.Time) *StockCountUpsert {
+	u.Set(stockcount.FieldApprovedAt, v)
+	return u
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateApprovedAt() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldApprovedAt)
+	return u
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *StockCountUpsert) ClearApprovedAt() *StockCountUpsert {
+	u.SetNull(stockcount.FieldApprovedAt)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *StockCountUpsert) SetUpdatedAt(v time.Time) *StockCountUpsert {
+	u.Set(stockcount.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *StockCountUpsert) UpdateUpdatedAt() *StockCountUpsert {
+	u.SetExcluded(stockcount.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stockcount.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockCountUpsertOne) UpdateNewValues() *StockCountUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(stockcount.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(stockcount.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *StockCountUpsertOne) Ignore() *StockCountUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockCountUpsertOne) DoNothing() *StockCountUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockCountCreate.OnConflict
+// documentation for more info.
+func (u *StockCountUpsertOne) Update(set func(*StockCountUpsert)) *StockCountUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockCountUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockCountUpsertOne) SetTenantID(v uuid.UUID) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateTenantID() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockCountUpsertOne) SetWarehouseID(v uuid.UUID) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateWarehouseID() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetReference sets the "reference" field.
+func (u *StockCountUpsertOne) SetReference(v string) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetReference(v)
+	})
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateReference() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateReference()
+	})
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockCountUpsertOne) ClearReference() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearReference()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *StockCountUpsertOne) SetStatus(v stockcount.Status) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateStatus() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCountedBy sets the "counted_by" field.
+func (u *StockCountUpsertOne) SetCountedBy(v uuid.UUID) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetCountedBy(v)
+	})
+}
+
+// UpdateCountedBy sets the "counted_by" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateCountedBy() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateCountedBy()
+	})
+}
+
+// ClearCountedBy clears the value of the "counted_by" field.
+func (u *StockCountUpsertOne) ClearCountedBy() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearCountedBy()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *StockCountUpsertOne) SetApprovedBy(v uuid.UUID) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateApprovedBy() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *StockCountUpsertOne) ClearApprovedBy() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockCountUpsertOne) SetNotes(v string) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateNotes() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockCountUpsertOne) ClearNotes() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *StockCountUpsertOne) SetApprovedAt(v time.Time) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetApprovedAt(v)
+	})
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateApprovedAt() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateApprovedAt()
+	})
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *StockCountUpsertOne) ClearApprovedAt() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearApprovedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *StockCountUpsertOne) SetUpdatedAt(v time.Time) *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *StockCountUpsertOne) UpdateUpdatedAt() *StockCountUpsertOne {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *StockCountUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockCountCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockCountUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *StockCountUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: StockCountUpsertOne.ID is not supported by MySQL driver. Use StockCountUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *StockCountUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // StockCountCreateBulk is the builder for creating many StockCount entities in bulk.
 type StockCountCreateBulk struct {
 	config
 	err      error
 	builders []*StockCountCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the StockCount entities in the database.
@@ -346,6 +788,7 @@ func (_c *StockCountCreateBulk) Save(ctx context.Context) ([]*StockCount, error)
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -392,6 +835,284 @@ func (_c *StockCountCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *StockCountCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockCount.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockCountUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockCountCreateBulk) OnConflict(opts ...sql.ConflictOption) *StockCountUpsertBulk {
+	_c.conflict = opts
+	return &StockCountUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockCountCreateBulk) OnConflictColumns(columns ...string) *StockCountUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockCountUpsertBulk{
+		create: _c,
+	}
+}
+
+// StockCountUpsertBulk is the builder for "upsert"-ing
+// a bulk of StockCount nodes.
+type StockCountUpsertBulk struct {
+	create *StockCountCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stockcount.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockCountUpsertBulk) UpdateNewValues() *StockCountUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(stockcount.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(stockcount.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockCount.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *StockCountUpsertBulk) Ignore() *StockCountUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockCountUpsertBulk) DoNothing() *StockCountUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockCountCreateBulk.OnConflict
+// documentation for more info.
+func (u *StockCountUpsertBulk) Update(set func(*StockCountUpsert)) *StockCountUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockCountUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockCountUpsertBulk) SetTenantID(v uuid.UUID) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateTenantID() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockCountUpsertBulk) SetWarehouseID(v uuid.UUID) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateWarehouseID() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetReference sets the "reference" field.
+func (u *StockCountUpsertBulk) SetReference(v string) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetReference(v)
+	})
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateReference() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateReference()
+	})
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockCountUpsertBulk) ClearReference() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearReference()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *StockCountUpsertBulk) SetStatus(v stockcount.Status) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateStatus() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCountedBy sets the "counted_by" field.
+func (u *StockCountUpsertBulk) SetCountedBy(v uuid.UUID) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetCountedBy(v)
+	})
+}
+
+// UpdateCountedBy sets the "counted_by" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateCountedBy() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateCountedBy()
+	})
+}
+
+// ClearCountedBy clears the value of the "counted_by" field.
+func (u *StockCountUpsertBulk) ClearCountedBy() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearCountedBy()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *StockCountUpsertBulk) SetApprovedBy(v uuid.UUID) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateApprovedBy() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *StockCountUpsertBulk) ClearApprovedBy() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockCountUpsertBulk) SetNotes(v string) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateNotes() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockCountUpsertBulk) ClearNotes() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetApprovedAt sets the "approved_at" field.
+func (u *StockCountUpsertBulk) SetApprovedAt(v time.Time) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetApprovedAt(v)
+	})
+}
+
+// UpdateApprovedAt sets the "approved_at" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateApprovedAt() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateApprovedAt()
+	})
+}
+
+// ClearApprovedAt clears the value of the "approved_at" field.
+func (u *StockCountUpsertBulk) ClearApprovedAt() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.ClearApprovedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *StockCountUpsertBulk) SetUpdatedAt(v time.Time) *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *StockCountUpsertBulk) UpdateUpdatedAt() *StockCountUpsertBulk {
+	return u.Update(func(s *StockCountUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *StockCountUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the StockCountCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockCountCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockCountUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

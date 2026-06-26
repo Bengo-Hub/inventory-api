@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/purchasereturn"
@@ -20,6 +22,7 @@ type PurchaseReturnLineCreate struct {
 	config
 	mutation *PurchaseReturnLineMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -208,6 +211,7 @@ func (_c *PurchaseReturnLineCreate) createSpec() (*PurchaseReturnLine, *sqlgraph
 		_node = &PurchaseReturnLine{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(purchasereturnline.Table, sqlgraph.NewFieldSpec(purchasereturnline.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -252,11 +256,306 @@ func (_c *PurchaseReturnLineCreate) createSpec() (*PurchaseReturnLine, *sqlgraph
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PurchaseReturnLine.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PurchaseReturnLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PurchaseReturnLineCreate) OnConflict(opts ...sql.ConflictOption) *PurchaseReturnLineUpsertOne {
+	_c.conflict = opts
+	return &PurchaseReturnLineUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PurchaseReturnLineCreate) OnConflictColumns(columns ...string) *PurchaseReturnLineUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PurchaseReturnLineUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// PurchaseReturnLineUpsertOne is the builder for "upsert"-ing
+	//  one PurchaseReturnLine node.
+	PurchaseReturnLineUpsertOne struct {
+		create *PurchaseReturnLineCreate
+	}
+
+	// PurchaseReturnLineUpsert is the "OnConflict" setter.
+	PurchaseReturnLineUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseReturnLineUpsert) SetTenantID(v uuid.UUID) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateTenantID() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldTenantID)
+	return u
+}
+
+// SetPurchaseReturnID sets the "purchase_return_id" field.
+func (u *PurchaseReturnLineUpsert) SetPurchaseReturnID(v uuid.UUID) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldPurchaseReturnID, v)
+	return u
+}
+
+// UpdatePurchaseReturnID sets the "purchase_return_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdatePurchaseReturnID() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldPurchaseReturnID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PurchaseReturnLineUpsert) SetItemID(v uuid.UUID) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateItemID() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldItemID)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *PurchaseReturnLineUpsert) SetQuantity(v int) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateQuantity() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *PurchaseReturnLineUpsert) AddQuantity(v int) *PurchaseReturnLineUpsert {
+	u.Add(purchasereturnline.FieldQuantity, v)
+	return u
+}
+
+// SetSubTotal sets the "sub_total" field.
+func (u *PurchaseReturnLineUpsert) SetSubTotal(v float64) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldSubTotal, v)
+	return u
+}
+
+// UpdateSubTotal sets the "sub_total" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateSubTotal() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldSubTotal)
+	return u
+}
+
+// AddSubTotal adds v to the "sub_total" field.
+func (u *PurchaseReturnLineUpsert) AddSubTotal(v float64) *PurchaseReturnLineUpsert {
+	u.Add(purchasereturnline.FieldSubTotal, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(purchasereturnline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PurchaseReturnLineUpsertOne) UpdateNewValues() *PurchaseReturnLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(purchasereturnline.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(purchasereturnline.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *PurchaseReturnLineUpsertOne) Ignore() *PurchaseReturnLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PurchaseReturnLineUpsertOne) DoNothing() *PurchaseReturnLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PurchaseReturnLineCreate.OnConflict
+// documentation for more info.
+func (u *PurchaseReturnLineUpsertOne) Update(set func(*PurchaseReturnLineUpsert)) *PurchaseReturnLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PurchaseReturnLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseReturnLineUpsertOne) SetTenantID(v uuid.UUID) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateTenantID() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetPurchaseReturnID sets the "purchase_return_id" field.
+func (u *PurchaseReturnLineUpsertOne) SetPurchaseReturnID(v uuid.UUID) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetPurchaseReturnID(v)
+	})
+}
+
+// UpdatePurchaseReturnID sets the "purchase_return_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdatePurchaseReturnID() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdatePurchaseReturnID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PurchaseReturnLineUpsertOne) SetItemID(v uuid.UUID) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateItemID() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *PurchaseReturnLineUpsertOne) SetQuantity(v int) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *PurchaseReturnLineUpsertOne) AddQuantity(v int) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateQuantity() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetSubTotal sets the "sub_total" field.
+func (u *PurchaseReturnLineUpsertOne) SetSubTotal(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetSubTotal(v)
+	})
+}
+
+// AddSubTotal adds v to the "sub_total" field.
+func (u *PurchaseReturnLineUpsertOne) AddSubTotal(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddSubTotal(v)
+	})
+}
+
+// UpdateSubTotal sets the "sub_total" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateSubTotal() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateSubTotal()
+	})
+}
+
+// Exec executes the query.
+func (u *PurchaseReturnLineUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PurchaseReturnLineCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PurchaseReturnLineUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *PurchaseReturnLineUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: PurchaseReturnLineUpsertOne.ID is not supported by MySQL driver. Use PurchaseReturnLineUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *PurchaseReturnLineUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // PurchaseReturnLineCreateBulk is the builder for creating many PurchaseReturnLine entities in bulk.
 type PurchaseReturnLineCreateBulk struct {
 	config
 	err      error
 	builders []*PurchaseReturnLineCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the PurchaseReturnLine entities in the database.
@@ -286,6 +585,7 @@ func (_c *PurchaseReturnLineCreateBulk) Save(ctx context.Context) ([]*PurchaseRe
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -332,6 +632,207 @@ func (_c *PurchaseReturnLineCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *PurchaseReturnLineCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PurchaseReturnLine.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PurchaseReturnLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PurchaseReturnLineCreateBulk) OnConflict(opts ...sql.ConflictOption) *PurchaseReturnLineUpsertBulk {
+	_c.conflict = opts
+	return &PurchaseReturnLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PurchaseReturnLineCreateBulk) OnConflictColumns(columns ...string) *PurchaseReturnLineUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PurchaseReturnLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// PurchaseReturnLineUpsertBulk is the builder for "upsert"-ing
+// a bulk of PurchaseReturnLine nodes.
+type PurchaseReturnLineUpsertBulk struct {
+	create *PurchaseReturnLineCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(purchasereturnline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PurchaseReturnLineUpsertBulk) UpdateNewValues() *PurchaseReturnLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(purchasereturnline.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(purchasereturnline.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseReturnLine.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *PurchaseReturnLineUpsertBulk) Ignore() *PurchaseReturnLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PurchaseReturnLineUpsertBulk) DoNothing() *PurchaseReturnLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PurchaseReturnLineCreateBulk.OnConflict
+// documentation for more info.
+func (u *PurchaseReturnLineUpsertBulk) Update(set func(*PurchaseReturnLineUpsert)) *PurchaseReturnLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PurchaseReturnLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseReturnLineUpsertBulk) SetTenantID(v uuid.UUID) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateTenantID() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetPurchaseReturnID sets the "purchase_return_id" field.
+func (u *PurchaseReturnLineUpsertBulk) SetPurchaseReturnID(v uuid.UUID) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetPurchaseReturnID(v)
+	})
+}
+
+// UpdatePurchaseReturnID sets the "purchase_return_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdatePurchaseReturnID() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdatePurchaseReturnID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *PurchaseReturnLineUpsertBulk) SetItemID(v uuid.UUID) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateItemID() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *PurchaseReturnLineUpsertBulk) SetQuantity(v int) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *PurchaseReturnLineUpsertBulk) AddQuantity(v int) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateQuantity() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetSubTotal sets the "sub_total" field.
+func (u *PurchaseReturnLineUpsertBulk) SetSubTotal(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetSubTotal(v)
+	})
+}
+
+// AddSubTotal adds v to the "sub_total" field.
+func (u *PurchaseReturnLineUpsertBulk) AddSubTotal(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddSubTotal(v)
+	})
+}
+
+// UpdateSubTotal sets the "sub_total" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateSubTotal() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateSubTotal()
+	})
+}
+
+// Exec executes the query.
+func (u *PurchaseReturnLineUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the PurchaseReturnLineCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PurchaseReturnLineCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PurchaseReturnLineUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

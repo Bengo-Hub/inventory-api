@@ -48,6 +48,7 @@ type requisitionPayload struct {
 	Priority       string                   `json:"priority"`
 	OutletID       *uuid.UUID               `json:"outlet_id"`
 	RequesterID    *uuid.UUID               `json:"requester_id"`
+	ProjectID      *uuid.UUID               `json:"project_id"`
 	RequiredByDate *time.Time               `json:"required_by_date"`
 	Notes          string                   `json:"notes"`
 	Lines          []requisitionLinePayload `json:"lines"`
@@ -260,6 +261,9 @@ func (h *InventoryExtrasHandler) CreateRequisition(w http.ResponseWriter, r *htt
 	}
 	if req.RequesterID != nil {
 		create = create.SetRequesterID(*req.RequesterID)
+	}
+	if req.ProjectID != nil {
+		create = create.SetProjectID(*req.ProjectID)
 	}
 	if req.RequiredByDate != nil {
 		create = create.SetRequiredByDate(*req.RequiredByDate)
@@ -559,6 +563,7 @@ func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r
 		SetPoNumber(poNumber).
 		SetCurrency(currency).
 		SetRequisitionID(rq.ID).
+		SetNillableProjectID(rq.ProjectID). // inherit the project so treasury attributes the cost
 		SetNillablePayTermDays(body.PayTermDays).
 		SetAdditionalShippingCharges(body.AdditionalShippingCharges).
 		SetNotes(fmt.Sprintf("From requisition %s", rq.ReferenceNumber)).

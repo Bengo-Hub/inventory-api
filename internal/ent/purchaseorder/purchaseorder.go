@@ -34,6 +34,8 @@ const (
 	FieldCurrency = "currency"
 	// FieldRequisitionID holds the string denoting the requisition_id field in the database.
 	FieldRequisitionID = "requisition_id"
+	// FieldProjectID holds the string denoting the project_id field in the database.
+	FieldProjectID = "project_id"
 	// FieldRfqID holds the string denoting the rfq_id field in the database.
 	FieldRfqID = "rfq_id"
 	// FieldPayTermDays holds the string denoting the pay_term_days field in the database.
@@ -91,6 +93,7 @@ var Columns = []string{
 	FieldTotalAmount,
 	FieldCurrency,
 	FieldRequisitionID,
+	FieldProjectID,
 	FieldRfqID,
 	FieldPayTermDays,
 	FieldAdditionalShippingCharges,
@@ -209,6 +212,11 @@ func ByCurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByRequisitionID orders the results by the requisition_id field.
 func ByRequisitionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequisitionID, opts...).ToFunc()
+}
+
+// ByProjectID orders the results by the project_id field.
+func ByProjectID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProjectID, opts...).ToFunc()
 }
 
 // ByRfqID orders the results by the rfq_id field.

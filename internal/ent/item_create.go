@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
@@ -35,6 +37,7 @@ type ItemCreate struct {
 	config
 	mutation *ItemMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -1386,6 +1389,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_node = &Item{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(item.Table, sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -1885,11 +1889,2477 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Item.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemCreate) OnConflict(opts ...sql.ConflictOption) *ItemUpsertOne {
+	_c.conflict = opts
+	return &ItemUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemCreate) OnConflictColumns(columns ...string) *ItemUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ItemUpsertOne is the builder for "upsert"-ing
+	//  one Item node.
+	ItemUpsertOne struct {
+		create *ItemCreate
+	}
+
+	// ItemUpsert is the "OnConflict" setter.
+	ItemUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ItemUpsert) SetTenantID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTenantID() *ItemUpsert {
+	u.SetExcluded(item.FieldTenantID)
+	return u
+}
+
+// SetSku sets the "sku" field.
+func (u *ItemUpsert) SetSku(v string) *ItemUpsert {
+	u.Set(item.FieldSku, v)
+	return u
+}
+
+// UpdateSku sets the "sku" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateSku() *ItemUpsert {
+	u.SetExcluded(item.FieldSku)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ItemUpsert) SetName(v string) *ItemUpsert {
+	u.Set(item.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateName() *ItemUpsert {
+	u.SetExcluded(item.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemUpsert) SetDescription(v string) *ItemUpsert {
+	u.Set(item.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDescription() *ItemUpsert {
+	u.SetExcluded(item.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemUpsert) ClearDescription() *ItemUpsert {
+	u.SetNull(item.FieldDescription)
+	return u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsert) SetCategoryID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldCategoryID, v)
+	return u
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCategoryID() *ItemUpsert {
+	u.SetExcluded(item.FieldCategoryID)
+	return u
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsert) ClearCategoryID() *ItemUpsert {
+	u.SetNull(item.FieldCategoryID)
+	return u
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsert) SetBrandID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldBrandID, v)
+	return u
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBrandID() *ItemUpsert {
+	u.SetExcluded(item.FieldBrandID)
+	return u
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsert) ClearBrandID() *ItemUpsert {
+	u.SetNull(item.FieldBrandID)
+	return u
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsert) SetManufacturer(v string) *ItemUpsert {
+	u.Set(item.FieldManufacturer, v)
+	return u
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateManufacturer() *ItemUpsert {
+	u.SetExcluded(item.FieldManufacturer)
+	return u
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsert) ClearManufacturer() *ItemUpsert {
+	u.SetNull(item.FieldManufacturer)
+	return u
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsert) SetModel(v string) *ItemUpsert {
+	u.Set(item.FieldModel, v)
+	return u
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateModel() *ItemUpsert {
+	u.SetExcluded(item.FieldModel)
+	return u
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsert) ClearModel() *ItemUpsert {
+	u.SetNull(item.FieldModel)
+	return u
+}
+
+// SetGtin sets the "gtin" field.
+func (u *ItemUpsert) SetGtin(v string) *ItemUpsert {
+	u.Set(item.FieldGtin, v)
+	return u
+}
+
+// UpdateGtin sets the "gtin" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateGtin() *ItemUpsert {
+	u.SetExcluded(item.FieldGtin)
+	return u
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (u *ItemUpsert) ClearGtin() *ItemUpsert {
+	u.SetNull(item.FieldGtin)
+	return u
+}
+
+// SetMpn sets the "mpn" field.
+func (u *ItemUpsert) SetMpn(v string) *ItemUpsert {
+	u.Set(item.FieldMpn, v)
+	return u
+}
+
+// UpdateMpn sets the "mpn" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMpn() *ItemUpsert {
+	u.SetExcluded(item.FieldMpn)
+	return u
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (u *ItemUpsert) ClearMpn() *ItemUpsert {
+	u.SetNull(item.FieldMpn)
+	return u
+}
+
+// SetCondition sets the "condition" field.
+func (u *ItemUpsert) SetCondition(v item.Condition) *ItemUpsert {
+	u.Set(item.FieldCondition, v)
+	return u
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCondition() *ItemUpsert {
+	u.SetExcluded(item.FieldCondition)
+	return u
+}
+
+// SetSlug sets the "slug" field.
+func (u *ItemUpsert) SetSlug(v string) *ItemUpsert {
+	u.Set(item.FieldSlug, v)
+	return u
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateSlug() *ItemUpsert {
+	u.SetExcluded(item.FieldSlug)
+	return u
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemUpsert) ClearSlug() *ItemUpsert {
+	u.SetNull(item.FieldSlug)
+	return u
+}
+
+// SetShortDescription sets the "short_description" field.
+func (u *ItemUpsert) SetShortDescription(v string) *ItemUpsert {
+	u.Set(item.FieldShortDescription, v)
+	return u
+}
+
+// UpdateShortDescription sets the "short_description" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateShortDescription() *ItemUpsert {
+	u.SetExcluded(item.FieldShortDescription)
+	return u
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (u *ItemUpsert) ClearShortDescription() *ItemUpsert {
+	u.SetNull(item.FieldShortDescription)
+	return u
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (u *ItemUpsert) SetMetaTitle(v string) *ItemUpsert {
+	u.Set(item.FieldMetaTitle, v)
+	return u
+}
+
+// UpdateMetaTitle sets the "meta_title" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMetaTitle() *ItemUpsert {
+	u.SetExcluded(item.FieldMetaTitle)
+	return u
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (u *ItemUpsert) ClearMetaTitle() *ItemUpsert {
+	u.SetNull(item.FieldMetaTitle)
+	return u
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (u *ItemUpsert) SetMetaDescription(v string) *ItemUpsert {
+	u.Set(item.FieldMetaDescription, v)
+	return u
+}
+
+// UpdateMetaDescription sets the "meta_description" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMetaDescription() *ItemUpsert {
+	u.SetExcluded(item.FieldMetaDescription)
+	return u
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (u *ItemUpsert) ClearMetaDescription() *ItemUpsert {
+	u.SetNull(item.FieldMetaDescription)
+	return u
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (u *ItemUpsert) SetCountryOfOrigin(v string) *ItemUpsert {
+	u.Set(item.FieldCountryOfOrigin, v)
+	return u
+}
+
+// UpdateCountryOfOrigin sets the "country_of_origin" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCountryOfOrigin() *ItemUpsert {
+	u.SetExcluded(item.FieldCountryOfOrigin)
+	return u
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (u *ItemUpsert) ClearCountryOfOrigin() *ItemUpsert {
+	u.SetNull(item.FieldCountryOfOrigin)
+	return u
+}
+
+// SetHsCode sets the "hs_code" field.
+func (u *ItemUpsert) SetHsCode(v string) *ItemUpsert {
+	u.Set(item.FieldHsCode, v)
+	return u
+}
+
+// UpdateHsCode sets the "hs_code" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateHsCode() *ItemUpsert {
+	u.SetExcluded(item.FieldHsCode)
+	return u
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (u *ItemUpsert) ClearHsCode() *ItemUpsert {
+	u.SetNull(item.FieldHsCode)
+	return u
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (u *ItemUpsert) SetIsReturnable(v bool) *ItemUpsert {
+	u.Set(item.FieldIsReturnable, v)
+	return u
+}
+
+// UpdateIsReturnable sets the "is_returnable" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsReturnable() *ItemUpsert {
+	u.SetExcluded(item.FieldIsReturnable)
+	return u
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (u *ItemUpsert) SetReturnWindowDays(v int) *ItemUpsert {
+	u.Set(item.FieldReturnWindowDays, v)
+	return u
+}
+
+// UpdateReturnWindowDays sets the "return_window_days" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateReturnWindowDays() *ItemUpsert {
+	u.SetExcluded(item.FieldReturnWindowDays)
+	return u
+}
+
+// AddReturnWindowDays adds v to the "return_window_days" field.
+func (u *ItemUpsert) AddReturnWindowDays(v int) *ItemUpsert {
+	u.Add(item.FieldReturnWindowDays, v)
+	return u
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (u *ItemUpsert) ClearReturnWindowDays() *ItemUpsert {
+	u.SetNull(item.FieldReturnWindowDays)
+	return u
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (u *ItemUpsert) SetAllowBackorder(v bool) *ItemUpsert {
+	u.Set(item.FieldAllowBackorder, v)
+	return u
+}
+
+// UpdateAllowBackorder sets the "allow_backorder" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateAllowBackorder() *ItemUpsert {
+	u.SetExcluded(item.FieldAllowBackorder)
+	return u
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (u *ItemUpsert) SetIsDiscontinued(v bool) *ItemUpsert {
+	u.Set(item.FieldIsDiscontinued, v)
+	return u
+}
+
+// UpdateIsDiscontinued sets the "is_discontinued" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsDiscontinued() *ItemUpsert {
+	u.SetExcluded(item.FieldIsDiscontinued)
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsert) SetUnitID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldUnitID, v)
+	return u
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUnitID() *ItemUpsert {
+	u.SetExcluded(item.FieldUnitID)
+	return u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsert) ClearUnitID() *ItemUpsert {
+	u.SetNull(item.FieldUnitID)
+	return u
+}
+
+// SetType sets the "type" field.
+func (u *ItemUpsert) SetType(v item.Type) *ItemUpsert {
+	u.Set(item.FieldType, v)
+	return u
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateType() *ItemUpsert {
+	u.SetExcluded(item.FieldType)
+	return u
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsert) SetUseCase(v item.UseCase) *ItemUpsert {
+	u.Set(item.FieldUseCase, v)
+	return u
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUseCase() *ItemUpsert {
+	u.SetExcluded(item.FieldUseCase)
+	return u
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsert) SetMealPlan(v item.MealPlan) *ItemUpsert {
+	u.Set(item.FieldMealPlan, v)
+	return u
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMealPlan() *ItemUpsert {
+	u.SetExcluded(item.FieldMealPlan)
+	return u
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsert) ClearMealPlan() *ItemUpsert {
+	u.SetNull(item.FieldMealPlan)
+	return u
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsert) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsert {
+	u.Set(item.FieldOccupancyBasis, v)
+	return u
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateOccupancyBasis() *ItemUpsert {
+	u.SetExcluded(item.FieldOccupancyBasis)
+	return u
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsert) ClearOccupancyBasis() *ItemUpsert {
+	u.SetNull(item.FieldOccupancyBasis)
+	return u
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsert) SetMaxAdults(v int) *ItemUpsert {
+	u.Set(item.FieldMaxAdults, v)
+	return u
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxAdults() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxAdults)
+	return u
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsert) AddMaxAdults(v int) *ItemUpsert {
+	u.Add(item.FieldMaxAdults, v)
+	return u
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsert) ClearMaxAdults() *ItemUpsert {
+	u.SetNull(item.FieldMaxAdults)
+	return u
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsert) SetMaxChildren(v int) *ItemUpsert {
+	u.Set(item.FieldMaxChildren, v)
+	return u
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxChildren() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxChildren)
+	return u
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsert) AddMaxChildren(v int) *ItemUpsert {
+	u.Add(item.FieldMaxChildren, v)
+	return u
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsert) ClearMaxChildren() *ItemUpsert {
+	u.SetNull(item.FieldMaxChildren)
+	return u
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsert) SetExtraBedAllowed(v bool) *ItemUpsert {
+	u.Set(item.FieldExtraBedAllowed, v)
+	return u
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateExtraBedAllowed() *ItemUpsert {
+	u.SetExcluded(item.FieldExtraBedAllowed)
+	return u
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsert) SetSingleSupplement(v float64) *ItemUpsert {
+	u.Set(item.FieldSingleSupplement, v)
+	return u
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateSingleSupplement() *ItemUpsert {
+	u.SetExcluded(item.FieldSingleSupplement)
+	return u
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsert) AddSingleSupplement(v float64) *ItemUpsert {
+	u.Add(item.FieldSingleSupplement, v)
+	return u
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsert) ClearSingleSupplement() *ItemUpsert {
+	u.SetNull(item.FieldSingleSupplement)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ItemUpsert) SetIsActive(v bool) *ItemUpsert {
+	u.Set(item.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsActive() *ItemUpsert {
+	u.SetExcluded(item.FieldIsActive)
+	return u
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemUpsert) SetImageURL(v string) *ItemUpsert {
+	u.Set(item.FieldImageURL, v)
+	return u
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateImageURL() *ItemUpsert {
+	u.SetExcluded(item.FieldImageURL)
+	return u
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemUpsert) ClearImageURL() *ItemUpsert {
+	u.SetNull(item.FieldImageURL)
+	return u
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsert) SetBarcode(v string) *ItemUpsert {
+	u.Set(item.FieldBarcode, v)
+	return u
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBarcode() *ItemUpsert {
+	u.SetExcluded(item.FieldBarcode)
+	return u
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsert) ClearBarcode() *ItemUpsert {
+	u.SetNull(item.FieldBarcode)
+	return u
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsert) SetBarcodeType(v string) *ItemUpsert {
+	u.Set(item.FieldBarcodeType, v)
+	return u
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBarcodeType() *ItemUpsert {
+	u.SetExcluded(item.FieldBarcodeType)
+	return u
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsert) ClearBarcodeType() *ItemUpsert {
+	u.SetNull(item.FieldBarcodeType)
+	return u
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsert) SetRequiresAgeVerification(v bool) *ItemUpsert {
+	u.Set(item.FieldRequiresAgeVerification, v)
+	return u
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateRequiresAgeVerification() *ItemUpsert {
+	u.SetExcluded(item.FieldRequiresAgeVerification)
+	return u
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsert) SetIsControlledSubstance(v bool) *ItemUpsert {
+	u.Set(item.FieldIsControlledSubstance, v)
+	return u
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsControlledSubstance() *ItemUpsert {
+	u.SetExcluded(item.FieldIsControlledSubstance)
+	return u
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsert) SetIsPerishable(v bool) *ItemUpsert {
+	u.Set(item.FieldIsPerishable, v)
+	return u
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateIsPerishable() *ItemUpsert {
+	u.SetExcluded(item.FieldIsPerishable)
+	return u
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsert) SetTrackSerialNumbers(v bool) *ItemUpsert {
+	u.Set(item.FieldTrackSerialNumbers, v)
+	return u
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTrackSerialNumbers() *ItemUpsert {
+	u.SetExcluded(item.FieldTrackSerialNumbers)
+	return u
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsert) SetTrackLots(v bool) *ItemUpsert {
+	u.Set(item.FieldTrackLots, v)
+	return u
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTrackLots() *ItemUpsert {
+	u.SetExcluded(item.FieldTrackLots)
+	return u
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsert) SetShelfLifeDays(v int) *ItemUpsert {
+	u.Set(item.FieldShelfLifeDays, v)
+	return u
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateShelfLifeDays() *ItemUpsert {
+	u.SetExcluded(item.FieldShelfLifeDays)
+	return u
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsert) AddShelfLifeDays(v int) *ItemUpsert {
+	u.Add(item.FieldShelfLifeDays, v)
+	return u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsert) ClearShelfLifeDays() *ItemUpsert {
+	u.SetNull(item.FieldShelfLifeDays)
+	return u
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsert) SetWeightKg(v float64) *ItemUpsert {
+	u.Set(item.FieldWeightKg, v)
+	return u
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWeightKg() *ItemUpsert {
+	u.SetExcluded(item.FieldWeightKg)
+	return u
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsert) AddWeightKg(v float64) *ItemUpsert {
+	u.Add(item.FieldWeightKg, v)
+	return u
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsert) ClearWeightKg() *ItemUpsert {
+	u.SetNull(item.FieldWeightKg)
+	return u
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsert) SetDimensionsCm(v map[string]float64) *ItemUpsert {
+	u.Set(item.FieldDimensionsCm, v)
+	return u
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDimensionsCm() *ItemUpsert {
+	u.SetExcluded(item.FieldDimensionsCm)
+	return u
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsert) ClearDimensionsCm() *ItemUpsert {
+	u.SetNull(item.FieldDimensionsCm)
+	return u
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsert) SetDurationMinutes(v int) *ItemUpsert {
+	u.Set(item.FieldDurationMinutes, v)
+	return u
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDurationMinutes() *ItemUpsert {
+	u.SetExcluded(item.FieldDurationMinutes)
+	return u
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsert) AddDurationMinutes(v int) *ItemUpsert {
+	u.Add(item.FieldDurationMinutes, v)
+	return u
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsert) ClearDurationMinutes() *ItemUpsert {
+	u.SetNull(item.FieldDurationMinutes)
+	return u
+}
+
+// SetTags sets the "tags" field.
+func (u *ItemUpsert) SetTags(v []string) *ItemUpsert {
+	u.Set(item.FieldTags, v)
+	return u
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTags() *ItemUpsert {
+	u.SetExcluded(item.FieldTags)
+	return u
+}
+
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsert) SetTaxCodeID(v string) *ItemUpsert {
+	u.Set(item.FieldTaxCodeID, v)
+	return u
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTaxCodeID() *ItemUpsert {
+	u.SetExcluded(item.FieldTaxCodeID)
+	return u
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsert) ClearTaxCodeID() *ItemUpsert {
+	u.SetNull(item.FieldTaxCodeID)
+	return u
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsert) SetTaxInclusive(v bool) *ItemUpsert {
+	u.Set(item.FieldTaxInclusive, v)
+	return u
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTaxInclusive() *ItemUpsert {
+	u.SetExcluded(item.FieldTaxInclusive)
+	return u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsert) SetCostPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldCostPrice, v)
+	return u
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateCostPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldCostPrice)
+	return u
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsert) AddCostPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldCostPrice, v)
+	return u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsert) ClearCostPrice() *ItemUpsert {
+	u.SetNull(item.FieldCostPrice)
+	return u
+}
+
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsert) SetPurchasePrice(v float64) *ItemUpsert {
+	u.Set(item.FieldPurchasePrice, v)
+	return u
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchasePrice() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchasePrice)
+	return u
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsert) AddPurchasePrice(v float64) *ItemUpsert {
+	u.Add(item.FieldPurchasePrice, v)
+	return u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsert) ClearPurchasePrice() *ItemUpsert {
+	u.SetNull(item.FieldPurchasePrice)
+	return u
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsert) SetPurchasePackSize(v float64) *ItemUpsert {
+	u.Set(item.FieldPurchasePackSize, v)
+	return u
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchasePackSize() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchasePackSize)
+	return u
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsert) AddPurchasePackSize(v float64) *ItemUpsert {
+	u.Add(item.FieldPurchasePackSize, v)
+	return u
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsert) ClearPurchasePackSize() *ItemUpsert {
+	u.SetNull(item.FieldPurchasePackSize)
+	return u
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsert) SetPurchaseUnit(v string) *ItemUpsert {
+	u.Set(item.FieldPurchaseUnit, v)
+	return u
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchaseUnit() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchaseUnit)
+	return u
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsert) ClearPurchaseUnit() *ItemUpsert {
+	u.SetNull(item.FieldPurchaseUnit)
+	return u
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsert) SetYieldPct(v float64) *ItemUpsert {
+	u.Set(item.FieldYieldPct, v)
+	return u
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateYieldPct() *ItemUpsert {
+	u.SetExcluded(item.FieldYieldPct)
+	return u
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsert) AddYieldPct(v float64) *ItemUpsert {
+	u.Add(item.FieldYieldPct, v)
+	return u
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsert) ClearYieldPct() *ItemUpsert {
+	u.SetNull(item.FieldYieldPct)
+	return u
+}
+
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsert) SetMinSellingPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldMinSellingPrice, v)
+	return u
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMinSellingPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldMinSellingPrice)
+	return u
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsert) AddMinSellingPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldMinSellingPrice, v)
+	return u
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsert) ClearMinSellingPrice() *ItemUpsert {
+	u.SetNull(item.FieldMinSellingPrice)
+	return u
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsert) SetMaxSellingPrice(v float64) *ItemUpsert {
+	u.Set(item.FieldMaxSellingPrice, v)
+	return u
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMaxSellingPrice() *ItemUpsert {
+	u.SetExcluded(item.FieldMaxSellingPrice)
+	return u
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsert) AddMaxSellingPrice(v float64) *ItemUpsert {
+	u.Add(item.FieldMaxSellingPrice, v)
+	return u
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsert) ClearMaxSellingPrice() *ItemUpsert {
+	u.SetNull(item.FieldMaxSellingPrice)
+	return u
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsert) SetTargetMarginPercent(v float64) *ItemUpsert {
+	u.Set(item.FieldTargetMarginPercent, v)
+	return u
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTargetMarginPercent() *ItemUpsert {
+	u.SetExcluded(item.FieldTargetMarginPercent)
+	return u
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsert) AddTargetMarginPercent(v float64) *ItemUpsert {
+	u.Add(item.FieldTargetMarginPercent, v)
+	return u
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsert) ClearTargetMarginPercent() *ItemUpsert {
+	u.SetNull(item.FieldTargetMarginPercent)
+	return u
+}
+
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsert) SetTotalCapacity(v int) *ItemUpsert {
+	u.Set(item.FieldTotalCapacity, v)
+	return u
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateTotalCapacity() *ItemUpsert {
+	u.SetExcluded(item.FieldTotalCapacity)
+	return u
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsert) AddTotalCapacity(v int) *ItemUpsert {
+	u.Add(item.FieldTotalCapacity, v)
+	return u
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsert) ClearTotalCapacity() *ItemUpsert {
+	u.SetNull(item.FieldTotalCapacity)
+	return u
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsert) SetBookedCapacity(v int) *ItemUpsert {
+	u.Set(item.FieldBookedCapacity, v)
+	return u
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateBookedCapacity() *ItemUpsert {
+	u.SetExcluded(item.FieldBookedCapacity)
+	return u
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsert) AddBookedCapacity(v int) *ItemUpsert {
+	u.Add(item.FieldBookedCapacity, v)
+	return u
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsert) ClearBookedCapacity() *ItemUpsert {
+	u.SetNull(item.FieldBookedCapacity)
+	return u
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsert) SetEventStartAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldEventStartAt, v)
+	return u
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventStartAt() *ItemUpsert {
+	u.SetExcluded(item.FieldEventStartAt)
+	return u
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsert) ClearEventStartAt() *ItemUpsert {
+	u.SetNull(item.FieldEventStartAt)
+	return u
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsert) SetEventEndAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldEventEndAt, v)
+	return u
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventEndAt() *ItemUpsert {
+	u.SetExcluded(item.FieldEventEndAt)
+	return u
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsert) ClearEventEndAt() *ItemUpsert {
+	u.SetNull(item.FieldEventEndAt)
+	return u
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsert) SetEventVenue(v string) *ItemUpsert {
+	u.Set(item.FieldEventVenue, v)
+	return u
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEventVenue() *ItemUpsert {
+	u.SetExcluded(item.FieldEventVenue)
+	return u
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsert) ClearEventVenue() *ItemUpsert {
+	u.SetNull(item.FieldEventVenue)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemUpsert) SetMetadata(v map[string]interface{}) *ItemUpsert {
+	u.Set(item.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMetadata() *ItemUpsert {
+	u.SetExcluded(item.FieldMetadata)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemUpsert) SetUpdatedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUpdatedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(item.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemUpsertOne) UpdateNewValues() *ItemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(item.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(item.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ItemUpsertOne) Ignore() *ItemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemUpsertOne) DoNothing() *ItemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemCreate.OnConflict
+// documentation for more info.
+func (u *ItemUpsertOne) Update(set func(*ItemUpsert)) *ItemUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ItemUpsertOne) SetTenantID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTenantID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSku sets the "sku" field.
+func (u *ItemUpsertOne) SetSku(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSku(v)
+	})
+}
+
+// UpdateSku sets the "sku" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateSku() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSku()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ItemUpsertOne) SetName(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateName() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemUpsertOne) SetDescription(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemUpsertOne) ClearDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsertOne) SetCategoryID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCategoryID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsertOne) ClearCategoryID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCategoryID()
+	})
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsertOne) SetBrandID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBrandID(v)
+	})
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBrandID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBrandID()
+	})
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsertOne) ClearBrandID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBrandID()
+	})
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsertOne) SetManufacturer(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetManufacturer(v)
+	})
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateManufacturer() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateManufacturer()
+	})
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsertOne) ClearManufacturer() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearManufacturer()
+	})
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsertOne) SetModel(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetModel(v)
+	})
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateModel() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateModel()
+	})
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsertOne) ClearModel() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearModel()
+	})
+}
+
+// SetGtin sets the "gtin" field.
+func (u *ItemUpsertOne) SetGtin(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetGtin(v)
+	})
+}
+
+// UpdateGtin sets the "gtin" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateGtin() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateGtin()
+	})
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (u *ItemUpsertOne) ClearGtin() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearGtin()
+	})
+}
+
+// SetMpn sets the "mpn" field.
+func (u *ItemUpsertOne) SetMpn(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMpn(v)
+	})
+}
+
+// UpdateMpn sets the "mpn" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMpn() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMpn()
+	})
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (u *ItemUpsertOne) ClearMpn() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMpn()
+	})
+}
+
+// SetCondition sets the "condition" field.
+func (u *ItemUpsertOne) SetCondition(v item.Condition) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCondition(v)
+	})
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCondition() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCondition()
+	})
+}
+
+// SetSlug sets the "slug" field.
+func (u *ItemUpsertOne) SetSlug(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateSlug() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemUpsertOne) ClearSlug() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSlug()
+	})
+}
+
+// SetShortDescription sets the "short_description" field.
+func (u *ItemUpsertOne) SetShortDescription(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShortDescription(v)
+	})
+}
+
+// UpdateShortDescription sets the "short_description" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateShortDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShortDescription()
+	})
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (u *ItemUpsertOne) ClearShortDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShortDescription()
+	})
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (u *ItemUpsertOne) SetMetaTitle(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetaTitle(v)
+	})
+}
+
+// UpdateMetaTitle sets the "meta_title" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMetaTitle() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetaTitle()
+	})
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (u *ItemUpsertOne) ClearMetaTitle() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMetaTitle()
+	})
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (u *ItemUpsertOne) SetMetaDescription(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetaDescription(v)
+	})
+}
+
+// UpdateMetaDescription sets the "meta_description" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMetaDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetaDescription()
+	})
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (u *ItemUpsertOne) ClearMetaDescription() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMetaDescription()
+	})
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (u *ItemUpsertOne) SetCountryOfOrigin(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCountryOfOrigin(v)
+	})
+}
+
+// UpdateCountryOfOrigin sets the "country_of_origin" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCountryOfOrigin() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCountryOfOrigin()
+	})
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (u *ItemUpsertOne) ClearCountryOfOrigin() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCountryOfOrigin()
+	})
+}
+
+// SetHsCode sets the "hs_code" field.
+func (u *ItemUpsertOne) SetHsCode(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetHsCode(v)
+	})
+}
+
+// UpdateHsCode sets the "hs_code" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateHsCode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateHsCode()
+	})
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (u *ItemUpsertOne) ClearHsCode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearHsCode()
+	})
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (u *ItemUpsertOne) SetIsReturnable(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsReturnable(v)
+	})
+}
+
+// UpdateIsReturnable sets the "is_returnable" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsReturnable() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsReturnable()
+	})
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (u *ItemUpsertOne) SetReturnWindowDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetReturnWindowDays(v)
+	})
+}
+
+// AddReturnWindowDays adds v to the "return_window_days" field.
+func (u *ItemUpsertOne) AddReturnWindowDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddReturnWindowDays(v)
+	})
+}
+
+// UpdateReturnWindowDays sets the "return_window_days" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateReturnWindowDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateReturnWindowDays()
+	})
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (u *ItemUpsertOne) ClearReturnWindowDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearReturnWindowDays()
+	})
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (u *ItemUpsertOne) SetAllowBackorder(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetAllowBackorder(v)
+	})
+}
+
+// UpdateAllowBackorder sets the "allow_backorder" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateAllowBackorder() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateAllowBackorder()
+	})
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (u *ItemUpsertOne) SetIsDiscontinued(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsDiscontinued(v)
+	})
+}
+
+// UpdateIsDiscontinued sets the "is_discontinued" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsDiscontinued() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsDiscontinued()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsertOne) SetUnitID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUnitID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsertOne) ClearUnitID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *ItemUpsertOne) SetType(v item.Type) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateType() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateType()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsertOne) SetUseCase(v item.UseCase) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUseCase() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsertOne) SetMealPlan(v item.MealPlan) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMealPlan(v)
+	})
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMealPlan() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMealPlan()
+	})
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsertOne) ClearMealPlan() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMealPlan()
+	})
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsertOne) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetOccupancyBasis(v)
+	})
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateOccupancyBasis() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateOccupancyBasis()
+	})
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsertOne) ClearOccupancyBasis() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearOccupancyBasis()
+	})
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsertOne) SetMaxAdults(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxAdults(v)
+	})
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsertOne) AddMaxAdults(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxAdults(v)
+	})
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxAdults() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxAdults()
+	})
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsertOne) ClearMaxAdults() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxAdults()
+	})
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsertOne) SetMaxChildren(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxChildren(v)
+	})
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsertOne) AddMaxChildren(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxChildren(v)
+	})
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxChildren() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxChildren()
+	})
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsertOne) ClearMaxChildren() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxChildren()
+	})
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsertOne) SetExtraBedAllowed(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraBedAllowed(v)
+	})
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateExtraBedAllowed() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraBedAllowed()
+	})
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsertOne) SetSingleSupplement(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSingleSupplement(v)
+	})
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsertOne) AddSingleSupplement(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSingleSupplement(v)
+	})
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateSingleSupplement() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSingleSupplement()
+	})
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsertOne) ClearSingleSupplement() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSingleSupplement()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ItemUpsertOne) SetIsActive(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsActive() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemUpsertOne) SetImageURL(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateImageURL() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemUpsertOne) ClearImageURL() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsertOne) SetBarcode(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBarcode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsertOne) ClearBarcode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsertOne) SetBarcodeType(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcodeType(v)
+	})
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBarcodeType() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcodeType()
+	})
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsertOne) ClearBarcodeType() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcodeType()
+	})
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsertOne) SetRequiresAgeVerification(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetRequiresAgeVerification(v)
+	})
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateRequiresAgeVerification() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateRequiresAgeVerification()
+	})
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsertOne) SetIsControlledSubstance(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsControlledSubstance(v)
+	})
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsControlledSubstance() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsControlledSubstance()
+	})
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsertOne) SetIsPerishable(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsPerishable(v)
+	})
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateIsPerishable() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsPerishable()
+	})
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsertOne) SetTrackSerialNumbers(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackSerialNumbers(v)
+	})
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTrackSerialNumbers() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackSerialNumbers()
+	})
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsertOne) SetTrackLots(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackLots(v)
+	})
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTrackLots() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackLots()
+	})
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsertOne) SetShelfLifeDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShelfLifeDays(v)
+	})
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsertOne) AddShelfLifeDays(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddShelfLifeDays(v)
+	})
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateShelfLifeDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShelfLifeDays()
+	})
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsertOne) ClearShelfLifeDays() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShelfLifeDays()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsertOne) SetWeightKg(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsertOne) AddWeightKg(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWeightKg() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsertOne) ClearWeightKg() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightKg()
+	})
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsertOne) SetDimensionsCm(v map[string]float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDimensionsCm(v)
+	})
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDimensionsCm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDimensionsCm()
+	})
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsertOne) ClearDimensionsCm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDimensionsCm()
+	})
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsertOne) SetDurationMinutes(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDurationMinutes(v)
+	})
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsertOne) AddDurationMinutes(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddDurationMinutes(v)
+	})
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDurationMinutes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDurationMinutes()
+	})
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsertOne) ClearDurationMinutes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDurationMinutes()
+	})
+}
+
+// SetTags sets the "tags" field.
+func (u *ItemUpsertOne) SetTags(v []string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTags(v)
+	})
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTags() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTags()
+	})
+}
+
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsertOne) SetTaxCodeID(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxCodeID(v)
+	})
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTaxCodeID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxCodeID()
+	})
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsertOne) ClearTaxCodeID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTaxCodeID()
+	})
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsertOne) SetTaxInclusive(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxInclusive(v)
+	})
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTaxInclusive() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxInclusive()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsertOne) SetCostPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsertOne) AddCostPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateCostPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsertOne) ClearCostPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsertOne) SetPurchasePrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertOne) AddPurchasePrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
+	})
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchasePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertOne) ClearPurchasePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
+	})
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsertOne) SetPurchasePackSize(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePackSize(v)
+	})
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsertOne) AddPurchasePackSize(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePackSize(v)
+	})
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchasePackSize() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePackSize()
+	})
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsertOne) ClearPurchasePackSize() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePackSize()
+	})
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsertOne) SetPurchaseUnit(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchaseUnit(v)
+	})
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchaseUnit() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchaseUnit()
+	})
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsertOne) ClearPurchaseUnit() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchaseUnit()
+	})
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsertOne) SetYieldPct(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetYieldPct(v)
+	})
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsertOne) AddYieldPct(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddYieldPct(v)
+	})
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateYieldPct() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateYieldPct()
+	})
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsertOne) ClearYieldPct() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearYieldPct()
+	})
+}
+
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsertOne) SetMinSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMinSellingPrice(v)
+	})
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsertOne) AddMinSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMinSellingPrice(v)
+	})
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMinSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMinSellingPrice()
+	})
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsertOne) ClearMinSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMinSellingPrice()
+	})
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsertOne) SetMaxSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxSellingPrice(v)
+	})
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsertOne) AddMaxSellingPrice(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxSellingPrice(v)
+	})
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMaxSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxSellingPrice()
+	})
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsertOne) ClearMaxSellingPrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxSellingPrice()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsertOne) SetTargetMarginPercent(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsertOne) AddTargetMarginPercent(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTargetMarginPercent() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsertOne) ClearTargetMarginPercent() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTargetMarginPercent()
+	})
+}
+
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsertOne) SetTotalCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTotalCapacity(v)
+	})
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsertOne) AddTotalCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTotalCapacity(v)
+	})
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateTotalCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTotalCapacity()
+	})
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsertOne) ClearTotalCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTotalCapacity()
+	})
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsertOne) SetBookedCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBookedCapacity(v)
+	})
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsertOne) AddBookedCapacity(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddBookedCapacity(v)
+	})
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateBookedCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBookedCapacity()
+	})
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsertOne) ClearBookedCapacity() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBookedCapacity()
+	})
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsertOne) SetEventStartAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventStartAt(v)
+	})
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventStartAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventStartAt()
+	})
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsertOne) ClearEventStartAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventStartAt()
+	})
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsertOne) SetEventEndAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventEndAt(v)
+	})
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventEndAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventEndAt()
+	})
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsertOne) ClearEventEndAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventEndAt()
+	})
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsertOne) SetEventVenue(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventVenue(v)
+	})
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEventVenue() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventVenue()
+	})
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsertOne) ClearEventVenue() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventVenue()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemUpsertOne) SetMetadata(v map[string]interface{}) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMetadata() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemUpsertOne) SetUpdatedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUpdatedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ItemUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ItemUpsertOne.ID is not supported by MySQL driver. Use ItemUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ItemUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ItemCreateBulk is the builder for creating many Item entities in bulk.
 type ItemCreateBulk struct {
 	config
 	err      error
 	builders []*ItemCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Item entities in the database.
@@ -1919,6 +4389,7 @@ func (_c *ItemCreateBulk) Save(ctx context.Context) ([]*Item, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -1965,6 +4436,1376 @@ func (_c *ItemCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ItemCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Item.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemCreateBulk) OnConflict(opts ...sql.ConflictOption) *ItemUpsertBulk {
+	_c.conflict = opts
+	return &ItemUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemCreateBulk) OnConflictColumns(columns ...string) *ItemUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemUpsertBulk{
+		create: _c,
+	}
+}
+
+// ItemUpsertBulk is the builder for "upsert"-ing
+// a bulk of Item nodes.
+type ItemUpsertBulk struct {
+	create *ItemCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(item.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemUpsertBulk) UpdateNewValues() *ItemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(item.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(item.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Item.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ItemUpsertBulk) Ignore() *ItemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemUpsertBulk) DoNothing() *ItemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemCreateBulk.OnConflict
+// documentation for more info.
+func (u *ItemUpsertBulk) Update(set func(*ItemUpsert)) *ItemUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ItemUpsertBulk) SetTenantID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTenantID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSku sets the "sku" field.
+func (u *ItemUpsertBulk) SetSku(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSku(v)
+	})
+}
+
+// UpdateSku sets the "sku" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateSku() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSku()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ItemUpsertBulk) SetName(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateName() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemUpsertBulk) SetDescription(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemUpsertBulk) ClearDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *ItemUpsertBulk) SetCategoryID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCategoryID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// ClearCategoryID clears the value of the "category_id" field.
+func (u *ItemUpsertBulk) ClearCategoryID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCategoryID()
+	})
+}
+
+// SetBrandID sets the "brand_id" field.
+func (u *ItemUpsertBulk) SetBrandID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBrandID(v)
+	})
+}
+
+// UpdateBrandID sets the "brand_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBrandID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBrandID()
+	})
+}
+
+// ClearBrandID clears the value of the "brand_id" field.
+func (u *ItemUpsertBulk) ClearBrandID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBrandID()
+	})
+}
+
+// SetManufacturer sets the "manufacturer" field.
+func (u *ItemUpsertBulk) SetManufacturer(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetManufacturer(v)
+	})
+}
+
+// UpdateManufacturer sets the "manufacturer" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateManufacturer() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateManufacturer()
+	})
+}
+
+// ClearManufacturer clears the value of the "manufacturer" field.
+func (u *ItemUpsertBulk) ClearManufacturer() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearManufacturer()
+	})
+}
+
+// SetModel sets the "model" field.
+func (u *ItemUpsertBulk) SetModel(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetModel(v)
+	})
+}
+
+// UpdateModel sets the "model" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateModel() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateModel()
+	})
+}
+
+// ClearModel clears the value of the "model" field.
+func (u *ItemUpsertBulk) ClearModel() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearModel()
+	})
+}
+
+// SetGtin sets the "gtin" field.
+func (u *ItemUpsertBulk) SetGtin(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetGtin(v)
+	})
+}
+
+// UpdateGtin sets the "gtin" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateGtin() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateGtin()
+	})
+}
+
+// ClearGtin clears the value of the "gtin" field.
+func (u *ItemUpsertBulk) ClearGtin() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearGtin()
+	})
+}
+
+// SetMpn sets the "mpn" field.
+func (u *ItemUpsertBulk) SetMpn(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMpn(v)
+	})
+}
+
+// UpdateMpn sets the "mpn" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMpn() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMpn()
+	})
+}
+
+// ClearMpn clears the value of the "mpn" field.
+func (u *ItemUpsertBulk) ClearMpn() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMpn()
+	})
+}
+
+// SetCondition sets the "condition" field.
+func (u *ItemUpsertBulk) SetCondition(v item.Condition) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCondition(v)
+	})
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCondition() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCondition()
+	})
+}
+
+// SetSlug sets the "slug" field.
+func (u *ItemUpsertBulk) SetSlug(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSlug(v)
+	})
+}
+
+// UpdateSlug sets the "slug" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateSlug() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSlug()
+	})
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (u *ItemUpsertBulk) ClearSlug() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSlug()
+	})
+}
+
+// SetShortDescription sets the "short_description" field.
+func (u *ItemUpsertBulk) SetShortDescription(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShortDescription(v)
+	})
+}
+
+// UpdateShortDescription sets the "short_description" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateShortDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShortDescription()
+	})
+}
+
+// ClearShortDescription clears the value of the "short_description" field.
+func (u *ItemUpsertBulk) ClearShortDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShortDescription()
+	})
+}
+
+// SetMetaTitle sets the "meta_title" field.
+func (u *ItemUpsertBulk) SetMetaTitle(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetaTitle(v)
+	})
+}
+
+// UpdateMetaTitle sets the "meta_title" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMetaTitle() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetaTitle()
+	})
+}
+
+// ClearMetaTitle clears the value of the "meta_title" field.
+func (u *ItemUpsertBulk) ClearMetaTitle() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMetaTitle()
+	})
+}
+
+// SetMetaDescription sets the "meta_description" field.
+func (u *ItemUpsertBulk) SetMetaDescription(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetaDescription(v)
+	})
+}
+
+// UpdateMetaDescription sets the "meta_description" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMetaDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetaDescription()
+	})
+}
+
+// ClearMetaDescription clears the value of the "meta_description" field.
+func (u *ItemUpsertBulk) ClearMetaDescription() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMetaDescription()
+	})
+}
+
+// SetCountryOfOrigin sets the "country_of_origin" field.
+func (u *ItemUpsertBulk) SetCountryOfOrigin(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCountryOfOrigin(v)
+	})
+}
+
+// UpdateCountryOfOrigin sets the "country_of_origin" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCountryOfOrigin() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCountryOfOrigin()
+	})
+}
+
+// ClearCountryOfOrigin clears the value of the "country_of_origin" field.
+func (u *ItemUpsertBulk) ClearCountryOfOrigin() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCountryOfOrigin()
+	})
+}
+
+// SetHsCode sets the "hs_code" field.
+func (u *ItemUpsertBulk) SetHsCode(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetHsCode(v)
+	})
+}
+
+// UpdateHsCode sets the "hs_code" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateHsCode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateHsCode()
+	})
+}
+
+// ClearHsCode clears the value of the "hs_code" field.
+func (u *ItemUpsertBulk) ClearHsCode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearHsCode()
+	})
+}
+
+// SetIsReturnable sets the "is_returnable" field.
+func (u *ItemUpsertBulk) SetIsReturnable(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsReturnable(v)
+	})
+}
+
+// UpdateIsReturnable sets the "is_returnable" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsReturnable() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsReturnable()
+	})
+}
+
+// SetReturnWindowDays sets the "return_window_days" field.
+func (u *ItemUpsertBulk) SetReturnWindowDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetReturnWindowDays(v)
+	})
+}
+
+// AddReturnWindowDays adds v to the "return_window_days" field.
+func (u *ItemUpsertBulk) AddReturnWindowDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddReturnWindowDays(v)
+	})
+}
+
+// UpdateReturnWindowDays sets the "return_window_days" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateReturnWindowDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateReturnWindowDays()
+	})
+}
+
+// ClearReturnWindowDays clears the value of the "return_window_days" field.
+func (u *ItemUpsertBulk) ClearReturnWindowDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearReturnWindowDays()
+	})
+}
+
+// SetAllowBackorder sets the "allow_backorder" field.
+func (u *ItemUpsertBulk) SetAllowBackorder(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetAllowBackorder(v)
+	})
+}
+
+// UpdateAllowBackorder sets the "allow_backorder" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateAllowBackorder() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateAllowBackorder()
+	})
+}
+
+// SetIsDiscontinued sets the "is_discontinued" field.
+func (u *ItemUpsertBulk) SetIsDiscontinued(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsDiscontinued(v)
+	})
+}
+
+// UpdateIsDiscontinued sets the "is_discontinued" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsDiscontinued() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsDiscontinued()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *ItemUpsertBulk) SetUnitID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUnitID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *ItemUpsertBulk) ClearUnitID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetType sets the "type" field.
+func (u *ItemUpsertBulk) SetType(v item.Type) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetType(v)
+	})
+}
+
+// UpdateType sets the "type" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateType() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateType()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *ItemUpsertBulk) SetUseCase(v item.UseCase) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUseCase() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// SetMealPlan sets the "meal_plan" field.
+func (u *ItemUpsertBulk) SetMealPlan(v item.MealPlan) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMealPlan(v)
+	})
+}
+
+// UpdateMealPlan sets the "meal_plan" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMealPlan() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMealPlan()
+	})
+}
+
+// ClearMealPlan clears the value of the "meal_plan" field.
+func (u *ItemUpsertBulk) ClearMealPlan() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMealPlan()
+	})
+}
+
+// SetOccupancyBasis sets the "occupancy_basis" field.
+func (u *ItemUpsertBulk) SetOccupancyBasis(v item.OccupancyBasis) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetOccupancyBasis(v)
+	})
+}
+
+// UpdateOccupancyBasis sets the "occupancy_basis" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateOccupancyBasis() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateOccupancyBasis()
+	})
+}
+
+// ClearOccupancyBasis clears the value of the "occupancy_basis" field.
+func (u *ItemUpsertBulk) ClearOccupancyBasis() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearOccupancyBasis()
+	})
+}
+
+// SetMaxAdults sets the "max_adults" field.
+func (u *ItemUpsertBulk) SetMaxAdults(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxAdults(v)
+	})
+}
+
+// AddMaxAdults adds v to the "max_adults" field.
+func (u *ItemUpsertBulk) AddMaxAdults(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxAdults(v)
+	})
+}
+
+// UpdateMaxAdults sets the "max_adults" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxAdults() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxAdults()
+	})
+}
+
+// ClearMaxAdults clears the value of the "max_adults" field.
+func (u *ItemUpsertBulk) ClearMaxAdults() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxAdults()
+	})
+}
+
+// SetMaxChildren sets the "max_children" field.
+func (u *ItemUpsertBulk) SetMaxChildren(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxChildren(v)
+	})
+}
+
+// AddMaxChildren adds v to the "max_children" field.
+func (u *ItemUpsertBulk) AddMaxChildren(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxChildren(v)
+	})
+}
+
+// UpdateMaxChildren sets the "max_children" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxChildren() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxChildren()
+	})
+}
+
+// ClearMaxChildren clears the value of the "max_children" field.
+func (u *ItemUpsertBulk) ClearMaxChildren() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxChildren()
+	})
+}
+
+// SetExtraBedAllowed sets the "extra_bed_allowed" field.
+func (u *ItemUpsertBulk) SetExtraBedAllowed(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraBedAllowed(v)
+	})
+}
+
+// UpdateExtraBedAllowed sets the "extra_bed_allowed" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateExtraBedAllowed() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraBedAllowed()
+	})
+}
+
+// SetSingleSupplement sets the "single_supplement" field.
+func (u *ItemUpsertBulk) SetSingleSupplement(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSingleSupplement(v)
+	})
+}
+
+// AddSingleSupplement adds v to the "single_supplement" field.
+func (u *ItemUpsertBulk) AddSingleSupplement(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSingleSupplement(v)
+	})
+}
+
+// UpdateSingleSupplement sets the "single_supplement" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateSingleSupplement() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSingleSupplement()
+	})
+}
+
+// ClearSingleSupplement clears the value of the "single_supplement" field.
+func (u *ItemUpsertBulk) ClearSingleSupplement() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSingleSupplement()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ItemUpsertBulk) SetIsActive(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsActive() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetImageURL sets the "image_url" field.
+func (u *ItemUpsertBulk) SetImageURL(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetImageURL(v)
+	})
+}
+
+// UpdateImageURL sets the "image_url" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateImageURL() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateImageURL()
+	})
+}
+
+// ClearImageURL clears the value of the "image_url" field.
+func (u *ItemUpsertBulk) ClearImageURL() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearImageURL()
+	})
+}
+
+// SetBarcode sets the "barcode" field.
+func (u *ItemUpsertBulk) SetBarcode(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcode(v)
+	})
+}
+
+// UpdateBarcode sets the "barcode" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBarcode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcode()
+	})
+}
+
+// ClearBarcode clears the value of the "barcode" field.
+func (u *ItemUpsertBulk) ClearBarcode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcode()
+	})
+}
+
+// SetBarcodeType sets the "barcode_type" field.
+func (u *ItemUpsertBulk) SetBarcodeType(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBarcodeType(v)
+	})
+}
+
+// UpdateBarcodeType sets the "barcode_type" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBarcodeType() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBarcodeType()
+	})
+}
+
+// ClearBarcodeType clears the value of the "barcode_type" field.
+func (u *ItemUpsertBulk) ClearBarcodeType() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBarcodeType()
+	})
+}
+
+// SetRequiresAgeVerification sets the "requires_age_verification" field.
+func (u *ItemUpsertBulk) SetRequiresAgeVerification(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetRequiresAgeVerification(v)
+	})
+}
+
+// UpdateRequiresAgeVerification sets the "requires_age_verification" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateRequiresAgeVerification() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateRequiresAgeVerification()
+	})
+}
+
+// SetIsControlledSubstance sets the "is_controlled_substance" field.
+func (u *ItemUpsertBulk) SetIsControlledSubstance(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsControlledSubstance(v)
+	})
+}
+
+// UpdateIsControlledSubstance sets the "is_controlled_substance" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsControlledSubstance() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsControlledSubstance()
+	})
+}
+
+// SetIsPerishable sets the "is_perishable" field.
+func (u *ItemUpsertBulk) SetIsPerishable(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetIsPerishable(v)
+	})
+}
+
+// UpdateIsPerishable sets the "is_perishable" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateIsPerishable() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateIsPerishable()
+	})
+}
+
+// SetTrackSerialNumbers sets the "track_serial_numbers" field.
+func (u *ItemUpsertBulk) SetTrackSerialNumbers(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackSerialNumbers(v)
+	})
+}
+
+// UpdateTrackSerialNumbers sets the "track_serial_numbers" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTrackSerialNumbers() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackSerialNumbers()
+	})
+}
+
+// SetTrackLots sets the "track_lots" field.
+func (u *ItemUpsertBulk) SetTrackLots(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTrackLots(v)
+	})
+}
+
+// UpdateTrackLots sets the "track_lots" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTrackLots() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTrackLots()
+	})
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (u *ItemUpsertBulk) SetShelfLifeDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetShelfLifeDays(v)
+	})
+}
+
+// AddShelfLifeDays adds v to the "shelf_life_days" field.
+func (u *ItemUpsertBulk) AddShelfLifeDays(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddShelfLifeDays(v)
+	})
+}
+
+// UpdateShelfLifeDays sets the "shelf_life_days" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateShelfLifeDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateShelfLifeDays()
+	})
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (u *ItemUpsertBulk) ClearShelfLifeDays() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearShelfLifeDays()
+	})
+}
+
+// SetWeightKg sets the "weight_kg" field.
+func (u *ItemUpsertBulk) SetWeightKg(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightKg(v)
+	})
+}
+
+// AddWeightKg adds v to the "weight_kg" field.
+func (u *ItemUpsertBulk) AddWeightKg(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightKg(v)
+	})
+}
+
+// UpdateWeightKg sets the "weight_kg" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWeightKg() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightKg()
+	})
+}
+
+// ClearWeightKg clears the value of the "weight_kg" field.
+func (u *ItemUpsertBulk) ClearWeightKg() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightKg()
+	})
+}
+
+// SetDimensionsCm sets the "dimensions_cm" field.
+func (u *ItemUpsertBulk) SetDimensionsCm(v map[string]float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDimensionsCm(v)
+	})
+}
+
+// UpdateDimensionsCm sets the "dimensions_cm" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDimensionsCm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDimensionsCm()
+	})
+}
+
+// ClearDimensionsCm clears the value of the "dimensions_cm" field.
+func (u *ItemUpsertBulk) ClearDimensionsCm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDimensionsCm()
+	})
+}
+
+// SetDurationMinutes sets the "duration_minutes" field.
+func (u *ItemUpsertBulk) SetDurationMinutes(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDurationMinutes(v)
+	})
+}
+
+// AddDurationMinutes adds v to the "duration_minutes" field.
+func (u *ItemUpsertBulk) AddDurationMinutes(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddDurationMinutes(v)
+	})
+}
+
+// UpdateDurationMinutes sets the "duration_minutes" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDurationMinutes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDurationMinutes()
+	})
+}
+
+// ClearDurationMinutes clears the value of the "duration_minutes" field.
+func (u *ItemUpsertBulk) ClearDurationMinutes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDurationMinutes()
+	})
+}
+
+// SetTags sets the "tags" field.
+func (u *ItemUpsertBulk) SetTags(v []string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTags(v)
+	})
+}
+
+// UpdateTags sets the "tags" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTags() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTags()
+	})
+}
+
+// SetTaxCodeID sets the "tax_code_id" field.
+func (u *ItemUpsertBulk) SetTaxCodeID(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxCodeID(v)
+	})
+}
+
+// UpdateTaxCodeID sets the "tax_code_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTaxCodeID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxCodeID()
+	})
+}
+
+// ClearTaxCodeID clears the value of the "tax_code_id" field.
+func (u *ItemUpsertBulk) ClearTaxCodeID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTaxCodeID()
+	})
+}
+
+// SetTaxInclusive sets the "tax_inclusive" field.
+func (u *ItemUpsertBulk) SetTaxInclusive(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTaxInclusive(v)
+	})
+}
+
+// UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTaxInclusive() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTaxInclusive()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *ItemUpsertBulk) SetCostPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *ItemUpsertBulk) AddCostPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateCostPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *ItemUpsertBulk) ClearCostPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetPurchasePrice sets the "purchase_price" field.
+func (u *ItemUpsertBulk) SetPurchasePrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertBulk) AddPurchasePrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
+	})
+}
+
+// UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchasePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertBulk) ClearPurchasePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
+	})
+}
+
+// SetPurchasePackSize sets the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) SetPurchasePackSize(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasePackSize(v)
+	})
+}
+
+// AddPurchasePackSize adds v to the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) AddPurchasePackSize(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePackSize(v)
+	})
+}
+
+// UpdatePurchasePackSize sets the "purchase_pack_size" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchasePackSize() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasePackSize()
+	})
+}
+
+// ClearPurchasePackSize clears the value of the "purchase_pack_size" field.
+func (u *ItemUpsertBulk) ClearPurchasePackSize() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePackSize()
+	})
+}
+
+// SetPurchaseUnit sets the "purchase_unit" field.
+func (u *ItemUpsertBulk) SetPurchaseUnit(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchaseUnit(v)
+	})
+}
+
+// UpdatePurchaseUnit sets the "purchase_unit" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchaseUnit() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchaseUnit()
+	})
+}
+
+// ClearPurchaseUnit clears the value of the "purchase_unit" field.
+func (u *ItemUpsertBulk) ClearPurchaseUnit() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchaseUnit()
+	})
+}
+
+// SetYieldPct sets the "yield_pct" field.
+func (u *ItemUpsertBulk) SetYieldPct(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetYieldPct(v)
+	})
+}
+
+// AddYieldPct adds v to the "yield_pct" field.
+func (u *ItemUpsertBulk) AddYieldPct(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddYieldPct(v)
+	})
+}
+
+// UpdateYieldPct sets the "yield_pct" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateYieldPct() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateYieldPct()
+	})
+}
+
+// ClearYieldPct clears the value of the "yield_pct" field.
+func (u *ItemUpsertBulk) ClearYieldPct() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearYieldPct()
+	})
+}
+
+// SetMinSellingPrice sets the "min_selling_price" field.
+func (u *ItemUpsertBulk) SetMinSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMinSellingPrice(v)
+	})
+}
+
+// AddMinSellingPrice adds v to the "min_selling_price" field.
+func (u *ItemUpsertBulk) AddMinSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMinSellingPrice(v)
+	})
+}
+
+// UpdateMinSellingPrice sets the "min_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMinSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMinSellingPrice()
+	})
+}
+
+// ClearMinSellingPrice clears the value of the "min_selling_price" field.
+func (u *ItemUpsertBulk) ClearMinSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMinSellingPrice()
+	})
+}
+
+// SetMaxSellingPrice sets the "max_selling_price" field.
+func (u *ItemUpsertBulk) SetMaxSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMaxSellingPrice(v)
+	})
+}
+
+// AddMaxSellingPrice adds v to the "max_selling_price" field.
+func (u *ItemUpsertBulk) AddMaxSellingPrice(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddMaxSellingPrice(v)
+	})
+}
+
+// UpdateMaxSellingPrice sets the "max_selling_price" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMaxSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMaxSellingPrice()
+	})
+}
+
+// ClearMaxSellingPrice clears the value of the "max_selling_price" field.
+func (u *ItemUpsertBulk) ClearMaxSellingPrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearMaxSellingPrice()
+	})
+}
+
+// SetTargetMarginPercent sets the "target_margin_percent" field.
+func (u *ItemUpsertBulk) SetTargetMarginPercent(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTargetMarginPercent(v)
+	})
+}
+
+// AddTargetMarginPercent adds v to the "target_margin_percent" field.
+func (u *ItemUpsertBulk) AddTargetMarginPercent(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTargetMarginPercent(v)
+	})
+}
+
+// UpdateTargetMarginPercent sets the "target_margin_percent" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTargetMarginPercent() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTargetMarginPercent()
+	})
+}
+
+// ClearTargetMarginPercent clears the value of the "target_margin_percent" field.
+func (u *ItemUpsertBulk) ClearTargetMarginPercent() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTargetMarginPercent()
+	})
+}
+
+// SetTotalCapacity sets the "total_capacity" field.
+func (u *ItemUpsertBulk) SetTotalCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetTotalCapacity(v)
+	})
+}
+
+// AddTotalCapacity adds v to the "total_capacity" field.
+func (u *ItemUpsertBulk) AddTotalCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddTotalCapacity(v)
+	})
+}
+
+// UpdateTotalCapacity sets the "total_capacity" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateTotalCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateTotalCapacity()
+	})
+}
+
+// ClearTotalCapacity clears the value of the "total_capacity" field.
+func (u *ItemUpsertBulk) ClearTotalCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearTotalCapacity()
+	})
+}
+
+// SetBookedCapacity sets the "booked_capacity" field.
+func (u *ItemUpsertBulk) SetBookedCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetBookedCapacity(v)
+	})
+}
+
+// AddBookedCapacity adds v to the "booked_capacity" field.
+func (u *ItemUpsertBulk) AddBookedCapacity(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddBookedCapacity(v)
+	})
+}
+
+// UpdateBookedCapacity sets the "booked_capacity" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateBookedCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateBookedCapacity()
+	})
+}
+
+// ClearBookedCapacity clears the value of the "booked_capacity" field.
+func (u *ItemUpsertBulk) ClearBookedCapacity() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearBookedCapacity()
+	})
+}
+
+// SetEventStartAt sets the "event_start_at" field.
+func (u *ItemUpsertBulk) SetEventStartAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventStartAt(v)
+	})
+}
+
+// UpdateEventStartAt sets the "event_start_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventStartAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventStartAt()
+	})
+}
+
+// ClearEventStartAt clears the value of the "event_start_at" field.
+func (u *ItemUpsertBulk) ClearEventStartAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventStartAt()
+	})
+}
+
+// SetEventEndAt sets the "event_end_at" field.
+func (u *ItemUpsertBulk) SetEventEndAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventEndAt(v)
+	})
+}
+
+// UpdateEventEndAt sets the "event_end_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventEndAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventEndAt()
+	})
+}
+
+// ClearEventEndAt clears the value of the "event_end_at" field.
+func (u *ItemUpsertBulk) ClearEventEndAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventEndAt()
+	})
+}
+
+// SetEventVenue sets the "event_venue" field.
+func (u *ItemUpsertBulk) SetEventVenue(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEventVenue(v)
+	})
+}
+
+// UpdateEventVenue sets the "event_venue" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEventVenue() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEventVenue()
+	})
+}
+
+// ClearEventVenue clears the value of the "event_venue" field.
+func (u *ItemUpsertBulk) ClearEventVenue() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEventVenue()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemUpsertBulk) SetMetadata(v map[string]interface{}) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMetadata() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemUpsertBulk) SetUpdatedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUpdatedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ItemCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

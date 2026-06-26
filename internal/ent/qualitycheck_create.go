@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
@@ -20,6 +22,7 @@ type QualityCheckCreate struct {
 	config
 	mutation *QualityCheckMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -232,6 +235,7 @@ func (_c *QualityCheckCreate) createSpec() (*QualityCheck, *sqlgraph.CreateSpec)
 		_node = &QualityCheck{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(qualitycheck.Table, sqlgraph.NewFieldSpec(qualitycheck.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -280,11 +284,332 @@ func (_c *QualityCheckCreate) createSpec() (*QualityCheck, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QualityCheck.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QualityCheckUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *QualityCheckCreate) OnConflict(opts ...sql.ConflictOption) *QualityCheckUpsertOne {
+	_c.conflict = opts
+	return &QualityCheckUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *QualityCheckCreate) OnConflictColumns(columns ...string) *QualityCheckUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &QualityCheckUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// QualityCheckUpsertOne is the builder for "upsert"-ing
+	//  one QualityCheck node.
+	QualityCheckUpsertOne struct {
+		create *QualityCheckCreate
+	}
+
+	// QualityCheckUpsert is the "OnConflict" setter.
+	QualityCheckUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *QualityCheckUpsert) SetTenantID(v uuid.UUID) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateTenantID() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldTenantID)
+	return u
+}
+
+// SetProductionBatchID sets the "production_batch_id" field.
+func (u *QualityCheckUpsert) SetProductionBatchID(v uuid.UUID) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldProductionBatchID, v)
+	return u
+}
+
+// UpdateProductionBatchID sets the "production_batch_id" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateProductionBatchID() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldProductionBatchID)
+	return u
+}
+
+// SetInspectorID sets the "inspector_id" field.
+func (u *QualityCheckUpsert) SetInspectorID(v uuid.UUID) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldInspectorID, v)
+	return u
+}
+
+// UpdateInspectorID sets the "inspector_id" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateInspectorID() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldInspectorID)
+	return u
+}
+
+// ClearInspectorID clears the value of the "inspector_id" field.
+func (u *QualityCheckUpsert) ClearInspectorID() *QualityCheckUpsert {
+	u.SetNull(qualitycheck.FieldInspectorID)
+	return u
+}
+
+// SetCheckDate sets the "check_date" field.
+func (u *QualityCheckUpsert) SetCheckDate(v time.Time) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldCheckDate, v)
+	return u
+}
+
+// UpdateCheckDate sets the "check_date" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateCheckDate() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldCheckDate)
+	return u
+}
+
+// SetResult sets the "result" field.
+func (u *QualityCheckUpsert) SetResult(v qualitycheck.Result) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldResult, v)
+	return u
+}
+
+// UpdateResult sets the "result" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateResult() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldResult)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *QualityCheckUpsert) SetNotes(v string) *QualityCheckUpsert {
+	u.Set(qualitycheck.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *QualityCheckUpsert) UpdateNotes() *QualityCheckUpsert {
+	u.SetExcluded(qualitycheck.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *QualityCheckUpsert) ClearNotes() *QualityCheckUpsert {
+	u.SetNull(qualitycheck.FieldNotes)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qualitycheck.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QualityCheckUpsertOne) UpdateNewValues() *QualityCheckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qualitycheck.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qualitycheck.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QualityCheckUpsertOne) Ignore() *QualityCheckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QualityCheckUpsertOne) DoNothing() *QualityCheckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QualityCheckCreate.OnConflict
+// documentation for more info.
+func (u *QualityCheckUpsertOne) Update(set func(*QualityCheckUpsert)) *QualityCheckUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QualityCheckUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *QualityCheckUpsertOne) SetTenantID(v uuid.UUID) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateTenantID() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProductionBatchID sets the "production_batch_id" field.
+func (u *QualityCheckUpsertOne) SetProductionBatchID(v uuid.UUID) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetProductionBatchID(v)
+	})
+}
+
+// UpdateProductionBatchID sets the "production_batch_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateProductionBatchID() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateProductionBatchID()
+	})
+}
+
+// SetInspectorID sets the "inspector_id" field.
+func (u *QualityCheckUpsertOne) SetInspectorID(v uuid.UUID) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetInspectorID(v)
+	})
+}
+
+// UpdateInspectorID sets the "inspector_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateInspectorID() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateInspectorID()
+	})
+}
+
+// ClearInspectorID clears the value of the "inspector_id" field.
+func (u *QualityCheckUpsertOne) ClearInspectorID() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.ClearInspectorID()
+	})
+}
+
+// SetCheckDate sets the "check_date" field.
+func (u *QualityCheckUpsertOne) SetCheckDate(v time.Time) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetCheckDate(v)
+	})
+}
+
+// UpdateCheckDate sets the "check_date" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateCheckDate() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateCheckDate()
+	})
+}
+
+// SetResult sets the "result" field.
+func (u *QualityCheckUpsertOne) SetResult(v qualitycheck.Result) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetResult(v)
+	})
+}
+
+// UpdateResult sets the "result" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateResult() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateResult()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *QualityCheckUpsertOne) SetNotes(v string) *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *QualityCheckUpsertOne) UpdateNotes() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *QualityCheckUpsertOne) ClearNotes() *QualityCheckUpsertOne {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// Exec executes the query.
+func (u *QualityCheckUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QualityCheckCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QualityCheckUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QualityCheckUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QualityCheckUpsertOne.ID is not supported by MySQL driver. Use QualityCheckUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QualityCheckUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QualityCheckCreateBulk is the builder for creating many QualityCheck entities in bulk.
 type QualityCheckCreateBulk struct {
 	config
 	err      error
 	builders []*QualityCheckCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QualityCheck entities in the database.
@@ -314,6 +639,7 @@ func (_c *QualityCheckCreateBulk) Save(ctx context.Context) ([]*QualityCheck, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -360,6 +686,221 @@ func (_c *QualityCheckCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *QualityCheckCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QualityCheck.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QualityCheckUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *QualityCheckCreateBulk) OnConflict(opts ...sql.ConflictOption) *QualityCheckUpsertBulk {
+	_c.conflict = opts
+	return &QualityCheckUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *QualityCheckCreateBulk) OnConflictColumns(columns ...string) *QualityCheckUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &QualityCheckUpsertBulk{
+		create: _c,
+	}
+}
+
+// QualityCheckUpsertBulk is the builder for "upsert"-ing
+// a bulk of QualityCheck nodes.
+type QualityCheckUpsertBulk struct {
+	create *QualityCheckCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qualitycheck.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QualityCheckUpsertBulk) UpdateNewValues() *QualityCheckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qualitycheck.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qualitycheck.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QualityCheck.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QualityCheckUpsertBulk) Ignore() *QualityCheckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QualityCheckUpsertBulk) DoNothing() *QualityCheckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QualityCheckCreateBulk.OnConflict
+// documentation for more info.
+func (u *QualityCheckUpsertBulk) Update(set func(*QualityCheckUpsert)) *QualityCheckUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QualityCheckUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *QualityCheckUpsertBulk) SetTenantID(v uuid.UUID) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateTenantID() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProductionBatchID sets the "production_batch_id" field.
+func (u *QualityCheckUpsertBulk) SetProductionBatchID(v uuid.UUID) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetProductionBatchID(v)
+	})
+}
+
+// UpdateProductionBatchID sets the "production_batch_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateProductionBatchID() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateProductionBatchID()
+	})
+}
+
+// SetInspectorID sets the "inspector_id" field.
+func (u *QualityCheckUpsertBulk) SetInspectorID(v uuid.UUID) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetInspectorID(v)
+	})
+}
+
+// UpdateInspectorID sets the "inspector_id" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateInspectorID() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateInspectorID()
+	})
+}
+
+// ClearInspectorID clears the value of the "inspector_id" field.
+func (u *QualityCheckUpsertBulk) ClearInspectorID() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.ClearInspectorID()
+	})
+}
+
+// SetCheckDate sets the "check_date" field.
+func (u *QualityCheckUpsertBulk) SetCheckDate(v time.Time) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetCheckDate(v)
+	})
+}
+
+// UpdateCheckDate sets the "check_date" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateCheckDate() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateCheckDate()
+	})
+}
+
+// SetResult sets the "result" field.
+func (u *QualityCheckUpsertBulk) SetResult(v qualitycheck.Result) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetResult(v)
+	})
+}
+
+// UpdateResult sets the "result" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateResult() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateResult()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *QualityCheckUpsertBulk) SetNotes(v string) *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *QualityCheckUpsertBulk) UpdateNotes() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *QualityCheckUpsertBulk) ClearNotes() *QualityCheckUpsertBulk {
+	return u.Update(func(s *QualityCheckUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// Exec executes the query.
+func (u *QualityCheckUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QualityCheckCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QualityCheckCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QualityCheckUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/approvalrule"
@@ -20,6 +22,7 @@ type ApprovalStepCreate struct {
 	config
 	mutation *ApprovalStepMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -194,6 +197,7 @@ func (_c *ApprovalStepCreate) createSpec() (*ApprovalStep, *sqlgraph.CreateSpec)
 		_node = &ApprovalStep{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(approvalstep.Table, sqlgraph.NewFieldSpec(approvalstep.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -238,11 +242,293 @@ func (_c *ApprovalStepCreate) createSpec() (*ApprovalStep, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ApprovalStep.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApprovalStepUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApprovalStepCreate) OnConflict(opts ...sql.ConflictOption) *ApprovalStepUpsertOne {
+	_c.conflict = opts
+	return &ApprovalStepUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApprovalStepCreate) OnConflictColumns(columns ...string) *ApprovalStepUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApprovalStepUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ApprovalStepUpsertOne is the builder for "upsert"-ing
+	//  one ApprovalStep node.
+	ApprovalStepUpsertOne struct {
+		create *ApprovalStepCreate
+	}
+
+	// ApprovalStepUpsert is the "OnConflict" setter.
+	ApprovalStepUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalStepUpsert) SetTenantID(v uuid.UUID) *ApprovalStepUpsert {
+	u.Set(approvalstep.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsert) UpdateTenantID() *ApprovalStepUpsert {
+	u.SetExcluded(approvalstep.FieldTenantID)
+	return u
+}
+
+// SetRuleID sets the "rule_id" field.
+func (u *ApprovalStepUpsert) SetRuleID(v uuid.UUID) *ApprovalStepUpsert {
+	u.Set(approvalstep.FieldRuleID, v)
+	return u
+}
+
+// UpdateRuleID sets the "rule_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsert) UpdateRuleID() *ApprovalStepUpsert {
+	u.SetExcluded(approvalstep.FieldRuleID)
+	return u
+}
+
+// SetSequence sets the "sequence" field.
+func (u *ApprovalStepUpsert) SetSequence(v int) *ApprovalStepUpsert {
+	u.Set(approvalstep.FieldSequence, v)
+	return u
+}
+
+// UpdateSequence sets the "sequence" field to the value that was provided on create.
+func (u *ApprovalStepUpsert) UpdateSequence() *ApprovalStepUpsert {
+	u.SetExcluded(approvalstep.FieldSequence)
+	return u
+}
+
+// AddSequence adds v to the "sequence" field.
+func (u *ApprovalStepUpsert) AddSequence(v int) *ApprovalStepUpsert {
+	u.Add(approvalstep.FieldSequence, v)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalStepUpsert) SetName(v string) *ApprovalStepUpsert {
+	u.Set(approvalstep.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalStepUpsert) UpdateName() *ApprovalStepUpsert {
+	u.SetExcluded(approvalstep.FieldName)
+	return u
+}
+
+// SetApproverRole sets the "approver_role" field.
+func (u *ApprovalStepUpsert) SetApproverRole(v string) *ApprovalStepUpsert {
+	u.Set(approvalstep.FieldApproverRole, v)
+	return u
+}
+
+// UpdateApproverRole sets the "approver_role" field to the value that was provided on create.
+func (u *ApprovalStepUpsert) UpdateApproverRole() *ApprovalStepUpsert {
+	u.SetExcluded(approvalstep.FieldApproverRole)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(approvalstep.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApprovalStepUpsertOne) UpdateNewValues() *ApprovalStepUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(approvalstep.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(approvalstep.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ApprovalStepUpsertOne) Ignore() *ApprovalStepUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApprovalStepUpsertOne) DoNothing() *ApprovalStepUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApprovalStepCreate.OnConflict
+// documentation for more info.
+func (u *ApprovalStepUpsertOne) Update(set func(*ApprovalStepUpsert)) *ApprovalStepUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApprovalStepUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalStepUpsertOne) SetTenantID(v uuid.UUID) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsertOne) UpdateTenantID() *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRuleID sets the "rule_id" field.
+func (u *ApprovalStepUpsertOne) SetRuleID(v uuid.UUID) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetRuleID(v)
+	})
+}
+
+// UpdateRuleID sets the "rule_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsertOne) UpdateRuleID() *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateRuleID()
+	})
+}
+
+// SetSequence sets the "sequence" field.
+func (u *ApprovalStepUpsertOne) SetSequence(v int) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetSequence(v)
+	})
+}
+
+// AddSequence adds v to the "sequence" field.
+func (u *ApprovalStepUpsertOne) AddSequence(v int) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.AddSequence(v)
+	})
+}
+
+// UpdateSequence sets the "sequence" field to the value that was provided on create.
+func (u *ApprovalStepUpsertOne) UpdateSequence() *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateSequence()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalStepUpsertOne) SetName(v string) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalStepUpsertOne) UpdateName() *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetApproverRole sets the "approver_role" field.
+func (u *ApprovalStepUpsertOne) SetApproverRole(v string) *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetApproverRole(v)
+	})
+}
+
+// UpdateApproverRole sets the "approver_role" field to the value that was provided on create.
+func (u *ApprovalStepUpsertOne) UpdateApproverRole() *ApprovalStepUpsertOne {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateApproverRole()
+	})
+}
+
+// Exec executes the query.
+func (u *ApprovalStepUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApprovalStepCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApprovalStepUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ApprovalStepUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ApprovalStepUpsertOne.ID is not supported by MySQL driver. Use ApprovalStepUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ApprovalStepUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ApprovalStepCreateBulk is the builder for creating many ApprovalStep entities in bulk.
 type ApprovalStepCreateBulk struct {
 	config
 	err      error
 	builders []*ApprovalStepCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ApprovalStep entities in the database.
@@ -272,6 +558,7 @@ func (_c *ApprovalStepCreateBulk) Save(ctx context.Context) ([]*ApprovalStep, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -318,6 +605,200 @@ func (_c *ApprovalStepCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ApprovalStepCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ApprovalStep.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApprovalStepUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApprovalStepCreateBulk) OnConflict(opts ...sql.ConflictOption) *ApprovalStepUpsertBulk {
+	_c.conflict = opts
+	return &ApprovalStepUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApprovalStepCreateBulk) OnConflictColumns(columns ...string) *ApprovalStepUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApprovalStepUpsertBulk{
+		create: _c,
+	}
+}
+
+// ApprovalStepUpsertBulk is the builder for "upsert"-ing
+// a bulk of ApprovalStep nodes.
+type ApprovalStepUpsertBulk struct {
+	create *ApprovalStepCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(approvalstep.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApprovalStepUpsertBulk) UpdateNewValues() *ApprovalStepUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(approvalstep.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(approvalstep.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalStep.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ApprovalStepUpsertBulk) Ignore() *ApprovalStepUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApprovalStepUpsertBulk) DoNothing() *ApprovalStepUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApprovalStepCreateBulk.OnConflict
+// documentation for more info.
+func (u *ApprovalStepUpsertBulk) Update(set func(*ApprovalStepUpsert)) *ApprovalStepUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApprovalStepUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalStepUpsertBulk) SetTenantID(v uuid.UUID) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsertBulk) UpdateTenantID() *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRuleID sets the "rule_id" field.
+func (u *ApprovalStepUpsertBulk) SetRuleID(v uuid.UUID) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetRuleID(v)
+	})
+}
+
+// UpdateRuleID sets the "rule_id" field to the value that was provided on create.
+func (u *ApprovalStepUpsertBulk) UpdateRuleID() *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateRuleID()
+	})
+}
+
+// SetSequence sets the "sequence" field.
+func (u *ApprovalStepUpsertBulk) SetSequence(v int) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetSequence(v)
+	})
+}
+
+// AddSequence adds v to the "sequence" field.
+func (u *ApprovalStepUpsertBulk) AddSequence(v int) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.AddSequence(v)
+	})
+}
+
+// UpdateSequence sets the "sequence" field to the value that was provided on create.
+func (u *ApprovalStepUpsertBulk) UpdateSequence() *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateSequence()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalStepUpsertBulk) SetName(v string) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalStepUpsertBulk) UpdateName() *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetApproverRole sets the "approver_role" field.
+func (u *ApprovalStepUpsertBulk) SetApproverRole(v string) *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.SetApproverRole(v)
+	})
+}
+
+// UpdateApproverRole sets the "approver_role" field to the value that was provided on create.
+func (u *ApprovalStepUpsertBulk) UpdateApproverRole() *ApprovalStepUpsertBulk {
+	return u.Update(func(s *ApprovalStepUpsert) {
+		s.UpdateApproverRole()
+	})
+}
+
+// Exec executes the query.
+func (u *ApprovalStepUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ApprovalStepCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApprovalStepCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApprovalStepUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

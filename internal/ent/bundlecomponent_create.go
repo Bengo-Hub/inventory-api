@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
@@ -20,6 +22,7 @@ type BundleComponentCreate struct {
 	config
 	mutation *BundleComponentMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetBundleID sets the "bundle_id" field.
@@ -266,6 +269,7 @@ func (_c *BundleComponentCreate) createSpec() (*BundleComponent, *sqlgraph.Creat
 		_node = &BundleComponent{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(bundlecomponent.Table, sqlgraph.NewFieldSpec(bundlecomponent.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -331,11 +335,407 @@ func (_c *BundleComponentCreate) createSpec() (*BundleComponent, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.BundleComponent.Create().
+//		SetBundleID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BundleComponentUpsert) {
+//			SetBundleID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BundleComponentCreate) OnConflict(opts ...sql.ConflictOption) *BundleComponentUpsertOne {
+	_c.conflict = opts
+	return &BundleComponentUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BundleComponentCreate) OnConflictColumns(columns ...string) *BundleComponentUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BundleComponentUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// BundleComponentUpsertOne is the builder for "upsert"-ing
+	//  one BundleComponent node.
+	BundleComponentUpsertOne struct {
+		create *BundleComponentCreate
+	}
+
+	// BundleComponentUpsert is the "OnConflict" setter.
+	BundleComponentUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetBundleID sets the "bundle_id" field.
+func (u *BundleComponentUpsert) SetBundleID(v uuid.UUID) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldBundleID, v)
+	return u
+}
+
+// UpdateBundleID sets the "bundle_id" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateBundleID() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldBundleID)
+	return u
+}
+
+// SetComponentItemID sets the "component_item_id" field.
+func (u *BundleComponentUpsert) SetComponentItemID(v uuid.UUID) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldComponentItemID, v)
+	return u
+}
+
+// UpdateComponentItemID sets the "component_item_id" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateComponentItemID() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldComponentItemID)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *BundleComponentUpsert) SetQuantity(v int) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateQuantity() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *BundleComponentUpsert) AddQuantity(v int) *BundleComponentUpsert {
+	u.Add(bundlecomponent.FieldQuantity, v)
+	return u
+}
+
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsert) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldComponentKind, v)
+	return u
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateComponentKind() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldComponentKind)
+	return u
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsert) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldMealPeriod, v)
+	return u
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateMealPeriod() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldMealPeriod)
+	return u
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsert) ClearMealPeriod() *BundleComponentUpsert {
+	u.SetNull(bundlecomponent.FieldMealPeriod)
+	return u
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsert) SetIsMetered(v bool) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldIsMetered, v)
+	return u
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateIsMetered() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldIsMetered)
+	return u
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsert) SetUnit(v string) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldUnit, v)
+	return u
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateUnit() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldUnit)
+	return u
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsert) ClearUnit() *BundleComponentUpsert {
+	u.SetNull(bundlecomponent.FieldUnit)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *BundleComponentUpsert) SetSortOrder(v int) *BundleComponentUpsert {
+	u.Set(bundlecomponent.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *BundleComponentUpsert) UpdateSortOrder() *BundleComponentUpsert {
+	u.SetExcluded(bundlecomponent.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *BundleComponentUpsert) AddSortOrder(v int) *BundleComponentUpsert {
+	u.Add(bundlecomponent.FieldSortOrder, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(bundlecomponent.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BundleComponentUpsertOne) UpdateNewValues() *BundleComponentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(bundlecomponent.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *BundleComponentUpsertOne) Ignore() *BundleComponentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BundleComponentUpsertOne) DoNothing() *BundleComponentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BundleComponentCreate.OnConflict
+// documentation for more info.
+func (u *BundleComponentUpsertOne) Update(set func(*BundleComponentUpsert)) *BundleComponentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BundleComponentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetBundleID sets the "bundle_id" field.
+func (u *BundleComponentUpsertOne) SetBundleID(v uuid.UUID) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetBundleID(v)
+	})
+}
+
+// UpdateBundleID sets the "bundle_id" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateBundleID() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateBundleID()
+	})
+}
+
+// SetComponentItemID sets the "component_item_id" field.
+func (u *BundleComponentUpsertOne) SetComponentItemID(v uuid.UUID) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentItemID(v)
+	})
+}
+
+// UpdateComponentItemID sets the "component_item_id" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateComponentItemID() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentItemID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *BundleComponentUpsertOne) SetQuantity(v int) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *BundleComponentUpsertOne) AddQuantity(v int) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateQuantity() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsertOne) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentKind(v)
+	})
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateComponentKind() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentKind()
+	})
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsertOne) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetMealPeriod(v)
+	})
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateMealPeriod() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateMealPeriod()
+	})
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsertOne) ClearMealPeriod() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearMealPeriod()
+	})
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsertOne) SetIsMetered(v bool) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetIsMetered(v)
+	})
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateIsMetered() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateIsMetered()
+	})
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsertOne) SetUnit(v string) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetUnit(v)
+	})
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateUnit() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateUnit()
+	})
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsertOne) ClearUnit() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearUnit()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *BundleComponentUpsertOne) SetSortOrder(v int) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *BundleComponentUpsertOne) AddSortOrder(v int) *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *BundleComponentUpsertOne) UpdateSortOrder() *BundleComponentUpsertOne {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *BundleComponentUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BundleComponentCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BundleComponentUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *BundleComponentUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: BundleComponentUpsertOne.ID is not supported by MySQL driver. Use BundleComponentUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *BundleComponentUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // BundleComponentCreateBulk is the builder for creating many BundleComponent entities in bulk.
 type BundleComponentCreateBulk struct {
 	config
 	err      error
 	builders []*BundleComponentCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the BundleComponent entities in the database.
@@ -365,6 +765,7 @@ func (_c *BundleComponentCreateBulk) Save(ctx context.Context) ([]*BundleCompone
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -411,6 +812,260 @@ func (_c *BundleComponentCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *BundleComponentCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.BundleComponent.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BundleComponentUpsert) {
+//			SetBundleID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BundleComponentCreateBulk) OnConflict(opts ...sql.ConflictOption) *BundleComponentUpsertBulk {
+	_c.conflict = opts
+	return &BundleComponentUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BundleComponentCreateBulk) OnConflictColumns(columns ...string) *BundleComponentUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BundleComponentUpsertBulk{
+		create: _c,
+	}
+}
+
+// BundleComponentUpsertBulk is the builder for "upsert"-ing
+// a bulk of BundleComponent nodes.
+type BundleComponentUpsertBulk struct {
+	create *BundleComponentCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(bundlecomponent.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BundleComponentUpsertBulk) UpdateNewValues() *BundleComponentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(bundlecomponent.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.BundleComponent.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *BundleComponentUpsertBulk) Ignore() *BundleComponentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BundleComponentUpsertBulk) DoNothing() *BundleComponentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BundleComponentCreateBulk.OnConflict
+// documentation for more info.
+func (u *BundleComponentUpsertBulk) Update(set func(*BundleComponentUpsert)) *BundleComponentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BundleComponentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetBundleID sets the "bundle_id" field.
+func (u *BundleComponentUpsertBulk) SetBundleID(v uuid.UUID) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetBundleID(v)
+	})
+}
+
+// UpdateBundleID sets the "bundle_id" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateBundleID() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateBundleID()
+	})
+}
+
+// SetComponentItemID sets the "component_item_id" field.
+func (u *BundleComponentUpsertBulk) SetComponentItemID(v uuid.UUID) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentItemID(v)
+	})
+}
+
+// UpdateComponentItemID sets the "component_item_id" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateComponentItemID() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentItemID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *BundleComponentUpsertBulk) SetQuantity(v int) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *BundleComponentUpsertBulk) AddQuantity(v int) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateQuantity() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetComponentKind sets the "component_kind" field.
+func (u *BundleComponentUpsertBulk) SetComponentKind(v bundlecomponent.ComponentKind) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetComponentKind(v)
+	})
+}
+
+// UpdateComponentKind sets the "component_kind" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateComponentKind() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateComponentKind()
+	})
+}
+
+// SetMealPeriod sets the "meal_period" field.
+func (u *BundleComponentUpsertBulk) SetMealPeriod(v bundlecomponent.MealPeriod) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetMealPeriod(v)
+	})
+}
+
+// UpdateMealPeriod sets the "meal_period" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateMealPeriod() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateMealPeriod()
+	})
+}
+
+// ClearMealPeriod clears the value of the "meal_period" field.
+func (u *BundleComponentUpsertBulk) ClearMealPeriod() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearMealPeriod()
+	})
+}
+
+// SetIsMetered sets the "is_metered" field.
+func (u *BundleComponentUpsertBulk) SetIsMetered(v bool) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetIsMetered(v)
+	})
+}
+
+// UpdateIsMetered sets the "is_metered" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateIsMetered() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateIsMetered()
+	})
+}
+
+// SetUnit sets the "unit" field.
+func (u *BundleComponentUpsertBulk) SetUnit(v string) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetUnit(v)
+	})
+}
+
+// UpdateUnit sets the "unit" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateUnit() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateUnit()
+	})
+}
+
+// ClearUnit clears the value of the "unit" field.
+func (u *BundleComponentUpsertBulk) ClearUnit() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.ClearUnit()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *BundleComponentUpsertBulk) SetSortOrder(v int) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *BundleComponentUpsertBulk) AddSortOrder(v int) *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *BundleComponentUpsertBulk) UpdateSortOrder() *BundleComponentUpsertBulk {
+	return u.Update(func(s *BundleComponentUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *BundleComponentUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the BundleComponentCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BundleComponentCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BundleComponentUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

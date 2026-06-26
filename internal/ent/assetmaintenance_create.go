@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/assetmaintenance"
@@ -19,6 +21,7 @@ type AssetMaintenanceCreate struct {
 	config
 	mutation *AssetMaintenanceMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -361,6 +364,7 @@ func (_c *AssetMaintenanceCreate) createSpec() (*AssetMaintenance, *sqlgraph.Cre
 		_node = &AssetMaintenance{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(assetmaintenance.Table, sqlgraph.NewFieldSpec(assetmaintenance.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -428,11 +432,618 @@ func (_c *AssetMaintenanceCreate) createSpec() (*AssetMaintenance, *sqlgraph.Cre
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetMaintenance.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetMaintenanceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetMaintenanceCreate) OnConflict(opts ...sql.ConflictOption) *AssetMaintenanceUpsertOne {
+	_c.conflict = opts
+	return &AssetMaintenanceUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetMaintenanceCreate) OnConflictColumns(columns ...string) *AssetMaintenanceUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetMaintenanceUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AssetMaintenanceUpsertOne is the builder for "upsert"-ing
+	//  one AssetMaintenance node.
+	AssetMaintenanceUpsertOne struct {
+		create *AssetMaintenanceCreate
+	}
+
+	// AssetMaintenanceUpsert is the "OnConflict" setter.
+	AssetMaintenanceUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetMaintenanceUpsert) SetTenantID(v uuid.UUID) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateTenantID() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldTenantID)
+	return u
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetMaintenanceUpsert) SetAssetID(v uuid.UUID) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldAssetID, v)
+	return u
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateAssetID() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldAssetID)
+	return u
+}
+
+// SetMaintenanceType sets the "maintenance_type" field.
+func (u *AssetMaintenanceUpsert) SetMaintenanceType(v assetmaintenance.MaintenanceType) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldMaintenanceType, v)
+	return u
+}
+
+// UpdateMaintenanceType sets the "maintenance_type" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateMaintenanceType() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldMaintenanceType)
+	return u
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *AssetMaintenanceUpsert) SetScheduledDate(v time.Time) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldScheduledDate, v)
+	return u
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateScheduledDate() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldScheduledDate)
+	return u
+}
+
+// SetCompletedDate sets the "completed_date" field.
+func (u *AssetMaintenanceUpsert) SetCompletedDate(v time.Time) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldCompletedDate, v)
+	return u
+}
+
+// UpdateCompletedDate sets the "completed_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateCompletedDate() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldCompletedDate)
+	return u
+}
+
+// ClearCompletedDate clears the value of the "completed_date" field.
+func (u *AssetMaintenanceUpsert) ClearCompletedDate() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldCompletedDate)
+	return u
+}
+
+// SetPerformedBy sets the "performed_by" field.
+func (u *AssetMaintenanceUpsert) SetPerformedBy(v string) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldPerformedBy, v)
+	return u
+}
+
+// UpdatePerformedBy sets the "performed_by" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdatePerformedBy() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldPerformedBy)
+	return u
+}
+
+// ClearPerformedBy clears the value of the "performed_by" field.
+func (u *AssetMaintenanceUpsert) ClearPerformedBy() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldPerformedBy)
+	return u
+}
+
+// SetCost sets the "cost" field.
+func (u *AssetMaintenanceUpsert) SetCost(v float64) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldCost, v)
+	return u
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateCost() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldCost)
+	return u
+}
+
+// AddCost adds v to the "cost" field.
+func (u *AssetMaintenanceUpsert) AddCost(v float64) *AssetMaintenanceUpsert {
+	u.Add(assetmaintenance.FieldCost, v)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *AssetMaintenanceUpsert) SetDescription(v string) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateDescription() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *AssetMaintenanceUpsert) ClearDescription() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldDescription)
+	return u
+}
+
+// SetFindings sets the "findings" field.
+func (u *AssetMaintenanceUpsert) SetFindings(v string) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldFindings, v)
+	return u
+}
+
+// UpdateFindings sets the "findings" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateFindings() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldFindings)
+	return u
+}
+
+// ClearFindings clears the value of the "findings" field.
+func (u *AssetMaintenanceUpsert) ClearFindings() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldFindings)
+	return u
+}
+
+// SetRecommendations sets the "recommendations" field.
+func (u *AssetMaintenanceUpsert) SetRecommendations(v string) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldRecommendations, v)
+	return u
+}
+
+// UpdateRecommendations sets the "recommendations" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateRecommendations() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldRecommendations)
+	return u
+}
+
+// ClearRecommendations clears the value of the "recommendations" field.
+func (u *AssetMaintenanceUpsert) ClearRecommendations() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldRecommendations)
+	return u
+}
+
+// SetNextMaintenanceDate sets the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsert) SetNextMaintenanceDate(v time.Time) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldNextMaintenanceDate, v)
+	return u
+}
+
+// UpdateNextMaintenanceDate sets the "next_maintenance_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateNextMaintenanceDate() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldNextMaintenanceDate)
+	return u
+}
+
+// ClearNextMaintenanceDate clears the value of the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsert) ClearNextMaintenanceDate() *AssetMaintenanceUpsert {
+	u.SetNull(assetmaintenance.FieldNextMaintenanceDate)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetMaintenanceUpsert) SetStatus(v assetmaintenance.Status) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateStatus() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldStatus)
+	return u
+}
+
+// SetPriority sets the "priority" field.
+func (u *AssetMaintenanceUpsert) SetPriority(v assetmaintenance.Priority) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldPriority, v)
+	return u
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdatePriority() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldPriority)
+	return u
+}
+
+// SetDowntimeHours sets the "downtime_hours" field.
+func (u *AssetMaintenanceUpsert) SetDowntimeHours(v float64) *AssetMaintenanceUpsert {
+	u.Set(assetmaintenance.FieldDowntimeHours, v)
+	return u
+}
+
+// UpdateDowntimeHours sets the "downtime_hours" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsert) UpdateDowntimeHours() *AssetMaintenanceUpsert {
+	u.SetExcluded(assetmaintenance.FieldDowntimeHours)
+	return u
+}
+
+// AddDowntimeHours adds v to the "downtime_hours" field.
+func (u *AssetMaintenanceUpsert) AddDowntimeHours(v float64) *AssetMaintenanceUpsert {
+	u.Add(assetmaintenance.FieldDowntimeHours, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetmaintenance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetMaintenanceUpsertOne) UpdateNewValues() *AssetMaintenanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(assetmaintenance.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(assetmaintenance.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AssetMaintenanceUpsertOne) Ignore() *AssetMaintenanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetMaintenanceUpsertOne) DoNothing() *AssetMaintenanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetMaintenanceCreate.OnConflict
+// documentation for more info.
+func (u *AssetMaintenanceUpsertOne) Update(set func(*AssetMaintenanceUpsert)) *AssetMaintenanceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetMaintenanceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetMaintenanceUpsertOne) SetTenantID(v uuid.UUID) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateTenantID() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetMaintenanceUpsertOne) SetAssetID(v uuid.UUID) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateAssetID() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetMaintenanceType sets the "maintenance_type" field.
+func (u *AssetMaintenanceUpsertOne) SetMaintenanceType(v assetmaintenance.MaintenanceType) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetMaintenanceType(v)
+	})
+}
+
+// UpdateMaintenanceType sets the "maintenance_type" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateMaintenanceType() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateMaintenanceType()
+	})
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *AssetMaintenanceUpsertOne) SetScheduledDate(v time.Time) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetScheduledDate(v)
+	})
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateScheduledDate() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateScheduledDate()
+	})
+}
+
+// SetCompletedDate sets the "completed_date" field.
+func (u *AssetMaintenanceUpsertOne) SetCompletedDate(v time.Time) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetCompletedDate(v)
+	})
+}
+
+// UpdateCompletedDate sets the "completed_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateCompletedDate() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateCompletedDate()
+	})
+}
+
+// ClearCompletedDate clears the value of the "completed_date" field.
+func (u *AssetMaintenanceUpsertOne) ClearCompletedDate() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearCompletedDate()
+	})
+}
+
+// SetPerformedBy sets the "performed_by" field.
+func (u *AssetMaintenanceUpsertOne) SetPerformedBy(v string) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetPerformedBy(v)
+	})
+}
+
+// UpdatePerformedBy sets the "performed_by" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdatePerformedBy() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdatePerformedBy()
+	})
+}
+
+// ClearPerformedBy clears the value of the "performed_by" field.
+func (u *AssetMaintenanceUpsertOne) ClearPerformedBy() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearPerformedBy()
+	})
+}
+
+// SetCost sets the "cost" field.
+func (u *AssetMaintenanceUpsertOne) SetCost(v float64) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetCost(v)
+	})
+}
+
+// AddCost adds v to the "cost" field.
+func (u *AssetMaintenanceUpsertOne) AddCost(v float64) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.AddCost(v)
+	})
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateCost() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateCost()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *AssetMaintenanceUpsertOne) SetDescription(v string) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateDescription() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *AssetMaintenanceUpsertOne) ClearDescription() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetFindings sets the "findings" field.
+func (u *AssetMaintenanceUpsertOne) SetFindings(v string) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetFindings(v)
+	})
+}
+
+// UpdateFindings sets the "findings" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateFindings() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateFindings()
+	})
+}
+
+// ClearFindings clears the value of the "findings" field.
+func (u *AssetMaintenanceUpsertOne) ClearFindings() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearFindings()
+	})
+}
+
+// SetRecommendations sets the "recommendations" field.
+func (u *AssetMaintenanceUpsertOne) SetRecommendations(v string) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetRecommendations(v)
+	})
+}
+
+// UpdateRecommendations sets the "recommendations" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateRecommendations() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateRecommendations()
+	})
+}
+
+// ClearRecommendations clears the value of the "recommendations" field.
+func (u *AssetMaintenanceUpsertOne) ClearRecommendations() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearRecommendations()
+	})
+}
+
+// SetNextMaintenanceDate sets the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsertOne) SetNextMaintenanceDate(v time.Time) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetNextMaintenanceDate(v)
+	})
+}
+
+// UpdateNextMaintenanceDate sets the "next_maintenance_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateNextMaintenanceDate() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateNextMaintenanceDate()
+	})
+}
+
+// ClearNextMaintenanceDate clears the value of the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsertOne) ClearNextMaintenanceDate() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearNextMaintenanceDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetMaintenanceUpsertOne) SetStatus(v assetmaintenance.Status) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateStatus() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *AssetMaintenanceUpsertOne) SetPriority(v assetmaintenance.Priority) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdatePriority() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetDowntimeHours sets the "downtime_hours" field.
+func (u *AssetMaintenanceUpsertOne) SetDowntimeHours(v float64) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetDowntimeHours(v)
+	})
+}
+
+// AddDowntimeHours adds v to the "downtime_hours" field.
+func (u *AssetMaintenanceUpsertOne) AddDowntimeHours(v float64) *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.AddDowntimeHours(v)
+	})
+}
+
+// UpdateDowntimeHours sets the "downtime_hours" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertOne) UpdateDowntimeHours() *AssetMaintenanceUpsertOne {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateDowntimeHours()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetMaintenanceUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetMaintenanceCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetMaintenanceUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AssetMaintenanceUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AssetMaintenanceUpsertOne.ID is not supported by MySQL driver. Use AssetMaintenanceUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AssetMaintenanceUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AssetMaintenanceCreateBulk is the builder for creating many AssetMaintenance entities in bulk.
 type AssetMaintenanceCreateBulk struct {
 	config
 	err      error
 	builders []*AssetMaintenanceCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AssetMaintenance entities in the database.
@@ -462,6 +1073,7 @@ func (_c *AssetMaintenanceCreateBulk) Save(ctx context.Context) ([]*AssetMainten
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -508,6 +1120,375 @@ func (_c *AssetMaintenanceCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *AssetMaintenanceCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetMaintenance.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetMaintenanceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetMaintenanceCreateBulk) OnConflict(opts ...sql.ConflictOption) *AssetMaintenanceUpsertBulk {
+	_c.conflict = opts
+	return &AssetMaintenanceUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetMaintenanceCreateBulk) OnConflictColumns(columns ...string) *AssetMaintenanceUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetMaintenanceUpsertBulk{
+		create: _c,
+	}
+}
+
+// AssetMaintenanceUpsertBulk is the builder for "upsert"-ing
+// a bulk of AssetMaintenance nodes.
+type AssetMaintenanceUpsertBulk struct {
+	create *AssetMaintenanceCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetmaintenance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetMaintenanceUpsertBulk) UpdateNewValues() *AssetMaintenanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(assetmaintenance.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(assetmaintenance.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetMaintenance.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AssetMaintenanceUpsertBulk) Ignore() *AssetMaintenanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetMaintenanceUpsertBulk) DoNothing() *AssetMaintenanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetMaintenanceCreateBulk.OnConflict
+// documentation for more info.
+func (u *AssetMaintenanceUpsertBulk) Update(set func(*AssetMaintenanceUpsert)) *AssetMaintenanceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetMaintenanceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetMaintenanceUpsertBulk) SetTenantID(v uuid.UUID) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateTenantID() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetMaintenanceUpsertBulk) SetAssetID(v uuid.UUID) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateAssetID() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetMaintenanceType sets the "maintenance_type" field.
+func (u *AssetMaintenanceUpsertBulk) SetMaintenanceType(v assetmaintenance.MaintenanceType) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetMaintenanceType(v)
+	})
+}
+
+// UpdateMaintenanceType sets the "maintenance_type" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateMaintenanceType() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateMaintenanceType()
+	})
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *AssetMaintenanceUpsertBulk) SetScheduledDate(v time.Time) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetScheduledDate(v)
+	})
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateScheduledDate() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateScheduledDate()
+	})
+}
+
+// SetCompletedDate sets the "completed_date" field.
+func (u *AssetMaintenanceUpsertBulk) SetCompletedDate(v time.Time) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetCompletedDate(v)
+	})
+}
+
+// UpdateCompletedDate sets the "completed_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateCompletedDate() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateCompletedDate()
+	})
+}
+
+// ClearCompletedDate clears the value of the "completed_date" field.
+func (u *AssetMaintenanceUpsertBulk) ClearCompletedDate() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearCompletedDate()
+	})
+}
+
+// SetPerformedBy sets the "performed_by" field.
+func (u *AssetMaintenanceUpsertBulk) SetPerformedBy(v string) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetPerformedBy(v)
+	})
+}
+
+// UpdatePerformedBy sets the "performed_by" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdatePerformedBy() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdatePerformedBy()
+	})
+}
+
+// ClearPerformedBy clears the value of the "performed_by" field.
+func (u *AssetMaintenanceUpsertBulk) ClearPerformedBy() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearPerformedBy()
+	})
+}
+
+// SetCost sets the "cost" field.
+func (u *AssetMaintenanceUpsertBulk) SetCost(v float64) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetCost(v)
+	})
+}
+
+// AddCost adds v to the "cost" field.
+func (u *AssetMaintenanceUpsertBulk) AddCost(v float64) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.AddCost(v)
+	})
+}
+
+// UpdateCost sets the "cost" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateCost() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateCost()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *AssetMaintenanceUpsertBulk) SetDescription(v string) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateDescription() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *AssetMaintenanceUpsertBulk) ClearDescription() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetFindings sets the "findings" field.
+func (u *AssetMaintenanceUpsertBulk) SetFindings(v string) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetFindings(v)
+	})
+}
+
+// UpdateFindings sets the "findings" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateFindings() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateFindings()
+	})
+}
+
+// ClearFindings clears the value of the "findings" field.
+func (u *AssetMaintenanceUpsertBulk) ClearFindings() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearFindings()
+	})
+}
+
+// SetRecommendations sets the "recommendations" field.
+func (u *AssetMaintenanceUpsertBulk) SetRecommendations(v string) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetRecommendations(v)
+	})
+}
+
+// UpdateRecommendations sets the "recommendations" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateRecommendations() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateRecommendations()
+	})
+}
+
+// ClearRecommendations clears the value of the "recommendations" field.
+func (u *AssetMaintenanceUpsertBulk) ClearRecommendations() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearRecommendations()
+	})
+}
+
+// SetNextMaintenanceDate sets the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsertBulk) SetNextMaintenanceDate(v time.Time) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetNextMaintenanceDate(v)
+	})
+}
+
+// UpdateNextMaintenanceDate sets the "next_maintenance_date" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateNextMaintenanceDate() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateNextMaintenanceDate()
+	})
+}
+
+// ClearNextMaintenanceDate clears the value of the "next_maintenance_date" field.
+func (u *AssetMaintenanceUpsertBulk) ClearNextMaintenanceDate() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.ClearNextMaintenanceDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetMaintenanceUpsertBulk) SetStatus(v assetmaintenance.Status) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateStatus() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *AssetMaintenanceUpsertBulk) SetPriority(v assetmaintenance.Priority) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdatePriority() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetDowntimeHours sets the "downtime_hours" field.
+func (u *AssetMaintenanceUpsertBulk) SetDowntimeHours(v float64) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.SetDowntimeHours(v)
+	})
+}
+
+// AddDowntimeHours adds v to the "downtime_hours" field.
+func (u *AssetMaintenanceUpsertBulk) AddDowntimeHours(v float64) *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.AddDowntimeHours(v)
+	})
+}
+
+// UpdateDowntimeHours sets the "downtime_hours" field to the value that was provided on create.
+func (u *AssetMaintenanceUpsertBulk) UpdateDowntimeHours() *AssetMaintenanceUpsertBulk {
+	return u.Update(func(s *AssetMaintenanceUpsert) {
+		s.UpdateDowntimeHours()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetMaintenanceUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AssetMaintenanceCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetMaintenanceCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetMaintenanceUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

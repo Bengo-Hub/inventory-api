@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/contract"
@@ -20,6 +22,7 @@ type ContractCreate struct {
 	config
 	mutation *ContractMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -292,6 +295,7 @@ func (_c *ContractCreate) createSpec() (*Contract, *sqlgraph.CreateSpec) {
 		_node = &Contract{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(contract.Table, sqlgraph.NewFieldSpec(contract.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -359,11 +363,449 @@ func (_c *ContractCreate) createSpec() (*Contract, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Contract.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ContractUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ContractCreate) OnConflict(opts ...sql.ConflictOption) *ContractUpsertOne {
+	_c.conflict = opts
+	return &ContractUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ContractCreate) OnConflictColumns(columns ...string) *ContractUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ContractUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ContractUpsertOne is the builder for "upsert"-ing
+	//  one Contract node.
+	ContractUpsertOne struct {
+		create *ContractCreate
+	}
+
+	// ContractUpsert is the "OnConflict" setter.
+	ContractUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ContractUpsert) SetTenantID(v uuid.UUID) *ContractUpsert {
+	u.Set(contract.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateTenantID() *ContractUpsert {
+	u.SetExcluded(contract.FieldTenantID)
+	return u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *ContractUpsert) SetSupplierID(v uuid.UUID) *ContractUpsert {
+	u.Set(contract.FieldSupplierID, v)
+	return u
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateSupplierID() *ContractUpsert {
+	u.SetExcluded(contract.FieldSupplierID)
+	return u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *ContractUpsert) SetRfqID(v uuid.UUID) *ContractUpsert {
+	u.Set(contract.FieldRfqID, v)
+	return u
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateRfqID() *ContractUpsert {
+	u.SetExcluded(contract.FieldRfqID)
+	return u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *ContractUpsert) ClearRfqID() *ContractUpsert {
+	u.SetNull(contract.FieldRfqID)
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *ContractUpsert) SetTitle(v string) *ContractUpsert {
+	u.Set(contract.FieldTitle, v)
+	return u
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateTitle() *ContractUpsert {
+	u.SetExcluded(contract.FieldTitle)
+	return u
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ContractUpsert) SetStartDate(v time.Time) *ContractUpsert {
+	u.Set(contract.FieldStartDate, v)
+	return u
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateStartDate() *ContractUpsert {
+	u.SetExcluded(contract.FieldStartDate)
+	return u
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ContractUpsert) SetEndDate(v time.Time) *ContractUpsert {
+	u.Set(contract.FieldEndDate, v)
+	return u
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateEndDate() *ContractUpsert {
+	u.SetExcluded(contract.FieldEndDate)
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *ContractUpsert) SetValue(v float64) *ContractUpsert {
+	u.Set(contract.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateValue() *ContractUpsert {
+	u.SetExcluded(contract.FieldValue)
+	return u
+}
+
+// AddValue adds v to the "value" field.
+func (u *ContractUpsert) AddValue(v float64) *ContractUpsert {
+	u.Add(contract.FieldValue, v)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ContractUpsert) SetStatus(v contract.Status) *ContractUpsert {
+	u.Set(contract.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateStatus() *ContractUpsert {
+	u.SetExcluded(contract.FieldStatus)
+	return u
+}
+
+// SetTerms sets the "terms" field.
+func (u *ContractUpsert) SetTerms(v string) *ContractUpsert {
+	u.Set(contract.FieldTerms, v)
+	return u
+}
+
+// UpdateTerms sets the "terms" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateTerms() *ContractUpsert {
+	u.SetExcluded(contract.FieldTerms)
+	return u
+}
+
+// ClearTerms clears the value of the "terms" field.
+func (u *ContractUpsert) ClearTerms() *ContractUpsert {
+	u.SetNull(contract.FieldTerms)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContractUpsert) SetUpdatedAt(v time.Time) *ContractUpsert {
+	u.Set(contract.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateUpdatedAt() *ContractUpsert {
+	u.SetExcluded(contract.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(contract.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ContractUpsertOne) UpdateNewValues() *ContractUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(contract.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(contract.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ContractUpsertOne) Ignore() *ContractUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ContractUpsertOne) DoNothing() *ContractUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ContractCreate.OnConflict
+// documentation for more info.
+func (u *ContractUpsertOne) Update(set func(*ContractUpsert)) *ContractUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ContractUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ContractUpsertOne) SetTenantID(v uuid.UUID) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateTenantID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *ContractUpsertOne) SetSupplierID(v uuid.UUID) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateSupplierID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *ContractUpsertOne) SetRfqID(v uuid.UUID) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateRfqID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *ContractUpsertOne) ClearRfqID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *ContractUpsertOne) SetTitle(v string) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateTitle() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ContractUpsertOne) SetStartDate(v time.Time) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateStartDate() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ContractUpsertOne) SetEndDate(v time.Time) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateEndDate() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetValue sets the "value" field.
+func (u *ContractUpsertOne) SetValue(v float64) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// AddValue adds v to the "value" field.
+func (u *ContractUpsertOne) AddValue(v float64) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.AddValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateValue() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ContractUpsertOne) SetStatus(v contract.Status) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateStatus() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetTerms sets the "terms" field.
+func (u *ContractUpsertOne) SetTerms(v string) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTerms(v)
+	})
+}
+
+// UpdateTerms sets the "terms" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateTerms() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTerms()
+	})
+}
+
+// ClearTerms clears the value of the "terms" field.
+func (u *ContractUpsertOne) ClearTerms() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearTerms()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContractUpsertOne) SetUpdatedAt(v time.Time) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateUpdatedAt() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ContractUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ContractCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ContractUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ContractUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ContractUpsertOne.ID is not supported by MySQL driver. Use ContractUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ContractUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ContractCreateBulk is the builder for creating many Contract entities in bulk.
 type ContractCreateBulk struct {
 	config
 	err      error
 	builders []*ContractCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Contract entities in the database.
@@ -393,6 +835,7 @@ func (_c *ContractCreateBulk) Save(ctx context.Context) ([]*Contract, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -439,6 +882,284 @@ func (_c *ContractCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ContractCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Contract.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ContractUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ContractCreateBulk) OnConflict(opts ...sql.ConflictOption) *ContractUpsertBulk {
+	_c.conflict = opts
+	return &ContractUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ContractCreateBulk) OnConflictColumns(columns ...string) *ContractUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ContractUpsertBulk{
+		create: _c,
+	}
+}
+
+// ContractUpsertBulk is the builder for "upsert"-ing
+// a bulk of Contract nodes.
+type ContractUpsertBulk struct {
+	create *ContractCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(contract.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ContractUpsertBulk) UpdateNewValues() *ContractUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(contract.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(contract.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Contract.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ContractUpsertBulk) Ignore() *ContractUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ContractUpsertBulk) DoNothing() *ContractUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ContractCreateBulk.OnConflict
+// documentation for more info.
+func (u *ContractUpsertBulk) Update(set func(*ContractUpsert)) *ContractUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ContractUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ContractUpsertBulk) SetTenantID(v uuid.UUID) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateTenantID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *ContractUpsertBulk) SetSupplierID(v uuid.UUID) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateSupplierID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *ContractUpsertBulk) SetRfqID(v uuid.UUID) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateRfqID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *ContractUpsertBulk) ClearRfqID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *ContractUpsertBulk) SetTitle(v string) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateTitle() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ContractUpsertBulk) SetStartDate(v time.Time) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateStartDate() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ContractUpsertBulk) SetEndDate(v time.Time) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateEndDate() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetValue sets the "value" field.
+func (u *ContractUpsertBulk) SetValue(v float64) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetValue(v)
+	})
+}
+
+// AddValue adds v to the "value" field.
+func (u *ContractUpsertBulk) AddValue(v float64) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.AddValue(v)
+	})
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateValue() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateValue()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ContractUpsertBulk) SetStatus(v contract.Status) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateStatus() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetTerms sets the "terms" field.
+func (u *ContractUpsertBulk) SetTerms(v string) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetTerms(v)
+	})
+}
+
+// UpdateTerms sets the "terms" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateTerms() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateTerms()
+	})
+}
+
+// ClearTerms clears the value of the "terms" field.
+func (u *ContractUpsertBulk) ClearTerms() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearTerms()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ContractUpsertBulk) SetUpdatedAt(v time.Time) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateUpdatedAt() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ContractUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ContractCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ContractCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ContractUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

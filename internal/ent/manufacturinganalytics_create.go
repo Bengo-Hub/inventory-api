@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/manufacturinganalytics"
@@ -19,6 +21,7 @@ type ManufacturingAnalyticsCreate struct {
 	config
 	mutation *ManufacturingAnalyticsMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -316,6 +319,7 @@ func (_c *ManufacturingAnalyticsCreate) createSpec() (*ManufacturingAnalytics, *
 		_node = &ManufacturingAnalytics{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(manufacturinganalytics.Table, sqlgraph.NewFieldSpec(manufacturinganalytics.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -367,11 +371,501 @@ func (_c *ManufacturingAnalyticsCreate) createSpec() (*ManufacturingAnalytics, *
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ManufacturingAnalytics.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ManufacturingAnalyticsUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ManufacturingAnalyticsCreate) OnConflict(opts ...sql.ConflictOption) *ManufacturingAnalyticsUpsertOne {
+	_c.conflict = opts
+	return &ManufacturingAnalyticsUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ManufacturingAnalyticsCreate) OnConflictColumns(columns ...string) *ManufacturingAnalyticsUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ManufacturingAnalyticsUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ManufacturingAnalyticsUpsertOne is the builder for "upsert"-ing
+	//  one ManufacturingAnalytics node.
+	ManufacturingAnalyticsUpsertOne struct {
+		create *ManufacturingAnalyticsCreate
+	}
+
+	// ManufacturingAnalyticsUpsert is the "OnConflict" setter.
+	ManufacturingAnalyticsUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ManufacturingAnalyticsUpsert) SetTenantID(v uuid.UUID) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTenantID() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTenantID)
+	return u
+}
+
+// SetDate sets the "date" field.
+func (u *ManufacturingAnalyticsUpsert) SetDate(v string) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldDate, v)
+	return u
+}
+
+// UpdateDate sets the "date" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateDate() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldDate)
+	return u
+}
+
+// SetTotalBatches sets the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsert) SetTotalBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTotalBatches, v)
+	return u
+}
+
+// UpdateTotalBatches sets the "total_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTotalBatches() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTotalBatches)
+	return u
+}
+
+// AddTotalBatches adds v to the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsert) AddTotalBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldTotalBatches, v)
+	return u
+}
+
+// SetCompletedBatches sets the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsert) SetCompletedBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldCompletedBatches, v)
+	return u
+}
+
+// UpdateCompletedBatches sets the "completed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateCompletedBatches() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldCompletedBatches)
+	return u
+}
+
+// AddCompletedBatches adds v to the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsert) AddCompletedBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldCompletedBatches, v)
+	return u
+}
+
+// SetFailedBatches sets the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsert) SetFailedBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldFailedBatches, v)
+	return u
+}
+
+// UpdateFailedBatches sets the "failed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateFailedBatches() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldFailedBatches)
+	return u
+}
+
+// AddFailedBatches adds v to the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsert) AddFailedBatches(v int) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldFailedBatches, v)
+	return u
+}
+
+// SetTotalProductionQty sets the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsert) SetTotalProductionQty(v float64) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTotalProductionQty, v)
+	return u
+}
+
+// UpdateTotalProductionQty sets the "total_production_qty" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTotalProductionQty() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTotalProductionQty)
+	return u
+}
+
+// AddTotalProductionQty adds v to the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsert) AddTotalProductionQty(v float64) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldTotalProductionQty, v)
+	return u
+}
+
+// SetTotalRawMaterialCost sets the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsert) SetTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTotalRawMaterialCost, v)
+	return u
+}
+
+// UpdateTotalRawMaterialCost sets the "total_raw_material_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTotalRawMaterialCost() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTotalRawMaterialCost)
+	return u
+}
+
+// AddTotalRawMaterialCost adds v to the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsert) AddTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldTotalRawMaterialCost, v)
+	return u
+}
+
+// SetTotalLaborCost sets the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsert) SetTotalLaborCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTotalLaborCost, v)
+	return u
+}
+
+// UpdateTotalLaborCost sets the "total_labor_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTotalLaborCost() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTotalLaborCost)
+	return u
+}
+
+// AddTotalLaborCost adds v to the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsert) AddTotalLaborCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldTotalLaborCost, v)
+	return u
+}
+
+// SetTotalOverheadCost sets the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsert) SetTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldTotalOverheadCost, v)
+	return u
+}
+
+// UpdateTotalOverheadCost sets the "total_overhead_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateTotalOverheadCost() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldTotalOverheadCost)
+	return u
+}
+
+// AddTotalOverheadCost adds v to the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsert) AddTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsert {
+	u.Add(manufacturinganalytics.FieldTotalOverheadCost, v)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ManufacturingAnalyticsUpsert) SetUpdatedAt(v time.Time) *ManufacturingAnalyticsUpsert {
+	u.Set(manufacturinganalytics.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsert) UpdateUpdatedAt() *ManufacturingAnalyticsUpsert {
+	u.SetExcluded(manufacturinganalytics.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(manufacturinganalytics.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ManufacturingAnalyticsUpsertOne) UpdateNewValues() *ManufacturingAnalyticsUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(manufacturinganalytics.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(manufacturinganalytics.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ManufacturingAnalyticsUpsertOne) Ignore() *ManufacturingAnalyticsUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ManufacturingAnalyticsUpsertOne) DoNothing() *ManufacturingAnalyticsUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ManufacturingAnalyticsCreate.OnConflict
+// documentation for more info.
+func (u *ManufacturingAnalyticsUpsertOne) Update(set func(*ManufacturingAnalyticsUpsert)) *ManufacturingAnalyticsUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ManufacturingAnalyticsUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTenantID(v uuid.UUID) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTenantID() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetDate sets the "date" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetDate(v string) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetDate(v)
+	})
+}
+
+// UpdateDate sets the "date" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateDate() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateDate()
+	})
+}
+
+// SetTotalBatches sets the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTotalBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalBatches(v)
+	})
+}
+
+// AddTotalBatches adds v to the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddTotalBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalBatches(v)
+	})
+}
+
+// UpdateTotalBatches sets the "total_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTotalBatches() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalBatches()
+	})
+}
+
+// SetCompletedBatches sets the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetCompletedBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetCompletedBatches(v)
+	})
+}
+
+// AddCompletedBatches adds v to the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddCompletedBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddCompletedBatches(v)
+	})
+}
+
+// UpdateCompletedBatches sets the "completed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateCompletedBatches() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateCompletedBatches()
+	})
+}
+
+// SetFailedBatches sets the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetFailedBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetFailedBatches(v)
+	})
+}
+
+// AddFailedBatches adds v to the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddFailedBatches(v int) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddFailedBatches(v)
+	})
+}
+
+// UpdateFailedBatches sets the "failed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateFailedBatches() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateFailedBatches()
+	})
+}
+
+// SetTotalProductionQty sets the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTotalProductionQty(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalProductionQty(v)
+	})
+}
+
+// AddTotalProductionQty adds v to the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddTotalProductionQty(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalProductionQty(v)
+	})
+}
+
+// UpdateTotalProductionQty sets the "total_production_qty" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTotalProductionQty() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalProductionQty()
+	})
+}
+
+// SetTotalRawMaterialCost sets the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalRawMaterialCost(v)
+	})
+}
+
+// AddTotalRawMaterialCost adds v to the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalRawMaterialCost(v)
+	})
+}
+
+// UpdateTotalRawMaterialCost sets the "total_raw_material_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTotalRawMaterialCost() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalRawMaterialCost()
+	})
+}
+
+// SetTotalLaborCost sets the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTotalLaborCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalLaborCost(v)
+	})
+}
+
+// AddTotalLaborCost adds v to the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddTotalLaborCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalLaborCost(v)
+	})
+}
+
+// UpdateTotalLaborCost sets the "total_labor_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTotalLaborCost() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalLaborCost()
+	})
+}
+
+// SetTotalOverheadCost sets the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalOverheadCost(v)
+	})
+}
+
+// AddTotalOverheadCost adds v to the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsertOne) AddTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalOverheadCost(v)
+	})
+}
+
+// UpdateTotalOverheadCost sets the "total_overhead_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateTotalOverheadCost() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalOverheadCost()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ManufacturingAnalyticsUpsertOne) SetUpdatedAt(v time.Time) *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertOne) UpdateUpdatedAt() *ManufacturingAnalyticsUpsertOne {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ManufacturingAnalyticsUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ManufacturingAnalyticsCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ManufacturingAnalyticsUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ManufacturingAnalyticsUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ManufacturingAnalyticsUpsertOne.ID is not supported by MySQL driver. Use ManufacturingAnalyticsUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ManufacturingAnalyticsUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ManufacturingAnalyticsCreateBulk is the builder for creating many ManufacturingAnalytics entities in bulk.
 type ManufacturingAnalyticsCreateBulk struct {
 	config
 	err      error
 	builders []*ManufacturingAnalyticsCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ManufacturingAnalytics entities in the database.
@@ -401,6 +895,7 @@ func (_c *ManufacturingAnalyticsCreateBulk) Save(ctx context.Context) ([]*Manufa
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -447,6 +942,312 @@ func (_c *ManufacturingAnalyticsCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ManufacturingAnalyticsCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ManufacturingAnalytics.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ManufacturingAnalyticsUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ManufacturingAnalyticsCreateBulk) OnConflict(opts ...sql.ConflictOption) *ManufacturingAnalyticsUpsertBulk {
+	_c.conflict = opts
+	return &ManufacturingAnalyticsUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ManufacturingAnalyticsCreateBulk) OnConflictColumns(columns ...string) *ManufacturingAnalyticsUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ManufacturingAnalyticsUpsertBulk{
+		create: _c,
+	}
+}
+
+// ManufacturingAnalyticsUpsertBulk is the builder for "upsert"-ing
+// a bulk of ManufacturingAnalytics nodes.
+type ManufacturingAnalyticsUpsertBulk struct {
+	create *ManufacturingAnalyticsCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(manufacturinganalytics.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateNewValues() *ManufacturingAnalyticsUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(manufacturinganalytics.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(manufacturinganalytics.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ManufacturingAnalytics.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ManufacturingAnalyticsUpsertBulk) Ignore() *ManufacturingAnalyticsUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ManufacturingAnalyticsUpsertBulk) DoNothing() *ManufacturingAnalyticsUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ManufacturingAnalyticsCreateBulk.OnConflict
+// documentation for more info.
+func (u *ManufacturingAnalyticsUpsertBulk) Update(set func(*ManufacturingAnalyticsUpsert)) *ManufacturingAnalyticsUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ManufacturingAnalyticsUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTenantID(v uuid.UUID) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTenantID() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetDate sets the "date" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetDate(v string) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetDate(v)
+	})
+}
+
+// UpdateDate sets the "date" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateDate() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateDate()
+	})
+}
+
+// SetTotalBatches sets the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTotalBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalBatches(v)
+	})
+}
+
+// AddTotalBatches adds v to the "total_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddTotalBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalBatches(v)
+	})
+}
+
+// UpdateTotalBatches sets the "total_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTotalBatches() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalBatches()
+	})
+}
+
+// SetCompletedBatches sets the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetCompletedBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetCompletedBatches(v)
+	})
+}
+
+// AddCompletedBatches adds v to the "completed_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddCompletedBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddCompletedBatches(v)
+	})
+}
+
+// UpdateCompletedBatches sets the "completed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateCompletedBatches() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateCompletedBatches()
+	})
+}
+
+// SetFailedBatches sets the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetFailedBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetFailedBatches(v)
+	})
+}
+
+// AddFailedBatches adds v to the "failed_batches" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddFailedBatches(v int) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddFailedBatches(v)
+	})
+}
+
+// UpdateFailedBatches sets the "failed_batches" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateFailedBatches() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateFailedBatches()
+	})
+}
+
+// SetTotalProductionQty sets the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTotalProductionQty(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalProductionQty(v)
+	})
+}
+
+// AddTotalProductionQty adds v to the "total_production_qty" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddTotalProductionQty(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalProductionQty(v)
+	})
+}
+
+// UpdateTotalProductionQty sets the "total_production_qty" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTotalProductionQty() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalProductionQty()
+	})
+}
+
+// SetTotalRawMaterialCost sets the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalRawMaterialCost(v)
+	})
+}
+
+// AddTotalRawMaterialCost adds v to the "total_raw_material_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddTotalRawMaterialCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalRawMaterialCost(v)
+	})
+}
+
+// UpdateTotalRawMaterialCost sets the "total_raw_material_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTotalRawMaterialCost() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalRawMaterialCost()
+	})
+}
+
+// SetTotalLaborCost sets the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTotalLaborCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalLaborCost(v)
+	})
+}
+
+// AddTotalLaborCost adds v to the "total_labor_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddTotalLaborCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalLaborCost(v)
+	})
+}
+
+// UpdateTotalLaborCost sets the "total_labor_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTotalLaborCost() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalLaborCost()
+	})
+}
+
+// SetTotalOverheadCost sets the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetTotalOverheadCost(v)
+	})
+}
+
+// AddTotalOverheadCost adds v to the "total_overhead_cost" field.
+func (u *ManufacturingAnalyticsUpsertBulk) AddTotalOverheadCost(v float64) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.AddTotalOverheadCost(v)
+	})
+}
+
+// UpdateTotalOverheadCost sets the "total_overhead_cost" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateTotalOverheadCost() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateTotalOverheadCost()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ManufacturingAnalyticsUpsertBulk) SetUpdatedAt(v time.Time) *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ManufacturingAnalyticsUpsertBulk) UpdateUpdatedAt() *ManufacturingAnalyticsUpsertBulk {
+	return u.Update(func(s *ManufacturingAnalyticsUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ManufacturingAnalyticsUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ManufacturingAnalyticsCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ManufacturingAnalyticsCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ManufacturingAnalyticsUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

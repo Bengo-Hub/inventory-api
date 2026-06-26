@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -20,6 +22,7 @@ type ItemAssetCreate struct {
 	config
 	mutation *ItemAssetMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetItemID sets the "item_id" field.
@@ -282,6 +285,7 @@ func (_c *ItemAssetCreate) createSpec() (*ItemAsset, *sqlgraph.CreateSpec) {
 		_node = &ItemAsset{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(itemasset.Table, sqlgraph.NewFieldSpec(itemasset.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -346,11 +350,475 @@ func (_c *ItemAssetCreate) createSpec() (*ItemAsset, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ItemAsset.Create().
+//		SetItemID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemAssetUpsert) {
+//			SetItemID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemAssetCreate) OnConflict(opts ...sql.ConflictOption) *ItemAssetUpsertOne {
+	_c.conflict = opts
+	return &ItemAssetUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemAssetCreate) OnConflictColumns(columns ...string) *ItemAssetUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemAssetUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ItemAssetUpsertOne is the builder for "upsert"-ing
+	//  one ItemAsset node.
+	ItemAssetUpsertOne struct {
+		create *ItemAssetCreate
+	}
+
+	// ItemAssetUpsert is the "OnConflict" setter.
+	ItemAssetUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetItemID sets the "item_id" field.
+func (u *ItemAssetUpsert) SetItemID(v uuid.UUID) *ItemAssetUpsert {
+	u.Set(itemasset.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateItemID() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldItemID)
+	return u
+}
+
+// SetAssetType sets the "asset_type" field.
+func (u *ItemAssetUpsert) SetAssetType(v string) *ItemAssetUpsert {
+	u.Set(itemasset.FieldAssetType, v)
+	return u
+}
+
+// UpdateAssetType sets the "asset_type" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateAssetType() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldAssetType)
+	return u
+}
+
+// SetURL sets the "url" field.
+func (u *ItemAssetUpsert) SetURL(v string) *ItemAssetUpsert {
+	u.Set(itemasset.FieldURL, v)
+	return u
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateURL() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldURL)
+	return u
+}
+
+// SetFileName sets the "file_name" field.
+func (u *ItemAssetUpsert) SetFileName(v string) *ItemAssetUpsert {
+	u.Set(itemasset.FieldFileName, v)
+	return u
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateFileName() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldFileName)
+	return u
+}
+
+// ClearFileName clears the value of the "file_name" field.
+func (u *ItemAssetUpsert) ClearFileName() *ItemAssetUpsert {
+	u.SetNull(itemasset.FieldFileName)
+	return u
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *ItemAssetUpsert) SetFileSize(v string) *ItemAssetUpsert {
+	u.Set(itemasset.FieldFileSize, v)
+	return u
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateFileSize() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldFileSize)
+	return u
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *ItemAssetUpsert) ClearFileSize() *ItemAssetUpsert {
+	u.SetNull(itemasset.FieldFileSize)
+	return u
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *ItemAssetUpsert) SetMimeType(v string) *ItemAssetUpsert {
+	u.Set(itemasset.FieldMimeType, v)
+	return u
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateMimeType() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldMimeType)
+	return u
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *ItemAssetUpsert) ClearMimeType() *ItemAssetUpsert {
+	u.SetNull(itemasset.FieldMimeType)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemAssetUpsert) SetMetadata(v map[string]interface{}) *ItemAssetUpsert {
+	u.Set(itemasset.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateMetadata() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ItemAssetUpsert) ClearMetadata() *ItemAssetUpsert {
+	u.SetNull(itemasset.FieldMetadata)
+	return u
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *ItemAssetUpsert) SetDisplayOrder(v int) *ItemAssetUpsert {
+	u.Set(itemasset.FieldDisplayOrder, v)
+	return u
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateDisplayOrder() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldDisplayOrder)
+	return u
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *ItemAssetUpsert) AddDisplayOrder(v int) *ItemAssetUpsert {
+	u.Add(itemasset.FieldDisplayOrder, v)
+	return u
+}
+
+// SetIsPrimary sets the "is_primary" field.
+func (u *ItemAssetUpsert) SetIsPrimary(v bool) *ItemAssetUpsert {
+	u.Set(itemasset.FieldIsPrimary, v)
+	return u
+}
+
+// UpdateIsPrimary sets the "is_primary" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateIsPrimary() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldIsPrimary)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemAssetUpsert) SetUpdatedAt(v time.Time) *ItemAssetUpsert {
+	u.Set(itemasset.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemAssetUpsert) UpdateUpdatedAt() *ItemAssetUpsert {
+	u.SetExcluded(itemasset.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(itemasset.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemAssetUpsertOne) UpdateNewValues() *ItemAssetUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(itemasset.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(itemasset.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ItemAssetUpsertOne) Ignore() *ItemAssetUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemAssetUpsertOne) DoNothing() *ItemAssetUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemAssetCreate.OnConflict
+// documentation for more info.
+func (u *ItemAssetUpsertOne) Update(set func(*ItemAssetUpsert)) *ItemAssetUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemAssetUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *ItemAssetUpsertOne) SetItemID(v uuid.UUID) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateItemID() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetAssetType sets the "asset_type" field.
+func (u *ItemAssetUpsertOne) SetAssetType(v string) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetAssetType(v)
+	})
+}
+
+// UpdateAssetType sets the "asset_type" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateAssetType() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateAssetType()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *ItemAssetUpsertOne) SetURL(v string) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateURL() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// SetFileName sets the "file_name" field.
+func (u *ItemAssetUpsertOne) SetFileName(v string) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetFileName(v)
+	})
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateFileName() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateFileName()
+	})
+}
+
+// ClearFileName clears the value of the "file_name" field.
+func (u *ItemAssetUpsertOne) ClearFileName() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearFileName()
+	})
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *ItemAssetUpsertOne) SetFileSize(v string) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetFileSize(v)
+	})
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateFileSize() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateFileSize()
+	})
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *ItemAssetUpsertOne) ClearFileSize() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearFileSize()
+	})
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *ItemAssetUpsertOne) SetMimeType(v string) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetMimeType(v)
+	})
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateMimeType() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateMimeType()
+	})
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *ItemAssetUpsertOne) ClearMimeType() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearMimeType()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemAssetUpsertOne) SetMetadata(v map[string]interface{}) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateMetadata() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ItemAssetUpsertOne) ClearMetadata() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *ItemAssetUpsertOne) SetDisplayOrder(v int) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetDisplayOrder(v)
+	})
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *ItemAssetUpsertOne) AddDisplayOrder(v int) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.AddDisplayOrder(v)
+	})
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateDisplayOrder() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateDisplayOrder()
+	})
+}
+
+// SetIsPrimary sets the "is_primary" field.
+func (u *ItemAssetUpsertOne) SetIsPrimary(v bool) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetIsPrimary(v)
+	})
+}
+
+// UpdateIsPrimary sets the "is_primary" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateIsPrimary() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateIsPrimary()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemAssetUpsertOne) SetUpdatedAt(v time.Time) *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemAssetUpsertOne) UpdateUpdatedAt() *ItemAssetUpsertOne {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemAssetUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemAssetCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemAssetUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ItemAssetUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ItemAssetUpsertOne.ID is not supported by MySQL driver. Use ItemAssetUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ItemAssetUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ItemAssetCreateBulk is the builder for creating many ItemAsset entities in bulk.
 type ItemAssetCreateBulk struct {
 	config
 	err      error
 	builders []*ItemAssetCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ItemAsset entities in the database.
@@ -380,6 +848,7 @@ func (_c *ItemAssetCreateBulk) Save(ctx context.Context) ([]*ItemAsset, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -426,6 +895,298 @@ func (_c *ItemAssetCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ItemAssetCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ItemAsset.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemAssetUpsert) {
+//			SetItemID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemAssetCreateBulk) OnConflict(opts ...sql.ConflictOption) *ItemAssetUpsertBulk {
+	_c.conflict = opts
+	return &ItemAssetUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemAssetCreateBulk) OnConflictColumns(columns ...string) *ItemAssetUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemAssetUpsertBulk{
+		create: _c,
+	}
+}
+
+// ItemAssetUpsertBulk is the builder for "upsert"-ing
+// a bulk of ItemAsset nodes.
+type ItemAssetUpsertBulk struct {
+	create *ItemAssetCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(itemasset.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemAssetUpsertBulk) UpdateNewValues() *ItemAssetUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(itemasset.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(itemasset.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ItemAsset.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ItemAssetUpsertBulk) Ignore() *ItemAssetUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemAssetUpsertBulk) DoNothing() *ItemAssetUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemAssetCreateBulk.OnConflict
+// documentation for more info.
+func (u *ItemAssetUpsertBulk) Update(set func(*ItemAssetUpsert)) *ItemAssetUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemAssetUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *ItemAssetUpsertBulk) SetItemID(v uuid.UUID) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateItemID() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetAssetType sets the "asset_type" field.
+func (u *ItemAssetUpsertBulk) SetAssetType(v string) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetAssetType(v)
+	})
+}
+
+// UpdateAssetType sets the "asset_type" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateAssetType() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateAssetType()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *ItemAssetUpsertBulk) SetURL(v string) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateURL() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// SetFileName sets the "file_name" field.
+func (u *ItemAssetUpsertBulk) SetFileName(v string) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetFileName(v)
+	})
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateFileName() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateFileName()
+	})
+}
+
+// ClearFileName clears the value of the "file_name" field.
+func (u *ItemAssetUpsertBulk) ClearFileName() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearFileName()
+	})
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *ItemAssetUpsertBulk) SetFileSize(v string) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetFileSize(v)
+	})
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateFileSize() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateFileSize()
+	})
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *ItemAssetUpsertBulk) ClearFileSize() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearFileSize()
+	})
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *ItemAssetUpsertBulk) SetMimeType(v string) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetMimeType(v)
+	})
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateMimeType() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateMimeType()
+	})
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *ItemAssetUpsertBulk) ClearMimeType() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearMimeType()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ItemAssetUpsertBulk) SetMetadata(v map[string]interface{}) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateMetadata() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ItemAssetUpsertBulk) ClearMetadata() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *ItemAssetUpsertBulk) SetDisplayOrder(v int) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetDisplayOrder(v)
+	})
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *ItemAssetUpsertBulk) AddDisplayOrder(v int) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.AddDisplayOrder(v)
+	})
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateDisplayOrder() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateDisplayOrder()
+	})
+}
+
+// SetIsPrimary sets the "is_primary" field.
+func (u *ItemAssetUpsertBulk) SetIsPrimary(v bool) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetIsPrimary(v)
+	})
+}
+
+// UpdateIsPrimary sets the "is_primary" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateIsPrimary() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateIsPrimary()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemAssetUpsertBulk) SetUpdatedAt(v time.Time) *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemAssetUpsertBulk) UpdateUpdatedAt() *ItemAssetUpsertBulk {
+	return u.Update(func(s *ItemAssetUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemAssetUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ItemAssetCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemAssetCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemAssetUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
@@ -20,6 +22,7 @@ type GoodsReceiptLineCreate struct {
 	config
 	mutation *GoodsReceiptLineMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -312,6 +315,7 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 		_node = &GoodsReceiptLine{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(goodsreceiptline.Table, sqlgraph.NewFieldSpec(goodsreceiptline.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -384,11 +388,579 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.GoodsReceiptLine.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.GoodsReceiptLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *GoodsReceiptLineCreate) OnConflict(opts ...sql.ConflictOption) *GoodsReceiptLineUpsertOne {
+	_c.conflict = opts
+	return &GoodsReceiptLineUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *GoodsReceiptLineCreate) OnConflictColumns(columns ...string) *GoodsReceiptLineUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &GoodsReceiptLineUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// GoodsReceiptLineUpsertOne is the builder for "upsert"-ing
+	//  one GoodsReceiptLine node.
+	GoodsReceiptLineUpsertOne struct {
+		create *GoodsReceiptLineCreate
+	}
+
+	// GoodsReceiptLineUpsert is the "OnConflict" setter.
+	GoodsReceiptLineUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptLineUpsert) SetTenantID(v uuid.UUID) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateTenantID() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldTenantID)
+	return u
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *GoodsReceiptLineUpsert) SetGoodsReceiptID(v uuid.UUID) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldGoodsReceiptID, v)
+	return u
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateGoodsReceiptID() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldGoodsReceiptID)
+	return u
+}
+
+// SetPurchaseOrderLineID sets the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsert) SetPurchaseOrderLineID(v uuid.UUID) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldPurchaseOrderLineID, v)
+	return u
+}
+
+// UpdatePurchaseOrderLineID sets the "purchase_order_line_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdatePurchaseOrderLineID() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldPurchaseOrderLineID)
+	return u
+}
+
+// ClearPurchaseOrderLineID clears the value of the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsert) ClearPurchaseOrderLineID() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldPurchaseOrderLineID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *GoodsReceiptLineUpsert) SetItemID(v uuid.UUID) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateItemID() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldItemID)
+	return u
+}
+
+// SetQuantityReceived sets the "quantity_received" field.
+func (u *GoodsReceiptLineUpsert) SetQuantityReceived(v float64) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldQuantityReceived, v)
+	return u
+}
+
+// UpdateQuantityReceived sets the "quantity_received" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateQuantityReceived() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldQuantityReceived)
+	return u
+}
+
+// AddQuantityReceived adds v to the "quantity_received" field.
+func (u *GoodsReceiptLineUpsert) AddQuantityReceived(v float64) *GoodsReceiptLineUpsert {
+	u.Add(goodsreceiptline.FieldQuantityReceived, v)
+	return u
+}
+
+// SetQuantityAccepted sets the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsert) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldQuantityAccepted, v)
+	return u
+}
+
+// UpdateQuantityAccepted sets the "quantity_accepted" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateQuantityAccepted() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldQuantityAccepted)
+	return u
+}
+
+// AddQuantityAccepted adds v to the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsert) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsert {
+	u.Add(goodsreceiptline.FieldQuantityAccepted, v)
+	return u
+}
+
+// SetQuantityRejected sets the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsert) SetQuantityRejected(v float64) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldQuantityRejected, v)
+	return u
+}
+
+// UpdateQuantityRejected sets the "quantity_rejected" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateQuantityRejected() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldQuantityRejected)
+	return u
+}
+
+// AddQuantityRejected adds v to the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsert) AddQuantityRejected(v float64) *GoodsReceiptLineUpsert {
+	u.Add(goodsreceiptline.FieldQuantityRejected, v)
+	return u
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *GoodsReceiptLineUpsert) SetUnitCost(v float64) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldUnitCost, v)
+	return u
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateUnitCost() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldUnitCost)
+	return u
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *GoodsReceiptLineUpsert) AddUnitCost(v float64) *GoodsReceiptLineUpsert {
+	u.Add(goodsreceiptline.FieldUnitCost, v)
+	return u
+}
+
+// SetRejectionReason sets the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsert) SetRejectionReason(v string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldRejectionReason, v)
+	return u
+}
+
+// UpdateRejectionReason sets the "rejection_reason" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateRejectionReason() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldRejectionReason)
+	return u
+}
+
+// ClearRejectionReason clears the value of the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsert) ClearRejectionReason() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldRejectionReason)
+	return u
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsert) SetSerials(v []string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldSerials, v)
+	return u
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateSerials() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldSerials)
+	return u
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsert) ClearSerials() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldSerials)
+	return u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsert) SetLotNumber(v string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldLotNumber, v)
+	return u
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateLotNumber() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldLotNumber)
+	return u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsert) ClearLotNumber() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldLotNumber)
+	return u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsert) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldExpiryDate, v)
+	return u
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateExpiryDate() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldExpiryDate)
+	return u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsert) ClearExpiryDate() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldExpiryDate)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(goodsreceiptline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *GoodsReceiptLineUpsertOne) UpdateNewValues() *GoodsReceiptLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(goodsreceiptline.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(goodsreceiptline.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *GoodsReceiptLineUpsertOne) Ignore() *GoodsReceiptLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *GoodsReceiptLineUpsertOne) DoNothing() *GoodsReceiptLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the GoodsReceiptLineCreate.OnConflict
+// documentation for more info.
+func (u *GoodsReceiptLineUpsertOne) Update(set func(*GoodsReceiptLineUpsert)) *GoodsReceiptLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&GoodsReceiptLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptLineUpsertOne) SetTenantID(v uuid.UUID) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateTenantID() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *GoodsReceiptLineUpsertOne) SetGoodsReceiptID(v uuid.UUID) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetGoodsReceiptID(v)
+	})
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateGoodsReceiptID() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateGoodsReceiptID()
+	})
+}
+
+// SetPurchaseOrderLineID sets the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsertOne) SetPurchaseOrderLineID(v uuid.UUID) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetPurchaseOrderLineID(v)
+	})
+}
+
+// UpdatePurchaseOrderLineID sets the "purchase_order_line_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdatePurchaseOrderLineID() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdatePurchaseOrderLineID()
+	})
+}
+
+// ClearPurchaseOrderLineID clears the value of the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsertOne) ClearPurchaseOrderLineID() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearPurchaseOrderLineID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *GoodsReceiptLineUpsertOne) SetItemID(v uuid.UUID) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateItemID() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetQuantityReceived sets the "quantity_received" field.
+func (u *GoodsReceiptLineUpsertOne) SetQuantityReceived(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityReceived(v)
+	})
+}
+
+// AddQuantityReceived adds v to the "quantity_received" field.
+func (u *GoodsReceiptLineUpsertOne) AddQuantityReceived(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityReceived(v)
+	})
+}
+
+// UpdateQuantityReceived sets the "quantity_received" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateQuantityReceived() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityReceived()
+	})
+}
+
+// SetQuantityAccepted sets the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsertOne) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityAccepted(v)
+	})
+}
+
+// AddQuantityAccepted adds v to the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsertOne) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityAccepted(v)
+	})
+}
+
+// UpdateQuantityAccepted sets the "quantity_accepted" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateQuantityAccepted() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityAccepted()
+	})
+}
+
+// SetQuantityRejected sets the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsertOne) SetQuantityRejected(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityRejected(v)
+	})
+}
+
+// AddQuantityRejected adds v to the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsertOne) AddQuantityRejected(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityRejected(v)
+	})
+}
+
+// UpdateQuantityRejected sets the "quantity_rejected" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateQuantityRejected() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityRejected()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *GoodsReceiptLineUpsertOne) SetUnitCost(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *GoodsReceiptLineUpsertOne) AddUnitCost(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateUnitCost() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// SetRejectionReason sets the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsertOne) SetRejectionReason(v string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetRejectionReason(v)
+	})
+}
+
+// UpdateRejectionReason sets the "rejection_reason" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateRejectionReason() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateRejectionReason()
+	})
+}
+
+// ClearRejectionReason clears the value of the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsertOne) ClearRejectionReason() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearRejectionReason()
+	})
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsertOne) SetSerials(v []string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetSerials(v)
+	})
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateSerials() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateSerials()
+	})
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsertOne) ClearSerials() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearSerials()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsertOne) SetLotNumber(v string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateLotNumber() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsertOne) ClearLotNumber() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertOne) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateExpiryDate() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertOne) ClearExpiryDate() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearExpiryDate()
+	})
+}
+
+// Exec executes the query.
+func (u *GoodsReceiptLineUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for GoodsReceiptLineCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *GoodsReceiptLineUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *GoodsReceiptLineUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: GoodsReceiptLineUpsertOne.ID is not supported by MySQL driver. Use GoodsReceiptLineUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *GoodsReceiptLineUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // GoodsReceiptLineCreateBulk is the builder for creating many GoodsReceiptLine entities in bulk.
 type GoodsReceiptLineCreateBulk struct {
 	config
 	err      error
 	builders []*GoodsReceiptLineCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the GoodsReceiptLine entities in the database.
@@ -418,6 +990,7 @@ func (_c *GoodsReceiptLineCreateBulk) Save(ctx context.Context) ([]*GoodsReceipt
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -464,6 +1037,354 @@ func (_c *GoodsReceiptLineCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *GoodsReceiptLineCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.GoodsReceiptLine.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.GoodsReceiptLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *GoodsReceiptLineCreateBulk) OnConflict(opts ...sql.ConflictOption) *GoodsReceiptLineUpsertBulk {
+	_c.conflict = opts
+	return &GoodsReceiptLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *GoodsReceiptLineCreateBulk) OnConflictColumns(columns ...string) *GoodsReceiptLineUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &GoodsReceiptLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// GoodsReceiptLineUpsertBulk is the builder for "upsert"-ing
+// a bulk of GoodsReceiptLine nodes.
+type GoodsReceiptLineUpsertBulk struct {
+	create *GoodsReceiptLineCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(goodsreceiptline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *GoodsReceiptLineUpsertBulk) UpdateNewValues() *GoodsReceiptLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(goodsreceiptline.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(goodsreceiptline.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceiptLine.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *GoodsReceiptLineUpsertBulk) Ignore() *GoodsReceiptLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *GoodsReceiptLineUpsertBulk) DoNothing() *GoodsReceiptLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the GoodsReceiptLineCreateBulk.OnConflict
+// documentation for more info.
+func (u *GoodsReceiptLineUpsertBulk) Update(set func(*GoodsReceiptLineUpsert)) *GoodsReceiptLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&GoodsReceiptLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptLineUpsertBulk) SetTenantID(v uuid.UUID) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateTenantID() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *GoodsReceiptLineUpsertBulk) SetGoodsReceiptID(v uuid.UUID) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetGoodsReceiptID(v)
+	})
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateGoodsReceiptID() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateGoodsReceiptID()
+	})
+}
+
+// SetPurchaseOrderLineID sets the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsertBulk) SetPurchaseOrderLineID(v uuid.UUID) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetPurchaseOrderLineID(v)
+	})
+}
+
+// UpdatePurchaseOrderLineID sets the "purchase_order_line_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdatePurchaseOrderLineID() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdatePurchaseOrderLineID()
+	})
+}
+
+// ClearPurchaseOrderLineID clears the value of the "purchase_order_line_id" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearPurchaseOrderLineID() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearPurchaseOrderLineID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *GoodsReceiptLineUpsertBulk) SetItemID(v uuid.UUID) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateItemID() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetQuantityReceived sets the "quantity_received" field.
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityReceived(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityReceived(v)
+	})
+}
+
+// AddQuantityReceived adds v to the "quantity_received" field.
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityReceived(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityReceived(v)
+	})
+}
+
+// UpdateQuantityReceived sets the "quantity_received" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateQuantityReceived() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityReceived()
+	})
+}
+
+// SetQuantityAccepted sets the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityAccepted(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityAccepted(v)
+	})
+}
+
+// AddQuantityAccepted adds v to the "quantity_accepted" field.
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityAccepted(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityAccepted(v)
+	})
+}
+
+// UpdateQuantityAccepted sets the "quantity_accepted" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateQuantityAccepted() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityAccepted()
+	})
+}
+
+// SetQuantityRejected sets the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsertBulk) SetQuantityRejected(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetQuantityRejected(v)
+	})
+}
+
+// AddQuantityRejected adds v to the "quantity_rejected" field.
+func (u *GoodsReceiptLineUpsertBulk) AddQuantityRejected(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddQuantityRejected(v)
+	})
+}
+
+// UpdateQuantityRejected sets the "quantity_rejected" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateQuantityRejected() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateQuantityRejected()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *GoodsReceiptLineUpsertBulk) SetUnitCost(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *GoodsReceiptLineUpsertBulk) AddUnitCost(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateUnitCost() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// SetRejectionReason sets the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsertBulk) SetRejectionReason(v string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetRejectionReason(v)
+	})
+}
+
+// UpdateRejectionReason sets the "rejection_reason" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateRejectionReason() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateRejectionReason()
+	})
+}
+
+// ClearRejectionReason clears the value of the "rejection_reason" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearRejectionReason() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearRejectionReason()
+	})
+}
+
+// SetSerials sets the "serials" field.
+func (u *GoodsReceiptLineUpsertBulk) SetSerials(v []string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetSerials(v)
+	})
+}
+
+// UpdateSerials sets the "serials" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateSerials() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateSerials()
+	})
+}
+
+// ClearSerials clears the value of the "serials" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearSerials() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearSerials()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *GoodsReceiptLineUpsertBulk) SetLotNumber(v string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateLotNumber() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearLotNumber() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertBulk) SetExpiryDate(v time.Time) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateExpiryDate() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearExpiryDate() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearExpiryDate()
+	})
+}
+
+// Exec executes the query.
+func (u *GoodsReceiptLineUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the GoodsReceiptLineCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for GoodsReceiptLineCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *GoodsReceiptLineUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

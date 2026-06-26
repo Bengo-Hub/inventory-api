@@ -22,6 +22,9 @@ func (Requisition) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}).Comment("Owning tenant"),
 		field.UUID("outlet_id", uuid.UUID{}).Optional().Nillable().Comment("Branch/outlet this requisition is for"),
+		// project_id links a requisition to a projects-service project so the resulting purchase
+		// cost is attributed to the project in treasury (project budget vs actual).
+		field.UUID("project_id", uuid.UUID{}).Optional().Nillable().Comment("projects-service project id"),
 		field.String("reference_number").NotEmpty().Comment("Unique requisition reference per tenant"),
 		field.UUID("requester_id", uuid.UUID{}).Optional().Nillable().Comment("Auth user who raised the requisition"),
 		field.Enum("request_type").Values("inventory", "external_item", "service").Default("inventory"),

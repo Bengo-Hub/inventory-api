@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
@@ -24,6 +26,7 @@ type WarehouseCreate struct {
 	config
 	mutation *WarehouseMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -373,6 +376,7 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 		_node = &Warehouse{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(warehouse.Table, sqlgraph.NewFieldSpec(warehouse.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -505,11 +509,527 @@ func (_c *WarehouseCreate) createSpec() (*Warehouse, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Warehouse.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.WarehouseUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *WarehouseCreate) OnConflict(opts ...sql.ConflictOption) *WarehouseUpsertOne {
+	_c.conflict = opts
+	return &WarehouseUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *WarehouseCreate) OnConflictColumns(columns ...string) *WarehouseUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &WarehouseUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// WarehouseUpsertOne is the builder for "upsert"-ing
+	//  one Warehouse node.
+	WarehouseUpsertOne struct {
+		create *WarehouseCreate
+	}
+
+	// WarehouseUpsert is the "OnConflict" setter.
+	WarehouseUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarehouseUpsert) SetTenantID(v uuid.UUID) *WarehouseUpsert {
+	u.Set(warehouse.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateTenantID() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldTenantID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *WarehouseUpsert) SetName(v string) *WarehouseUpsert {
+	u.Set(warehouse.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateName() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldName)
+	return u
+}
+
+// SetCode sets the "code" field.
+func (u *WarehouseUpsert) SetCode(v string) *WarehouseUpsert {
+	u.Set(warehouse.FieldCode, v)
+	return u
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateCode() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldCode)
+	return u
+}
+
+// SetAddress sets the "address" field.
+func (u *WarehouseUpsert) SetAddress(v string) *WarehouseUpsert {
+	u.Set(warehouse.FieldAddress, v)
+	return u
+}
+
+// UpdateAddress sets the "address" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateAddress() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldAddress)
+	return u
+}
+
+// ClearAddress clears the value of the "address" field.
+func (u *WarehouseUpsert) ClearAddress() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldAddress)
+	return u
+}
+
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsert) SetLatitude(v float64) *WarehouseUpsert {
+	u.Set(warehouse.FieldLatitude, v)
+	return u
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateLatitude() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldLatitude)
+	return u
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsert) AddLatitude(v float64) *WarehouseUpsert {
+	u.Add(warehouse.FieldLatitude, v)
+	return u
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsert) ClearLatitude() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldLatitude)
+	return u
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsert) SetLongitude(v float64) *WarehouseUpsert {
+	u.Set(warehouse.FieldLongitude, v)
+	return u
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateLongitude() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldLongitude)
+	return u
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsert) AddLongitude(v float64) *WarehouseUpsert {
+	u.Add(warehouse.FieldLongitude, v)
+	return u
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsert) ClearLongitude() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldLongitude)
+	return u
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsert) SetOutletID(v uuid.UUID) *WarehouseUpsert {
+	u.Set(warehouse.FieldOutletID, v)
+	return u
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateOutletID() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldOutletID)
+	return u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsert) ClearOutletID() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldOutletID)
+	return u
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsert) SetUseCase(v string) *WarehouseUpsert {
+	u.Set(warehouse.FieldUseCase, v)
+	return u
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateUseCase() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldUseCase)
+	return u
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsert) ClearUseCase() *WarehouseUpsert {
+	u.SetNull(warehouse.FieldUseCase)
+	return u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *WarehouseUpsert) SetIsDefault(v bool) *WarehouseUpsert {
+	u.Set(warehouse.FieldIsDefault, v)
+	return u
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateIsDefault() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldIsDefault)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *WarehouseUpsert) SetIsActive(v bool) *WarehouseUpsert {
+	u.Set(warehouse.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateIsActive() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldIsActive)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarehouseUpsert) SetUpdatedAt(v time.Time) *WarehouseUpsert {
+	u.Set(warehouse.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarehouseUpsert) UpdateUpdatedAt() *WarehouseUpsert {
+	u.SetExcluded(warehouse.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(warehouse.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *WarehouseUpsertOne) UpdateNewValues() *WarehouseUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(warehouse.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(warehouse.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *WarehouseUpsertOne) Ignore() *WarehouseUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *WarehouseUpsertOne) DoNothing() *WarehouseUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the WarehouseCreate.OnConflict
+// documentation for more info.
+func (u *WarehouseUpsertOne) Update(set func(*WarehouseUpsert)) *WarehouseUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&WarehouseUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarehouseUpsertOne) SetTenantID(v uuid.UUID) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateTenantID() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *WarehouseUpsertOne) SetName(v string) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateName() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *WarehouseUpsertOne) SetCode(v string) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateCode() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetAddress sets the "address" field.
+func (u *WarehouseUpsertOne) SetAddress(v string) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetAddress(v)
+	})
+}
+
+// UpdateAddress sets the "address" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateAddress() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateAddress()
+	})
+}
+
+// ClearAddress clears the value of the "address" field.
+func (u *WarehouseUpsertOne) ClearAddress() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearAddress()
+	})
+}
+
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsertOne) SetLatitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLatitude(v)
+	})
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsertOne) AddLatitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLatitude(v)
+	})
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateLatitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLatitude()
+	})
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsertOne) ClearLatitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLatitude()
+	})
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsertOne) SetLongitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLongitude(v)
+	})
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsertOne) AddLongitude(v float64) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLongitude(v)
+	})
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateLongitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLongitude()
+	})
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsertOne) ClearLongitude() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLongitude()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsertOne) SetOutletID(v uuid.UUID) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateOutletID() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsertOne) ClearOutletID() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsertOne) SetUseCase(v string) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateUseCase() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsertOne) ClearUseCase() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearUseCase()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *WarehouseUpsertOne) SetIsDefault(v bool) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateIsDefault() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateIsDefault()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *WarehouseUpsertOne) SetIsActive(v bool) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateIsActive() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarehouseUpsertOne) SetUpdatedAt(v time.Time) *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarehouseUpsertOne) UpdateUpdatedAt() *WarehouseUpsertOne {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *WarehouseUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for WarehouseCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *WarehouseUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *WarehouseUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: WarehouseUpsertOne.ID is not supported by MySQL driver. Use WarehouseUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *WarehouseUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // WarehouseCreateBulk is the builder for creating many Warehouse entities in bulk.
 type WarehouseCreateBulk struct {
 	config
 	err      error
 	builders []*WarehouseCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Warehouse entities in the database.
@@ -539,6 +1059,7 @@ func (_c *WarehouseCreateBulk) Save(ctx context.Context) ([]*Warehouse, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -585,6 +1106,326 @@ func (_c *WarehouseCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *WarehouseCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Warehouse.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.WarehouseUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *WarehouseCreateBulk) OnConflict(opts ...sql.ConflictOption) *WarehouseUpsertBulk {
+	_c.conflict = opts
+	return &WarehouseUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *WarehouseCreateBulk) OnConflictColumns(columns ...string) *WarehouseUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &WarehouseUpsertBulk{
+		create: _c,
+	}
+}
+
+// WarehouseUpsertBulk is the builder for "upsert"-ing
+// a bulk of Warehouse nodes.
+type WarehouseUpsertBulk struct {
+	create *WarehouseCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(warehouse.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *WarehouseUpsertBulk) UpdateNewValues() *WarehouseUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(warehouse.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(warehouse.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Warehouse.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *WarehouseUpsertBulk) Ignore() *WarehouseUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *WarehouseUpsertBulk) DoNothing() *WarehouseUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the WarehouseCreateBulk.OnConflict
+// documentation for more info.
+func (u *WarehouseUpsertBulk) Update(set func(*WarehouseUpsert)) *WarehouseUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&WarehouseUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *WarehouseUpsertBulk) SetTenantID(v uuid.UUID) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateTenantID() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *WarehouseUpsertBulk) SetName(v string) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateName() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *WarehouseUpsertBulk) SetCode(v string) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateCode() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetAddress sets the "address" field.
+func (u *WarehouseUpsertBulk) SetAddress(v string) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetAddress(v)
+	})
+}
+
+// UpdateAddress sets the "address" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateAddress() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateAddress()
+	})
+}
+
+// ClearAddress clears the value of the "address" field.
+func (u *WarehouseUpsertBulk) ClearAddress() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearAddress()
+	})
+}
+
+// SetLatitude sets the "latitude" field.
+func (u *WarehouseUpsertBulk) SetLatitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLatitude(v)
+	})
+}
+
+// AddLatitude adds v to the "latitude" field.
+func (u *WarehouseUpsertBulk) AddLatitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLatitude(v)
+	})
+}
+
+// UpdateLatitude sets the "latitude" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateLatitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLatitude()
+	})
+}
+
+// ClearLatitude clears the value of the "latitude" field.
+func (u *WarehouseUpsertBulk) ClearLatitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLatitude()
+	})
+}
+
+// SetLongitude sets the "longitude" field.
+func (u *WarehouseUpsertBulk) SetLongitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetLongitude(v)
+	})
+}
+
+// AddLongitude adds v to the "longitude" field.
+func (u *WarehouseUpsertBulk) AddLongitude(v float64) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.AddLongitude(v)
+	})
+}
+
+// UpdateLongitude sets the "longitude" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateLongitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateLongitude()
+	})
+}
+
+// ClearLongitude clears the value of the "longitude" field.
+func (u *WarehouseUpsertBulk) ClearLongitude() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearLongitude()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *WarehouseUpsertBulk) SetOutletID(v uuid.UUID) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateOutletID() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *WarehouseUpsertBulk) ClearOutletID() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetUseCase sets the "use_case" field.
+func (u *WarehouseUpsertBulk) SetUseCase(v string) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUseCase(v)
+	})
+}
+
+// UpdateUseCase sets the "use_case" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateUseCase() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUseCase()
+	})
+}
+
+// ClearUseCase clears the value of the "use_case" field.
+func (u *WarehouseUpsertBulk) ClearUseCase() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.ClearUseCase()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *WarehouseUpsertBulk) SetIsDefault(v bool) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateIsDefault() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateIsDefault()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *WarehouseUpsertBulk) SetIsActive(v bool) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateIsActive() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WarehouseUpsertBulk) SetUpdatedAt(v time.Time) *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WarehouseUpsertBulk) UpdateUpdatedAt() *WarehouseUpsertBulk {
+	return u.Update(func(s *WarehouseUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *WarehouseUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the WarehouseCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for WarehouseCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *WarehouseUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

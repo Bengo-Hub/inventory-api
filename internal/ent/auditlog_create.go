@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/auditlog"
@@ -19,6 +21,7 @@ type AuditLogCreate struct {
 	config
 	mutation *AuditLogMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -258,6 +261,7 @@ func (_c *AuditLogCreate) createSpec() (*AuditLog, *sqlgraph.CreateSpec) {
 		_node = &AuditLog{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(auditlog.Table, sqlgraph.NewFieldSpec(auditlog.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -313,11 +317,553 @@ func (_c *AuditLogCreate) createSpec() (*AuditLog, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AuditLog.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AuditLogUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AuditLogCreate) OnConflict(opts ...sql.ConflictOption) *AuditLogUpsertOne {
+	_c.conflict = opts
+	return &AuditLogUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AuditLogCreate) OnConflictColumns(columns ...string) *AuditLogUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AuditLogUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AuditLogUpsertOne is the builder for "upsert"-ing
+	//  one AuditLog node.
+	AuditLogUpsertOne struct {
+		create *AuditLogCreate
+	}
+
+	// AuditLogUpsert is the "OnConflict" setter.
+	AuditLogUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AuditLogUpsert) SetTenantID(v uuid.UUID) *AuditLogUpsert {
+	u.Set(auditlog.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateTenantID() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldTenantID)
+	return u
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *AuditLogUpsert) SetOutletID(v uuid.UUID) *AuditLogUpsert {
+	u.Set(auditlog.FieldOutletID, v)
+	return u
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateOutletID() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldOutletID)
+	return u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *AuditLogUpsert) ClearOutletID() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldOutletID)
+	return u
+}
+
+// SetActorUserID sets the "actor_user_id" field.
+func (u *AuditLogUpsert) SetActorUserID(v uuid.UUID) *AuditLogUpsert {
+	u.Set(auditlog.FieldActorUserID, v)
+	return u
+}
+
+// UpdateActorUserID sets the "actor_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateActorUserID() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldActorUserID)
+	return u
+}
+
+// SetApproverUserID sets the "approver_user_id" field.
+func (u *AuditLogUpsert) SetApproverUserID(v uuid.UUID) *AuditLogUpsert {
+	u.Set(auditlog.FieldApproverUserID, v)
+	return u
+}
+
+// UpdateApproverUserID sets the "approver_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateApproverUserID() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldApproverUserID)
+	return u
+}
+
+// ClearApproverUserID clears the value of the "approver_user_id" field.
+func (u *AuditLogUpsert) ClearApproverUserID() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldApproverUserID)
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *AuditLogUpsert) SetAction(v string) *AuditLogUpsert {
+	u.Set(auditlog.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateAction() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldAction)
+	return u
+}
+
+// SetEntityType sets the "entity_type" field.
+func (u *AuditLogUpsert) SetEntityType(v string) *AuditLogUpsert {
+	u.Set(auditlog.FieldEntityType, v)
+	return u
+}
+
+// UpdateEntityType sets the "entity_type" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateEntityType() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldEntityType)
+	return u
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (u *AuditLogUpsert) ClearEntityType() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldEntityType)
+	return u
+}
+
+// SetEntityID sets the "entity_id" field.
+func (u *AuditLogUpsert) SetEntityID(v string) *AuditLogUpsert {
+	u.Set(auditlog.FieldEntityID, v)
+	return u
+}
+
+// UpdateEntityID sets the "entity_id" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateEntityID() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldEntityID)
+	return u
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (u *AuditLogUpsert) ClearEntityID() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldEntityID)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *AuditLogUpsert) SetReason(v string) *AuditLogUpsert {
+	u.Set(auditlog.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateReason() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldReason)
+	return u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AuditLogUpsert) ClearReason() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldReason)
+	return u
+}
+
+// SetBeforeJSON sets the "before_json" field.
+func (u *AuditLogUpsert) SetBeforeJSON(v map[string]interface{}) *AuditLogUpsert {
+	u.Set(auditlog.FieldBeforeJSON, v)
+	return u
+}
+
+// UpdateBeforeJSON sets the "before_json" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateBeforeJSON() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldBeforeJSON)
+	return u
+}
+
+// ClearBeforeJSON clears the value of the "before_json" field.
+func (u *AuditLogUpsert) ClearBeforeJSON() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldBeforeJSON)
+	return u
+}
+
+// SetAfterJSON sets the "after_json" field.
+func (u *AuditLogUpsert) SetAfterJSON(v map[string]interface{}) *AuditLogUpsert {
+	u.Set(auditlog.FieldAfterJSON, v)
+	return u
+}
+
+// UpdateAfterJSON sets the "after_json" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateAfterJSON() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldAfterJSON)
+	return u
+}
+
+// ClearAfterJSON clears the value of the "after_json" field.
+func (u *AuditLogUpsert) ClearAfterJSON() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldAfterJSON)
+	return u
+}
+
+// SetAmount sets the "amount" field.
+func (u *AuditLogUpsert) SetAmount(v float64) *AuditLogUpsert {
+	u.Set(auditlog.FieldAmount, v)
+	return u
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *AuditLogUpsert) UpdateAmount() *AuditLogUpsert {
+	u.SetExcluded(auditlog.FieldAmount)
+	return u
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *AuditLogUpsert) AddAmount(v float64) *AuditLogUpsert {
+	u.Add(auditlog.FieldAmount, v)
+	return u
+}
+
+// ClearAmount clears the value of the "amount" field.
+func (u *AuditLogUpsert) ClearAmount() *AuditLogUpsert {
+	u.SetNull(auditlog.FieldAmount)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(auditlog.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AuditLogUpsertOne) UpdateNewValues() *AuditLogUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(auditlog.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(auditlog.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AuditLogUpsertOne) Ignore() *AuditLogUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AuditLogUpsertOne) DoNothing() *AuditLogUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AuditLogCreate.OnConflict
+// documentation for more info.
+func (u *AuditLogUpsertOne) Update(set func(*AuditLogUpsert)) *AuditLogUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AuditLogUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AuditLogUpsertOne) SetTenantID(v uuid.UUID) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateTenantID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *AuditLogUpsertOne) SetOutletID(v uuid.UUID) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateOutletID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *AuditLogUpsertOne) ClearOutletID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetActorUserID sets the "actor_user_id" field.
+func (u *AuditLogUpsertOne) SetActorUserID(v uuid.UUID) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetActorUserID(v)
+	})
+}
+
+// UpdateActorUserID sets the "actor_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateActorUserID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateActorUserID()
+	})
+}
+
+// SetApproverUserID sets the "approver_user_id" field.
+func (u *AuditLogUpsertOne) SetApproverUserID(v uuid.UUID) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetApproverUserID(v)
+	})
+}
+
+// UpdateApproverUserID sets the "approver_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateApproverUserID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateApproverUserID()
+	})
+}
+
+// ClearApproverUserID clears the value of the "approver_user_id" field.
+func (u *AuditLogUpsertOne) ClearApproverUserID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearApproverUserID()
+	})
+}
+
+// SetAction sets the "action" field.
+func (u *AuditLogUpsertOne) SetAction(v string) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateAction() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetEntityType sets the "entity_type" field.
+func (u *AuditLogUpsertOne) SetEntityType(v string) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetEntityType(v)
+	})
+}
+
+// UpdateEntityType sets the "entity_type" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateEntityType() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateEntityType()
+	})
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (u *AuditLogUpsertOne) ClearEntityType() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearEntityType()
+	})
+}
+
+// SetEntityID sets the "entity_id" field.
+func (u *AuditLogUpsertOne) SetEntityID(v string) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetEntityID(v)
+	})
+}
+
+// UpdateEntityID sets the "entity_id" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateEntityID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateEntityID()
+	})
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (u *AuditLogUpsertOne) ClearEntityID() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearEntityID()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *AuditLogUpsertOne) SetReason(v string) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateReason() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AuditLogUpsertOne) ClearReason() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearReason()
+	})
+}
+
+// SetBeforeJSON sets the "before_json" field.
+func (u *AuditLogUpsertOne) SetBeforeJSON(v map[string]interface{}) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetBeforeJSON(v)
+	})
+}
+
+// UpdateBeforeJSON sets the "before_json" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateBeforeJSON() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateBeforeJSON()
+	})
+}
+
+// ClearBeforeJSON clears the value of the "before_json" field.
+func (u *AuditLogUpsertOne) ClearBeforeJSON() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearBeforeJSON()
+	})
+}
+
+// SetAfterJSON sets the "after_json" field.
+func (u *AuditLogUpsertOne) SetAfterJSON(v map[string]interface{}) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAfterJSON(v)
+	})
+}
+
+// UpdateAfterJSON sets the "after_json" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateAfterJSON() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAfterJSON()
+	})
+}
+
+// ClearAfterJSON clears the value of the "after_json" field.
+func (u *AuditLogUpsertOne) ClearAfterJSON() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearAfterJSON()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *AuditLogUpsertOne) SetAmount(v float64) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *AuditLogUpsertOne) AddAmount(v float64) *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *AuditLogUpsertOne) UpdateAmount() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// ClearAmount clears the value of the "amount" field.
+func (u *AuditLogUpsertOne) ClearAmount() *AuditLogUpsertOne {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearAmount()
+	})
+}
+
+// Exec executes the query.
+func (u *AuditLogUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AuditLogCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AuditLogUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AuditLogUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AuditLogUpsertOne.ID is not supported by MySQL driver. Use AuditLogUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AuditLogUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AuditLogCreateBulk is the builder for creating many AuditLog entities in bulk.
 type AuditLogCreateBulk struct {
 	config
 	err      error
 	builders []*AuditLogCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AuditLog entities in the database.
@@ -347,6 +893,7 @@ func (_c *AuditLogCreateBulk) Save(ctx context.Context) ([]*AuditLog, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -393,6 +940,340 @@ func (_c *AuditLogCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *AuditLogCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AuditLog.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AuditLogUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AuditLogCreateBulk) OnConflict(opts ...sql.ConflictOption) *AuditLogUpsertBulk {
+	_c.conflict = opts
+	return &AuditLogUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AuditLogCreateBulk) OnConflictColumns(columns ...string) *AuditLogUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AuditLogUpsertBulk{
+		create: _c,
+	}
+}
+
+// AuditLogUpsertBulk is the builder for "upsert"-ing
+// a bulk of AuditLog nodes.
+type AuditLogUpsertBulk struct {
+	create *AuditLogCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(auditlog.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AuditLogUpsertBulk) UpdateNewValues() *AuditLogUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(auditlog.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(auditlog.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AuditLog.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AuditLogUpsertBulk) Ignore() *AuditLogUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AuditLogUpsertBulk) DoNothing() *AuditLogUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AuditLogCreateBulk.OnConflict
+// documentation for more info.
+func (u *AuditLogUpsertBulk) Update(set func(*AuditLogUpsert)) *AuditLogUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AuditLogUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AuditLogUpsertBulk) SetTenantID(v uuid.UUID) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateTenantID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *AuditLogUpsertBulk) SetOutletID(v uuid.UUID) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateOutletID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *AuditLogUpsertBulk) ClearOutletID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetActorUserID sets the "actor_user_id" field.
+func (u *AuditLogUpsertBulk) SetActorUserID(v uuid.UUID) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetActorUserID(v)
+	})
+}
+
+// UpdateActorUserID sets the "actor_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateActorUserID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateActorUserID()
+	})
+}
+
+// SetApproverUserID sets the "approver_user_id" field.
+func (u *AuditLogUpsertBulk) SetApproverUserID(v uuid.UUID) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetApproverUserID(v)
+	})
+}
+
+// UpdateApproverUserID sets the "approver_user_id" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateApproverUserID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateApproverUserID()
+	})
+}
+
+// ClearApproverUserID clears the value of the "approver_user_id" field.
+func (u *AuditLogUpsertBulk) ClearApproverUserID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearApproverUserID()
+	})
+}
+
+// SetAction sets the "action" field.
+func (u *AuditLogUpsertBulk) SetAction(v string) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateAction() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetEntityType sets the "entity_type" field.
+func (u *AuditLogUpsertBulk) SetEntityType(v string) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetEntityType(v)
+	})
+}
+
+// UpdateEntityType sets the "entity_type" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateEntityType() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateEntityType()
+	})
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (u *AuditLogUpsertBulk) ClearEntityType() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearEntityType()
+	})
+}
+
+// SetEntityID sets the "entity_id" field.
+func (u *AuditLogUpsertBulk) SetEntityID(v string) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetEntityID(v)
+	})
+}
+
+// UpdateEntityID sets the "entity_id" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateEntityID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateEntityID()
+	})
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (u *AuditLogUpsertBulk) ClearEntityID() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearEntityID()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *AuditLogUpsertBulk) SetReason(v string) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateReason() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AuditLogUpsertBulk) ClearReason() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearReason()
+	})
+}
+
+// SetBeforeJSON sets the "before_json" field.
+func (u *AuditLogUpsertBulk) SetBeforeJSON(v map[string]interface{}) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetBeforeJSON(v)
+	})
+}
+
+// UpdateBeforeJSON sets the "before_json" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateBeforeJSON() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateBeforeJSON()
+	})
+}
+
+// ClearBeforeJSON clears the value of the "before_json" field.
+func (u *AuditLogUpsertBulk) ClearBeforeJSON() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearBeforeJSON()
+	})
+}
+
+// SetAfterJSON sets the "after_json" field.
+func (u *AuditLogUpsertBulk) SetAfterJSON(v map[string]interface{}) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAfterJSON(v)
+	})
+}
+
+// UpdateAfterJSON sets the "after_json" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateAfterJSON() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAfterJSON()
+	})
+}
+
+// ClearAfterJSON clears the value of the "after_json" field.
+func (u *AuditLogUpsertBulk) ClearAfterJSON() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearAfterJSON()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *AuditLogUpsertBulk) SetAmount(v float64) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *AuditLogUpsertBulk) AddAmount(v float64) *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *AuditLogUpsertBulk) UpdateAmount() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// ClearAmount clears the value of the "amount" field.
+func (u *AuditLogUpsertBulk) ClearAmount() *AuditLogUpsertBulk {
+	return u.Update(func(s *AuditLogUpsert) {
+		s.ClearAmount()
+	})
+}
+
+// Exec executes the query.
+func (u *AuditLogUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AuditLogCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AuditLogCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AuditLogUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

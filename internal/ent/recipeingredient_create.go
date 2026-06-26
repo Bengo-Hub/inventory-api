@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -21,6 +23,7 @@ type RecipeIngredientCreate struct {
 	config
 	mutation *RecipeIngredientMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetRecipeID sets the "recipe_id" field.
@@ -295,6 +298,7 @@ func (_c *RecipeIngredientCreate) createSpec() (*RecipeIngredient, *sqlgraph.Cre
 		_node = &RecipeIngredient{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(recipeingredient.Table, sqlgraph.NewFieldSpec(recipeingredient.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -394,11 +398,498 @@ func (_c *RecipeIngredientCreate) createSpec() (*RecipeIngredient, *sqlgraph.Cre
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RecipeIngredient.Create().
+//		SetRecipeID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RecipeIngredientUpsert) {
+//			SetRecipeID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RecipeIngredientCreate) OnConflict(opts ...sql.ConflictOption) *RecipeIngredientUpsertOne {
+	_c.conflict = opts
+	return &RecipeIngredientUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RecipeIngredientCreate) OnConflictColumns(columns ...string) *RecipeIngredientUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RecipeIngredientUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// RecipeIngredientUpsertOne is the builder for "upsert"-ing
+	//  one RecipeIngredient node.
+	RecipeIngredientUpsertOne struct {
+		create *RecipeIngredientCreate
+	}
+
+	// RecipeIngredientUpsert is the "OnConflict" setter.
+	RecipeIngredientUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *RecipeIngredientUpsert) SetRecipeID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldRecipeID, v)
+	return u
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateRecipeID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldRecipeID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeIngredientUpsert) SetItemID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateItemID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldItemID)
+	return u
+}
+
+// SetItemSku sets the "item_sku" field.
+func (u *RecipeIngredientUpsert) SetItemSku(v string) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldItemSku, v)
+	return u
+}
+
+// UpdateItemSku sets the "item_sku" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateItemSku() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldItemSku)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RecipeIngredientUpsert) SetQuantity(v float64) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateQuantity() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RecipeIngredientUpsert) AddQuantity(v float64) *RecipeIngredientUpsert {
+	u.Add(recipeingredient.FieldQuantity, v)
+	return u
+}
+
+// SetUnitOfMeasure sets the "unit_of_measure" field.
+func (u *RecipeIngredientUpsert) SetUnitOfMeasure(v string) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldUnitOfMeasure, v)
+	return u
+}
+
+// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateUnitOfMeasure() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldUnitOfMeasure)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *RecipeIngredientUpsert) SetNotes(v string) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateNotes() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *RecipeIngredientUpsert) ClearNotes() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldNotes)
+	return u
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *RecipeIngredientUpsert) SetDisplayOrder(v int) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldDisplayOrder, v)
+	return u
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateDisplayOrder() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldDisplayOrder)
+	return u
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *RecipeIngredientUpsert) AddDisplayOrder(v int) *RecipeIngredientUpsert {
+	u.Add(recipeingredient.FieldDisplayOrder, v)
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsert) SetUnitID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldUnitID, v)
+	return u
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateUnitID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldUnitID)
+	return u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsert) ClearUnitID() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldUnitID)
+	return u
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsert) SetWastePercent(v float64) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldWastePercent, v)
+	return u
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateWastePercent() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldWastePercent)
+	return u
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsert) AddWastePercent(v float64) *RecipeIngredientUpsert {
+	u.Add(recipeingredient.FieldWastePercent, v)
+	return u
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsert) ClearWastePercent() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldWastePercent)
+	return u
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsert) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsert {
+	u.Set(recipeingredient.FieldSubRecipeID, v)
+	return u
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsert) UpdateSubRecipeID() *RecipeIngredientUpsert {
+	u.SetExcluded(recipeingredient.FieldSubRecipeID)
+	return u
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsert) ClearSubRecipeID() *RecipeIngredientUpsert {
+	u.SetNull(recipeingredient.FieldSubRecipeID)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(recipeingredient.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RecipeIngredientUpsertOne) UpdateNewValues() *RecipeIngredientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(recipeingredient.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *RecipeIngredientUpsertOne) Ignore() *RecipeIngredientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RecipeIngredientUpsertOne) DoNothing() *RecipeIngredientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RecipeIngredientCreate.OnConflict
+// documentation for more info.
+func (u *RecipeIngredientUpsertOne) Update(set func(*RecipeIngredientUpsert)) *RecipeIngredientUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RecipeIngredientUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *RecipeIngredientUpsertOne) SetRecipeID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetRecipeID(v)
+	})
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateRecipeID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateRecipeID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeIngredientUpsertOne) SetItemID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateItemID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetItemSku sets the "item_sku" field.
+func (u *RecipeIngredientUpsertOne) SetItemSku(v string) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetItemSku(v)
+	})
+}
+
+// UpdateItemSku sets the "item_sku" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateItemSku() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateItemSku()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RecipeIngredientUpsertOne) SetQuantity(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RecipeIngredientUpsertOne) AddQuantity(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateQuantity() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetUnitOfMeasure sets the "unit_of_measure" field.
+func (u *RecipeIngredientUpsertOne) SetUnitOfMeasure(v string) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitOfMeasure(v)
+	})
+}
+
+// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateUnitOfMeasure() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitOfMeasure()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *RecipeIngredientUpsertOne) SetNotes(v string) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateNotes() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *RecipeIngredientUpsertOne) ClearNotes() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *RecipeIngredientUpsertOne) SetDisplayOrder(v int) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetDisplayOrder(v)
+	})
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *RecipeIngredientUpsertOne) AddDisplayOrder(v int) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddDisplayOrder(v)
+	})
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateDisplayOrder() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateDisplayOrder()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsertOne) SetUnitID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateUnitID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsertOne) ClearUnitID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) SetWastePercent(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetWastePercent(v)
+	})
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) AddWastePercent(v float64) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddWastePercent(v)
+	})
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateWastePercent() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateWastePercent()
+	})
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsertOne) ClearWastePercent() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearWastePercent()
+	})
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertOne) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetSubRecipeID(v)
+	})
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertOne) UpdateSubRecipeID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateSubRecipeID()
+	})
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertOne) ClearSubRecipeID() *RecipeIngredientUpsertOne {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearSubRecipeID()
+	})
+}
+
+// Exec executes the query.
+func (u *RecipeIngredientUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RecipeIngredientCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RecipeIngredientUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *RecipeIngredientUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: RecipeIngredientUpsertOne.ID is not supported by MySQL driver. Use RecipeIngredientUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *RecipeIngredientUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // RecipeIngredientCreateBulk is the builder for creating many RecipeIngredient entities in bulk.
 type RecipeIngredientCreateBulk struct {
 	config
 	err      error
 	builders []*RecipeIngredientCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the RecipeIngredient entities in the database.
@@ -428,6 +919,7 @@ func (_c *RecipeIngredientCreateBulk) Save(ctx context.Context) ([]*RecipeIngred
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -474,6 +966,309 @@ func (_c *RecipeIngredientCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *RecipeIngredientCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RecipeIngredient.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RecipeIngredientUpsert) {
+//			SetRecipeID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RecipeIngredientCreateBulk) OnConflict(opts ...sql.ConflictOption) *RecipeIngredientUpsertBulk {
+	_c.conflict = opts
+	return &RecipeIngredientUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RecipeIngredientCreateBulk) OnConflictColumns(columns ...string) *RecipeIngredientUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RecipeIngredientUpsertBulk{
+		create: _c,
+	}
+}
+
+// RecipeIngredientUpsertBulk is the builder for "upsert"-ing
+// a bulk of RecipeIngredient nodes.
+type RecipeIngredientUpsertBulk struct {
+	create *RecipeIngredientCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(recipeingredient.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RecipeIngredientUpsertBulk) UpdateNewValues() *RecipeIngredientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(recipeingredient.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RecipeIngredient.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *RecipeIngredientUpsertBulk) Ignore() *RecipeIngredientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RecipeIngredientUpsertBulk) DoNothing() *RecipeIngredientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RecipeIngredientCreateBulk.OnConflict
+// documentation for more info.
+func (u *RecipeIngredientUpsertBulk) Update(set func(*RecipeIngredientUpsert)) *RecipeIngredientUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RecipeIngredientUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *RecipeIngredientUpsertBulk) SetRecipeID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetRecipeID(v)
+	})
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateRecipeID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateRecipeID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RecipeIngredientUpsertBulk) SetItemID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateItemID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetItemSku sets the "item_sku" field.
+func (u *RecipeIngredientUpsertBulk) SetItemSku(v string) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetItemSku(v)
+	})
+}
+
+// UpdateItemSku sets the "item_sku" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateItemSku() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateItemSku()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RecipeIngredientUpsertBulk) SetQuantity(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RecipeIngredientUpsertBulk) AddQuantity(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateQuantity() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetUnitOfMeasure sets the "unit_of_measure" field.
+func (u *RecipeIngredientUpsertBulk) SetUnitOfMeasure(v string) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitOfMeasure(v)
+	})
+}
+
+// UpdateUnitOfMeasure sets the "unit_of_measure" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateUnitOfMeasure() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitOfMeasure()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *RecipeIngredientUpsertBulk) SetNotes(v string) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateNotes() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *RecipeIngredientUpsertBulk) ClearNotes() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetDisplayOrder sets the "display_order" field.
+func (u *RecipeIngredientUpsertBulk) SetDisplayOrder(v int) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetDisplayOrder(v)
+	})
+}
+
+// AddDisplayOrder adds v to the "display_order" field.
+func (u *RecipeIngredientUpsertBulk) AddDisplayOrder(v int) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddDisplayOrder(v)
+	})
+}
+
+// UpdateDisplayOrder sets the "display_order" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateDisplayOrder() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateDisplayOrder()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *RecipeIngredientUpsertBulk) SetUnitID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateUnitID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *RecipeIngredientUpsertBulk) ClearUnitID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearUnitID()
+	})
+}
+
+// SetWastePercent sets the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) SetWastePercent(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetWastePercent(v)
+	})
+}
+
+// AddWastePercent adds v to the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) AddWastePercent(v float64) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.AddWastePercent(v)
+	})
+}
+
+// UpdateWastePercent sets the "waste_percent" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateWastePercent() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateWastePercent()
+	})
+}
+
+// ClearWastePercent clears the value of the "waste_percent" field.
+func (u *RecipeIngredientUpsertBulk) ClearWastePercent() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearWastePercent()
+	})
+}
+
+// SetSubRecipeID sets the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertBulk) SetSubRecipeID(v uuid.UUID) *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.SetSubRecipeID(v)
+	})
+}
+
+// UpdateSubRecipeID sets the "sub_recipe_id" field to the value that was provided on create.
+func (u *RecipeIngredientUpsertBulk) UpdateSubRecipeID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.UpdateSubRecipeID()
+	})
+}
+
+// ClearSubRecipeID clears the value of the "sub_recipe_id" field.
+func (u *RecipeIngredientUpsertBulk) ClearSubRecipeID() *RecipeIngredientUpsertBulk {
+	return u.Update(func(s *RecipeIngredientUpsert) {
+		s.ClearSubRecipeID()
+	})
+}
+
+// Exec executes the query.
+func (u *RecipeIngredientUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the RecipeIngredientCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RecipeIngredientCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RecipeIngredientUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

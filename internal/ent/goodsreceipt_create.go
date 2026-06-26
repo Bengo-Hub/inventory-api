@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
@@ -20,6 +22,7 @@ type GoodsReceiptCreate struct {
 	config
 	mutation *GoodsReceiptMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -302,6 +305,7 @@ func (_c *GoodsReceiptCreate) createSpec() (*GoodsReceipt, *sqlgraph.CreateSpec)
 		_node = &GoodsReceipt{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(goodsreceipt.Table, sqlgraph.NewFieldSpec(goodsreceipt.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -369,11 +373,462 @@ func (_c *GoodsReceiptCreate) createSpec() (*GoodsReceipt, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.GoodsReceipt.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.GoodsReceiptUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *GoodsReceiptCreate) OnConflict(opts ...sql.ConflictOption) *GoodsReceiptUpsertOne {
+	_c.conflict = opts
+	return &GoodsReceiptUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *GoodsReceiptCreate) OnConflictColumns(columns ...string) *GoodsReceiptUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &GoodsReceiptUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// GoodsReceiptUpsertOne is the builder for "upsert"-ing
+	//  one GoodsReceipt node.
+	GoodsReceiptUpsertOne struct {
+		create *GoodsReceiptCreate
+	}
+
+	// GoodsReceiptUpsert is the "OnConflict" setter.
+	GoodsReceiptUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptUpsert) SetTenantID(v uuid.UUID) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateTenantID() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldTenantID)
+	return u
+}
+
+// SetGrnNumber sets the "grn_number" field.
+func (u *GoodsReceiptUpsert) SetGrnNumber(v string) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldGrnNumber, v)
+	return u
+}
+
+// UpdateGrnNumber sets the "grn_number" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateGrnNumber() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldGrnNumber)
+	return u
+}
+
+// SetPurchaseOrderID sets the "purchase_order_id" field.
+func (u *GoodsReceiptUpsert) SetPurchaseOrderID(v uuid.UUID) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldPurchaseOrderID, v)
+	return u
+}
+
+// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdatePurchaseOrderID() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldPurchaseOrderID)
+	return u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *GoodsReceiptUpsert) SetSupplierID(v uuid.UUID) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldSupplierID, v)
+	return u
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateSupplierID() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldSupplierID)
+	return u
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *GoodsReceiptUpsert) ClearSupplierID() *GoodsReceiptUpsert {
+	u.SetNull(goodsreceipt.FieldSupplierID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *GoodsReceiptUpsert) SetWarehouseID(v uuid.UUID) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateWarehouseID() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *GoodsReceiptUpsert) ClearWarehouseID() *GoodsReceiptUpsert {
+	u.SetNull(goodsreceipt.FieldWarehouseID)
+	return u
+}
+
+// SetReceivedBy sets the "received_by" field.
+func (u *GoodsReceiptUpsert) SetReceivedBy(v uuid.UUID) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldReceivedBy, v)
+	return u
+}
+
+// UpdateReceivedBy sets the "received_by" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateReceivedBy() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldReceivedBy)
+	return u
+}
+
+// ClearReceivedBy clears the value of the "received_by" field.
+func (u *GoodsReceiptUpsert) ClearReceivedBy() *GoodsReceiptUpsert {
+	u.SetNull(goodsreceipt.FieldReceivedBy)
+	return u
+}
+
+// SetReceivedDate sets the "received_date" field.
+func (u *GoodsReceiptUpsert) SetReceivedDate(v time.Time) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldReceivedDate, v)
+	return u
+}
+
+// UpdateReceivedDate sets the "received_date" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateReceivedDate() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldReceivedDate)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *GoodsReceiptUpsert) SetStatus(v goodsreceipt.Status) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateStatus() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldStatus)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *GoodsReceiptUpsert) SetNotes(v string) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateNotes() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *GoodsReceiptUpsert) ClearNotes() *GoodsReceiptUpsert {
+	u.SetNull(goodsreceipt.FieldNotes)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *GoodsReceiptUpsert) SetUpdatedAt(v time.Time) *GoodsReceiptUpsert {
+	u.Set(goodsreceipt.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *GoodsReceiptUpsert) UpdateUpdatedAt() *GoodsReceiptUpsert {
+	u.SetExcluded(goodsreceipt.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(goodsreceipt.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *GoodsReceiptUpsertOne) UpdateNewValues() *GoodsReceiptUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(goodsreceipt.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(goodsreceipt.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *GoodsReceiptUpsertOne) Ignore() *GoodsReceiptUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *GoodsReceiptUpsertOne) DoNothing() *GoodsReceiptUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the GoodsReceiptCreate.OnConflict
+// documentation for more info.
+func (u *GoodsReceiptUpsertOne) Update(set func(*GoodsReceiptUpsert)) *GoodsReceiptUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&GoodsReceiptUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptUpsertOne) SetTenantID(v uuid.UUID) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateTenantID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetGrnNumber sets the "grn_number" field.
+func (u *GoodsReceiptUpsertOne) SetGrnNumber(v string) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetGrnNumber(v)
+	})
+}
+
+// UpdateGrnNumber sets the "grn_number" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateGrnNumber() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateGrnNumber()
+	})
+}
+
+// SetPurchaseOrderID sets the "purchase_order_id" field.
+func (u *GoodsReceiptUpsertOne) SetPurchaseOrderID(v uuid.UUID) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetPurchaseOrderID(v)
+	})
+}
+
+// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdatePurchaseOrderID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdatePurchaseOrderID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *GoodsReceiptUpsertOne) SetSupplierID(v uuid.UUID) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateSupplierID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *GoodsReceiptUpsertOne) ClearSupplierID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *GoodsReceiptUpsertOne) SetWarehouseID(v uuid.UUID) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateWarehouseID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *GoodsReceiptUpsertOne) ClearWarehouseID() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetReceivedBy sets the "received_by" field.
+func (u *GoodsReceiptUpsertOne) SetReceivedBy(v uuid.UUID) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetReceivedBy(v)
+	})
+}
+
+// UpdateReceivedBy sets the "received_by" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateReceivedBy() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateReceivedBy()
+	})
+}
+
+// ClearReceivedBy clears the value of the "received_by" field.
+func (u *GoodsReceiptUpsertOne) ClearReceivedBy() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearReceivedBy()
+	})
+}
+
+// SetReceivedDate sets the "received_date" field.
+func (u *GoodsReceiptUpsertOne) SetReceivedDate(v time.Time) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetReceivedDate(v)
+	})
+}
+
+// UpdateReceivedDate sets the "received_date" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateReceivedDate() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateReceivedDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *GoodsReceiptUpsertOne) SetStatus(v goodsreceipt.Status) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateStatus() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *GoodsReceiptUpsertOne) SetNotes(v string) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateNotes() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *GoodsReceiptUpsertOne) ClearNotes() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *GoodsReceiptUpsertOne) SetUpdatedAt(v time.Time) *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertOne) UpdateUpdatedAt() *GoodsReceiptUpsertOne {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *GoodsReceiptUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for GoodsReceiptCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *GoodsReceiptUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *GoodsReceiptUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: GoodsReceiptUpsertOne.ID is not supported by MySQL driver. Use GoodsReceiptUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *GoodsReceiptUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // GoodsReceiptCreateBulk is the builder for creating many GoodsReceipt entities in bulk.
 type GoodsReceiptCreateBulk struct {
 	config
 	err      error
 	builders []*GoodsReceiptCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the GoodsReceipt entities in the database.
@@ -403,6 +858,7 @@ func (_c *GoodsReceiptCreateBulk) Save(ctx context.Context) ([]*GoodsReceipt, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -449,6 +905,291 @@ func (_c *GoodsReceiptCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *GoodsReceiptCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.GoodsReceipt.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.GoodsReceiptUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *GoodsReceiptCreateBulk) OnConflict(opts ...sql.ConflictOption) *GoodsReceiptUpsertBulk {
+	_c.conflict = opts
+	return &GoodsReceiptUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *GoodsReceiptCreateBulk) OnConflictColumns(columns ...string) *GoodsReceiptUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &GoodsReceiptUpsertBulk{
+		create: _c,
+	}
+}
+
+// GoodsReceiptUpsertBulk is the builder for "upsert"-ing
+// a bulk of GoodsReceipt nodes.
+type GoodsReceiptUpsertBulk struct {
+	create *GoodsReceiptCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(goodsreceipt.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *GoodsReceiptUpsertBulk) UpdateNewValues() *GoodsReceiptUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(goodsreceipt.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(goodsreceipt.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.GoodsReceipt.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *GoodsReceiptUpsertBulk) Ignore() *GoodsReceiptUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *GoodsReceiptUpsertBulk) DoNothing() *GoodsReceiptUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the GoodsReceiptCreateBulk.OnConflict
+// documentation for more info.
+func (u *GoodsReceiptUpsertBulk) Update(set func(*GoodsReceiptUpsert)) *GoodsReceiptUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&GoodsReceiptUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *GoodsReceiptUpsertBulk) SetTenantID(v uuid.UUID) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateTenantID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetGrnNumber sets the "grn_number" field.
+func (u *GoodsReceiptUpsertBulk) SetGrnNumber(v string) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetGrnNumber(v)
+	})
+}
+
+// UpdateGrnNumber sets the "grn_number" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateGrnNumber() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateGrnNumber()
+	})
+}
+
+// SetPurchaseOrderID sets the "purchase_order_id" field.
+func (u *GoodsReceiptUpsertBulk) SetPurchaseOrderID(v uuid.UUID) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetPurchaseOrderID(v)
+	})
+}
+
+// UpdatePurchaseOrderID sets the "purchase_order_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdatePurchaseOrderID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdatePurchaseOrderID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *GoodsReceiptUpsertBulk) SetSupplierID(v uuid.UUID) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateSupplierID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *GoodsReceiptUpsertBulk) ClearSupplierID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *GoodsReceiptUpsertBulk) SetWarehouseID(v uuid.UUID) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateWarehouseID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *GoodsReceiptUpsertBulk) ClearWarehouseID() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetReceivedBy sets the "received_by" field.
+func (u *GoodsReceiptUpsertBulk) SetReceivedBy(v uuid.UUID) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetReceivedBy(v)
+	})
+}
+
+// UpdateReceivedBy sets the "received_by" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateReceivedBy() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateReceivedBy()
+	})
+}
+
+// ClearReceivedBy clears the value of the "received_by" field.
+func (u *GoodsReceiptUpsertBulk) ClearReceivedBy() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearReceivedBy()
+	})
+}
+
+// SetReceivedDate sets the "received_date" field.
+func (u *GoodsReceiptUpsertBulk) SetReceivedDate(v time.Time) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetReceivedDate(v)
+	})
+}
+
+// UpdateReceivedDate sets the "received_date" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateReceivedDate() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateReceivedDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *GoodsReceiptUpsertBulk) SetStatus(v goodsreceipt.Status) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateStatus() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *GoodsReceiptUpsertBulk) SetNotes(v string) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateNotes() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *GoodsReceiptUpsertBulk) ClearNotes() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *GoodsReceiptUpsertBulk) SetUpdatedAt(v time.Time) *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *GoodsReceiptUpsertBulk) UpdateUpdatedAt() *GoodsReceiptUpsertBulk {
+	return u.Update(func(s *GoodsReceiptUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *GoodsReceiptUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the GoodsReceiptCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for GoodsReceiptCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *GoodsReceiptUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

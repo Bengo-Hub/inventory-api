@@ -1884,6 +1884,7 @@ var (
 		{Name: "total_amount", Type: field.TypeFloat64, Default: 0},
 		{Name: "currency", Type: field.TypeString, Default: "KES"},
 		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "project_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "rfq_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "pay_term_days", Type: field.TypeInt, Nullable: true},
 		{Name: "additional_shipping_charges", Type: field.TypeFloat64, Default: 0},
@@ -1902,13 +1903,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_orders_suppliers_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[15]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[16]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "purchase_orders_warehouses_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[16]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[17]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1927,7 +1928,7 @@ var (
 			{
 				Name:    "purchaseorder_tenant_id_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[15]},
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[16]},
 			},
 		},
 	}
@@ -2374,6 +2375,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "project_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "reference_number", Type: field.TypeString},
 		{Name: "requester_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "request_type", Type: field.TypeEnum, Enums: []string{"inventory", "external_item", "service"}, Default: "inventory"},
@@ -2394,22 +2396,22 @@ var (
 			{
 				Name:    "requisition_tenant_id_reference_number",
 				Unique:  true,
-				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[3]},
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[4]},
 			},
 			{
 				Name:    "requisition_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[9]},
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[10]},
 			},
 			{
 				Name:    "requisition_tenant_id_request_type",
 				Unique:  false,
-				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[5]},
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[6]},
 			},
 			{
 				Name:    "requisition_tenant_id_priority",
 				Unique:  false,
-				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[7]},
+				Columns: []*schema.Column{RequisitionsColumns[1], RequisitionsColumns[8]},
 			},
 		},
 	}

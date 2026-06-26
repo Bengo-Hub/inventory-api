@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
@@ -19,6 +21,7 @@ type BackupSettingCreate struct {
 	config
 	mutation *BackupSettingMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -223,6 +226,7 @@ func (_c *BackupSettingCreate) createSpec() (*BackupSetting, *sqlgraph.CreateSpe
 		_node = &BackupSetting{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(backupsetting.Table, sqlgraph.NewFieldSpec(backupsetting.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -254,11 +258,306 @@ func (_c *BackupSettingCreate) createSpec() (*BackupSetting, *sqlgraph.CreateSpe
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.BackupSetting.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BackupSettingUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BackupSettingCreate) OnConflict(opts ...sql.ConflictOption) *BackupSettingUpsertOne {
+	_c.conflict = opts
+	return &BackupSettingUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BackupSettingCreate) OnConflictColumns(columns ...string) *BackupSettingUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BackupSettingUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// BackupSettingUpsertOne is the builder for "upsert"-ing
+	//  one BackupSetting node.
+	BackupSettingUpsertOne struct {
+		create *BackupSettingCreate
+	}
+
+	// BackupSettingUpsert is the "OnConflict" setter.
+	BackupSettingUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BackupSettingUpsert) SetTenantID(v uuid.UUID) *BackupSettingUpsert {
+	u.Set(backupsetting.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BackupSettingUpsert) UpdateTenantID() *BackupSettingUpsert {
+	u.SetExcluded(backupsetting.FieldTenantID)
+	return u
+}
+
+// SetAutoEnabled sets the "auto_enabled" field.
+func (u *BackupSettingUpsert) SetAutoEnabled(v bool) *BackupSettingUpsert {
+	u.Set(backupsetting.FieldAutoEnabled, v)
+	return u
+}
+
+// UpdateAutoEnabled sets the "auto_enabled" field to the value that was provided on create.
+func (u *BackupSettingUpsert) UpdateAutoEnabled() *BackupSettingUpsert {
+	u.SetExcluded(backupsetting.FieldAutoEnabled)
+	return u
+}
+
+// SetScheduleHour sets the "schedule_hour" field.
+func (u *BackupSettingUpsert) SetScheduleHour(v int) *BackupSettingUpsert {
+	u.Set(backupsetting.FieldScheduleHour, v)
+	return u
+}
+
+// UpdateScheduleHour sets the "schedule_hour" field to the value that was provided on create.
+func (u *BackupSettingUpsert) UpdateScheduleHour() *BackupSettingUpsert {
+	u.SetExcluded(backupsetting.FieldScheduleHour)
+	return u
+}
+
+// AddScheduleHour adds v to the "schedule_hour" field.
+func (u *BackupSettingUpsert) AddScheduleHour(v int) *BackupSettingUpsert {
+	u.Add(backupsetting.FieldScheduleHour, v)
+	return u
+}
+
+// SetRetentionDays sets the "retention_days" field.
+func (u *BackupSettingUpsert) SetRetentionDays(v int) *BackupSettingUpsert {
+	u.Set(backupsetting.FieldRetentionDays, v)
+	return u
+}
+
+// UpdateRetentionDays sets the "retention_days" field to the value that was provided on create.
+func (u *BackupSettingUpsert) UpdateRetentionDays() *BackupSettingUpsert {
+	u.SetExcluded(backupsetting.FieldRetentionDays)
+	return u
+}
+
+// AddRetentionDays adds v to the "retention_days" field.
+func (u *BackupSettingUpsert) AddRetentionDays(v int) *BackupSettingUpsert {
+	u.Add(backupsetting.FieldRetentionDays, v)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BackupSettingUpsert) SetUpdatedAt(v time.Time) *BackupSettingUpsert {
+	u.Set(backupsetting.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BackupSettingUpsert) UpdateUpdatedAt() *BackupSettingUpsert {
+	u.SetExcluded(backupsetting.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(backupsetting.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BackupSettingUpsertOne) UpdateNewValues() *BackupSettingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(backupsetting.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(backupsetting.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *BackupSettingUpsertOne) Ignore() *BackupSettingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BackupSettingUpsertOne) DoNothing() *BackupSettingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BackupSettingCreate.OnConflict
+// documentation for more info.
+func (u *BackupSettingUpsertOne) Update(set func(*BackupSettingUpsert)) *BackupSettingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BackupSettingUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BackupSettingUpsertOne) SetTenantID(v uuid.UUID) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BackupSettingUpsertOne) UpdateTenantID() *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAutoEnabled sets the "auto_enabled" field.
+func (u *BackupSettingUpsertOne) SetAutoEnabled(v bool) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetAutoEnabled(v)
+	})
+}
+
+// UpdateAutoEnabled sets the "auto_enabled" field to the value that was provided on create.
+func (u *BackupSettingUpsertOne) UpdateAutoEnabled() *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateAutoEnabled()
+	})
+}
+
+// SetScheduleHour sets the "schedule_hour" field.
+func (u *BackupSettingUpsertOne) SetScheduleHour(v int) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetScheduleHour(v)
+	})
+}
+
+// AddScheduleHour adds v to the "schedule_hour" field.
+func (u *BackupSettingUpsertOne) AddScheduleHour(v int) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.AddScheduleHour(v)
+	})
+}
+
+// UpdateScheduleHour sets the "schedule_hour" field to the value that was provided on create.
+func (u *BackupSettingUpsertOne) UpdateScheduleHour() *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateScheduleHour()
+	})
+}
+
+// SetRetentionDays sets the "retention_days" field.
+func (u *BackupSettingUpsertOne) SetRetentionDays(v int) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetRetentionDays(v)
+	})
+}
+
+// AddRetentionDays adds v to the "retention_days" field.
+func (u *BackupSettingUpsertOne) AddRetentionDays(v int) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.AddRetentionDays(v)
+	})
+}
+
+// UpdateRetentionDays sets the "retention_days" field to the value that was provided on create.
+func (u *BackupSettingUpsertOne) UpdateRetentionDays() *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateRetentionDays()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BackupSettingUpsertOne) SetUpdatedAt(v time.Time) *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BackupSettingUpsertOne) UpdateUpdatedAt() *BackupSettingUpsertOne {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *BackupSettingUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BackupSettingCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BackupSettingUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *BackupSettingUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: BackupSettingUpsertOne.ID is not supported by MySQL driver. Use BackupSettingUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *BackupSettingUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // BackupSettingCreateBulk is the builder for creating many BackupSetting entities in bulk.
 type BackupSettingCreateBulk struct {
 	config
 	err      error
 	builders []*BackupSettingCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the BackupSetting entities in the database.
@@ -288,6 +587,7 @@ func (_c *BackupSettingCreateBulk) Save(ctx context.Context) ([]*BackupSetting, 
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -334,6 +634,207 @@ func (_c *BackupSettingCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *BackupSettingCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.BackupSetting.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BackupSettingUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BackupSettingCreateBulk) OnConflict(opts ...sql.ConflictOption) *BackupSettingUpsertBulk {
+	_c.conflict = opts
+	return &BackupSettingUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BackupSettingCreateBulk) OnConflictColumns(columns ...string) *BackupSettingUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BackupSettingUpsertBulk{
+		create: _c,
+	}
+}
+
+// BackupSettingUpsertBulk is the builder for "upsert"-ing
+// a bulk of BackupSetting nodes.
+type BackupSettingUpsertBulk struct {
+	create *BackupSettingCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(backupsetting.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BackupSettingUpsertBulk) UpdateNewValues() *BackupSettingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(backupsetting.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(backupsetting.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.BackupSetting.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *BackupSettingUpsertBulk) Ignore() *BackupSettingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BackupSettingUpsertBulk) DoNothing() *BackupSettingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BackupSettingCreateBulk.OnConflict
+// documentation for more info.
+func (u *BackupSettingUpsertBulk) Update(set func(*BackupSettingUpsert)) *BackupSettingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BackupSettingUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BackupSettingUpsertBulk) SetTenantID(v uuid.UUID) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BackupSettingUpsertBulk) UpdateTenantID() *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAutoEnabled sets the "auto_enabled" field.
+func (u *BackupSettingUpsertBulk) SetAutoEnabled(v bool) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetAutoEnabled(v)
+	})
+}
+
+// UpdateAutoEnabled sets the "auto_enabled" field to the value that was provided on create.
+func (u *BackupSettingUpsertBulk) UpdateAutoEnabled() *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateAutoEnabled()
+	})
+}
+
+// SetScheduleHour sets the "schedule_hour" field.
+func (u *BackupSettingUpsertBulk) SetScheduleHour(v int) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetScheduleHour(v)
+	})
+}
+
+// AddScheduleHour adds v to the "schedule_hour" field.
+func (u *BackupSettingUpsertBulk) AddScheduleHour(v int) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.AddScheduleHour(v)
+	})
+}
+
+// UpdateScheduleHour sets the "schedule_hour" field to the value that was provided on create.
+func (u *BackupSettingUpsertBulk) UpdateScheduleHour() *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateScheduleHour()
+	})
+}
+
+// SetRetentionDays sets the "retention_days" field.
+func (u *BackupSettingUpsertBulk) SetRetentionDays(v int) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetRetentionDays(v)
+	})
+}
+
+// AddRetentionDays adds v to the "retention_days" field.
+func (u *BackupSettingUpsertBulk) AddRetentionDays(v int) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.AddRetentionDays(v)
+	})
+}
+
+// UpdateRetentionDays sets the "retention_days" field to the value that was provided on create.
+func (u *BackupSettingUpsertBulk) UpdateRetentionDays() *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateRetentionDays()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BackupSettingUpsertBulk) SetUpdatedAt(v time.Time) *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BackupSettingUpsertBulk) UpdateUpdatedAt() *BackupSettingUpsertBulk {
+	return u.Update(func(s *BackupSettingUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *BackupSettingUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the BackupSettingCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BackupSettingCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BackupSettingUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

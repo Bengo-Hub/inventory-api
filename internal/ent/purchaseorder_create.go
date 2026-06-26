@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -22,6 +24,7 @@ type PurchaseOrderCreate struct {
 	config
 	mutation *PurchaseOrderMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -114,6 +117,20 @@ func (_c *PurchaseOrderCreate) SetRequisitionID(v uuid.UUID) *PurchaseOrderCreat
 func (_c *PurchaseOrderCreate) SetNillableRequisitionID(v *uuid.UUID) *PurchaseOrderCreate {
 	if v != nil {
 		_c.SetRequisitionID(*v)
+	}
+	return _c
+}
+
+// SetProjectID sets the "project_id" field.
+func (_c *PurchaseOrderCreate) SetProjectID(v uuid.UUID) *PurchaseOrderCreate {
+	_c.mutation.SetProjectID(v)
+	return _c
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableProjectID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetProjectID(*v)
 	}
 	return _c
 }
@@ -399,6 +416,7 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 		_node = &PurchaseOrder{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(purchaseorder.Table, sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -430,6 +448,10 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.RequisitionID(); ok {
 		_spec.SetField(purchaseorder.FieldRequisitionID, field.TypeUUID, value)
 		_node.RequisitionID = &value
+	}
+	if value, ok := _c.mutation.ProjectID(); ok {
+		_spec.SetField(purchaseorder.FieldProjectID, field.TypeUUID, value)
+		_node.ProjectID = &value
 	}
 	if value, ok := _c.mutation.RfqID(); ok {
 		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
@@ -512,11 +534,696 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PurchaseOrder.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PurchaseOrderUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PurchaseOrderCreate) OnConflict(opts ...sql.ConflictOption) *PurchaseOrderUpsertOne {
+	_c.conflict = opts
+	return &PurchaseOrderUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PurchaseOrderCreate) OnConflictColumns(columns ...string) *PurchaseOrderUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PurchaseOrderUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// PurchaseOrderUpsertOne is the builder for "upsert"-ing
+	//  one PurchaseOrder node.
+	PurchaseOrderUpsertOne struct {
+		create *PurchaseOrderCreate
+	}
+
+	// PurchaseOrderUpsert is the "OnConflict" setter.
+	PurchaseOrderUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseOrderUpsert) SetTenantID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateTenantID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldTenantID)
+	return u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *PurchaseOrderUpsert) SetSupplierID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldSupplierID, v)
+	return u
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateSupplierID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldSupplierID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseOrderUpsert) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateWarehouseID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldWarehouseID)
+	return u
+}
+
+// SetPoNumber sets the "po_number" field.
+func (u *PurchaseOrderUpsert) SetPoNumber(v string) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldPoNumber, v)
+	return u
+}
+
+// UpdatePoNumber sets the "po_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdatePoNumber() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldPoNumber)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *PurchaseOrderUpsert) SetStatus(v purchaseorder.Status) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateStatus() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldStatus)
+	return u
+}
+
+// SetExpectedDate sets the "expected_date" field.
+func (u *PurchaseOrderUpsert) SetExpectedDate(v time.Time) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldExpectedDate, v)
+	return u
+}
+
+// UpdateExpectedDate sets the "expected_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateExpectedDate() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldExpectedDate)
+	return u
+}
+
+// ClearExpectedDate clears the value of the "expected_date" field.
+func (u *PurchaseOrderUpsert) ClearExpectedDate() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldExpectedDate)
+	return u
+}
+
+// SetTotalAmount sets the "total_amount" field.
+func (u *PurchaseOrderUpsert) SetTotalAmount(v float64) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldTotalAmount, v)
+	return u
+}
+
+// UpdateTotalAmount sets the "total_amount" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateTotalAmount() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldTotalAmount)
+	return u
+}
+
+// AddTotalAmount adds v to the "total_amount" field.
+func (u *PurchaseOrderUpsert) AddTotalAmount(v float64) *PurchaseOrderUpsert {
+	u.Add(purchaseorder.FieldTotalAmount, v)
+	return u
+}
+
+// SetCurrency sets the "currency" field.
+func (u *PurchaseOrderUpsert) SetCurrency(v string) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldCurrency, v)
+	return u
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateCurrency() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldCurrency)
+	return u
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsert) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldRequisitionID, v)
+	return u
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateRequisitionID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldRequisitionID)
+	return u
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsert) ClearRequisitionID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldRequisitionID)
+	return u
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *PurchaseOrderUpsert) SetProjectID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldProjectID, v)
+	return u
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateProjectID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldProjectID)
+	return u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *PurchaseOrderUpsert) ClearProjectID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldProjectID)
+	return u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsert) SetRfqID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldRfqID, v)
+	return u
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateRfqID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldRfqID)
+	return u
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsert) ClearRfqID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldRfqID)
+	return u
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) SetPayTermDays(v int) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldPayTermDays, v)
+	return u
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdatePayTermDays() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldPayTermDays)
+	return u
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) AddPayTermDays(v int) *PurchaseOrderUpsert {
+	u.Add(purchaseorder.FieldPayTermDays, v)
+	return u
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsert) ClearPayTermDays() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldPayTermDays)
+	return u
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsert) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldAdditionalShippingCharges, v)
+	return u
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateAdditionalShippingCharges() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldAdditionalShippingCharges)
+	return u
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsert) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsert {
+	u.Add(purchaseorder.FieldAdditionalShippingCharges, v)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *PurchaseOrderUpsert) SetNotes(v string) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateNotes() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *PurchaseOrderUpsert) ClearNotes() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldNotes)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PurchaseOrderUpsert) SetCreatedBy(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateCreatedBy() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldCreatedBy)
+	return u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *PurchaseOrderUpsert) ClearCreatedBy() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldCreatedBy)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PurchaseOrderUpsert) SetUpdatedAt(v time.Time) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateUpdatedAt() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(purchaseorder.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PurchaseOrderUpsertOne) UpdateNewValues() *PurchaseOrderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(purchaseorder.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(purchaseorder.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *PurchaseOrderUpsertOne) Ignore() *PurchaseOrderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PurchaseOrderUpsertOne) DoNothing() *PurchaseOrderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PurchaseOrderCreate.OnConflict
+// documentation for more info.
+func (u *PurchaseOrderUpsertOne) Update(set func(*PurchaseOrderUpsert)) *PurchaseOrderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PurchaseOrderUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseOrderUpsertOne) SetTenantID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateTenantID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *PurchaseOrderUpsertOne) SetSupplierID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateSupplierID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseOrderUpsertOne) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateWarehouseID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetPoNumber sets the "po_number" field.
+func (u *PurchaseOrderUpsertOne) SetPoNumber(v string) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPoNumber(v)
+	})
+}
+
+// UpdatePoNumber sets the "po_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdatePoNumber() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePoNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *PurchaseOrderUpsertOne) SetStatus(v purchaseorder.Status) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateStatus() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetExpectedDate sets the "expected_date" field.
+func (u *PurchaseOrderUpsertOne) SetExpectedDate(v time.Time) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetExpectedDate(v)
+	})
+}
+
+// UpdateExpectedDate sets the "expected_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateExpectedDate() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateExpectedDate()
+	})
+}
+
+// ClearExpectedDate clears the value of the "expected_date" field.
+func (u *PurchaseOrderUpsertOne) ClearExpectedDate() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearExpectedDate()
+	})
+}
+
+// SetTotalAmount sets the "total_amount" field.
+func (u *PurchaseOrderUpsertOne) SetTotalAmount(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetTotalAmount(v)
+	})
+}
+
+// AddTotalAmount adds v to the "total_amount" field.
+func (u *PurchaseOrderUpsertOne) AddTotalAmount(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddTotalAmount(v)
+	})
+}
+
+// UpdateTotalAmount sets the "total_amount" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateTotalAmount() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateTotalAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *PurchaseOrderUpsertOne) SetCurrency(v string) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateCurrency() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsertOne) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRequisitionID(v)
+	})
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateRequisitionID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRequisitionID()
+	})
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsertOne) ClearRequisitionID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRequisitionID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *PurchaseOrderUpsertOne) SetProjectID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateProjectID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *PurchaseOrderUpsertOne) ClearProjectID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearProjectID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsertOne) SetRfqID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateRfqID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsertOne) ClearRfqID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) SetPayTermDays(v int) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPayTermDays(v)
+	})
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) AddPayTermDays(v int) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddPayTermDays(v)
+	})
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdatePayTermDays() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePayTermDays()
+	})
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsertOne) ClearPayTermDays() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearPayTermDays()
+	})
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertOne) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetAdditionalShippingCharges(v)
+	})
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertOne) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddAdditionalShippingCharges(v)
+	})
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateAdditionalShippingCharges() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateAdditionalShippingCharges()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *PurchaseOrderUpsertOne) SetNotes(v string) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateNotes() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *PurchaseOrderUpsertOne) ClearNotes() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PurchaseOrderUpsertOne) SetCreatedBy(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateCreatedBy() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *PurchaseOrderUpsertOne) ClearCreatedBy() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PurchaseOrderUpsertOne) SetUpdatedAt(v time.Time) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateUpdatedAt() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *PurchaseOrderUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PurchaseOrderCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PurchaseOrderUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *PurchaseOrderUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: PurchaseOrderUpsertOne.ID is not supported by MySQL driver. Use PurchaseOrderUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *PurchaseOrderUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // PurchaseOrderCreateBulk is the builder for creating many PurchaseOrder entities in bulk.
 type PurchaseOrderCreateBulk struct {
 	config
 	err      error
 	builders []*PurchaseOrderCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the PurchaseOrder entities in the database.
@@ -546,6 +1253,7 @@ func (_c *PurchaseOrderCreateBulk) Save(ctx context.Context) ([]*PurchaseOrder, 
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -592,6 +1300,417 @@ func (_c *PurchaseOrderCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *PurchaseOrderCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PurchaseOrder.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PurchaseOrderUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PurchaseOrderCreateBulk) OnConflict(opts ...sql.ConflictOption) *PurchaseOrderUpsertBulk {
+	_c.conflict = opts
+	return &PurchaseOrderUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PurchaseOrderCreateBulk) OnConflictColumns(columns ...string) *PurchaseOrderUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PurchaseOrderUpsertBulk{
+		create: _c,
+	}
+}
+
+// PurchaseOrderUpsertBulk is the builder for "upsert"-ing
+// a bulk of PurchaseOrder nodes.
+type PurchaseOrderUpsertBulk struct {
+	create *PurchaseOrderCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(purchaseorder.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PurchaseOrderUpsertBulk) UpdateNewValues() *PurchaseOrderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(purchaseorder.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(purchaseorder.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PurchaseOrder.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *PurchaseOrderUpsertBulk) Ignore() *PurchaseOrderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PurchaseOrderUpsertBulk) DoNothing() *PurchaseOrderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PurchaseOrderCreateBulk.OnConflict
+// documentation for more info.
+func (u *PurchaseOrderUpsertBulk) Update(set func(*PurchaseOrderUpsert)) *PurchaseOrderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PurchaseOrderUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PurchaseOrderUpsertBulk) SetTenantID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateTenantID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *PurchaseOrderUpsertBulk) SetSupplierID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateSupplierID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseOrderUpsertBulk) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateWarehouseID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetPoNumber sets the "po_number" field.
+func (u *PurchaseOrderUpsertBulk) SetPoNumber(v string) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPoNumber(v)
+	})
+}
+
+// UpdatePoNumber sets the "po_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdatePoNumber() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePoNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *PurchaseOrderUpsertBulk) SetStatus(v purchaseorder.Status) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateStatus() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetExpectedDate sets the "expected_date" field.
+func (u *PurchaseOrderUpsertBulk) SetExpectedDate(v time.Time) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetExpectedDate(v)
+	})
+}
+
+// UpdateExpectedDate sets the "expected_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateExpectedDate() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateExpectedDate()
+	})
+}
+
+// ClearExpectedDate clears the value of the "expected_date" field.
+func (u *PurchaseOrderUpsertBulk) ClearExpectedDate() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearExpectedDate()
+	})
+}
+
+// SetTotalAmount sets the "total_amount" field.
+func (u *PurchaseOrderUpsertBulk) SetTotalAmount(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetTotalAmount(v)
+	})
+}
+
+// AddTotalAmount adds v to the "total_amount" field.
+func (u *PurchaseOrderUpsertBulk) AddTotalAmount(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddTotalAmount(v)
+	})
+}
+
+// UpdateTotalAmount sets the "total_amount" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateTotalAmount() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateTotalAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *PurchaseOrderUpsertBulk) SetCurrency(v string) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateCurrency() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetRequisitionID sets the "requisition_id" field.
+func (u *PurchaseOrderUpsertBulk) SetRequisitionID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRequisitionID(v)
+	})
+}
+
+// UpdateRequisitionID sets the "requisition_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateRequisitionID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRequisitionID()
+	})
+}
+
+// ClearRequisitionID clears the value of the "requisition_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearRequisitionID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRequisitionID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *PurchaseOrderUpsertBulk) SetProjectID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateProjectID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearProjectID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearProjectID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *PurchaseOrderUpsertBulk) SetRfqID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateRfqID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// ClearRfqID clears the value of the "rfq_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearRfqID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearRfqID()
+	})
+}
+
+// SetPayTermDays sets the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) SetPayTermDays(v int) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetPayTermDays(v)
+	})
+}
+
+// AddPayTermDays adds v to the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) AddPayTermDays(v int) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddPayTermDays(v)
+	})
+}
+
+// UpdatePayTermDays sets the "pay_term_days" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdatePayTermDays() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdatePayTermDays()
+	})
+}
+
+// ClearPayTermDays clears the value of the "pay_term_days" field.
+func (u *PurchaseOrderUpsertBulk) ClearPayTermDays() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearPayTermDays()
+	})
+}
+
+// SetAdditionalShippingCharges sets the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertBulk) SetAdditionalShippingCharges(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetAdditionalShippingCharges(v)
+	})
+}
+
+// AddAdditionalShippingCharges adds v to the "additional_shipping_charges" field.
+func (u *PurchaseOrderUpsertBulk) AddAdditionalShippingCharges(v float64) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.AddAdditionalShippingCharges(v)
+	})
+}
+
+// UpdateAdditionalShippingCharges sets the "additional_shipping_charges" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateAdditionalShippingCharges() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateAdditionalShippingCharges()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *PurchaseOrderUpsertBulk) SetNotes(v string) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateNotes() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *PurchaseOrderUpsertBulk) ClearNotes() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PurchaseOrderUpsertBulk) SetCreatedBy(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateCreatedBy() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *PurchaseOrderUpsertBulk) ClearCreatedBy() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PurchaseOrderUpsertBulk) SetUpdatedAt(v time.Time) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateUpdatedAt() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *PurchaseOrderUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the PurchaseOrderCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PurchaseOrderCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PurchaseOrderUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
@@ -21,6 +23,7 @@ type ReservationCreate struct {
 	config
 	mutation *ReservationMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -266,6 +269,7 @@ func (_c *ReservationCreate) createSpec() (*Reservation, *sqlgraph.CreateSpec) {
 		_node = &Reservation{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(reservation.Table, sqlgraph.NewFieldSpec(reservation.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -326,11 +330,436 @@ func (_c *ReservationCreate) createSpec() (*Reservation, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Reservation.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ReservationUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ReservationCreate) OnConflict(opts ...sql.ConflictOption) *ReservationUpsertOne {
+	_c.conflict = opts
+	return &ReservationUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ReservationCreate) OnConflictColumns(columns ...string) *ReservationUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ReservationUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ReservationUpsertOne is the builder for "upsert"-ing
+	//  one Reservation node.
+	ReservationUpsertOne struct {
+		create *ReservationCreate
+	}
+
+	// ReservationUpsert is the "OnConflict" setter.
+	ReservationUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ReservationUpsert) SetTenantID(v uuid.UUID) *ReservationUpsert {
+	u.Set(reservation.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateTenantID() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldTenantID)
+	return u
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ReservationUpsert) SetOrderID(v uuid.UUID) *ReservationUpsert {
+	u.Set(reservation.FieldOrderID, v)
+	return u
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateOrderID() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldOrderID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ReservationUpsert) SetWarehouseID(v uuid.UUID) *ReservationUpsert {
+	u.Set(reservation.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateWarehouseID() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ReservationUpsert) ClearWarehouseID() *ReservationUpsert {
+	u.SetNull(reservation.FieldWarehouseID)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ReservationUpsert) SetStatus(v string) *ReservationUpsert {
+	u.Set(reservation.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateStatus() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldStatus)
+	return u
+}
+
+// SetItems sets the "items" field.
+func (u *ReservationUpsert) SetItems(v []schema.ReservedItemJSON) *ReservationUpsert {
+	u.Set(reservation.FieldItems, v)
+	return u
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateItems() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldItems)
+	return u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *ReservationUpsert) SetExpiresAt(v time.Time) *ReservationUpsert {
+	u.Set(reservation.FieldExpiresAt, v)
+	return u
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateExpiresAt() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldExpiresAt)
+	return u
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *ReservationUpsert) ClearExpiresAt() *ReservationUpsert {
+	u.SetNull(reservation.FieldExpiresAt)
+	return u
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (u *ReservationUpsert) SetConfirmedAt(v time.Time) *ReservationUpsert {
+	u.Set(reservation.FieldConfirmedAt, v)
+	return u
+}
+
+// UpdateConfirmedAt sets the "confirmed_at" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateConfirmedAt() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldConfirmedAt)
+	return u
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (u *ReservationUpsert) ClearConfirmedAt() *ReservationUpsert {
+	u.SetNull(reservation.FieldConfirmedAt)
+	return u
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ReservationUpsert) SetIdempotencyKey(v string) *ReservationUpsert {
+	u.Set(reservation.FieldIdempotencyKey, v)
+	return u
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateIdempotencyKey() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldIdempotencyKey)
+	return u
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ReservationUpsert) ClearIdempotencyKey() *ReservationUpsert {
+	u.SetNull(reservation.FieldIdempotencyKey)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ReservationUpsert) SetUpdatedAt(v time.Time) *ReservationUpsert {
+	u.Set(reservation.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ReservationUpsert) UpdateUpdatedAt() *ReservationUpsert {
+	u.SetExcluded(reservation.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(reservation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ReservationUpsertOne) UpdateNewValues() *ReservationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(reservation.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(reservation.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ReservationUpsertOne) Ignore() *ReservationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ReservationUpsertOne) DoNothing() *ReservationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ReservationCreate.OnConflict
+// documentation for more info.
+func (u *ReservationUpsertOne) Update(set func(*ReservationUpsert)) *ReservationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ReservationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ReservationUpsertOne) SetTenantID(v uuid.UUID) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateTenantID() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ReservationUpsertOne) SetOrderID(v uuid.UUID) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetOrderID(v)
+	})
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateOrderID() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateOrderID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ReservationUpsertOne) SetWarehouseID(v uuid.UUID) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateWarehouseID() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ReservationUpsertOne) ClearWarehouseID() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ReservationUpsertOne) SetStatus(v string) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateStatus() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetItems sets the "items" field.
+func (u *ReservationUpsertOne) SetItems(v []schema.ReservedItemJSON) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetItems(v)
+	})
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateItems() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateItems()
+	})
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *ReservationUpsertOne) SetExpiresAt(v time.Time) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateExpiresAt() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *ReservationUpsertOne) ClearExpiresAt() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearExpiresAt()
+	})
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (u *ReservationUpsertOne) SetConfirmedAt(v time.Time) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetConfirmedAt(v)
+	})
+}
+
+// UpdateConfirmedAt sets the "confirmed_at" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateConfirmedAt() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateConfirmedAt()
+	})
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (u *ReservationUpsertOne) ClearConfirmedAt() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearConfirmedAt()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ReservationUpsertOne) SetIdempotencyKey(v string) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateIdempotencyKey() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ReservationUpsertOne) ClearIdempotencyKey() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearIdempotencyKey()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ReservationUpsertOne) SetUpdatedAt(v time.Time) *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ReservationUpsertOne) UpdateUpdatedAt() *ReservationUpsertOne {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ReservationUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ReservationCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ReservationUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ReservationUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ReservationUpsertOne.ID is not supported by MySQL driver. Use ReservationUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ReservationUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ReservationCreateBulk is the builder for creating many Reservation entities in bulk.
 type ReservationCreateBulk struct {
 	config
 	err      error
 	builders []*ReservationCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Reservation entities in the database.
@@ -360,6 +789,7 @@ func (_c *ReservationCreateBulk) Save(ctx context.Context) ([]*Reservation, erro
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -406,6 +836,277 @@ func (_c *ReservationCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ReservationCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Reservation.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ReservationUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ReservationCreateBulk) OnConflict(opts ...sql.ConflictOption) *ReservationUpsertBulk {
+	_c.conflict = opts
+	return &ReservationUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ReservationCreateBulk) OnConflictColumns(columns ...string) *ReservationUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ReservationUpsertBulk{
+		create: _c,
+	}
+}
+
+// ReservationUpsertBulk is the builder for "upsert"-ing
+// a bulk of Reservation nodes.
+type ReservationUpsertBulk struct {
+	create *ReservationCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(reservation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ReservationUpsertBulk) UpdateNewValues() *ReservationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(reservation.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(reservation.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Reservation.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ReservationUpsertBulk) Ignore() *ReservationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ReservationUpsertBulk) DoNothing() *ReservationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ReservationCreateBulk.OnConflict
+// documentation for more info.
+func (u *ReservationUpsertBulk) Update(set func(*ReservationUpsert)) *ReservationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ReservationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ReservationUpsertBulk) SetTenantID(v uuid.UUID) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateTenantID() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ReservationUpsertBulk) SetOrderID(v uuid.UUID) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetOrderID(v)
+	})
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateOrderID() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateOrderID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ReservationUpsertBulk) SetWarehouseID(v uuid.UUID) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateWarehouseID() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ReservationUpsertBulk) ClearWarehouseID() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ReservationUpsertBulk) SetStatus(v string) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateStatus() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetItems sets the "items" field.
+func (u *ReservationUpsertBulk) SetItems(v []schema.ReservedItemJSON) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetItems(v)
+	})
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateItems() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateItems()
+	})
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *ReservationUpsertBulk) SetExpiresAt(v time.Time) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateExpiresAt() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *ReservationUpsertBulk) ClearExpiresAt() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearExpiresAt()
+	})
+}
+
+// SetConfirmedAt sets the "confirmed_at" field.
+func (u *ReservationUpsertBulk) SetConfirmedAt(v time.Time) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetConfirmedAt(v)
+	})
+}
+
+// UpdateConfirmedAt sets the "confirmed_at" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateConfirmedAt() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateConfirmedAt()
+	})
+}
+
+// ClearConfirmedAt clears the value of the "confirmed_at" field.
+func (u *ReservationUpsertBulk) ClearConfirmedAt() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearConfirmedAt()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ReservationUpsertBulk) SetIdempotencyKey(v string) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateIdempotencyKey() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ReservationUpsertBulk) ClearIdempotencyKey() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.ClearIdempotencyKey()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ReservationUpsertBulk) SetUpdatedAt(v time.Time) *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ReservationUpsertBulk) UpdateUpdatedAt() *ReservationUpsertBulk {
+	return u.Update(func(s *ReservationUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ReservationUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ReservationCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ReservationCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ReservationUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
