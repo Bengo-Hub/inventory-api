@@ -81,6 +81,20 @@ func (_c *RFQCreate) SetNillableRequisitionID(v *uuid.UUID) *RFQCreate {
 	return _c
 }
 
+// SetProjectID sets the "project_id" field.
+func (_c *RFQCreate) SetProjectID(v uuid.UUID) *RFQCreate {
+	_c.mutation.SetProjectID(v)
+	return _c
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_c *RFQCreate) SetNillableProjectID(v *uuid.UUID) *RFQCreate {
+	if v != nil {
+		_c.SetProjectID(*v)
+	}
+	return _c
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_c *RFQCreate) SetWarehouseID(v uuid.UUID) *RFQCreate {
 	_c.mutation.SetWarehouseID(v)
@@ -360,6 +374,10 @@ func (_c *RFQCreate) createSpec() (*RFQ, *sqlgraph.CreateSpec) {
 		_spec.SetField(rfq.FieldRequisitionID, field.TypeUUID, value)
 		_node.RequisitionID = &value
 	}
+	if value, ok := _c.mutation.ProjectID(); ok {
+		_spec.SetField(rfq.FieldProjectID, field.TypeUUID, value)
+		_node.ProjectID = &value
+	}
 	if value, ok := _c.mutation.WarehouseID(); ok {
 		_spec.SetField(rfq.FieldWarehouseID, field.TypeUUID, value)
 		_node.WarehouseID = &value
@@ -553,6 +571,24 @@ func (u *RFQUpsert) UpdateRequisitionID() *RFQUpsert {
 // ClearRequisitionID clears the value of the "requisition_id" field.
 func (u *RFQUpsert) ClearRequisitionID() *RFQUpsert {
 	u.SetNull(rfq.FieldRequisitionID)
+	return u
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *RFQUpsert) SetProjectID(v uuid.UUID) *RFQUpsert {
+	u.Set(rfq.FieldProjectID, v)
+	return u
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *RFQUpsert) UpdateProjectID() *RFQUpsert {
+	u.SetExcluded(rfq.FieldProjectID)
+	return u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *RFQUpsert) ClearProjectID() *RFQUpsert {
+	u.SetNull(rfq.FieldProjectID)
 	return u
 }
 
@@ -772,6 +808,27 @@ func (u *RFQUpsertOne) UpdateRequisitionID() *RFQUpsertOne {
 func (u *RFQUpsertOne) ClearRequisitionID() *RFQUpsertOne {
 	return u.Update(func(s *RFQUpsert) {
 		s.ClearRequisitionID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *RFQUpsertOne) SetProjectID(v uuid.UUID) *RFQUpsertOne {
+	return u.Update(func(s *RFQUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *RFQUpsertOne) UpdateProjectID() *RFQUpsertOne {
+	return u.Update(func(s *RFQUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *RFQUpsertOne) ClearProjectID() *RFQUpsertOne {
+	return u.Update(func(s *RFQUpsert) {
+		s.ClearProjectID()
 	})
 }
 
@@ -1172,6 +1229,27 @@ func (u *RFQUpsertBulk) UpdateRequisitionID() *RFQUpsertBulk {
 func (u *RFQUpsertBulk) ClearRequisitionID() *RFQUpsertBulk {
 	return u.Update(func(s *RFQUpsert) {
 		s.ClearRequisitionID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *RFQUpsertBulk) SetProjectID(v uuid.UUID) *RFQUpsertBulk {
+	return u.Update(func(s *RFQUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *RFQUpsertBulk) UpdateProjectID() *RFQUpsertBulk {
+	return u.Update(func(s *RFQUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *RFQUpsertBulk) ClearProjectID() *RFQUpsertBulk {
+	return u.Update(func(s *RFQUpsert) {
+		s.ClearProjectID()
 	})
 }
 

@@ -58448,6 +58448,7 @@ type RFQMutation struct {
 	title            *string
 	status           *rfq.Status
 	requisition_id   *uuid.UUID
+	project_id       *uuid.UUID
 	warehouse_id     *uuid.UUID
 	notes            *string
 	due_date         *time.Time
@@ -58777,6 +58778,55 @@ func (m *RFQMutation) RequisitionIDCleared() bool {
 func (m *RFQMutation) ResetRequisitionID() {
 	m.requisition_id = nil
 	delete(m.clearedFields, rfq.FieldRequisitionID)
+}
+
+// SetProjectID sets the "project_id" field.
+func (m *RFQMutation) SetProjectID(u uuid.UUID) {
+	m.project_id = &u
+}
+
+// ProjectID returns the value of the "project_id" field in the mutation.
+func (m *RFQMutation) ProjectID() (r uuid.UUID, exists bool) {
+	v := m.project_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectID returns the old "project_id" field's value of the RFQ entity.
+// If the RFQ object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RFQMutation) OldProjectID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectID: %w", err)
+	}
+	return oldValue.ProjectID, nil
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (m *RFQMutation) ClearProjectID() {
+	m.project_id = nil
+	m.clearedFields[rfq.FieldProjectID] = struct{}{}
+}
+
+// ProjectIDCleared returns if the "project_id" field was cleared in this mutation.
+func (m *RFQMutation) ProjectIDCleared() bool {
+	_, ok := m.clearedFields[rfq.FieldProjectID]
+	return ok
+}
+
+// ResetProjectID resets all changes to the "project_id" field.
+func (m *RFQMutation) ResetProjectID() {
+	m.project_id = nil
+	delete(m.clearedFields, rfq.FieldProjectID)
 }
 
 // SetWarehouseID sets the "warehouse_id" field.
@@ -59243,7 +59293,7 @@ func (m *RFQMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RFQMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, rfq.FieldTenantID)
 	}
@@ -59258,6 +59308,9 @@ func (m *RFQMutation) Fields() []string {
 	}
 	if m.requisition_id != nil {
 		fields = append(fields, rfq.FieldRequisitionID)
+	}
+	if m.project_id != nil {
+		fields = append(fields, rfq.FieldProjectID)
 	}
 	if m.warehouse_id != nil {
 		fields = append(fields, rfq.FieldWarehouseID)
@@ -59295,6 +59348,8 @@ func (m *RFQMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case rfq.FieldRequisitionID:
 		return m.RequisitionID()
+	case rfq.FieldProjectID:
+		return m.ProjectID()
 	case rfq.FieldWarehouseID:
 		return m.WarehouseID()
 	case rfq.FieldNotes:
@@ -59326,6 +59381,8 @@ func (m *RFQMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldStatus(ctx)
 	case rfq.FieldRequisitionID:
 		return m.OldRequisitionID(ctx)
+	case rfq.FieldProjectID:
+		return m.OldProjectID(ctx)
 	case rfq.FieldWarehouseID:
 		return m.OldWarehouseID(ctx)
 	case rfq.FieldNotes:
@@ -59381,6 +59438,13 @@ func (m *RFQMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequisitionID(v)
+		return nil
+	case rfq.FieldProjectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectID(v)
 		return nil
 	case rfq.FieldWarehouseID:
 		v, ok := value.(uuid.UUID)
@@ -59460,6 +59524,9 @@ func (m *RFQMutation) ClearedFields() []string {
 	if m.FieldCleared(rfq.FieldRequisitionID) {
 		fields = append(fields, rfq.FieldRequisitionID)
 	}
+	if m.FieldCleared(rfq.FieldProjectID) {
+		fields = append(fields, rfq.FieldProjectID)
+	}
 	if m.FieldCleared(rfq.FieldWarehouseID) {
 		fields = append(fields, rfq.FieldWarehouseID)
 	}
@@ -59491,6 +59558,9 @@ func (m *RFQMutation) ClearField(name string) error {
 		return nil
 	case rfq.FieldRequisitionID:
 		m.ClearRequisitionID()
+		return nil
+	case rfq.FieldProjectID:
+		m.ClearProjectID()
 		return nil
 	case rfq.FieldWarehouseID:
 		m.ClearWarehouseID()
@@ -59526,6 +59596,9 @@ func (m *RFQMutation) ResetField(name string) error {
 		return nil
 	case rfq.FieldRequisitionID:
 		m.ResetRequisitionID()
+		return nil
+	case rfq.FieldProjectID:
+		m.ResetProjectID()
 		return nil
 	case rfq.FieldWarehouseID:
 		m.ResetWarehouseID()

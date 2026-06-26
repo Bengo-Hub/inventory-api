@@ -28,6 +28,8 @@ type RFQ struct {
 	Status rfq.Status `json:"status,omitempty"`
 	// Originating requisition, if any
 	RequisitionID *uuid.UUID `json:"requisition_id,omitempty"`
+	// projects-service project id (from the requisition)
+	ProjectID *uuid.UUID `json:"project_id,omitempty"`
 	// Destination warehouse for resulting POs
 	WarehouseID *uuid.UUID `json:"warehouse_id,omitempty"`
 	// Notes holds the value of the "notes" field.
@@ -91,7 +93,7 @@ func (*RFQ) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rfq.FieldRequisitionID, rfq.FieldWarehouseID, rfq.FieldCreatedBy:
+		case rfq.FieldRequisitionID, rfq.FieldProjectID, rfq.FieldWarehouseID, rfq.FieldCreatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case rfq.FieldRfqNumber, rfq.FieldTitle, rfq.FieldStatus, rfq.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -150,6 +152,13 @@ func (_m *RFQ) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RequisitionID = new(uuid.UUID)
 				*_m.RequisitionID = *value.S.(*uuid.UUID)
+			}
+		case rfq.FieldProjectID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field project_id", values[i])
+			} else if value.Valid {
+				_m.ProjectID = new(uuid.UUID)
+				*_m.ProjectID = *value.S.(*uuid.UUID)
 			}
 		case rfq.FieldWarehouseID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -255,6 +264,11 @@ func (_m *RFQ) String() string {
 	builder.WriteString(", ")
 	if v := _m.RequisitionID; v != nil {
 		builder.WriteString("requisition_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProjectID; v != nil {
+		builder.WriteString("project_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
