@@ -513,6 +513,10 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		"pay_term_days":        derefInt(po.PayTermDays),
 		"lines":                grLineArr,
 	}
+	// Carry the PO's project so treasury attributes the per-GR vendor bill to that project.
+	if po.ProjectID != nil {
+		grPayload["project_id"] = po.ProjectID
+	}
 	for k, v := range supplierPaymentFields(po) {
 		grPayload[k] = v
 	}
