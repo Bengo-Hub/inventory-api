@@ -390,6 +390,10 @@ func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Requ
 	}
 	h.publishOutbox(r.Context(), tenantID, "asset", a.ID, "inventory.asset.created", map[string]any{
 		"id": a.ID, "asset_tag": a.AssetTag, "name": a.Name, "purchase_cost": a.PurchaseCost,
+		// Extra fields let treasury auto-register the capital-allowance asset richly
+		// (purchase date + method); ca_class_code is assigned later in the treasury UI.
+		"purchase_date":       a.PurchaseDate,
+		"depreciation_method": a.DepreciationMethod,
 	})
 	writeJSON(w, http.StatusCreated, a)
 }
