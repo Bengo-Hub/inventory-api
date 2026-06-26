@@ -520,19 +520,19 @@ func init() {
 	contractFields := schema.Contract{}.Fields()
 	_ = contractFields
 	// contractDescTitle is the schema descriptor for title field.
-	contractDescTitle := contractFields[4].Descriptor()
+	contractDescTitle := contractFields[5].Descriptor()
 	// contract.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	contract.TitleValidator = contractDescTitle.Validators[0].(func(string) error)
 	// contractDescValue is the schema descriptor for value field.
-	contractDescValue := contractFields[7].Descriptor()
+	contractDescValue := contractFields[8].Descriptor()
 	// contract.DefaultValue holds the default value on creation for the value field.
 	contract.DefaultValue = contractDescValue.Default.(float64)
 	// contractDescCreatedAt is the schema descriptor for created_at field.
-	contractDescCreatedAt := contractFields[10].Descriptor()
+	contractDescCreatedAt := contractFields[11].Descriptor()
 	// contract.DefaultCreatedAt holds the default value on creation for the created_at field.
 	contract.DefaultCreatedAt = contractDescCreatedAt.Default.(func() time.Time)
 	// contractDescUpdatedAt is the schema descriptor for updated_at field.
-	contractDescUpdatedAt := contractFields[11].Descriptor()
+	contractDescUpdatedAt := contractFields[12].Descriptor()
 	// contract.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	contract.DefaultUpdatedAt = contractDescUpdatedAt.Default.(func() time.Time)
 	// contract.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

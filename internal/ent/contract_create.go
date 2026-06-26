@@ -51,6 +51,20 @@ func (_c *ContractCreate) SetNillableRfqID(v *uuid.UUID) *ContractCreate {
 	return _c
 }
 
+// SetProjectID sets the "project_id" field.
+func (_c *ContractCreate) SetProjectID(v uuid.UUID) *ContractCreate {
+	_c.mutation.SetProjectID(v)
+	return _c
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_c *ContractCreate) SetNillableProjectID(v *uuid.UUID) *ContractCreate {
+	if v != nil {
+		_c.SetProjectID(*v)
+	}
+	return _c
+}
+
 // SetTitle sets the "title" field.
 func (_c *ContractCreate) SetTitle(v string) *ContractCreate {
 	_c.mutation.SetTitle(v)
@@ -312,6 +326,10 @@ func (_c *ContractCreate) createSpec() (*Contract, *sqlgraph.CreateSpec) {
 		_spec.SetField(contract.FieldRfqID, field.TypeUUID, value)
 		_node.RfqID = &value
 	}
+	if value, ok := _c.mutation.ProjectID(); ok {
+		_spec.SetField(contract.FieldProjectID, field.TypeUUID, value)
+		_node.ProjectID = &value
+	}
 	if value, ok := _c.mutation.Title(); ok {
 		_spec.SetField(contract.FieldTitle, field.TypeString, value)
 		_node.Title = value
@@ -451,6 +469,24 @@ func (u *ContractUpsert) UpdateRfqID() *ContractUpsert {
 // ClearRfqID clears the value of the "rfq_id" field.
 func (u *ContractUpsert) ClearRfqID() *ContractUpsert {
 	u.SetNull(contract.FieldRfqID)
+	return u
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ContractUpsert) SetProjectID(v uuid.UUID) *ContractUpsert {
+	u.Set(contract.FieldProjectID, v)
+	return u
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ContractUpsert) UpdateProjectID() *ContractUpsert {
+	u.SetExcluded(contract.FieldProjectID)
+	return u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *ContractUpsert) ClearProjectID() *ContractUpsert {
+	u.SetNull(contract.FieldProjectID)
 	return u
 }
 
@@ -647,6 +683,27 @@ func (u *ContractUpsertOne) UpdateRfqID() *ContractUpsertOne {
 func (u *ContractUpsertOne) ClearRfqID() *ContractUpsertOne {
 	return u.Update(func(s *ContractUpsert) {
 		s.ClearRfqID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ContractUpsertOne) SetProjectID(v uuid.UUID) *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ContractUpsertOne) UpdateProjectID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *ContractUpsertOne) ClearProjectID() *ContractUpsertOne {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearProjectID()
 	})
 }
 
@@ -1026,6 +1083,27 @@ func (u *ContractUpsertBulk) UpdateRfqID() *ContractUpsertBulk {
 func (u *ContractUpsertBulk) ClearRfqID() *ContractUpsertBulk {
 	return u.Update(func(s *ContractUpsert) {
 		s.ClearRfqID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ContractUpsertBulk) SetProjectID(v uuid.UUID) *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ContractUpsertBulk) UpdateProjectID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (u *ContractUpsertBulk) ClearProjectID() *ContractUpsertBulk {
+	return u.Update(func(s *ContractUpsert) {
+		s.ClearProjectID()
 	})
 }
 

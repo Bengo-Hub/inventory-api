@@ -71,6 +71,11 @@ func RfqID(v uuid.UUID) predicate.Contract {
 	return predicate.Contract(sql.FieldEQ(FieldRfqID, v))
 }
 
+// ProjectID applies equality check predicate on the "project_id" field. It's identical to ProjectIDEQ.
+func ProjectID(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldEQ(FieldProjectID, v))
+}
+
 // Title applies equality check predicate on the "title" field. It's identical to TitleEQ.
 func Title(v string) predicate.Contract {
 	return predicate.Contract(sql.FieldEQ(FieldTitle, v))
@@ -234,6 +239,56 @@ func RfqIDIsNil() predicate.Contract {
 // RfqIDNotNil applies the NotNil predicate on the "rfq_id" field.
 func RfqIDNotNil() predicate.Contract {
 	return predicate.Contract(sql.FieldNotNull(FieldRfqID))
+}
+
+// ProjectIDEQ applies the EQ predicate on the "project_id" field.
+func ProjectIDEQ(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldEQ(FieldProjectID, v))
+}
+
+// ProjectIDNEQ applies the NEQ predicate on the "project_id" field.
+func ProjectIDNEQ(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldNEQ(FieldProjectID, v))
+}
+
+// ProjectIDIn applies the In predicate on the "project_id" field.
+func ProjectIDIn(vs ...uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldIn(FieldProjectID, vs...))
+}
+
+// ProjectIDNotIn applies the NotIn predicate on the "project_id" field.
+func ProjectIDNotIn(vs ...uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldNotIn(FieldProjectID, vs...))
+}
+
+// ProjectIDGT applies the GT predicate on the "project_id" field.
+func ProjectIDGT(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldGT(FieldProjectID, v))
+}
+
+// ProjectIDGTE applies the GTE predicate on the "project_id" field.
+func ProjectIDGTE(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldGTE(FieldProjectID, v))
+}
+
+// ProjectIDLT applies the LT predicate on the "project_id" field.
+func ProjectIDLT(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldLT(FieldProjectID, v))
+}
+
+// ProjectIDLTE applies the LTE predicate on the "project_id" field.
+func ProjectIDLTE(v uuid.UUID) predicate.Contract {
+	return predicate.Contract(sql.FieldLTE(FieldProjectID, v))
+}
+
+// ProjectIDIsNil applies the IsNil predicate on the "project_id" field.
+func ProjectIDIsNil() predicate.Contract {
+	return predicate.Contract(sql.FieldIsNull(FieldProjectID))
+}
+
+// ProjectIDNotNil applies the NotNil predicate on the "project_id" field.
+func ProjectIDNotNil() predicate.Contract {
+	return predicate.Contract(sql.FieldNotNull(FieldProjectID))
 }
 
 // TitleEQ applies the EQ predicate on the "title" field.

@@ -22,6 +22,8 @@ const (
 	FieldSupplierID = "supplier_id"
 	// FieldRfqID holds the string denoting the rfq_id field in the database.
 	FieldRfqID = "rfq_id"
+	// FieldProjectID holds the string denoting the project_id field in the database.
+	FieldProjectID = "project_id"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
 	// FieldStartDate holds the string denoting the start_date field in the database.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldTenantID,
 	FieldSupplierID,
 	FieldRfqID,
+	FieldProjectID,
 	FieldTitle,
 	FieldStartDate,
 	FieldEndDate,
@@ -141,6 +144,11 @@ func BySupplierID(opts ...sql.OrderTermOption) OrderOption {
 // ByRfqID orders the results by the rfq_id field.
 func ByRfqID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRfqID, opts...).ToFunc()
+}
+
+// ByProjectID orders the results by the project_id field.
+func ByProjectID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProjectID, opts...).ToFunc()
 }
 
 // ByTitle orders the results by the title field.

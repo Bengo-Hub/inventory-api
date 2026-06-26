@@ -19,6 +19,8 @@ import (
 
 type contractPayload struct {
 	SupplierID uuid.UUID  `json:"supplier_id"`
+	RFQID      *uuid.UUID `json:"rfq_id"`
+	ProjectID  *uuid.UUID `json:"project_id"`
 	Title      string     `json:"title"`
 	StartDate  *time.Time `json:"start_date"`
 	EndDate    *time.Time `json:"end_date"`
@@ -27,20 +29,22 @@ type contractPayload struct {
 }
 
 type contractDTO struct {
-	ID         uuid.UUID `json:"id"`
-	SupplierID uuid.UUID `json:"supplier_id"`
-	Title      string    `json:"title"`
-	StartDate  time.Time `json:"start_date"`
-	EndDate    time.Time `json:"end_date"`
-	Value      float64   `json:"value"`
-	Status     string    `json:"status"`
-	Terms      string    `json:"terms"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         uuid.UUID  `json:"id"`
+	SupplierID uuid.UUID  `json:"supplier_id"`
+	RFQID      *uuid.UUID `json:"rfq_id,omitempty"`
+	ProjectID  *uuid.UUID `json:"project_id,omitempty"`
+	Title      string     `json:"title"`
+	StartDate  time.Time  `json:"start_date"`
+	EndDate    time.Time  `json:"end_date"`
+	Value      float64    `json:"value"`
+	Status     string     `json:"status"`
+	Terms      string     `json:"terms"`
+	CreatedAt  time.Time  `json:"created_at"`
 }
 
 func contractToDTO(c *ent.Contract) contractDTO {
 	return contractDTO{
-		ID: c.ID, SupplierID: c.SupplierID, Title: c.Title,
+		ID: c.ID, SupplierID: c.SupplierID, RFQID: c.RfqID, ProjectID: c.ProjectID, Title: c.Title,
 		StartDate: c.StartDate, EndDate: c.EndDate, Value: c.Value,
 		Status: string(c.Status), Terms: c.Terms, CreatedAt: c.CreatedAt,
 	}
@@ -126,7 +130,14 @@ func (h *InventoryExtrasHandler) CreateContract(w http.ResponseWriter, r *http.R
 	}
 	create := h.orm.Contract.Create().
 		SetTenantID(tenantID).SetSupplierID(req.SupplierID).SetTitle(req.Title).
-		SetValue(req.Value).SetTerms(req.Terms)
+		SetValue(req.Value).SetTerms(req.Terms).
+		SetNillableRfqID(req.RFQID).SetNillableProjectID(req.ProjectID)
+	// When awarded from an RFQ, inherit that RFQ's project so the contract stays project-attributed.
+	if req.RFQID != nil && req.ProjectID == nil {
+		if rfq, rerr := h.orm.RFQ.Get(r.Context(), *req.RFQID); rerr == nil && rfq.ProjectID != nil {
+			create = create.SetProjectID(*rfq.ProjectID)
+		}
+	}
 	if req.StartDate != nil {
 		create = create.SetStartDate(*req.StartDate)
 	} else {

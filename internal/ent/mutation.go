@@ -20339,6 +20339,7 @@ type ContractMutation struct {
 	tenant_id          *uuid.UUID
 	supplier_id        *uuid.UUID
 	rfq_id             *uuid.UUID
+	project_id         *uuid.UUID
 	title              *string
 	start_date         *time.Time
 	end_date           *time.Time
@@ -20580,6 +20581,55 @@ func (m *ContractMutation) RfqIDCleared() bool {
 func (m *ContractMutation) ResetRfqID() {
 	m.rfq_id = nil
 	delete(m.clearedFields, contract.FieldRfqID)
+}
+
+// SetProjectID sets the "project_id" field.
+func (m *ContractMutation) SetProjectID(u uuid.UUID) {
+	m.project_id = &u
+}
+
+// ProjectID returns the value of the "project_id" field in the mutation.
+func (m *ContractMutation) ProjectID() (r uuid.UUID, exists bool) {
+	v := m.project_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectID returns the old "project_id" field's value of the Contract entity.
+// If the Contract object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContractMutation) OldProjectID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectID: %w", err)
+	}
+	return oldValue.ProjectID, nil
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (m *ContractMutation) ClearProjectID() {
+	m.project_id = nil
+	m.clearedFields[contract.FieldProjectID] = struct{}{}
+}
+
+// ProjectIDCleared returns if the "project_id" field was cleared in this mutation.
+func (m *ContractMutation) ProjectIDCleared() bool {
+	_, ok := m.clearedFields[contract.FieldProjectID]
+	return ok
+}
+
+// ResetProjectID resets all changes to the "project_id" field.
+func (m *ContractMutation) ResetProjectID() {
+	m.project_id = nil
+	delete(m.clearedFields, contract.FieldProjectID)
 }
 
 // SetTitle sets the "title" field.
@@ -20991,7 +21041,7 @@ func (m *ContractMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContractMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, contract.FieldTenantID)
 	}
@@ -21000,6 +21050,9 @@ func (m *ContractMutation) Fields() []string {
 	}
 	if m.rfq_id != nil {
 		fields = append(fields, contract.FieldRfqID)
+	}
+	if m.project_id != nil {
+		fields = append(fields, contract.FieldProjectID)
 	}
 	if m.title != nil {
 		fields = append(fields, contract.FieldTitle)
@@ -21039,6 +21092,8 @@ func (m *ContractMutation) Field(name string) (ent.Value, bool) {
 		return m.SupplierID()
 	case contract.FieldRfqID:
 		return m.RfqID()
+	case contract.FieldProjectID:
+		return m.ProjectID()
 	case contract.FieldTitle:
 		return m.Title()
 	case contract.FieldStartDate:
@@ -21070,6 +21125,8 @@ func (m *ContractMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldSupplierID(ctx)
 	case contract.FieldRfqID:
 		return m.OldRfqID(ctx)
+	case contract.FieldProjectID:
+		return m.OldProjectID(ctx)
 	case contract.FieldTitle:
 		return m.OldTitle(ctx)
 	case contract.FieldStartDate:
@@ -21115,6 +21172,13 @@ func (m *ContractMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRfqID(v)
+		return nil
+	case contract.FieldProjectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectID(v)
 		return nil
 	case contract.FieldTitle:
 		v, ok := value.(string)
@@ -21220,6 +21284,9 @@ func (m *ContractMutation) ClearedFields() []string {
 	if m.FieldCleared(contract.FieldRfqID) {
 		fields = append(fields, contract.FieldRfqID)
 	}
+	if m.FieldCleared(contract.FieldProjectID) {
+		fields = append(fields, contract.FieldProjectID)
+	}
 	if m.FieldCleared(contract.FieldTerms) {
 		fields = append(fields, contract.FieldTerms)
 	}
@@ -21240,6 +21307,9 @@ func (m *ContractMutation) ClearField(name string) error {
 	case contract.FieldRfqID:
 		m.ClearRfqID()
 		return nil
+	case contract.FieldProjectID:
+		m.ClearProjectID()
+		return nil
 	case contract.FieldTerms:
 		m.ClearTerms()
 		return nil
@@ -21259,6 +21329,9 @@ func (m *ContractMutation) ResetField(name string) error {
 		return nil
 	case contract.FieldRfqID:
 		m.ResetRfqID()
+		return nil
+	case contract.FieldProjectID:
+		m.ResetProjectID()
 		return nil
 	case contract.FieldTitle:
 		m.ResetTitle()
