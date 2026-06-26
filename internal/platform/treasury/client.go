@@ -7,7 +7,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -111,6 +113,47 @@ func (c *Client) fetchTaxCodes(ctx context.Context, tenantID uuid.UUID) ([]TaxCo
 		return nil, fmt.Errorf("treasury: decode tax codes: %w", err)
 	}
 	return out.TaxCodes, nil
+}
+
+// ListBanks proxies the treasury S2S Paystack bank list for a country (raw JSON passthrough).
+func (c *Client) ListBanks(ctx context.Context, tenantID uuid.UUID, country string) (json.RawMessage, error) {
+	if !c.Enabled() {
+		return nil, fmt.Errorf("treasury client not configured")
+	}
+	if country == "" {
+		country = "kenya"
+	}
+	url := fmt.Sprintf("%s/api/v1/s2s/%s/gateways/banks/%s", c.baseURL, tenantID.String(), country)
+	return c.getRaw(ctx, url)
+}
+
+// ResolveAccount proxies the treasury S2S Paystack account name-enquiry (raw JSON passthrough).
+func (c *Client) ResolveAccount(ctx context.Context, tenantID uuid.UUID, accountNumber, bankCode string) (json.RawMessage, error) {
+	if !c.Enabled() {
+		return nil, fmt.Errorf("treasury client not configured")
+	}
+	url := fmt.Sprintf("%s/api/v1/s2s/%s/gateways/resolve-account?account_number=%s&bank_code=%s",
+		c.baseURL, tenantID.String(), url.QueryEscape(accountNumber), url.QueryEscape(bankCode))
+	return c.getRaw(ctx, url)
+}
+
+// getRaw performs an S2S GET and returns the raw response body (status-checked).
+func (c *Client) getRaw(ctx context.Context, url string) (json.RawMessage, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-API-Key", c.apiKey)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("treasury: %s status %d: %s", url, resp.StatusCode, string(body))
+	}
+	return json.RawMessage(body), nil
 }
 
 // VATActive reports whether the tenant should charge VAT (treasury tax profile). Defaults

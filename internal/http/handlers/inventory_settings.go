@@ -20,21 +20,21 @@ import (
 // unit defaults saved. Values are in the natural unit (e.g. g for GRAM, ml for ML).
 func DefaultUnitReorderLevels() map[string]int {
 	return map[string]int{
-		"pc":   10,   // PIECE
-		"cup":  10,   // CUP
-		"srv":  20,   // SERVING
-		"bowl": 5,    // BOWL
+		"pc":    10,  // PIECE
+		"cup":   10,  // CUP
+		"srv":   20,  // SERVING
+		"bowl":  5,   // BOWL
 		"plate": 5,   // PLATE
 		"slice": 10,  // SLICE
-		"kg":   5,    // KG
-		"g":    500,  // GRAM
-		"L":    5,    // LITRE
-		"ml":   500,  // ML
-		"box":  3,    // BOX
-		"btl":  5,    // BOTTLE
-		"shot": 50,   // SHOT
-		"pack": 5,    // PACK
-		"bag":  5,    // BAG
+		"kg":    5,   // KG
+		"g":     500, // GRAM
+		"L":     5,   // LITRE
+		"ml":    500, // ML
+		"box":   3,   // BOX
+		"btl":   5,   // BOTTLE
+		"shot":  50,  // SHOT
+		"pack":  5,   // PACK
+		"bag":   5,   // BAG
 	}
 }
 
@@ -63,26 +63,26 @@ func (h *InventorySettingsHandler) SetRBACService(svc *rbac.Service) {
 type inventorySettingsResponse struct {
 	TenantID string `json:"tenant_id"`
 	// Stock thresholds
-	LowStockThresholdPct      float64            `json:"low_stock_threshold_pct"`
-	CriticalStockThresholdPct float64            `json:"critical_stock_threshold_pct"`
-	DefaultReorderLevel       int                `json:"default_reorder_level"`
-	UnitReorderDefaults       map[string]int     `json:"unit_reorder_defaults"`
-	ExpiryWarningDays         int                `json:"expiry_warning_days"`
+	LowStockThresholdPct      float64        `json:"low_stock_threshold_pct"`
+	CriticalStockThresholdPct float64        `json:"critical_stock_threshold_pct"`
+	DefaultReorderLevel       int            `json:"default_reorder_level"`
+	UnitReorderDefaults       map[string]int `json:"unit_reorder_defaults"`
+	ExpiryWarningDays         int            `json:"expiry_warning_days"`
 	// Notifications
 	EnableLowStockNotifications bool    `json:"enable_low_stock_notifications"`
 	EnableExpiryNotifications   bool    `json:"enable_expiry_notifications"`
 	NotificationEmail           *string `json:"notification_email"`
 	DefaultWarehouseID          *string `json:"default_warehouse_id"`
 	// Tracking
-	EnableLotTracking              bool `json:"enable_lot_tracking"`
-	EnableExpiryTracking           bool `json:"enable_expiry_tracking"`
-	PurchaseOrderApprovalRequired  bool `json:"purchase_order_approval_required"`
-	AutoAdjustOnTransfer           bool `json:"auto_adjust_on_transfer"`
+	EnableLotTracking             bool `json:"enable_lot_tracking"`
+	EnableExpiryTracking          bool `json:"enable_expiry_tracking"`
+	PurchaseOrderApprovalRequired bool `json:"purchase_order_approval_required"`
+	AutoAdjustOnTransfer          bool `json:"auto_adjust_on_transfer"`
 	// Modules
-	LotsModuleEnabled          bool `json:"lots_module_enabled"`
-	RecipesModuleEnabled       bool `json:"recipes_module_enabled"`
-	PurchaseOrdersEnabled      bool `json:"purchase_orders_enabled"`
-	SupplierManagementEnabled  bool `json:"supplier_management_enabled"`
+	LotsModuleEnabled         bool `json:"lots_module_enabled"`
+	RecipesModuleEnabled      bool `json:"recipes_module_enabled"`
+	PurchaseOrdersEnabled     bool `json:"purchase_orders_enabled"`
+	SupplierManagementEnabled bool `json:"supplier_management_enabled"`
 	// Hospitality modules
 	EnableRoomPricing        bool `json:"enable_room_pricing"`
 	EnableFacilityBooking    bool `json:"enable_facility_booking"`
@@ -163,26 +163,26 @@ func (h *InventorySettingsHandler) GetSettings(w http.ResponseWriter, r *http.Re
 }
 
 type updateInventorySettingsInput struct {
-	LowStockThresholdPct          *float64        `json:"low_stock_threshold_pct"`
-	CriticalStockThresholdPct     *float64        `json:"critical_stock_threshold_pct"`
-	DefaultReorderLevel           *int            `json:"default_reorder_level"`
-	UnitReorderDefaults           map[string]int  `json:"unit_reorder_defaults"`
-	ExpiryWarningDays             *int            `json:"expiry_warning_days"`
-	EnableLowStockNotifications   *bool           `json:"enable_low_stock_notifications"`
-	EnableExpiryNotifications     *bool           `json:"enable_expiry_notifications"`
-	NotificationEmail             *string         `json:"notification_email"`
-	DefaultWarehouseID            *string         `json:"default_warehouse_id"`
-	EnableLotTracking             *bool           `json:"enable_lot_tracking"`
-	EnableExpiryTracking          *bool           `json:"enable_expiry_tracking"`
-	PurchaseOrderApprovalRequired *bool           `json:"purchase_order_approval_required"`
-	AutoAdjustOnTransfer          *bool           `json:"auto_adjust_on_transfer"`
-	EnableRoomPricing             *bool           `json:"enable_room_pricing"`
-	EnableFacilityBooking         *bool           `json:"enable_facility_booking"`
-	EnableConferencePackages      *bool           `json:"enable_conference_packages"`
-	DefaultTargetMarginPercent    *float64        `json:"default_target_margin_percent"`
-	PricesInclusiveOfTax          *bool           `json:"prices_inclusive_of_tax"`
-	DefaultTaxCode                *string         `json:"default_tax_code"`
-		CostingMethod                 *string         `json:"costing_method"`
+	LowStockThresholdPct          *float64       `json:"low_stock_threshold_pct"`
+	CriticalStockThresholdPct     *float64       `json:"critical_stock_threshold_pct"`
+	DefaultReorderLevel           *int           `json:"default_reorder_level"`
+	UnitReorderDefaults           map[string]int `json:"unit_reorder_defaults"`
+	ExpiryWarningDays             *int           `json:"expiry_warning_days"`
+	EnableLowStockNotifications   *bool          `json:"enable_low_stock_notifications"`
+	EnableExpiryNotifications     *bool          `json:"enable_expiry_notifications"`
+	NotificationEmail             *string        `json:"notification_email"`
+	DefaultWarehouseID            *string        `json:"default_warehouse_id"`
+	EnableLotTracking             *bool          `json:"enable_lot_tracking"`
+	EnableExpiryTracking          *bool          `json:"enable_expiry_tracking"`
+	PurchaseOrderApprovalRequired *bool          `json:"purchase_order_approval_required"`
+	AutoAdjustOnTransfer          *bool          `json:"auto_adjust_on_transfer"`
+	EnableRoomPricing             *bool          `json:"enable_room_pricing"`
+	EnableFacilityBooking         *bool          `json:"enable_facility_booking"`
+	EnableConferencePackages      *bool          `json:"enable_conference_packages"`
+	DefaultTargetMarginPercent    *float64       `json:"default_target_margin_percent"`
+	PricesInclusiveOfTax          *bool          `json:"prices_inclusive_of_tax"`
+	DefaultTaxCode                *string        `json:"default_tax_code"`
+	CostingMethod                 *string        `json:"costing_method"`
 }
 
 // PutSettings handles PUT /{tenant}/inventory/settings
@@ -387,5 +387,48 @@ func (h *InventorySettingsHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermSettingsChange)).Patch("/inventory/settings/modules", h.PatchModules)
 	// Tax codes for the settings + item tax-code pickers (read-only mirror of treasury-api).
 	r.Get("/inventory/taxes", h.ListTaxes)
+	// Bank list + account verification (proxied to treasury S2S Paystack) so supplier bank
+	// details are verified before saving — one source of truth across services.
+	r.Get("/inventory/banks/{country}", h.ListBanks)
+	r.Get("/inventory/banks/resolve", h.ResolveBankAccount)
 }
 
+// ListBanks proxies the Paystack bank list for a country via treasury S2S.
+func (h *InventorySettingsHandler) ListBanks(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.treasury == nil {
+		writeError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "bank verification not configured")
+		return
+	}
+	raw, err := h.treasury.ListBanks(r.Context(), tenantID, chi.URLParam(r, "country"))
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "BANKS_FAILED", "failed to load banks")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(raw)
+}
+
+// ResolveBankAccount proxies Paystack account name-enquiry via treasury S2S.
+func (h *InventorySettingsHandler) ResolveBankAccount(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.treasury == nil {
+		writeError(w, http.StatusServiceUnavailable, "UNAVAILABLE", "bank verification not configured")
+		return
+	}
+	raw, err := h.treasury.ResolveAccount(r.Context(), tenantID, r.URL.Query().Get("account_number"), r.URL.Query().Get("bank_code"))
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "RESOLVE_FAILED", "failed to verify account")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(raw)
+}
