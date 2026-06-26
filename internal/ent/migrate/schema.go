@@ -691,6 +691,7 @@ var (
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "supplier_id", Type: field.TypeUUID},
 		{Name: "rfq_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "project_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "title", Type: field.TypeString},
 		{Name: "start_date", Type: field.TypeTime},
 		{Name: "end_date", Type: field.TypeTime},
@@ -714,7 +715,7 @@ var (
 			{
 				Name:    "contract_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[8]},
+				Columns: []*schema.Column{ContractsColumns[1], ContractsColumns[9]},
 			},
 		},
 	}

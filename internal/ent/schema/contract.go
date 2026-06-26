@@ -19,6 +19,9 @@ func (Contract) Fields() []ent.Field {
 		field.UUID("tenant_id", uuid.UUID{}),
 		field.UUID("supplier_id", uuid.UUID{}).Comment("FK to Supplier"),
 		field.UUID("rfq_id", uuid.UUID{}).Optional().Nillable().Comment("Source RFQ this contract was awarded from"),
+		// project_id flows from the source RFQ so an awarded supplier contract stays attributed to
+		// the project (completes the Requisition → RFQ → contract project link).
+		field.UUID("project_id", uuid.UUID{}).Optional().Nillable().Comment("projects-service project id (from the source RFQ)"),
 		field.String("title").NotEmpty(),
 		field.Time("start_date"),
 		field.Time("end_date"),

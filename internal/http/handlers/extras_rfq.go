@@ -69,6 +69,7 @@ type rfqDTO struct {
 	Title         string                `json:"title"`
 	Status        string                `json:"status"`
 	RequisitionID *uuid.UUID            `json:"requisition_id,omitempty"`
+	ProjectID     *uuid.UUID            `json:"project_id,omitempty"`
 	WarehouseID   *uuid.UUID            `json:"warehouse_id,omitempty"`
 	Notes         string                `json:"notes,omitempty"`
 	DueDate       *time.Time            `json:"due_date,omitempty"`
@@ -117,7 +118,7 @@ func (h *InventoryExtrasHandler) itemName(ctx context.Context, tenantID, id uuid
 func (h *InventoryExtrasHandler) rfqToDTO(ctx context.Context, tenantID uuid.UUID, r *ent.RFQ, withChildren bool) rfqDTO {
 	dto := rfqDTO{
 		ID: r.ID, RFQNumber: r.RfqNumber, Title: r.Title, Status: string(r.Status),
-		RequisitionID: r.RequisitionID, WarehouseID: r.WarehouseID, Notes: r.Notes,
+		RequisitionID: r.RequisitionID, ProjectID: r.ProjectID, WarehouseID: r.WarehouseID, Notes: r.Notes,
 		DueDate: r.DueDate, CreatedAt: r.CreatedAt,
 	}
 	if !withChildren {

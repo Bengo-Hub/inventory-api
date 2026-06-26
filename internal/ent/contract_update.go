@@ -78,6 +78,26 @@ func (_u *ContractUpdate) ClearRfqID() *ContractUpdate {
 	return _u
 }
 
+// SetProjectID sets the "project_id" field.
+func (_u *ContractUpdate) SetProjectID(v uuid.UUID) *ContractUpdate {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *ContractUpdate) SetNillableProjectID(v *uuid.UUID) *ContractUpdate {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *ContractUpdate) ClearProjectID() *ContractUpdate {
+	_u.mutation.ClearProjectID()
+	return _u
+}
+
 // SetTitle sets the "title" field.
 func (_u *ContractUpdate) SetTitle(v string) *ContractUpdate {
 	_u.mutation.SetTitle(v)
@@ -297,6 +317,12 @@ func (_u *ContractUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.RfqIDCleared() {
 		_spec.ClearField(contract.FieldRfqID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(contract.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(contract.FieldProjectID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(contract.FieldTitle, field.TypeString, value)
 	}
@@ -434,6 +460,26 @@ func (_u *ContractUpdateOne) SetNillableRfqID(v *uuid.UUID) *ContractUpdateOne {
 // ClearRfqID clears the value of the "rfq_id" field.
 func (_u *ContractUpdateOne) ClearRfqID() *ContractUpdateOne {
 	_u.mutation.ClearRfqID()
+	return _u
+}
+
+// SetProjectID sets the "project_id" field.
+func (_u *ContractUpdateOne) SetProjectID(v uuid.UUID) *ContractUpdateOne {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *ContractUpdateOne) SetNillableProjectID(v *uuid.UUID) *ContractUpdateOne {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *ContractUpdateOne) ClearProjectID() *ContractUpdateOne {
+	_u.mutation.ClearProjectID()
 	return _u
 }
 
@@ -685,6 +731,12 @@ func (_u *ContractUpdateOne) sqlSave(ctx context.Context) (_node *Contract, err 
 	}
 	if _u.mutation.RfqIDCleared() {
 		_spec.ClearField(contract.FieldRfqID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(contract.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(contract.FieldProjectID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Title(); ok {
 		_spec.SetField(contract.FieldTitle, field.TypeString, value)

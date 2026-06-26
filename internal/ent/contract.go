@@ -24,6 +24,8 @@ type Contract struct {
 	SupplierID uuid.UUID `json:"supplier_id,omitempty"`
 	// Source RFQ this contract was awarded from
 	RfqID *uuid.UUID `json:"rfq_id,omitempty"`
+	// projects-service project id (from the source RFQ)
+	ProjectID *uuid.UUID `json:"project_id,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
 	// StartDate holds the value of the "start_date" field.
@@ -69,7 +71,7 @@ func (*Contract) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case contract.FieldRfqID:
+		case contract.FieldRfqID, contract.FieldProjectID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case contract.FieldValue:
 			values[i] = new(sql.NullFloat64)
@@ -118,6 +120,13 @@ func (_m *Contract) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RfqID = new(uuid.UUID)
 				*_m.RfqID = *value.S.(*uuid.UUID)
+			}
+		case contract.FieldProjectID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field project_id", values[i])
+			} else if value.Valid {
+				_m.ProjectID = new(uuid.UUID)
+				*_m.ProjectID = *value.S.(*uuid.UUID)
 			}
 		case contract.FieldTitle:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -216,6 +225,11 @@ func (_m *Contract) String() string {
 	builder.WriteString(", ")
 	if v := _m.RfqID; v != nil {
 		builder.WriteString("rfq_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProjectID; v != nil {
+		builder.WriteString("project_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
