@@ -47,6 +47,12 @@ func (PurchaseOrder) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Source requisition this PO was converted from (traceability)"),
+		// project_id flows from the source requisition so the received cost is attributed to the
+		// project in treasury (carried on the purchase_order.received event).
+		field.UUID("project_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("projects-service project id (inherited from the source requisition)"),
 		field.UUID("rfq_id", uuid.UUID{}).
 			Optional().
 			Nillable().

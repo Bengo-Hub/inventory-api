@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -21,6 +23,7 @@ type InventoryLotCreate struct {
 	config
 	mutation *InventoryLotMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -313,6 +316,7 @@ func (_c *InventoryLotCreate) createSpec() (*InventoryLot, *sqlgraph.CreateSpec)
 		_node = &InventoryLot{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(inventorylot.Table, sqlgraph.NewFieldSpec(inventorylot.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -394,11 +398,514 @@ func (_c *InventoryLotCreate) createSpec() (*InventoryLot, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventoryLot.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventoryLotUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventoryLotCreate) OnConflict(opts ...sql.ConflictOption) *InventoryLotUpsertOne {
+	_c.conflict = opts
+	return &InventoryLotUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventoryLotCreate) OnConflictColumns(columns ...string) *InventoryLotUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventoryLotUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// InventoryLotUpsertOne is the builder for "upsert"-ing
+	//  one InventoryLot node.
+	InventoryLotUpsertOne struct {
+		create *InventoryLotCreate
+	}
+
+	// InventoryLotUpsert is the "OnConflict" setter.
+	InventoryLotUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventoryLotUpsert) SetTenantID(v uuid.UUID) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateTenantID() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldTenantID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventoryLotUpsert) SetItemID(v uuid.UUID) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateItemID() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldItemID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventoryLotUpsert) SetWarehouseID(v uuid.UUID) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateWarehouseID() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldWarehouseID)
+	return u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *InventoryLotUpsert) SetLotNumber(v string) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldLotNumber, v)
+	return u
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateLotNumber() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldLotNumber)
+	return u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *InventoryLotUpsert) SetExpiryDate(v time.Time) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldExpiryDate, v)
+	return u
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateExpiryDate() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldExpiryDate)
+	return u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *InventoryLotUpsert) ClearExpiryDate() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldExpiryDate)
+	return u
+}
+
+// SetManufacturedDate sets the "manufactured_date" field.
+func (u *InventoryLotUpsert) SetManufacturedDate(v time.Time) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldManufacturedDate, v)
+	return u
+}
+
+// UpdateManufacturedDate sets the "manufactured_date" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateManufacturedDate() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldManufacturedDate)
+	return u
+}
+
+// ClearManufacturedDate clears the value of the "manufactured_date" field.
+func (u *InventoryLotUpsert) ClearManufacturedDate() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldManufacturedDate)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *InventoryLotUpsert) SetQuantity(v float64) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateQuantity() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *InventoryLotUpsert) AddQuantity(v float64) *InventoryLotUpsert {
+	u.Add(inventorylot.FieldQuantity, v)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *InventoryLotUpsert) SetStatus(v inventorylot.Status) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateStatus() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldStatus)
+	return u
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *InventoryLotUpsert) SetCostPrice(v float64) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldCostPrice, v)
+	return u
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateCostPrice() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldCostPrice)
+	return u
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *InventoryLotUpsert) AddCostPrice(v float64) *InventoryLotUpsert {
+	u.Add(inventorylot.FieldCostPrice, v)
+	return u
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *InventoryLotUpsert) ClearCostPrice() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldCostPrice)
+	return u
+}
+
+// SetSupplierReference sets the "supplier_reference" field.
+func (u *InventoryLotUpsert) SetSupplierReference(v string) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldSupplierReference, v)
+	return u
+}
+
+// UpdateSupplierReference sets the "supplier_reference" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateSupplierReference() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldSupplierReference)
+	return u
+}
+
+// ClearSupplierReference clears the value of the "supplier_reference" field.
+func (u *InventoryLotUpsert) ClearSupplierReference() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldSupplierReference)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventoryLotUpsert) SetUpdatedAt(v time.Time) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateUpdatedAt() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventorylot.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventoryLotUpsertOne) UpdateNewValues() *InventoryLotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(inventorylot.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(inventorylot.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *InventoryLotUpsertOne) Ignore() *InventoryLotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventoryLotUpsertOne) DoNothing() *InventoryLotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventoryLotCreate.OnConflict
+// documentation for more info.
+func (u *InventoryLotUpsertOne) Update(set func(*InventoryLotUpsert)) *InventoryLotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventoryLotUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventoryLotUpsertOne) SetTenantID(v uuid.UUID) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateTenantID() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventoryLotUpsertOne) SetItemID(v uuid.UUID) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateItemID() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventoryLotUpsertOne) SetWarehouseID(v uuid.UUID) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateWarehouseID() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *InventoryLotUpsertOne) SetLotNumber(v string) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateLotNumber() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *InventoryLotUpsertOne) SetExpiryDate(v time.Time) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateExpiryDate() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *InventoryLotUpsertOne) ClearExpiryDate() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearExpiryDate()
+	})
+}
+
+// SetManufacturedDate sets the "manufactured_date" field.
+func (u *InventoryLotUpsertOne) SetManufacturedDate(v time.Time) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetManufacturedDate(v)
+	})
+}
+
+// UpdateManufacturedDate sets the "manufactured_date" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateManufacturedDate() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateManufacturedDate()
+	})
+}
+
+// ClearManufacturedDate clears the value of the "manufactured_date" field.
+func (u *InventoryLotUpsertOne) ClearManufacturedDate() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearManufacturedDate()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *InventoryLotUpsertOne) SetQuantity(v float64) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *InventoryLotUpsertOne) AddQuantity(v float64) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateQuantity() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *InventoryLotUpsertOne) SetStatus(v inventorylot.Status) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateStatus() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *InventoryLotUpsertOne) SetCostPrice(v float64) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *InventoryLotUpsertOne) AddCostPrice(v float64) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateCostPrice() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *InventoryLotUpsertOne) ClearCostPrice() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetSupplierReference sets the "supplier_reference" field.
+func (u *InventoryLotUpsertOne) SetSupplierReference(v string) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetSupplierReference(v)
+	})
+}
+
+// UpdateSupplierReference sets the "supplier_reference" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateSupplierReference() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateSupplierReference()
+	})
+}
+
+// ClearSupplierReference clears the value of the "supplier_reference" field.
+func (u *InventoryLotUpsertOne) ClearSupplierReference() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearSupplierReference()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventoryLotUpsertOne) SetUpdatedAt(v time.Time) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateUpdatedAt() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *InventoryLotUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventoryLotCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventoryLotUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *InventoryLotUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: InventoryLotUpsertOne.ID is not supported by MySQL driver. Use InventoryLotUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *InventoryLotUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // InventoryLotCreateBulk is the builder for creating many InventoryLot entities in bulk.
 type InventoryLotCreateBulk struct {
 	config
 	err      error
 	builders []*InventoryLotCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the InventoryLot entities in the database.
@@ -428,6 +935,7 @@ func (_c *InventoryLotCreateBulk) Save(ctx context.Context) ([]*InventoryLot, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -474,6 +982,319 @@ func (_c *InventoryLotCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *InventoryLotCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventoryLot.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventoryLotUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventoryLotCreateBulk) OnConflict(opts ...sql.ConflictOption) *InventoryLotUpsertBulk {
+	_c.conflict = opts
+	return &InventoryLotUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventoryLotCreateBulk) OnConflictColumns(columns ...string) *InventoryLotUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventoryLotUpsertBulk{
+		create: _c,
+	}
+}
+
+// InventoryLotUpsertBulk is the builder for "upsert"-ing
+// a bulk of InventoryLot nodes.
+type InventoryLotUpsertBulk struct {
+	create *InventoryLotCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventorylot.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventoryLotUpsertBulk) UpdateNewValues() *InventoryLotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(inventorylot.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(inventorylot.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventoryLot.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *InventoryLotUpsertBulk) Ignore() *InventoryLotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventoryLotUpsertBulk) DoNothing() *InventoryLotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventoryLotCreateBulk.OnConflict
+// documentation for more info.
+func (u *InventoryLotUpsertBulk) Update(set func(*InventoryLotUpsert)) *InventoryLotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventoryLotUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventoryLotUpsertBulk) SetTenantID(v uuid.UUID) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateTenantID() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventoryLotUpsertBulk) SetItemID(v uuid.UUID) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateItemID() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventoryLotUpsertBulk) SetWarehouseID(v uuid.UUID) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateWarehouseID() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *InventoryLotUpsertBulk) SetLotNumber(v string) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateLotNumber() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *InventoryLotUpsertBulk) SetExpiryDate(v time.Time) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateExpiryDate() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *InventoryLotUpsertBulk) ClearExpiryDate() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearExpiryDate()
+	})
+}
+
+// SetManufacturedDate sets the "manufactured_date" field.
+func (u *InventoryLotUpsertBulk) SetManufacturedDate(v time.Time) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetManufacturedDate(v)
+	})
+}
+
+// UpdateManufacturedDate sets the "manufactured_date" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateManufacturedDate() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateManufacturedDate()
+	})
+}
+
+// ClearManufacturedDate clears the value of the "manufactured_date" field.
+func (u *InventoryLotUpsertBulk) ClearManufacturedDate() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearManufacturedDate()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *InventoryLotUpsertBulk) SetQuantity(v float64) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *InventoryLotUpsertBulk) AddQuantity(v float64) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateQuantity() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *InventoryLotUpsertBulk) SetStatus(v inventorylot.Status) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateStatus() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCostPrice sets the "cost_price" field.
+func (u *InventoryLotUpsertBulk) SetCostPrice(v float64) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetCostPrice(v)
+	})
+}
+
+// AddCostPrice adds v to the "cost_price" field.
+func (u *InventoryLotUpsertBulk) AddCostPrice(v float64) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.AddCostPrice(v)
+	})
+}
+
+// UpdateCostPrice sets the "cost_price" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateCostPrice() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateCostPrice()
+	})
+}
+
+// ClearCostPrice clears the value of the "cost_price" field.
+func (u *InventoryLotUpsertBulk) ClearCostPrice() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearCostPrice()
+	})
+}
+
+// SetSupplierReference sets the "supplier_reference" field.
+func (u *InventoryLotUpsertBulk) SetSupplierReference(v string) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetSupplierReference(v)
+	})
+}
+
+// UpdateSupplierReference sets the "supplier_reference" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateSupplierReference() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateSupplierReference()
+	})
+}
+
+// ClearSupplierReference clears the value of the "supplier_reference" field.
+func (u *InventoryLotUpsertBulk) ClearSupplierReference() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearSupplierReference()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventoryLotUpsertBulk) SetUpdatedAt(v time.Time) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateUpdatedAt() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *InventoryLotUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the InventoryLotCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventoryLotCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventoryLotUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

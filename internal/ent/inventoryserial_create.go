@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
@@ -19,6 +21,7 @@ type InventorySerialCreate struct {
 	config
 	mutation *InventorySerialMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -300,6 +303,7 @@ func (_c *InventorySerialCreate) createSpec() (*InventorySerial, *sqlgraph.Creat
 		_node = &InventorySerial{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(inventoryserial.Table, sqlgraph.NewFieldSpec(inventoryserial.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -355,11 +359,501 @@ func (_c *InventorySerialCreate) createSpec() (*InventorySerial, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventorySerial.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventorySerialUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventorySerialCreate) OnConflict(opts ...sql.ConflictOption) *InventorySerialUpsertOne {
+	_c.conflict = opts
+	return &InventorySerialUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventorySerialCreate) OnConflictColumns(columns ...string) *InventorySerialUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventorySerialUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// InventorySerialUpsertOne is the builder for "upsert"-ing
+	//  one InventorySerial node.
+	InventorySerialUpsertOne struct {
+		create *InventorySerialCreate
+	}
+
+	// InventorySerialUpsert is the "OnConflict" setter.
+	InventorySerialUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventorySerialUpsert) SetTenantID(v uuid.UUID) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateTenantID() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldTenantID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventorySerialUpsert) SetItemID(v uuid.UUID) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateItemID() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldItemID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventorySerialUpsert) SetWarehouseID(v uuid.UUID) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateWarehouseID() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *InventorySerialUpsert) ClearWarehouseID() *InventorySerialUpsert {
+	u.SetNull(inventoryserial.FieldWarehouseID)
+	return u
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *InventorySerialUpsert) SetSerialNumber(v string) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldSerialNumber, v)
+	return u
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateSerialNumber() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldSerialNumber)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *InventorySerialUpsert) SetStatus(v inventoryserial.Status) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateStatus() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldStatus)
+	return u
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventorySerialUpsert) SetReceivedAt(v time.Time) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldReceivedAt, v)
+	return u
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateReceivedAt() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldReceivedAt)
+	return u
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsert) SetGoodsReceiptLineID(v uuid.UUID) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldGoodsReceiptLineID, v)
+	return u
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateGoodsReceiptLineID() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldGoodsReceiptLineID)
+	return u
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsert) ClearGoodsReceiptLineID() *InventorySerialUpsert {
+	u.SetNull(inventoryserial.FieldGoodsReceiptLineID)
+	return u
+}
+
+// SetSoldAt sets the "sold_at" field.
+func (u *InventorySerialUpsert) SetSoldAt(v time.Time) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldSoldAt, v)
+	return u
+}
+
+// UpdateSoldAt sets the "sold_at" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateSoldAt() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldSoldAt)
+	return u
+}
+
+// ClearSoldAt clears the value of the "sold_at" field.
+func (u *InventorySerialUpsert) ClearSoldAt() *InventorySerialUpsert {
+	u.SetNull(inventoryserial.FieldSoldAt)
+	return u
+}
+
+// SetPosOrderLineID sets the "pos_order_line_id" field.
+func (u *InventorySerialUpsert) SetPosOrderLineID(v string) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldPosOrderLineID, v)
+	return u
+}
+
+// UpdatePosOrderLineID sets the "pos_order_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdatePosOrderLineID() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldPosOrderLineID)
+	return u
+}
+
+// ClearPosOrderLineID clears the value of the "pos_order_line_id" field.
+func (u *InventorySerialUpsert) ClearPosOrderLineID() *InventorySerialUpsert {
+	u.SetNull(inventoryserial.FieldPosOrderLineID)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *InventorySerialUpsert) SetNotes(v string) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateNotes() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *InventorySerialUpsert) ClearNotes() *InventorySerialUpsert {
+	u.SetNull(inventoryserial.FieldNotes)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventorySerialUpsert) SetUpdatedAt(v time.Time) *InventorySerialUpsert {
+	u.Set(inventoryserial.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventorySerialUpsert) UpdateUpdatedAt() *InventorySerialUpsert {
+	u.SetExcluded(inventoryserial.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventoryserial.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventorySerialUpsertOne) UpdateNewValues() *InventorySerialUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(inventoryserial.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(inventoryserial.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *InventorySerialUpsertOne) Ignore() *InventorySerialUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventorySerialUpsertOne) DoNothing() *InventorySerialUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventorySerialCreate.OnConflict
+// documentation for more info.
+func (u *InventorySerialUpsertOne) Update(set func(*InventorySerialUpsert)) *InventorySerialUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventorySerialUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventorySerialUpsertOne) SetTenantID(v uuid.UUID) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateTenantID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventorySerialUpsertOne) SetItemID(v uuid.UUID) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateItemID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventorySerialUpsertOne) SetWarehouseID(v uuid.UUID) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateWarehouseID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *InventorySerialUpsertOne) ClearWarehouseID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *InventorySerialUpsertOne) SetSerialNumber(v string) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetSerialNumber(v)
+	})
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateSerialNumber() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateSerialNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *InventorySerialUpsertOne) SetStatus(v inventoryserial.Status) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateStatus() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventorySerialUpsertOne) SetReceivedAt(v time.Time) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetReceivedAt(v)
+	})
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateReceivedAt() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateReceivedAt()
+	})
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsertOne) SetGoodsReceiptLineID(v uuid.UUID) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetGoodsReceiptLineID(v)
+	})
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateGoodsReceiptLineID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateGoodsReceiptLineID()
+	})
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsertOne) ClearGoodsReceiptLineID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearGoodsReceiptLineID()
+	})
+}
+
+// SetSoldAt sets the "sold_at" field.
+func (u *InventorySerialUpsertOne) SetSoldAt(v time.Time) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetSoldAt(v)
+	})
+}
+
+// UpdateSoldAt sets the "sold_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateSoldAt() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateSoldAt()
+	})
+}
+
+// ClearSoldAt clears the value of the "sold_at" field.
+func (u *InventorySerialUpsertOne) ClearSoldAt() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearSoldAt()
+	})
+}
+
+// SetPosOrderLineID sets the "pos_order_line_id" field.
+func (u *InventorySerialUpsertOne) SetPosOrderLineID(v string) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetPosOrderLineID(v)
+	})
+}
+
+// UpdatePosOrderLineID sets the "pos_order_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdatePosOrderLineID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdatePosOrderLineID()
+	})
+}
+
+// ClearPosOrderLineID clears the value of the "pos_order_line_id" field.
+func (u *InventorySerialUpsertOne) ClearPosOrderLineID() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearPosOrderLineID()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *InventorySerialUpsertOne) SetNotes(v string) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateNotes() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *InventorySerialUpsertOne) ClearNotes() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventorySerialUpsertOne) SetUpdatedAt(v time.Time) *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertOne) UpdateUpdatedAt() *InventorySerialUpsertOne {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *InventorySerialUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventorySerialCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventorySerialUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *InventorySerialUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: InventorySerialUpsertOne.ID is not supported by MySQL driver. Use InventorySerialUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *InventorySerialUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // InventorySerialCreateBulk is the builder for creating many InventorySerial entities in bulk.
 type InventorySerialCreateBulk struct {
 	config
 	err      error
 	builders []*InventorySerialCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the InventorySerial entities in the database.
@@ -389,6 +883,7 @@ func (_c *InventorySerialCreateBulk) Save(ctx context.Context) ([]*InventorySeri
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -435,6 +930,312 @@ func (_c *InventorySerialCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *InventorySerialCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventorySerial.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventorySerialUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventorySerialCreateBulk) OnConflict(opts ...sql.ConflictOption) *InventorySerialUpsertBulk {
+	_c.conflict = opts
+	return &InventorySerialUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventorySerialCreateBulk) OnConflictColumns(columns ...string) *InventorySerialUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventorySerialUpsertBulk{
+		create: _c,
+	}
+}
+
+// InventorySerialUpsertBulk is the builder for "upsert"-ing
+// a bulk of InventorySerial nodes.
+type InventorySerialUpsertBulk struct {
+	create *InventorySerialCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventoryserial.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventorySerialUpsertBulk) UpdateNewValues() *InventorySerialUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(inventoryserial.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(inventoryserial.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventorySerial.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *InventorySerialUpsertBulk) Ignore() *InventorySerialUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventorySerialUpsertBulk) DoNothing() *InventorySerialUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventorySerialCreateBulk.OnConflict
+// documentation for more info.
+func (u *InventorySerialUpsertBulk) Update(set func(*InventorySerialUpsert)) *InventorySerialUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventorySerialUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *InventorySerialUpsertBulk) SetTenantID(v uuid.UUID) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateTenantID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *InventorySerialUpsertBulk) SetItemID(v uuid.UUID) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateItemID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *InventorySerialUpsertBulk) SetWarehouseID(v uuid.UUID) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateWarehouseID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *InventorySerialUpsertBulk) ClearWarehouseID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetSerialNumber sets the "serial_number" field.
+func (u *InventorySerialUpsertBulk) SetSerialNumber(v string) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetSerialNumber(v)
+	})
+}
+
+// UpdateSerialNumber sets the "serial_number" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateSerialNumber() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateSerialNumber()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *InventorySerialUpsertBulk) SetStatus(v inventoryserial.Status) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateStatus() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventorySerialUpsertBulk) SetReceivedAt(v time.Time) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetReceivedAt(v)
+	})
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateReceivedAt() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateReceivedAt()
+	})
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsertBulk) SetGoodsReceiptLineID(v uuid.UUID) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetGoodsReceiptLineID(v)
+	})
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateGoodsReceiptLineID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateGoodsReceiptLineID()
+	})
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventorySerialUpsertBulk) ClearGoodsReceiptLineID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearGoodsReceiptLineID()
+	})
+}
+
+// SetSoldAt sets the "sold_at" field.
+func (u *InventorySerialUpsertBulk) SetSoldAt(v time.Time) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetSoldAt(v)
+	})
+}
+
+// UpdateSoldAt sets the "sold_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateSoldAt() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateSoldAt()
+	})
+}
+
+// ClearSoldAt clears the value of the "sold_at" field.
+func (u *InventorySerialUpsertBulk) ClearSoldAt() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearSoldAt()
+	})
+}
+
+// SetPosOrderLineID sets the "pos_order_line_id" field.
+func (u *InventorySerialUpsertBulk) SetPosOrderLineID(v string) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetPosOrderLineID(v)
+	})
+}
+
+// UpdatePosOrderLineID sets the "pos_order_line_id" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdatePosOrderLineID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdatePosOrderLineID()
+	})
+}
+
+// ClearPosOrderLineID clears the value of the "pos_order_line_id" field.
+func (u *InventorySerialUpsertBulk) ClearPosOrderLineID() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearPosOrderLineID()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *InventorySerialUpsertBulk) SetNotes(v string) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateNotes() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *InventorySerialUpsertBulk) ClearNotes() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *InventorySerialUpsertBulk) SetUpdatedAt(v time.Time) *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *InventorySerialUpsertBulk) UpdateUpdatedAt() *InventorySerialUpsertBulk {
+	return u.Update(func(s *InventorySerialUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *InventorySerialUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the InventorySerialCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventorySerialCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventorySerialUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
@@ -19,6 +21,7 @@ type StockAdjustmentCreate struct {
 	config
 	mutation *StockAdjustmentMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -256,6 +259,7 @@ func (_c *StockAdjustmentCreate) createSpec() (*StockAdjustment, *sqlgraph.Creat
 		_node = &StockAdjustment{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(stockadjustment.Table, sqlgraph.NewFieldSpec(stockadjustment.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -311,11 +315,501 @@ func (_c *StockAdjustmentCreate) createSpec() (*StockAdjustment, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockAdjustment.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockAdjustmentUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockAdjustmentCreate) OnConflict(opts ...sql.ConflictOption) *StockAdjustmentUpsertOne {
+	_c.conflict = opts
+	return &StockAdjustmentUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockAdjustmentCreate) OnConflictColumns(columns ...string) *StockAdjustmentUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockAdjustmentUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// StockAdjustmentUpsertOne is the builder for "upsert"-ing
+	//  one StockAdjustment node.
+	StockAdjustmentUpsertOne struct {
+		create *StockAdjustmentCreate
+	}
+
+	// StockAdjustmentUpsert is the "OnConflict" setter.
+	StockAdjustmentUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockAdjustmentUpsert) SetTenantID(v uuid.UUID) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateTenantID() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldTenantID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockAdjustmentUpsert) SetItemID(v uuid.UUID) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateItemID() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldItemID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockAdjustmentUpsert) SetWarehouseID(v uuid.UUID) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateWarehouseID() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldWarehouseID)
+	return u
+}
+
+// SetQuantityBefore sets the "quantity_before" field.
+func (u *StockAdjustmentUpsert) SetQuantityBefore(v float64) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldQuantityBefore, v)
+	return u
+}
+
+// UpdateQuantityBefore sets the "quantity_before" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateQuantityBefore() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldQuantityBefore)
+	return u
+}
+
+// AddQuantityBefore adds v to the "quantity_before" field.
+func (u *StockAdjustmentUpsert) AddQuantityBefore(v float64) *StockAdjustmentUpsert {
+	u.Add(stockadjustment.FieldQuantityBefore, v)
+	return u
+}
+
+// SetQuantityChange sets the "quantity_change" field.
+func (u *StockAdjustmentUpsert) SetQuantityChange(v float64) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldQuantityChange, v)
+	return u
+}
+
+// UpdateQuantityChange sets the "quantity_change" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateQuantityChange() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldQuantityChange)
+	return u
+}
+
+// AddQuantityChange adds v to the "quantity_change" field.
+func (u *StockAdjustmentUpsert) AddQuantityChange(v float64) *StockAdjustmentUpsert {
+	u.Add(stockadjustment.FieldQuantityChange, v)
+	return u
+}
+
+// SetQuantityAfter sets the "quantity_after" field.
+func (u *StockAdjustmentUpsert) SetQuantityAfter(v float64) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldQuantityAfter, v)
+	return u
+}
+
+// UpdateQuantityAfter sets the "quantity_after" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateQuantityAfter() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldQuantityAfter)
+	return u
+}
+
+// AddQuantityAfter adds v to the "quantity_after" field.
+func (u *StockAdjustmentUpsert) AddQuantityAfter(v float64) *StockAdjustmentUpsert {
+	u.Add(stockadjustment.FieldQuantityAfter, v)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *StockAdjustmentUpsert) SetReason(v stockadjustment.Reason) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateReason() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldReason)
+	return u
+}
+
+// SetReference sets the "reference" field.
+func (u *StockAdjustmentUpsert) SetReference(v string) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldReference, v)
+	return u
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateReference() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldReference)
+	return u
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockAdjustmentUpsert) ClearReference() *StockAdjustmentUpsert {
+	u.SetNull(stockadjustment.FieldReference)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockAdjustmentUpsert) SetNotes(v string) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateNotes() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockAdjustmentUpsert) ClearNotes() *StockAdjustmentUpsert {
+	u.SetNull(stockadjustment.FieldNotes)
+	return u
+}
+
+// SetAdjustedBy sets the "adjusted_by" field.
+func (u *StockAdjustmentUpsert) SetAdjustedBy(v uuid.UUID) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldAdjustedBy, v)
+	return u
+}
+
+// UpdateAdjustedBy sets the "adjusted_by" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateAdjustedBy() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldAdjustedBy)
+	return u
+}
+
+// SetAdjustedAt sets the "adjusted_at" field.
+func (u *StockAdjustmentUpsert) SetAdjustedAt(v time.Time) *StockAdjustmentUpsert {
+	u.Set(stockadjustment.FieldAdjustedAt, v)
+	return u
+}
+
+// UpdateAdjustedAt sets the "adjusted_at" field to the value that was provided on create.
+func (u *StockAdjustmentUpsert) UpdateAdjustedAt() *StockAdjustmentUpsert {
+	u.SetExcluded(stockadjustment.FieldAdjustedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stockadjustment.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockAdjustmentUpsertOne) UpdateNewValues() *StockAdjustmentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(stockadjustment.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(stockadjustment.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *StockAdjustmentUpsertOne) Ignore() *StockAdjustmentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockAdjustmentUpsertOne) DoNothing() *StockAdjustmentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockAdjustmentCreate.OnConflict
+// documentation for more info.
+func (u *StockAdjustmentUpsertOne) Update(set func(*StockAdjustmentUpsert)) *StockAdjustmentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockAdjustmentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockAdjustmentUpsertOne) SetTenantID(v uuid.UUID) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateTenantID() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockAdjustmentUpsertOne) SetItemID(v uuid.UUID) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateItemID() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockAdjustmentUpsertOne) SetWarehouseID(v uuid.UUID) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateWarehouseID() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetQuantityBefore sets the "quantity_before" field.
+func (u *StockAdjustmentUpsertOne) SetQuantityBefore(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityBefore(v)
+	})
+}
+
+// AddQuantityBefore adds v to the "quantity_before" field.
+func (u *StockAdjustmentUpsertOne) AddQuantityBefore(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityBefore(v)
+	})
+}
+
+// UpdateQuantityBefore sets the "quantity_before" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateQuantityBefore() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityBefore()
+	})
+}
+
+// SetQuantityChange sets the "quantity_change" field.
+func (u *StockAdjustmentUpsertOne) SetQuantityChange(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityChange(v)
+	})
+}
+
+// AddQuantityChange adds v to the "quantity_change" field.
+func (u *StockAdjustmentUpsertOne) AddQuantityChange(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityChange(v)
+	})
+}
+
+// UpdateQuantityChange sets the "quantity_change" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateQuantityChange() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityChange()
+	})
+}
+
+// SetQuantityAfter sets the "quantity_after" field.
+func (u *StockAdjustmentUpsertOne) SetQuantityAfter(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityAfter(v)
+	})
+}
+
+// AddQuantityAfter adds v to the "quantity_after" field.
+func (u *StockAdjustmentUpsertOne) AddQuantityAfter(v float64) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityAfter(v)
+	})
+}
+
+// UpdateQuantityAfter sets the "quantity_after" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateQuantityAfter() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityAfter()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *StockAdjustmentUpsertOne) SetReason(v stockadjustment.Reason) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateReason() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// SetReference sets the "reference" field.
+func (u *StockAdjustmentUpsertOne) SetReference(v string) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetReference(v)
+	})
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateReference() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateReference()
+	})
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockAdjustmentUpsertOne) ClearReference() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.ClearReference()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockAdjustmentUpsertOne) SetNotes(v string) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateNotes() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockAdjustmentUpsertOne) ClearNotes() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetAdjustedBy sets the "adjusted_by" field.
+func (u *StockAdjustmentUpsertOne) SetAdjustedBy(v uuid.UUID) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetAdjustedBy(v)
+	})
+}
+
+// UpdateAdjustedBy sets the "adjusted_by" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateAdjustedBy() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateAdjustedBy()
+	})
+}
+
+// SetAdjustedAt sets the "adjusted_at" field.
+func (u *StockAdjustmentUpsertOne) SetAdjustedAt(v time.Time) *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetAdjustedAt(v)
+	})
+}
+
+// UpdateAdjustedAt sets the "adjusted_at" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertOne) UpdateAdjustedAt() *StockAdjustmentUpsertOne {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateAdjustedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *StockAdjustmentUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockAdjustmentCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockAdjustmentUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *StockAdjustmentUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: StockAdjustmentUpsertOne.ID is not supported by MySQL driver. Use StockAdjustmentUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *StockAdjustmentUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // StockAdjustmentCreateBulk is the builder for creating many StockAdjustment entities in bulk.
 type StockAdjustmentCreateBulk struct {
 	config
 	err      error
 	builders []*StockAdjustmentCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the StockAdjustment entities in the database.
@@ -345,6 +839,7 @@ func (_c *StockAdjustmentCreateBulk) Save(ctx context.Context) ([]*StockAdjustme
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -391,6 +886,312 @@ func (_c *StockAdjustmentCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *StockAdjustmentCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockAdjustment.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockAdjustmentUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockAdjustmentCreateBulk) OnConflict(opts ...sql.ConflictOption) *StockAdjustmentUpsertBulk {
+	_c.conflict = opts
+	return &StockAdjustmentUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockAdjustmentCreateBulk) OnConflictColumns(columns ...string) *StockAdjustmentUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockAdjustmentUpsertBulk{
+		create: _c,
+	}
+}
+
+// StockAdjustmentUpsertBulk is the builder for "upsert"-ing
+// a bulk of StockAdjustment nodes.
+type StockAdjustmentUpsertBulk struct {
+	create *StockAdjustmentCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stockadjustment.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockAdjustmentUpsertBulk) UpdateNewValues() *StockAdjustmentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(stockadjustment.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(stockadjustment.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockAdjustment.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *StockAdjustmentUpsertBulk) Ignore() *StockAdjustmentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockAdjustmentUpsertBulk) DoNothing() *StockAdjustmentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockAdjustmentCreateBulk.OnConflict
+// documentation for more info.
+func (u *StockAdjustmentUpsertBulk) Update(set func(*StockAdjustmentUpsert)) *StockAdjustmentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockAdjustmentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *StockAdjustmentUpsertBulk) SetTenantID(v uuid.UUID) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateTenantID() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockAdjustmentUpsertBulk) SetItemID(v uuid.UUID) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateItemID() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *StockAdjustmentUpsertBulk) SetWarehouseID(v uuid.UUID) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateWarehouseID() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// SetQuantityBefore sets the "quantity_before" field.
+func (u *StockAdjustmentUpsertBulk) SetQuantityBefore(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityBefore(v)
+	})
+}
+
+// AddQuantityBefore adds v to the "quantity_before" field.
+func (u *StockAdjustmentUpsertBulk) AddQuantityBefore(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityBefore(v)
+	})
+}
+
+// UpdateQuantityBefore sets the "quantity_before" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateQuantityBefore() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityBefore()
+	})
+}
+
+// SetQuantityChange sets the "quantity_change" field.
+func (u *StockAdjustmentUpsertBulk) SetQuantityChange(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityChange(v)
+	})
+}
+
+// AddQuantityChange adds v to the "quantity_change" field.
+func (u *StockAdjustmentUpsertBulk) AddQuantityChange(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityChange(v)
+	})
+}
+
+// UpdateQuantityChange sets the "quantity_change" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateQuantityChange() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityChange()
+	})
+}
+
+// SetQuantityAfter sets the "quantity_after" field.
+func (u *StockAdjustmentUpsertBulk) SetQuantityAfter(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetQuantityAfter(v)
+	})
+}
+
+// AddQuantityAfter adds v to the "quantity_after" field.
+func (u *StockAdjustmentUpsertBulk) AddQuantityAfter(v float64) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.AddQuantityAfter(v)
+	})
+}
+
+// UpdateQuantityAfter sets the "quantity_after" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateQuantityAfter() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateQuantityAfter()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *StockAdjustmentUpsertBulk) SetReason(v stockadjustment.Reason) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateReason() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// SetReference sets the "reference" field.
+func (u *StockAdjustmentUpsertBulk) SetReference(v string) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetReference(v)
+	})
+}
+
+// UpdateReference sets the "reference" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateReference() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateReference()
+	})
+}
+
+// ClearReference clears the value of the "reference" field.
+func (u *StockAdjustmentUpsertBulk) ClearReference() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.ClearReference()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *StockAdjustmentUpsertBulk) SetNotes(v string) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateNotes() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *StockAdjustmentUpsertBulk) ClearNotes() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetAdjustedBy sets the "adjusted_by" field.
+func (u *StockAdjustmentUpsertBulk) SetAdjustedBy(v uuid.UUID) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetAdjustedBy(v)
+	})
+}
+
+// UpdateAdjustedBy sets the "adjusted_by" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateAdjustedBy() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateAdjustedBy()
+	})
+}
+
+// SetAdjustedAt sets the "adjusted_at" field.
+func (u *StockAdjustmentUpsertBulk) SetAdjustedAt(v time.Time) *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.SetAdjustedAt(v)
+	})
+}
+
+// UpdateAdjustedAt sets the "adjusted_at" field to the value that was provided on create.
+func (u *StockAdjustmentUpsertBulk) UpdateAdjustedAt() *StockAdjustmentUpsertBulk {
+	return u.Update(func(s *StockAdjustmentUpsert) {
+		s.UpdateAdjustedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *StockAdjustmentUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the StockAdjustmentCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockAdjustmentCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockAdjustmentUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

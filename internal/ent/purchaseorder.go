@@ -38,6 +38,8 @@ type PurchaseOrder struct {
 	Currency string `json:"currency,omitempty"`
 	// Source requisition this PO was converted from (traceability)
 	RequisitionID *uuid.UUID `json:"requisition_id,omitempty"`
+	// projects-service project id (inherited from the source requisition)
+	ProjectID *uuid.UUID `json:"project_id,omitempty"`
 	// Source RFQ this PO was awarded from (traceability)
 	RfqID *uuid.UUID `json:"rfq_id,omitempty"`
 	// Supplier credit term in days — treasury computes the AP bill due date as receipt + pay_term_days
@@ -107,7 +109,7 @@ func (*PurchaseOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchaseorder.FieldRequisitionID, purchaseorder.FieldRfqID, purchaseorder.FieldCreatedBy:
+		case purchaseorder.FieldRequisitionID, purchaseorder.FieldProjectID, purchaseorder.FieldRfqID, purchaseorder.FieldCreatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchaseorder.FieldTotalAmount, purchaseorder.FieldAdditionalShippingCharges:
 			values[i] = new(sql.NullFloat64)
@@ -195,6 +197,13 @@ func (_m *PurchaseOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RequisitionID = new(uuid.UUID)
 				*_m.RequisitionID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorder.FieldProjectID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field project_id", values[i])
+			} else if value.Valid {
+				_m.ProjectID = new(uuid.UUID)
+				*_m.ProjectID = *value.S.(*uuid.UUID)
 			}
 		case purchaseorder.FieldRfqID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -320,6 +329,11 @@ func (_m *PurchaseOrder) String() string {
 	builder.WriteString(", ")
 	if v := _m.RequisitionID; v != nil {
 		builder.WriteString("requisition_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProjectID; v != nil {
+		builder.WriteString("project_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

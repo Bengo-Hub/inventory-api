@@ -64,6 +64,26 @@ func (_u *RequisitionUpdate) ClearOutletID() *RequisitionUpdate {
 	return _u
 }
 
+// SetProjectID sets the "project_id" field.
+func (_u *RequisitionUpdate) SetProjectID(v uuid.UUID) *RequisitionUpdate {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *RequisitionUpdate) SetNillableProjectID(v *uuid.UUID) *RequisitionUpdate {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *RequisitionUpdate) ClearProjectID() *RequisitionUpdate {
+	_u.mutation.ClearProjectID()
+	return _u
+}
+
 // SetReferenceNumber sets the "reference_number" field.
 func (_u *RequisitionUpdate) SetReferenceNumber(v string) *RequisitionUpdate {
 	_u.mutation.SetReferenceNumber(v)
@@ -329,6 +349,12 @@ func (_u *RequisitionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.OutletIDCleared() {
 		_spec.ClearField(requisition.FieldOutletID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(requisition.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(requisition.FieldProjectID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.ReferenceNumber(); ok {
 		_spec.SetField(requisition.FieldReferenceNumber, field.TypeString, value)
 	}
@@ -464,6 +490,26 @@ func (_u *RequisitionUpdateOne) SetNillableOutletID(v *uuid.UUID) *RequisitionUp
 // ClearOutletID clears the value of the "outlet_id" field.
 func (_u *RequisitionUpdateOne) ClearOutletID() *RequisitionUpdateOne {
 	_u.mutation.ClearOutletID()
+	return _u
+}
+
+// SetProjectID sets the "project_id" field.
+func (_u *RequisitionUpdateOne) SetProjectID(v uuid.UUID) *RequisitionUpdateOne {
+	_u.mutation.SetProjectID(v)
+	return _u
+}
+
+// SetNillableProjectID sets the "project_id" field if the given value is not nil.
+func (_u *RequisitionUpdateOne) SetNillableProjectID(v *uuid.UUID) *RequisitionUpdateOne {
+	if v != nil {
+		_u.SetProjectID(*v)
+	}
+	return _u
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (_u *RequisitionUpdateOne) ClearProjectID() *RequisitionUpdateOne {
+	_u.mutation.ClearProjectID()
 	return _u
 }
 
@@ -761,6 +807,12 @@ func (_u *RequisitionUpdateOne) sqlSave(ctx context.Context) (_node *Requisition
 	}
 	if _u.mutation.OutletIDCleared() {
 		_spec.ClearField(requisition.FieldOutletID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ProjectID(); ok {
+		_spec.SetField(requisition.FieldProjectID, field.TypeUUID, value)
+	}
+	if _u.mutation.ProjectIDCleared() {
+		_spec.ClearField(requisition.FieldProjectID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.ReferenceNumber(); ok {
 		_spec.SetField(requisition.FieldReferenceNumber, field.TypeString, value)

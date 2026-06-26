@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -21,6 +23,7 @@ type InventoryPermissionCreate struct {
 	config
 	mutation *InventoryPermissionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetPermissionCode sets the "permission_code" field.
@@ -246,6 +249,7 @@ func (_c *InventoryPermissionCreate) createSpec() (*InventoryPermission, *sqlgra
 		_node = &InventoryPermission{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(inventorypermission.Table, sqlgraph.NewFieldSpec(inventorypermission.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -313,11 +317,332 @@ func (_c *InventoryPermissionCreate) createSpec() (*InventoryPermission, *sqlgra
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventoryPermission.Create().
+//		SetPermissionCode(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventoryPermissionUpsert) {
+//			SetPermissionCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventoryPermissionCreate) OnConflict(opts ...sql.ConflictOption) *InventoryPermissionUpsertOne {
+	_c.conflict = opts
+	return &InventoryPermissionUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventoryPermissionCreate) OnConflictColumns(columns ...string) *InventoryPermissionUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventoryPermissionUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// InventoryPermissionUpsertOne is the builder for "upsert"-ing
+	//  one InventoryPermission node.
+	InventoryPermissionUpsertOne struct {
+		create *InventoryPermissionCreate
+	}
+
+	// InventoryPermissionUpsert is the "OnConflict" setter.
+	InventoryPermissionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetPermissionCode sets the "permission_code" field.
+func (u *InventoryPermissionUpsert) SetPermissionCode(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldPermissionCode, v)
+	return u
+}
+
+// UpdatePermissionCode sets the "permission_code" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdatePermissionCode() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldPermissionCode)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *InventoryPermissionUpsert) SetName(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdateName() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldName)
+	return u
+}
+
+// SetModule sets the "module" field.
+func (u *InventoryPermissionUpsert) SetModule(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldModule, v)
+	return u
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdateModule() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldModule)
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *InventoryPermissionUpsert) SetAction(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdateAction() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldAction)
+	return u
+}
+
+// SetResource sets the "resource" field.
+func (u *InventoryPermissionUpsert) SetResource(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldResource, v)
+	return u
+}
+
+// UpdateResource sets the "resource" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdateResource() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldResource)
+	return u
+}
+
+// ClearResource clears the value of the "resource" field.
+func (u *InventoryPermissionUpsert) ClearResource() *InventoryPermissionUpsert {
+	u.SetNull(inventorypermission.FieldResource)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *InventoryPermissionUpsert) SetDescription(v string) *InventoryPermissionUpsert {
+	u.Set(inventorypermission.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *InventoryPermissionUpsert) UpdateDescription() *InventoryPermissionUpsert {
+	u.SetExcluded(inventorypermission.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *InventoryPermissionUpsert) ClearDescription() *InventoryPermissionUpsert {
+	u.SetNull(inventorypermission.FieldDescription)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventorypermission.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventoryPermissionUpsertOne) UpdateNewValues() *InventoryPermissionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(inventorypermission.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(inventorypermission.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *InventoryPermissionUpsertOne) Ignore() *InventoryPermissionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventoryPermissionUpsertOne) DoNothing() *InventoryPermissionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventoryPermissionCreate.OnConflict
+// documentation for more info.
+func (u *InventoryPermissionUpsertOne) Update(set func(*InventoryPermissionUpsert)) *InventoryPermissionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventoryPermissionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPermissionCode sets the "permission_code" field.
+func (u *InventoryPermissionUpsertOne) SetPermissionCode(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetPermissionCode(v)
+	})
+}
+
+// UpdatePermissionCode sets the "permission_code" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdatePermissionCode() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdatePermissionCode()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *InventoryPermissionUpsertOne) SetName(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdateName() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetModule sets the "module" field.
+func (u *InventoryPermissionUpsertOne) SetModule(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetModule(v)
+	})
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdateModule() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateModule()
+	})
+}
+
+// SetAction sets the "action" field.
+func (u *InventoryPermissionUpsertOne) SetAction(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdateAction() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetResource sets the "resource" field.
+func (u *InventoryPermissionUpsertOne) SetResource(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetResource(v)
+	})
+}
+
+// UpdateResource sets the "resource" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdateResource() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateResource()
+	})
+}
+
+// ClearResource clears the value of the "resource" field.
+func (u *InventoryPermissionUpsertOne) ClearResource() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.ClearResource()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *InventoryPermissionUpsertOne) SetDescription(v string) *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertOne) UpdateDescription() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *InventoryPermissionUpsertOne) ClearDescription() *InventoryPermissionUpsertOne {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// Exec executes the query.
+func (u *InventoryPermissionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventoryPermissionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventoryPermissionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *InventoryPermissionUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: InventoryPermissionUpsertOne.ID is not supported by MySQL driver. Use InventoryPermissionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *InventoryPermissionUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // InventoryPermissionCreateBulk is the builder for creating many InventoryPermission entities in bulk.
 type InventoryPermissionCreateBulk struct {
 	config
 	err      error
 	builders []*InventoryPermissionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the InventoryPermission entities in the database.
@@ -347,6 +672,7 @@ func (_c *InventoryPermissionCreateBulk) Save(ctx context.Context) ([]*Inventory
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -393,6 +719,221 @@ func (_c *InventoryPermissionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *InventoryPermissionCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.InventoryPermission.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.InventoryPermissionUpsert) {
+//			SetPermissionCode(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *InventoryPermissionCreateBulk) OnConflict(opts ...sql.ConflictOption) *InventoryPermissionUpsertBulk {
+	_c.conflict = opts
+	return &InventoryPermissionUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *InventoryPermissionCreateBulk) OnConflictColumns(columns ...string) *InventoryPermissionUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &InventoryPermissionUpsertBulk{
+		create: _c,
+	}
+}
+
+// InventoryPermissionUpsertBulk is the builder for "upsert"-ing
+// a bulk of InventoryPermission nodes.
+type InventoryPermissionUpsertBulk struct {
+	create *InventoryPermissionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(inventorypermission.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *InventoryPermissionUpsertBulk) UpdateNewValues() *InventoryPermissionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(inventorypermission.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(inventorypermission.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.InventoryPermission.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *InventoryPermissionUpsertBulk) Ignore() *InventoryPermissionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *InventoryPermissionUpsertBulk) DoNothing() *InventoryPermissionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the InventoryPermissionCreateBulk.OnConflict
+// documentation for more info.
+func (u *InventoryPermissionUpsertBulk) Update(set func(*InventoryPermissionUpsert)) *InventoryPermissionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&InventoryPermissionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPermissionCode sets the "permission_code" field.
+func (u *InventoryPermissionUpsertBulk) SetPermissionCode(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetPermissionCode(v)
+	})
+}
+
+// UpdatePermissionCode sets the "permission_code" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdatePermissionCode() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdatePermissionCode()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *InventoryPermissionUpsertBulk) SetName(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdateName() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetModule sets the "module" field.
+func (u *InventoryPermissionUpsertBulk) SetModule(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetModule(v)
+	})
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdateModule() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateModule()
+	})
+}
+
+// SetAction sets the "action" field.
+func (u *InventoryPermissionUpsertBulk) SetAction(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetAction(v)
+	})
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdateAction() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateAction()
+	})
+}
+
+// SetResource sets the "resource" field.
+func (u *InventoryPermissionUpsertBulk) SetResource(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetResource(v)
+	})
+}
+
+// UpdateResource sets the "resource" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdateResource() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateResource()
+	})
+}
+
+// ClearResource clears the value of the "resource" field.
+func (u *InventoryPermissionUpsertBulk) ClearResource() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.ClearResource()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *InventoryPermissionUpsertBulk) SetDescription(v string) *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *InventoryPermissionUpsertBulk) UpdateDescription() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *InventoryPermissionUpsertBulk) ClearDescription() *InventoryPermissionUpsertBulk {
+	return u.Update(func(s *InventoryPermissionUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// Exec executes the query.
+func (u *InventoryPermissionUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the InventoryPermissionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for InventoryPermissionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *InventoryPermissionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/assetinsurance"
@@ -19,6 +21,7 @@ type AssetInsuranceCreate struct {
 	config
 	mutation *AssetInsuranceMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -306,6 +309,7 @@ func (_c *AssetInsuranceCreate) createSpec() (*AssetInsurance, *sqlgraph.CreateS
 		_node = &AssetInsurance{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(assetinsurance.Table, sqlgraph.NewFieldSpec(assetinsurance.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -365,11 +369,540 @@ func (_c *AssetInsuranceCreate) createSpec() (*AssetInsurance, *sqlgraph.CreateS
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetInsurance.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetInsuranceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetInsuranceCreate) OnConflict(opts ...sql.ConflictOption) *AssetInsuranceUpsertOne {
+	_c.conflict = opts
+	return &AssetInsuranceUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetInsuranceCreate) OnConflictColumns(columns ...string) *AssetInsuranceUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetInsuranceUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AssetInsuranceUpsertOne is the builder for "upsert"-ing
+	//  one AssetInsurance node.
+	AssetInsuranceUpsertOne struct {
+		create *AssetInsuranceCreate
+	}
+
+	// AssetInsuranceUpsert is the "OnConflict" setter.
+	AssetInsuranceUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetInsuranceUpsert) SetTenantID(v uuid.UUID) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateTenantID() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldTenantID)
+	return u
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetInsuranceUpsert) SetAssetID(v uuid.UUID) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldAssetID, v)
+	return u
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateAssetID() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldAssetID)
+	return u
+}
+
+// SetPolicyNumber sets the "policy_number" field.
+func (u *AssetInsuranceUpsert) SetPolicyNumber(v string) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldPolicyNumber, v)
+	return u
+}
+
+// UpdatePolicyNumber sets the "policy_number" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdatePolicyNumber() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldPolicyNumber)
+	return u
+}
+
+// SetProvider sets the "provider" field.
+func (u *AssetInsuranceUpsert) SetProvider(v string) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldProvider, v)
+	return u
+}
+
+// UpdateProvider sets the "provider" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateProvider() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldProvider)
+	return u
+}
+
+// ClearProvider clears the value of the "provider" field.
+func (u *AssetInsuranceUpsert) ClearProvider() *AssetInsuranceUpsert {
+	u.SetNull(assetinsurance.FieldProvider)
+	return u
+}
+
+// SetPolicyType sets the "policy_type" field.
+func (u *AssetInsuranceUpsert) SetPolicyType(v string) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldPolicyType, v)
+	return u
+}
+
+// UpdatePolicyType sets the "policy_type" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdatePolicyType() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldPolicyType)
+	return u
+}
+
+// ClearPolicyType clears the value of the "policy_type" field.
+func (u *AssetInsuranceUpsert) ClearPolicyType() *AssetInsuranceUpsert {
+	u.SetNull(assetinsurance.FieldPolicyType)
+	return u
+}
+
+// SetCoverageAmount sets the "coverage_amount" field.
+func (u *AssetInsuranceUpsert) SetCoverageAmount(v float64) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldCoverageAmount, v)
+	return u
+}
+
+// UpdateCoverageAmount sets the "coverage_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateCoverageAmount() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldCoverageAmount)
+	return u
+}
+
+// AddCoverageAmount adds v to the "coverage_amount" field.
+func (u *AssetInsuranceUpsert) AddCoverageAmount(v float64) *AssetInsuranceUpsert {
+	u.Add(assetinsurance.FieldCoverageAmount, v)
+	return u
+}
+
+// SetPremiumAmount sets the "premium_amount" field.
+func (u *AssetInsuranceUpsert) SetPremiumAmount(v float64) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldPremiumAmount, v)
+	return u
+}
+
+// UpdatePremiumAmount sets the "premium_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdatePremiumAmount() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldPremiumAmount)
+	return u
+}
+
+// AddPremiumAmount adds v to the "premium_amount" field.
+func (u *AssetInsuranceUpsert) AddPremiumAmount(v float64) *AssetInsuranceUpsert {
+	u.Add(assetinsurance.FieldPremiumAmount, v)
+	return u
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *AssetInsuranceUpsert) SetStartDate(v time.Time) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldStartDate, v)
+	return u
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateStartDate() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldStartDate)
+	return u
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *AssetInsuranceUpsert) SetEndDate(v time.Time) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldEndDate, v)
+	return u
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateEndDate() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldEndDate)
+	return u
+}
+
+// SetDeductible sets the "deductible" field.
+func (u *AssetInsuranceUpsert) SetDeductible(v float64) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldDeductible, v)
+	return u
+}
+
+// UpdateDeductible sets the "deductible" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateDeductible() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldDeductible)
+	return u
+}
+
+// AddDeductible adds v to the "deductible" field.
+func (u *AssetInsuranceUpsert) AddDeductible(v float64) *AssetInsuranceUpsert {
+	u.Add(assetinsurance.FieldDeductible, v)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *AssetInsuranceUpsert) SetIsActive(v bool) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateIsActive() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldIsActive)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetInsuranceUpsert) SetNotes(v string) *AssetInsuranceUpsert {
+	u.Set(assetinsurance.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetInsuranceUpsert) UpdateNotes() *AssetInsuranceUpsert {
+	u.SetExcluded(assetinsurance.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetInsuranceUpsert) ClearNotes() *AssetInsuranceUpsert {
+	u.SetNull(assetinsurance.FieldNotes)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetinsurance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetInsuranceUpsertOne) UpdateNewValues() *AssetInsuranceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(assetinsurance.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(assetinsurance.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AssetInsuranceUpsertOne) Ignore() *AssetInsuranceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetInsuranceUpsertOne) DoNothing() *AssetInsuranceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetInsuranceCreate.OnConflict
+// documentation for more info.
+func (u *AssetInsuranceUpsertOne) Update(set func(*AssetInsuranceUpsert)) *AssetInsuranceUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetInsuranceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetInsuranceUpsertOne) SetTenantID(v uuid.UUID) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateTenantID() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetInsuranceUpsertOne) SetAssetID(v uuid.UUID) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateAssetID() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetPolicyNumber sets the "policy_number" field.
+func (u *AssetInsuranceUpsertOne) SetPolicyNumber(v string) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPolicyNumber(v)
+	})
+}
+
+// UpdatePolicyNumber sets the "policy_number" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdatePolicyNumber() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePolicyNumber()
+	})
+}
+
+// SetProvider sets the "provider" field.
+func (u *AssetInsuranceUpsertOne) SetProvider(v string) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetProvider(v)
+	})
+}
+
+// UpdateProvider sets the "provider" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateProvider() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateProvider()
+	})
+}
+
+// ClearProvider clears the value of the "provider" field.
+func (u *AssetInsuranceUpsertOne) ClearProvider() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearProvider()
+	})
+}
+
+// SetPolicyType sets the "policy_type" field.
+func (u *AssetInsuranceUpsertOne) SetPolicyType(v string) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPolicyType(v)
+	})
+}
+
+// UpdatePolicyType sets the "policy_type" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdatePolicyType() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePolicyType()
+	})
+}
+
+// ClearPolicyType clears the value of the "policy_type" field.
+func (u *AssetInsuranceUpsertOne) ClearPolicyType() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearPolicyType()
+	})
+}
+
+// SetCoverageAmount sets the "coverage_amount" field.
+func (u *AssetInsuranceUpsertOne) SetCoverageAmount(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetCoverageAmount(v)
+	})
+}
+
+// AddCoverageAmount adds v to the "coverage_amount" field.
+func (u *AssetInsuranceUpsertOne) AddCoverageAmount(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddCoverageAmount(v)
+	})
+}
+
+// UpdateCoverageAmount sets the "coverage_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateCoverageAmount() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateCoverageAmount()
+	})
+}
+
+// SetPremiumAmount sets the "premium_amount" field.
+func (u *AssetInsuranceUpsertOne) SetPremiumAmount(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPremiumAmount(v)
+	})
+}
+
+// AddPremiumAmount adds v to the "premium_amount" field.
+func (u *AssetInsuranceUpsertOne) AddPremiumAmount(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddPremiumAmount(v)
+	})
+}
+
+// UpdatePremiumAmount sets the "premium_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdatePremiumAmount() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePremiumAmount()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *AssetInsuranceUpsertOne) SetStartDate(v time.Time) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateStartDate() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *AssetInsuranceUpsertOne) SetEndDate(v time.Time) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateEndDate() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetDeductible sets the "deductible" field.
+func (u *AssetInsuranceUpsertOne) SetDeductible(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetDeductible(v)
+	})
+}
+
+// AddDeductible adds v to the "deductible" field.
+func (u *AssetInsuranceUpsertOne) AddDeductible(v float64) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddDeductible(v)
+	})
+}
+
+// UpdateDeductible sets the "deductible" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateDeductible() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateDeductible()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *AssetInsuranceUpsertOne) SetIsActive(v bool) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateIsActive() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetInsuranceUpsertOne) SetNotes(v string) *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertOne) UpdateNotes() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetInsuranceUpsertOne) ClearNotes() *AssetInsuranceUpsertOne {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetInsuranceUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetInsuranceCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetInsuranceUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AssetInsuranceUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AssetInsuranceUpsertOne.ID is not supported by MySQL driver. Use AssetInsuranceUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AssetInsuranceUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AssetInsuranceCreateBulk is the builder for creating many AssetInsurance entities in bulk.
 type AssetInsuranceCreateBulk struct {
 	config
 	err      error
 	builders []*AssetInsuranceCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AssetInsurance entities in the database.
@@ -399,6 +932,7 @@ func (_c *AssetInsuranceCreateBulk) Save(ctx context.Context) ([]*AssetInsurance
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -445,6 +979,333 @@ func (_c *AssetInsuranceCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *AssetInsuranceCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetInsurance.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetInsuranceUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetInsuranceCreateBulk) OnConflict(opts ...sql.ConflictOption) *AssetInsuranceUpsertBulk {
+	_c.conflict = opts
+	return &AssetInsuranceUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetInsuranceCreateBulk) OnConflictColumns(columns ...string) *AssetInsuranceUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetInsuranceUpsertBulk{
+		create: _c,
+	}
+}
+
+// AssetInsuranceUpsertBulk is the builder for "upsert"-ing
+// a bulk of AssetInsurance nodes.
+type AssetInsuranceUpsertBulk struct {
+	create *AssetInsuranceCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetinsurance.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetInsuranceUpsertBulk) UpdateNewValues() *AssetInsuranceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(assetinsurance.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(assetinsurance.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetInsurance.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AssetInsuranceUpsertBulk) Ignore() *AssetInsuranceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetInsuranceUpsertBulk) DoNothing() *AssetInsuranceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetInsuranceCreateBulk.OnConflict
+// documentation for more info.
+func (u *AssetInsuranceUpsertBulk) Update(set func(*AssetInsuranceUpsert)) *AssetInsuranceUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetInsuranceUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetInsuranceUpsertBulk) SetTenantID(v uuid.UUID) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateTenantID() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetInsuranceUpsertBulk) SetAssetID(v uuid.UUID) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateAssetID() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetPolicyNumber sets the "policy_number" field.
+func (u *AssetInsuranceUpsertBulk) SetPolicyNumber(v string) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPolicyNumber(v)
+	})
+}
+
+// UpdatePolicyNumber sets the "policy_number" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdatePolicyNumber() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePolicyNumber()
+	})
+}
+
+// SetProvider sets the "provider" field.
+func (u *AssetInsuranceUpsertBulk) SetProvider(v string) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetProvider(v)
+	})
+}
+
+// UpdateProvider sets the "provider" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateProvider() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateProvider()
+	})
+}
+
+// ClearProvider clears the value of the "provider" field.
+func (u *AssetInsuranceUpsertBulk) ClearProvider() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearProvider()
+	})
+}
+
+// SetPolicyType sets the "policy_type" field.
+func (u *AssetInsuranceUpsertBulk) SetPolicyType(v string) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPolicyType(v)
+	})
+}
+
+// UpdatePolicyType sets the "policy_type" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdatePolicyType() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePolicyType()
+	})
+}
+
+// ClearPolicyType clears the value of the "policy_type" field.
+func (u *AssetInsuranceUpsertBulk) ClearPolicyType() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearPolicyType()
+	})
+}
+
+// SetCoverageAmount sets the "coverage_amount" field.
+func (u *AssetInsuranceUpsertBulk) SetCoverageAmount(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetCoverageAmount(v)
+	})
+}
+
+// AddCoverageAmount adds v to the "coverage_amount" field.
+func (u *AssetInsuranceUpsertBulk) AddCoverageAmount(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddCoverageAmount(v)
+	})
+}
+
+// UpdateCoverageAmount sets the "coverage_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateCoverageAmount() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateCoverageAmount()
+	})
+}
+
+// SetPremiumAmount sets the "premium_amount" field.
+func (u *AssetInsuranceUpsertBulk) SetPremiumAmount(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetPremiumAmount(v)
+	})
+}
+
+// AddPremiumAmount adds v to the "premium_amount" field.
+func (u *AssetInsuranceUpsertBulk) AddPremiumAmount(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddPremiumAmount(v)
+	})
+}
+
+// UpdatePremiumAmount sets the "premium_amount" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdatePremiumAmount() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdatePremiumAmount()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *AssetInsuranceUpsertBulk) SetStartDate(v time.Time) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateStartDate() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *AssetInsuranceUpsertBulk) SetEndDate(v time.Time) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateEndDate() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetDeductible sets the "deductible" field.
+func (u *AssetInsuranceUpsertBulk) SetDeductible(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetDeductible(v)
+	})
+}
+
+// AddDeductible adds v to the "deductible" field.
+func (u *AssetInsuranceUpsertBulk) AddDeductible(v float64) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.AddDeductible(v)
+	})
+}
+
+// UpdateDeductible sets the "deductible" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateDeductible() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateDeductible()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *AssetInsuranceUpsertBulk) SetIsActive(v bool) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateIsActive() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetInsuranceUpsertBulk) SetNotes(v string) *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetInsuranceUpsertBulk) UpdateNotes() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetInsuranceUpsertBulk) ClearNotes() *AssetInsuranceUpsertBulk {
+	return u.Update(func(s *AssetInsuranceUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetInsuranceUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AssetInsuranceCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetInsuranceCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetInsuranceUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

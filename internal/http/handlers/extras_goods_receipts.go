@@ -568,6 +568,11 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 		"pay_term_days":               derefInt(po.PayTermDays),
 		"additional_shipping_charges": po.AdditionalShippingCharges,
 	}
+	// project_id (when the PO came from a project requisition) lets treasury attribute the cost
+	// to the project's budget actuals.
+	if po.ProjectID != nil {
+		payload["project_id"] = po.ProjectID
+	}
 	for k, v := range supplierPaymentFields(po) {
 		payload[k] = v
 	}

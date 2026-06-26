@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
@@ -19,6 +21,7 @@ type StockTransferLineCreate struct {
 	config
 	mutation *StockTransferLineMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTransferID sets the "transfer_id" field.
@@ -184,6 +187,7 @@ func (_c *StockTransferLineCreate) createSpec() (*StockTransferLine, *sqlgraph.C
 		_node = &StockTransferLine{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(stocktransferline.Table, sqlgraph.NewFieldSpec(stocktransferline.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -224,11 +228,316 @@ func (_c *StockTransferLineCreate) createSpec() (*StockTransferLine, *sqlgraph.C
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockTransferLine.Create().
+//		SetTransferID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockTransferLineUpsert) {
+//			SetTransferID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockTransferLineCreate) OnConflict(opts ...sql.ConflictOption) *StockTransferLineUpsertOne {
+	_c.conflict = opts
+	return &StockTransferLineUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockTransferLineCreate) OnConflictColumns(columns ...string) *StockTransferLineUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockTransferLineUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// StockTransferLineUpsertOne is the builder for "upsert"-ing
+	//  one StockTransferLine node.
+	StockTransferLineUpsertOne struct {
+		create *StockTransferLineCreate
+	}
+
+	// StockTransferLineUpsert is the "OnConflict" setter.
+	StockTransferLineUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTransferID sets the "transfer_id" field.
+func (u *StockTransferLineUpsert) SetTransferID(v uuid.UUID) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldTransferID, v)
+	return u
+}
+
+// UpdateTransferID sets the "transfer_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateTransferID() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldTransferID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockTransferLineUpsert) SetItemID(v uuid.UUID) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateItemID() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldItemID)
+	return u
+}
+
+// SetVariantID sets the "variant_id" field.
+func (u *StockTransferLineUpsert) SetVariantID(v uuid.UUID) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldVariantID, v)
+	return u
+}
+
+// UpdateVariantID sets the "variant_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateVariantID() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldVariantID)
+	return u
+}
+
+// ClearVariantID clears the value of the "variant_id" field.
+func (u *StockTransferLineUpsert) ClearVariantID() *StockTransferLineUpsert {
+	u.SetNull(stocktransferline.FieldVariantID)
+	return u
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *StockTransferLineUpsert) SetLotID(v uuid.UUID) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldLotID, v)
+	return u
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateLotID() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldLotID)
+	return u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *StockTransferLineUpsert) ClearLotID() *StockTransferLineUpsert {
+	u.SetNull(stocktransferline.FieldLotID)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *StockTransferLineUpsert) SetQuantity(v float64) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateQuantity() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *StockTransferLineUpsert) AddQuantity(v float64) *StockTransferLineUpsert {
+	u.Add(stocktransferline.FieldQuantity, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stocktransferline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockTransferLineUpsertOne) UpdateNewValues() *StockTransferLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(stocktransferline.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *StockTransferLineUpsertOne) Ignore() *StockTransferLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockTransferLineUpsertOne) DoNothing() *StockTransferLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockTransferLineCreate.OnConflict
+// documentation for more info.
+func (u *StockTransferLineUpsertOne) Update(set func(*StockTransferLineUpsert)) *StockTransferLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockTransferLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTransferID sets the "transfer_id" field.
+func (u *StockTransferLineUpsertOne) SetTransferID(v uuid.UUID) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetTransferID(v)
+	})
+}
+
+// UpdateTransferID sets the "transfer_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateTransferID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateTransferID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockTransferLineUpsertOne) SetItemID(v uuid.UUID) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateItemID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetVariantID sets the "variant_id" field.
+func (u *StockTransferLineUpsertOne) SetVariantID(v uuid.UUID) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetVariantID(v)
+	})
+}
+
+// UpdateVariantID sets the "variant_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateVariantID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateVariantID()
+	})
+}
+
+// ClearVariantID clears the value of the "variant_id" field.
+func (u *StockTransferLineUpsertOne) ClearVariantID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearVariantID()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *StockTransferLineUpsertOne) SetLotID(v uuid.UUID) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateLotID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *StockTransferLineUpsertOne) ClearLotID() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearLotID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *StockTransferLineUpsertOne) SetQuantity(v float64) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *StockTransferLineUpsertOne) AddQuantity(v float64) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateQuantity() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// Exec executes the query.
+func (u *StockTransferLineUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockTransferLineCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockTransferLineUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *StockTransferLineUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: StockTransferLineUpsertOne.ID is not supported by MySQL driver. Use StockTransferLineUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *StockTransferLineUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // StockTransferLineCreateBulk is the builder for creating many StockTransferLine entities in bulk.
 type StockTransferLineCreateBulk struct {
 	config
 	err      error
 	builders []*StockTransferLineCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the StockTransferLine entities in the database.
@@ -258,6 +567,7 @@ func (_c *StockTransferLineCreateBulk) Save(ctx context.Context) ([]*StockTransf
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -304,6 +614,211 @@ func (_c *StockTransferLineCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *StockTransferLineCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.StockTransferLine.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.StockTransferLineUpsert) {
+//			SetTransferID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *StockTransferLineCreateBulk) OnConflict(opts ...sql.ConflictOption) *StockTransferLineUpsertBulk {
+	_c.conflict = opts
+	return &StockTransferLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *StockTransferLineCreateBulk) OnConflictColumns(columns ...string) *StockTransferLineUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &StockTransferLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// StockTransferLineUpsertBulk is the builder for "upsert"-ing
+// a bulk of StockTransferLine nodes.
+type StockTransferLineUpsertBulk struct {
+	create *StockTransferLineCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(stocktransferline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *StockTransferLineUpsertBulk) UpdateNewValues() *StockTransferLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(stocktransferline.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.StockTransferLine.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *StockTransferLineUpsertBulk) Ignore() *StockTransferLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *StockTransferLineUpsertBulk) DoNothing() *StockTransferLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the StockTransferLineCreateBulk.OnConflict
+// documentation for more info.
+func (u *StockTransferLineUpsertBulk) Update(set func(*StockTransferLineUpsert)) *StockTransferLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&StockTransferLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTransferID sets the "transfer_id" field.
+func (u *StockTransferLineUpsertBulk) SetTransferID(v uuid.UUID) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetTransferID(v)
+	})
+}
+
+// UpdateTransferID sets the "transfer_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateTransferID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateTransferID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *StockTransferLineUpsertBulk) SetItemID(v uuid.UUID) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateItemID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetVariantID sets the "variant_id" field.
+func (u *StockTransferLineUpsertBulk) SetVariantID(v uuid.UUID) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetVariantID(v)
+	})
+}
+
+// UpdateVariantID sets the "variant_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateVariantID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateVariantID()
+	})
+}
+
+// ClearVariantID clears the value of the "variant_id" field.
+func (u *StockTransferLineUpsertBulk) ClearVariantID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearVariantID()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *StockTransferLineUpsertBulk) SetLotID(v uuid.UUID) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateLotID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *StockTransferLineUpsertBulk) ClearLotID() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearLotID()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *StockTransferLineUpsertBulk) SetQuantity(v float64) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *StockTransferLineUpsertBulk) AddQuantity(v float64) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateQuantity() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// Exec executes the query.
+func (u *StockTransferLineUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the StockTransferLineCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for StockTransferLineCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *StockTransferLineUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

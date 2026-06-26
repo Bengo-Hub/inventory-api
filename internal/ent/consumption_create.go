@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
@@ -20,6 +22,7 @@ type ConsumptionCreate struct {
 	config
 	mutation *ConsumptionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -253,6 +256,7 @@ func (_c *ConsumptionCreate) createSpec() (*Consumption, *sqlgraph.CreateSpec) {
 		_node = &Consumption{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(consumption.Table, sqlgraph.NewFieldSpec(consumption.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -296,11 +300,384 @@ func (_c *ConsumptionCreate) createSpec() (*Consumption, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Consumption.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ConsumptionUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ConsumptionCreate) OnConflict(opts ...sql.ConflictOption) *ConsumptionUpsertOne {
+	_c.conflict = opts
+	return &ConsumptionUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ConsumptionCreate) OnConflictColumns(columns ...string) *ConsumptionUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ConsumptionUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ConsumptionUpsertOne is the builder for "upsert"-ing
+	//  one Consumption node.
+	ConsumptionUpsertOne struct {
+		create *ConsumptionCreate
+	}
+
+	// ConsumptionUpsert is the "OnConflict" setter.
+	ConsumptionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ConsumptionUpsert) SetTenantID(v uuid.UUID) *ConsumptionUpsert {
+	u.Set(consumption.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateTenantID() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldTenantID)
+	return u
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ConsumptionUpsert) SetOrderID(v uuid.UUID) *ConsumptionUpsert {
+	u.Set(consumption.FieldOrderID, v)
+	return u
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateOrderID() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldOrderID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ConsumptionUpsert) SetWarehouseID(v uuid.UUID) *ConsumptionUpsert {
+	u.Set(consumption.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateWarehouseID() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ConsumptionUpsert) ClearWarehouseID() *ConsumptionUpsert {
+	u.SetNull(consumption.FieldWarehouseID)
+	return u
+}
+
+// SetItems sets the "items" field.
+func (u *ConsumptionUpsert) SetItems(v []schema.ConsumptionItemJSON) *ConsumptionUpsert {
+	u.Set(consumption.FieldItems, v)
+	return u
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateItems() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldItems)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *ConsumptionUpsert) SetReason(v string) *ConsumptionUpsert {
+	u.Set(consumption.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateReason() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldReason)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ConsumptionUpsert) SetStatus(v string) *ConsumptionUpsert {
+	u.Set(consumption.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateStatus() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldStatus)
+	return u
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ConsumptionUpsert) SetIdempotencyKey(v string) *ConsumptionUpsert {
+	u.Set(consumption.FieldIdempotencyKey, v)
+	return u
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateIdempotencyKey() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldIdempotencyKey)
+	return u
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ConsumptionUpsert) ClearIdempotencyKey() *ConsumptionUpsert {
+	u.SetNull(consumption.FieldIdempotencyKey)
+	return u
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (u *ConsumptionUpsert) SetProcessedAt(v time.Time) *ConsumptionUpsert {
+	u.Set(consumption.FieldProcessedAt, v)
+	return u
+}
+
+// UpdateProcessedAt sets the "processed_at" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateProcessedAt() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldProcessedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(consumption.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ConsumptionUpsertOne) UpdateNewValues() *ConsumptionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(consumption.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(consumption.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ConsumptionUpsertOne) Ignore() *ConsumptionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ConsumptionUpsertOne) DoNothing() *ConsumptionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ConsumptionCreate.OnConflict
+// documentation for more info.
+func (u *ConsumptionUpsertOne) Update(set func(*ConsumptionUpsert)) *ConsumptionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ConsumptionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ConsumptionUpsertOne) SetTenantID(v uuid.UUID) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateTenantID() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ConsumptionUpsertOne) SetOrderID(v uuid.UUID) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetOrderID(v)
+	})
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateOrderID() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateOrderID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ConsumptionUpsertOne) SetWarehouseID(v uuid.UUID) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateWarehouseID() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ConsumptionUpsertOne) ClearWarehouseID() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetItems sets the "items" field.
+func (u *ConsumptionUpsertOne) SetItems(v []schema.ConsumptionItemJSON) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetItems(v)
+	})
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateItems() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateItems()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *ConsumptionUpsertOne) SetReason(v string) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateReason() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ConsumptionUpsertOne) SetStatus(v string) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateStatus() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ConsumptionUpsertOne) SetIdempotencyKey(v string) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateIdempotencyKey() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ConsumptionUpsertOne) ClearIdempotencyKey() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearIdempotencyKey()
+	})
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (u *ConsumptionUpsertOne) SetProcessedAt(v time.Time) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetProcessedAt(v)
+	})
+}
+
+// UpdateProcessedAt sets the "processed_at" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateProcessedAt() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateProcessedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ConsumptionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ConsumptionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ConsumptionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ConsumptionUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ConsumptionUpsertOne.ID is not supported by MySQL driver. Use ConsumptionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ConsumptionUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ConsumptionCreateBulk is the builder for creating many Consumption entities in bulk.
 type ConsumptionCreateBulk struct {
 	config
 	err      error
 	builders []*ConsumptionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Consumption entities in the database.
@@ -330,6 +707,7 @@ func (_c *ConsumptionCreateBulk) Save(ctx context.Context) ([]*Consumption, erro
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -376,6 +754,249 @@ func (_c *ConsumptionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ConsumptionCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Consumption.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ConsumptionUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ConsumptionCreateBulk) OnConflict(opts ...sql.ConflictOption) *ConsumptionUpsertBulk {
+	_c.conflict = opts
+	return &ConsumptionUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ConsumptionCreateBulk) OnConflictColumns(columns ...string) *ConsumptionUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ConsumptionUpsertBulk{
+		create: _c,
+	}
+}
+
+// ConsumptionUpsertBulk is the builder for "upsert"-ing
+// a bulk of Consumption nodes.
+type ConsumptionUpsertBulk struct {
+	create *ConsumptionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(consumption.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ConsumptionUpsertBulk) UpdateNewValues() *ConsumptionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(consumption.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(consumption.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Consumption.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ConsumptionUpsertBulk) Ignore() *ConsumptionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ConsumptionUpsertBulk) DoNothing() *ConsumptionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ConsumptionCreateBulk.OnConflict
+// documentation for more info.
+func (u *ConsumptionUpsertBulk) Update(set func(*ConsumptionUpsert)) *ConsumptionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ConsumptionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ConsumptionUpsertBulk) SetTenantID(v uuid.UUID) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateTenantID() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOrderID sets the "order_id" field.
+func (u *ConsumptionUpsertBulk) SetOrderID(v uuid.UUID) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetOrderID(v)
+	})
+}
+
+// UpdateOrderID sets the "order_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateOrderID() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateOrderID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *ConsumptionUpsertBulk) SetWarehouseID(v uuid.UUID) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateWarehouseID() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *ConsumptionUpsertBulk) ClearWarehouseID() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearWarehouseID()
+	})
+}
+
+// SetItems sets the "items" field.
+func (u *ConsumptionUpsertBulk) SetItems(v []schema.ConsumptionItemJSON) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetItems(v)
+	})
+}
+
+// UpdateItems sets the "items" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateItems() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateItems()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *ConsumptionUpsertBulk) SetReason(v string) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateReason() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ConsumptionUpsertBulk) SetStatus(v string) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateStatus() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *ConsumptionUpsertBulk) SetIdempotencyKey(v string) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateIdempotencyKey() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *ConsumptionUpsertBulk) ClearIdempotencyKey() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearIdempotencyKey()
+	})
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (u *ConsumptionUpsertBulk) SetProcessedAt(v time.Time) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetProcessedAt(v)
+	})
+}
+
+// UpdateProcessedAt sets the "processed_at" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateProcessedAt() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateProcessedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ConsumptionUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ConsumptionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ConsumptionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ConsumptionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

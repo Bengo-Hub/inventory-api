@@ -22,6 +22,8 @@ type Requisition struct {
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
 	// Branch/outlet this requisition is for
 	OutletID *uuid.UUID `json:"outlet_id,omitempty"`
+	// projects-service project id
+	ProjectID *uuid.UUID `json:"project_id,omitempty"`
 	// Unique requisition reference per tenant
 	ReferenceNumber string `json:"reference_number,omitempty"`
 	// Auth user who raised the requisition
@@ -71,7 +73,7 @@ func (*Requisition) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case requisition.FieldOutletID, requisition.FieldRequesterID:
+		case requisition.FieldOutletID, requisition.FieldProjectID, requisition.FieldRequesterID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case requisition.FieldReferenceNumber, requisition.FieldRequestType, requisition.FieldPurpose, requisition.FieldPriority, requisition.FieldStatus, requisition.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -112,6 +114,13 @@ func (_m *Requisition) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.OutletID = new(uuid.UUID)
 				*_m.OutletID = *value.S.(*uuid.UUID)
+			}
+		case requisition.FieldProjectID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field project_id", values[i])
+			} else if value.Valid {
+				_m.ProjectID = new(uuid.UUID)
+				*_m.ProjectID = *value.S.(*uuid.UUID)
 			}
 		case requisition.FieldReferenceNumber:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -221,6 +230,11 @@ func (_m *Requisition) String() string {
 	builder.WriteString(", ")
 	if v := _m.OutletID; v != nil {
 		builder.WriteString("outlet_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProjectID; v != nil {
+		builder.WriteString("project_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

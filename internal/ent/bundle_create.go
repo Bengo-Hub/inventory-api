@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
@@ -21,6 +23,7 @@ type BundleCreate struct {
 	config
 	mutation *BundleMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -344,6 +347,7 @@ func (_c *BundleCreate) createSpec() (*Bundle, *sqlgraph.CreateSpec) {
 		_node = &Bundle{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(bundle.Table, sqlgraph.NewFieldSpec(bundle.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -428,11 +432,514 @@ func (_c *BundleCreate) createSpec() (*Bundle, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Bundle.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BundleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BundleCreate) OnConflict(opts ...sql.ConflictOption) *BundleUpsertOne {
+	_c.conflict = opts
+	return &BundleUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BundleCreate) OnConflictColumns(columns ...string) *BundleUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BundleUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// BundleUpsertOne is the builder for "upsert"-ing
+	//  one Bundle node.
+	BundleUpsertOne struct {
+		create *BundleCreate
+	}
+
+	// BundleUpsert is the "OnConflict" setter.
+	BundleUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BundleUpsert) SetTenantID(v uuid.UUID) *BundleUpsert {
+	u.Set(bundle.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateTenantID() *BundleUpsert {
+	u.SetExcluded(bundle.FieldTenantID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *BundleUpsert) SetItemID(v uuid.UUID) *BundleUpsert {
+	u.Set(bundle.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateItemID() *BundleUpsert {
+	u.SetExcluded(bundle.FieldItemID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *BundleUpsert) SetName(v string) *BundleUpsert {
+	u.Set(bundle.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateName() *BundleUpsert {
+	u.SetExcluded(bundle.FieldName)
+	return u
+}
+
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsert) SetPackageType(v bundle.PackageType) *BundleUpsert {
+	u.Set(bundle.FieldPackageType, v)
+	return u
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsert) UpdatePackageType() *BundleUpsert {
+	u.SetExcluded(bundle.FieldPackageType)
+	return u
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsert) SetPriceBasis(v bundle.PriceBasis) *BundleUpsert {
+	u.Set(bundle.FieldPriceBasis, v)
+	return u
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsert) UpdatePriceBasis() *BundleUpsert {
+	u.SetExcluded(bundle.FieldPriceBasis)
+	return u
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsert) SetMinDelegates(v int) *BundleUpsert {
+	u.Set(bundle.FieldMinDelegates, v)
+	return u
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateMinDelegates() *BundleUpsert {
+	u.SetExcluded(bundle.FieldMinDelegates)
+	return u
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsert) AddMinDelegates(v int) *BundleUpsert {
+	u.Add(bundle.FieldMinDelegates, v)
+	return u
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsert) ClearMinDelegates() *BundleUpsert {
+	u.SetNull(bundle.FieldMinDelegates)
+	return u
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsert) SetAccommodationIncluded(v bool) *BundleUpsert {
+	u.Set(bundle.FieldAccommodationIncluded, v)
+	return u
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateAccommodationIncluded() *BundleUpsert {
+	u.SetExcluded(bundle.FieldAccommodationIncluded)
+	return u
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsert) SetSessionsTotal(v int) *BundleUpsert {
+	u.Set(bundle.FieldSessionsTotal, v)
+	return u
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateSessionsTotal() *BundleUpsert {
+	u.SetExcluded(bundle.FieldSessionsTotal)
+	return u
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsert) AddSessionsTotal(v int) *BundleUpsert {
+	u.Add(bundle.FieldSessionsTotal, v)
+	return u
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsert) ClearSessionsTotal() *BundleUpsert {
+	u.SetNull(bundle.FieldSessionsTotal)
+	return u
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsert) SetValidityDays(v int) *BundleUpsert {
+	u.Set(bundle.FieldValidityDays, v)
+	return u
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateValidityDays() *BundleUpsert {
+	u.SetExcluded(bundle.FieldValidityDays)
+	return u
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsert) AddValidityDays(v int) *BundleUpsert {
+	u.Add(bundle.FieldValidityDays, v)
+	return u
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsert) ClearValidityDays() *BundleUpsert {
+	u.SetNull(bundle.FieldValidityDays)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *BundleUpsert) SetIsActive(v bool) *BundleUpsert {
+	u.Set(bundle.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateIsActive() *BundleUpsert {
+	u.SetExcluded(bundle.FieldIsActive)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BundleUpsert) SetUpdatedAt(v time.Time) *BundleUpsert {
+	u.Set(bundle.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BundleUpsert) UpdateUpdatedAt() *BundleUpsert {
+	u.SetExcluded(bundle.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(bundle.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BundleUpsertOne) UpdateNewValues() *BundleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(bundle.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(bundle.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *BundleUpsertOne) Ignore() *BundleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BundleUpsertOne) DoNothing() *BundleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BundleCreate.OnConflict
+// documentation for more info.
+func (u *BundleUpsertOne) Update(set func(*BundleUpsert)) *BundleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BundleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BundleUpsertOne) SetTenantID(v uuid.UUID) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateTenantID() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *BundleUpsertOne) SetItemID(v uuid.UUID) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateItemID() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *BundleUpsertOne) SetName(v string) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateName() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsertOne) SetPackageType(v bundle.PackageType) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPackageType(v)
+	})
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdatePackageType() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePackageType()
+	})
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsertOne) SetPriceBasis(v bundle.PriceBasis) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPriceBasis(v)
+	})
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdatePriceBasis() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePriceBasis()
+	})
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsertOne) SetMinDelegates(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetMinDelegates(v)
+	})
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsertOne) AddMinDelegates(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddMinDelegates(v)
+	})
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateMinDelegates() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateMinDelegates()
+	})
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsertOne) ClearMinDelegates() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearMinDelegates()
+	})
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsertOne) SetAccommodationIncluded(v bool) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetAccommodationIncluded(v)
+	})
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateAccommodationIncluded() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateAccommodationIncluded()
+	})
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsertOne) SetSessionsTotal(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetSessionsTotal(v)
+	})
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsertOne) AddSessionsTotal(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddSessionsTotal(v)
+	})
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateSessionsTotal() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateSessionsTotal()
+	})
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsertOne) ClearSessionsTotal() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearSessionsTotal()
+	})
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsertOne) SetValidityDays(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetValidityDays(v)
+	})
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsertOne) AddValidityDays(v int) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddValidityDays(v)
+	})
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateValidityDays() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateValidityDays()
+	})
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsertOne) ClearValidityDays() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearValidityDays()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *BundleUpsertOne) SetIsActive(v bool) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateIsActive() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BundleUpsertOne) SetUpdatedAt(v time.Time) *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BundleUpsertOne) UpdateUpdatedAt() *BundleUpsertOne {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *BundleUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BundleCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BundleUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *BundleUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: BundleUpsertOne.ID is not supported by MySQL driver. Use BundleUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *BundleUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // BundleCreateBulk is the builder for creating many Bundle entities in bulk.
 type BundleCreateBulk struct {
 	config
 	err      error
 	builders []*BundleCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Bundle entities in the database.
@@ -462,6 +969,7 @@ func (_c *BundleCreateBulk) Save(ctx context.Context) ([]*Bundle, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -508,6 +1016,319 @@ func (_c *BundleCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *BundleCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Bundle.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.BundleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *BundleCreateBulk) OnConflict(opts ...sql.ConflictOption) *BundleUpsertBulk {
+	_c.conflict = opts
+	return &BundleUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *BundleCreateBulk) OnConflictColumns(columns ...string) *BundleUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &BundleUpsertBulk{
+		create: _c,
+	}
+}
+
+// BundleUpsertBulk is the builder for "upsert"-ing
+// a bulk of Bundle nodes.
+type BundleUpsertBulk struct {
+	create *BundleCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(bundle.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *BundleUpsertBulk) UpdateNewValues() *BundleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(bundle.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(bundle.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Bundle.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *BundleUpsertBulk) Ignore() *BundleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *BundleUpsertBulk) DoNothing() *BundleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the BundleCreateBulk.OnConflict
+// documentation for more info.
+func (u *BundleUpsertBulk) Update(set func(*BundleUpsert)) *BundleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&BundleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *BundleUpsertBulk) SetTenantID(v uuid.UUID) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateTenantID() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *BundleUpsertBulk) SetItemID(v uuid.UUID) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateItemID() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *BundleUpsertBulk) SetName(v string) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateName() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetPackageType sets the "package_type" field.
+func (u *BundleUpsertBulk) SetPackageType(v bundle.PackageType) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPackageType(v)
+	})
+}
+
+// UpdatePackageType sets the "package_type" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdatePackageType() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePackageType()
+	})
+}
+
+// SetPriceBasis sets the "price_basis" field.
+func (u *BundleUpsertBulk) SetPriceBasis(v bundle.PriceBasis) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetPriceBasis(v)
+	})
+}
+
+// UpdatePriceBasis sets the "price_basis" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdatePriceBasis() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdatePriceBasis()
+	})
+}
+
+// SetMinDelegates sets the "min_delegates" field.
+func (u *BundleUpsertBulk) SetMinDelegates(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetMinDelegates(v)
+	})
+}
+
+// AddMinDelegates adds v to the "min_delegates" field.
+func (u *BundleUpsertBulk) AddMinDelegates(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddMinDelegates(v)
+	})
+}
+
+// UpdateMinDelegates sets the "min_delegates" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateMinDelegates() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateMinDelegates()
+	})
+}
+
+// ClearMinDelegates clears the value of the "min_delegates" field.
+func (u *BundleUpsertBulk) ClearMinDelegates() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearMinDelegates()
+	})
+}
+
+// SetAccommodationIncluded sets the "accommodation_included" field.
+func (u *BundleUpsertBulk) SetAccommodationIncluded(v bool) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetAccommodationIncluded(v)
+	})
+}
+
+// UpdateAccommodationIncluded sets the "accommodation_included" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateAccommodationIncluded() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateAccommodationIncluded()
+	})
+}
+
+// SetSessionsTotal sets the "sessions_total" field.
+func (u *BundleUpsertBulk) SetSessionsTotal(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetSessionsTotal(v)
+	})
+}
+
+// AddSessionsTotal adds v to the "sessions_total" field.
+func (u *BundleUpsertBulk) AddSessionsTotal(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddSessionsTotal(v)
+	})
+}
+
+// UpdateSessionsTotal sets the "sessions_total" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateSessionsTotal() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateSessionsTotal()
+	})
+}
+
+// ClearSessionsTotal clears the value of the "sessions_total" field.
+func (u *BundleUpsertBulk) ClearSessionsTotal() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearSessionsTotal()
+	})
+}
+
+// SetValidityDays sets the "validity_days" field.
+func (u *BundleUpsertBulk) SetValidityDays(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetValidityDays(v)
+	})
+}
+
+// AddValidityDays adds v to the "validity_days" field.
+func (u *BundleUpsertBulk) AddValidityDays(v int) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.AddValidityDays(v)
+	})
+}
+
+// UpdateValidityDays sets the "validity_days" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateValidityDays() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateValidityDays()
+	})
+}
+
+// ClearValidityDays clears the value of the "validity_days" field.
+func (u *BundleUpsertBulk) ClearValidityDays() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.ClearValidityDays()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *BundleUpsertBulk) SetIsActive(v bool) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateIsActive() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BundleUpsertBulk) SetUpdatedAt(v time.Time) *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BundleUpsertBulk) UpdateUpdatedAt() *BundleUpsertBulk {
+	return u.Update(func(s *BundleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *BundleUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the BundleCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for BundleCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *BundleUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

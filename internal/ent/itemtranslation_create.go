@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -20,6 +22,7 @@ type ItemTranslationCreate struct {
 	config
 	mutation *ItemTranslationMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetItemID sets the "item_id" field.
@@ -211,6 +214,7 @@ func (_c *ItemTranslationCreate) createSpec() (*ItemTranslation, *sqlgraph.Creat
 		_node = &ItemTranslation{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(itemtranslation.Table, sqlgraph.NewFieldSpec(itemtranslation.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -255,11 +259,293 @@ func (_c *ItemTranslationCreate) createSpec() (*ItemTranslation, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ItemTranslation.Create().
+//		SetItemID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemTranslationUpsert) {
+//			SetItemID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemTranslationCreate) OnConflict(opts ...sql.ConflictOption) *ItemTranslationUpsertOne {
+	_c.conflict = opts
+	return &ItemTranslationUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemTranslationCreate) OnConflictColumns(columns ...string) *ItemTranslationUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemTranslationUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ItemTranslationUpsertOne is the builder for "upsert"-ing
+	//  one ItemTranslation node.
+	ItemTranslationUpsertOne struct {
+		create *ItemTranslationCreate
+	}
+
+	// ItemTranslationUpsert is the "OnConflict" setter.
+	ItemTranslationUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetItemID sets the "item_id" field.
+func (u *ItemTranslationUpsert) SetItemID(v uuid.UUID) *ItemTranslationUpsert {
+	u.Set(itemtranslation.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemTranslationUpsert) UpdateItemID() *ItemTranslationUpsert {
+	u.SetExcluded(itemtranslation.FieldItemID)
+	return u
+}
+
+// SetLocale sets the "locale" field.
+func (u *ItemTranslationUpsert) SetLocale(v string) *ItemTranslationUpsert {
+	u.Set(itemtranslation.FieldLocale, v)
+	return u
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ItemTranslationUpsert) UpdateLocale() *ItemTranslationUpsert {
+	u.SetExcluded(itemtranslation.FieldLocale)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ItemTranslationUpsert) SetName(v string) *ItemTranslationUpsert {
+	u.Set(itemtranslation.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemTranslationUpsert) UpdateName() *ItemTranslationUpsert {
+	u.SetExcluded(itemtranslation.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemTranslationUpsert) SetDescription(v string) *ItemTranslationUpsert {
+	u.Set(itemtranslation.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemTranslationUpsert) UpdateDescription() *ItemTranslationUpsert {
+	u.SetExcluded(itemtranslation.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemTranslationUpsert) ClearDescription() *ItemTranslationUpsert {
+	u.SetNull(itemtranslation.FieldDescription)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemTranslationUpsert) SetUpdatedAt(v time.Time) *ItemTranslationUpsert {
+	u.Set(itemtranslation.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemTranslationUpsert) UpdateUpdatedAt() *ItemTranslationUpsert {
+	u.SetExcluded(itemtranslation.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(itemtranslation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemTranslationUpsertOne) UpdateNewValues() *ItemTranslationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(itemtranslation.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(itemtranslation.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ItemTranslationUpsertOne) Ignore() *ItemTranslationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemTranslationUpsertOne) DoNothing() *ItemTranslationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemTranslationCreate.OnConflict
+// documentation for more info.
+func (u *ItemTranslationUpsertOne) Update(set func(*ItemTranslationUpsert)) *ItemTranslationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemTranslationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *ItemTranslationUpsertOne) SetItemID(v uuid.UUID) *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemTranslationUpsertOne) UpdateItemID() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetLocale sets the "locale" field.
+func (u *ItemTranslationUpsertOne) SetLocale(v string) *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetLocale(v)
+	})
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ItemTranslationUpsertOne) UpdateLocale() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateLocale()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ItemTranslationUpsertOne) SetName(v string) *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemTranslationUpsertOne) UpdateName() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemTranslationUpsertOne) SetDescription(v string) *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemTranslationUpsertOne) UpdateDescription() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemTranslationUpsertOne) ClearDescription() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemTranslationUpsertOne) SetUpdatedAt(v time.Time) *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemTranslationUpsertOne) UpdateUpdatedAt() *ItemTranslationUpsertOne {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemTranslationUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemTranslationCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemTranslationUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ItemTranslationUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ItemTranslationUpsertOne.ID is not supported by MySQL driver. Use ItemTranslationUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ItemTranslationUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ItemTranslationCreateBulk is the builder for creating many ItemTranslation entities in bulk.
 type ItemTranslationCreateBulk struct {
 	config
 	err      error
 	builders []*ItemTranslationCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ItemTranslation entities in the database.
@@ -289,6 +575,7 @@ func (_c *ItemTranslationCreateBulk) Save(ctx context.Context) ([]*ItemTranslati
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -335,6 +622,200 @@ func (_c *ItemTranslationCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ItemTranslationCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ItemTranslation.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ItemTranslationUpsert) {
+//			SetItemID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ItemTranslationCreateBulk) OnConflict(opts ...sql.ConflictOption) *ItemTranslationUpsertBulk {
+	_c.conflict = opts
+	return &ItemTranslationUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ItemTranslationCreateBulk) OnConflictColumns(columns ...string) *ItemTranslationUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ItemTranslationUpsertBulk{
+		create: _c,
+	}
+}
+
+// ItemTranslationUpsertBulk is the builder for "upsert"-ing
+// a bulk of ItemTranslation nodes.
+type ItemTranslationUpsertBulk struct {
+	create *ItemTranslationCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(itemtranslation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ItemTranslationUpsertBulk) UpdateNewValues() *ItemTranslationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(itemtranslation.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(itemtranslation.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ItemTranslation.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ItemTranslationUpsertBulk) Ignore() *ItemTranslationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ItemTranslationUpsertBulk) DoNothing() *ItemTranslationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ItemTranslationCreateBulk.OnConflict
+// documentation for more info.
+func (u *ItemTranslationUpsertBulk) Update(set func(*ItemTranslationUpsert)) *ItemTranslationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ItemTranslationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *ItemTranslationUpsertBulk) SetItemID(v uuid.UUID) *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *ItemTranslationUpsertBulk) UpdateItemID() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// SetLocale sets the "locale" field.
+func (u *ItemTranslationUpsertBulk) SetLocale(v string) *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetLocale(v)
+	})
+}
+
+// UpdateLocale sets the "locale" field to the value that was provided on create.
+func (u *ItemTranslationUpsertBulk) UpdateLocale() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateLocale()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ItemTranslationUpsertBulk) SetName(v string) *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ItemTranslationUpsertBulk) UpdateName() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *ItemTranslationUpsertBulk) SetDescription(v string) *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *ItemTranslationUpsertBulk) UpdateDescription() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *ItemTranslationUpsertBulk) ClearDescription() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ItemTranslationUpsertBulk) SetUpdatedAt(v time.Time) *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ItemTranslationUpsertBulk) UpdateUpdatedAt() *ItemTranslationUpsertBulk {
+	return u.Update(func(s *ItemTranslationUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ItemTranslationUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ItemTranslationCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ItemTranslationCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ItemTranslationUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

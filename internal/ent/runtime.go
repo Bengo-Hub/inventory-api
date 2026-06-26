@@ -1376,15 +1376,15 @@ func init() {
 	// purchaseorder.DefaultCurrency holds the default value on creation for the currency field.
 	purchaseorder.DefaultCurrency = purchaseorderDescCurrency.Default.(string)
 	// purchaseorderDescAdditionalShippingCharges is the schema descriptor for additional_shipping_charges field.
-	purchaseorderDescAdditionalShippingCharges := purchaseorderFields[12].Descriptor()
+	purchaseorderDescAdditionalShippingCharges := purchaseorderFields[13].Descriptor()
 	// purchaseorder.DefaultAdditionalShippingCharges holds the default value on creation for the additional_shipping_charges field.
 	purchaseorder.DefaultAdditionalShippingCharges = purchaseorderDescAdditionalShippingCharges.Default.(float64)
 	// purchaseorderDescCreatedAt is the schema descriptor for created_at field.
-	purchaseorderDescCreatedAt := purchaseorderFields[15].Descriptor()
+	purchaseorderDescCreatedAt := purchaseorderFields[16].Descriptor()
 	// purchaseorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	purchaseorder.DefaultCreatedAt = purchaseorderDescCreatedAt.Default.(func() time.Time)
 	// purchaseorderDescUpdatedAt is the schema descriptor for updated_at field.
-	purchaseorderDescUpdatedAt := purchaseorderFields[16].Descriptor()
+	purchaseorderDescUpdatedAt := purchaseorderFields[17].Descriptor()
 	// purchaseorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchaseorder.DefaultUpdatedAt = purchaseorderDescUpdatedAt.Default.(func() time.Time)
 	// purchaseorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1704,15 +1704,15 @@ func init() {
 	requisitionFields := schema.Requisition{}.Fields()
 	_ = requisitionFields
 	// requisitionDescReferenceNumber is the schema descriptor for reference_number field.
-	requisitionDescReferenceNumber := requisitionFields[3].Descriptor()
+	requisitionDescReferenceNumber := requisitionFields[4].Descriptor()
 	// requisition.ReferenceNumberValidator is a validator for the "reference_number" field. It is called by the builders before save.
 	requisition.ReferenceNumberValidator = requisitionDescReferenceNumber.Validators[0].(func(string) error)
 	// requisitionDescCreatedAt is the schema descriptor for created_at field.
-	requisitionDescCreatedAt := requisitionFields[11].Descriptor()
+	requisitionDescCreatedAt := requisitionFields[12].Descriptor()
 	// requisition.DefaultCreatedAt holds the default value on creation for the created_at field.
 	requisition.DefaultCreatedAt = requisitionDescCreatedAt.Default.(func() time.Time)
 	// requisitionDescUpdatedAt is the schema descriptor for updated_at field.
-	requisitionDescUpdatedAt := requisitionFields[12].Descriptor()
+	requisitionDescUpdatedAt := requisitionFields[13].Descriptor()
 	// requisition.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	requisition.DefaultUpdatedAt = requisitionDescUpdatedAt.Default.(func() time.Time)
 	// requisition.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

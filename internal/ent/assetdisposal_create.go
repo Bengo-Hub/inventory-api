@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/assetdisposal"
@@ -19,6 +21,7 @@ type AssetDisposalCreate struct {
 	config
 	mutation *AssetDisposalMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -286,6 +289,7 @@ func (_c *AssetDisposalCreate) createSpec() (*AssetDisposal, *sqlgraph.CreateSpe
 		_node = &AssetDisposal{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(assetdisposal.Table, sqlgraph.NewFieldSpec(assetdisposal.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -337,11 +341,475 @@ func (_c *AssetDisposalCreate) createSpec() (*AssetDisposal, *sqlgraph.CreateSpe
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetDisposal.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetDisposalUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetDisposalCreate) OnConflict(opts ...sql.ConflictOption) *AssetDisposalUpsertOne {
+	_c.conflict = opts
+	return &AssetDisposalUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetDisposalCreate) OnConflictColumns(columns ...string) *AssetDisposalUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetDisposalUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// AssetDisposalUpsertOne is the builder for "upsert"-ing
+	//  one AssetDisposal node.
+	AssetDisposalUpsertOne struct {
+		create *AssetDisposalCreate
+	}
+
+	// AssetDisposalUpsert is the "OnConflict" setter.
+	AssetDisposalUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetDisposalUpsert) SetTenantID(v uuid.UUID) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateTenantID() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldTenantID)
+	return u
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetDisposalUpsert) SetAssetID(v uuid.UUID) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldAssetID, v)
+	return u
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateAssetID() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldAssetID)
+	return u
+}
+
+// SetDisposalDate sets the "disposal_date" field.
+func (u *AssetDisposalUpsert) SetDisposalDate(v time.Time) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldDisposalDate, v)
+	return u
+}
+
+// UpdateDisposalDate sets the "disposal_date" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateDisposalDate() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldDisposalDate)
+	return u
+}
+
+// SetDisposalMethod sets the "disposal_method" field.
+func (u *AssetDisposalUpsert) SetDisposalMethod(v assetdisposal.DisposalMethod) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldDisposalMethod, v)
+	return u
+}
+
+// UpdateDisposalMethod sets the "disposal_method" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateDisposalMethod() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldDisposalMethod)
+	return u
+}
+
+// SetDisposalValue sets the "disposal_value" field.
+func (u *AssetDisposalUpsert) SetDisposalValue(v float64) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldDisposalValue, v)
+	return u
+}
+
+// UpdateDisposalValue sets the "disposal_value" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateDisposalValue() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldDisposalValue)
+	return u
+}
+
+// AddDisposalValue adds v to the "disposal_value" field.
+func (u *AssetDisposalUpsert) AddDisposalValue(v float64) *AssetDisposalUpsert {
+	u.Add(assetdisposal.FieldDisposalValue, v)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *AssetDisposalUpsert) SetReason(v string) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateReason() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldReason)
+	return u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AssetDisposalUpsert) ClearReason() *AssetDisposalUpsert {
+	u.SetNull(assetdisposal.FieldReason)
+	return u
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *AssetDisposalUpsert) SetApprovedBy(v uuid.UUID) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldApprovedBy, v)
+	return u
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateApprovedBy() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldApprovedBy)
+	return u
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *AssetDisposalUpsert) ClearApprovedBy() *AssetDisposalUpsert {
+	u.SetNull(assetdisposal.FieldApprovedBy)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetDisposalUpsert) SetStatus(v assetdisposal.Status) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateStatus() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldStatus)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetDisposalUpsert) SetNotes(v string) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateNotes() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetDisposalUpsert) ClearNotes() *AssetDisposalUpsert {
+	u.SetNull(assetdisposal.FieldNotes)
+	return u
+}
+
+// SetDisposalCertificate sets the "disposal_certificate" field.
+func (u *AssetDisposalUpsert) SetDisposalCertificate(v string) *AssetDisposalUpsert {
+	u.Set(assetdisposal.FieldDisposalCertificate, v)
+	return u
+}
+
+// UpdateDisposalCertificate sets the "disposal_certificate" field to the value that was provided on create.
+func (u *AssetDisposalUpsert) UpdateDisposalCertificate() *AssetDisposalUpsert {
+	u.SetExcluded(assetdisposal.FieldDisposalCertificate)
+	return u
+}
+
+// ClearDisposalCertificate clears the value of the "disposal_certificate" field.
+func (u *AssetDisposalUpsert) ClearDisposalCertificate() *AssetDisposalUpsert {
+	u.SetNull(assetdisposal.FieldDisposalCertificate)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetdisposal.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetDisposalUpsertOne) UpdateNewValues() *AssetDisposalUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(assetdisposal.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(assetdisposal.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *AssetDisposalUpsertOne) Ignore() *AssetDisposalUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetDisposalUpsertOne) DoNothing() *AssetDisposalUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetDisposalCreate.OnConflict
+// documentation for more info.
+func (u *AssetDisposalUpsertOne) Update(set func(*AssetDisposalUpsert)) *AssetDisposalUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetDisposalUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetDisposalUpsertOne) SetTenantID(v uuid.UUID) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateTenantID() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetDisposalUpsertOne) SetAssetID(v uuid.UUID) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateAssetID() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetDisposalDate sets the "disposal_date" field.
+func (u *AssetDisposalUpsertOne) SetDisposalDate(v time.Time) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalDate(v)
+	})
+}
+
+// UpdateDisposalDate sets the "disposal_date" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateDisposalDate() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalDate()
+	})
+}
+
+// SetDisposalMethod sets the "disposal_method" field.
+func (u *AssetDisposalUpsertOne) SetDisposalMethod(v assetdisposal.DisposalMethod) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalMethod(v)
+	})
+}
+
+// UpdateDisposalMethod sets the "disposal_method" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateDisposalMethod() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalMethod()
+	})
+}
+
+// SetDisposalValue sets the "disposal_value" field.
+func (u *AssetDisposalUpsertOne) SetDisposalValue(v float64) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalValue(v)
+	})
+}
+
+// AddDisposalValue adds v to the "disposal_value" field.
+func (u *AssetDisposalUpsertOne) AddDisposalValue(v float64) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.AddDisposalValue(v)
+	})
+}
+
+// UpdateDisposalValue sets the "disposal_value" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateDisposalValue() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalValue()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *AssetDisposalUpsertOne) SetReason(v string) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateReason() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AssetDisposalUpsertOne) ClearReason() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearReason()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *AssetDisposalUpsertOne) SetApprovedBy(v uuid.UUID) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateApprovedBy() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *AssetDisposalUpsertOne) ClearApprovedBy() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetDisposalUpsertOne) SetStatus(v assetdisposal.Status) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateStatus() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetDisposalUpsertOne) SetNotes(v string) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateNotes() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetDisposalUpsertOne) ClearNotes() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetDisposalCertificate sets the "disposal_certificate" field.
+func (u *AssetDisposalUpsertOne) SetDisposalCertificate(v string) *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalCertificate(v)
+	})
+}
+
+// UpdateDisposalCertificate sets the "disposal_certificate" field to the value that was provided on create.
+func (u *AssetDisposalUpsertOne) UpdateDisposalCertificate() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalCertificate()
+	})
+}
+
+// ClearDisposalCertificate clears the value of the "disposal_certificate" field.
+func (u *AssetDisposalUpsertOne) ClearDisposalCertificate() *AssetDisposalUpsertOne {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearDisposalCertificate()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetDisposalUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetDisposalCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetDisposalUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *AssetDisposalUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: AssetDisposalUpsertOne.ID is not supported by MySQL driver. Use AssetDisposalUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *AssetDisposalUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // AssetDisposalCreateBulk is the builder for creating many AssetDisposal entities in bulk.
 type AssetDisposalCreateBulk struct {
 	config
 	err      error
 	builders []*AssetDisposalCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the AssetDisposal entities in the database.
@@ -371,6 +839,7 @@ func (_c *AssetDisposalCreateBulk) Save(ctx context.Context) ([]*AssetDisposal, 
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -417,6 +886,298 @@ func (_c *AssetDisposalCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *AssetDisposalCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.AssetDisposal.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.AssetDisposalUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *AssetDisposalCreateBulk) OnConflict(opts ...sql.ConflictOption) *AssetDisposalUpsertBulk {
+	_c.conflict = opts
+	return &AssetDisposalUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *AssetDisposalCreateBulk) OnConflictColumns(columns ...string) *AssetDisposalUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &AssetDisposalUpsertBulk{
+		create: _c,
+	}
+}
+
+// AssetDisposalUpsertBulk is the builder for "upsert"-ing
+// a bulk of AssetDisposal nodes.
+type AssetDisposalUpsertBulk struct {
+	create *AssetDisposalCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(assetdisposal.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *AssetDisposalUpsertBulk) UpdateNewValues() *AssetDisposalUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(assetdisposal.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(assetdisposal.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.AssetDisposal.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *AssetDisposalUpsertBulk) Ignore() *AssetDisposalUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *AssetDisposalUpsertBulk) DoNothing() *AssetDisposalUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the AssetDisposalCreateBulk.OnConflict
+// documentation for more info.
+func (u *AssetDisposalUpsertBulk) Update(set func(*AssetDisposalUpsert)) *AssetDisposalUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&AssetDisposalUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *AssetDisposalUpsertBulk) SetTenantID(v uuid.UUID) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateTenantID() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetAssetID sets the "asset_id" field.
+func (u *AssetDisposalUpsertBulk) SetAssetID(v uuid.UUID) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetAssetID(v)
+	})
+}
+
+// UpdateAssetID sets the "asset_id" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateAssetID() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateAssetID()
+	})
+}
+
+// SetDisposalDate sets the "disposal_date" field.
+func (u *AssetDisposalUpsertBulk) SetDisposalDate(v time.Time) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalDate(v)
+	})
+}
+
+// UpdateDisposalDate sets the "disposal_date" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateDisposalDate() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalDate()
+	})
+}
+
+// SetDisposalMethod sets the "disposal_method" field.
+func (u *AssetDisposalUpsertBulk) SetDisposalMethod(v assetdisposal.DisposalMethod) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalMethod(v)
+	})
+}
+
+// UpdateDisposalMethod sets the "disposal_method" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateDisposalMethod() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalMethod()
+	})
+}
+
+// SetDisposalValue sets the "disposal_value" field.
+func (u *AssetDisposalUpsertBulk) SetDisposalValue(v float64) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalValue(v)
+	})
+}
+
+// AddDisposalValue adds v to the "disposal_value" field.
+func (u *AssetDisposalUpsertBulk) AddDisposalValue(v float64) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.AddDisposalValue(v)
+	})
+}
+
+// UpdateDisposalValue sets the "disposal_value" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateDisposalValue() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalValue()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *AssetDisposalUpsertBulk) SetReason(v string) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateReason() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *AssetDisposalUpsertBulk) ClearReason() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearReason()
+	})
+}
+
+// SetApprovedBy sets the "approved_by" field.
+func (u *AssetDisposalUpsertBulk) SetApprovedBy(v uuid.UUID) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetApprovedBy(v)
+	})
+}
+
+// UpdateApprovedBy sets the "approved_by" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateApprovedBy() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateApprovedBy()
+	})
+}
+
+// ClearApprovedBy clears the value of the "approved_by" field.
+func (u *AssetDisposalUpsertBulk) ClearApprovedBy() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearApprovedBy()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetDisposalUpsertBulk) SetStatus(v assetdisposal.Status) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateStatus() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *AssetDisposalUpsertBulk) SetNotes(v string) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateNotes() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *AssetDisposalUpsertBulk) ClearNotes() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetDisposalCertificate sets the "disposal_certificate" field.
+func (u *AssetDisposalUpsertBulk) SetDisposalCertificate(v string) *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.SetDisposalCertificate(v)
+	})
+}
+
+// UpdateDisposalCertificate sets the "disposal_certificate" field to the value that was provided on create.
+func (u *AssetDisposalUpsertBulk) UpdateDisposalCertificate() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.UpdateDisposalCertificate()
+	})
+}
+
+// ClearDisposalCertificate clears the value of the "disposal_certificate" field.
+func (u *AssetDisposalUpsertBulk) ClearDisposalCertificate() *AssetDisposalUpsertBulk {
+	return u.Update(func(s *AssetDisposalUpsert) {
+		s.ClearDisposalCertificate()
+	})
+}
+
+// Exec executes the query.
+func (u *AssetDisposalUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the AssetDisposalCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for AssetDisposalCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *AssetDisposalUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

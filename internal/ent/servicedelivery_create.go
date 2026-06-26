@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
@@ -19,6 +21,7 @@ type ServiceDeliveryCreate struct {
 	config
 	mutation *ServiceDeliveryMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -288,6 +291,7 @@ func (_c *ServiceDeliveryCreate) createSpec() (*ServiceDelivery, *sqlgraph.Creat
 		_node = &ServiceDelivery{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(servicedelivery.Table, sqlgraph.NewFieldSpec(servicedelivery.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -339,11 +343,462 @@ func (_c *ServiceDeliveryCreate) createSpec() (*ServiceDelivery, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ServiceDelivery.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ServiceDeliveryUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ServiceDeliveryCreate) OnConflict(opts ...sql.ConflictOption) *ServiceDeliveryUpsertOne {
+	_c.conflict = opts
+	return &ServiceDeliveryUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ServiceDeliveryCreate) OnConflictColumns(columns ...string) *ServiceDeliveryUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ServiceDeliveryUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ServiceDeliveryUpsertOne is the builder for "upsert"-ing
+	//  one ServiceDelivery node.
+	ServiceDeliveryUpsertOne struct {
+		create *ServiceDeliveryCreate
+	}
+
+	// ServiceDeliveryUpsert is the "OnConflict" setter.
+	ServiceDeliveryUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ServiceDeliveryUpsert) SetTenantID(v uuid.UUID) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateTenantID() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldTenantID)
+	return u
+}
+
+// SetRequisitionLineID sets the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsert) SetRequisitionLineID(v uuid.UUID) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldRequisitionLineID, v)
+	return u
+}
+
+// UpdateRequisitionLineID sets the "requisition_line_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateRequisitionLineID() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldRequisitionLineID)
+	return u
+}
+
+// ClearRequisitionLineID clears the value of the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsert) ClearRequisitionLineID() *ServiceDeliveryUpsert {
+	u.SetNull(servicedelivery.FieldRequisitionLineID)
+	return u
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *ServiceDeliveryUpsert) SetProviderID(v uuid.UUID) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldProviderID, v)
+	return u
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateProviderID() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldProviderID)
+	return u
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *ServiceDeliveryUpsert) ClearProviderID() *ServiceDeliveryUpsert {
+	u.SetNull(servicedelivery.FieldProviderID)
+	return u
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ServiceDeliveryUpsert) SetStartDate(v time.Time) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldStartDate, v)
+	return u
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateStartDate() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldStartDate)
+	return u
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ServiceDeliveryUpsert) SetEndDate(v time.Time) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldEndDate, v)
+	return u
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateEndDate() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldEndDate)
+	return u
+}
+
+// SetDeliverables sets the "deliverables" field.
+func (u *ServiceDeliveryUpsert) SetDeliverables(v string) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldDeliverables, v)
+	return u
+}
+
+// UpdateDeliverables sets the "deliverables" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateDeliverables() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldDeliverables)
+	return u
+}
+
+// ClearDeliverables clears the value of the "deliverables" field.
+func (u *ServiceDeliveryUpsert) ClearDeliverables() *ServiceDeliveryUpsert {
+	u.SetNull(servicedelivery.FieldDeliverables)
+	return u
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsert) SetAmount(v float64) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldAmount, v)
+	return u
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateAmount() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldAmount)
+	return u
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsert) AddAmount(v float64) *ServiceDeliveryUpsert {
+	u.Add(servicedelivery.FieldAmount, v)
+	return u
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsert) SetCurrency(v string) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldCurrency, v)
+	return u
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateCurrency() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldCurrency)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ServiceDeliveryUpsert) SetStatus(v servicedelivery.Status) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateStatus() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldStatus)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ServiceDeliveryUpsert) SetUpdatedAt(v time.Time) *ServiceDeliveryUpsert {
+	u.Set(servicedelivery.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsert) UpdateUpdatedAt() *ServiceDeliveryUpsert {
+	u.SetExcluded(servicedelivery.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(servicedelivery.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ServiceDeliveryUpsertOne) UpdateNewValues() *ServiceDeliveryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(servicedelivery.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(servicedelivery.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ServiceDeliveryUpsertOne) Ignore() *ServiceDeliveryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ServiceDeliveryUpsertOne) DoNothing() *ServiceDeliveryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ServiceDeliveryCreate.OnConflict
+// documentation for more info.
+func (u *ServiceDeliveryUpsertOne) Update(set func(*ServiceDeliveryUpsert)) *ServiceDeliveryUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ServiceDeliveryUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ServiceDeliveryUpsertOne) SetTenantID(v uuid.UUID) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateTenantID() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRequisitionLineID sets the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsertOne) SetRequisitionLineID(v uuid.UUID) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetRequisitionLineID(v)
+	})
+}
+
+// UpdateRequisitionLineID sets the "requisition_line_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateRequisitionLineID() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateRequisitionLineID()
+	})
+}
+
+// ClearRequisitionLineID clears the value of the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsertOne) ClearRequisitionLineID() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearRequisitionLineID()
+	})
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *ServiceDeliveryUpsertOne) SetProviderID(v uuid.UUID) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateProviderID() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *ServiceDeliveryUpsertOne) ClearProviderID() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearProviderID()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ServiceDeliveryUpsertOne) SetStartDate(v time.Time) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateStartDate() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ServiceDeliveryUpsertOne) SetEndDate(v time.Time) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateEndDate() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetDeliverables sets the "deliverables" field.
+func (u *ServiceDeliveryUpsertOne) SetDeliverables(v string) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetDeliverables(v)
+	})
+}
+
+// UpdateDeliverables sets the "deliverables" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateDeliverables() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateDeliverables()
+	})
+}
+
+// ClearDeliverables clears the value of the "deliverables" field.
+func (u *ServiceDeliveryUpsertOne) ClearDeliverables() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearDeliverables()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsertOne) SetAmount(v float64) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsertOne) AddAmount(v float64) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateAmount() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsertOne) SetCurrency(v string) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateCurrency() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ServiceDeliveryUpsertOne) SetStatus(v servicedelivery.Status) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateStatus() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ServiceDeliveryUpsertOne) SetUpdatedAt(v time.Time) *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertOne) UpdateUpdatedAt() *ServiceDeliveryUpsertOne {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ServiceDeliveryUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ServiceDeliveryCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ServiceDeliveryUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ServiceDeliveryUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ServiceDeliveryUpsertOne.ID is not supported by MySQL driver. Use ServiceDeliveryUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ServiceDeliveryUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ServiceDeliveryCreateBulk is the builder for creating many ServiceDelivery entities in bulk.
 type ServiceDeliveryCreateBulk struct {
 	config
 	err      error
 	builders []*ServiceDeliveryCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ServiceDelivery entities in the database.
@@ -373,6 +828,7 @@ func (_c *ServiceDeliveryCreateBulk) Save(ctx context.Context) ([]*ServiceDelive
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -419,6 +875,291 @@ func (_c *ServiceDeliveryCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ServiceDeliveryCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ServiceDelivery.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ServiceDeliveryUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ServiceDeliveryCreateBulk) OnConflict(opts ...sql.ConflictOption) *ServiceDeliveryUpsertBulk {
+	_c.conflict = opts
+	return &ServiceDeliveryUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ServiceDeliveryCreateBulk) OnConflictColumns(columns ...string) *ServiceDeliveryUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ServiceDeliveryUpsertBulk{
+		create: _c,
+	}
+}
+
+// ServiceDeliveryUpsertBulk is the builder for "upsert"-ing
+// a bulk of ServiceDelivery nodes.
+type ServiceDeliveryUpsertBulk struct {
+	create *ServiceDeliveryCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(servicedelivery.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ServiceDeliveryUpsertBulk) UpdateNewValues() *ServiceDeliveryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(servicedelivery.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(servicedelivery.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ServiceDelivery.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ServiceDeliveryUpsertBulk) Ignore() *ServiceDeliveryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ServiceDeliveryUpsertBulk) DoNothing() *ServiceDeliveryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ServiceDeliveryCreateBulk.OnConflict
+// documentation for more info.
+func (u *ServiceDeliveryUpsertBulk) Update(set func(*ServiceDeliveryUpsert)) *ServiceDeliveryUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ServiceDeliveryUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ServiceDeliveryUpsertBulk) SetTenantID(v uuid.UUID) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateTenantID() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRequisitionLineID sets the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsertBulk) SetRequisitionLineID(v uuid.UUID) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetRequisitionLineID(v)
+	})
+}
+
+// UpdateRequisitionLineID sets the "requisition_line_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateRequisitionLineID() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateRequisitionLineID()
+	})
+}
+
+// ClearRequisitionLineID clears the value of the "requisition_line_id" field.
+func (u *ServiceDeliveryUpsertBulk) ClearRequisitionLineID() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearRequisitionLineID()
+	})
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *ServiceDeliveryUpsertBulk) SetProviderID(v uuid.UUID) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateProviderID() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *ServiceDeliveryUpsertBulk) ClearProviderID() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearProviderID()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ServiceDeliveryUpsertBulk) SetStartDate(v time.Time) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateStartDate() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ServiceDeliveryUpsertBulk) SetEndDate(v time.Time) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateEndDate() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// SetDeliverables sets the "deliverables" field.
+func (u *ServiceDeliveryUpsertBulk) SetDeliverables(v string) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetDeliverables(v)
+	})
+}
+
+// UpdateDeliverables sets the "deliverables" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateDeliverables() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateDeliverables()
+	})
+}
+
+// ClearDeliverables clears the value of the "deliverables" field.
+func (u *ServiceDeliveryUpsertBulk) ClearDeliverables() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.ClearDeliverables()
+	})
+}
+
+// SetAmount sets the "amount" field.
+func (u *ServiceDeliveryUpsertBulk) SetAmount(v float64) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *ServiceDeliveryUpsertBulk) AddAmount(v float64) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateAmount() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *ServiceDeliveryUpsertBulk) SetCurrency(v string) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateCurrency() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ServiceDeliveryUpsertBulk) SetStatus(v servicedelivery.Status) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateStatus() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ServiceDeliveryUpsertBulk) SetUpdatedAt(v time.Time) *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ServiceDeliveryUpsertBulk) UpdateUpdatedAt() *ServiceDeliveryUpsertBulk {
+	return u.Update(func(s *ServiceDeliveryUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ServiceDeliveryUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ServiceDeliveryCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ServiceDeliveryCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ServiceDeliveryUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

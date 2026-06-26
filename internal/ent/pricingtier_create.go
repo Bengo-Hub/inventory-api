@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
@@ -18,6 +20,7 @@ type PricingTierCreate struct {
 	config
 	mutation *PricingTierMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -222,6 +225,7 @@ func (_c *PricingTierCreate) createSpec() (*PricingTier, *sqlgraph.CreateSpec) {
 		_node = &PricingTier{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(pricingtier.Table, sqlgraph.NewFieldSpec(pricingtier.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -257,11 +261,355 @@ func (_c *PricingTierCreate) createSpec() (*PricingTier, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PricingTier.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PricingTierUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PricingTierCreate) OnConflict(opts ...sql.ConflictOption) *PricingTierUpsertOne {
+	_c.conflict = opts
+	return &PricingTierUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PricingTierCreate) OnConflictColumns(columns ...string) *PricingTierUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PricingTierUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// PricingTierUpsertOne is the builder for "upsert"-ing
+	//  one PricingTier node.
+	PricingTierUpsertOne struct {
+		create *PricingTierCreate
+	}
+
+	// PricingTierUpsert is the "OnConflict" setter.
+	PricingTierUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PricingTierUpsert) SetTenantID(v uuid.UUID) *PricingTierUpsert {
+	u.Set(pricingtier.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateTenantID() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldTenantID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *PricingTierUpsert) SetName(v string) *PricingTierUpsert {
+	u.Set(pricingtier.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateName() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldName)
+	return u
+}
+
+// SetCode sets the "code" field.
+func (u *PricingTierUpsert) SetCode(v string) *PricingTierUpsert {
+	u.Set(pricingtier.FieldCode, v)
+	return u
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateCode() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldCode)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *PricingTierUpsert) SetDescription(v string) *PricingTierUpsert {
+	u.Set(pricingtier.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateDescription() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *PricingTierUpsert) ClearDescription() *PricingTierUpsert {
+	u.SetNull(pricingtier.FieldDescription)
+	return u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *PricingTierUpsert) SetIsDefault(v bool) *PricingTierUpsert {
+	u.Set(pricingtier.FieldIsDefault, v)
+	return u
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateIsDefault() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldIsDefault)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *PricingTierUpsert) SetIsActive(v bool) *PricingTierUpsert {
+	u.Set(pricingtier.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateIsActive() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldIsActive)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *PricingTierUpsert) SetSortOrder(v int) *PricingTierUpsert {
+	u.Set(pricingtier.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *PricingTierUpsert) UpdateSortOrder() *PricingTierUpsert {
+	u.SetExcluded(pricingtier.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *PricingTierUpsert) AddSortOrder(v int) *PricingTierUpsert {
+	u.Add(pricingtier.FieldSortOrder, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(pricingtier.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PricingTierUpsertOne) UpdateNewValues() *PricingTierUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(pricingtier.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *PricingTierUpsertOne) Ignore() *PricingTierUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PricingTierUpsertOne) DoNothing() *PricingTierUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PricingTierCreate.OnConflict
+// documentation for more info.
+func (u *PricingTierUpsertOne) Update(set func(*PricingTierUpsert)) *PricingTierUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PricingTierUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PricingTierUpsertOne) SetTenantID(v uuid.UUID) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateTenantID() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *PricingTierUpsertOne) SetName(v string) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateName() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *PricingTierUpsertOne) SetCode(v string) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateCode() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *PricingTierUpsertOne) SetDescription(v string) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateDescription() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *PricingTierUpsertOne) ClearDescription() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *PricingTierUpsertOne) SetIsDefault(v bool) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateIsDefault() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateIsDefault()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *PricingTierUpsertOne) SetIsActive(v bool) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateIsActive() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *PricingTierUpsertOne) SetSortOrder(v int) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *PricingTierUpsertOne) AddSortOrder(v int) *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *PricingTierUpsertOne) UpdateSortOrder() *PricingTierUpsertOne {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *PricingTierUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PricingTierCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PricingTierUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *PricingTierUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: PricingTierUpsertOne.ID is not supported by MySQL driver. Use PricingTierUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *PricingTierUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // PricingTierCreateBulk is the builder for creating many PricingTier entities in bulk.
 type PricingTierCreateBulk struct {
 	config
 	err      error
 	builders []*PricingTierCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the PricingTier entities in the database.
@@ -291,6 +639,7 @@ func (_c *PricingTierCreateBulk) Save(ctx context.Context) ([]*PricingTier, erro
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -337,6 +686,232 @@ func (_c *PricingTierCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *PricingTierCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.PricingTier.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.PricingTierUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *PricingTierCreateBulk) OnConflict(opts ...sql.ConflictOption) *PricingTierUpsertBulk {
+	_c.conflict = opts
+	return &PricingTierUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *PricingTierCreateBulk) OnConflictColumns(columns ...string) *PricingTierUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &PricingTierUpsertBulk{
+		create: _c,
+	}
+}
+
+// PricingTierUpsertBulk is the builder for "upsert"-ing
+// a bulk of PricingTier nodes.
+type PricingTierUpsertBulk struct {
+	create *PricingTierCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(pricingtier.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *PricingTierUpsertBulk) UpdateNewValues() *PricingTierUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(pricingtier.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.PricingTier.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *PricingTierUpsertBulk) Ignore() *PricingTierUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *PricingTierUpsertBulk) DoNothing() *PricingTierUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the PricingTierCreateBulk.OnConflict
+// documentation for more info.
+func (u *PricingTierUpsertBulk) Update(set func(*PricingTierUpsert)) *PricingTierUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&PricingTierUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *PricingTierUpsertBulk) SetTenantID(v uuid.UUID) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateTenantID() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *PricingTierUpsertBulk) SetName(v string) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateName() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCode sets the "code" field.
+func (u *PricingTierUpsertBulk) SetCode(v string) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetCode(v)
+	})
+}
+
+// UpdateCode sets the "code" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateCode() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateCode()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *PricingTierUpsertBulk) SetDescription(v string) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateDescription() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *PricingTierUpsertBulk) ClearDescription() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *PricingTierUpsertBulk) SetIsDefault(v bool) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateIsDefault() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateIsDefault()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *PricingTierUpsertBulk) SetIsActive(v bool) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateIsActive() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *PricingTierUpsertBulk) SetSortOrder(v int) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *PricingTierUpsertBulk) AddSortOrder(v int) *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *PricingTierUpsertBulk) UpdateSortOrder() *PricingTierUpsertBulk {
+	return u.Update(func(s *PricingTierUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// Exec executes the query.
+func (u *PricingTierUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the PricingTierCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for PricingTierCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *PricingTierUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

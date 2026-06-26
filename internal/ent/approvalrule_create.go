@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/approvalrule"
@@ -20,6 +22,7 @@ type ApprovalRuleCreate struct {
 	config
 	mutation *ApprovalRuleMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -260,6 +263,7 @@ func (_c *ApprovalRuleCreate) createSpec() (*ApprovalRule, *sqlgraph.CreateSpec)
 		_node = &ApprovalRule{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(approvalrule.Table, sqlgraph.NewFieldSpec(approvalrule.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -315,11 +319,371 @@ func (_c *ApprovalRuleCreate) createSpec() (*ApprovalRule, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ApprovalRule.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApprovalRuleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApprovalRuleCreate) OnConflict(opts ...sql.ConflictOption) *ApprovalRuleUpsertOne {
+	_c.conflict = opts
+	return &ApprovalRuleUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApprovalRuleCreate) OnConflictColumns(columns ...string) *ApprovalRuleUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApprovalRuleUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ApprovalRuleUpsertOne is the builder for "upsert"-ing
+	//  one ApprovalRule node.
+	ApprovalRuleUpsertOne struct {
+		create *ApprovalRuleCreate
+	}
+
+	// ApprovalRuleUpsert is the "OnConflict" setter.
+	ApprovalRuleUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalRuleUpsert) SetTenantID(v uuid.UUID) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateTenantID() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldTenantID)
+	return u
+}
+
+// SetModule sets the "module" field.
+func (u *ApprovalRuleUpsert) SetModule(v approvalrule.Module) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldModule, v)
+	return u
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateModule() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldModule)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalRuleUpsert) SetName(v string) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateName() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldName)
+	return u
+}
+
+// SetMinAmount sets the "min_amount" field.
+func (u *ApprovalRuleUpsert) SetMinAmount(v float64) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldMinAmount, v)
+	return u
+}
+
+// UpdateMinAmount sets the "min_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateMinAmount() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldMinAmount)
+	return u
+}
+
+// AddMinAmount adds v to the "min_amount" field.
+func (u *ApprovalRuleUpsert) AddMinAmount(v float64) *ApprovalRuleUpsert {
+	u.Add(approvalrule.FieldMinAmount, v)
+	return u
+}
+
+// SetMaxAmount sets the "max_amount" field.
+func (u *ApprovalRuleUpsert) SetMaxAmount(v float64) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldMaxAmount, v)
+	return u
+}
+
+// UpdateMaxAmount sets the "max_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateMaxAmount() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldMaxAmount)
+	return u
+}
+
+// AddMaxAmount adds v to the "max_amount" field.
+func (u *ApprovalRuleUpsert) AddMaxAmount(v float64) *ApprovalRuleUpsert {
+	u.Add(approvalrule.FieldMaxAmount, v)
+	return u
+}
+
+// ClearMaxAmount clears the value of the "max_amount" field.
+func (u *ApprovalRuleUpsert) ClearMaxAmount() *ApprovalRuleUpsert {
+	u.SetNull(approvalrule.FieldMaxAmount)
+	return u
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ApprovalRuleUpsert) SetIsActive(v bool) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldIsActive, v)
+	return u
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateIsActive() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldIsActive)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ApprovalRuleUpsert) SetUpdatedAt(v time.Time) *ApprovalRuleUpsert {
+	u.Set(approvalrule.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ApprovalRuleUpsert) UpdateUpdatedAt() *ApprovalRuleUpsert {
+	u.SetExcluded(approvalrule.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(approvalrule.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApprovalRuleUpsertOne) UpdateNewValues() *ApprovalRuleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(approvalrule.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(approvalrule.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ApprovalRuleUpsertOne) Ignore() *ApprovalRuleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApprovalRuleUpsertOne) DoNothing() *ApprovalRuleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApprovalRuleCreate.OnConflict
+// documentation for more info.
+func (u *ApprovalRuleUpsertOne) Update(set func(*ApprovalRuleUpsert)) *ApprovalRuleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApprovalRuleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalRuleUpsertOne) SetTenantID(v uuid.UUID) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateTenantID() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetModule sets the "module" field.
+func (u *ApprovalRuleUpsertOne) SetModule(v approvalrule.Module) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetModule(v)
+	})
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateModule() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateModule()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalRuleUpsertOne) SetName(v string) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateName() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetMinAmount sets the "min_amount" field.
+func (u *ApprovalRuleUpsertOne) SetMinAmount(v float64) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetMinAmount(v)
+	})
+}
+
+// AddMinAmount adds v to the "min_amount" field.
+func (u *ApprovalRuleUpsertOne) AddMinAmount(v float64) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.AddMinAmount(v)
+	})
+}
+
+// UpdateMinAmount sets the "min_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateMinAmount() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateMinAmount()
+	})
+}
+
+// SetMaxAmount sets the "max_amount" field.
+func (u *ApprovalRuleUpsertOne) SetMaxAmount(v float64) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetMaxAmount(v)
+	})
+}
+
+// AddMaxAmount adds v to the "max_amount" field.
+func (u *ApprovalRuleUpsertOne) AddMaxAmount(v float64) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.AddMaxAmount(v)
+	})
+}
+
+// UpdateMaxAmount sets the "max_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateMaxAmount() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateMaxAmount()
+	})
+}
+
+// ClearMaxAmount clears the value of the "max_amount" field.
+func (u *ApprovalRuleUpsertOne) ClearMaxAmount() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.ClearMaxAmount()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ApprovalRuleUpsertOne) SetIsActive(v bool) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateIsActive() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ApprovalRuleUpsertOne) SetUpdatedAt(v time.Time) *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertOne) UpdateUpdatedAt() *ApprovalRuleUpsertOne {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ApprovalRuleUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApprovalRuleCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApprovalRuleUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ApprovalRuleUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ApprovalRuleUpsertOne.ID is not supported by MySQL driver. Use ApprovalRuleUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ApprovalRuleUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ApprovalRuleCreateBulk is the builder for creating many ApprovalRule entities in bulk.
 type ApprovalRuleCreateBulk struct {
 	config
 	err      error
 	builders []*ApprovalRuleCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ApprovalRule entities in the database.
@@ -349,6 +713,7 @@ func (_c *ApprovalRuleCreateBulk) Save(ctx context.Context) ([]*ApprovalRule, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -395,6 +760,242 @@ func (_c *ApprovalRuleCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ApprovalRuleCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ApprovalRule.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ApprovalRuleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ApprovalRuleCreateBulk) OnConflict(opts ...sql.ConflictOption) *ApprovalRuleUpsertBulk {
+	_c.conflict = opts
+	return &ApprovalRuleUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ApprovalRuleCreateBulk) OnConflictColumns(columns ...string) *ApprovalRuleUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ApprovalRuleUpsertBulk{
+		create: _c,
+	}
+}
+
+// ApprovalRuleUpsertBulk is the builder for "upsert"-ing
+// a bulk of ApprovalRule nodes.
+type ApprovalRuleUpsertBulk struct {
+	create *ApprovalRuleCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(approvalrule.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ApprovalRuleUpsertBulk) UpdateNewValues() *ApprovalRuleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(approvalrule.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(approvalrule.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ApprovalRule.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ApprovalRuleUpsertBulk) Ignore() *ApprovalRuleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ApprovalRuleUpsertBulk) DoNothing() *ApprovalRuleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ApprovalRuleCreateBulk.OnConflict
+// documentation for more info.
+func (u *ApprovalRuleUpsertBulk) Update(set func(*ApprovalRuleUpsert)) *ApprovalRuleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ApprovalRuleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ApprovalRuleUpsertBulk) SetTenantID(v uuid.UUID) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateTenantID() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetModule sets the "module" field.
+func (u *ApprovalRuleUpsertBulk) SetModule(v approvalrule.Module) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetModule(v)
+	})
+}
+
+// UpdateModule sets the "module" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateModule() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateModule()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *ApprovalRuleUpsertBulk) SetName(v string) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateName() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetMinAmount sets the "min_amount" field.
+func (u *ApprovalRuleUpsertBulk) SetMinAmount(v float64) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetMinAmount(v)
+	})
+}
+
+// AddMinAmount adds v to the "min_amount" field.
+func (u *ApprovalRuleUpsertBulk) AddMinAmount(v float64) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.AddMinAmount(v)
+	})
+}
+
+// UpdateMinAmount sets the "min_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateMinAmount() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateMinAmount()
+	})
+}
+
+// SetMaxAmount sets the "max_amount" field.
+func (u *ApprovalRuleUpsertBulk) SetMaxAmount(v float64) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetMaxAmount(v)
+	})
+}
+
+// AddMaxAmount adds v to the "max_amount" field.
+func (u *ApprovalRuleUpsertBulk) AddMaxAmount(v float64) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.AddMaxAmount(v)
+	})
+}
+
+// UpdateMaxAmount sets the "max_amount" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateMaxAmount() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateMaxAmount()
+	})
+}
+
+// ClearMaxAmount clears the value of the "max_amount" field.
+func (u *ApprovalRuleUpsertBulk) ClearMaxAmount() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.ClearMaxAmount()
+	})
+}
+
+// SetIsActive sets the "is_active" field.
+func (u *ApprovalRuleUpsertBulk) SetIsActive(v bool) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetIsActive(v)
+	})
+}
+
+// UpdateIsActive sets the "is_active" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateIsActive() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateIsActive()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ApprovalRuleUpsertBulk) SetUpdatedAt(v time.Time) *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ApprovalRuleUpsertBulk) UpdateUpdatedAt() *ApprovalRuleUpsertBulk {
+	return u.Update(func(s *ApprovalRuleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ApprovalRuleUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ApprovalRuleCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ApprovalRuleCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ApprovalRuleUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

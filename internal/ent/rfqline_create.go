@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/rfq"
@@ -19,6 +21,7 @@ type RFQLineCreate struct {
 	config
 	mutation *RFQLineMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -198,6 +201,7 @@ func (_c *RFQLineCreate) createSpec() (*RFQLine, *sqlgraph.CreateSpec) {
 		_node = &RFQLine{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(rfqline.Table, sqlgraph.NewFieldSpec(rfqline.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -242,11 +246,355 @@ func (_c *RFQLineCreate) createSpec() (*RFQLine, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RFQLine.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RFQLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RFQLineCreate) OnConflict(opts ...sql.ConflictOption) *RFQLineUpsertOne {
+	_c.conflict = opts
+	return &RFQLineUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RFQLineCreate) OnConflictColumns(columns ...string) *RFQLineUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RFQLineUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// RFQLineUpsertOne is the builder for "upsert"-ing
+	//  one RFQLine node.
+	RFQLineUpsertOne struct {
+		create *RFQLineCreate
+	}
+
+	// RFQLineUpsert is the "OnConflict" setter.
+	RFQLineUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RFQLineUpsert) SetTenantID(v uuid.UUID) *RFQLineUpsert {
+	u.Set(rfqline.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateTenantID() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldTenantID)
+	return u
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *RFQLineUpsert) SetRfqID(v uuid.UUID) *RFQLineUpsert {
+	u.Set(rfqline.FieldRfqID, v)
+	return u
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateRfqID() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldRfqID)
+	return u
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RFQLineUpsert) SetItemID(v uuid.UUID) *RFQLineUpsert {
+	u.Set(rfqline.FieldItemID, v)
+	return u
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateItemID() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldItemID)
+	return u
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RFQLineUpsert) ClearItemID() *RFQLineUpsert {
+	u.SetNull(rfqline.FieldItemID)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *RFQLineUpsert) SetDescription(v string) *RFQLineUpsert {
+	u.Set(rfqline.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateDescription() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RFQLineUpsert) ClearDescription() *RFQLineUpsert {
+	u.SetNull(rfqline.FieldDescription)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RFQLineUpsert) SetQuantity(v float64) *RFQLineUpsert {
+	u.Set(rfqline.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateQuantity() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RFQLineUpsert) AddQuantity(v float64) *RFQLineUpsert {
+	u.Add(rfqline.FieldQuantity, v)
+	return u
+}
+
+// SetUom sets the "uom" field.
+func (u *RFQLineUpsert) SetUom(v string) *RFQLineUpsert {
+	u.Set(rfqline.FieldUom, v)
+	return u
+}
+
+// UpdateUom sets the "uom" field to the value that was provided on create.
+func (u *RFQLineUpsert) UpdateUom() *RFQLineUpsert {
+	u.SetExcluded(rfqline.FieldUom)
+	return u
+}
+
+// ClearUom clears the value of the "uom" field.
+func (u *RFQLineUpsert) ClearUom() *RFQLineUpsert {
+	u.SetNull(rfqline.FieldUom)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(rfqline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RFQLineUpsertOne) UpdateNewValues() *RFQLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(rfqline.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *RFQLineUpsertOne) Ignore() *RFQLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RFQLineUpsertOne) DoNothing() *RFQLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RFQLineCreate.OnConflict
+// documentation for more info.
+func (u *RFQLineUpsertOne) Update(set func(*RFQLineUpsert)) *RFQLineUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RFQLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RFQLineUpsertOne) SetTenantID(v uuid.UUID) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateTenantID() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *RFQLineUpsertOne) SetRfqID(v uuid.UUID) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateRfqID() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RFQLineUpsertOne) SetItemID(v uuid.UUID) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateItemID() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RFQLineUpsertOne) ClearItemID() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearItemID()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *RFQLineUpsertOne) SetDescription(v string) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateDescription() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RFQLineUpsertOne) ClearDescription() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RFQLineUpsertOne) SetQuantity(v float64) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RFQLineUpsertOne) AddQuantity(v float64) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateQuantity() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetUom sets the "uom" field.
+func (u *RFQLineUpsertOne) SetUom(v string) *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetUom(v)
+	})
+}
+
+// UpdateUom sets the "uom" field to the value that was provided on create.
+func (u *RFQLineUpsertOne) UpdateUom() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateUom()
+	})
+}
+
+// ClearUom clears the value of the "uom" field.
+func (u *RFQLineUpsertOne) ClearUom() *RFQLineUpsertOne {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearUom()
+	})
+}
+
+// Exec executes the query.
+func (u *RFQLineUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RFQLineCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RFQLineUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *RFQLineUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: RFQLineUpsertOne.ID is not supported by MySQL driver. Use RFQLineUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *RFQLineUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // RFQLineCreateBulk is the builder for creating many RFQLine entities in bulk.
 type RFQLineCreateBulk struct {
 	config
 	err      error
 	builders []*RFQLineCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the RFQLine entities in the database.
@@ -276,6 +624,7 @@ func (_c *RFQLineCreateBulk) Save(ctx context.Context) ([]*RFQLine, error) {
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -322,6 +671,232 @@ func (_c *RFQLineCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *RFQLineCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.RFQLine.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RFQLineUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *RFQLineCreateBulk) OnConflict(opts ...sql.ConflictOption) *RFQLineUpsertBulk {
+	_c.conflict = opts
+	return &RFQLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *RFQLineCreateBulk) OnConflictColumns(columns ...string) *RFQLineUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &RFQLineUpsertBulk{
+		create: _c,
+	}
+}
+
+// RFQLineUpsertBulk is the builder for "upsert"-ing
+// a bulk of RFQLine nodes.
+type RFQLineUpsertBulk struct {
+	create *RFQLineCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(rfqline.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RFQLineUpsertBulk) UpdateNewValues() *RFQLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(rfqline.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.RFQLine.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *RFQLineUpsertBulk) Ignore() *RFQLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RFQLineUpsertBulk) DoNothing() *RFQLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RFQLineCreateBulk.OnConflict
+// documentation for more info.
+func (u *RFQLineUpsertBulk) Update(set func(*RFQLineUpsert)) *RFQLineUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RFQLineUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RFQLineUpsertBulk) SetTenantID(v uuid.UUID) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateTenantID() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetRfqID sets the "rfq_id" field.
+func (u *RFQLineUpsertBulk) SetRfqID(v uuid.UUID) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetRfqID(v)
+	})
+}
+
+// UpdateRfqID sets the "rfq_id" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateRfqID() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateRfqID()
+	})
+}
+
+// SetItemID sets the "item_id" field.
+func (u *RFQLineUpsertBulk) SetItemID(v uuid.UUID) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetItemID(v)
+	})
+}
+
+// UpdateItemID sets the "item_id" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateItemID() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateItemID()
+	})
+}
+
+// ClearItemID clears the value of the "item_id" field.
+func (u *RFQLineUpsertBulk) ClearItemID() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearItemID()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *RFQLineUpsertBulk) SetDescription(v string) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateDescription() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RFQLineUpsertBulk) ClearDescription() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *RFQLineUpsertBulk) SetQuantity(v float64) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *RFQLineUpsertBulk) AddQuantity(v float64) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateQuantity() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetUom sets the "uom" field.
+func (u *RFQLineUpsertBulk) SetUom(v string) *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.SetUom(v)
+	})
+}
+
+// UpdateUom sets the "uom" field to the value that was provided on create.
+func (u *RFQLineUpsertBulk) UpdateUom() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.UpdateUom()
+	})
+}
+
+// ClearUom clears the value of the "uom" field.
+func (u *RFQLineUpsertBulk) ClearUom() *RFQLineUpsertBulk {
+	return u.Update(func(s *RFQLineUpsert) {
+		s.ClearUom()
+	})
+}
+
+// Exec executes the query.
+func (u *RFQLineUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the RFQLineCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RFQLineCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RFQLineUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

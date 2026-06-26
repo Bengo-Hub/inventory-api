@@ -53256,6 +53256,7 @@ type PurchaseOrderMutation struct {
 	addtotal_amount                *float64
 	currency                       *string
 	requisition_id                 *uuid.UUID
+	project_id                     *uuid.UUID
 	rfq_id                         *uuid.UUID
 	pay_term_days                  *int
 	addpay_term_days               *int
@@ -53752,6 +53753,55 @@ func (m *PurchaseOrderMutation) ResetRequisitionID() {
 	delete(m.clearedFields, purchaseorder.FieldRequisitionID)
 }
 
+// SetProjectID sets the "project_id" field.
+func (m *PurchaseOrderMutation) SetProjectID(u uuid.UUID) {
+	m.project_id = &u
+}
+
+// ProjectID returns the value of the "project_id" field in the mutation.
+func (m *PurchaseOrderMutation) ProjectID() (r uuid.UUID, exists bool) {
+	v := m.project_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectID returns the old "project_id" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldProjectID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectID: %w", err)
+	}
+	return oldValue.ProjectID, nil
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (m *PurchaseOrderMutation) ClearProjectID() {
+	m.project_id = nil
+	m.clearedFields[purchaseorder.FieldProjectID] = struct{}{}
+}
+
+// ProjectIDCleared returns if the "project_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) ProjectIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldProjectID]
+	return ok
+}
+
+// ResetProjectID resets all changes to the "project_id" field.
+func (m *PurchaseOrderMutation) ResetProjectID() {
+	m.project_id = nil
+	delete(m.clearedFields, purchaseorder.FieldProjectID)
+}
+
 // SetRfqID sets the "rfq_id" field.
 func (m *PurchaseOrderMutation) SetRfqID(u uuid.UUID) {
 	m.rfq_id = &u
@@ -54239,7 +54289,7 @@ func (m *PurchaseOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.tenant_id != nil {
 		fields = append(fields, purchaseorder.FieldTenantID)
 	}
@@ -54266,6 +54316,9 @@ func (m *PurchaseOrderMutation) Fields() []string {
 	}
 	if m.requisition_id != nil {
 		fields = append(fields, purchaseorder.FieldRequisitionID)
+	}
+	if m.project_id != nil {
+		fields = append(fields, purchaseorder.FieldProjectID)
 	}
 	if m.rfq_id != nil {
 		fields = append(fields, purchaseorder.FieldRfqID)
@@ -54314,6 +54367,8 @@ func (m *PurchaseOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Currency()
 	case purchaseorder.FieldRequisitionID:
 		return m.RequisitionID()
+	case purchaseorder.FieldProjectID:
+		return m.ProjectID()
 	case purchaseorder.FieldRfqID:
 		return m.RfqID()
 	case purchaseorder.FieldPayTermDays:
@@ -54355,6 +54410,8 @@ func (m *PurchaseOrderMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCurrency(ctx)
 	case purchaseorder.FieldRequisitionID:
 		return m.OldRequisitionID(ctx)
+	case purchaseorder.FieldProjectID:
+		return m.OldProjectID(ctx)
 	case purchaseorder.FieldRfqID:
 		return m.OldRfqID(ctx)
 	case purchaseorder.FieldPayTermDays:
@@ -54440,6 +54497,13 @@ func (m *PurchaseOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequisitionID(v)
+		return nil
+	case purchaseorder.FieldProjectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectID(v)
 		return nil
 	case purchaseorder.FieldRfqID:
 		v, ok := value.(uuid.UUID)
@@ -54565,6 +54629,9 @@ func (m *PurchaseOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(purchaseorder.FieldRequisitionID) {
 		fields = append(fields, purchaseorder.FieldRequisitionID)
 	}
+	if m.FieldCleared(purchaseorder.FieldProjectID) {
+		fields = append(fields, purchaseorder.FieldProjectID)
+	}
 	if m.FieldCleared(purchaseorder.FieldRfqID) {
 		fields = append(fields, purchaseorder.FieldRfqID)
 	}
@@ -54596,6 +54663,9 @@ func (m *PurchaseOrderMutation) ClearField(name string) error {
 		return nil
 	case purchaseorder.FieldRequisitionID:
 		m.ClearRequisitionID()
+		return nil
+	case purchaseorder.FieldProjectID:
+		m.ClearProjectID()
 		return nil
 	case purchaseorder.FieldRfqID:
 		m.ClearRfqID()
@@ -54643,6 +54713,9 @@ func (m *PurchaseOrderMutation) ResetField(name string) error {
 		return nil
 	case purchaseorder.FieldRequisitionID:
 		m.ResetRequisitionID()
+		return nil
+	case purchaseorder.FieldProjectID:
+		m.ResetProjectID()
 		return nil
 	case purchaseorder.FieldRfqID:
 		m.ResetRfqID()
@@ -66374,6 +66447,7 @@ type RequisitionMutation struct {
 	id               *uuid.UUID
 	tenant_id        *uuid.UUID
 	outlet_id        *uuid.UUID
+	project_id       *uuid.UUID
 	reference_number *string
 	requester_id     *uuid.UUID
 	request_type     *requisition.RequestType
@@ -66580,6 +66654,55 @@ func (m *RequisitionMutation) OutletIDCleared() bool {
 func (m *RequisitionMutation) ResetOutletID() {
 	m.outlet_id = nil
 	delete(m.clearedFields, requisition.FieldOutletID)
+}
+
+// SetProjectID sets the "project_id" field.
+func (m *RequisitionMutation) SetProjectID(u uuid.UUID) {
+	m.project_id = &u
+}
+
+// ProjectID returns the value of the "project_id" field in the mutation.
+func (m *RequisitionMutation) ProjectID() (r uuid.UUID, exists bool) {
+	v := m.project_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProjectID returns the old "project_id" field's value of the Requisition entity.
+// If the Requisition object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequisitionMutation) OldProjectID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProjectID: %w", err)
+	}
+	return oldValue.ProjectID, nil
+}
+
+// ClearProjectID clears the value of the "project_id" field.
+func (m *RequisitionMutation) ClearProjectID() {
+	m.project_id = nil
+	m.clearedFields[requisition.FieldProjectID] = struct{}{}
+}
+
+// ProjectIDCleared returns if the "project_id" field was cleared in this mutation.
+func (m *RequisitionMutation) ProjectIDCleared() bool {
+	_, ok := m.clearedFields[requisition.FieldProjectID]
+	return ok
+}
+
+// ResetProjectID resets all changes to the "project_id" field.
+func (m *RequisitionMutation) ResetProjectID() {
+	m.project_id = nil
+	delete(m.clearedFields, requisition.FieldProjectID)
 }
 
 // SetReferenceNumber sets the "reference_number" field.
@@ -67082,12 +67205,15 @@ func (m *RequisitionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RequisitionMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, requisition.FieldTenantID)
 	}
 	if m.outlet_id != nil {
 		fields = append(fields, requisition.FieldOutletID)
+	}
+	if m.project_id != nil {
+		fields = append(fields, requisition.FieldProjectID)
 	}
 	if m.reference_number != nil {
 		fields = append(fields, requisition.FieldReferenceNumber)
@@ -67131,6 +67257,8 @@ func (m *RequisitionMutation) Field(name string) (ent.Value, bool) {
 		return m.TenantID()
 	case requisition.FieldOutletID:
 		return m.OutletID()
+	case requisition.FieldProjectID:
+		return m.ProjectID()
 	case requisition.FieldReferenceNumber:
 		return m.ReferenceNumber()
 	case requisition.FieldRequesterID:
@@ -67164,6 +67292,8 @@ func (m *RequisitionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldTenantID(ctx)
 	case requisition.FieldOutletID:
 		return m.OldOutletID(ctx)
+	case requisition.FieldProjectID:
+		return m.OldProjectID(ctx)
 	case requisition.FieldReferenceNumber:
 		return m.OldReferenceNumber(ctx)
 	case requisition.FieldRequesterID:
@@ -67206,6 +67336,13 @@ func (m *RequisitionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOutletID(v)
+		return nil
+	case requisition.FieldProjectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProjectID(v)
 		return nil
 	case requisition.FieldReferenceNumber:
 		v, ok := value.(string)
@@ -67310,6 +67447,9 @@ func (m *RequisitionMutation) ClearedFields() []string {
 	if m.FieldCleared(requisition.FieldOutletID) {
 		fields = append(fields, requisition.FieldOutletID)
 	}
+	if m.FieldCleared(requisition.FieldProjectID) {
+		fields = append(fields, requisition.FieldProjectID)
+	}
 	if m.FieldCleared(requisition.FieldRequesterID) {
 		fields = append(fields, requisition.FieldRequesterID)
 	}
@@ -67339,6 +67479,9 @@ func (m *RequisitionMutation) ClearField(name string) error {
 	case requisition.FieldOutletID:
 		m.ClearOutletID()
 		return nil
+	case requisition.FieldProjectID:
+		m.ClearProjectID()
+		return nil
 	case requisition.FieldRequesterID:
 		m.ClearRequesterID()
 		return nil
@@ -67364,6 +67507,9 @@ func (m *RequisitionMutation) ResetField(name string) error {
 		return nil
 	case requisition.FieldOutletID:
 		m.ResetOutletID()
+		return nil
+	case requisition.FieldProjectID:
+		m.ResetProjectID()
 		return nil
 	case requisition.FieldReferenceNumber:
 		m.ResetReferenceNumber()

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
@@ -19,6 +21,7 @@ type VariantAttributeCreate struct {
 	config
 	mutation *VariantAttributeMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -204,6 +207,7 @@ func (_c *VariantAttributeCreate) createSpec() (*VariantAttribute, *sqlgraph.Cre
 		_node = &VariantAttribute{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(variantattribute.Table, sqlgraph.NewFieldSpec(variantattribute.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -235,11 +239,293 @@ func (_c *VariantAttributeCreate) createSpec() (*VariantAttribute, *sqlgraph.Cre
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.VariantAttribute.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.VariantAttributeUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *VariantAttributeCreate) OnConflict(opts ...sql.ConflictOption) *VariantAttributeUpsertOne {
+	_c.conflict = opts
+	return &VariantAttributeUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *VariantAttributeCreate) OnConflictColumns(columns ...string) *VariantAttributeUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &VariantAttributeUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// VariantAttributeUpsertOne is the builder for "upsert"-ing
+	//  one VariantAttribute node.
+	VariantAttributeUpsertOne struct {
+		create *VariantAttributeCreate
+	}
+
+	// VariantAttributeUpsert is the "OnConflict" setter.
+	VariantAttributeUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *VariantAttributeUpsert) SetTenantID(v uuid.UUID) *VariantAttributeUpsert {
+	u.Set(variantattribute.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *VariantAttributeUpsert) UpdateTenantID() *VariantAttributeUpsert {
+	u.SetExcluded(variantattribute.FieldTenantID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *VariantAttributeUpsert) SetName(v string) *VariantAttributeUpsert {
+	u.Set(variantattribute.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *VariantAttributeUpsert) UpdateName() *VariantAttributeUpsert {
+	u.SetExcluded(variantattribute.FieldName)
+	return u
+}
+
+// SetValues sets the "values" field.
+func (u *VariantAttributeUpsert) SetValues(v []string) *VariantAttributeUpsert {
+	u.Set(variantattribute.FieldValues, v)
+	return u
+}
+
+// UpdateValues sets the "values" field to the value that was provided on create.
+func (u *VariantAttributeUpsert) UpdateValues() *VariantAttributeUpsert {
+	u.SetExcluded(variantattribute.FieldValues)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *VariantAttributeUpsert) SetSortOrder(v int) *VariantAttributeUpsert {
+	u.Set(variantattribute.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *VariantAttributeUpsert) UpdateSortOrder() *VariantAttributeUpsert {
+	u.SetExcluded(variantattribute.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *VariantAttributeUpsert) AddSortOrder(v int) *VariantAttributeUpsert {
+	u.Add(variantattribute.FieldSortOrder, v)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *VariantAttributeUpsert) SetUpdatedAt(v time.Time) *VariantAttributeUpsert {
+	u.Set(variantattribute.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *VariantAttributeUpsert) UpdateUpdatedAt() *VariantAttributeUpsert {
+	u.SetExcluded(variantattribute.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(variantattribute.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *VariantAttributeUpsertOne) UpdateNewValues() *VariantAttributeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(variantattribute.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(variantattribute.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *VariantAttributeUpsertOne) Ignore() *VariantAttributeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *VariantAttributeUpsertOne) DoNothing() *VariantAttributeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the VariantAttributeCreate.OnConflict
+// documentation for more info.
+func (u *VariantAttributeUpsertOne) Update(set func(*VariantAttributeUpsert)) *VariantAttributeUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&VariantAttributeUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *VariantAttributeUpsertOne) SetTenantID(v uuid.UUID) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *VariantAttributeUpsertOne) UpdateTenantID() *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *VariantAttributeUpsertOne) SetName(v string) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *VariantAttributeUpsertOne) UpdateName() *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetValues sets the "values" field.
+func (u *VariantAttributeUpsertOne) SetValues(v []string) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetValues(v)
+	})
+}
+
+// UpdateValues sets the "values" field to the value that was provided on create.
+func (u *VariantAttributeUpsertOne) UpdateValues() *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateValues()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *VariantAttributeUpsertOne) SetSortOrder(v int) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *VariantAttributeUpsertOne) AddSortOrder(v int) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *VariantAttributeUpsertOne) UpdateSortOrder() *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *VariantAttributeUpsertOne) SetUpdatedAt(v time.Time) *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *VariantAttributeUpsertOne) UpdateUpdatedAt() *VariantAttributeUpsertOne {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *VariantAttributeUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for VariantAttributeCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *VariantAttributeUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *VariantAttributeUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: VariantAttributeUpsertOne.ID is not supported by MySQL driver. Use VariantAttributeUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *VariantAttributeUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // VariantAttributeCreateBulk is the builder for creating many VariantAttribute entities in bulk.
 type VariantAttributeCreateBulk struct {
 	config
 	err      error
 	builders []*VariantAttributeCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the VariantAttribute entities in the database.
@@ -269,6 +555,7 @@ func (_c *VariantAttributeCreateBulk) Save(ctx context.Context) ([]*VariantAttri
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -315,6 +602,200 @@ func (_c *VariantAttributeCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *VariantAttributeCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.VariantAttribute.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.VariantAttributeUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *VariantAttributeCreateBulk) OnConflict(opts ...sql.ConflictOption) *VariantAttributeUpsertBulk {
+	_c.conflict = opts
+	return &VariantAttributeUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *VariantAttributeCreateBulk) OnConflictColumns(columns ...string) *VariantAttributeUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &VariantAttributeUpsertBulk{
+		create: _c,
+	}
+}
+
+// VariantAttributeUpsertBulk is the builder for "upsert"-ing
+// a bulk of VariantAttribute nodes.
+type VariantAttributeUpsertBulk struct {
+	create *VariantAttributeCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(variantattribute.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *VariantAttributeUpsertBulk) UpdateNewValues() *VariantAttributeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(variantattribute.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(variantattribute.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.VariantAttribute.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *VariantAttributeUpsertBulk) Ignore() *VariantAttributeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *VariantAttributeUpsertBulk) DoNothing() *VariantAttributeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the VariantAttributeCreateBulk.OnConflict
+// documentation for more info.
+func (u *VariantAttributeUpsertBulk) Update(set func(*VariantAttributeUpsert)) *VariantAttributeUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&VariantAttributeUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *VariantAttributeUpsertBulk) SetTenantID(v uuid.UUID) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *VariantAttributeUpsertBulk) UpdateTenantID() *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *VariantAttributeUpsertBulk) SetName(v string) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *VariantAttributeUpsertBulk) UpdateName() *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetValues sets the "values" field.
+func (u *VariantAttributeUpsertBulk) SetValues(v []string) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetValues(v)
+	})
+}
+
+// UpdateValues sets the "values" field to the value that was provided on create.
+func (u *VariantAttributeUpsertBulk) UpdateValues() *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateValues()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *VariantAttributeUpsertBulk) SetSortOrder(v int) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *VariantAttributeUpsertBulk) AddSortOrder(v int) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *VariantAttributeUpsertBulk) UpdateSortOrder() *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *VariantAttributeUpsertBulk) SetUpdatedAt(v time.Time) *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *VariantAttributeUpsertBulk) UpdateUpdatedAt() *VariantAttributeUpsertBulk {
+	return u.Update(func(s *VariantAttributeUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *VariantAttributeUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the VariantAttributeCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for VariantAttributeCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *VariantAttributeUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

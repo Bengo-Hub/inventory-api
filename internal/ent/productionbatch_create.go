@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
@@ -21,6 +23,7 @@ type ProductionBatchCreate struct {
 	config
 	mutation *ProductionBatchMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -446,6 +449,7 @@ func (_c *ProductionBatchCreate) createSpec() (*ProductionBatch, *sqlgraph.Creat
 		_node = &ProductionBatch{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(productionbatch.Table, sqlgraph.NewFieldSpec(productionbatch.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -561,11 +565,800 @@ func (_c *ProductionBatchCreate) createSpec() (*ProductionBatch, *sqlgraph.Creat
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ProductionBatch.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ProductionBatchUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ProductionBatchCreate) OnConflict(opts ...sql.ConflictOption) *ProductionBatchUpsertOne {
+	_c.conflict = opts
+	return &ProductionBatchUpsertOne{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ProductionBatchCreate) OnConflictColumns(columns ...string) *ProductionBatchUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ProductionBatchUpsertOne{
+		create: _c,
+	}
+}
+
+type (
+	// ProductionBatchUpsertOne is the builder for "upsert"-ing
+	//  one ProductionBatch node.
+	ProductionBatchUpsertOne struct {
+		create *ProductionBatchCreate
+	}
+
+	// ProductionBatchUpsert is the "OnConflict" setter.
+	ProductionBatchUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProductionBatchUpsert) SetTenantID(v uuid.UUID) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateTenantID() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldTenantID)
+	return u
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ProductionBatchUpsert) SetOutletID(v uuid.UUID) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldOutletID, v)
+	return u
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateOutletID() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldOutletID)
+	return u
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ProductionBatchUpsert) ClearOutletID() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldOutletID)
+	return u
+}
+
+// SetBatchNumber sets the "batch_number" field.
+func (u *ProductionBatchUpsert) SetBatchNumber(v string) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldBatchNumber, v)
+	return u
+}
+
+// UpdateBatchNumber sets the "batch_number" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateBatchNumber() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldBatchNumber)
+	return u
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *ProductionBatchUpsert) SetRecipeID(v uuid.UUID) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldRecipeID, v)
+	return u
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateRecipeID() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldRecipeID)
+	return u
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *ProductionBatchUpsert) SetScheduledDate(v time.Time) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldScheduledDate, v)
+	return u
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateScheduledDate() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldScheduledDate)
+	return u
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ProductionBatchUpsert) SetStartDate(v time.Time) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldStartDate, v)
+	return u
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateStartDate() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldStartDate)
+	return u
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (u *ProductionBatchUpsert) ClearStartDate() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldStartDate)
+	return u
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ProductionBatchUpsert) SetEndDate(v time.Time) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldEndDate, v)
+	return u
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateEndDate() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldEndDate)
+	return u
+}
+
+// ClearEndDate clears the value of the "end_date" field.
+func (u *ProductionBatchUpsert) ClearEndDate() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldEndDate)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *ProductionBatchUpsert) SetStatus(v productionbatch.Status) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateStatus() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldStatus)
+	return u
+}
+
+// SetPlannedQuantity sets the "planned_quantity" field.
+func (u *ProductionBatchUpsert) SetPlannedQuantity(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldPlannedQuantity, v)
+	return u
+}
+
+// UpdatePlannedQuantity sets the "planned_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdatePlannedQuantity() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldPlannedQuantity)
+	return u
+}
+
+// AddPlannedQuantity adds v to the "planned_quantity" field.
+func (u *ProductionBatchUpsert) AddPlannedQuantity(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldPlannedQuantity, v)
+	return u
+}
+
+// SetActualQuantity sets the "actual_quantity" field.
+func (u *ProductionBatchUpsert) SetActualQuantity(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldActualQuantity, v)
+	return u
+}
+
+// UpdateActualQuantity sets the "actual_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateActualQuantity() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldActualQuantity)
+	return u
+}
+
+// AddActualQuantity adds v to the "actual_quantity" field.
+func (u *ProductionBatchUpsert) AddActualQuantity(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldActualQuantity, v)
+	return u
+}
+
+// ClearActualQuantity clears the value of the "actual_quantity" field.
+func (u *ProductionBatchUpsert) ClearActualQuantity() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldActualQuantity)
+	return u
+}
+
+// SetLaborCost sets the "labor_cost" field.
+func (u *ProductionBatchUpsert) SetLaborCost(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldLaborCost, v)
+	return u
+}
+
+// UpdateLaborCost sets the "labor_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateLaborCost() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldLaborCost)
+	return u
+}
+
+// AddLaborCost adds v to the "labor_cost" field.
+func (u *ProductionBatchUpsert) AddLaborCost(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldLaborCost, v)
+	return u
+}
+
+// SetOverheadCost sets the "overhead_cost" field.
+func (u *ProductionBatchUpsert) SetOverheadCost(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldOverheadCost, v)
+	return u
+}
+
+// UpdateOverheadCost sets the "overhead_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateOverheadCost() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldOverheadCost)
+	return u
+}
+
+// AddOverheadCost adds v to the "overhead_cost" field.
+func (u *ProductionBatchUpsert) AddOverheadCost(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldOverheadCost, v)
+	return u
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsert) SetScrapQuantity(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldScrapQuantity, v)
+	return u
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateScrapQuantity() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldScrapQuantity)
+	return u
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsert) AddScrapQuantity(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldScrapQuantity, v)
+	return u
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsert) SetUnitCost(v float64) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldUnitCost, v)
+	return u
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateUnitCost() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldUnitCost)
+	return u
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsert) AddUnitCost(v float64) *ProductionBatchUpsert {
+	u.Add(productionbatch.FieldUnitCost, v)
+	return u
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsert) ClearUnitCost() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldUnitCost)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *ProductionBatchUpsert) SetNotes(v string) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateNotes() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ProductionBatchUpsert) ClearNotes() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldNotes)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *ProductionBatchUpsert) SetCreatedBy(v uuid.UUID) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateCreatedBy() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldCreatedBy)
+	return u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *ProductionBatchUpsert) ClearCreatedBy() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldCreatedBy)
+	return u
+}
+
+// SetSupervisorID sets the "supervisor_id" field.
+func (u *ProductionBatchUpsert) SetSupervisorID(v uuid.UUID) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldSupervisorID, v)
+	return u
+}
+
+// UpdateSupervisorID sets the "supervisor_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateSupervisorID() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldSupervisorID)
+	return u
+}
+
+// ClearSupervisorID clears the value of the "supervisor_id" field.
+func (u *ProductionBatchUpsert) ClearSupervisorID() *ProductionBatchUpsert {
+	u.SetNull(productionbatch.FieldSupervisorID)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ProductionBatchUpsert) SetUpdatedAt(v time.Time) *ProductionBatchUpsert {
+	u.Set(productionbatch.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ProductionBatchUpsert) UpdateUpdatedAt() *ProductionBatchUpsert {
+	u.SetExcluded(productionbatch.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(productionbatch.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ProductionBatchUpsertOne) UpdateNewValues() *ProductionBatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(productionbatch.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(productionbatch.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ProductionBatchUpsertOne) Ignore() *ProductionBatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ProductionBatchUpsertOne) DoNothing() *ProductionBatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ProductionBatchCreate.OnConflict
+// documentation for more info.
+func (u *ProductionBatchUpsertOne) Update(set func(*ProductionBatchUpsert)) *ProductionBatchUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ProductionBatchUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProductionBatchUpsertOne) SetTenantID(v uuid.UUID) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateTenantID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ProductionBatchUpsertOne) SetOutletID(v uuid.UUID) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateOutletID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ProductionBatchUpsertOne) ClearOutletID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetBatchNumber sets the "batch_number" field.
+func (u *ProductionBatchUpsertOne) SetBatchNumber(v string) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetBatchNumber(v)
+	})
+}
+
+// UpdateBatchNumber sets the "batch_number" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateBatchNumber() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateBatchNumber()
+	})
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *ProductionBatchUpsertOne) SetRecipeID(v uuid.UUID) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetRecipeID(v)
+	})
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateRecipeID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateRecipeID()
+	})
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *ProductionBatchUpsertOne) SetScheduledDate(v time.Time) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScheduledDate(v)
+	})
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateScheduledDate() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScheduledDate()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ProductionBatchUpsertOne) SetStartDate(v time.Time) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateStartDate() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (u *ProductionBatchUpsertOne) ClearStartDate() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ProductionBatchUpsertOne) SetEndDate(v time.Time) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateEndDate() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// ClearEndDate clears the value of the "end_date" field.
+func (u *ProductionBatchUpsertOne) ClearEndDate() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearEndDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ProductionBatchUpsertOne) SetStatus(v productionbatch.Status) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateStatus() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPlannedQuantity sets the "planned_quantity" field.
+func (u *ProductionBatchUpsertOne) SetPlannedQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetPlannedQuantity(v)
+	})
+}
+
+// AddPlannedQuantity adds v to the "planned_quantity" field.
+func (u *ProductionBatchUpsertOne) AddPlannedQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddPlannedQuantity(v)
+	})
+}
+
+// UpdatePlannedQuantity sets the "planned_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdatePlannedQuantity() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdatePlannedQuantity()
+	})
+}
+
+// SetActualQuantity sets the "actual_quantity" field.
+func (u *ProductionBatchUpsertOne) SetActualQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetActualQuantity(v)
+	})
+}
+
+// AddActualQuantity adds v to the "actual_quantity" field.
+func (u *ProductionBatchUpsertOne) AddActualQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddActualQuantity(v)
+	})
+}
+
+// UpdateActualQuantity sets the "actual_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateActualQuantity() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateActualQuantity()
+	})
+}
+
+// ClearActualQuantity clears the value of the "actual_quantity" field.
+func (u *ProductionBatchUpsertOne) ClearActualQuantity() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearActualQuantity()
+	})
+}
+
+// SetLaborCost sets the "labor_cost" field.
+func (u *ProductionBatchUpsertOne) SetLaborCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetLaborCost(v)
+	})
+}
+
+// AddLaborCost adds v to the "labor_cost" field.
+func (u *ProductionBatchUpsertOne) AddLaborCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddLaborCost(v)
+	})
+}
+
+// UpdateLaborCost sets the "labor_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateLaborCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateLaborCost()
+	})
+}
+
+// SetOverheadCost sets the "overhead_cost" field.
+func (u *ProductionBatchUpsertOne) SetOverheadCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetOverheadCost(v)
+	})
+}
+
+// AddOverheadCost adds v to the "overhead_cost" field.
+func (u *ProductionBatchUpsertOne) AddOverheadCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddOverheadCost(v)
+	})
+}
+
+// UpdateOverheadCost sets the "overhead_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateOverheadCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateOverheadCost()
+	})
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsertOne) SetScrapQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScrapQuantity(v)
+	})
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsertOne) AddScrapQuantity(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddScrapQuantity(v)
+	})
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateScrapQuantity() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScrapQuantity()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) SetUnitCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) AddUnitCost(v float64) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateUnitCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsertOne) ClearUnitCost() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearUnitCost()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *ProductionBatchUpsertOne) SetNotes(v string) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateNotes() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ProductionBatchUpsertOne) ClearNotes() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *ProductionBatchUpsertOne) SetCreatedBy(v uuid.UUID) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateCreatedBy() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *ProductionBatchUpsertOne) ClearCreatedBy() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetSupervisorID sets the "supervisor_id" field.
+func (u *ProductionBatchUpsertOne) SetSupervisorID(v uuid.UUID) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetSupervisorID(v)
+	})
+}
+
+// UpdateSupervisorID sets the "supervisor_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateSupervisorID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateSupervisorID()
+	})
+}
+
+// ClearSupervisorID clears the value of the "supervisor_id" field.
+func (u *ProductionBatchUpsertOne) ClearSupervisorID() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearSupervisorID()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ProductionBatchUpsertOne) SetUpdatedAt(v time.Time) *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ProductionBatchUpsertOne) UpdateUpdatedAt() *ProductionBatchUpsertOne {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ProductionBatchUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ProductionBatchCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ProductionBatchUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ProductionBatchUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ProductionBatchUpsertOne.ID is not supported by MySQL driver. Use ProductionBatchUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ProductionBatchUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ProductionBatchCreateBulk is the builder for creating many ProductionBatch entities in bulk.
 type ProductionBatchCreateBulk struct {
 	config
 	err      error
 	builders []*ProductionBatchCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ProductionBatch entities in the database.
@@ -595,6 +1388,7 @@ func (_c *ProductionBatchCreateBulk) Save(ctx context.Context) ([]*ProductionBat
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -641,6 +1435,473 @@ func (_c *ProductionBatchCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *ProductionBatchCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ProductionBatch.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ProductionBatchUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (_c *ProductionBatchCreateBulk) OnConflict(opts ...sql.ConflictOption) *ProductionBatchUpsertBulk {
+	_c.conflict = opts
+	return &ProductionBatchUpsertBulk{
+		create: _c,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (_c *ProductionBatchCreateBulk) OnConflictColumns(columns ...string) *ProductionBatchUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
+	return &ProductionBatchUpsertBulk{
+		create: _c,
+	}
+}
+
+// ProductionBatchUpsertBulk is the builder for "upsert"-ing
+// a bulk of ProductionBatch nodes.
+type ProductionBatchUpsertBulk struct {
+	create *ProductionBatchCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(productionbatch.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ProductionBatchUpsertBulk) UpdateNewValues() *ProductionBatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(productionbatch.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(productionbatch.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ProductionBatch.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ProductionBatchUpsertBulk) Ignore() *ProductionBatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ProductionBatchUpsertBulk) DoNothing() *ProductionBatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ProductionBatchCreateBulk.OnConflict
+// documentation for more info.
+func (u *ProductionBatchUpsertBulk) Update(set func(*ProductionBatchUpsert)) *ProductionBatchUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ProductionBatchUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProductionBatchUpsertBulk) SetTenantID(v uuid.UUID) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateTenantID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetOutletID sets the "outlet_id" field.
+func (u *ProductionBatchUpsertBulk) SetOutletID(v uuid.UUID) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetOutletID(v)
+	})
+}
+
+// UpdateOutletID sets the "outlet_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateOutletID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateOutletID()
+	})
+}
+
+// ClearOutletID clears the value of the "outlet_id" field.
+func (u *ProductionBatchUpsertBulk) ClearOutletID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearOutletID()
+	})
+}
+
+// SetBatchNumber sets the "batch_number" field.
+func (u *ProductionBatchUpsertBulk) SetBatchNumber(v string) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetBatchNumber(v)
+	})
+}
+
+// UpdateBatchNumber sets the "batch_number" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateBatchNumber() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateBatchNumber()
+	})
+}
+
+// SetRecipeID sets the "recipe_id" field.
+func (u *ProductionBatchUpsertBulk) SetRecipeID(v uuid.UUID) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetRecipeID(v)
+	})
+}
+
+// UpdateRecipeID sets the "recipe_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateRecipeID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateRecipeID()
+	})
+}
+
+// SetScheduledDate sets the "scheduled_date" field.
+func (u *ProductionBatchUpsertBulk) SetScheduledDate(v time.Time) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScheduledDate(v)
+	})
+}
+
+// UpdateScheduledDate sets the "scheduled_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateScheduledDate() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScheduledDate()
+	})
+}
+
+// SetStartDate sets the "start_date" field.
+func (u *ProductionBatchUpsertBulk) SetStartDate(v time.Time) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetStartDate(v)
+	})
+}
+
+// UpdateStartDate sets the "start_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateStartDate() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateStartDate()
+	})
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (u *ProductionBatchUpsertBulk) ClearStartDate() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearStartDate()
+	})
+}
+
+// SetEndDate sets the "end_date" field.
+func (u *ProductionBatchUpsertBulk) SetEndDate(v time.Time) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetEndDate(v)
+	})
+}
+
+// UpdateEndDate sets the "end_date" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateEndDate() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateEndDate()
+	})
+}
+
+// ClearEndDate clears the value of the "end_date" field.
+func (u *ProductionBatchUpsertBulk) ClearEndDate() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearEndDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *ProductionBatchUpsertBulk) SetStatus(v productionbatch.Status) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateStatus() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPlannedQuantity sets the "planned_quantity" field.
+func (u *ProductionBatchUpsertBulk) SetPlannedQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetPlannedQuantity(v)
+	})
+}
+
+// AddPlannedQuantity adds v to the "planned_quantity" field.
+func (u *ProductionBatchUpsertBulk) AddPlannedQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddPlannedQuantity(v)
+	})
+}
+
+// UpdatePlannedQuantity sets the "planned_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdatePlannedQuantity() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdatePlannedQuantity()
+	})
+}
+
+// SetActualQuantity sets the "actual_quantity" field.
+func (u *ProductionBatchUpsertBulk) SetActualQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetActualQuantity(v)
+	})
+}
+
+// AddActualQuantity adds v to the "actual_quantity" field.
+func (u *ProductionBatchUpsertBulk) AddActualQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddActualQuantity(v)
+	})
+}
+
+// UpdateActualQuantity sets the "actual_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateActualQuantity() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateActualQuantity()
+	})
+}
+
+// ClearActualQuantity clears the value of the "actual_quantity" field.
+func (u *ProductionBatchUpsertBulk) ClearActualQuantity() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearActualQuantity()
+	})
+}
+
+// SetLaborCost sets the "labor_cost" field.
+func (u *ProductionBatchUpsertBulk) SetLaborCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetLaborCost(v)
+	})
+}
+
+// AddLaborCost adds v to the "labor_cost" field.
+func (u *ProductionBatchUpsertBulk) AddLaborCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddLaborCost(v)
+	})
+}
+
+// UpdateLaborCost sets the "labor_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateLaborCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateLaborCost()
+	})
+}
+
+// SetOverheadCost sets the "overhead_cost" field.
+func (u *ProductionBatchUpsertBulk) SetOverheadCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetOverheadCost(v)
+	})
+}
+
+// AddOverheadCost adds v to the "overhead_cost" field.
+func (u *ProductionBatchUpsertBulk) AddOverheadCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddOverheadCost(v)
+	})
+}
+
+// UpdateOverheadCost sets the "overhead_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateOverheadCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateOverheadCost()
+	})
+}
+
+// SetScrapQuantity sets the "scrap_quantity" field.
+func (u *ProductionBatchUpsertBulk) SetScrapQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetScrapQuantity(v)
+	})
+}
+
+// AddScrapQuantity adds v to the "scrap_quantity" field.
+func (u *ProductionBatchUpsertBulk) AddScrapQuantity(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddScrapQuantity(v)
+	})
+}
+
+// UpdateScrapQuantity sets the "scrap_quantity" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateScrapQuantity() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateScrapQuantity()
+	})
+}
+
+// SetUnitCost sets the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) SetUnitCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUnitCost(v)
+	})
+}
+
+// AddUnitCost adds v to the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) AddUnitCost(v float64) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.AddUnitCost(v)
+	})
+}
+
+// UpdateUnitCost sets the "unit_cost" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateUnitCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUnitCost()
+	})
+}
+
+// ClearUnitCost clears the value of the "unit_cost" field.
+func (u *ProductionBatchUpsertBulk) ClearUnitCost() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearUnitCost()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *ProductionBatchUpsertBulk) SetNotes(v string) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateNotes() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ProductionBatchUpsertBulk) ClearNotes() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *ProductionBatchUpsertBulk) SetCreatedBy(v uuid.UUID) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateCreatedBy() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *ProductionBatchUpsertBulk) ClearCreatedBy() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetSupervisorID sets the "supervisor_id" field.
+func (u *ProductionBatchUpsertBulk) SetSupervisorID(v uuid.UUID) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetSupervisorID(v)
+	})
+}
+
+// UpdateSupervisorID sets the "supervisor_id" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateSupervisorID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateSupervisorID()
+	})
+}
+
+// ClearSupervisorID clears the value of the "supervisor_id" field.
+func (u *ProductionBatchUpsertBulk) ClearSupervisorID() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.ClearSupervisorID()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ProductionBatchUpsertBulk) SetUpdatedAt(v time.Time) *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ProductionBatchUpsertBulk) UpdateUpdatedAt() *ProductionBatchUpsertBulk {
+	return u.Update(func(s *ProductionBatchUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *ProductionBatchUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ProductionBatchCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ProductionBatchCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ProductionBatchUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
