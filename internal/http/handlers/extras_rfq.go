@@ -205,6 +205,7 @@ type rfqLinePayload struct {
 type createRFQPayload struct {
 	Title         string           `json:"title"`
 	RequisitionID *uuid.UUID       `json:"requisition_id"`
+	ProjectID     *uuid.UUID       `json:"project_id"`
 	WarehouseID   *uuid.UUID       `json:"warehouse_id"`
 	Notes         string           `json:"notes"`
 	DueDate       *time.Time       `json:"due_date"`
@@ -241,6 +242,10 @@ func (h *InventoryExtrasHandler) CreateRFQ(w http.ResponseWriter, r *http.Reques
 		if req, rerr := h.orm.Requisition.Get(r.Context(), *p.RequisitionID); rerr == nil && req.ProjectID != nil {
 			create = create.SetProjectID(*req.ProjectID)
 		}
+	}
+	// An explicit project_id (standalone RFQ, or override) wins.
+	if p.ProjectID != nil {
+		create = create.SetProjectID(*p.ProjectID)
 	}
 	if p.WarehouseID != nil {
 		create = create.SetWarehouseID(*p.WarehouseID)
