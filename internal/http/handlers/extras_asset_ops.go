@@ -444,7 +444,13 @@ func (h *InventoryExtrasHandler) CompleteAssetDisposal(w http.ResponseWriter, r 
 		return
 	}
 	_, _ = h.orm.Asset.UpdateOneID(rec.AssetID).SetStatus(entasset.StatusDisposed).SetCurrentValue(0).SetBookValue(0).Save(r.Context())
-	h.publishOutbox(r.Context(), tenantID, "asset", rec.AssetID, "inventory.asset.disposed", map[string]any{"asset_id": rec.AssetID, "disposal_id": rec.ID, "method": rec.DisposalMethod})
+	h.publishOutbox(r.Context(), tenantID, "asset", rec.AssetID, "inventory.asset.disposed", map[string]any{
+		"asset_id":    rec.AssetID,
+		"disposal_id": rec.ID,
+		"method":      rec.DisposalMethod,
+		// proceeds drive the treasury capital gain/loss (proceeds − tax WDV).
+		"proceeds": rec.DisposalValue,
+	})
 	writeJSON(w, http.StatusOK, updated)
 }
 
