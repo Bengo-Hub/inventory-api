@@ -34,14 +34,14 @@ const DefaultMaxImagesPerItem = 1
 
 // CheckLimit reports whether currentValue is within the plan limit for limitKey.
 // Returns true (within limit) when there are no claims, the tenant bypasses
-// gating (platform owner / superuser / demo / service-charge), the key is absent,
-// or the limit is <= 0 (treated as unlimited).
+// gating (claims.IsGatingExempt: platform owner / demo / service-charge / sub-exempt),
+// the key is absent, or the limit is <= 0 (treated as unlimited).
 func CheckLimit(r *http.Request, limitKey string, currentValue int) bool {
 	claims, ok := authclient.ClaimsFromContext(r.Context())
 	if !ok {
 		return true
 	}
-	if claims.IsPlatformOwner || claims.IsSuperuser() || claims.IsDemo || claims.BillingMode == "service_charge" {
+	if claims.IsGatingExempt() {
 		return true
 	}
 	limit := claims.GetLimit(limitKey)
