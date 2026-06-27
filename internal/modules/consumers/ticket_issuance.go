@@ -69,8 +69,11 @@ func (c *TicketIssuanceConsumer) Start(ctx context.Context, js nats.JetStreamCon
 	return nil
 }
 
+// paymentConfirmedEnvelope decodes the ordering.order.payment_confirmed event.
+// ordering-backend now publishes the fleet-uniform shared-events envelope
+// (tenant_id/payload).
 type paymentConfirmedEnvelope struct {
-	TenantID string `json:"tenantId"`
+	TenantID string `json:"tenant_id"`
 	Data     struct {
 		OrderID       string `json:"order_id"`
 		CustomerEmail string `json:"customer_email"`
