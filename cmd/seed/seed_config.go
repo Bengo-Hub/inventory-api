@@ -138,6 +138,7 @@ var serviceConfigDefs = []serviceConfigDef{
 	{"inventory.enable_batch_tracking", "false", "bool", "Enable batch/lot tracking for items", false},
 	{"inventory.default_currency", "KES", "string", "Default currency for cost tracking", false},
 	{"inventory.enable_multi_warehouse", "true", "bool", "Enable multi-warehouse support", false},
+	{"inventory.screensaver_idle_timeout_seconds", "300", "int", "Idle time (seconds) before the branded screensaver shows; tenant default", false},
 }
 
 func seedServiceConfigs(ctx context.Context, client *ent.Client) error {
