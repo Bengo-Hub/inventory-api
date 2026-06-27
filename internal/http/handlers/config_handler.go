@@ -147,8 +147,10 @@ func (h *ServiceConfigHandler) UpsertPlatformSetting(w http.ResponseWriter, r *h
 func (h *ServiceConfigHandler) ListTenantSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	tenantIDStr := chi.URLParam(r, "tenant")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	// Resolve the tenant via the canonical helper (TenantV2 context / slug→UUID
+	// via the syncer). The {tenant} URL param is a slug in inventory-ui, so a
+	// direct uuid.Parse would fail.
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
@@ -196,8 +198,7 @@ func (h *ServiceConfigHandler) ListTenantSettings(w http.ResponseWriter, r *http
 // UpsertTenantSetting creates or updates a tenant-specific config override.
 // PUT /api/v1/{tenant}/settings/{key}
 func (h *ServiceConfigHandler) UpsertTenantSetting(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := chi.URLParam(r, "tenant")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	tenantID, err := parseTenantID(r)
 	if err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant ID"})
 		return
