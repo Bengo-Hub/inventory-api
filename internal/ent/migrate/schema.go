@@ -1887,14 +1887,16 @@ var (
 		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "project_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "rfq_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "quotation_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "quotation_number", Type: field.TypeString, Nullable: true},
 		{Name: "pay_term_days", Type: field.TypeInt, Nullable: true},
 		{Name: "additional_shipping_charges", Type: field.TypeFloat64, Default: 0},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "supplier_id", Type: field.TypeUUID},
-		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "supplier_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// PurchaseOrdersTable holds the schema information for the "purchase_orders" table.
 	PurchaseOrdersTable = &schema.Table{
@@ -1904,15 +1906,15 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_orders_suppliers_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[16]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[18]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "purchase_orders_warehouses_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[17]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[19]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -1929,7 +1931,12 @@ var (
 			{
 				Name:    "purchaseorder_tenant_id_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[16]},
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[18]},
+			},
+			{
+				Name:    "purchaseorder_tenant_id_quotation_id",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[10]},
 			},
 		},
 	}
