@@ -105,9 +105,11 @@ type Supplier struct {
 type SupplierEdges struct {
 	// PurchaseOrders holds the value of the purchase_orders edge.
 	PurchaseOrders []*PurchaseOrder `json:"purchase_orders,omitempty"`
+	// Items for which this supplier is the preferred procurement source
+	PreferredItems []*Item `json:"preferred_items,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // PurchaseOrdersOrErr returns the PurchaseOrders value or an error if the edge
@@ -117,6 +119,15 @@ func (e SupplierEdges) PurchaseOrdersOrErr() ([]*PurchaseOrder, error) {
 		return e.PurchaseOrders, nil
 	}
 	return nil, &NotLoadedError{edge: "purchase_orders"}
+}
+
+// PreferredItemsOrErr returns the PreferredItems value or an error if the edge
+// was not loaded in eager-loading.
+func (e SupplierEdges) PreferredItemsOrErr() ([]*Item, error) {
+	if e.loadedTypes[1] {
+		return e.PreferredItems, nil
+	}
+	return nil, &NotLoadedError{edge: "preferred_items"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -405,6 +416,11 @@ func (_m *Supplier) Value(name string) (ent.Value, error) {
 // QueryPurchaseOrders queries the "purchase_orders" edge of the Supplier entity.
 func (_m *Supplier) QueryPurchaseOrders() *PurchaseOrderQuery {
 	return NewSupplierClient(_m.config).QueryPurchaseOrders(_m)
+}
+
+// QueryPreferredItems queries the "preferred_items" edge of the Supplier entity.
+func (_m *Supplier) QueryPreferredItems() *ItemQuery {
+	return NewSupplierClient(_m.config).QueryPreferredItems(_m)
 }
 
 // Update returns a builder for updating this Supplier.

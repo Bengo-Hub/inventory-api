@@ -271,6 +271,11 @@ func PurchaseUnit(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldPurchaseUnit, v))
 }
 
+// PreferredSupplierID applies equality check predicate on the "preferred_supplier_id" field. It's identical to PreferredSupplierIDEQ.
+func PreferredSupplierID(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPreferredSupplierID, v))
+}
+
 // YieldPct applies equality check predicate on the "yield_pct" field. It's identical to YieldPctEQ.
 func YieldPct(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
@@ -2506,6 +2511,36 @@ func PurchaseUnitContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldPurchaseUnit, v))
 }
 
+// PreferredSupplierIDEQ applies the EQ predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDNEQ applies the NEQ predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNEQ(v uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldPreferredSupplierID, v))
+}
+
+// PreferredSupplierIDIn applies the In predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldPreferredSupplierID, vs...))
+}
+
+// PreferredSupplierIDNotIn applies the NotIn predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNotIn(vs ...uuid.UUID) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldPreferredSupplierID, vs...))
+}
+
+// PreferredSupplierIDIsNil applies the IsNil predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldPreferredSupplierID))
+}
+
+// PreferredSupplierIDNotNil applies the NotNil predicate on the "preferred_supplier_id" field.
+func PreferredSupplierIDNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldPreferredSupplierID))
+}
+
 // YieldPctEQ applies the EQ predicate on the "yield_pct" field.
 func YieldPctEQ(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
@@ -3421,6 +3456,29 @@ func HasItemBrand() predicate.Item {
 func HasItemBrandWith(preds ...predicate.ItemBrand) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {
 		step := newItemBrandStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPreferredSupplier applies the HasEdge predicate on the "preferred_supplier" edge.
+func HasPreferredSupplier() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PreferredSupplierTable, PreferredSupplierColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPreferredSupplierWith applies the HasEdge predicate on the "preferred_supplier" edge with a given conditions (other predicates).
+func HasPreferredSupplierWith(preds ...predicate.Supplier) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := newPreferredSupplierStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

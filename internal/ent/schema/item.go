@@ -197,6 +197,10 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			MaxLen(50).
 			Comment("How the ingredient is bought — e.g. 'kg', 'litre', 'crate'"),
+		field.UUID("preferred_supplier_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Preferred Supplier for procurement — drives per-vendor PO split in procure-to-order; nil = unassigned"),
 		field.Float("yield_pct").
 			Optional().
 			Nillable().
@@ -284,6 +288,11 @@ func (Item) Edges() []ent.Edge {
 			Ref("items").
 			Unique().
 			Field("brand_id"),
+		edge.From("preferred_supplier", Supplier.Type).
+			Ref("preferred_items").
+			Unique().
+			Field("preferred_supplier_id").
+			Comment("Preferred supplier for procurement (procure-to-order per-vendor PO split)"),
 	}
 }
 
@@ -297,5 +306,6 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("tenant_id", "barcode"),
 		index.Fields("tenant_id", "created_at"),
 		index.Fields("tenant_id", "unit_id"),
+		index.Fields("tenant_id", "preferred_supplier_id"),
 	}
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -700,6 +701,20 @@ func (_c *ItemCreate) SetNillablePurchaseUnit(v *string) *ItemCreate {
 	return _c
 }
 
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_c *ItemCreate) SetPreferredSupplierID(v uuid.UUID) *ItemCreate {
+	_c.mutation.SetPreferredSupplierID(v)
+	return _c
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePreferredSupplierID(v *uuid.UUID) *ItemCreate {
+	if v != nil {
+		_c.SetPreferredSupplierID(*v)
+	}
+	return _c
+}
+
 // SetYieldPct sets the "yield_pct" field.
 func (_c *ItemCreate) SetYieldPct(v float64) *ItemCreate {
 	_c.mutation.SetYieldPct(v)
@@ -1122,6 +1137,11 @@ func (_c *ItemCreate) SetNillableItemBrandID(id *uuid.UUID) *ItemCreate {
 // SetItemBrand sets the "item_brand" edge to the ItemBrand entity.
 func (_c *ItemCreate) SetItemBrand(v *ItemBrand) *ItemCreate {
 	return _c.SetItemBrandID(v.ID)
+}
+
+// SetPreferredSupplier sets the "preferred_supplier" edge to the Supplier entity.
+func (_c *ItemCreate) SetPreferredSupplier(v *Supplier) *ItemCreate {
+	return _c.SetPreferredSupplierID(v.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -1884,6 +1904,23 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.BrandID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PreferredSupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.PreferredSupplierTable,
+			Columns: []string{item.PreferredSupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.PreferredSupplierID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -2787,6 +2824,24 @@ func (u *ItemUpsert) UpdatePurchaseUnit() *ItemUpsert {
 // ClearPurchaseUnit clears the value of the "purchase_unit" field.
 func (u *ItemUpsert) ClearPurchaseUnit() *ItemUpsert {
 	u.SetNull(item.FieldPurchaseUnit)
+	return u
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *ItemUpsert) SetPreferredSupplierID(v uuid.UUID) *ItemUpsert {
+	u.Set(item.FieldPreferredSupplierID, v)
+	return u
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePreferredSupplierID() *ItemUpsert {
+	u.SetExcluded(item.FieldPreferredSupplierID)
+	return u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *ItemUpsert) ClearPreferredSupplierID() *ItemUpsert {
+	u.SetNull(item.FieldPreferredSupplierID)
 	return u
 }
 
@@ -4054,6 +4109,27 @@ func (u *ItemUpsertOne) UpdatePurchaseUnit() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearPurchaseUnit() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearPurchaseUnit()
+	})
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *ItemUpsertOne) SetPreferredSupplierID(v uuid.UUID) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPreferredSupplierID(v)
+	})
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePreferredSupplierID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePreferredSupplierID()
+	})
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *ItemUpsertOne) ClearPreferredSupplierID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPreferredSupplierID()
 	})
 }
 
@@ -5525,6 +5601,27 @@ func (u *ItemUpsertBulk) UpdatePurchaseUnit() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearPurchaseUnit() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearPurchaseUnit()
+	})
+}
+
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (u *ItemUpsertBulk) SetPreferredSupplierID(v uuid.UUID) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPreferredSupplierID(v)
+	})
+}
+
+// UpdatePreferredSupplierID sets the "preferred_supplier_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePreferredSupplierID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePreferredSupplierID()
+	})
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (u *ItemUpsertBulk) ClearPreferredSupplierID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPreferredSupplierID()
 	})
 }
 
