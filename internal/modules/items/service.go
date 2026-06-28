@@ -63,6 +63,10 @@ type ItemDTO struct {
 	CategoryID      *uuid.UUID     `json:"category_id,omitempty"`
 	BrandID         *uuid.UUID     `json:"brand_id,omitempty"`
 	UnitID          *uuid.UUID     `json:"unit_id,omitempty"`
+	// Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).
+	// Accepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).
+	PreferredSupplierID   *uuid.UUID `json:"preferred_supplier_id,omitempty"`
+	PreferredSupplierName string     `json:"preferred_supplier_name,omitempty"`
 	Type            string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
 	IsActive        bool           `json:"is_active"`
 	ImageURL        string         `json:"image_url,omitempty"`
@@ -583,6 +587,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		Name:                    i.Name,
 		Description:             i.Description,
 		CategoryID:              i.CategoryID,
+		PreferredSupplierID:     i.PreferredSupplierID,
 		BrandID:                 i.BrandID,
 		UnitID:                  i.UnitID,
 		Type:                    string(i.Type),
@@ -640,6 +645,10 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		SingleSupplement:        i.SingleSupplement,
 		CreatedAt:               i.CreatedAt,
 		UpdatedAt:               i.UpdatedAt,
+	}
+	// Surface the preferred supplier's display name when the edge has been eager-loaded.
+	if sup, err := i.Edges.PreferredSupplierOrErr(); err == nil && sup != nil {
+		dto.PreferredSupplierName = sup.Name
 	}
 	// Surface product variations when the variants edge has been eager-loaded.
 	// Only active variants are exposed for sale; HasVariants reflects that count.
@@ -904,6 +913,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		aq.Where(itemasset.AssetType(AssetTypeImage)).
 			Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
 	})
+	// Eager-load the preferred supplier so each row surfaces preferred_supplier_name (used by
+	// the item edit form's preferred-supplier combobox to show the current selection).
+	listQuery = listQuery.WithPreferredSupplier()
 	if includeVariants(ctx) {
 		// Eager-load active variants so mapToDTO can surface them inline.
 		listQuery = listQuery.WithVariants(func(vq *ent.ItemVariantQuery) {
@@ -1438,6 +1450,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		SetType(item.Type(dto.Type)).
 		SetIsActive(dto.IsActive).
 		SetNillableImageURL(&dto.ImageURL).
+		SetNillablePreferredSupplierID(dto.PreferredSupplierID).
 		SetTags(tags).
 		SetMetadata(dto.Metadata).
 		SetNillableCostPrice(dto.CostPrice).
@@ -1783,6 +1796,15 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetManufacturer(dto.Manufacturer).
 		SetModel(dto.Model).
 		SetTaxInclusive(dto.TaxInclusive)
+	// Preferred supplier: a non-nil, non-zero UUID assigns it; the zero UUID explicitly
+	// unassigns (clears) it. nil leaves the existing value untouched (partial update).
+	if dto.PreferredSupplierID != nil {
+		if *dto.PreferredSupplierID == uuid.Nil {
+			updateBuilder = updateBuilder.ClearPreferredSupplierID()
+		} else {
+			updateBuilder = updateBuilder.SetPreferredSupplierID(*dto.PreferredSupplierID)
+		}
+	}
 	if len(dto.DimensionsCm) > 0 {
 		updateBuilder = updateBuilder.SetDimensionsCm(dto.DimensionsCm)
 	}
