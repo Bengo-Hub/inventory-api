@@ -60,6 +60,12 @@ func (_u *PurchaseOrderUpdate) SetNillableSupplierID(v *uuid.UUID) *PurchaseOrde
 	return _u
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (_u *PurchaseOrderUpdate) ClearSupplierID() *PurchaseOrderUpdate {
+	_u.mutation.ClearSupplierID()
+	return _u
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_u *PurchaseOrderUpdate) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpdate {
 	_u.mutation.SetWarehouseID(v)
@@ -71,6 +77,12 @@ func (_u *PurchaseOrderUpdate) SetNillableWarehouseID(v *uuid.UUID) *PurchaseOrd
 	if v != nil {
 		_u.SetWarehouseID(*v)
 	}
+	return _u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (_u *PurchaseOrderUpdate) ClearWarehouseID() *PurchaseOrderUpdate {
+	_u.mutation.ClearWarehouseID()
 	return _u
 }
 
@@ -214,6 +226,46 @@ func (_u *PurchaseOrderUpdate) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderUpda
 // ClearRfqID clears the value of the "rfq_id" field.
 func (_u *PurchaseOrderUpdate) ClearRfqID() *PurchaseOrderUpdate {
 	_u.mutation.ClearRfqID()
+	return _u
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (_u *PurchaseOrderUpdate) SetQuotationID(v uuid.UUID) *PurchaseOrderUpdate {
+	_u.mutation.SetQuotationID(v)
+	return _u
+}
+
+// SetNillableQuotationID sets the "quotation_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableQuotationID(v *uuid.UUID) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetQuotationID(*v)
+	}
+	return _u
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (_u *PurchaseOrderUpdate) ClearQuotationID() *PurchaseOrderUpdate {
+	_u.mutation.ClearQuotationID()
+	return _u
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (_u *PurchaseOrderUpdate) SetQuotationNumber(v string) *PurchaseOrderUpdate {
+	_u.mutation.SetQuotationNumber(v)
+	return _u
+}
+
+// SetNillableQuotationNumber sets the "quotation_number" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableQuotationNumber(v *string) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetQuotationNumber(*v)
+	}
+	return _u
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (_u *PurchaseOrderUpdate) ClearQuotationNumber() *PurchaseOrderUpdate {
+	_u.mutation.ClearQuotationNumber()
 	return _u
 }
 
@@ -422,12 +474,6 @@ func (_u *PurchaseOrderUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PurchaseOrder.status": %w`, err)}
 		}
 	}
-	if _u.mutation.SupplierCleared() && len(_u.mutation.SupplierIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "PurchaseOrder.supplier"`)
-	}
-	if _u.mutation.WarehouseCleared() && len(_u.mutation.WarehouseIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "PurchaseOrder.warehouse"`)
-	}
 	return nil
 }
 
@@ -484,6 +530,18 @@ func (_u *PurchaseOrderUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.RfqIDCleared() {
 		_spec.ClearField(purchaseorder.FieldRfqID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.QuotationID(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationID, field.TypeUUID, value)
+	}
+	if _u.mutation.QuotationIDCleared() {
+		_spec.ClearField(purchaseorder.FieldQuotationID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.QuotationNumber(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationNumber, field.TypeString, value)
+	}
+	if _u.mutation.QuotationNumberCleared() {
+		_spec.ClearField(purchaseorder.FieldQuotationNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.PayTermDays(); ok {
 		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
@@ -666,6 +724,12 @@ func (_u *PurchaseOrderUpdateOne) SetNillableSupplierID(v *uuid.UUID) *PurchaseO
 	return _u
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearSupplierID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearSupplierID()
+	return _u
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_u *PurchaseOrderUpdateOne) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpdateOne {
 	_u.mutation.SetWarehouseID(v)
@@ -677,6 +741,12 @@ func (_u *PurchaseOrderUpdateOne) SetNillableWarehouseID(v *uuid.UUID) *Purchase
 	if v != nil {
 		_u.SetWarehouseID(*v)
 	}
+	return _u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearWarehouseID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearWarehouseID()
 	return _u
 }
 
@@ -820,6 +890,46 @@ func (_u *PurchaseOrderUpdateOne) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderU
 // ClearRfqID clears the value of the "rfq_id" field.
 func (_u *PurchaseOrderUpdateOne) ClearRfqID() *PurchaseOrderUpdateOne {
 	_u.mutation.ClearRfqID()
+	return _u
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (_u *PurchaseOrderUpdateOne) SetQuotationID(v uuid.UUID) *PurchaseOrderUpdateOne {
+	_u.mutation.SetQuotationID(v)
+	return _u
+}
+
+// SetNillableQuotationID sets the "quotation_id" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableQuotationID(v *uuid.UUID) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetQuotationID(*v)
+	}
+	return _u
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (_u *PurchaseOrderUpdateOne) ClearQuotationID() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearQuotationID()
+	return _u
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (_u *PurchaseOrderUpdateOne) SetQuotationNumber(v string) *PurchaseOrderUpdateOne {
+	_u.mutation.SetQuotationNumber(v)
+	return _u
+}
+
+// SetNillableQuotationNumber sets the "quotation_number" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableQuotationNumber(v *string) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetQuotationNumber(*v)
+	}
+	return _u
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (_u *PurchaseOrderUpdateOne) ClearQuotationNumber() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearQuotationNumber()
 	return _u
 }
 
@@ -1041,12 +1151,6 @@ func (_u *PurchaseOrderUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "PurchaseOrder.status": %w`, err)}
 		}
 	}
-	if _u.mutation.SupplierCleared() && len(_u.mutation.SupplierIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "PurchaseOrder.supplier"`)
-	}
-	if _u.mutation.WarehouseCleared() && len(_u.mutation.WarehouseIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "PurchaseOrder.warehouse"`)
-	}
 	return nil
 }
 
@@ -1120,6 +1224,18 @@ func (_u *PurchaseOrderUpdateOne) sqlSave(ctx context.Context) (_node *PurchaseO
 	}
 	if _u.mutation.RfqIDCleared() {
 		_spec.ClearField(purchaseorder.FieldRfqID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.QuotationID(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationID, field.TypeUUID, value)
+	}
+	if _u.mutation.QuotationIDCleared() {
+		_spec.ClearField(purchaseorder.FieldQuotationID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.QuotationNumber(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationNumber, field.TypeString, value)
+	}
+	if _u.mutation.QuotationNumberCleared() {
+		_spec.ClearField(purchaseorder.FieldQuotationNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.PayTermDays(); ok {
 		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)

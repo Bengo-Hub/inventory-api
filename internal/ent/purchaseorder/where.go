@@ -106,6 +106,16 @@ func RfqID(v uuid.UUID) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldRfqID, v))
 }
 
+// QuotationID applies equality check predicate on the "quotation_id" field. It's identical to QuotationIDEQ.
+func QuotationID(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldQuotationID, v))
+}
+
+// QuotationNumber applies equality check predicate on the "quotation_number" field. It's identical to QuotationNumberEQ.
+func QuotationNumber(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldQuotationNumber, v))
+}
+
 // PayTermDays applies equality check predicate on the "pay_term_days" field. It's identical to PayTermDaysEQ.
 func PayTermDays(v int) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldPayTermDays, v))
@@ -196,6 +206,16 @@ func SupplierIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldNotIn(FieldSupplierID, vs...))
 }
 
+// SupplierIDIsNil applies the IsNil predicate on the "supplier_id" field.
+func SupplierIDIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldSupplierID))
+}
+
+// SupplierIDNotNil applies the NotNil predicate on the "supplier_id" field.
+func SupplierIDNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldSupplierID))
+}
+
 // WarehouseIDEQ applies the EQ predicate on the "warehouse_id" field.
 func WarehouseIDEQ(v uuid.UUID) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldWarehouseID, v))
@@ -214,6 +234,16 @@ func WarehouseIDIn(vs ...uuid.UUID) predicate.PurchaseOrder {
 // WarehouseIDNotIn applies the NotIn predicate on the "warehouse_id" field.
 func WarehouseIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldNotIn(FieldWarehouseID, vs...))
+}
+
+// WarehouseIDIsNil applies the IsNil predicate on the "warehouse_id" field.
+func WarehouseIDIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldWarehouseID))
+}
+
+// WarehouseIDNotNil applies the NotNil predicate on the "warehouse_id" field.
+func WarehouseIDNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldWarehouseID))
 }
 
 // PoNumberEQ applies the EQ predicate on the "po_number" field.
@@ -604,6 +634,131 @@ func RfqIDIsNil() predicate.PurchaseOrder {
 // RfqIDNotNil applies the NotNil predicate on the "rfq_id" field.
 func RfqIDNotNil() predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldNotNull(FieldRfqID))
+}
+
+// QuotationIDEQ applies the EQ predicate on the "quotation_id" field.
+func QuotationIDEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldQuotationID, v))
+}
+
+// QuotationIDNEQ applies the NEQ predicate on the "quotation_id" field.
+func QuotationIDNEQ(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldQuotationID, v))
+}
+
+// QuotationIDIn applies the In predicate on the "quotation_id" field.
+func QuotationIDIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldQuotationID, vs...))
+}
+
+// QuotationIDNotIn applies the NotIn predicate on the "quotation_id" field.
+func QuotationIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldQuotationID, vs...))
+}
+
+// QuotationIDGT applies the GT predicate on the "quotation_id" field.
+func QuotationIDGT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldQuotationID, v))
+}
+
+// QuotationIDGTE applies the GTE predicate on the "quotation_id" field.
+func QuotationIDGTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldQuotationID, v))
+}
+
+// QuotationIDLT applies the LT predicate on the "quotation_id" field.
+func QuotationIDLT(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldQuotationID, v))
+}
+
+// QuotationIDLTE applies the LTE predicate on the "quotation_id" field.
+func QuotationIDLTE(v uuid.UUID) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldQuotationID, v))
+}
+
+// QuotationIDIsNil applies the IsNil predicate on the "quotation_id" field.
+func QuotationIDIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldQuotationID))
+}
+
+// QuotationIDNotNil applies the NotNil predicate on the "quotation_id" field.
+func QuotationIDNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldQuotationID))
+}
+
+// QuotationNumberEQ applies the EQ predicate on the "quotation_number" field.
+func QuotationNumberEQ(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldQuotationNumber, v))
+}
+
+// QuotationNumberNEQ applies the NEQ predicate on the "quotation_number" field.
+func QuotationNumberNEQ(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldQuotationNumber, v))
+}
+
+// QuotationNumberIn applies the In predicate on the "quotation_number" field.
+func QuotationNumberIn(vs ...string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldQuotationNumber, vs...))
+}
+
+// QuotationNumberNotIn applies the NotIn predicate on the "quotation_number" field.
+func QuotationNumberNotIn(vs ...string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldQuotationNumber, vs...))
+}
+
+// QuotationNumberGT applies the GT predicate on the "quotation_number" field.
+func QuotationNumberGT(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldQuotationNumber, v))
+}
+
+// QuotationNumberGTE applies the GTE predicate on the "quotation_number" field.
+func QuotationNumberGTE(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldQuotationNumber, v))
+}
+
+// QuotationNumberLT applies the LT predicate on the "quotation_number" field.
+func QuotationNumberLT(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldQuotationNumber, v))
+}
+
+// QuotationNumberLTE applies the LTE predicate on the "quotation_number" field.
+func QuotationNumberLTE(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldQuotationNumber, v))
+}
+
+// QuotationNumberContains applies the Contains predicate on the "quotation_number" field.
+func QuotationNumberContains(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldContains(FieldQuotationNumber, v))
+}
+
+// QuotationNumberHasPrefix applies the HasPrefix predicate on the "quotation_number" field.
+func QuotationNumberHasPrefix(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldHasPrefix(FieldQuotationNumber, v))
+}
+
+// QuotationNumberHasSuffix applies the HasSuffix predicate on the "quotation_number" field.
+func QuotationNumberHasSuffix(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldHasSuffix(FieldQuotationNumber, v))
+}
+
+// QuotationNumberIsNil applies the IsNil predicate on the "quotation_number" field.
+func QuotationNumberIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldQuotationNumber))
+}
+
+// QuotationNumberNotNil applies the NotNil predicate on the "quotation_number" field.
+func QuotationNumberNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldQuotationNumber))
+}
+
+// QuotationNumberEqualFold applies the EqualFold predicate on the "quotation_number" field.
+func QuotationNumberEqualFold(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEqualFold(FieldQuotationNumber, v))
+}
+
+// QuotationNumberContainsFold applies the ContainsFold predicate on the "quotation_number" field.
+func QuotationNumberContainsFold(v string) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldContainsFold(FieldQuotationNumber, v))
 }
 
 // PayTermDaysEQ applies the EQ predicate on the "pay_term_days" field.

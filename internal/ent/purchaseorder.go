@@ -22,10 +22,10 @@ type PurchaseOrder struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// Owning tenant
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
-	// FK to Supplier
-	SupplierID uuid.UUID `json:"supplier_id,omitempty"`
-	// FK to Warehouse — destination for received goods
-	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
+	// FK to Supplier — optional for draft POs (e.g. procure-to-order) until a supplier is assigned
+	SupplierID *uuid.UUID `json:"supplier_id,omitempty"`
+	// FK to Warehouse — destination for received goods; optional until resolved
+	WarehouseID *uuid.UUID `json:"warehouse_id,omitempty"`
 	// Unique PO number per tenant
 	PoNumber string `json:"po_number,omitempty"`
 	// Status holds the value of the "status" field.
@@ -42,6 +42,10 @@ type PurchaseOrder struct {
 	ProjectID *uuid.UUID `json:"project_id,omitempty"`
 	// Source RFQ this PO was awarded from (traceability)
 	RfqID *uuid.UUID `json:"rfq_id,omitempty"`
+	// Source treasury sales quotation this procure-to-order PO was auto-created from (traceability + idempotency)
+	QuotationID *uuid.UUID `json:"quotation_id,omitempty"`
+	// Human-readable number of the source sales quotation (procure-to-order)
+	QuotationNumber string `json:"quotation_number,omitempty"`
 	// Supplier credit term in days — treasury computes the AP bill due date as receipt + pay_term_days
 	PayTermDays *int `json:"pay_term_days,omitempty"`
 	// Freight/shipping added on the PO; posted as a treasury expense on receipt
@@ -109,17 +113,17 @@ func (*PurchaseOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchaseorder.FieldRequisitionID, purchaseorder.FieldProjectID, purchaseorder.FieldRfqID, purchaseorder.FieldCreatedBy:
+		case purchaseorder.FieldSupplierID, purchaseorder.FieldWarehouseID, purchaseorder.FieldRequisitionID, purchaseorder.FieldProjectID, purchaseorder.FieldRfqID, purchaseorder.FieldQuotationID, purchaseorder.FieldCreatedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchaseorder.FieldTotalAmount, purchaseorder.FieldAdditionalShippingCharges:
 			values[i] = new(sql.NullFloat64)
 		case purchaseorder.FieldPayTermDays:
 			values[i] = new(sql.NullInt64)
-		case purchaseorder.FieldPoNumber, purchaseorder.FieldStatus, purchaseorder.FieldCurrency, purchaseorder.FieldNotes:
+		case purchaseorder.FieldPoNumber, purchaseorder.FieldStatus, purchaseorder.FieldCurrency, purchaseorder.FieldQuotationNumber, purchaseorder.FieldNotes:
 			values[i] = new(sql.NullString)
 		case purchaseorder.FieldExpectedDate, purchaseorder.FieldCreatedAt, purchaseorder.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case purchaseorder.FieldID, purchaseorder.FieldTenantID, purchaseorder.FieldSupplierID, purchaseorder.FieldWarehouseID:
+		case purchaseorder.FieldID, purchaseorder.FieldTenantID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -149,16 +153,18 @@ func (_m *PurchaseOrder) assignValues(columns []string, values []any) error {
 				_m.TenantID = *value
 			}
 		case purchaseorder.FieldSupplierID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field supplier_id", values[i])
-			} else if value != nil {
-				_m.SupplierID = *value
+			} else if value.Valid {
+				_m.SupplierID = new(uuid.UUID)
+				*_m.SupplierID = *value.S.(*uuid.UUID)
 			}
 		case purchaseorder.FieldWarehouseID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field warehouse_id", values[i])
-			} else if value != nil {
-				_m.WarehouseID = *value
+			} else if value.Valid {
+				_m.WarehouseID = new(uuid.UUID)
+				*_m.WarehouseID = *value.S.(*uuid.UUID)
 			}
 		case purchaseorder.FieldPoNumber:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -211,6 +217,19 @@ func (_m *PurchaseOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RfqID = new(uuid.UUID)
 				*_m.RfqID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorder.FieldQuotationID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field quotation_id", values[i])
+			} else if value.Valid {
+				_m.QuotationID = new(uuid.UUID)
+				*_m.QuotationID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorder.FieldQuotationNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field quotation_number", values[i])
+			} else if value.Valid {
+				_m.QuotationNumber = value.String
 			}
 		case purchaseorder.FieldPayTermDays:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -304,11 +323,15 @@ func (_m *PurchaseOrder) String() string {
 	builder.WriteString("tenant_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
 	builder.WriteString(", ")
-	builder.WriteString("supplier_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SupplierID))
+	if v := _m.SupplierID; v != nil {
+		builder.WriteString("supplier_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("warehouse_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.WarehouseID))
+	if v := _m.WarehouseID; v != nil {
+		builder.WriteString("warehouse_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("po_number=")
 	builder.WriteString(_m.PoNumber)
@@ -341,6 +364,14 @@ func (_m *PurchaseOrder) String() string {
 		builder.WriteString("rfq_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.QuotationID; v != nil {
+		builder.WriteString("quotation_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("quotation_number=")
+	builder.WriteString(_m.QuotationNumber)
 	builder.WriteString(", ")
 	if v := _m.PayTermDays; v != nil {
 		builder.WriteString("pay_term_days=")

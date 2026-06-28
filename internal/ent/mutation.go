@@ -53331,6 +53331,8 @@ type PurchaseOrderMutation struct {
 	requisition_id                 *uuid.UUID
 	project_id                     *uuid.UUID
 	rfq_id                         *uuid.UUID
+	quotation_id                   *uuid.UUID
+	quotation_number               *string
 	pay_term_days                  *int
 	addpay_term_days               *int
 	additional_shipping_charges    *float64
@@ -53509,7 +53511,7 @@ func (m *PurchaseOrderMutation) SupplierID() (r uuid.UUID, exists bool) {
 // OldSupplierID returns the old "supplier_id" field's value of the PurchaseOrder entity.
 // If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PurchaseOrderMutation) OldSupplierID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *PurchaseOrderMutation) OldSupplierID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSupplierID is only allowed on UpdateOne operations")
 	}
@@ -53523,9 +53525,22 @@ func (m *PurchaseOrderMutation) OldSupplierID(ctx context.Context) (v uuid.UUID,
 	return oldValue.SupplierID, nil
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (m *PurchaseOrderMutation) ClearSupplierID() {
+	m.supplier = nil
+	m.clearedFields[purchaseorder.FieldSupplierID] = struct{}{}
+}
+
+// SupplierIDCleared returns if the "supplier_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) SupplierIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldSupplierID]
+	return ok
+}
+
 // ResetSupplierID resets all changes to the "supplier_id" field.
 func (m *PurchaseOrderMutation) ResetSupplierID() {
 	m.supplier = nil
+	delete(m.clearedFields, purchaseorder.FieldSupplierID)
 }
 
 // SetWarehouseID sets the "warehouse_id" field.
@@ -53545,7 +53560,7 @@ func (m *PurchaseOrderMutation) WarehouseID() (r uuid.UUID, exists bool) {
 // OldWarehouseID returns the old "warehouse_id" field's value of the PurchaseOrder entity.
 // If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PurchaseOrderMutation) OldWarehouseID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *PurchaseOrderMutation) OldWarehouseID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
 	}
@@ -53559,9 +53574,22 @@ func (m *PurchaseOrderMutation) OldWarehouseID(ctx context.Context) (v uuid.UUID
 	return oldValue.WarehouseID, nil
 }
 
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (m *PurchaseOrderMutation) ClearWarehouseID() {
+	m.warehouse = nil
+	m.clearedFields[purchaseorder.FieldWarehouseID] = struct{}{}
+}
+
+// WarehouseIDCleared returns if the "warehouse_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) WarehouseIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldWarehouseID]
+	return ok
+}
+
 // ResetWarehouseID resets all changes to the "warehouse_id" field.
 func (m *PurchaseOrderMutation) ResetWarehouseID() {
 	m.warehouse = nil
+	delete(m.clearedFields, purchaseorder.FieldWarehouseID)
 }
 
 // SetPoNumber sets the "po_number" field.
@@ -53924,6 +53952,104 @@ func (m *PurchaseOrderMutation) ResetRfqID() {
 	delete(m.clearedFields, purchaseorder.FieldRfqID)
 }
 
+// SetQuotationID sets the "quotation_id" field.
+func (m *PurchaseOrderMutation) SetQuotationID(u uuid.UUID) {
+	m.quotation_id = &u
+}
+
+// QuotationID returns the value of the "quotation_id" field in the mutation.
+func (m *PurchaseOrderMutation) QuotationID() (r uuid.UUID, exists bool) {
+	v := m.quotation_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotationID returns the old "quotation_id" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldQuotationID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotationID: %w", err)
+	}
+	return oldValue.QuotationID, nil
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (m *PurchaseOrderMutation) ClearQuotationID() {
+	m.quotation_id = nil
+	m.clearedFields[purchaseorder.FieldQuotationID] = struct{}{}
+}
+
+// QuotationIDCleared returns if the "quotation_id" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) QuotationIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldQuotationID]
+	return ok
+}
+
+// ResetQuotationID resets all changes to the "quotation_id" field.
+func (m *PurchaseOrderMutation) ResetQuotationID() {
+	m.quotation_id = nil
+	delete(m.clearedFields, purchaseorder.FieldQuotationID)
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (m *PurchaseOrderMutation) SetQuotationNumber(s string) {
+	m.quotation_number = &s
+}
+
+// QuotationNumber returns the value of the "quotation_number" field in the mutation.
+func (m *PurchaseOrderMutation) QuotationNumber() (r string, exists bool) {
+	v := m.quotation_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuotationNumber returns the old "quotation_number" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldQuotationNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuotationNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuotationNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuotationNumber: %w", err)
+	}
+	return oldValue.QuotationNumber, nil
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (m *PurchaseOrderMutation) ClearQuotationNumber() {
+	m.quotation_number = nil
+	m.clearedFields[purchaseorder.FieldQuotationNumber] = struct{}{}
+}
+
+// QuotationNumberCleared returns if the "quotation_number" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) QuotationNumberCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldQuotationNumber]
+	return ok
+}
+
+// ResetQuotationNumber resets all changes to the "quotation_number" field.
+func (m *PurchaseOrderMutation) ResetQuotationNumber() {
+	m.quotation_number = nil
+	delete(m.clearedFields, purchaseorder.FieldQuotationNumber)
+}
+
 // SetPayTermDays sets the "pay_term_days" field.
 func (m *PurchaseOrderMutation) SetPayTermDays(i int) {
 	m.pay_term_days = &i
@@ -54228,7 +54354,7 @@ func (m *PurchaseOrderMutation) ClearSupplier() {
 
 // SupplierCleared reports if the "supplier" edge to the Supplier entity was cleared.
 func (m *PurchaseOrderMutation) SupplierCleared() bool {
-	return m.clearedsupplier
+	return m.SupplierIDCleared() || m.clearedsupplier
 }
 
 // SupplierIDs returns the "supplier" edge IDs in the mutation.
@@ -54255,7 +54381,7 @@ func (m *PurchaseOrderMutation) ClearWarehouse() {
 
 // WarehouseCleared reports if the "warehouse" edge to the Warehouse entity was cleared.
 func (m *PurchaseOrderMutation) WarehouseCleared() bool {
-	return m.clearedwarehouse
+	return m.WarehouseIDCleared() || m.clearedwarehouse
 }
 
 // WarehouseIDs returns the "warehouse" edge IDs in the mutation.
@@ -54362,7 +54488,7 @@ func (m *PurchaseOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 19)
 	if m.tenant_id != nil {
 		fields = append(fields, purchaseorder.FieldTenantID)
 	}
@@ -54395,6 +54521,12 @@ func (m *PurchaseOrderMutation) Fields() []string {
 	}
 	if m.rfq_id != nil {
 		fields = append(fields, purchaseorder.FieldRfqID)
+	}
+	if m.quotation_id != nil {
+		fields = append(fields, purchaseorder.FieldQuotationID)
+	}
+	if m.quotation_number != nil {
+		fields = append(fields, purchaseorder.FieldQuotationNumber)
 	}
 	if m.pay_term_days != nil {
 		fields = append(fields, purchaseorder.FieldPayTermDays)
@@ -54444,6 +54576,10 @@ func (m *PurchaseOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.ProjectID()
 	case purchaseorder.FieldRfqID:
 		return m.RfqID()
+	case purchaseorder.FieldQuotationID:
+		return m.QuotationID()
+	case purchaseorder.FieldQuotationNumber:
+		return m.QuotationNumber()
 	case purchaseorder.FieldPayTermDays:
 		return m.PayTermDays()
 	case purchaseorder.FieldAdditionalShippingCharges:
@@ -54487,6 +54623,10 @@ func (m *PurchaseOrderMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldProjectID(ctx)
 	case purchaseorder.FieldRfqID:
 		return m.OldRfqID(ctx)
+	case purchaseorder.FieldQuotationID:
+		return m.OldQuotationID(ctx)
+	case purchaseorder.FieldQuotationNumber:
+		return m.OldQuotationNumber(ctx)
 	case purchaseorder.FieldPayTermDays:
 		return m.OldPayTermDays(ctx)
 	case purchaseorder.FieldAdditionalShippingCharges:
@@ -54584,6 +54724,20 @@ func (m *PurchaseOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRfqID(v)
+		return nil
+	case purchaseorder.FieldQuotationID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotationID(v)
+		return nil
+	case purchaseorder.FieldQuotationNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuotationNumber(v)
 		return nil
 	case purchaseorder.FieldPayTermDays:
 		v, ok := value.(int)
@@ -54696,6 +54850,12 @@ func (m *PurchaseOrderMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *PurchaseOrderMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(purchaseorder.FieldSupplierID) {
+		fields = append(fields, purchaseorder.FieldSupplierID)
+	}
+	if m.FieldCleared(purchaseorder.FieldWarehouseID) {
+		fields = append(fields, purchaseorder.FieldWarehouseID)
+	}
 	if m.FieldCleared(purchaseorder.FieldExpectedDate) {
 		fields = append(fields, purchaseorder.FieldExpectedDate)
 	}
@@ -54707,6 +54867,12 @@ func (m *PurchaseOrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(purchaseorder.FieldRfqID) {
 		fields = append(fields, purchaseorder.FieldRfqID)
+	}
+	if m.FieldCleared(purchaseorder.FieldQuotationID) {
+		fields = append(fields, purchaseorder.FieldQuotationID)
+	}
+	if m.FieldCleared(purchaseorder.FieldQuotationNumber) {
+		fields = append(fields, purchaseorder.FieldQuotationNumber)
 	}
 	if m.FieldCleared(purchaseorder.FieldPayTermDays) {
 		fields = append(fields, purchaseorder.FieldPayTermDays)
@@ -54731,6 +54897,12 @@ func (m *PurchaseOrderMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *PurchaseOrderMutation) ClearField(name string) error {
 	switch name {
+	case purchaseorder.FieldSupplierID:
+		m.ClearSupplierID()
+		return nil
+	case purchaseorder.FieldWarehouseID:
+		m.ClearWarehouseID()
+		return nil
 	case purchaseorder.FieldExpectedDate:
 		m.ClearExpectedDate()
 		return nil
@@ -54742,6 +54914,12 @@ func (m *PurchaseOrderMutation) ClearField(name string) error {
 		return nil
 	case purchaseorder.FieldRfqID:
 		m.ClearRfqID()
+		return nil
+	case purchaseorder.FieldQuotationID:
+		m.ClearQuotationID()
+		return nil
+	case purchaseorder.FieldQuotationNumber:
+		m.ClearQuotationNumber()
 		return nil
 	case purchaseorder.FieldPayTermDays:
 		m.ClearPayTermDays()
@@ -54792,6 +54970,12 @@ func (m *PurchaseOrderMutation) ResetField(name string) error {
 		return nil
 	case purchaseorder.FieldRfqID:
 		m.ResetRfqID()
+		return nil
+	case purchaseorder.FieldQuotationID:
+		m.ResetQuotationID()
+		return nil
+	case purchaseorder.FieldQuotationNumber:
+		m.ResetQuotationNumber()
 		return nil
 	case purchaseorder.FieldPayTermDays:
 		m.ResetPayTermDays()

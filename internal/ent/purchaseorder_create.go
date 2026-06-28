@@ -39,9 +39,25 @@ func (_c *PurchaseOrderCreate) SetSupplierID(v uuid.UUID) *PurchaseOrderCreate {
 	return _c
 }
 
+// SetNillableSupplierID sets the "supplier_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableSupplierID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetSupplierID(*v)
+	}
+	return _c
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_c *PurchaseOrderCreate) SetWarehouseID(v uuid.UUID) *PurchaseOrderCreate {
 	_c.mutation.SetWarehouseID(v)
+	return _c
+}
+
+// SetNillableWarehouseID sets the "warehouse_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableWarehouseID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetWarehouseID(*v)
+	}
 	return _c
 }
 
@@ -145,6 +161,34 @@ func (_c *PurchaseOrderCreate) SetRfqID(v uuid.UUID) *PurchaseOrderCreate {
 func (_c *PurchaseOrderCreate) SetNillableRfqID(v *uuid.UUID) *PurchaseOrderCreate {
 	if v != nil {
 		_c.SetRfqID(*v)
+	}
+	return _c
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (_c *PurchaseOrderCreate) SetQuotationID(v uuid.UUID) *PurchaseOrderCreate {
+	_c.mutation.SetQuotationID(v)
+	return _c
+}
+
+// SetNillableQuotationID sets the "quotation_id" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableQuotationID(v *uuid.UUID) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetQuotationID(*v)
+	}
+	return _c
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (_c *PurchaseOrderCreate) SetQuotationNumber(v string) *PurchaseOrderCreate {
+	_c.mutation.SetQuotationNumber(v)
+	return _c
+}
+
+// SetNillableQuotationNumber sets the "quotation_number" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableQuotationNumber(v *string) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetQuotationNumber(*v)
 	}
 	return _c
 }
@@ -342,12 +386,6 @@ func (_c *PurchaseOrderCreate) check() error {
 	if _, ok := _c.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "PurchaseOrder.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.SupplierID(); !ok {
-		return &ValidationError{Name: "supplier_id", err: errors.New(`ent: missing required field "PurchaseOrder.supplier_id"`)}
-	}
-	if _, ok := _c.mutation.WarehouseID(); !ok {
-		return &ValidationError{Name: "warehouse_id", err: errors.New(`ent: missing required field "PurchaseOrder.warehouse_id"`)}
-	}
 	if _, ok := _c.mutation.PoNumber(); !ok {
 		return &ValidationError{Name: "po_number", err: errors.New(`ent: missing required field "PurchaseOrder.po_number"`)}
 	}
@@ -378,12 +416,6 @@ func (_c *PurchaseOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "PurchaseOrder.updated_at"`)}
-	}
-	if len(_c.mutation.SupplierIDs()) == 0 {
-		return &ValidationError{Name: "supplier", err: errors.New(`ent: missing required edge "PurchaseOrder.supplier"`)}
-	}
-	if len(_c.mutation.WarehouseIDs()) == 0 {
-		return &ValidationError{Name: "warehouse", err: errors.New(`ent: missing required edge "PurchaseOrder.warehouse"`)}
 	}
 	return nil
 }
@@ -457,6 +489,14 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 		_spec.SetField(purchaseorder.FieldRfqID, field.TypeUUID, value)
 		_node.RfqID = &value
 	}
+	if value, ok := _c.mutation.QuotationID(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationID, field.TypeUUID, value)
+		_node.QuotationID = &value
+	}
+	if value, ok := _c.mutation.QuotationNumber(); ok {
+		_spec.SetField(purchaseorder.FieldQuotationNumber, field.TypeString, value)
+		_node.QuotationNumber = value
+	}
 	if value, ok := _c.mutation.PayTermDays(); ok {
 		_spec.SetField(purchaseorder.FieldPayTermDays, field.TypeInt, value)
 		_node.PayTermDays = &value
@@ -495,7 +535,7 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.SupplierID = nodes[0]
+		_node.SupplierID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.WarehouseIDs(); len(nodes) > 0 {
@@ -512,7 +552,7 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.WarehouseID = nodes[0]
+		_node.WarehouseID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.LinesIDs(); len(nodes) > 0 {
@@ -607,6 +647,12 @@ func (u *PurchaseOrderUpsert) UpdateSupplierID() *PurchaseOrderUpsert {
 	return u
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *PurchaseOrderUpsert) ClearSupplierID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldSupplierID)
+	return u
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (u *PurchaseOrderUpsert) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsert {
 	u.Set(purchaseorder.FieldWarehouseID, v)
@@ -616,6 +662,12 @@ func (u *PurchaseOrderUpsert) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsert {
 // UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
 func (u *PurchaseOrderUpsert) UpdateWarehouseID() *PurchaseOrderUpsert {
 	u.SetExcluded(purchaseorder.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseOrderUpsert) ClearWarehouseID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldWarehouseID)
 	return u
 }
 
@@ -742,6 +794,42 @@ func (u *PurchaseOrderUpsert) UpdateRfqID() *PurchaseOrderUpsert {
 // ClearRfqID clears the value of the "rfq_id" field.
 func (u *PurchaseOrderUpsert) ClearRfqID() *PurchaseOrderUpsert {
 	u.SetNull(purchaseorder.FieldRfqID)
+	return u
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (u *PurchaseOrderUpsert) SetQuotationID(v uuid.UUID) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldQuotationID, v)
+	return u
+}
+
+// UpdateQuotationID sets the "quotation_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateQuotationID() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldQuotationID)
+	return u
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (u *PurchaseOrderUpsert) ClearQuotationID() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldQuotationID)
+	return u
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (u *PurchaseOrderUpsert) SetQuotationNumber(v string) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldQuotationNumber, v)
+	return u
+}
+
+// UpdateQuotationNumber sets the "quotation_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateQuotationNumber() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldQuotationNumber)
+	return u
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (u *PurchaseOrderUpsert) ClearQuotationNumber() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldQuotationNumber)
 	return u
 }
 
@@ -914,6 +1002,13 @@ func (u *PurchaseOrderUpsertOne) UpdateSupplierID() *PurchaseOrderUpsertOne {
 	})
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *PurchaseOrderUpsertOne) ClearSupplierID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (u *PurchaseOrderUpsertOne) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsertOne {
 	return u.Update(func(s *PurchaseOrderUpsert) {
@@ -925,6 +1020,13 @@ func (u *PurchaseOrderUpsertOne) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpser
 func (u *PurchaseOrderUpsertOne) UpdateWarehouseID() *PurchaseOrderUpsertOne {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseOrderUpsertOne) ClearWarehouseID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearWarehouseID()
 	})
 }
 
@@ -1072,6 +1174,48 @@ func (u *PurchaseOrderUpsertOne) UpdateRfqID() *PurchaseOrderUpsertOne {
 func (u *PurchaseOrderUpsertOne) ClearRfqID() *PurchaseOrderUpsertOne {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.ClearRfqID()
+	})
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (u *PurchaseOrderUpsertOne) SetQuotationID(v uuid.UUID) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetQuotationID(v)
+	})
+}
+
+// UpdateQuotationID sets the "quotation_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateQuotationID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateQuotationID()
+	})
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (u *PurchaseOrderUpsertOne) ClearQuotationID() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearQuotationID()
+	})
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (u *PurchaseOrderUpsertOne) SetQuotationNumber(v string) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetQuotationNumber(v)
+	})
+}
+
+// UpdateQuotationNumber sets the "quotation_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateQuotationNumber() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateQuotationNumber()
+	})
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (u *PurchaseOrderUpsertOne) ClearQuotationNumber() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearQuotationNumber()
 	})
 }
 
@@ -1426,6 +1570,13 @@ func (u *PurchaseOrderUpsertBulk) UpdateSupplierID() *PurchaseOrderUpsertBulk {
 	})
 }
 
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearSupplierID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (u *PurchaseOrderUpsertBulk) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpsertBulk {
 	return u.Update(func(s *PurchaseOrderUpsert) {
@@ -1437,6 +1588,13 @@ func (u *PurchaseOrderUpsertBulk) SetWarehouseID(v uuid.UUID) *PurchaseOrderUpse
 func (u *PurchaseOrderUpsertBulk) UpdateWarehouseID() *PurchaseOrderUpsertBulk {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearWarehouseID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearWarehouseID()
 	})
 }
 
@@ -1584,6 +1742,48 @@ func (u *PurchaseOrderUpsertBulk) UpdateRfqID() *PurchaseOrderUpsertBulk {
 func (u *PurchaseOrderUpsertBulk) ClearRfqID() *PurchaseOrderUpsertBulk {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.ClearRfqID()
+	})
+}
+
+// SetQuotationID sets the "quotation_id" field.
+func (u *PurchaseOrderUpsertBulk) SetQuotationID(v uuid.UUID) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetQuotationID(v)
+	})
+}
+
+// UpdateQuotationID sets the "quotation_id" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateQuotationID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateQuotationID()
+	})
+}
+
+// ClearQuotationID clears the value of the "quotation_id" field.
+func (u *PurchaseOrderUpsertBulk) ClearQuotationID() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearQuotationID()
+	})
+}
+
+// SetQuotationNumber sets the "quotation_number" field.
+func (u *PurchaseOrderUpsertBulk) SetQuotationNumber(v string) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetQuotationNumber(v)
+	})
+}
+
+// UpdateQuotationNumber sets the "quotation_number" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateQuotationNumber() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateQuotationNumber()
+	})
+}
+
+// ClearQuotationNumber clears the value of the "quotation_number" field.
+func (u *PurchaseOrderUpsertBulk) ClearQuotationNumber() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearQuotationNumber()
 	})
 }
 

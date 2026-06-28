@@ -58,15 +58,19 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 
 	supplierName := ""
 	var supplierAddr []string
-	if sup, e := h.orm.Supplier.Query().Where(entsupplierdoc.ID(po.SupplierID)).Only(ctx); e == nil {
-		supplierName = sup.Name
-		if sup.Address != "" {
-			supplierAddr = strings.Split(sup.Address, "\n")
+	if po.SupplierID != nil {
+		if sup, e := h.orm.Supplier.Query().Where(entsupplierdoc.ID(*po.SupplierID)).Only(ctx); e == nil {
+			supplierName = sup.Name
+			if sup.Address != "" {
+				supplierAddr = strings.Split(sup.Address, "\n")
+			}
 		}
 	}
 	warehouseName := ""
-	if wh, e := h.orm.Warehouse.Query().Where(entwhdoc.ID(po.WarehouseID)).Only(ctx); e == nil {
-		warehouseName = wh.Name
+	if po.WarehouseID != nil {
+		if wh, e := h.orm.Warehouse.Query().Where(entwhdoc.ID(*po.WarehouseID)).Only(ctx); e == nil {
+			warehouseName = wh.Name
+		}
 	}
 
 	items := make([]documents.DocLine, 0, len(lines))
