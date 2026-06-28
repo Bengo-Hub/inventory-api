@@ -70,6 +70,7 @@ type App struct {
 	ticketConsumer      *consumers.TicketIssuanceConsumer
 	treasuryTaxConsumer *consumers.TreasuryTaxEventsConsumer
 	tenantPurgeConsumer *consumers.TenantPurgeConsumer
+	quotationConsumer   *consumers.QuotationAcceptedConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -237,6 +238,11 @@ func New(ctx context.Context) (*App, error) {
 	// Stock low events consumer — auto-creates draft POs when auto_reorder_enabled
 	stockConsumer := consumers.NewStockEventsConsumer(log, ormClient)
 
+	// Procure-to-order consumer — on an ACCEPTED treasury sales quotation, auto-creates a draft
+	// PurchaseOrder to buy the quoted items at their buying (cost) price. Gated by entitlement (fail-open).
+	quotationConsumer := consumers.NewQuotationAcceptedConsumer(log, ormClient)
+	quotationConsumer.SetFeatureGate(consumerFeatureGate)
+
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
 
@@ -351,6 +357,7 @@ func New(ctx context.Context) (*App, error) {
 		ticketConsumer:      ticketConsumer,
 		treasuryTaxConsumer: treasuryTaxConsumer,
 		tenantPurgeConsumer: tenantPurgeConsumer,
+		quotationConsumer:   quotationConsumer,
 	}, nil
 }
 
@@ -448,6 +455,17 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("tenant purge consumer started")
+			}
+
+			// Start procure-to-order consumer — on an accepted treasury sales quotation,
+			// auto-creates a draft PO to buy the quoted items at their buying cost.
+			if a.quotationConsumer != nil {
+				go func() {
+					if err := a.quotationConsumer.Start(ctx, js); err != nil {
+						a.log.Error("quotation accepted (procure-to-order) consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("quotation accepted (procure-to-order) consumer started")
 			}
 		}
 	}

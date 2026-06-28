@@ -25,9 +25,13 @@ func (PurchaseOrder) Fields() []ent.Field {
 		field.UUID("tenant_id", uuid.UUID{}).
 			Comment("Owning tenant"),
 		field.UUID("supplier_id", uuid.UUID{}).
-			Comment("FK to Supplier"),
+			Optional().
+			Nillable().
+			Comment("FK to Supplier — optional for draft POs (e.g. procure-to-order) until a supplier is assigned"),
 		field.UUID("warehouse_id", uuid.UUID{}).
-			Comment("FK to Warehouse — destination for received goods"),
+			Optional().
+			Nillable().
+			Comment("FK to Warehouse — destination for received goods; optional until resolved"),
 		field.String("po_number").
 			NotEmpty().
 			Comment("Unique PO number per tenant"),
@@ -57,6 +61,16 @@ func (PurchaseOrder) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Source RFQ this PO was awarded from (traceability)"),
+		// Procure-to-order: link back to the treasury sales quotation that triggered this
+		// draft PO (consumed from quotation.accepted). Used for idempotency so a redelivered
+		// event never creates a duplicate PO for the same quotation.
+		field.UUID("quotation_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Source treasury sales quotation this procure-to-order PO was auto-created from (traceability + idempotency)"),
+		field.String("quotation_number").
+			Optional().
+			Comment("Human-readable number of the source sales quotation (procure-to-order)"),
 		field.Int("pay_term_days").
 			Optional().
 			Nillable().
@@ -85,13 +99,11 @@ func (PurchaseOrder) Edges() []ent.Edge {
 		edge.From("supplier", Supplier.Type).
 			Ref("purchase_orders").
 			Field("supplier_id").
-			Unique().
-			Required(),
+			Unique(),
 		edge.From("warehouse", Warehouse.Type).
 			Ref("purchase_orders").
 			Field("warehouse_id").
-			Unique().
-			Required(),
+			Unique(),
 		edge.To("lines", PurchaseOrderLine.Type),
 	}
 }
@@ -102,5 +114,7 @@ func (PurchaseOrder) Indexes() []ent.Index {
 		index.Fields("tenant_id", "po_number").Unique(),
 		index.Fields("tenant_id", "status"),
 		index.Fields("tenant_id", "supplier_id"),
+		// Idempotency lookup for procure-to-order: at most one PO per quotation per tenant.
+		index.Fields("tenant_id", "quotation_id"),
 	}
 }

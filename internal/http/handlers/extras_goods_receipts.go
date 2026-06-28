@@ -257,11 +257,11 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 	}
 	warehouseID := po.WarehouseID
 	if req.WarehouseID != nil {
-		warehouseID = *req.WarehouseID
+		warehouseID = req.WarehouseID
 	}
 	create := h.orm.GoodsReceipt.Create().
 		SetTenantID(tenantID).SetGrnNumber(grnNumber).SetPurchaseOrderID(poID).
-		SetSupplierID(po.SupplierID).SetWarehouseID(warehouseID).SetNotes(req.Notes)
+		SetNillableSupplierID(po.SupplierID).SetNillableWarehouseID(warehouseID).SetNotes(req.Notes)
 	if req.ReceivedBy != nil {
 		create = create.SetReceivedBy(*req.ReceivedBy)
 	}
@@ -343,7 +343,10 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
 		return
 	}
-	warehouseID := po.WarehouseID
+	var warehouseID uuid.UUID
+	if po.WarehouseID != nil {
+		warehouseID = *po.WarehouseID
+	}
 	if g.WarehouseID != nil {
 		warehouseID = *g.WarehouseID
 	}
@@ -534,6 +537,15 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 func derefInt(p *int) int {
 	if p == nil {
 		return 0
+	}
+	return *p
+}
+
+// derefUUID returns the pointed-to UUID, or uuid.Nil when nil. Used for PO DTOs now that
+// supplier_id/warehouse_id are optional (e.g. unassigned procure-to-order draft POs).
+func derefUUID(p *uuid.UUID) uuid.UUID {
+	if p == nil {
+		return uuid.Nil
 	}
 	return *p
 }

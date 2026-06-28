@@ -24,19 +24,19 @@ import (
 // ─── Purchase Orders ──────────────────────────────────────────────────────────
 
 type purchaseOrderDTO struct {
-	ID            uuid.UUID  `json:"id"`
-	PONumber      string     `json:"po_number"`
-	SupplierName  string     `json:"supplier_name"`
-	SupplierID    uuid.UUID  `json:"supplier_id"`
-	WarehouseName string     `json:"warehouse_name"`
-	WarehouseID   uuid.UUID  `json:"warehouse_id"`
-	Status        string     `json:"status"`
-	TotalAmount   float64    `json:"total_amount"`
-	ExpectedDate  *time.Time `json:"expected_date"`
-	Notes         string     `json:"notes"`
-	PayTermDays               *int    `json:"pay_term_days"`
-	AdditionalShippingCharges float64 `json:"additional_shipping_charges"`
-	CreatedAt     time.Time  `json:"created_at"`
+	ID                        uuid.UUID  `json:"id"`
+	PONumber                  string     `json:"po_number"`
+	SupplierName              string     `json:"supplier_name"`
+	SupplierID                uuid.UUID  `json:"supplier_id"`
+	WarehouseName             string     `json:"warehouse_name"`
+	WarehouseID               uuid.UUID  `json:"warehouse_id"`
+	Status                    string     `json:"status"`
+	TotalAmount               float64    `json:"total_amount"`
+	ExpectedDate              *time.Time `json:"expected_date"`
+	Notes                     string     `json:"notes"`
+	PayTermDays               *int       `json:"pay_term_days"`
+	AdditionalShippingCharges float64    `json:"additional_shipping_charges"`
+	CreatedAt                 time.Time  `json:"created_at"`
 }
 
 // ListPurchaseOrders handles GET /inventory/purchase-orders.
@@ -87,18 +87,18 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 			}
 		}
 		dto := purchaseOrderDTO{
-			ID:            o.ID,
-			PONumber:      o.PoNumber,
-			SupplierName:  supplierName,
-			SupplierID:    o.SupplierID,
-			WarehouseName: warehouseName,
-			WarehouseID:   o.WarehouseID,
-			Status:        o.Status.String(),
-			TotalAmount:   o.TotalAmount,
-			Notes:         o.Notes,
+			ID:                        o.ID,
+			PONumber:                  o.PoNumber,
+			SupplierName:              supplierName,
+			SupplierID:                derefUUID(o.SupplierID),
+			WarehouseName:             warehouseName,
+			WarehouseID:               derefUUID(o.WarehouseID),
+			Status:                    o.Status.String(),
+			TotalAmount:               o.TotalAmount,
+			Notes:                     o.Notes,
 			PayTermDays:               o.PayTermDays,
 			AdditionalShippingCharges: o.AdditionalShippingCharges,
-			CreatedAt:     o.CreatedAt,
+			CreatedAt:                 o.CreatedAt,
 		}
 		if o.ExpectedDate != nil {
 			dto.ExpectedDate = o.ExpectedDate
@@ -197,18 +197,18 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 	}
 
 	dto := purchaseOrderDTO{
-		ID:            po.ID,
-		PONumber:      po.PoNumber,
-		SupplierName:  supplierName,
-		SupplierID:    po.SupplierID,
-		WarehouseName: warehouseName,
-		WarehouseID:   po.WarehouseID,
-		Status:        po.Status.String(),
-		TotalAmount:   po.TotalAmount,
-		Notes:         po.Notes,
+		ID:                        po.ID,
+		PONumber:                  po.PoNumber,
+		SupplierName:              supplierName,
+		SupplierID:                derefUUID(po.SupplierID),
+		WarehouseName:             warehouseName,
+		WarehouseID:               derefUUID(po.WarehouseID),
+		Status:                    po.Status.String(),
+		TotalAmount:               po.TotalAmount,
+		Notes:                     po.Notes,
 		PayTermDays:               po.PayTermDays,
 		AdditionalShippingCharges: po.AdditionalShippingCharges,
-		CreatedAt:     po.CreatedAt,
+		CreatedAt:                 po.CreatedAt,
 	}
 	if po.ExpectedDate != nil {
 		dto.ExpectedDate = po.ExpectedDate
@@ -589,6 +589,11 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		}
 	}()
 
+	if po.WarehouseID == nil {
+		_ = tx.Rollback()
+		writeError(w, http.StatusBadRequest, "MISSING_WAREHOUSE", "Assign a destination warehouse before receiving this purchase order")
+		return
+	}
 	for _, line := range po.Edges.Lines {
 		qty := line.QuantityOrdered
 		bal, balErr := tx.InventoryBalance.Query().
@@ -603,7 +608,7 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 			_, err = tx.InventoryBalance.Create().
 				SetTenantID(tenantID).
 				SetItemID(line.ItemID).
-				SetWarehouseID(po.WarehouseID).
+				SetWarehouseID(*po.WarehouseID).
 				SetOnHand(qty).
 				SetAvailable(qty).
 				SetReserved(0).
