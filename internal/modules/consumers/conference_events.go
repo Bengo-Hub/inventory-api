@@ -11,7 +11,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
-	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -55,10 +54,12 @@ func (c *ConferenceEventsConsumer) Start(ctx context.Context, js nats.JetStreamC
 			return fmt.Errorf("conference events: ensure stream: %w", aerr)
 		}
 	}
-	eventslib.SubscribeWithRebind(
+	SubscribeQueueWithRebind(
 		c.log,
 		js,
+		"pos",
 		"pos.conference.mealcard.redeemed",
+		conferenceMealcardDurable,
 		c.handleMessage,
 		nats.Durable(conferenceMealcardDurable),
 		nats.AckExplicit(),

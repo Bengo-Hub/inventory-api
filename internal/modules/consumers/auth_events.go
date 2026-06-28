@@ -83,7 +83,7 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 
 	for _, s := range subs {
 		s := s
-		sharedevents.SubscribeWithRebind(c.log, js, s.subject, func(msg *nats.Msg) {
+		SubscribeQueueWithRebind(c.log, js, "auth", s.subject, s.durable, func(msg *nats.Msg) {
 			evt, err := sharedevents.FromJSON(msg.Data)
 			if err != nil {
 				c.log.Error("failed to unmarshal auth user event",

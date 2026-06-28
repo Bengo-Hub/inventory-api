@@ -10,7 +10,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
-	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -58,10 +57,12 @@ func (c *ReturnEventsConsumer) StartPOSReturns(ctx context.Context, js nats.JetS
 		}
 	}
 
-	eventslib.SubscribeWithRebind(
+	SubscribeQueueWithRebind(
 		c.log,
 		js,
+		"pos",
 		"pos.return.completed",
+		posReturnDurableConsumer,
 		c.handlePOSReturn,
 		nats.Durable(posReturnDurableConsumer),
 		nats.AckExplicit(),
@@ -91,10 +92,12 @@ func (c *ReturnEventsConsumer) StartOrderingReturns(ctx context.Context, js nats
 		}
 	}
 
-	eventslib.SubscribeWithRebind(
+	SubscribeQueueWithRebind(
 		c.log,
 		js,
+		"ordering",
 		"ordering.return.approved",
+		orderingReturnDurableConsumer,
 		c.handleOrderingReturn,
 		nats.Durable(orderingReturnDurableConsumer),
 		nats.AckExplicit(),

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -151,10 +150,12 @@ func (c *TenantPurgeConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		}
 	}
 
-	eventslib.SubscribeWithRebind(
+	SubscribeQueueWithRebind(
 		c.log,
 		js,
+		tenantPurgeStream,
 		tenantPurgeSubject,
+		tenantPurgeDurable,
 		c.handleMessage,
 		nats.Durable(tenantPurgeDurable),
 		nats.AckExplicit(),

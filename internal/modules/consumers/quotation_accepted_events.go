@@ -12,7 +12,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
-	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -121,10 +120,15 @@ func (c *QuotationAcceptedConsumer) Start(ctx context.Context, js nats.JetStream
 		}
 	}
 
-	eventslib.SubscribeWithRebind(
+	// Durable QUEUE consumer so BOTH inventory-api replicas share the consumer (load-balanced,
+	// exactly-once) instead of one replica binding and the other looping forever on
+	// "consumer is already bound". The durable name is reused as the deliver-group name.
+	SubscribeQueueWithRebind(
 		c.log,
 		js,
+		"treasury",
 		quotationAcceptedSubject,
+		quotationAcceptedDurableConsumer,
 		c.handleMessage,
 		nats.Durable(quotationAcceptedDurableConsumer),
 		nats.AckExplicit(),
