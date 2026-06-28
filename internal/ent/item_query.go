@@ -27,6 +27,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -56,6 +57,7 @@ type ItemQuery struct {
 	withProducedByRecipe  *RecipeQuery
 	withItemCategory      *ItemCategoryQuery
 	withItemBrand         *ItemBrandQuery
+	withPreferredSupplier *SupplierQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -444,6 +446,28 @@ func (_q *ItemQuery) QueryItemBrand() *ItemBrandQuery {
 	return query
 }
 
+// QueryPreferredSupplier chains the current query on the "preferred_supplier" edge.
+func (_q *ItemQuery) QueryPreferredSupplier() *SupplierQuery {
+	query := (&SupplierClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(supplier.Table, supplier.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.PreferredSupplierTable, item.PreferredSupplierColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Item entity from the query.
 // Returns a *NotFoundError when no Item was found.
 func (_q *ItemQuery) First(ctx context.Context) (*Item, error) {
@@ -652,6 +676,7 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		withProducedByRecipe:  _q.withProducedByRecipe.Clone(),
 		withItemCategory:      _q.withItemCategory.Clone(),
 		withItemBrand:         _q.withItemBrand.Clone(),
+		withPreferredSupplier: _q.withPreferredSupplier.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -834,6 +859,17 @@ func (_q *ItemQuery) WithItemBrand(opts ...func(*ItemBrandQuery)) *ItemQuery {
 	return _q
 }
 
+// WithPreferredSupplier tells the query-builder to eager-load the nodes that are connected to
+// the "preferred_supplier" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithPreferredSupplier(opts ...func(*SupplierQuery)) *ItemQuery {
+	query := (&SupplierClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPreferredSupplier = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -912,7 +948,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	var (
 		nodes       = []*Item{}
 		_spec       = _q.querySpec()
-		loadedTypes = [16]bool{
+		loadedTypes = [17]bool{
 			_q.withTenant != nil,
 			_q.withBalances != nil,
 			_q.withRecipeIngredients != nil,
@@ -929,6 +965,7 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 			_q.withProducedByRecipe != nil,
 			_q.withItemCategory != nil,
 			_q.withItemBrand != nil,
+			_q.withPreferredSupplier != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -1052,6 +1089,12 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	if query := _q.withItemBrand; query != nil {
 		if err := _q.loadItemBrand(ctx, query, nodes, nil,
 			func(n *Item, e *ItemBrand) { n.Edges.ItemBrand = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPreferredSupplier; query != nil {
+		if err := _q.loadPreferredSupplier(ctx, query, nodes, nil,
+			func(n *Item, e *Supplier) { n.Edges.PreferredSupplier = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -1540,6 +1583,38 @@ func (_q *ItemQuery) loadItemBrand(ctx context.Context, query *ItemBrandQuery, n
 	}
 	return nil
 }
+func (_q *ItemQuery) loadPreferredSupplier(ctx context.Context, query *SupplierQuery, nodes []*Item, init func(*Item), assign func(*Item, *Supplier)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Item)
+	for i := range nodes {
+		if nodes[i].PreferredSupplierID == nil {
+			continue
+		}
+		fk := *nodes[i].PreferredSupplierID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(supplier.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "preferred_supplier_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *ItemQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -1577,6 +1652,9 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withItemBrand != nil {
 			_spec.Node.AddColumnOnce(item.FieldBrandID)
+		}
+		if _q.withPreferredSupplier != nil {
+			_spec.Node.AddColumnOnce(item.FieldPreferredSupplierID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

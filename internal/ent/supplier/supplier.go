@@ -94,6 +94,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgePurchaseOrders holds the string denoting the purchase_orders edge name in mutations.
 	EdgePurchaseOrders = "purchase_orders"
+	// EdgePreferredItems holds the string denoting the preferred_items edge name in mutations.
+	EdgePreferredItems = "preferred_items"
 	// Table holds the table name of the supplier in the database.
 	Table = "suppliers"
 	// PurchaseOrdersTable is the table that holds the purchase_orders relation/edge.
@@ -103,6 +105,13 @@ const (
 	PurchaseOrdersInverseTable = "purchase_orders"
 	// PurchaseOrdersColumn is the table column denoting the purchase_orders relation/edge.
 	PurchaseOrdersColumn = "supplier_id"
+	// PreferredItemsTable is the table that holds the preferred_items relation/edge.
+	PreferredItemsTable = "items"
+	// PreferredItemsInverseTable is the table name for the Item entity.
+	// It exists in this package in order to avoid circular dependency with the "item" package.
+	PreferredItemsInverseTable = "items"
+	// PreferredItemsColumn is the table column denoting the preferred_items relation/edge.
+	PreferredItemsColumn = "preferred_supplier_id"
 )
 
 // Columns holds all SQL columns for supplier fields.
@@ -415,10 +424,31 @@ func ByPurchaseOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPurchaseOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPreferredItemsCount orders the results by preferred_items count.
+func ByPreferredItemsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPreferredItemsStep(), opts...)
+	}
+}
+
+// ByPreferredItems orders the results by preferred_items terms.
+func ByPreferredItems(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPreferredItemsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPurchaseOrdersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PurchaseOrdersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PurchaseOrdersTable, PurchaseOrdersColumn),
+	)
+}
+func newPreferredItemsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PreferredItemsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PreferredItemsTable, PreferredItemsColumn),
 	)
 }

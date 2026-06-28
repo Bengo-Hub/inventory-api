@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/google/uuid"
@@ -125,6 +126,8 @@ type Item struct {
 	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
 	// How the ingredient is bought — e.g. 'kg', 'litre', 'crate'
 	PurchaseUnit string `json:"purchase_unit,omitempty"`
+	// Preferred Supplier for procurement — drives per-vendor PO split in procure-to-order; nil = unassigned
+	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
 	// Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct
 	YieldPct *float64 `json:"yield_pct,omitempty"`
 	// Hard minimum selling price (KES). Prices below this are rejected at price upsert and require manager approval at POS
@@ -189,9 +192,11 @@ type ItemEdges struct {
 	ItemCategory *ItemCategory `json:"item_category,omitempty"`
 	// ItemBrand holds the value of the item_brand edge.
 	ItemBrand *ItemBrand `json:"item_brand,omitempty"`
+	// Preferred supplier for procurement (procure-to-order per-vendor PO split)
+	PreferredSupplier *Supplier `json:"preferred_supplier,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [16]bool
+	loadedTypes [17]bool
 }
 
 // TenantOrErr returns the Tenant value or an error if the edge
@@ -350,12 +355,23 @@ func (e ItemEdges) ItemBrandOrErr() (*ItemBrand, error) {
 	return nil, &NotLoadedError{edge: "item_brand"}
 }
 
+// PreferredSupplierOrErr returns the PreferredSupplier value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) PreferredSupplierOrErr() (*Supplier, error) {
+	if e.PreferredSupplier != nil {
+		return e.PreferredSupplier, nil
+	} else if e.loadedTypes[16] {
+		return nil, &NotFoundError{label: supplier.Label}
+	}
+	return nil, &NotLoadedError{edge: "preferred_supplier"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Item) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldCategoryID, item.FieldBrandID, item.FieldUnitID:
+		case item.FieldCategoryID, item.FieldBrandID, item.FieldUnitID, item.FieldPreferredSupplierID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
@@ -711,6 +727,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PurchaseUnit = value.String
 			}
+		case item.FieldPreferredSupplierID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field preferred_supplier_id", values[i])
+			} else if value.Valid {
+				_m.PreferredSupplierID = new(uuid.UUID)
+				*_m.PreferredSupplierID = *value.S.(*uuid.UUID)
+			}
 		case item.FieldYieldPct:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field yield_pct", values[i])
@@ -885,6 +908,11 @@ func (_m *Item) QueryItemCategory() *ItemCategoryQuery {
 // QueryItemBrand queries the "item_brand" edge of the Item entity.
 func (_m *Item) QueryItemBrand() *ItemBrandQuery {
 	return NewItemClient(_m.config).QueryItemBrand(_m)
+}
+
+// QueryPreferredSupplier queries the "preferred_supplier" edge of the Item entity.
+func (_m *Item) QueryPreferredSupplier() *SupplierQuery {
+	return NewItemClient(_m.config).QueryPreferredSupplier(_m)
 }
 
 // Update returns a builder for updating this Item.
@@ -1089,6 +1117,11 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("purchase_unit=")
 	builder.WriteString(_m.PurchaseUnit)
+	builder.WriteString(", ")
+	if v := _m.PreferredSupplierID; v != nil {
+		builder.WriteString("preferred_supplier_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.YieldPct; v != nil {
 		builder.WriteString("yield_pct=")

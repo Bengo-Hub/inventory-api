@@ -2609,6 +2609,29 @@ func HasPurchaseOrdersWith(preds ...predicate.PurchaseOrder) predicate.Supplier 
 	})
 }
 
+// HasPreferredItems applies the HasEdge predicate on the "preferred_items" edge.
+func HasPreferredItems() predicate.Supplier {
+	return predicate.Supplier(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PreferredItemsTable, PreferredItemsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPreferredItemsWith applies the HasEdge predicate on the "preferred_items" edge with a given conditions (other predicates).
+func HasPreferredItemsWith(preds ...predicate.Item) predicate.Supplier {
+	return predicate.Supplier(func(s *sql.Selector) {
+		step := newPreferredItemsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Supplier) predicate.Supplier {
 	return predicate.Supplier(sql.AndPredicates(predicates...))

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/google/uuid"
@@ -554,6 +555,21 @@ func (_c *SupplierCreate) AddPurchaseOrders(v ...*PurchaseOrder) *SupplierCreate
 	return _c.AddPurchaseOrderIDs(ids...)
 }
 
+// AddPreferredItemIDs adds the "preferred_items" edge to the Item entity by IDs.
+func (_c *SupplierCreate) AddPreferredItemIDs(ids ...uuid.UUID) *SupplierCreate {
+	_c.mutation.AddPreferredItemIDs(ids...)
+	return _c
+}
+
+// AddPreferredItems adds the "preferred_items" edges to the Item entity.
+func (_c *SupplierCreate) AddPreferredItems(v ...*Item) *SupplierCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPreferredItemIDs(ids...)
+}
+
 // Mutation returns the SupplierMutation object of the builder.
 func (_c *SupplierCreate) Mutation() *SupplierMutation {
 	return _c.mutation
@@ -867,6 +883,22 @@ func (_c *SupplierCreate) createSpec() (*Supplier, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PreferredItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

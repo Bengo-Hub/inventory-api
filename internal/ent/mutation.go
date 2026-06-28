@@ -34322,6 +34322,8 @@ type ItemMutation struct {
 	cleareditem_category       bool
 	item_brand                 *uuid.UUID
 	cleareditem_brand          bool
+	preferred_supplier         *uuid.UUID
+	clearedpreferred_supplier  bool
 	done                       bool
 	oldValue                   func(context.Context) (*Item, error)
 	predicates                 []predicate.Item
@@ -36872,6 +36874,55 @@ func (m *ItemMutation) ResetPurchaseUnit() {
 	delete(m.clearedFields, item.FieldPurchaseUnit)
 }
 
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (m *ItemMutation) SetPreferredSupplierID(u uuid.UUID) {
+	m.preferred_supplier = &u
+}
+
+// PreferredSupplierID returns the value of the "preferred_supplier_id" field in the mutation.
+func (m *ItemMutation) PreferredSupplierID() (r uuid.UUID, exists bool) {
+	v := m.preferred_supplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreferredSupplierID returns the old "preferred_supplier_id" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldPreferredSupplierID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreferredSupplierID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreferredSupplierID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreferredSupplierID: %w", err)
+	}
+	return oldValue.PreferredSupplierID, nil
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (m *ItemMutation) ClearPreferredSupplierID() {
+	m.preferred_supplier = nil
+	m.clearedFields[item.FieldPreferredSupplierID] = struct{}{}
+}
+
+// PreferredSupplierIDCleared returns if the "preferred_supplier_id" field was cleared in this mutation.
+func (m *ItemMutation) PreferredSupplierIDCleared() bool {
+	_, ok := m.clearedFields[item.FieldPreferredSupplierID]
+	return ok
+}
+
+// ResetPreferredSupplierID resets all changes to the "preferred_supplier_id" field.
+func (m *ItemMutation) ResetPreferredSupplierID() {
+	m.preferred_supplier = nil
+	delete(m.clearedFields, item.FieldPreferredSupplierID)
+}
+
 // SetYieldPct sets the "yield_pct" field.
 func (m *ItemMutation) SetYieldPct(f float64) {
 	m.yield_pct = &f
@@ -38312,6 +38363,33 @@ func (m *ItemMutation) ResetItemBrand() {
 	m.cleareditem_brand = false
 }
 
+// ClearPreferredSupplier clears the "preferred_supplier" edge to the Supplier entity.
+func (m *ItemMutation) ClearPreferredSupplier() {
+	m.clearedpreferred_supplier = true
+	m.clearedFields[item.FieldPreferredSupplierID] = struct{}{}
+}
+
+// PreferredSupplierCleared reports if the "preferred_supplier" edge to the Supplier entity was cleared.
+func (m *ItemMutation) PreferredSupplierCleared() bool {
+	return m.PreferredSupplierIDCleared() || m.clearedpreferred_supplier
+}
+
+// PreferredSupplierIDs returns the "preferred_supplier" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PreferredSupplierID instead. It exists only for internal usage by the builders.
+func (m *ItemMutation) PreferredSupplierIDs() (ids []uuid.UUID) {
+	if id := m.preferred_supplier; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPreferredSupplier resets all changes to the "preferred_supplier" edge.
+func (m *ItemMutation) ResetPreferredSupplier() {
+	m.preferred_supplier = nil
+	m.clearedpreferred_supplier = false
+}
+
 // Where appends a list predicates to the ItemMutation builder.
 func (m *ItemMutation) Where(ps ...predicate.Item) {
 	m.predicates = append(m.predicates, ps...)
@@ -38346,7 +38424,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 62)
+	fields := make([]string, 0, 63)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -38497,6 +38575,9 @@ func (m *ItemMutation) Fields() []string {
 	if m.purchase_unit != nil {
 		fields = append(fields, item.FieldPurchaseUnit)
 	}
+	if m.preferred_supplier != nil {
+		fields = append(fields, item.FieldPreferredSupplierID)
+	}
 	if m.yield_pct != nil {
 		fields = append(fields, item.FieldYieldPct)
 	}
@@ -38641,6 +38722,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchasePackSize()
 	case item.FieldPurchaseUnit:
 		return m.PurchaseUnit()
+	case item.FieldPreferredSupplierID:
+		return m.PreferredSupplierID()
 	case item.FieldYieldPct:
 		return m.YieldPct()
 	case item.FieldMinSellingPrice:
@@ -38774,6 +38857,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPurchasePackSize(ctx)
 	case item.FieldPurchaseUnit:
 		return m.OldPurchaseUnit(ctx)
+	case item.FieldPreferredSupplierID:
+		return m.OldPreferredSupplierID(ctx)
 	case item.FieldYieldPct:
 		return m.OldYieldPct(ctx)
 	case item.FieldMinSellingPrice:
@@ -39156,6 +39241,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPurchaseUnit(v)
+		return nil
+	case item.FieldPreferredSupplierID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreferredSupplierID(v)
 		return nil
 	case item.FieldYieldPct:
 		v, ok := value.(float64)
@@ -39562,6 +39654,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldPurchaseUnit) {
 		fields = append(fields, item.FieldPurchaseUnit)
 	}
+	if m.FieldCleared(item.FieldPreferredSupplierID) {
+		fields = append(fields, item.FieldPreferredSupplierID)
+	}
 	if m.FieldCleared(item.FieldYieldPct) {
 		fields = append(fields, item.FieldYieldPct)
 	}
@@ -39698,6 +39793,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldPurchaseUnit:
 		m.ClearPurchaseUnit()
+		return nil
+	case item.FieldPreferredSupplierID:
+		m.ClearPreferredSupplierID()
 		return nil
 	case item.FieldYieldPct:
 		m.ClearYieldPct()
@@ -39884,6 +39982,9 @@ func (m *ItemMutation) ResetField(name string) error {
 	case item.FieldPurchaseUnit:
 		m.ResetPurchaseUnit()
 		return nil
+	case item.FieldPreferredSupplierID:
+		m.ResetPreferredSupplierID()
+		return nil
 	case item.FieldYieldPct:
 		m.ResetYieldPct()
 		return nil
@@ -39926,7 +40027,7 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 16)
+	edges := make([]string, 0, 17)
 	if m.tenant != nil {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -39974,6 +40075,9 @@ func (m *ItemMutation) AddedEdges() []string {
 	}
 	if m.item_brand != nil {
 		edges = append(edges, item.EdgeItemBrand)
+	}
+	if m.preferred_supplier != nil {
+		edges = append(edges, item.EdgePreferredSupplier)
 	}
 	return edges
 }
@@ -40066,13 +40170,17 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 		if id := m.item_brand; id != nil {
 			return []ent.Value{*id}
 		}
+	case item.EdgePreferredSupplier:
+		if id := m.preferred_supplier; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 16)
+	edges := make([]string, 0, 17)
 	if m.removedbalances != nil {
 		edges = append(edges, item.EdgeBalances)
 	}
@@ -40176,7 +40284,7 @@ func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 16)
+	edges := make([]string, 0, 17)
 	if m.clearedtenant {
 		edges = append(edges, item.EdgeTenant)
 	}
@@ -40225,6 +40333,9 @@ func (m *ItemMutation) ClearedEdges() []string {
 	if m.cleareditem_brand {
 		edges = append(edges, item.EdgeItemBrand)
 	}
+	if m.clearedpreferred_supplier {
+		edges = append(edges, item.EdgePreferredSupplier)
+	}
 	return edges
 }
 
@@ -40264,6 +40375,8 @@ func (m *ItemMutation) EdgeCleared(name string) bool {
 		return m.cleareditem_category
 	case item.EdgeItemBrand:
 		return m.cleareditem_brand
+	case item.EdgePreferredSupplier:
+		return m.clearedpreferred_supplier
 	}
 	return false
 }
@@ -40289,6 +40402,9 @@ func (m *ItemMutation) ClearEdge(name string) error {
 		return nil
 	case item.EdgeItemBrand:
 		m.ClearItemBrand()
+		return nil
+	case item.EdgePreferredSupplier:
+		m.ClearPreferredSupplier()
 		return nil
 	}
 	return fmt.Errorf("unknown Item unique edge %s", name)
@@ -40345,6 +40461,9 @@ func (m *ItemMutation) ResetEdge(name string) error {
 		return nil
 	case item.EdgeItemBrand:
 		m.ResetItemBrand()
+		return nil
+	case item.EdgePreferredSupplier:
+		m.ResetPreferredSupplier()
 		return nil
 	}
 	return fmt.Errorf("unknown Item edge %s", name)
@@ -79024,6 +79143,9 @@ type SupplierMutation struct {
 	purchase_orders                 map[uuid.UUID]struct{}
 	removedpurchase_orders          map[uuid.UUID]struct{}
 	clearedpurchase_orders          bool
+	preferred_items                 map[uuid.UUID]struct{}
+	removedpreferred_items          map[uuid.UUID]struct{}
+	clearedpreferred_items          bool
 	done                            bool
 	oldValue                        func(context.Context) (*Supplier, error)
 	predicates                      []predicate.Supplier
@@ -80960,6 +81082,60 @@ func (m *SupplierMutation) ResetPurchaseOrders() {
 	m.removedpurchase_orders = nil
 }
 
+// AddPreferredItemIDs adds the "preferred_items" edge to the Item entity by ids.
+func (m *SupplierMutation) AddPreferredItemIDs(ids ...uuid.UUID) {
+	if m.preferred_items == nil {
+		m.preferred_items = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.preferred_items[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPreferredItems clears the "preferred_items" edge to the Item entity.
+func (m *SupplierMutation) ClearPreferredItems() {
+	m.clearedpreferred_items = true
+}
+
+// PreferredItemsCleared reports if the "preferred_items" edge to the Item entity was cleared.
+func (m *SupplierMutation) PreferredItemsCleared() bool {
+	return m.clearedpreferred_items
+}
+
+// RemovePreferredItemIDs removes the "preferred_items" edge to the Item entity by IDs.
+func (m *SupplierMutation) RemovePreferredItemIDs(ids ...uuid.UUID) {
+	if m.removedpreferred_items == nil {
+		m.removedpreferred_items = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.preferred_items, ids[i])
+		m.removedpreferred_items[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPreferredItems returns the removed IDs of the "preferred_items" edge to the Item entity.
+func (m *SupplierMutation) RemovedPreferredItemsIDs() (ids []uuid.UUID) {
+	for id := range m.removedpreferred_items {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PreferredItemsIDs returns the "preferred_items" edge IDs in the mutation.
+func (m *SupplierMutation) PreferredItemsIDs() (ids []uuid.UUID) {
+	for id := range m.preferred_items {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPreferredItems resets all changes to the "preferred_items" edge.
+func (m *SupplierMutation) ResetPreferredItems() {
+	m.preferred_items = nil
+	m.clearedpreferred_items = false
+	m.removedpreferred_items = nil
+}
+
 // Where appends a list predicates to the SupplierMutation builder.
 func (m *SupplierMutation) Where(ps ...predicate.Supplier) {
 	m.predicates = append(m.predicates, ps...)
@@ -81920,9 +82096,12 @@ func (m *SupplierMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SupplierMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.purchase_orders != nil {
 		edges = append(edges, supplier.EdgePurchaseOrders)
+	}
+	if m.preferred_items != nil {
+		edges = append(edges, supplier.EdgePreferredItems)
 	}
 	return edges
 }
@@ -81937,15 +82116,24 @@ func (m *SupplierMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case supplier.EdgePreferredItems:
+		ids := make([]ent.Value, 0, len(m.preferred_items))
+		for id := range m.preferred_items {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SupplierMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedpurchase_orders != nil {
 		edges = append(edges, supplier.EdgePurchaseOrders)
+	}
+	if m.removedpreferred_items != nil {
+		edges = append(edges, supplier.EdgePreferredItems)
 	}
 	return edges
 }
@@ -81960,15 +82148,24 @@ func (m *SupplierMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case supplier.EdgePreferredItems:
+		ids := make([]ent.Value, 0, len(m.removedpreferred_items))
+		for id := range m.removedpreferred_items {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SupplierMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedpurchase_orders {
 		edges = append(edges, supplier.EdgePurchaseOrders)
+	}
+	if m.clearedpreferred_items {
+		edges = append(edges, supplier.EdgePreferredItems)
 	}
 	return edges
 }
@@ -81979,6 +82176,8 @@ func (m *SupplierMutation) EdgeCleared(name string) bool {
 	switch name {
 	case supplier.EdgePurchaseOrders:
 		return m.clearedpurchase_orders
+	case supplier.EdgePreferredItems:
+		return m.clearedpreferred_items
 	}
 	return false
 }
@@ -81997,6 +82196,9 @@ func (m *SupplierMutation) ResetEdge(name string) error {
 	switch name {
 	case supplier.EdgePurchaseOrders:
 		m.ResetPurchaseOrders()
+		return nil
+	case supplier.EdgePreferredItems:
+		m.ResetPreferredItems()
 		return nil
 	}
 	return fmt.Errorf("unknown Supplier edge %s", name)

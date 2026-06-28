@@ -115,6 +115,8 @@ func (Supplier) Fields() []ent.Field {
 func (Supplier) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("purchase_orders", PurchaseOrder.Type),
+		edge.To("preferred_items", Item.Type).
+			Comment("Items for which this supplier is the preferred procurement source"),
 	}
 }
 
