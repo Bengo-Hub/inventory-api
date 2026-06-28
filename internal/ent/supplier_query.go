@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -26,6 +27,7 @@ type SupplierQuery struct {
 	inters             []Interceptor
 	predicates         []predicate.Supplier
 	withPurchaseOrders *PurchaseOrderQuery
+	withPreferredItems *ItemQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +79,28 @@ func (_q *SupplierQuery) QueryPurchaseOrders() *PurchaseOrderQuery {
 			sqlgraph.From(supplier.Table, supplier.FieldID, selector),
 			sqlgraph.To(purchaseorder.Table, purchaseorder.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, supplier.PurchaseOrdersTable, supplier.PurchaseOrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPreferredItems chains the current query on the "preferred_items" edge.
+func (_q *SupplierQuery) QueryPreferredItems() *ItemQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(supplier.Table, supplier.FieldID, selector),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, supplier.PreferredItemsTable, supplier.PreferredItemsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +301,7 @@ func (_q *SupplierQuery) Clone() *SupplierQuery {
 		inters:             append([]Interceptor{}, _q.inters...),
 		predicates:         append([]predicate.Supplier{}, _q.predicates...),
 		withPurchaseOrders: _q.withPurchaseOrders.Clone(),
+		withPreferredItems: _q.withPreferredItems.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -291,6 +316,17 @@ func (_q *SupplierQuery) WithPurchaseOrders(opts ...func(*PurchaseOrderQuery)) *
 		opt(query)
 	}
 	_q.withPurchaseOrders = query
+	return _q
+}
+
+// WithPreferredItems tells the query-builder to eager-load the nodes that are connected to
+// the "preferred_items" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SupplierQuery) WithPreferredItems(opts ...func(*ItemQuery)) *SupplierQuery {
+	query := (&ItemClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPreferredItems = query
 	return _q
 }
 
@@ -372,8 +408,9 @@ func (_q *SupplierQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sup
 	var (
 		nodes       = []*Supplier{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withPurchaseOrders != nil,
+			_q.withPreferredItems != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,6 +435,13 @@ func (_q *SupplierQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sup
 		if err := _q.loadPurchaseOrders(ctx, query, nodes,
 			func(n *Supplier) { n.Edges.PurchaseOrders = []*PurchaseOrder{} },
 			func(n *Supplier, e *PurchaseOrder) { n.Edges.PurchaseOrders = append(n.Edges.PurchaseOrders, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPreferredItems; query != nil {
+		if err := _q.loadPreferredItems(ctx, query, nodes,
+			func(n *Supplier) { n.Edges.PreferredItems = []*Item{} },
+			func(n *Supplier, e *Item) { n.Edges.PreferredItems = append(n.Edges.PreferredItems, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -432,6 +476,39 @@ func (_q *SupplierQuery) loadPurchaseOrders(ctx context.Context, query *Purchase
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "supplier_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SupplierQuery) loadPreferredItems(ctx context.Context, query *ItemQuery, nodes []*Supplier, init func(*Supplier), assign func(*Supplier, *Item)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Supplier)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(item.FieldPreferredSupplierID)
+	}
+	query.Where(predicate.Item(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(supplier.PreferredItemsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PreferredSupplierID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "preferred_supplier_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "preferred_supplier_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
