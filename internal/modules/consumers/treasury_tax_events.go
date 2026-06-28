@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/platform/treasury"
 )
 
@@ -61,7 +62,7 @@ func (c *TreasuryTaxEventsConsumer) Start(ctx context.Context, js nats.JetStream
 		}
 	}
 
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"treasury",

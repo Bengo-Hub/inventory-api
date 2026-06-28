@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entticket "github.com/bengobox/inventory-service/internal/ent/ticket"
@@ -52,7 +53,7 @@ func (c *TicketIssuanceConsumer) Start(ctx context.Context, js nats.JetStreamCon
 			return fmt.Errorf("ticket issuance: ensure stream: %w", aerr)
 		}
 	}
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"ordering",
