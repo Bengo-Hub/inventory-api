@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entauditlog "github.com/bengobox/inventory-service/internal/ent/auditlog"
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
@@ -92,6 +93,36 @@ func (h *WarehouseHandler) fetchTenantOutlets(r *http.Request, slug string) ([]o
 	return arr, nil
 }
 
+// localOutletsFallback returns the tenant's locally-mirrored warehouses as outletItems,
+// keyed by the auth-owned outlet_id (never a fresh UUID). Used when auth-api is
+// unreachable or temporarily returns no outlets, so the picker isn't blocked. Only
+// active warehouses that carry an outlet_id (i.e. were mirrored from an auth.outlet
+// event) are returned — purely-local warehouses without an auth outlet are skipped.
+func (h *WarehouseHandler) localOutletsFallback(ctx context.Context, tenantID uuid.UUID) []outletItem {
+	rows, err := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID)).
+		All(ctx)
+	if err != nil {
+		h.log.Warn("my-outlets: local warehouse fallback query failed", zap.Error(err))
+		return nil
+	}
+	out := make([]outletItem, 0, len(rows))
+	for _, wh := range rows {
+		if wh.OutletID == nil || !wh.IsActive {
+			continue
+		}
+		out = append(out, outletItem{
+			ID:      wh.OutletID.String(),
+			Code:    wh.Code,
+			Name:    wh.Name,
+			UseCase: wh.UseCase,
+			IsHQ:    wh.IsDefault,
+			Status:  "active",
+		})
+	}
+	return out
+}
+
 // MyOutlets handles GET /inventory/my-outlets — returns the outlets the current
 // user is assigned to. HQ / all-outlet users receive the full tenant outlet list.
 func (h *WarehouseHandler) MyOutlets(w http.ResponseWriter, r *http.Request) {
@@ -113,9 +144,12 @@ func (h *WarehouseHandler) MyOutlets(w http.ResponseWriter, r *http.Request) {
 
 	fetched, err := h.fetchTenantOutlets(r, slug)
 	if err != nil {
-		h.log.Error("my-outlets: fetch tenant outlets failed", zap.Error(err))
-		writeError(w, http.StatusBadGateway, "PROXY_ERROR", "Failed to fetch outlets")
-		return
+		// Auth-api unreachable: fall back to the locally-mirrored warehouses so the
+		// outlet picker is never blocked on a transient auth outage. The local
+		// warehouse carries the auth-owned outlet_id, so the UUID stays uniform —
+		// we never mint a fresh one here.
+		h.log.Warn("my-outlets: auth fetch failed, falling back to local warehouse mirrors", zap.Error(err))
+		fetched = h.localOutletsFallback(r.Context(), tenantID)
 	}
 
 	// Only outlets whose use_case is relevant to inventory (i.e. get a warehouse mirror)
@@ -125,6 +159,17 @@ func (h *WarehouseHandler) MyOutlets(w http.ResponseWriter, r *http.Request) {
 	for _, o := range fetched {
 		if tenant.IsInventoryApplicable(o.UseCase) {
 			all = append(all, o)
+		}
+	}
+
+	// Still nothing (auth returned an empty set AND we have no mirrors yet): surface the
+	// local warehouse mirrors as a last resort. Auth's GET /outlets self-heals a missing
+	// HQ MAIN outlet, so this is just belt-and-suspenders for the warehouse-event lag.
+	if len(all) == 0 {
+		for _, o := range h.localOutletsFallback(r.Context(), tenantID) {
+			if tenant.IsInventoryApplicable(o.UseCase) {
+				all = append(all, o)
+			}
 		}
 	}
 
