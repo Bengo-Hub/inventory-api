@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entbal "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
@@ -68,7 +69,7 @@ func (c *StockEventsConsumer) Start(ctx context.Context, js nats.JetStreamContex
 		}
 	}
 
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"inventory",

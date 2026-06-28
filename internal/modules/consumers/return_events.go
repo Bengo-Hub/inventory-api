@@ -10,6 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -57,7 +58,7 @@ func (c *ReturnEventsConsumer) StartPOSReturns(ctx context.Context, js nats.JetS
 		}
 	}
 
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"pos",
@@ -92,7 +93,7 @@ func (c *ReturnEventsConsumer) StartOrderingReturns(ctx context.Context, js nats
 		}
 	}
 
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"ordering",

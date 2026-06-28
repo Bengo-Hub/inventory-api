@@ -12,6 +12,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventoryserial"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -101,7 +102,7 @@ func (c *POSSaleEventsConsumer) Start(ctx context.Context, js nats.JetStreamCont
 		}
 	}
 
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"pos",

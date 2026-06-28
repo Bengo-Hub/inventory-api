@@ -11,6 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -54,7 +55,7 @@ func (c *ConferenceEventsConsumer) Start(ctx context.Context, js nats.JetStreamC
 			return fmt.Errorf("conference events: ensure stream: %w", aerr)
 		}
 	}
-	SubscribeQueueWithRebind(
+	eventslib.SubscribeQueueWithRebind(
 		c.log,
 		js,
 		"pos",
