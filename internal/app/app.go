@@ -54,23 +54,24 @@ import (
 )
 
 type App struct {
-	cfg                 *config.Config
-	log                 *zap.Logger
-	httpServer          *http.Server
-	db                  *pgxpool.Pool
-	cache               *redis.Client
-	events              *nats.Conn
-	orm                 *ent.Client
-	outboxPublisher     *eventslib.OutboxPoller
-	posSaleConsumer     *consumers.POSSaleEventsConsumer
-	conferenceConsumer  *consumers.ConferenceEventsConsumer
-	authConsumer        *consumers.AuthEventsConsumer
-	returnConsumer      *consumers.ReturnEventsConsumer
-	stockConsumer       *consumers.StockEventsConsumer
-	ticketConsumer      *consumers.TicketIssuanceConsumer
-	treasuryTaxConsumer *consumers.TreasuryTaxEventsConsumer
-	tenantPurgeConsumer *consumers.TenantPurgeConsumer
-	quotationConsumer   *consumers.QuotationAcceptedConsumer
+	cfg                  *config.Config
+	log                  *zap.Logger
+	httpServer           *http.Server
+	db                   *pgxpool.Pool
+	cache                *redis.Client
+	events               *nats.Conn
+	orm                  *ent.Client
+	outboxPublisher      *eventslib.OutboxPoller
+	posSaleConsumer      *consumers.POSSaleEventsConsumer
+	conferenceConsumer   *consumers.ConferenceEventsConsumer
+	authConsumer         *consumers.AuthEventsConsumer
+	returnConsumer       *consumers.ReturnEventsConsumer
+	stockConsumer        *consumers.StockEventsConsumer
+	ticketConsumer       *consumers.TicketIssuanceConsumer
+	treasuryTaxConsumer  *consumers.TreasuryTaxEventsConsumer
+	tenantPurgeConsumer  *consumers.TenantPurgeConsumer
+	quotationConsumer    *consumers.QuotationAcceptedConsumer
+	deliveryNoteConsumer *consumers.DeliveryNoteDispatchedConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -243,6 +244,13 @@ func New(ctx context.Context) (*App, error) {
 	quotationConsumer := consumers.NewQuotationAcceptedConsumer(log, ormClient)
 	quotationConsumer.SetFeatureGate(consumerFeatureGate)
 
+	// Goods-issue consumer — on a DISPATCHED treasury delivery note, deducts the dispatched
+	// quantities from the issuing warehouse via the canonical stock-adjustment path (auditable
+	// StockAdjustment + balance decrement + lot drawdown). Idempotent on delivery_note_id; gated
+	// by entitlement (fail-open).
+	deliveryNoteConsumer := consumers.NewDeliveryNoteDispatchedConsumer(log, stockSvc, ormClient)
+	deliveryNoteConsumer.SetFeatureGate(consumerFeatureGate)
+
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
 
@@ -341,23 +349,24 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:                 cfg,
-		log:                 log,
-		httpServer:          httpServer,
-		db:                  dbPool,
-		cache:               redisClient,
-		events:              natsConn,
-		orm:                 ormClient,
-		outboxPublisher:     outboxPublisher,
-		posSaleConsumer:     posSaleConsumer,
-		conferenceConsumer:  conferenceConsumer,
-		authConsumer:        authConsumer,
-		returnConsumer:      returnConsumer,
-		stockConsumer:       stockConsumer,
-		ticketConsumer:      ticketConsumer,
-		treasuryTaxConsumer: treasuryTaxConsumer,
-		tenantPurgeConsumer: tenantPurgeConsumer,
-		quotationConsumer:   quotationConsumer,
+		cfg:                  cfg,
+		log:                  log,
+		httpServer:           httpServer,
+		db:                   dbPool,
+		cache:                redisClient,
+		events:               natsConn,
+		orm:                  ormClient,
+		outboxPublisher:      outboxPublisher,
+		posSaleConsumer:      posSaleConsumer,
+		conferenceConsumer:   conferenceConsumer,
+		authConsumer:         authConsumer,
+		returnConsumer:       returnConsumer,
+		stockConsumer:        stockConsumer,
+		ticketConsumer:       ticketConsumer,
+		treasuryTaxConsumer:  treasuryTaxConsumer,
+		tenantPurgeConsumer:  tenantPurgeConsumer,
+		quotationConsumer:    quotationConsumer,
+		deliveryNoteConsumer: deliveryNoteConsumer,
 	}, nil
 }
 
@@ -466,6 +475,17 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("quotation accepted (procure-to-order) consumer started")
+			}
+
+			// Start goods-issue consumer — on a dispatched treasury delivery note, deducts the
+			// dispatched quantities from the issuing warehouse's stock (auditable adjustments).
+			if a.deliveryNoteConsumer != nil {
+				go func() {
+					if err := a.deliveryNoteConsumer.Start(ctx, js); err != nil {
+						a.log.Error("delivery note dispatched (goods-issue) consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("delivery note dispatched (goods-issue) consumer started")
 			}
 		}
 	}
