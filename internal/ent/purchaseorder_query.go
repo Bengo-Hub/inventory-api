@@ -494,7 +494,10 @@ func (_q *PurchaseOrderQuery) loadSupplier(ctx context.Context, query *SupplierQ
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PurchaseOrder)
 	for i := range nodes {
-		fk := nodes[i].SupplierID
+		if nodes[i].SupplierID == nil {
+			continue
+		}
+		fk := *nodes[i].SupplierID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -523,7 +526,10 @@ func (_q *PurchaseOrderQuery) loadWarehouse(ctx context.Context, query *Warehous
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*PurchaseOrder)
 	for i := range nodes {
-		fk := nodes[i].WarehouseID
+		if nodes[i].WarehouseID == nil {
+			continue
+		}
+		fk := *nodes[i].WarehouseID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}

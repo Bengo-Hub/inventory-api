@@ -38,6 +38,10 @@ const (
 	FieldProjectID = "project_id"
 	// FieldRfqID holds the string denoting the rfq_id field in the database.
 	FieldRfqID = "rfq_id"
+	// FieldQuotationID holds the string denoting the quotation_id field in the database.
+	FieldQuotationID = "quotation_id"
+	// FieldQuotationNumber holds the string denoting the quotation_number field in the database.
+	FieldQuotationNumber = "quotation_number"
 	// FieldPayTermDays holds the string denoting the pay_term_days field in the database.
 	FieldPayTermDays = "pay_term_days"
 	// FieldAdditionalShippingCharges holds the string denoting the additional_shipping_charges field in the database.
@@ -95,6 +99,8 @@ var Columns = []string{
 	FieldRequisitionID,
 	FieldProjectID,
 	FieldRfqID,
+	FieldQuotationID,
+	FieldQuotationNumber,
 	FieldPayTermDays,
 	FieldAdditionalShippingCharges,
 	FieldNotes,
@@ -222,6 +228,16 @@ func ByProjectID(opts ...sql.OrderTermOption) OrderOption {
 // ByRfqID orders the results by the rfq_id field.
 func ByRfqID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRfqID, opts...).ToFunc()
+}
+
+// ByQuotationID orders the results by the quotation_id field.
+func ByQuotationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuotationID, opts...).ToFunc()
+}
+
+// ByQuotationNumber orders the results by the quotation_number field.
+func ByQuotationNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuotationNumber, opts...).ToFunc()
 }
 
 // ByPayTermDays orders the results by the pay_term_days field.
