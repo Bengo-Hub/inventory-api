@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -729,6 +730,21 @@ func (_u *SupplierUpdate) AddPurchaseOrders(v ...*PurchaseOrder) *SupplierUpdate
 	return _u.AddPurchaseOrderIDs(ids...)
 }
 
+// AddPreferredItemIDs adds the "preferred_items" edge to the Item entity by IDs.
+func (_u *SupplierUpdate) AddPreferredItemIDs(ids ...uuid.UUID) *SupplierUpdate {
+	_u.mutation.AddPreferredItemIDs(ids...)
+	return _u
+}
+
+// AddPreferredItems adds the "preferred_items" edges to the Item entity.
+func (_u *SupplierUpdate) AddPreferredItems(v ...*Item) *SupplierUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPreferredItemIDs(ids...)
+}
+
 // Mutation returns the SupplierMutation object of the builder.
 func (_u *SupplierUpdate) Mutation() *SupplierMutation {
 	return _u.mutation
@@ -753,6 +769,27 @@ func (_u *SupplierUpdate) RemovePurchaseOrders(v ...*PurchaseOrder) *SupplierUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePurchaseOrderIDs(ids...)
+}
+
+// ClearPreferredItems clears all "preferred_items" edges to the Item entity.
+func (_u *SupplierUpdate) ClearPreferredItems() *SupplierUpdate {
+	_u.mutation.ClearPreferredItems()
+	return _u
+}
+
+// RemovePreferredItemIDs removes the "preferred_items" edge to Item entities by IDs.
+func (_u *SupplierUpdate) RemovePreferredItemIDs(ids ...uuid.UUID) *SupplierUpdate {
+	_u.mutation.RemovePreferredItemIDs(ids...)
+	return _u
+}
+
+// RemovePreferredItems removes "preferred_items" edges to Item entities.
+func (_u *SupplierUpdate) RemovePreferredItems(v ...*Item) *SupplierUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePreferredItemIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1062,6 +1099,51 @@ func (_u *SupplierUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PreferredItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPreferredItemsIDs(); len(nodes) > 0 && !_u.mutation.PreferredItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PreferredItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1788,6 +1870,21 @@ func (_u *SupplierUpdateOne) AddPurchaseOrders(v ...*PurchaseOrder) *SupplierUpd
 	return _u.AddPurchaseOrderIDs(ids...)
 }
 
+// AddPreferredItemIDs adds the "preferred_items" edge to the Item entity by IDs.
+func (_u *SupplierUpdateOne) AddPreferredItemIDs(ids ...uuid.UUID) *SupplierUpdateOne {
+	_u.mutation.AddPreferredItemIDs(ids...)
+	return _u
+}
+
+// AddPreferredItems adds the "preferred_items" edges to the Item entity.
+func (_u *SupplierUpdateOne) AddPreferredItems(v ...*Item) *SupplierUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPreferredItemIDs(ids...)
+}
+
 // Mutation returns the SupplierMutation object of the builder.
 func (_u *SupplierUpdateOne) Mutation() *SupplierMutation {
 	return _u.mutation
@@ -1812,6 +1909,27 @@ func (_u *SupplierUpdateOne) RemovePurchaseOrders(v ...*PurchaseOrder) *Supplier
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePurchaseOrderIDs(ids...)
+}
+
+// ClearPreferredItems clears all "preferred_items" edges to the Item entity.
+func (_u *SupplierUpdateOne) ClearPreferredItems() *SupplierUpdateOne {
+	_u.mutation.ClearPreferredItems()
+	return _u
+}
+
+// RemovePreferredItemIDs removes the "preferred_items" edge to Item entities by IDs.
+func (_u *SupplierUpdateOne) RemovePreferredItemIDs(ids ...uuid.UUID) *SupplierUpdateOne {
+	_u.mutation.RemovePreferredItemIDs(ids...)
+	return _u
+}
+
+// RemovePreferredItems removes "preferred_items" edges to Item entities.
+func (_u *SupplierUpdateOne) RemovePreferredItems(v ...*Item) *SupplierUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePreferredItemIDs(ids...)
 }
 
 // Where appends a list predicates to the SupplierUpdate builder.
@@ -2151,6 +2269,51 @@ func (_u *SupplierUpdateOne) sqlSave(ctx context.Context) (_node *Supplier, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(purchaseorder.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PreferredItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPreferredItemsIDs(); len(nodes) > 0 && !_u.mutation.PreferredItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PreferredItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   supplier.PreferredItemsTable,
+			Columns: []string{supplier.PreferredItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -116,6 +116,8 @@ const (
 	FieldPurchasePackSize = "purchase_pack_size"
 	// FieldPurchaseUnit holds the string denoting the purchase_unit field in the database.
 	FieldPurchaseUnit = "purchase_unit"
+	// FieldPreferredSupplierID holds the string denoting the preferred_supplier_id field in the database.
+	FieldPreferredSupplierID = "preferred_supplier_id"
 	// FieldYieldPct holds the string denoting the yield_pct field in the database.
 	FieldYieldPct = "yield_pct"
 	// FieldMinSellingPrice holds the string denoting the min_selling_price field in the database.
@@ -172,6 +174,8 @@ const (
 	EdgeItemCategory = "item_category"
 	// EdgeItemBrand holds the string denoting the item_brand edge name in mutations.
 	EdgeItemBrand = "item_brand"
+	// EdgePreferredSupplier holds the string denoting the preferred_supplier edge name in mutations.
+	EdgePreferredSupplier = "preferred_supplier"
 	// Table holds the table name of the item in the database.
 	Table = "items"
 	// TenantTable is the table that holds the tenant relation/edge.
@@ -286,6 +290,13 @@ const (
 	ItemBrandInverseTable = "item_brands"
 	// ItemBrandColumn is the table column denoting the item_brand relation/edge.
 	ItemBrandColumn = "brand_id"
+	// PreferredSupplierTable is the table that holds the preferred_supplier relation/edge.
+	PreferredSupplierTable = "items"
+	// PreferredSupplierInverseTable is the table name for the Supplier entity.
+	// It exists in this package in order to avoid circular dependency with the "supplier" package.
+	PreferredSupplierInverseTable = "suppliers"
+	// PreferredSupplierColumn is the table column denoting the preferred_supplier relation/edge.
+	PreferredSupplierColumn = "preferred_supplier_id"
 )
 
 // Columns holds all SQL columns for item fields.
@@ -341,6 +352,7 @@ var Columns = []string{
 	FieldPurchasePrice,
 	FieldPurchasePackSize,
 	FieldPurchaseUnit,
+	FieldPreferredSupplierID,
 	FieldYieldPct,
 	FieldMinSellingPrice,
 	FieldMaxSellingPrice,
@@ -801,6 +813,11 @@ func ByPurchaseUnit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPurchaseUnit, opts...).ToFunc()
 }
 
+// ByPreferredSupplierID orders the results by the preferred_supplier_id field.
+func ByPreferredSupplierID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreferredSupplierID, opts...).ToFunc()
+}
+
 // ByYieldPct orders the results by the yield_pct field.
 func ByYieldPct(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldYieldPct, opts...).ToFunc()
@@ -1037,6 +1054,13 @@ func ByItemBrandField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newItemBrandStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByPreferredSupplierField orders the results by preferred_supplier field.
+func ByPreferredSupplierField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPreferredSupplierStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTenantStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -1147,5 +1171,12 @@ func newItemBrandStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ItemBrandInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ItemBrandTable, ItemBrandColumn),
+	)
+}
+func newPreferredSupplierStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PreferredSupplierInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PreferredSupplierTable, PreferredSupplierColumn),
 	)
 }

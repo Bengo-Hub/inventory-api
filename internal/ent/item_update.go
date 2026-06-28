@@ -27,6 +27,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	"github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/ent/tenant"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -998,6 +999,26 @@ func (_u *ItemUpdate) ClearPurchaseUnit() *ItemUpdate {
 	return _u
 }
 
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_u *ItemUpdate) SetPreferredSupplierID(v uuid.UUID) *ItemUpdate {
+	_u.mutation.SetPreferredSupplierID(v)
+	return _u
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillablePreferredSupplierID(v *uuid.UUID) *ItemUpdate {
+	if v != nil {
+		_u.SetPreferredSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (_u *ItemUpdate) ClearPreferredSupplierID() *ItemUpdate {
+	_u.mutation.ClearPreferredSupplierID()
+	return _u
+}
+
 // SetYieldPct sets the "yield_pct" field.
 func (_u *ItemUpdate) SetYieldPct(v float64) *ItemUpdate {
 	_u.mutation.ResetYieldPct()
@@ -1482,6 +1503,11 @@ func (_u *ItemUpdate) SetItemBrand(v *ItemBrand) *ItemUpdate {
 	return _u.SetItemBrandID(v.ID)
 }
 
+// SetPreferredSupplier sets the "preferred_supplier" edge to the Supplier entity.
+func (_u *ItemUpdate) SetPreferredSupplier(v *Supplier) *ItemUpdate {
+	return _u.SetPreferredSupplierID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdate) Mutation() *ItemMutation {
 	return _u.mutation
@@ -1730,6 +1756,12 @@ func (_u *ItemUpdate) ClearItemCategory() *ItemUpdate {
 // ClearItemBrand clears the "item_brand" edge to the ItemBrand entity.
 func (_u *ItemUpdate) ClearItemBrand() *ItemUpdate {
 	_u.mutation.ClearItemBrand()
+	return _u
+}
+
+// ClearPreferredSupplier clears the "preferred_supplier" edge to the Supplier entity.
+func (_u *ItemUpdate) ClearPreferredSupplier() *ItemUpdate {
+	_u.mutation.ClearPreferredSupplier()
 	return _u
 }
 
@@ -2796,6 +2828,35 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PreferredSupplierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.PreferredSupplierTable,
+			Columns: []string{item.PreferredSupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PreferredSupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.PreferredSupplierTable,
+			Columns: []string{item.PreferredSupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{item.Label}
@@ -3768,6 +3829,26 @@ func (_u *ItemUpdateOne) ClearPurchaseUnit() *ItemUpdateOne {
 	return _u
 }
 
+// SetPreferredSupplierID sets the "preferred_supplier_id" field.
+func (_u *ItemUpdateOne) SetPreferredSupplierID(v uuid.UUID) *ItemUpdateOne {
+	_u.mutation.SetPreferredSupplierID(v)
+	return _u
+}
+
+// SetNillablePreferredSupplierID sets the "preferred_supplier_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillablePreferredSupplierID(v *uuid.UUID) *ItemUpdateOne {
+	if v != nil {
+		_u.SetPreferredSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearPreferredSupplierID clears the value of the "preferred_supplier_id" field.
+func (_u *ItemUpdateOne) ClearPreferredSupplierID() *ItemUpdateOne {
+	_u.mutation.ClearPreferredSupplierID()
+	return _u
+}
+
 // SetYieldPct sets the "yield_pct" field.
 func (_u *ItemUpdateOne) SetYieldPct(v float64) *ItemUpdateOne {
 	_u.mutation.ResetYieldPct()
@@ -4252,6 +4333,11 @@ func (_u *ItemUpdateOne) SetItemBrand(v *ItemBrand) *ItemUpdateOne {
 	return _u.SetItemBrandID(v.ID)
 }
 
+// SetPreferredSupplier sets the "preferred_supplier" edge to the Supplier entity.
+func (_u *ItemUpdateOne) SetPreferredSupplier(v *Supplier) *ItemUpdateOne {
+	return _u.SetPreferredSupplierID(v.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (_u *ItemUpdateOne) Mutation() *ItemMutation {
 	return _u.mutation
@@ -4500,6 +4586,12 @@ func (_u *ItemUpdateOne) ClearItemCategory() *ItemUpdateOne {
 // ClearItemBrand clears the "item_brand" edge to the ItemBrand entity.
 func (_u *ItemUpdateOne) ClearItemBrand() *ItemUpdateOne {
 	_u.mutation.ClearItemBrand()
+	return _u
+}
+
+// ClearPreferredSupplier clears the "preferred_supplier" edge to the Supplier entity.
+func (_u *ItemUpdateOne) ClearPreferredSupplier() *ItemUpdateOne {
+	_u.mutation.ClearPreferredSupplier()
 	return _u
 }
 
@@ -5589,6 +5681,35 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itembrand.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PreferredSupplierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.PreferredSupplierTable,
+			Columns: []string{item.PreferredSupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PreferredSupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.PreferredSupplierTable,
+			Columns: []string{item.PreferredSupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

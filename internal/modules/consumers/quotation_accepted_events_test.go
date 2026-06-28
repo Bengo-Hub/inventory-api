@@ -73,6 +73,122 @@ func TestParseQuotationAcceptedEnvelope(t *testing.T) {
 	}
 }
 
+// TestParseQuotationAcceptedOutletID verifies the top-level outlet_id (branch) on the event
+// payload is decoded so the consumer can resolve a branch-aware receiving warehouse.
+func TestParseQuotationAcceptedOutletID(t *testing.T) {
+	tenantID := uuid.New()
+	outletID := uuid.New()
+	payload := map[string]any{
+		"quotation_id":     uuid.New().String(),
+		"quotation_number": "QT-2026-0099",
+		"currency":         "KES",
+		"outlet_id":        outletID.String(),
+		"lines":            []map[string]any{},
+	}
+	evt := eventslib.NewEvent("quotation_accepted", "treasury", uuid.New(), tenantID, payload)
+	data, err := evt.ToJSON()
+	if err != nil {
+		t.Fatalf("marshal envelope: %v", err)
+	}
+	var envelope struct {
+		Payload quotationAcceptedPayload `json:"payload"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		t.Fatalf("unmarshal envelope: %v", err)
+	}
+	if envelope.Payload.OutletID != outletID.String() {
+		t.Errorf("outlet_id = %q, want %q", envelope.Payload.OutletID, outletID.String())
+	}
+
+	// Absent outlet_id (tenant-wide quotation) decodes to empty string -> default-warehouse path.
+	payload2 := map[string]any{
+		"quotation_id":     uuid.New().String(),
+		"quotation_number": "QT-2026-0100",
+		"currency":         "KES",
+		"lines":            []map[string]any{},
+	}
+	evt2 := eventslib.NewEvent("quotation_accepted", "treasury", uuid.New(), tenantID, payload2)
+	data2, _ := evt2.ToJSON()
+	var envelope2 struct {
+		Payload quotationAcceptedPayload `json:"payload"`
+	}
+	if err := json.Unmarshal(data2, &envelope2); err != nil {
+		t.Fatalf("unmarshal envelope2: %v", err)
+	}
+	if envelope2.Payload.OutletID != "" {
+		t.Errorf("absent outlet_id should decode to empty, got %q", envelope2.Payload.OutletID)
+	}
+}
+
+// TestGroupBySupplier verifies per-vendor PO splitting: lines are grouped by each item's
+// preferred_supplier_id, items with no preferred supplier collect into the uuid.Nil bucket,
+// and supplier keys come back in stable first-seen order.
+func TestGroupBySupplier(t *testing.T) {
+	supA := uuid.New()
+	supB := uuid.New()
+
+	itemA1 := &ent.Item{ID: uuid.New(), PreferredSupplierID: &supA}
+	itemB1 := &ent.Item{ID: uuid.New(), PreferredSupplierID: &supB}
+	itemA2 := &ent.Item{ID: uuid.New(), PreferredSupplierID: &supA}
+	itemNone := &ent.Item{ID: uuid.New()} // no preferred supplier
+
+	resolved := []resolvedLine{
+		{item: itemA1, quantity: 2, unitCost: 10},
+		{item: itemB1, quantity: 1, unitCost: 50},
+		{item: itemNone, quantity: 5, unitCost: 3},
+		{item: itemA2, quantity: 4, unitCost: 7},
+	}
+
+	groups, order := groupBySupplier(resolved)
+
+	// Three buckets: supA, supB, uuid.Nil (supplier-less).
+	if len(groups) != 3 {
+		t.Fatalf("groups = %d, want 3", len(groups))
+	}
+	// Stable first-seen order: supA, supB, Nil.
+	wantOrder := []uuid.UUID{supA, supB, uuid.Nil}
+	if len(order) != len(wantOrder) {
+		t.Fatalf("order len = %d, want %d", len(order), len(wantOrder))
+	}
+	for i, k := range wantOrder {
+		if order[i] != k {
+			t.Errorf("order[%d] = %s, want %s", i, order[i], k)
+		}
+	}
+	// supA has two lines (itemA1, itemA2).
+	if got := len(groups[supA]); got != 2 {
+		t.Errorf("supA lines = %d, want 2", got)
+	}
+	// supB has one line.
+	if got := len(groups[supB]); got != 1 {
+		t.Errorf("supB lines = %d, want 1", got)
+	}
+	// supplier-less bucket (uuid.Nil) has one line.
+	if got := len(groups[uuid.Nil]); got != 1 {
+		t.Errorf("supplier-less lines = %d, want 1", got)
+	}
+	// Line content carries item id + qty + cost through.
+	if groups[supB][0].itemID != itemB1.ID || groups[supB][0].quantity != 1 || groups[supB][0].unitCost != 50 {
+		t.Errorf("supB line mismatch: %+v", groups[supB][0])
+	}
+}
+
+// TestGroupBySupplierAllUnassigned verifies that when no item has a preferred supplier, all lines
+// collect into the single supplier-less bucket (current/legacy behavior).
+func TestGroupBySupplierAllUnassigned(t *testing.T) {
+	resolved := []resolvedLine{
+		{item: &ent.Item{ID: uuid.New()}, quantity: 1, unitCost: 10},
+		{item: &ent.Item{ID: uuid.New()}, quantity: 2, unitCost: 20},
+	}
+	groups, order := groupBySupplier(resolved)
+	if len(groups) != 1 || len(order) != 1 || order[0] != uuid.Nil {
+		t.Fatalf("want single uuid.Nil bucket, got groups=%d order=%v", len(groups), order)
+	}
+	if got := len(groups[uuid.Nil]); got != 2 {
+		t.Errorf("supplier-less lines = %d, want 2", got)
+	}
+}
+
 func f64p(v float64) *float64 { return &v }
 
 func TestBuyingCost(t *testing.T) {
