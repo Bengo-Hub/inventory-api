@@ -21,9 +21,9 @@ type MenuEngineeringService struct {
 }
 
 // NewMenuEngineeringService creates a new MenuEngineeringService.
-func NewMenuEngineeringService(client *ent.Client, log *zap.Logger, orderingURL, apiKey string) *MenuEngineeringService {
+func NewMenuEngineeringService(client *ent.Client, log *zap.Logger, orderingURL, posURL, apiKey string) *MenuEngineeringService {
 	return &MenuEngineeringService{
-		varianceSvc: NewVarianceService(client, log, orderingURL, apiKey),
+		varianceSvc: NewVarianceService(client, log, orderingURL, posURL, apiKey),
 		client:      client,
 		log:         log.Named("recipes.menu_engineering"),
 	}
@@ -62,10 +62,10 @@ func (s *MenuEngineeringService) GetMatrix(ctx context.Context, tenantID uuid.UU
 		return nil, nil
 	}
 
-	// Fetch units sold from ordering service.
-	soldQty, err := s.varianceSvc.fetchSoldQty(ctx, tenantSlug, start, end)
+	// Fetch units sold from ordering + POS sales (S2S).
+	soldQty, err := s.varianceSvc.fetchSoldQty(ctx, tenantID, tenantSlug, start, end)
 	if err != nil {
-		s.log.Warn("menu_engineering: ordering S2S failed, using zero sales", zap.Error(err))
+		s.log.Warn("menu_engineering: sales S2S failed, using zero sales", zap.Error(err))
 		soldQty = map[string]float64{}
 	}
 

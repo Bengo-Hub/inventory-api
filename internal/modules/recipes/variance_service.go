@@ -24,15 +24,17 @@ type VarianceService struct {
 	client      *ent.Client
 	log         *zap.Logger
 	orderingURL string
+	posURL      string
 	apiKey      string
 }
 
 // NewVarianceService creates a new VarianceService.
-func NewVarianceService(client *ent.Client, log *zap.Logger, orderingURL, apiKey string) *VarianceService {
+func NewVarianceService(client *ent.Client, log *zap.Logger, orderingURL, posURL, apiKey string) *VarianceService {
 	return &VarianceService{
 		client:      client,
 		log:         log.Named("recipes.variance"),
 		orderingURL: orderingURL,
+		posURL:      posURL,
 		apiKey:      apiKey,
 	}
 }
@@ -82,10 +84,10 @@ func (s *VarianceService) CalculatePeriodVariance(ctx context.Context, tenantID 
 		recipeMap[r.Sku] = r
 	}
 
-	// 2. Fetch units sold per SKU from ordering service (S2S).
-	soldQty, err := s.fetchSoldQty(ctx, tenantSlug, start, end)
+	// 2. Fetch units sold per SKU from ordering + POS sales (S2S).
+	soldQty, err := s.fetchSoldQty(ctx, tenantID, tenantSlug, start, end)
 	if err != nil {
-		s.log.Warn("variance: ordering S2S call failed, falling back to zero sales", zap.Error(err))
+		s.log.Warn("variance: sales S2S call failed, falling back to zero sales", zap.Error(err))
 		soldQty = map[string]float64{}
 	}
 
@@ -194,12 +196,40 @@ func (s *VarianceService) GetStoredVariance(ctx context.Context, tenantID uuid.U
 	return result, nil
 }
 
-// fetchSoldQty calls the ordering service to get SKU → units sold for a date range.
-func (s *VarianceService) fetchSoldQty(ctx context.Context, tenantSlug string, start, end time.Time) (map[string]float64, error) {
-	if s.orderingURL == "" {
-		return nil, fmt.Errorf("ordering service URL not configured")
+// fetchSoldQty returns SKU → units sold for a date range, combining BOTH sources of sales:
+// the ordering service (online/e-commerce orders) AND pos-api (in-store POS sales). A POS-driven
+// outlet records no ordering-service orders, so counting ordering alone made menu-engineering /
+// variance report zero units sold for every recipe — this merges POS sales in.
+func (s *VarianceService) fetchSoldQty(ctx context.Context, tenantID uuid.UUID, tenantSlug string, start, end time.Time) (map[string]float64, error) {
+	sold := map[string]float64{}
+
+	// Source 1: ordering service (best-effort — POS-only tenants have none).
+	if s.orderingURL != "" {
+		if ord, err := s.fetchOrderingSoldQty(ctx, tenantSlug, start, end); err != nil {
+			s.log.Warn("fetchSoldQty: ordering source failed", zap.Error(err))
+		} else {
+			for sku, q := range ord {
+				sold[sku] += q
+			}
+		}
 	}
 
+	// Source 2: pos-api completed sales (in-store).
+	if s.posURL != "" {
+		if pos, err := s.fetchPOSSoldQty(ctx, tenantID, start, end); err != nil {
+			s.log.Warn("fetchSoldQty: pos source failed", zap.Error(err))
+		} else {
+			for sku, q := range pos {
+				sold[sku] += q
+			}
+		}
+	}
+
+	return sold, nil
+}
+
+// fetchOrderingSoldQty calls the ordering service for SKU → units sold in a date range.
+func (s *VarianceService) fetchOrderingSoldQty(ctx context.Context, tenantSlug string, start, end time.Time) (map[string]float64, error) {
 	url := fmt.Sprintf("%s/api/v1/%s/orders/summary?from=%s&to=%s&status=completed",
 		s.orderingURL,
 		tenantSlug,
@@ -234,6 +264,50 @@ func (s *VarianceService) fetchSoldQty(ctx context.Context, tenantSlug string, s
 	for _, order := range body.Data {
 		for _, item := range order.Items {
 			sold[item.SKU] += item.Quantity
+		}
+	}
+	return sold, nil
+}
+
+// posSalesResponse is the shape pos-api /s2s/{tenant}/pos/sales/by-sku returns.
+type posSalesResponse struct {
+	Data []struct {
+		SKU          string  `json:"sku"`
+		QuantitySold float64 `json:"quantity_sold"`
+	} `json:"data"`
+}
+
+// fetchPOSSoldQty calls pos-api (S2S) for SKU → units sold from completed POS sales in a range.
+func (s *VarianceService) fetchPOSSoldQty(ctx context.Context, tenantID uuid.UUID, start, end time.Time) (map[string]float64, error) {
+	url := fmt.Sprintf("%s/api/v1/s2s/%s/pos/sales/by-sku?from=%s&to=%s",
+		s.posURL,
+		tenantID.String(),
+		start.Format(time.RFC3339),
+		end.Format(time.RFC3339),
+	)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if s.apiKey != "" {
+		req.Header.Set("X-API-Key", s.apiKey)
+	}
+	resp, err := s2sHTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("pos service returned HTTP %d", resp.StatusCode)
+	}
+	var body posSalesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, fmt.Errorf("decode pos response: %w", err)
+	}
+	sold := map[string]float64{}
+	for _, row := range body.Data {
+		if row.SKU != "" {
+			sold[row.SKU] += row.QuantitySold
 		}
 	}
 	return sold, nil
