@@ -106,6 +106,8 @@ type ServicesConfig struct {
 	OrderingURL string `envconfig:"ORDERING_SERVICE_URL" default:"https://orderingapi.codevertexitsolutions.com"`
 	// TreasuryURL is the treasury-api base URL — source of truth for tax codes/rates (S2S).
 	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexitsolutions.com"`
+	// POSURL is the pos-api base URL — source of POS units-sold (S2S) for menu-engineering/variance.
+	POSURL string `envconfig:"POS_SERVICE_URL" default:"https://posapi.codevertexitsolutions.com"`
 }
 
 type AuthConfig struct {
