@@ -174,6 +174,18 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 	var warnings []string
 
 	for i, ing := range req.Ingredients {
+		// A recipe ingredient must consume a positive quantity — the RecipeIngredient
+		// schema enforces quantity > 0. Rather than let a zero/blank qty row fail the
+		// whole transaction (RECIPE_FAILED), skip it with a clear warning so the rest
+		// of the menu item still saves.
+		label := ing.IngredientName
+		if label == "" {
+			label = ing.IngredientSKU
+		}
+		if ing.Qty <= 0 {
+			warnings = append(warnings, fmt.Sprintf("ingredient[%d] %q skipped: quantity must be greater than 0", i, label))
+			continue
+		}
 		ingDTO := items.ItemDTO{
 			SKU:              ing.IngredientSKU,
 			Name:             ing.IngredientName,
