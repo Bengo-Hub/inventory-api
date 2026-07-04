@@ -85,6 +85,16 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// A tenant admin/owner must have full access to their tenant's inventory. Surface the
+	// inventory_admin role (and superuser flag) explicitly so the UI shows every in-scope
+	// page even before the JIT-provisioned local role row has fully propagated — the API
+	// middleware already treats inventory_admin as a full bypass.
+	isAdmin := claims.IsPlatformOwner || claims.IsSuperuser() ||
+		rbac.IsAdminRoles(claims.Roles) || appendUniqueStrContains(roles, rbac.RoleInventoryAdmin)
+	if isAdmin {
+		roles = appendUniqueStr(roles, rbac.RoleInventoryAdmin)
+	}
+
 	respondJSON(w, http.StatusOK, MeResponse{
 		ID:              claims.Subject,
 		Email:           claims.Email,
@@ -93,8 +103,18 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		Roles:           roles,
 		Permissions:     permissions,
 		IsPlatformOwner: claims.IsPlatformOwner,
-		IsSuperUser:     claims.IsSuperuser(),
+		IsSuperUser:     claims.IsSuperuser() || isAdmin,
 	})
+}
+
+// appendUniqueStrContains reports whether slice already contains s.
+func appendUniqueStrContains(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 // RegisterAuthRoutes mounts auth routes on the supplied router.

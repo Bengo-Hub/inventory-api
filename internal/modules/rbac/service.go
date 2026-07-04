@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -104,11 +105,19 @@ func (s *Service) assignDefaultRoleFromJWT(ctx context.Context, tenantID uuid.UU
 
 	role, err := s.repo.GetRoleByCode(ctx, tenantID, roleCode)
 	if err != nil {
-		s.logger.Debug("inventory role not found for JIT assignment",
-			zap.String("role_code", roleCode),
-			zap.String("tenant_id", tenantID.String()),
-		)
-		return
+		// The role hasn't been seeded for this tenant/deployment yet. Provision it on the fly so a
+		// tenant admin (mapped to inventory_admin) is never locked out of permission-gated pages
+		// just because the role-seed step never ran. Without this, GetRoleByCode failed silently
+		// and the admin ended up with NO inventory role → 403 on every gated route.
+		role, err = s.ensureRoleByCode(ctx, tenantID, roleCode)
+		if err != nil {
+			s.logger.Warn("JIT role provisioning failed",
+				zap.String("role_code", roleCode),
+				zap.String("tenant_id", tenantID.String()),
+				zap.Error(err),
+			)
+			return
+		}
 	}
 
 	// Idempotent: check if already assigned
@@ -142,8 +151,55 @@ func (s *Service) assignDefaultRoleFromJWT(ctx context.Context, tenantID uuid.UU
 	)
 }
 
+// ensureRoleByCode returns the role for a code, creating a tenant-scoped role when
+// neither a global system role nor a tenant override exists yet. This keeps JIT role
+// assignment self-healing so a tenant admin always ends up holding inventory_admin
+// (which the permission middleware treats as a full bypass) even on a deployment where
+// the role catalog was never seeded. Idempotent under the unique (tenant, role_code).
+func (s *Service) ensureRoleByCode(ctx context.Context, tenantID uuid.UUID, roleCode string) (*InventoryRole, error) {
+	if role, err := s.repo.GetRoleByCode(ctx, tenantID, roleCode); err == nil {
+		return role, nil
+	}
+	role := &InventoryRole{
+		ID:           uuid.New(),
+		TenantID:     &tenantID,
+		RoleCode:     roleCode,
+		Name:         humanizeRoleCode(roleCode),
+		IsSystemRole: true,
+	}
+	if err := s.repo.CreateRole(ctx, tenantID, role); err != nil {
+		// Lost a race, or it already exists — re-fetch rather than fail.
+		if existing, gerr := s.repo.GetRoleByCode(ctx, tenantID, roleCode); gerr == nil {
+			return existing, nil
+		}
+		return nil, err
+	}
+	s.logger.Info("provisioned inventory role on demand",
+		zap.String("role_code", roleCode), zap.String("tenant_id", tenantID.String()))
+	return role, nil
+}
+
+// humanizeRoleCode turns a snake_case role code into a display name ("inventory_admin" → "Inventory Admin").
+func humanizeRoleCode(code string) string {
+	parts := strings.Split(code, "_")
+	for i, p := range parts {
+		if p != "" {
+			parts[i] = strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// IsAdminRoles reports whether any of the given global SSO roles grants tenant-admin
+// (full inventory) access — i.e. maps to inventory_admin.
+func IsAdminRoles(roles []string) bool {
+	return mapGlobalRoleToInventoryRole(roles) == RoleInventoryAdmin
+}
+
 // mapGlobalRoleToInventoryRole maps global SSO roles to inventory service roles.
-// Priority order: most privileged role wins.
+// Priority order: most privileged role wins. Matching is case-insensitive and covers
+// the common tenant-admin aliases so a tenant owner/admin always resolves to
+// inventory_admin (full access) regardless of how auth named the role.
 func mapGlobalRoleToInventoryRole(roles []string) string {
 	best := ""
 	rank := func(code string) int {
@@ -165,14 +221,16 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 	}
 	for _, r := range roles {
 		var mapped string
-		switch r {
-		case "superuser", "admin", "tenant_admin", "owner":
+		switch strings.ToLower(strings.TrimSpace(r)) {
+		case "superuser", "admin", "administrator", "tenant_admin", "tenantadmin",
+			"tenant-admin", "owner", "account_owner", "org_admin", "orgadmin",
+			"organization_admin", "proprietor", "director":
 			mapped = "inventory_admin"
-		case "staff", "manager", "store_manager":
+		case "staff", "manager", "store_manager", "storemanager", "supervisor", "branch_manager":
 			mapped = "warehouse_manager"
-		case "accountant":
+		case "accountant", "finance", "finance_manager":
 			mapped = "accountant"
-		case "cashier", "kitchen", "bar", "barista", "stock_clerk":
+		case "cashier", "kitchen", "bar", "barista", "stock_clerk", "storekeeper", "waiter":
 			mapped = "stock_clerk"
 		default:
 			mapped = "viewer"
