@@ -457,6 +457,14 @@ func (h *InventoryExtrasHandler) transitionRequisition(w http.ResponseWriter, r 
 	h.publishOutbox(r.Context(), tenantID, "requisition", updated.ID, eventType, map[string]any{
 		"id": updated.ID, "reference_number": updated.ReferenceNumber, "status": updated.Status,
 	})
+	// On approval, auto-raise purchase order(s) from the requisition lines (inventory,
+	// external and service) so an approved request flows straight into procurement.
+	if status == entreq.StatusApproved {
+		h.autoCreatePOsFromRequisition(r.Context(), tenantID, updated)
+		if fresh, ferr := h.orm.Requisition.Get(r.Context(), updated.ID); ferr == nil {
+			updated = fresh
+		}
+	}
 	writeJSON(w, http.StatusOK, requisitionToDTO(updated, nil))
 }
 
@@ -477,6 +485,14 @@ func (h *InventoryExtrasHandler) transitionRequisition(w http.ResponseWriter, r 
 func (h *InventoryExtrasHandler) ConvertRequisitionToPO(w http.ResponseWriter, r *http.Request) {
 	tenantID, rq, ok := h.loadRequisition(w, r)
 	if !ok {
+		return
+	}
+
+	// Approval already auto-raises the PO(s); block a second conversion so lines aren't
+	// double-ordered. Manual conversion remains the fallback when auto couldn't resolve a
+	// supplier/warehouse (status stays "approved").
+	if rq.Status == entreq.StatusOrdered {
+		writeError(w, http.StatusConflict, "ALREADY_ORDERED", "This requisition has already been converted to a purchase order")
 		return
 	}
 

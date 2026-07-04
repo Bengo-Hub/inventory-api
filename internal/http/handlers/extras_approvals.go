@@ -594,6 +594,13 @@ func (h *InventoryExtrasHandler) syncDocFromApproval(r *http.Request, req *ent.A
 	h.publishOutbox(r.Context(), req.TenantID, "requisition", req.ObjectID, "inventory.requisition."+string(st), map[string]any{
 		"id": req.ObjectID, "status": st, "via": "approval_matrix",
 	})
+	// A matrix-approved requisition auto-raises its purchase order(s), same as the
+	// direct-approve path — so multi-step sign-off ends in procurement too.
+	if st == entreq.StatusApproved {
+		if rq, err := h.orm.Requisition.Get(r.Context(), req.ObjectID); err == nil {
+			h.autoCreatePOsFromRequisition(r.Context(), req.TenantID, rq)
+		}
+	}
 }
 
 // ─── Submit-for-approval (purchase orders) ───────────────────────────────────
