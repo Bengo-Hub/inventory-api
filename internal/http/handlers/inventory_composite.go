@@ -12,6 +12,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // MenuItemIngredientInput is one ingredient line in the composite request.
@@ -133,6 +134,15 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 	// ── Step 1: Load category + unit maps ────────────────────────────────────
 	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
+	// id → abbreviation, used to resolve an ingredient's stored base unit so a recipe
+	// line given in a smaller unit (e.g. 2.5 ml of an oil stocked in L) is converted
+	// back to the base unit before it is stored and costed.
+	unitAbbrByID := map[uuid.UUID]string{}
+	if us, uErr := h.unitSvc.ListUnits(r.Context(), tenantID); uErr == nil {
+		for _, u := range us {
+			unitAbbrByID[u.ID] = u.Abbreviation
+		}
+	}
 
 	// ── Step 2: Resolve / upsert the RECIPE-type item ─────────────────────────
 	sp := req.SellingPrice
@@ -204,15 +214,6 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 			ingDTO.UnitID = &uid
 		}
 
-		// Resolve qty to the ingredient's base unit via unit conversion.
-		resolvedQty := ing.Qty
-		if ing.Unit != "" {
-			// Try to find the ingredient's stored base unit for conversion.
-			// For new ingredients the user must provide the qty already in the base unit,
-			// or in a unit we can convert. We attempt conversion; if it fails, use as-is.
-			_ = resolvedQty // used directly; conversion is best-effort
-		}
-
 		// Find or create the ingredient item.
 		ingItem, ingErr := h.resolveOrCreateIngredient(r, tenantID, ingDTO, unitMap, &reorderSeeds)
 		if ingErr != nil {
@@ -220,11 +221,26 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 			continue
 		}
 
+		// Resolve qty to the ingredient's stored base unit. cost_price is expressed per
+		// base unit, so a line entered in a different unit (e.g. 2.5 ml against a per-litre
+		// oil) must be converted or costing would be off by the unit ratio. Best-effort:
+		// when the base unit is unknown or the units aren't convertible, keep the line as-is.
+		resolvedQty := ing.Qty
+		unitName := ing.Unit
+		if ingItem.UnitID != nil {
+			if baseAbbr := unitAbbrByID[*ingItem.UnitID]; baseAbbr != "" {
+				if conv, ok := units.Convert(ing.Qty, ing.Unit, baseAbbr); ok {
+					resolvedQty = conv
+					unitName = baseAbbr
+				}
+			}
+		}
+
 		resolved = append(resolved, resolvedLine{
 			itemID:   ingItem.ID,
 			itemSKU:  ingItem.SKU,
 			qty:      resolvedQty,
-			unitName: ing.Unit,
+			unitName: unitName,
 			waste:    ing.WastePercent,
 			notes:    ing.Notes,
 			order:    i + 1,
