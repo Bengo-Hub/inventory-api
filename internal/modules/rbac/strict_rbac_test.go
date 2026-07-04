@@ -43,3 +43,21 @@ func TestMapGlobalRoleToInventoryRole_SuperuserGetsInventoryAdmin(t *testing.T) 
 		}
 	}
 }
+
+// Tenant-admin aliases and mixed casing must all resolve to inventory_admin so a tenant
+// owner/admin is never locked out just because auth named the role differently.
+func TestMapGlobalRoleToInventoryRole_AdminAliasesAndCasing(t *testing.T) {
+	adminish := []string{"Admin", "OWNER", "Tenant_Admin", "administrator", "org_admin", "account_owner", "Proprietor", "director"}
+	for _, role := range adminish {
+		if got := mapGlobalRoleToInventoryRole([]string{role}); got != "inventory_admin" {
+			t.Fatalf("role %q mapped to %q, want inventory_admin", role, got)
+		}
+		if !IsAdminRoles([]string{role}) {
+			t.Fatalf("IsAdminRoles(%q) = false, want true", role)
+		}
+	}
+	// A plain staff role must NOT be treated as admin.
+	if IsAdminRoles([]string{"cashier"}) {
+		t.Fatal("IsAdminRoles(cashier) = true, want false")
+	}
+}
