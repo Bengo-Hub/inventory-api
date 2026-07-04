@@ -72,7 +72,7 @@ type ItemDTO struct {
 	ImageURL        string         `json:"image_url,omitempty"`
 	Tags            []string       `json:"tags,omitempty"`
 	Metadata        map[string]any `json:"metadata,omitempty"`
-	InitialQuantity int            `json:"initial_quantity,omitempty"`
+	InitialQuantity float64        `json:"initial_quantity,omitempty"` // opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)
 	ReorderLevel    int            `json:"reorder_level"`
 	ReorderQuantity int            `json:"reorder_quantity"`
 	SuggestedPrice  *float64       `json:"suggested_price,omitempty"`
@@ -1562,7 +1562,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	// Opening stock defaults to 0 — a brand-new item has no stock until it's received or counted
 	// in. (Previously this forced 1, seeding phantom stock on every item.) A real opening quantity
 	// is recorded with an opening_balance audit adjustment below so it doesn't bypass the ledger.
-	initialQty := float64(dto.InitialQuantity)
+	initialQty := dto.InitialQuantity
 	if initialQty < 0 {
 		initialQty = 0
 	}
