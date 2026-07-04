@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
@@ -8,6 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/ent"
+	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
 
@@ -15,13 +19,15 @@ import (
 type AuthHandler struct {
 	logger      *zap.Logger
 	rbacService *rbac.Service
+	orm         *ent.Client
 }
 
 // NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(logger *zap.Logger, rbacService *rbac.Service) *AuthHandler {
+func NewAuthHandler(logger *zap.Logger, rbacService *rbac.Service, orm *ent.Client) *AuthHandler {
 	return &AuthHandler{
 		logger:      logger.Named("auth.Handler"),
 		rbacService: rbacService,
+		orm:         orm,
 	}
 }
 
@@ -35,6 +41,10 @@ type MeResponse struct {
 	Permissions     []string `json:"permissions"`
 	IsPlatformOwner bool     `json:"is_platform_owner"`
 	IsSuperUser     bool     `json:"is_superuser"`
+	// Resolved home outlet for this user in this tenant. Auto-linked to the tenant default
+	// when the user had none, so the UI never loads an empty outlet while the tenant has one.
+	OutletID   string `json:"outlet_id,omitempty"`
+	OutletName string `json:"outlet_name,omitempty"`
 }
 
 // Me handles GET /auth/me.
@@ -95,6 +105,10 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		roles = appendUniqueStr(roles, rbac.RoleInventoryAdmin)
 	}
 
+	// Resolve (and, when missing, auto-link) the user's home outlet so the UI never loads an
+	// empty outlet while the tenant has one.
+	outletID, outletName := h.resolveHomeOutlet(r.Context(), *tenantID, userID)
+
 	respondJSON(w, http.StatusOK, MeResponse{
 		ID:              claims.Subject,
 		Email:           claims.Email,
@@ -104,7 +118,79 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		Permissions:     permissions,
 		IsPlatformOwner: claims.IsPlatformOwner,
 		IsSuperUser:     claims.IsSuperuser() || isAdmin,
+		OutletID:        outletID,
+		OutletName:      outletName,
 	})
+}
+
+// resolveHomeOutlet returns the user's home outlet (id + name) for the tenant. When the user
+// has no outlet assignment yet, it links them to the tenant's default outlet (a warehouse with
+// a non-nil outlet_id, preferring is_default) so login is never blocked and the UI always has a
+// branch to load. Returns empty strings only when the tenant has no outlet-bearing warehouse.
+func (h *AuthHandler) resolveHomeOutlet(ctx context.Context, tenantID, userID uuid.UUID) (string, string) {
+	if h.orm == nil {
+		return "", ""
+	}
+
+	// Already assigned? Prefer the home outlet, else the first assignment.
+	rows, err := h.orm.UserOutlet.Query().
+		Where(entuseroutlet.TenantID(tenantID), entuseroutlet.UserID(userID)).
+		All(ctx)
+	if err == nil && len(rows) > 0 {
+		outletID := rows[0].OutletID
+		for _, a := range rows {
+			if a.IsHomeOutlet {
+				outletID = a.OutletID
+				break
+			}
+		}
+		return outletID.String(), h.warehouseNameForOutlet(ctx, tenantID, outletID)
+	}
+
+	// Unassigned → link to the tenant default outlet.
+	wh := h.defaultOutletWarehouse(ctx, tenantID)
+	if wh == nil || wh.OutletID == nil {
+		return "", ""
+	}
+	if _, cErr := h.orm.UserOutlet.Create().
+		SetTenantID(tenantID).
+		SetUserID(userID).
+		SetOutletID(*wh.OutletID).
+		SetIsHomeOutlet(true).
+		Save(ctx); cErr != nil {
+		// Non-fatal: still return the default outlet so the UI can load it this session.
+		h.logger.Warn("auto-link default outlet failed", zap.Error(cErr),
+			zap.String("tenant_id", tenantID.String()), zap.String("user_id", userID.String()))
+	} else {
+		h.logger.Info("auto-linked user to default outlet",
+			zap.String("tenant_id", tenantID.String()), zap.String("user_id", userID.String()),
+			zap.String("outlet_id", wh.OutletID.String()))
+	}
+	return wh.OutletID.String(), wh.Name
+}
+
+// defaultOutletWarehouse returns the tenant's default outlet-bearing warehouse: an active
+// warehouse with a non-nil outlet_id, preferring is_default. nil when none qualifies.
+func (h *AuthHandler) defaultOutletWarehouse(ctx context.Context, tenantID uuid.UUID) *ent.Warehouse {
+	base := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID), entwarehouse.IsActive(true), entwarehouse.OutletIDNotNil())
+	if wh, err := base.Clone().Where(entwarehouse.IsDefault(true)).First(ctx); err == nil && wh != nil {
+		return wh
+	}
+	if wh, err := base.First(ctx); err == nil && wh != nil {
+		return wh
+	}
+	return nil
+}
+
+// warehouseNameForOutlet resolves a warehouse display name from its outlet id.
+func (h *AuthHandler) warehouseNameForOutlet(ctx context.Context, tenantID, outletID uuid.UUID) string {
+	if wh, err := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletID(outletID)).
+		First(ctx); err == nil && wh != nil {
+		return wh.Name
+	}
+	return ""
 }
 
 // appendUniqueStrContains reports whether slice already contains s.
