@@ -398,7 +398,7 @@ func buildItemDTOFromRow(
 		RequiresAgeVerification: parseBool(col(row, "requires_age_verification"), false),
 		ReorderLevel:            parseInt(col(row, "reorder_level"), 0),
 		ReorderQuantity:         parseInt(col(row, "reorder_quantity"), 0),
-		InitialQuantity:         parseInt(col(row, "initial_quantity"), 0),
+		InitialQuantity:         parseFloatOr(col(row, "initial_quantity"), 0),
 		AddToAllOutlets:         false, // bulk import targets only the user-selected warehouse
 	}
 
@@ -531,6 +531,14 @@ func parseFloat(s string) *float64 {
 		return nil
 	}
 	return &v
+}
+
+// parseFloatOr parses a decimal, falling back to def on empty/invalid input.
+func parseFloatOr(s string, def float64) float64 {
+	if p := parseFloat(s); p != nil {
+		return *p
+	}
+	return def
 }
 
 func parseIntPtr(s string) *int {
