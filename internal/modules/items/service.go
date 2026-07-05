@@ -786,9 +786,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			q = q.Where(item.UnitID(*unitID))
 		}
 		if search != "" {
+			// Barcode is matched too so scanning a product barcode (camera scan in the UI) resolves
+			// the item — an EAN/UPC rarely equals the SKU.
 			q = q.Where(item.Or(
 				item.NameContainsFold(search),
 				item.SkuContainsFold(search),
+				item.BarcodeContainsFold(search),
 			))
 		}
 		// Tag filtering via JSONB containment — each tag is ANDed at DB level.
