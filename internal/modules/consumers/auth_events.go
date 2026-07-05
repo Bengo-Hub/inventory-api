@@ -132,6 +132,11 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 		return fmt.Errorf("sync user from auth.user.created: %w", err)
 	}
 
+	// Persist the user's service-level inventory role from the global roles carried on the
+	// event, so RBAC (and PIN terminal sessions, which have no SSO JWT to read roles from)
+	// resolve the right permissions without waiting for a first SSO request to JIT-provision.
+	c.syncServiceRoles(ctx, evt.TenantID, userID, email, evt.Payload)
+
 	if err := c.reconcileUserOutlets(ctx, evt.TenantID, userID, evt.Payload); err != nil {
 		return fmt.Errorf("reconcile outlets from auth.user.created: %w", err)
 	}
@@ -158,6 +163,9 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
 		return fmt.Errorf("sync user from auth.user.updated: %w", err)
 	}
+
+	// Re-sync the service role so a role change in auth (e.g. cashier → manager) propagates.
+	c.syncServiceRoles(ctx, evt.TenantID, userID, email, evt.Payload)
 
 	if err := c.reconcileUserOutlets(ctx, evt.TenantID, userID, evt.Payload); err != nil {
 		return fmt.Errorf("reconcile outlets from auth.user.updated: %w", err)
@@ -204,7 +212,55 @@ func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents
 	}
 	c.log.Info("stored terminal PIN hash", zap.String("user_id", userID.String()),
 		zap.String("tenant_id", evt.TenantID.String()), zap.Int("updated", n))
+
+	// The pin_set event carries the user's global roles — persist the mapped inventory role
+	// now so the very first PIN login resolves the correct permissions (PIN sessions have no
+	// SSO JWT to derive roles from; without this a PIN user logs in with zero permissions).
+	c.syncServiceRoles(ctx, evt.TenantID, userID, email, evt.Payload)
 	return nil
+}
+
+// syncServiceRoles maps the global roles carried on an auth.user event to an inventory
+// service role and assigns it locally (idempotent). No-op when the event carries no roles,
+// so a profile-only update never downgrades a user to the default viewer role.
+func (c *AuthEventsConsumer) syncServiceRoles(ctx context.Context, tenantID, authUserID uuid.UUID, email string, payload map[string]any) {
+	roles := stringSliceFromPayload(payload["roles"])
+	if len(roles) == 0 {
+		return
+	}
+	slug, _ := payload["tenant_slug"].(string)
+	if _, err := c.rbacSvc.EnsureUserFromToken(ctx, tenantID, authUserID, email, slug, roles...); err != nil {
+		c.log.Warn("sync service roles failed",
+			zap.String("user_id", authUserID.String()),
+			zap.String("tenant_id", tenantID.String()),
+			zap.Strings("roles", roles),
+			zap.Error(err))
+	}
+}
+
+// stringSliceFromPayload coerces a JSON array payload value (decoded as []any of strings,
+// or already []string) into []string, dropping non-string / empty entries.
+func stringSliceFromPayload(v any) []string {
+	switch t := v.(type) {
+	case []string:
+		out := make([]string, 0, len(t))
+		for _, s := range t {
+			if s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, e := range t {
+			if s, ok := e.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
 }
 
 // handleTenantChanged invalidates the cached tenant branding (tenant:{slug}) when a tenant's
