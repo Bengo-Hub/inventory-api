@@ -74,13 +74,22 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 	}
 }
 
-// effectivePrice resolves an item's customer price: recipe → default tier → cost+margin suggestion.
+// effectivePrice resolves an item's customer price: recipe → default tier → the merchant's
+// max/ceiling selling price → cost+margin suggestion (last resort only).
+//
+// The max_selling_price (the merchant-entered retail ceiling) is preferred over the cost+margin
+// SuggestedPrice so a GOODS item that has a real selling price never surfaces a "cooked" price on
+// the POS/ordering channels. SuggestedPrice remains the very last fallback so a fully-costed item
+// with no explicit price is still sellable rather than priced 0/hidden.
 func effectivePrice(d *ItemDTO, recipePrice, tierPrice map[uuid.UUID]float64) float64 {
 	if p, ok := recipePrice[d.ID]; ok && p > 0 {
 		return p
 	}
 	if p, ok := tierPrice[d.ID]; ok && p > 0 {
 		return p
+	}
+	if d.MaxSellingPrice != nil && *d.MaxSellingPrice > 0 {
+		return *d.MaxSellingPrice
 	}
 	if d.SuggestedPrice != nil && *d.SuggestedPrice > 0 {
 		return *d.SuggestedPrice
@@ -107,21 +116,57 @@ func (s *Service) EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.
 	if err != nil {
 		return err
 	}
+	return s.upsertItemTierPrice(ctx, tenantID, itemID, tier.ID, price)
+}
+
+// EnsureGuardrailTierPrices materializes an item's selling-price guardrails as real pricing-tier
+// prices so the POS/ordering price-resolve reads the merchant's ACTUAL price instead of a
+// cost+margin "suggested" (cooked) fallback: Retail (default tier) = maxPrice, Wholesale = minPrice.
+// A non-positive price for a tier is skipped so it never clobbers an existing profile with 0.
+func (s *Service) EnsureGuardrailTierPrices(ctx context.Context, tenantID, itemID uuid.UUID, maxPrice, minPrice float64) error {
+	if maxPrice > 0 {
+		if err := s.EnsureDefaultPrice(ctx, tenantID, itemID, maxPrice); err != nil {
+			return err
+		}
+	}
+	if minPrice > 0 {
+		tier, err := s.client.PricingTier.Query().
+			Where(pricingtier.TenantID(tenantID), pricingtier.Code("WHOLESALE"), pricingtier.IsActive(true)).
+			First(ctx)
+		if ent.IsNotFound(err) {
+			tier, err = s.client.PricingTier.Create().
+				SetTenantID(tenantID).SetName("Wholesale").SetCode("WHOLESALE").
+				SetIsDefault(false).SetIsActive(true).SetSortOrder(1).
+				Save(ctx)
+		}
+		if err != nil {
+			return err
+		}
+		if err := s.upsertItemTierPrice(ctx, tenantID, itemID, tier.ID, minPrice); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// upsertItemTierPrice upserts the all-outlets (outlet_id IS NULL) ItemPricing row for the given
+// item + tier at `price`, reactivating it if it was soft-deleted.
+func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) error {
 	if existing, qErr := s.client.ItemPricing.Query().
 		Where(
 			itempricing.TenantID(tenantID),
 			itempricing.ItemID(itemID),
-			itempricing.PricingTierID(tier.ID),
+			itempricing.PricingTierID(tierID),
 			itempricing.OutletIDIsNil(),
 		).
 		First(ctx); qErr == nil && existing != nil {
-		_, err = existing.Update().SetPrice(price).SetIsActive(true).Save(ctx)
+		_, err := existing.Update().SetPrice(price).SetIsActive(true).Save(ctx)
 		return err
 	}
-	_, err = s.client.ItemPricing.Create().
+	_, err := s.client.ItemPricing.Create().
 		SetTenantID(tenantID).
 		SetItemID(itemID).
-		SetPricingTierID(tier.ID).
+		SetPricingTierID(tierID).
 		SetPrice(price).
 		SetCurrency("KES").
 		SetIsActive(true).
