@@ -69,6 +69,18 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Persist the user's service-level inventory role from their claims on every login, so
+	// local RBAC stays in sync for BOTH auth flows: SSO claims carry the global tenant roles,
+	// and terminal/PIN claims carry the already-mapped inventory role codes (idempotent). This
+	// is the belt-and-braces companion to the auth.user event consumer — a user who reaches the
+	// API before their event is processed still gets provisioned. Skipped when claims carry no
+	// roles so we never assign a spurious default.
+	if h.rbacService != nil && len(claims.Roles) > 0 {
+		if _, perr := h.rbacService.EnsureUserFromToken(r.Context(), *tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...); perr != nil {
+			h.logger.Debug("auth/me: service-role sync failed", zap.Error(perr))
+		}
+	}
+
 	// Base roles/permissions come from JWT claims (always present immediately after SSO login).
 	roles := make([]string, len(claims.Roles))
 	copy(roles, claims.Roles)
