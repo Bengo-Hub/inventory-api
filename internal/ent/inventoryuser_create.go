@@ -98,6 +98,62 @@ func (_c *InventoryUserCreate) SetNillableLastSyncAt(v *time.Time) *InventoryUse
 	return _c
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (_c *InventoryUserCreate) SetPinHash(v string) *InventoryUserCreate {
+	_c.mutation.SetPinHash(v)
+	return _c
+}
+
+// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillablePinHash(v *string) *InventoryUserCreate {
+	if v != nil {
+		_c.SetPinHash(*v)
+	}
+	return _c
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (_c *InventoryUserCreate) SetPinFastHash(v string) *InventoryUserCreate {
+	_c.mutation.SetPinFastHash(v)
+	return _c
+}
+
+// SetNillablePinFastHash sets the "pin_fast_hash" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillablePinFastHash(v *string) *InventoryUserCreate {
+	if v != nil {
+		_c.SetPinFastHash(*v)
+	}
+	return _c
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (_c *InventoryUserCreate) SetPinFailedAttempts(v int) *InventoryUserCreate {
+	_c.mutation.SetPinFailedAttempts(v)
+	return _c
+}
+
+// SetNillablePinFailedAttempts sets the "pin_failed_attempts" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillablePinFailedAttempts(v *int) *InventoryUserCreate {
+	if v != nil {
+		_c.SetPinFailedAttempts(*v)
+	}
+	return _c
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (_c *InventoryUserCreate) SetPinLockedUntil(v time.Time) *InventoryUserCreate {
+	_c.mutation.SetPinLockedUntil(v)
+	return _c
+}
+
+// SetNillablePinLockedUntil sets the "pin_locked_until" field if the given value is not nil.
+func (_c *InventoryUserCreate) SetNillablePinLockedUntil(v *time.Time) *InventoryUserCreate {
+	if v != nil {
+		_c.SetPinLockedUntil(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *InventoryUserCreate) SetCreatedAt(v time.Time) *InventoryUserCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -183,6 +239,10 @@ func (_c *InventoryUserCreate) defaults() {
 		v := inventoryuser.DefaultSyncStatus
 		_c.mutation.SetSyncStatus(v)
 	}
+	if _, ok := _c.mutation.PinFailedAttempts(); !ok {
+		v := inventoryuser.DefaultPinFailedAttempts
+		_c.mutation.SetPinFailedAttempts(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := inventoryuser.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -218,6 +278,9 @@ func (_c *InventoryUserCreate) check() error {
 	}
 	if _, ok := _c.mutation.SyncStatus(); !ok {
 		return &ValidationError{Name: "sync_status", err: errors.New(`ent: missing required field "InventoryUser.sync_status"`)}
+	}
+	if _, ok := _c.mutation.PinFailedAttempts(); !ok {
+		return &ValidationError{Name: "pin_failed_attempts", err: errors.New(`ent: missing required field "InventoryUser.pin_failed_attempts"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "InventoryUser.created_at"`)}
@@ -288,6 +351,22 @@ func (_c *InventoryUserCreate) createSpec() (*InventoryUser, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.LastSyncAt(); ok {
 		_spec.SetField(inventoryuser.FieldLastSyncAt, field.TypeTime, value)
 		_node.LastSyncAt = value
+	}
+	if value, ok := _c.mutation.PinHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
+		_node.PinHash = &value
+	}
+	if value, ok := _c.mutation.PinFastHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinFastHash, field.TypeString, value)
+		_node.PinFastHash = value
+	}
+	if value, ok := _c.mutation.PinFailedAttempts(); ok {
+		_spec.SetField(inventoryuser.FieldPinFailedAttempts, field.TypeInt, value)
+		_node.PinFailedAttempts = value
+	}
+	if value, ok := _c.mutation.PinLockedUntil(); ok {
+		_spec.SetField(inventoryuser.FieldPinLockedUntil, field.TypeTime, value)
+		_node.PinLockedUntil = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(inventoryuser.FieldCreatedAt, field.TypeTime, value)
@@ -442,6 +521,78 @@ func (u *InventoryUserUpsert) UpdateLastSyncAt() *InventoryUserUpsert {
 // ClearLastSyncAt clears the value of the "last_sync_at" field.
 func (u *InventoryUserUpsert) ClearLastSyncAt() *InventoryUserUpsert {
 	u.SetNull(inventoryuser.FieldLastSyncAt)
+	return u
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsert) SetPinHash(v string) *InventoryUserUpsert {
+	u.Set(inventoryuser.FieldPinHash, v)
+	return u
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsert) UpdatePinHash() *InventoryUserUpsert {
+	u.SetExcluded(inventoryuser.FieldPinHash)
+	return u
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsert) ClearPinHash() *InventoryUserUpsert {
+	u.SetNull(inventoryuser.FieldPinHash)
+	return u
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (u *InventoryUserUpsert) SetPinFastHash(v string) *InventoryUserUpsert {
+	u.Set(inventoryuser.FieldPinFastHash, v)
+	return u
+}
+
+// UpdatePinFastHash sets the "pin_fast_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsert) UpdatePinFastHash() *InventoryUserUpsert {
+	u.SetExcluded(inventoryuser.FieldPinFastHash)
+	return u
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (u *InventoryUserUpsert) ClearPinFastHash() *InventoryUserUpsert {
+	u.SetNull(inventoryuser.FieldPinFastHash)
+	return u
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (u *InventoryUserUpsert) SetPinFailedAttempts(v int) *InventoryUserUpsert {
+	u.Set(inventoryuser.FieldPinFailedAttempts, v)
+	return u
+}
+
+// UpdatePinFailedAttempts sets the "pin_failed_attempts" field to the value that was provided on create.
+func (u *InventoryUserUpsert) UpdatePinFailedAttempts() *InventoryUserUpsert {
+	u.SetExcluded(inventoryuser.FieldPinFailedAttempts)
+	return u
+}
+
+// AddPinFailedAttempts adds v to the "pin_failed_attempts" field.
+func (u *InventoryUserUpsert) AddPinFailedAttempts(v int) *InventoryUserUpsert {
+	u.Add(inventoryuser.FieldPinFailedAttempts, v)
+	return u
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (u *InventoryUserUpsert) SetPinLockedUntil(v time.Time) *InventoryUserUpsert {
+	u.Set(inventoryuser.FieldPinLockedUntil, v)
+	return u
+}
+
+// UpdatePinLockedUntil sets the "pin_locked_until" field to the value that was provided on create.
+func (u *InventoryUserUpsert) UpdatePinLockedUntil() *InventoryUserUpsert {
+	u.SetExcluded(inventoryuser.FieldPinLockedUntil)
+	return u
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (u *InventoryUserUpsert) ClearPinLockedUntil() *InventoryUserUpsert {
+	u.SetNull(inventoryuser.FieldPinLockedUntil)
 	return u
 }
 
@@ -617,6 +768,90 @@ func (u *InventoryUserUpsertOne) UpdateLastSyncAt() *InventoryUserUpsertOne {
 func (u *InventoryUserUpsertOne) ClearLastSyncAt() *InventoryUserUpsertOne {
 	return u.Update(func(s *InventoryUserUpsert) {
 		s.ClearLastSyncAt()
+	})
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsertOne) SetPinHash(v string) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinHash(v)
+	})
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertOne) UpdatePinHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinHash()
+	})
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsertOne) ClearPinHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinHash()
+	})
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (u *InventoryUserUpsertOne) SetPinFastHash(v string) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinFastHash(v)
+	})
+}
+
+// UpdatePinFastHash sets the "pin_fast_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertOne) UpdatePinFastHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinFastHash()
+	})
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (u *InventoryUserUpsertOne) ClearPinFastHash() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinFastHash()
+	})
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (u *InventoryUserUpsertOne) SetPinFailedAttempts(v int) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinFailedAttempts(v)
+	})
+}
+
+// AddPinFailedAttempts adds v to the "pin_failed_attempts" field.
+func (u *InventoryUserUpsertOne) AddPinFailedAttempts(v int) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.AddPinFailedAttempts(v)
+	})
+}
+
+// UpdatePinFailedAttempts sets the "pin_failed_attempts" field to the value that was provided on create.
+func (u *InventoryUserUpsertOne) UpdatePinFailedAttempts() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinFailedAttempts()
+	})
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (u *InventoryUserUpsertOne) SetPinLockedUntil(v time.Time) *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinLockedUntil(v)
+	})
+}
+
+// UpdatePinLockedUntil sets the "pin_locked_until" field to the value that was provided on create.
+func (u *InventoryUserUpsertOne) UpdatePinLockedUntil() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinLockedUntil()
+	})
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (u *InventoryUserUpsertOne) ClearPinLockedUntil() *InventoryUserUpsertOne {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinLockedUntil()
 	})
 }
 
@@ -961,6 +1196,90 @@ func (u *InventoryUserUpsertBulk) UpdateLastSyncAt() *InventoryUserUpsertBulk {
 func (u *InventoryUserUpsertBulk) ClearLastSyncAt() *InventoryUserUpsertBulk {
 	return u.Update(func(s *InventoryUserUpsert) {
 		s.ClearLastSyncAt()
+	})
+}
+
+// SetPinHash sets the "pin_hash" field.
+func (u *InventoryUserUpsertBulk) SetPinHash(v string) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinHash(v)
+	})
+}
+
+// UpdatePinHash sets the "pin_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertBulk) UpdatePinHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinHash()
+	})
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (u *InventoryUserUpsertBulk) ClearPinHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinHash()
+	})
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (u *InventoryUserUpsertBulk) SetPinFastHash(v string) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinFastHash(v)
+	})
+}
+
+// UpdatePinFastHash sets the "pin_fast_hash" field to the value that was provided on create.
+func (u *InventoryUserUpsertBulk) UpdatePinFastHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinFastHash()
+	})
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (u *InventoryUserUpsertBulk) ClearPinFastHash() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinFastHash()
+	})
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (u *InventoryUserUpsertBulk) SetPinFailedAttempts(v int) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinFailedAttempts(v)
+	})
+}
+
+// AddPinFailedAttempts adds v to the "pin_failed_attempts" field.
+func (u *InventoryUserUpsertBulk) AddPinFailedAttempts(v int) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.AddPinFailedAttempts(v)
+	})
+}
+
+// UpdatePinFailedAttempts sets the "pin_failed_attempts" field to the value that was provided on create.
+func (u *InventoryUserUpsertBulk) UpdatePinFailedAttempts() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinFailedAttempts()
+	})
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (u *InventoryUserUpsertBulk) SetPinLockedUntil(v time.Time) *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.SetPinLockedUntil(v)
+	})
+}
+
+// UpdatePinLockedUntil sets the "pin_locked_until" field to the value that was provided on create.
+func (u *InventoryUserUpsertBulk) UpdatePinLockedUntil() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.UpdatePinLockedUntil()
+	})
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (u *InventoryUserUpsertBulk) ClearPinLockedUntil() *InventoryUserUpsertBulk {
+	return u.Update(func(s *InventoryUserUpsert) {
+		s.ClearPinLockedUntil()
 	})
 }
 

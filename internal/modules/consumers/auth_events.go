@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
@@ -74,6 +75,8 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 	subs := []sub{
 		{"auth.user.created", "inv-auth-user-created", c.handleUserCreated},
 		{"auth.user.updated", "inv-auth-user-updated", c.handleUserUpdated},
+		// Terminal/PIN provisioning: store the bcrypt PIN hash so /inventory/auth/pin/* works.
+		{"auth.user.pin_set", "inv-auth-user-pin-set", c.handlePinSet},
 		// Branding cache invalidation: tenant edits in auth must drop the cached tenant:{slug}
 		// entry, otherwise document generation keeps serving stale company name/address/KRA PIN
 		// for up to the 6h TTL.
@@ -163,6 +166,44 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	c.log.Info("user synced from auth.user.updated",
 		zap.String("user_id", userID.String()),
 		zap.String("tenant_id", evt.TenantID.String()))
+	return nil
+}
+
+// handlePinSet stores the bcrypt PIN hash carried on an auth.user.pin_set event so the user
+// can authenticate at an inventory terminal. Only acts on events for service "inventory".
+func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents.Event) error {
+	service, _ := evt.Payload["service"].(string)
+	if service != "" && service != "inventory" {
+		return nil // PIN provisioned for a different service (pos/library/…)
+	}
+	userIDStr, _ := evt.Payload["user_id"].(string)
+	pinHash, _ := evt.Payload["pin_hash"].(string)
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid user_id %q in pin_set: %w", userIDStr, err)
+	}
+	if evt.TenantID == uuid.Nil || pinHash == "" {
+		return fmt.Errorf("missing tenant_id or pin_hash in pin_set event")
+	}
+
+	// Ensure the local user exists first (pin_set may arrive before user.created is processed).
+	email, _ := evt.Payload["email"].(string)
+	name, _ := evt.Payload["full_name"].(string)
+	if _, serr := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); serr != nil {
+		return fmt.Errorf("sync user for pin_set: %w", serr)
+	}
+
+	n, uerr := c.orm.InventoryUser.Update().
+		Where(entinvuser.TenantID(evt.TenantID), entinvuser.AuthServiceUserID(userID)).
+		SetPinHash(pinHash).
+		SetPinFailedAttempts(0).
+		ClearPinLockedUntil().
+		Save(ctx)
+	if uerr != nil {
+		return fmt.Errorf("store pin hash: %w", uerr)
+	}
+	c.log.Info("stored terminal PIN hash", zap.String("user_id", userID.String()),
+		zap.String("tenant_id", evt.TenantID.String()), zap.Int("updated", n))
 	return nil
 }
 

@@ -124,6 +124,7 @@ type InventoryHandler struct {
 	auditSvc     *audit.Service
 	approvalSvc  *approvals.Service
 	orm          *ent.Client
+	pinSecret    []byte // terminal/PIN JWT secret; feature-gated GETs accept PIN sessions too
 }
 
 // SetEntClient wires the Ent client used by route-level middleware (e.g. resolving an
@@ -162,13 +163,18 @@ func (h *InventoryHandler) SetAuthMiddleware(mw *authclient.AuthMiddleware) {
 	h.authMW = mw
 }
 
+// SetTerminalSecret wires the PIN/terminal JWT secret so feature-gated GET routes accept
+// terminal (PIN) sessions in addition to SSO sessions.
+func (h *InventoryHandler) SetTerminalSecret(secret []byte) { h.pinSecret = secret }
+
 // requireAuthForFeatureGet returns RequireAuth when the auth middleware is wired,
 // or a pass-through otherwise (preserving prior behavior in tests / setups without auth).
 func (h *InventoryHandler) requireAuthForFeatureGet() func(http.Handler) http.Handler {
 	if h.authMW == nil {
 		return func(next http.Handler) http.Handler { return next }
 	}
-	return h.authMW.RequireAuth
+	// Accept terminal (PIN) sessions as well as SSO on feature-gated GETs.
+	return RequireAnyAuth(h.pinSecret, h.authMW)
 }
 
 // SetModifiersService injects the modifiers service (optional; modifier endpoints are skipped if nil).

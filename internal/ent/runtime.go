@@ -863,12 +863,16 @@ func init() {
 	inventoryuserDescSyncStatus := inventoryuserFields[6].Descriptor()
 	// inventoryuser.DefaultSyncStatus holds the default value on creation for the sync_status field.
 	inventoryuser.DefaultSyncStatus = inventoryuserDescSyncStatus.Default.(string)
+	// inventoryuserDescPinFailedAttempts is the schema descriptor for pin_failed_attempts field.
+	inventoryuserDescPinFailedAttempts := inventoryuserFields[10].Descriptor()
+	// inventoryuser.DefaultPinFailedAttempts holds the default value on creation for the pin_failed_attempts field.
+	inventoryuser.DefaultPinFailedAttempts = inventoryuserDescPinFailedAttempts.Default.(int)
 	// inventoryuserDescCreatedAt is the schema descriptor for created_at field.
-	inventoryuserDescCreatedAt := inventoryuserFields[8].Descriptor()
+	inventoryuserDescCreatedAt := inventoryuserFields[12].Descriptor()
 	// inventoryuser.DefaultCreatedAt holds the default value on creation for the created_at field.
 	inventoryuser.DefaultCreatedAt = inventoryuserDescCreatedAt.Default.(func() time.Time)
 	// inventoryuserDescUpdatedAt is the schema descriptor for updated_at field.
-	inventoryuserDescUpdatedAt := inventoryuserFields[9].Descriptor()
+	inventoryuserDescUpdatedAt := inventoryuserFields[13].Descriptor()
 	// inventoryuser.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventoryuser.DefaultUpdatedAt = inventoryuserDescUpdatedAt.Default.(func() time.Time)
 	// inventoryuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
