@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entib "github.com/bengobox/inventory-service/internal/ent/itembrand"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -41,10 +42,56 @@ func (h *BrandHandler) RegisterRoutes(r chi.Router) {
 
 	r.Route("/inventory/brands", func(b chi.Router) {
 		b.Get("/", h.ListBrands)
+		// S2S: resolve brand names for a set of SKUs (used by pos-api register-details
+		// "products sold by brand"). GET → no auth required, tenant from URL.
+		b.Get("/by-sku", h.BrandsBySKU)
 		b.With(perm(rbac.PermItemsAdd)).Post("/", h.CreateBrand)
 		b.With(perm(rbac.PermItemsChange)).Put("/{brandID}", h.UpdateBrand)
 		b.With(perm(rbac.PermItemsDelete)).Delete("/{brandID}", h.DeleteBrand)
 	})
+}
+
+// BrandsBySKU handles GET /inventory/brands/by-sku?skus=SKU1,SKU2,...
+// Returns a map of sku → brand name for the tenant's items. SKUs with no brand (or not
+// found) are omitted; the caller treats missing SKUs as "Unbranded". Used S2S by pos-api.
+func (h *BrandHandler) BrandsBySKU(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	raw := strings.TrimSpace(r.URL.Query().Get("skus"))
+	if raw == "" {
+		writeJSON(w, http.StatusOK, map[string]any{"data": map[string]string{}})
+		return
+	}
+	skus := make([]string, 0)
+	for _, s := range strings.Split(raw, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			skus = append(skus, s)
+		}
+	}
+	if len(skus) == 0 {
+		writeJSON(w, http.StatusOK, map[string]any{"data": map[string]string{}})
+		return
+	}
+
+	items, err := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.SkuIn(skus...)).
+		WithItemBrand().
+		All(r.Context())
+	if err != nil {
+		h.log.Error("brands by sku query failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "LOOKUP_FAILED", "Failed to resolve brands")
+		return
+	}
+	result := make(map[string]string, len(items))
+	for _, it := range items {
+		if it.Edges.ItemBrand != nil && it.Edges.ItemBrand.Name != "" {
+			result[it.Sku] = it.Edges.ItemBrand.Name
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": result})
 }
 
 // --- Brand DTOs ---
