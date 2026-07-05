@@ -28,6 +28,14 @@ const (
 	FieldSyncStatus = "sync_status"
 	// FieldLastSyncAt holds the string denoting the last_sync_at field in the database.
 	FieldLastSyncAt = "last_sync_at"
+	// FieldPinHash holds the string denoting the pin_hash field in the database.
+	FieldPinHash = "pin_hash"
+	// FieldPinFastHash holds the string denoting the pin_fast_hash field in the database.
+	FieldPinFastHash = "pin_fast_hash"
+	// FieldPinFailedAttempts holds the string denoting the pin_failed_attempts field in the database.
+	FieldPinFailedAttempts = "pin_failed_attempts"
+	// FieldPinLockedUntil holds the string denoting the pin_locked_until field in the database.
+	FieldPinLockedUntil = "pin_locked_until"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -46,6 +54,10 @@ var Columns = []string{
 	FieldStatus,
 	FieldSyncStatus,
 	FieldLastSyncAt,
+	FieldPinHash,
+	FieldPinFastHash,
+	FieldPinFailedAttempts,
+	FieldPinLockedUntil,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -67,6 +79,8 @@ var (
 	DefaultStatus string
 	// DefaultSyncStatus holds the default value on creation for the "sync_status" field.
 	DefaultSyncStatus string
+	// DefaultPinFailedAttempts holds the default value on creation for the "pin_failed_attempts" field.
+	DefaultPinFailedAttempts int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -118,6 +132,26 @@ func BySyncStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSyncAt orders the results by the last_sync_at field.
 func ByLastSyncAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSyncAt, opts...).ToFunc()
+}
+
+// ByPinHash orders the results by the pin_hash field.
+func ByPinHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinHash, opts...).ToFunc()
+}
+
+// ByPinFastHash orders the results by the pin_fast_hash field.
+func ByPinFastHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinFastHash, opts...).ToFunc()
+}
+
+// ByPinFailedAttempts orders the results by the pin_failed_attempts field.
+func ByPinFailedAttempts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinFailedAttempts, opts...).ToFunc()
+}
+
+// ByPinLockedUntil orders the results by the pin_locked_until field.
+func ByPinLockedUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinLockedUntil, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

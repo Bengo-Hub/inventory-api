@@ -120,6 +120,9 @@ type AuthConfig struct {
 	JWKSRefreshInterval time.Duration `envconfig:"AUTH_JWKS_REFRESH_INTERVAL" default:"300s"`
 	EnableAPIKeyAuth    bool          `envconfig:"AUTH_ENABLE_API_KEY_AUTH" default:"true"`
 	APIKey              string        `envconfig:"INTERNAL_SERVICE_KEY" default:""`
+	// TerminalJWTSecret signs desk/kiosk PIN (terminal) JWTs. Falls back to INTERNAL_SERVICE_KEY
+	// (via terminalJWTSecret in app.go) when unset, mirroring pos-api / library-api.
+	TerminalJWTSecret string `envconfig:"TERMINAL_JWT_SECRET" default:""`
 }
 
 // Load gathers configuration from environment variables and optional .env files.

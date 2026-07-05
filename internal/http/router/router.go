@@ -48,8 +48,19 @@ func New(
 	stockCountHandler *handlers.StockCountHandler,
 	backupsHandler *handlers.Backups,
 	backupDestHandler *handlers.BackupDestinationHandler,
+	pinAuthHandler *handlers.PINAuthHandler,
 ) http.Handler {
 	r := chi.NewRouter()
+
+	// Terminal/PIN JWT secret — lets the private + inventory groups accept PIN sessions
+	// (via RequireAnyAuth) in addition to SSO, and is nil-safe when PIN login is unwired.
+	var pinSecret []byte
+	if pinAuthHandler != nil {
+		pinSecret = pinAuthHandler.Secret()
+		if inventoryHandler != nil {
+			inventoryHandler.SetTerminalSecret(pinSecret)
+		}
+	}
 
 	// Feature-gated GET routes (e.g. GET /inventory/adjustments) are exempt from the
 	// group-level GET auth, so give the handler the auth middleware to re-require auth
@@ -187,10 +198,18 @@ func New(
 				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
 			}
 
-			// Private User Routes (Always require auth)
+			// Public PIN/terminal login — this IS the login, so no auth. TenantV2 resolves
+			// the tenant from the URL for these unauthenticated requests.
+			if pinAuthHandler != nil {
+				tenant.Group(func(pub chi.Router) {
+					pub.Route("/", func(p chi.Router) { pinAuthHandler.RegisterRoutes(p) })
+				})
+			}
+
+			// Private User Routes (Always require auth — SSO or terminal PIN)
 			tenant.Group(func(private chi.Router) {
 				if authMiddleware != nil {
-					private.Use(authMiddleware.RequireAuth)
+					private.Use(handlers.RequireAnyAuth(pinSecret, authMiddleware))
 					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
 					private.Use(authclient.RequireActiveSubscription())
 				}
@@ -235,7 +254,7 @@ func New(
 								return
 							}
 							if authMiddleware != nil {
-								authMiddleware.RequireAuth(next).ServeHTTP(w, r)
+								handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
 							} else {
 								next.ServeHTTP(w, r)
 							}
@@ -309,7 +328,7 @@ func New(
 								return
 							}
 							if authMiddleware != nil {
-								authMiddleware.RequireAuth(next).ServeHTTP(w, r)
+								handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
 							} else {
 								next.ServeHTTP(w, r)
 							}

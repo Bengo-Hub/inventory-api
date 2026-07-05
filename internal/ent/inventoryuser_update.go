@@ -139,6 +139,87 @@ func (_u *InventoryUserUpdate) ClearLastSyncAt() *InventoryUserUpdate {
 	return _u
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (_u *InventoryUserUpdate) SetPinHash(v string) *InventoryUserUpdate {
+	_u.mutation.SetPinHash(v)
+	return _u
+}
+
+// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
+func (_u *InventoryUserUpdate) SetNillablePinHash(v *string) *InventoryUserUpdate {
+	if v != nil {
+		_u.SetPinHash(*v)
+	}
+	return _u
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (_u *InventoryUserUpdate) ClearPinHash() *InventoryUserUpdate {
+	_u.mutation.ClearPinHash()
+	return _u
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (_u *InventoryUserUpdate) SetPinFastHash(v string) *InventoryUserUpdate {
+	_u.mutation.SetPinFastHash(v)
+	return _u
+}
+
+// SetNillablePinFastHash sets the "pin_fast_hash" field if the given value is not nil.
+func (_u *InventoryUserUpdate) SetNillablePinFastHash(v *string) *InventoryUserUpdate {
+	if v != nil {
+		_u.SetPinFastHash(*v)
+	}
+	return _u
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (_u *InventoryUserUpdate) ClearPinFastHash() *InventoryUserUpdate {
+	_u.mutation.ClearPinFastHash()
+	return _u
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (_u *InventoryUserUpdate) SetPinFailedAttempts(v int) *InventoryUserUpdate {
+	_u.mutation.ResetPinFailedAttempts()
+	_u.mutation.SetPinFailedAttempts(v)
+	return _u
+}
+
+// SetNillablePinFailedAttempts sets the "pin_failed_attempts" field if the given value is not nil.
+func (_u *InventoryUserUpdate) SetNillablePinFailedAttempts(v *int) *InventoryUserUpdate {
+	if v != nil {
+		_u.SetPinFailedAttempts(*v)
+	}
+	return _u
+}
+
+// AddPinFailedAttempts adds value to the "pin_failed_attempts" field.
+func (_u *InventoryUserUpdate) AddPinFailedAttempts(v int) *InventoryUserUpdate {
+	_u.mutation.AddPinFailedAttempts(v)
+	return _u
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (_u *InventoryUserUpdate) SetPinLockedUntil(v time.Time) *InventoryUserUpdate {
+	_u.mutation.SetPinLockedUntil(v)
+	return _u
+}
+
+// SetNillablePinLockedUntil sets the "pin_locked_until" field if the given value is not nil.
+func (_u *InventoryUserUpdate) SetNillablePinLockedUntil(v *time.Time) *InventoryUserUpdate {
+	if v != nil {
+		_u.SetPinLockedUntil(*v)
+	}
+	return _u
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (_u *InventoryUserUpdate) ClearPinLockedUntil() *InventoryUserUpdate {
+	_u.mutation.ClearPinLockedUntil()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryUserUpdate) SetUpdatedAt(v time.Time) *InventoryUserUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -234,6 +315,30 @@ func (_u *InventoryUserUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.LastSyncAtCleared() {
 		_spec.ClearField(inventoryuser.FieldLastSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PinHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
+	}
+	if _u.mutation.PinHashCleared() {
+		_spec.ClearField(inventoryuser.FieldPinHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.PinFastHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinFastHash, field.TypeString, value)
+	}
+	if _u.mutation.PinFastHashCleared() {
+		_spec.ClearField(inventoryuser.FieldPinFastHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.PinFailedAttempts(); ok {
+		_spec.SetField(inventoryuser.FieldPinFailedAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPinFailedAttempts(); ok {
+		_spec.AddField(inventoryuser.FieldPinFailedAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PinLockedUntil(); ok {
+		_spec.SetField(inventoryuser.FieldPinLockedUntil, field.TypeTime, value)
+	}
+	if _u.mutation.PinLockedUntilCleared() {
+		_spec.ClearField(inventoryuser.FieldPinLockedUntil, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventoryuser.FieldUpdatedAt, field.TypeTime, value)
@@ -368,6 +473,87 @@ func (_u *InventoryUserUpdateOne) ClearLastSyncAt() *InventoryUserUpdateOne {
 	return _u
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (_u *InventoryUserUpdateOne) SetPinHash(v string) *InventoryUserUpdateOne {
+	_u.mutation.SetPinHash(v)
+	return _u
+}
+
+// SetNillablePinHash sets the "pin_hash" field if the given value is not nil.
+func (_u *InventoryUserUpdateOne) SetNillablePinHash(v *string) *InventoryUserUpdateOne {
+	if v != nil {
+		_u.SetPinHash(*v)
+	}
+	return _u
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (_u *InventoryUserUpdateOne) ClearPinHash() *InventoryUserUpdateOne {
+	_u.mutation.ClearPinHash()
+	return _u
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (_u *InventoryUserUpdateOne) SetPinFastHash(v string) *InventoryUserUpdateOne {
+	_u.mutation.SetPinFastHash(v)
+	return _u
+}
+
+// SetNillablePinFastHash sets the "pin_fast_hash" field if the given value is not nil.
+func (_u *InventoryUserUpdateOne) SetNillablePinFastHash(v *string) *InventoryUserUpdateOne {
+	if v != nil {
+		_u.SetPinFastHash(*v)
+	}
+	return _u
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (_u *InventoryUserUpdateOne) ClearPinFastHash() *InventoryUserUpdateOne {
+	_u.mutation.ClearPinFastHash()
+	return _u
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (_u *InventoryUserUpdateOne) SetPinFailedAttempts(v int) *InventoryUserUpdateOne {
+	_u.mutation.ResetPinFailedAttempts()
+	_u.mutation.SetPinFailedAttempts(v)
+	return _u
+}
+
+// SetNillablePinFailedAttempts sets the "pin_failed_attempts" field if the given value is not nil.
+func (_u *InventoryUserUpdateOne) SetNillablePinFailedAttempts(v *int) *InventoryUserUpdateOne {
+	if v != nil {
+		_u.SetPinFailedAttempts(*v)
+	}
+	return _u
+}
+
+// AddPinFailedAttempts adds value to the "pin_failed_attempts" field.
+func (_u *InventoryUserUpdateOne) AddPinFailedAttempts(v int) *InventoryUserUpdateOne {
+	_u.mutation.AddPinFailedAttempts(v)
+	return _u
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (_u *InventoryUserUpdateOne) SetPinLockedUntil(v time.Time) *InventoryUserUpdateOne {
+	_u.mutation.SetPinLockedUntil(v)
+	return _u
+}
+
+// SetNillablePinLockedUntil sets the "pin_locked_until" field if the given value is not nil.
+func (_u *InventoryUserUpdateOne) SetNillablePinLockedUntil(v *time.Time) *InventoryUserUpdateOne {
+	if v != nil {
+		_u.SetPinLockedUntil(*v)
+	}
+	return _u
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (_u *InventoryUserUpdateOne) ClearPinLockedUntil() *InventoryUserUpdateOne {
+	_u.mutation.ClearPinLockedUntil()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryUserUpdateOne) SetUpdatedAt(v time.Time) *InventoryUserUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -493,6 +679,30 @@ func (_u *InventoryUserUpdateOne) sqlSave(ctx context.Context) (_node *Inventory
 	}
 	if _u.mutation.LastSyncAtCleared() {
 		_spec.ClearField(inventoryuser.FieldLastSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.PinHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinHash, field.TypeString, value)
+	}
+	if _u.mutation.PinHashCleared() {
+		_spec.ClearField(inventoryuser.FieldPinHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.PinFastHash(); ok {
+		_spec.SetField(inventoryuser.FieldPinFastHash, field.TypeString, value)
+	}
+	if _u.mutation.PinFastHashCleared() {
+		_spec.ClearField(inventoryuser.FieldPinFastHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.PinFailedAttempts(); ok {
+		_spec.SetField(inventoryuser.FieldPinFailedAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPinFailedAttempts(); ok {
+		_spec.AddField(inventoryuser.FieldPinFailedAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PinLockedUntil(); ok {
+		_spec.SetField(inventoryuser.FieldPinLockedUntil, field.TypeTime, value)
+	}
+	if _u.mutation.PinLockedUntilCleared() {
+		_spec.ClearField(inventoryuser.FieldPinLockedUntil, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventoryuser.FieldUpdatedAt, field.TypeTime, value)

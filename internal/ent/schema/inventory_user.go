@@ -39,6 +39,24 @@ func (InventoryUser) Fields() []ent.Field {
 			Comment("Sync status: synced, pending, failed"),
 		field.Time("last_sync_at").
 			Optional(),
+		// ── Terminal/PIN login (desk/kiosk) ──────────────────────────────────
+		// Populated from auth.user.pin_set events; used by /inventory/auth/pin/* to
+		// authenticate staff at a warehouse terminal without SSO.
+		field.String("pin_hash").
+			Optional().
+			Nillable().
+			Sensitive().
+			Comment("bcrypt hash of the 4-digit service PIN"),
+		field.String("pin_fast_hash").
+			Optional().
+			Comment("hex(SHA256(tenant:user:pin)) for O(1) PIN lookup"),
+		field.Int("pin_failed_attempts").
+			Default(0).
+			Comment("consecutive wrong-PIN attempts (lockout)"),
+		field.Time("pin_locked_until").
+			Optional().
+			Nillable().
+			Comment("PIN login locked until this time after too many failures"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),

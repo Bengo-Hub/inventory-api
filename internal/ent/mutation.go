@@ -33396,22 +33396,27 @@ func (m *InventorySerialMutation) ResetEdge(name string) error {
 // InventoryUserMutation represents an operation that mutates the InventoryUser nodes in the graph.
 type InventoryUserMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	tenant_id            *uuid.UUID
-	auth_service_user_id *uuid.UUID
-	email                *string
-	name                 *string
-	status               *string
-	sync_status          *string
-	last_sync_at         *time.Time
-	created_at           *time.Time
-	updated_at           *time.Time
-	clearedFields        map[string]struct{}
-	done                 bool
-	oldValue             func(context.Context) (*InventoryUser, error)
-	predicates           []predicate.InventoryUser
+	op                     Op
+	typ                    string
+	id                     *uuid.UUID
+	tenant_id              *uuid.UUID
+	auth_service_user_id   *uuid.UUID
+	email                  *string
+	name                   *string
+	status                 *string
+	sync_status            *string
+	last_sync_at           *time.Time
+	pin_hash               *string
+	pin_fast_hash          *string
+	pin_failed_attempts    *int
+	addpin_failed_attempts *int
+	pin_locked_until       *time.Time
+	created_at             *time.Time
+	updated_at             *time.Time
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*InventoryUser, error)
+	predicates             []predicate.InventoryUser
 }
 
 var _ ent.Mutation = (*InventoryUserMutation)(nil)
@@ -33796,6 +33801,209 @@ func (m *InventoryUserMutation) ResetLastSyncAt() {
 	delete(m.clearedFields, inventoryuser.FieldLastSyncAt)
 }
 
+// SetPinHash sets the "pin_hash" field.
+func (m *InventoryUserMutation) SetPinHash(s string) {
+	m.pin_hash = &s
+}
+
+// PinHash returns the value of the "pin_hash" field in the mutation.
+func (m *InventoryUserMutation) PinHash() (r string, exists bool) {
+	v := m.pin_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinHash returns the old "pin_hash" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldPinHash(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinHash: %w", err)
+	}
+	return oldValue.PinHash, nil
+}
+
+// ClearPinHash clears the value of the "pin_hash" field.
+func (m *InventoryUserMutation) ClearPinHash() {
+	m.pin_hash = nil
+	m.clearedFields[inventoryuser.FieldPinHash] = struct{}{}
+}
+
+// PinHashCleared returns if the "pin_hash" field was cleared in this mutation.
+func (m *InventoryUserMutation) PinHashCleared() bool {
+	_, ok := m.clearedFields[inventoryuser.FieldPinHash]
+	return ok
+}
+
+// ResetPinHash resets all changes to the "pin_hash" field.
+func (m *InventoryUserMutation) ResetPinHash() {
+	m.pin_hash = nil
+	delete(m.clearedFields, inventoryuser.FieldPinHash)
+}
+
+// SetPinFastHash sets the "pin_fast_hash" field.
+func (m *InventoryUserMutation) SetPinFastHash(s string) {
+	m.pin_fast_hash = &s
+}
+
+// PinFastHash returns the value of the "pin_fast_hash" field in the mutation.
+func (m *InventoryUserMutation) PinFastHash() (r string, exists bool) {
+	v := m.pin_fast_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinFastHash returns the old "pin_fast_hash" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldPinFastHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinFastHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinFastHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinFastHash: %w", err)
+	}
+	return oldValue.PinFastHash, nil
+}
+
+// ClearPinFastHash clears the value of the "pin_fast_hash" field.
+func (m *InventoryUserMutation) ClearPinFastHash() {
+	m.pin_fast_hash = nil
+	m.clearedFields[inventoryuser.FieldPinFastHash] = struct{}{}
+}
+
+// PinFastHashCleared returns if the "pin_fast_hash" field was cleared in this mutation.
+func (m *InventoryUserMutation) PinFastHashCleared() bool {
+	_, ok := m.clearedFields[inventoryuser.FieldPinFastHash]
+	return ok
+}
+
+// ResetPinFastHash resets all changes to the "pin_fast_hash" field.
+func (m *InventoryUserMutation) ResetPinFastHash() {
+	m.pin_fast_hash = nil
+	delete(m.clearedFields, inventoryuser.FieldPinFastHash)
+}
+
+// SetPinFailedAttempts sets the "pin_failed_attempts" field.
+func (m *InventoryUserMutation) SetPinFailedAttempts(i int) {
+	m.pin_failed_attempts = &i
+	m.addpin_failed_attempts = nil
+}
+
+// PinFailedAttempts returns the value of the "pin_failed_attempts" field in the mutation.
+func (m *InventoryUserMutation) PinFailedAttempts() (r int, exists bool) {
+	v := m.pin_failed_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinFailedAttempts returns the old "pin_failed_attempts" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldPinFailedAttempts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinFailedAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinFailedAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinFailedAttempts: %w", err)
+	}
+	return oldValue.PinFailedAttempts, nil
+}
+
+// AddPinFailedAttempts adds i to the "pin_failed_attempts" field.
+func (m *InventoryUserMutation) AddPinFailedAttempts(i int) {
+	if m.addpin_failed_attempts != nil {
+		*m.addpin_failed_attempts += i
+	} else {
+		m.addpin_failed_attempts = &i
+	}
+}
+
+// AddedPinFailedAttempts returns the value that was added to the "pin_failed_attempts" field in this mutation.
+func (m *InventoryUserMutation) AddedPinFailedAttempts() (r int, exists bool) {
+	v := m.addpin_failed_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPinFailedAttempts resets all changes to the "pin_failed_attempts" field.
+func (m *InventoryUserMutation) ResetPinFailedAttempts() {
+	m.pin_failed_attempts = nil
+	m.addpin_failed_attempts = nil
+}
+
+// SetPinLockedUntil sets the "pin_locked_until" field.
+func (m *InventoryUserMutation) SetPinLockedUntil(t time.Time) {
+	m.pin_locked_until = &t
+}
+
+// PinLockedUntil returns the value of the "pin_locked_until" field in the mutation.
+func (m *InventoryUserMutation) PinLockedUntil() (r time.Time, exists bool) {
+	v := m.pin_locked_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinLockedUntil returns the old "pin_locked_until" field's value of the InventoryUser entity.
+// If the InventoryUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryUserMutation) OldPinLockedUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinLockedUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinLockedUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinLockedUntil: %w", err)
+	}
+	return oldValue.PinLockedUntil, nil
+}
+
+// ClearPinLockedUntil clears the value of the "pin_locked_until" field.
+func (m *InventoryUserMutation) ClearPinLockedUntil() {
+	m.pin_locked_until = nil
+	m.clearedFields[inventoryuser.FieldPinLockedUntil] = struct{}{}
+}
+
+// PinLockedUntilCleared returns if the "pin_locked_until" field was cleared in this mutation.
+func (m *InventoryUserMutation) PinLockedUntilCleared() bool {
+	_, ok := m.clearedFields[inventoryuser.FieldPinLockedUntil]
+	return ok
+}
+
+// ResetPinLockedUntil resets all changes to the "pin_locked_until" field.
+func (m *InventoryUserMutation) ResetPinLockedUntil() {
+	m.pin_locked_until = nil
+	delete(m.clearedFields, inventoryuser.FieldPinLockedUntil)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *InventoryUserMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -33902,7 +34110,7 @@ func (m *InventoryUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryUserMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, inventoryuser.FieldTenantID)
 	}
@@ -33923,6 +34131,18 @@ func (m *InventoryUserMutation) Fields() []string {
 	}
 	if m.last_sync_at != nil {
 		fields = append(fields, inventoryuser.FieldLastSyncAt)
+	}
+	if m.pin_hash != nil {
+		fields = append(fields, inventoryuser.FieldPinHash)
+	}
+	if m.pin_fast_hash != nil {
+		fields = append(fields, inventoryuser.FieldPinFastHash)
+	}
+	if m.pin_failed_attempts != nil {
+		fields = append(fields, inventoryuser.FieldPinFailedAttempts)
+	}
+	if m.pin_locked_until != nil {
+		fields = append(fields, inventoryuser.FieldPinLockedUntil)
 	}
 	if m.created_at != nil {
 		fields = append(fields, inventoryuser.FieldCreatedAt)
@@ -33952,6 +34172,14 @@ func (m *InventoryUserMutation) Field(name string) (ent.Value, bool) {
 		return m.SyncStatus()
 	case inventoryuser.FieldLastSyncAt:
 		return m.LastSyncAt()
+	case inventoryuser.FieldPinHash:
+		return m.PinHash()
+	case inventoryuser.FieldPinFastHash:
+		return m.PinFastHash()
+	case inventoryuser.FieldPinFailedAttempts:
+		return m.PinFailedAttempts()
+	case inventoryuser.FieldPinLockedUntil:
+		return m.PinLockedUntil()
 	case inventoryuser.FieldCreatedAt:
 		return m.CreatedAt()
 	case inventoryuser.FieldUpdatedAt:
@@ -33979,6 +34207,14 @@ func (m *InventoryUserMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldSyncStatus(ctx)
 	case inventoryuser.FieldLastSyncAt:
 		return m.OldLastSyncAt(ctx)
+	case inventoryuser.FieldPinHash:
+		return m.OldPinHash(ctx)
+	case inventoryuser.FieldPinFastHash:
+		return m.OldPinFastHash(ctx)
+	case inventoryuser.FieldPinFailedAttempts:
+		return m.OldPinFailedAttempts(ctx)
+	case inventoryuser.FieldPinLockedUntil:
+		return m.OldPinLockedUntil(ctx)
 	case inventoryuser.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case inventoryuser.FieldUpdatedAt:
@@ -34041,6 +34277,34 @@ func (m *InventoryUserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSyncAt(v)
 		return nil
+	case inventoryuser.FieldPinHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinHash(v)
+		return nil
+	case inventoryuser.FieldPinFastHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinFastHash(v)
+		return nil
+	case inventoryuser.FieldPinFailedAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinFailedAttempts(v)
+		return nil
+	case inventoryuser.FieldPinLockedUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinLockedUntil(v)
+		return nil
 	case inventoryuser.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -34062,13 +34326,21 @@ func (m *InventoryUserMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *InventoryUserMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addpin_failed_attempts != nil {
+		fields = append(fields, inventoryuser.FieldPinFailedAttempts)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *InventoryUserMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case inventoryuser.FieldPinFailedAttempts:
+		return m.AddedPinFailedAttempts()
+	}
 	return nil, false
 }
 
@@ -34077,6 +34349,13 @@ func (m *InventoryUserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *InventoryUserMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case inventoryuser.FieldPinFailedAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPinFailedAttempts(v)
+		return nil
 	}
 	return fmt.Errorf("unknown InventoryUser numeric field %s", name)
 }
@@ -34090,6 +34369,15 @@ func (m *InventoryUserMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(inventoryuser.FieldLastSyncAt) {
 		fields = append(fields, inventoryuser.FieldLastSyncAt)
+	}
+	if m.FieldCleared(inventoryuser.FieldPinHash) {
+		fields = append(fields, inventoryuser.FieldPinHash)
+	}
+	if m.FieldCleared(inventoryuser.FieldPinFastHash) {
+		fields = append(fields, inventoryuser.FieldPinFastHash)
+	}
+	if m.FieldCleared(inventoryuser.FieldPinLockedUntil) {
+		fields = append(fields, inventoryuser.FieldPinLockedUntil)
 	}
 	return fields
 }
@@ -34110,6 +34398,15 @@ func (m *InventoryUserMutation) ClearField(name string) error {
 		return nil
 	case inventoryuser.FieldLastSyncAt:
 		m.ClearLastSyncAt()
+		return nil
+	case inventoryuser.FieldPinHash:
+		m.ClearPinHash()
+		return nil
+	case inventoryuser.FieldPinFastHash:
+		m.ClearPinFastHash()
+		return nil
+	case inventoryuser.FieldPinLockedUntil:
+		m.ClearPinLockedUntil()
 		return nil
 	}
 	return fmt.Errorf("unknown InventoryUser nullable field %s", name)
@@ -34139,6 +34436,18 @@ func (m *InventoryUserMutation) ResetField(name string) error {
 		return nil
 	case inventoryuser.FieldLastSyncAt:
 		m.ResetLastSyncAt()
+		return nil
+	case inventoryuser.FieldPinHash:
+		m.ResetPinHash()
+		return nil
+	case inventoryuser.FieldPinFastHash:
+		m.ResetPinFastHash()
+		return nil
+	case inventoryuser.FieldPinFailedAttempts:
+		m.ResetPinFailedAttempts()
+		return nil
+	case inventoryuser.FieldPinLockedUntil:
+		m.ResetPinLockedUntil()
 		return nil
 	case inventoryuser.FieldCreatedAt:
 		m.ResetCreatedAt()

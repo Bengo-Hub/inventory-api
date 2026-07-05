@@ -32,6 +32,14 @@ type InventoryUser struct {
 	SyncStatus string `json:"sync_status,omitempty"`
 	// LastSyncAt holds the value of the "last_sync_at" field.
 	LastSyncAt time.Time `json:"last_sync_at,omitempty"`
+	// bcrypt hash of the 4-digit service PIN
+	PinHash *string `json:"-"`
+	// hex(SHA256(tenant:user:pin)) for O(1) PIN lookup
+	PinFastHash string `json:"pin_fast_hash,omitempty"`
+	// consecutive wrong-PIN attempts (lockout)
+	PinFailedAttempts int `json:"pin_failed_attempts,omitempty"`
+	// PIN login locked until this time after too many failures
+	PinLockedUntil *time.Time `json:"pin_locked_until,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -44,9 +52,11 @@ func (*InventoryUser) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inventoryuser.FieldEmail, inventoryuser.FieldName, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus:
+		case inventoryuser.FieldPinFailedAttempts:
+			values[i] = new(sql.NullInt64)
+		case inventoryuser.FieldEmail, inventoryuser.FieldName, inventoryuser.FieldStatus, inventoryuser.FieldSyncStatus, inventoryuser.FieldPinHash, inventoryuser.FieldPinFastHash:
 			values[i] = new(sql.NullString)
-		case inventoryuser.FieldLastSyncAt, inventoryuser.FieldCreatedAt, inventoryuser.FieldUpdatedAt:
+		case inventoryuser.FieldLastSyncAt, inventoryuser.FieldPinLockedUntil, inventoryuser.FieldCreatedAt, inventoryuser.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case inventoryuser.FieldID, inventoryuser.FieldTenantID, inventoryuser.FieldAuthServiceUserID:
 			values[i] = new(uuid.UUID)
@@ -112,6 +122,32 @@ func (_m *InventoryUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_sync_at", values[i])
 			} else if value.Valid {
 				_m.LastSyncAt = value.Time
+			}
+		case inventoryuser.FieldPinHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field pin_hash", values[i])
+			} else if value.Valid {
+				_m.PinHash = new(string)
+				*_m.PinHash = value.String
+			}
+		case inventoryuser.FieldPinFastHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field pin_fast_hash", values[i])
+			} else if value.Valid {
+				_m.PinFastHash = value.String
+			}
+		case inventoryuser.FieldPinFailedAttempts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field pin_failed_attempts", values[i])
+			} else if value.Valid {
+				_m.PinFailedAttempts = int(value.Int64)
+			}
+		case inventoryuser.FieldPinLockedUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field pin_locked_until", values[i])
+			} else if value.Valid {
+				_m.PinLockedUntil = new(time.Time)
+				*_m.PinLockedUntil = value.Time
 			}
 		case inventoryuser.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -181,6 +217,19 @@ func (_m *InventoryUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_sync_at=")
 	builder.WriteString(_m.LastSyncAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("pin_hash=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("pin_fast_hash=")
+	builder.WriteString(_m.PinFastHash)
+	builder.WriteString(", ")
+	builder.WriteString("pin_failed_attempts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PinFailedAttempts))
+	builder.WriteString(", ")
+	if v := _m.PinLockedUntil; v != nil {
+		builder.WriteString("pin_locked_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

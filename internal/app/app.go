@@ -53,6 +53,16 @@ import (
 	"github.com/bengobox/inventory-service/internal/shared/logger"
 )
 
+// terminalJWTSecret returns the PIN/terminal JWT signing secret, falling back to the shared
+// INTERNAL_SERVICE_KEY when TERMINAL_JWT_SECRET isn't set (mirrors pos-api / library-api) so
+// warehouse desk/kiosk PIN login works out of the box across the platform.
+func terminalJWTSecret(cfg *config.Config) string {
+	if cfg.Auth.TerminalJWTSecret != "" {
+		return cfg.Auth.TerminalJWTSecret
+	}
+	return cfg.Auth.APIKey
+}
+
 type App struct {
 	cfg                  *config.Config
 	log                  *zap.Logger
@@ -337,7 +347,10 @@ func New(ctx context.Context) (*App, error) {
 		RetentionDays: cfg.Backup.RetentionDays,
 	}, log).Start(ctx)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler)
+	// Terminal/PIN login: issues + validates HMAC terminal JWTs for warehouse desk sessions.
+	pinAuthHandler := handlers.NewPINAuthHandler(ormClient, rbacService, subsClient, terminalJWTSecret(cfg), log)
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
