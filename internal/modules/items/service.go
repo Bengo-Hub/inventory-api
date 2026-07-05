@@ -1743,7 +1743,31 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		return nil, fmt.Errorf("items: commit transaction: %w", err)
 	}
 
+	// Materialize the selling-price guardrails as real tier prices (Retail=max, Wholesale=min)
+	// so the POS/ordering price-resolve reads the merchant's actual price, never a cost+margin
+	// cooked price. Post-commit + best-effort: a failure here must not fail item creation.
+	s.applyGuardrailTierPrices(ctx, tenantID, i.ID, dto)
+
 	return s.mapToDTO(i), nil
+}
+
+// applyGuardrailTierPrices upserts Retail(=max_selling_price)/Wholesale(=min_selling_price) tier
+// prices for the item from its guardrail fields, logging (never returning) any error.
+func (s *Service) applyGuardrailTierPrices(ctx context.Context, tenantID, itemID uuid.UUID, dto ItemDTO) {
+	var maxP, minP float64
+	if dto.MaxSellingPrice != nil {
+		maxP = *dto.MaxSellingPrice
+	}
+	if dto.MinSellingPrice != nil {
+		minP = *dto.MinSellingPrice
+	}
+	if maxP <= 0 && minP <= 0 {
+		return
+	}
+	if err := s.EnsureGuardrailTierPrices(ctx, tenantID, itemID, maxP, minP); err != nil {
+		s.log.Warn("items: apply guardrail tier prices failed",
+			zap.String("item_id", itemID.String()), zap.Error(err))
+	}
 }
 
 // UpdateItem updates an item and records an outbox event within a transaction.
@@ -2008,6 +2032,10 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("items: commit transaction: %w", err)
 	}
+
+	// Keep the Retail/Wholesale tier prices in step with edited guardrails (Retail=max,
+	// Wholesale=min) so an edit that sets/raises the selling price is reflected on the POS.
+	s.applyGuardrailTierPrices(ctx, tenantID, i.ID, dto)
 
 	return s.mapToDTO(i), nil
 }
