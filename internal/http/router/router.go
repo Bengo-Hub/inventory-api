@@ -198,11 +198,11 @@ func New(
 				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
 			}
 
-			// Public PIN/terminal login — this IS the login, so no auth. TenantV2 resolves
-			// the tenant from the URL for these unauthenticated requests.
+			// Public PIN/terminal login — this IS the login, so no auth. Registered in its own
+			// group with NO auth middleware; TenantV2 resolves the tenant from the URL.
 			if pinAuthHandler != nil {
 				tenant.Group(func(pub chi.Router) {
-					pub.Route("/", func(p chi.Router) { pinAuthHandler.RegisterRoutes(p) })
+					pinAuthHandler.RegisterRoutes(pub)
 				})
 			}
 
