@@ -257,7 +257,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
 		inv.Get("/reports/stock-valuation", h.StockValuationReport)
+		inv.Get("/reports/stock-valuation.pdf", h.StockValuationReportPDF)
 		inv.Get("/reports/deadstock", h.StockDeadstockReport)
+		inv.Get("/reports/deadstock.pdf", h.StockDeadstockReportPDF)
 
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.

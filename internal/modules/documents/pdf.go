@@ -17,6 +17,11 @@ func RenderPurchaseOrderPDF(d PurchaseOrderDoc) ([]byte, error) {
 	return render.Render(&d, logo, logoType)
 }
 
+// FetchLogoBytes downloads a tenant logo from the (trusted auth-api) URL, returning the raw
+// bytes and the fpdf image-type ("PNG"/"JPG"/"GIF"). Graceful: returns (nil, "") on any failure
+// so callers (e.g. report PDFs) still render without a logo. Exported wrapper over fetchLogoBytes.
+func FetchLogoBytes(url string) ([]byte, string) { return fetchLogoBytes(url) }
+
 // fetchLogoBytes downloads a logo from the (trusted auth-api) URL. Graceful: returns
 // nil on any failure so the document still renders without a logo.
 func fetchLogoBytes(url string) ([]byte, string) {
