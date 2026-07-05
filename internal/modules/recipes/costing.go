@@ -10,6 +10,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // defaultFoodCostTarget is the maximum healthy food-cost percentage (35%).
@@ -33,7 +34,7 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.ID(recipeID)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.WithItem().WithSubRecipe()
+			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() }).WithSubRecipe()
 		}).
 		Only(ctx)
 	if err != nil {
@@ -59,7 +60,22 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		if ing.Edges.Item == nil || ing.Edges.Item.CostPrice == nil {
 			continue
 		}
-		totalCost += effectiveQty * *ing.Edges.Item.CostPrice
+		// The recipe line is written in whatever unit the dish actually consumes (e.g. grams,
+		// millilitres), while the ingredient's cost_price is per its NATURAL stocking/purchase unit
+		// (e.g. per kg, per litre) — staff shouldn't have to pre-convert a market price into a
+		// fractional per-gram figure before linking it into a recipe. The composite create-flow
+		// (inventory_composite.go) already converts a line's quantity into the ingredient's base
+		// unit at write time using units.Convert; do the same conversion here at read time so a
+		// recalculation is correct even for rows written some other way (bulk import, direct edit).
+		// Unrecognized/mismatched pairs (count units, or a family like "cup"/"shot" with no fixed
+		// real-world size) fall back to a direct multiply, same as the previous behavior.
+		qty := effectiveQty
+		if ing.Edges.Item.Edges.Units != nil {
+			if converted, ok := units.Convert(effectiveQty, ing.UnitOfMeasure, ing.Edges.Item.Edges.Units.Abbreviation); ok {
+				qty = converted
+			}
+		}
+		totalCost += qty * *ing.Edges.Item.CostPrice
 		hasCost = true
 	}
 
