@@ -10,7 +10,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
-	"github.com/bengobox/inventory-service/internal/modules/units"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // defaultFoodCostTarget is the maximum healthy food-cost percentage (35%).
@@ -63,17 +63,14 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		// The recipe line is written in whatever unit the dish actually consumes (e.g. grams,
 		// millilitres), while the ingredient's cost_price is per its NATURAL stocking/purchase unit
 		// (e.g. per kg, per litre) — staff shouldn't have to pre-convert a market price into a
-		// fractional per-gram figure before linking it into a recipe. The composite create-flow
-		// (inventory_composite.go) already converts a line's quantity into the ingredient's base
-		// unit at write time using units.Convert; do the same conversion here at read time so a
-		// recalculation is correct even for rows written some other way (bulk import, direct edit).
-		// Unrecognized/mismatched pairs (count units, or a family like "cup"/"shot" with no fixed
-		// real-world size) fall back to a direct multiply, same as the previous behavior.
+		// fractional per-gram figure before linking it into a recipe. Convert the same way the
+		// stock-deduction path does (stock.ConvertToStockUnit), including the content-per-unit
+		// bridge: a 30 ml tot against a 750 ml-per-piece bottle costs 0.04 × the per-piece cost,
+		// so tot margins are right. Unrecognized/unbridgeable pairs fall back to a direct
+		// multiply, same as the previous behavior (the write-time guard prevents new ones).
 		qty := effectiveQty
-		if ing.Edges.Item.Edges.Units != nil {
-			if converted, ok := units.Convert(effectiveQty, ing.UnitOfMeasure, ing.Edges.Item.Edges.Units.Abbreviation); ok {
-				qty = converted
-			}
+		if converted, ok := stock.ConvertToStockUnit(ing.Edges.Item, effectiveQty, ing.UnitOfMeasure); ok {
+			qty = converted
 		}
 		totalCost += qty * *ing.Edges.Item.CostPrice
 		hasCost = true

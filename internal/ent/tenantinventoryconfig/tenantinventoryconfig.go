@@ -45,6 +45,10 @@ const (
 	FieldPurchaseOrderApprovalRequired = "purchase_order_approval_required"
 	// FieldAutoAdjustOnTransfer holds the string denoting the auto_adjust_on_transfer field in the database.
 	FieldAutoAdjustOnTransfer = "auto_adjust_on_transfer"
+	// FieldRecipeItemsNonDepletingDefault holds the string denoting the recipe_items_non_depleting_default field in the database.
+	FieldRecipeItemsNonDepletingDefault = "recipe_items_non_depleting_default"
+	// FieldRecordTheoreticalUsage holds the string denoting the record_theoretical_usage field in the database.
+	FieldRecordTheoreticalUsage = "record_theoretical_usage"
 	// FieldLotsModuleEnabled holds the string denoting the lots_module_enabled field in the database.
 	FieldLotsModuleEnabled = "lots_module_enabled"
 	// FieldRecipesModuleEnabled holds the string denoting the recipes_module_enabled field in the database.
@@ -91,6 +95,8 @@ var Columns = []string{
 	FieldEnableExpiryTracking,
 	FieldPurchaseOrderApprovalRequired,
 	FieldAutoAdjustOnTransfer,
+	FieldRecipeItemsNonDepletingDefault,
+	FieldRecordTheoreticalUsage,
 	FieldLotsModuleEnabled,
 	FieldRecipesModuleEnabled,
 	FieldPurchaseOrdersEnabled,
@@ -136,6 +142,10 @@ var (
 	DefaultPurchaseOrderApprovalRequired bool
 	// DefaultAutoAdjustOnTransfer holds the default value on creation for the "auto_adjust_on_transfer" field.
 	DefaultAutoAdjustOnTransfer bool
+	// DefaultRecipeItemsNonDepletingDefault holds the default value on creation for the "recipe_items_non_depleting_default" field.
+	DefaultRecipeItemsNonDepletingDefault bool
+	// DefaultRecordTheoreticalUsage holds the default value on creation for the "record_theoretical_usage" field.
+	DefaultRecordTheoreticalUsage bool
 	// DefaultLotsModuleEnabled holds the default value on creation for the "lots_module_enabled" field.
 	DefaultLotsModuleEnabled bool
 	// DefaultRecipesModuleEnabled holds the default value on creation for the "recipes_module_enabled" field.
@@ -268,6 +278,16 @@ func ByPurchaseOrderApprovalRequired(opts ...sql.OrderTermOption) OrderOption {
 // ByAutoAdjustOnTransfer orders the results by the auto_adjust_on_transfer field.
 func ByAutoAdjustOnTransfer(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAutoAdjustOnTransfer, opts...).ToFunc()
+}
+
+// ByRecipeItemsNonDepletingDefault orders the results by the recipe_items_non_depleting_default field.
+func ByRecipeItemsNonDepletingDefault(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecipeItemsNonDepletingDefault, opts...).ToFunc()
+}
+
+// ByRecordTheoreticalUsage orders the results by the record_theoretical_usage field.
+func ByRecordTheoreticalUsage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecordTheoreticalUsage, opts...).ToFunc()
 }
 
 // ByLotsModuleEnabled orders the results by the lots_module_enabled field.

@@ -78,6 +78,9 @@ type inventorySettingsResponse struct {
 	EnableExpiryTracking          bool `json:"enable_expiry_tracking"`
 	PurchaseOrderApprovalRequired bool `json:"purchase_order_approval_required"`
 	AutoAdjustOnTransfer          bool `json:"auto_adjust_on_transfer"`
+	// Non-depletion (manual stock tracking) policy
+	RecipeItemsNonDepletingDefault bool `json:"recipe_items_non_depleting_default"`
+	RecordTheoreticalUsage         bool `json:"record_theoretical_usage"`
 	// Modules
 	LotsModuleEnabled         bool `json:"lots_module_enabled"`
 	RecipesModuleEnabled      bool `json:"recipes_module_enabled"`
@@ -115,6 +118,8 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		EnableExpiryTracking:          c.EnableExpiryTracking,
 		PurchaseOrderApprovalRequired: c.PurchaseOrderApprovalRequired,
 		AutoAdjustOnTransfer:          c.AutoAdjustOnTransfer,
+		RecipeItemsNonDepletingDefault: c.RecipeItemsNonDepletingDefault,
+		RecordTheoreticalUsage:         c.RecordTheoreticalUsage,
 		LotsModuleEnabled:             c.LotsModuleEnabled,
 		RecipesModuleEnabled:          c.RecipesModuleEnabled,
 		PurchaseOrdersEnabled:         c.PurchaseOrdersEnabled,
@@ -176,6 +181,8 @@ type updateInventorySettingsInput struct {
 	EnableExpiryTracking          *bool          `json:"enable_expiry_tracking"`
 	PurchaseOrderApprovalRequired *bool          `json:"purchase_order_approval_required"`
 	AutoAdjustOnTransfer          *bool          `json:"auto_adjust_on_transfer"`
+	RecipeItemsNonDepletingDefault *bool         `json:"recipe_items_non_depleting_default"`
+	RecordTheoreticalUsage         *bool         `json:"record_theoretical_usage"`
 	EnableRoomPricing             *bool          `json:"enable_room_pricing"`
 	EnableFacilityBooking         *bool          `json:"enable_facility_booking"`
 	EnableConferencePackages      *bool          `json:"enable_conference_packages"`
@@ -245,6 +252,12 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.AutoAdjustOnTransfer != nil {
 		upd = upd.SetAutoAdjustOnTransfer(*input.AutoAdjustOnTransfer)
+	}
+	if input.RecipeItemsNonDepletingDefault != nil {
+		upd = upd.SetRecipeItemsNonDepletingDefault(*input.RecipeItemsNonDepletingDefault)
+	}
+	if input.RecordTheoreticalUsage != nil {
+		upd = upd.SetRecordTheoreticalUsage(*input.RecordTheoreticalUsage)
 	}
 	if input.CostingMethod != nil {
 		upd = upd.SetCostingMethod(entconfig.CostingMethod(*input.CostingMethod))

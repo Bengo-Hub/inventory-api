@@ -213,6 +213,15 @@ func (s *Service) GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, skuCod
 
 // CreateRecipe creates a new recipe.
 func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto RecipeDTO) (*RecipeDTO, error) {
+	// Reject lines whose units can never deduct stock (cross-dimension, no bridge) —
+	// bad unit data becomes inexpressible instead of silently corrupting balances.
+	if err := s.validateIngredientUnits(ctx, tenantID, dto.Ingredients); err != nil {
+		return nil, err
+	}
+	// Lines referencing prepared items (produced by a prep recipe) ride that recipe
+	// automatically for costing + backflush.
+	s.autoLinkSubRecipes(ctx, tenantID, nil, dto.Ingredients)
+
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return nil, err
@@ -297,6 +306,12 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 
 // UpdateRecipe updates an existing recipe and its ingredients.
 func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto RecipeDTO) (*RecipeDTO, error) {
+	// Same write-time unit guard + prepared-item auto-link as CreateRecipe.
+	if err := s.validateIngredientUnits(ctx, tenantID, dto.Ingredients); err != nil {
+		return nil, err
+	}
+	s.autoLinkSubRecipes(ctx, tenantID, &id, dto.Ingredients)
+
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return nil, err

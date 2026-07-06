@@ -743,6 +743,48 @@ func (_c *ItemCreate) SetNillableYieldPct(v *float64) *ItemCreate {
 	return _c
 }
 
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (_c *ItemCreate) SetUnitContentQty(v float64) *ItemCreate {
+	_c.mutation.SetUnitContentQty(v)
+	return _c
+}
+
+// SetNillableUnitContentQty sets the "unit_content_qty" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableUnitContentQty(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetUnitContentQty(*v)
+	}
+	return _c
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (_c *ItemCreate) SetUnitContentUom(v string) *ItemCreate {
+	_c.mutation.SetUnitContentUom(v)
+	return _c
+}
+
+// SetNillableUnitContentUom sets the "unit_content_uom" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableUnitContentUom(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetUnitContentUom(*v)
+	}
+	return _c
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (_c *ItemCreate) SetStockTrackingMode(v item.StockTrackingMode) *ItemCreate {
+	_c.mutation.SetStockTrackingMode(v)
+	return _c
+}
+
+// SetNillableStockTrackingMode sets the "stock_tracking_mode" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableStockTrackingMode(v *item.StockTrackingMode) *ItemCreate {
+	if v != nil {
+		_c.SetStockTrackingMode(*v)
+	}
+	return _c
+}
+
 // SetMinSellingPrice sets the "min_selling_price" field.
 func (_c *ItemCreate) SetMinSellingPrice(v float64) *ItemCreate {
 	_c.mutation.SetMinSellingPrice(v)
@@ -1261,6 +1303,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultYieldPct
 		_c.mutation.SetYieldPct(v)
 	}
+	if _, ok := _c.mutation.StockTrackingMode(); !ok {
+		v := item.DefaultStockTrackingMode
+		_c.mutation.SetStockTrackingMode(v)
+	}
 	if _, ok := _c.mutation.BookedCapacity(); !ok {
 		v := item.DefaultBookedCapacity
 		_c.mutation.SetBookedCapacity(v)
@@ -1380,6 +1426,19 @@ func (_c *ItemCreate) check() error {
 	if v, ok := _c.mutation.PurchaseUnit(); ok {
 		if err := item.PurchaseUnitValidator(v); err != nil {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.UnitContentUom(); ok {
+		if err := item.UnitContentUomValidator(v); err != nil {
+			return &ValidationError{Name: "unit_content_uom", err: fmt.Errorf(`ent: validator failed for field "Item.unit_content_uom": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.StockTrackingMode(); !ok {
+		return &ValidationError{Name: "stock_tracking_mode", err: errors.New(`ent: missing required field "Item.stock_tracking_mode"`)}
+	}
+	if v, ok := _c.mutation.StockTrackingMode(); ok {
+		if err := item.StockTrackingModeValidator(v); err != nil {
+			return &ValidationError{Name: "stock_tracking_mode", err: fmt.Errorf(`ent: validator failed for field "Item.stock_tracking_mode": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.EventVenue(); ok {
@@ -1626,6 +1685,18 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.YieldPct(); ok {
 		_spec.SetField(item.FieldYieldPct, field.TypeFloat64, value)
 		_node.YieldPct = &value
+	}
+	if value, ok := _c.mutation.UnitContentQty(); ok {
+		_spec.SetField(item.FieldUnitContentQty, field.TypeFloat64, value)
+		_node.UnitContentQty = &value
+	}
+	if value, ok := _c.mutation.UnitContentUom(); ok {
+		_spec.SetField(item.FieldUnitContentUom, field.TypeString, value)
+		_node.UnitContentUom = value
+	}
+	if value, ok := _c.mutation.StockTrackingMode(); ok {
+		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)
+		_node.StockTrackingMode = value
 	}
 	if value, ok := _c.mutation.MinSellingPrice(); ok {
 		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
@@ -2903,6 +2974,60 @@ func (u *ItemUpsert) AddYieldPct(v float64) *ItemUpsert {
 // ClearYieldPct clears the value of the "yield_pct" field.
 func (u *ItemUpsert) ClearYieldPct() *ItemUpsert {
 	u.SetNull(item.FieldYieldPct)
+	return u
+}
+
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (u *ItemUpsert) SetUnitContentQty(v float64) *ItemUpsert {
+	u.Set(item.FieldUnitContentQty, v)
+	return u
+}
+
+// UpdateUnitContentQty sets the "unit_content_qty" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUnitContentQty() *ItemUpsert {
+	u.SetExcluded(item.FieldUnitContentQty)
+	return u
+}
+
+// AddUnitContentQty adds v to the "unit_content_qty" field.
+func (u *ItemUpsert) AddUnitContentQty(v float64) *ItemUpsert {
+	u.Add(item.FieldUnitContentQty, v)
+	return u
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (u *ItemUpsert) ClearUnitContentQty() *ItemUpsert {
+	u.SetNull(item.FieldUnitContentQty)
+	return u
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (u *ItemUpsert) SetUnitContentUom(v string) *ItemUpsert {
+	u.Set(item.FieldUnitContentUom, v)
+	return u
+}
+
+// UpdateUnitContentUom sets the "unit_content_uom" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUnitContentUom() *ItemUpsert {
+	u.SetExcluded(item.FieldUnitContentUom)
+	return u
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (u *ItemUpsert) ClearUnitContentUom() *ItemUpsert {
+	u.SetNull(item.FieldUnitContentUom)
+	return u
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (u *ItemUpsert) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpsert {
+	u.Set(item.FieldStockTrackingMode, v)
+	return u
+}
+
+// UpdateStockTrackingMode sets the "stock_tracking_mode" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateStockTrackingMode() *ItemUpsert {
+	u.SetExcluded(item.FieldStockTrackingMode)
 	return u
 }
 
@@ -4209,6 +4334,69 @@ func (u *ItemUpsertOne) UpdateYieldPct() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearYieldPct() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearYieldPct()
+	})
+}
+
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (u *ItemUpsertOne) SetUnitContentQty(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitContentQty(v)
+	})
+}
+
+// AddUnitContentQty adds v to the "unit_content_qty" field.
+func (u *ItemUpsertOne) AddUnitContentQty(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddUnitContentQty(v)
+	})
+}
+
+// UpdateUnitContentQty sets the "unit_content_qty" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUnitContentQty() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitContentQty()
+	})
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (u *ItemUpsertOne) ClearUnitContentQty() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitContentQty()
+	})
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (u *ItemUpsertOne) SetUnitContentUom(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitContentUom(v)
+	})
+}
+
+// UpdateUnitContentUom sets the "unit_content_uom" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUnitContentUom() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitContentUom()
+	})
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (u *ItemUpsertOne) ClearUnitContentUom() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitContentUom()
+	})
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (u *ItemUpsertOne) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetStockTrackingMode(v)
+	})
+}
+
+// UpdateStockTrackingMode sets the "stock_tracking_mode" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateStockTrackingMode() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateStockTrackingMode()
 	})
 }
 
@@ -5715,6 +5903,69 @@ func (u *ItemUpsertBulk) UpdateYieldPct() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearYieldPct() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearYieldPct()
+	})
+}
+
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (u *ItemUpsertBulk) SetUnitContentQty(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitContentQty(v)
+	})
+}
+
+// AddUnitContentQty adds v to the "unit_content_qty" field.
+func (u *ItemUpsertBulk) AddUnitContentQty(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddUnitContentQty(v)
+	})
+}
+
+// UpdateUnitContentQty sets the "unit_content_qty" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUnitContentQty() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitContentQty()
+	})
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (u *ItemUpsertBulk) ClearUnitContentQty() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitContentQty()
+	})
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (u *ItemUpsertBulk) SetUnitContentUom(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUnitContentUom(v)
+	})
+}
+
+// UpdateUnitContentUom sets the "unit_content_uom" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUnitContentUom() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUnitContentUom()
+	})
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (u *ItemUpsertBulk) ClearUnitContentUom() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearUnitContentUom()
+	})
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (u *ItemUpsertBulk) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetStockTrackingMode(v)
+	})
+}
+
+// UpdateStockTrackingMode sets the "stock_tracking_mode" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateStockTrackingMode() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateStockTrackingMode()
 	})
 }
 

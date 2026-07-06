@@ -34573,6 +34573,10 @@ type ItemMutation struct {
 	purchase_unit              *string
 	yield_pct                  *float64
 	addyield_pct               *float64
+	unit_content_qty           *float64
+	addunit_content_qty        *float64
+	unit_content_uom           *string
+	stock_tracking_mode        *item.StockTrackingMode
 	min_selling_price          *float64
 	addmin_selling_price       *float64
 	max_selling_price          *float64
@@ -37339,6 +37343,161 @@ func (m *ItemMutation) ResetYieldPct() {
 	delete(m.clearedFields, item.FieldYieldPct)
 }
 
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (m *ItemMutation) SetUnitContentQty(f float64) {
+	m.unit_content_qty = &f
+	m.addunit_content_qty = nil
+}
+
+// UnitContentQty returns the value of the "unit_content_qty" field in the mutation.
+func (m *ItemMutation) UnitContentQty() (r float64, exists bool) {
+	v := m.unit_content_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitContentQty returns the old "unit_content_qty" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldUnitContentQty(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitContentQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitContentQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitContentQty: %w", err)
+	}
+	return oldValue.UnitContentQty, nil
+}
+
+// AddUnitContentQty adds f to the "unit_content_qty" field.
+func (m *ItemMutation) AddUnitContentQty(f float64) {
+	if m.addunit_content_qty != nil {
+		*m.addunit_content_qty += f
+	} else {
+		m.addunit_content_qty = &f
+	}
+}
+
+// AddedUnitContentQty returns the value that was added to the "unit_content_qty" field in this mutation.
+func (m *ItemMutation) AddedUnitContentQty() (r float64, exists bool) {
+	v := m.addunit_content_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (m *ItemMutation) ClearUnitContentQty() {
+	m.unit_content_qty = nil
+	m.addunit_content_qty = nil
+	m.clearedFields[item.FieldUnitContentQty] = struct{}{}
+}
+
+// UnitContentQtyCleared returns if the "unit_content_qty" field was cleared in this mutation.
+func (m *ItemMutation) UnitContentQtyCleared() bool {
+	_, ok := m.clearedFields[item.FieldUnitContentQty]
+	return ok
+}
+
+// ResetUnitContentQty resets all changes to the "unit_content_qty" field.
+func (m *ItemMutation) ResetUnitContentQty() {
+	m.unit_content_qty = nil
+	m.addunit_content_qty = nil
+	delete(m.clearedFields, item.FieldUnitContentQty)
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (m *ItemMutation) SetUnitContentUom(s string) {
+	m.unit_content_uom = &s
+}
+
+// UnitContentUom returns the value of the "unit_content_uom" field in the mutation.
+func (m *ItemMutation) UnitContentUom() (r string, exists bool) {
+	v := m.unit_content_uom
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitContentUom returns the old "unit_content_uom" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldUnitContentUom(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitContentUom is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitContentUom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitContentUom: %w", err)
+	}
+	return oldValue.UnitContentUom, nil
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (m *ItemMutation) ClearUnitContentUom() {
+	m.unit_content_uom = nil
+	m.clearedFields[item.FieldUnitContentUom] = struct{}{}
+}
+
+// UnitContentUomCleared returns if the "unit_content_uom" field was cleared in this mutation.
+func (m *ItemMutation) UnitContentUomCleared() bool {
+	_, ok := m.clearedFields[item.FieldUnitContentUom]
+	return ok
+}
+
+// ResetUnitContentUom resets all changes to the "unit_content_uom" field.
+func (m *ItemMutation) ResetUnitContentUom() {
+	m.unit_content_uom = nil
+	delete(m.clearedFields, item.FieldUnitContentUom)
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (m *ItemMutation) SetStockTrackingMode(itm item.StockTrackingMode) {
+	m.stock_tracking_mode = &itm
+}
+
+// StockTrackingMode returns the value of the "stock_tracking_mode" field in the mutation.
+func (m *ItemMutation) StockTrackingMode() (r item.StockTrackingMode, exists bool) {
+	v := m.stock_tracking_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockTrackingMode returns the old "stock_tracking_mode" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldStockTrackingMode(ctx context.Context) (v item.StockTrackingMode, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockTrackingMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockTrackingMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockTrackingMode: %w", err)
+	}
+	return oldValue.StockTrackingMode, nil
+}
+
+// ResetStockTrackingMode resets all changes to the "stock_tracking_mode" field.
+func (m *ItemMutation) ResetStockTrackingMode() {
+	m.stock_tracking_mode = nil
+}
+
 // SetMinSellingPrice sets the "min_selling_price" field.
 func (m *ItemMutation) SetMinSellingPrice(f float64) {
 	m.min_selling_price = &f
@@ -38770,7 +38929,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 64)
+	fields := make([]string, 0, 67)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -38930,6 +39089,15 @@ func (m *ItemMutation) Fields() []string {
 	if m.yield_pct != nil {
 		fields = append(fields, item.FieldYieldPct)
 	}
+	if m.unit_content_qty != nil {
+		fields = append(fields, item.FieldUnitContentQty)
+	}
+	if m.unit_content_uom != nil {
+		fields = append(fields, item.FieldUnitContentUom)
+	}
+	if m.stock_tracking_mode != nil {
+		fields = append(fields, item.FieldStockTrackingMode)
+	}
 	if m.min_selling_price != nil {
 		fields = append(fields, item.FieldMinSellingPrice)
 	}
@@ -39077,6 +39245,12 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.PreferredSupplierID()
 	case item.FieldYieldPct:
 		return m.YieldPct()
+	case item.FieldUnitContentQty:
+		return m.UnitContentQty()
+	case item.FieldUnitContentUom:
+		return m.UnitContentUom()
+	case item.FieldStockTrackingMode:
+		return m.StockTrackingMode()
 	case item.FieldMinSellingPrice:
 		return m.MinSellingPrice()
 	case item.FieldMaxSellingPrice:
@@ -39214,6 +39388,12 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPreferredSupplierID(ctx)
 	case item.FieldYieldPct:
 		return m.OldYieldPct(ctx)
+	case item.FieldUnitContentQty:
+		return m.OldUnitContentQty(ctx)
+	case item.FieldUnitContentUom:
+		return m.OldUnitContentUom(ctx)
+	case item.FieldStockTrackingMode:
+		return m.OldStockTrackingMode(ctx)
 	case item.FieldMinSellingPrice:
 		return m.OldMinSellingPrice(ctx)
 	case item.FieldMaxSellingPrice:
@@ -39616,6 +39796,27 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetYieldPct(v)
 		return nil
+	case item.FieldUnitContentQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitContentQty(v)
+		return nil
+	case item.FieldUnitContentUom:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitContentUom(v)
+		return nil
+	case item.FieldStockTrackingMode:
+		v, ok := value.(item.StockTrackingMode)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockTrackingMode(v)
+		return nil
 	case item.FieldMinSellingPrice:
 		v, ok := value.(float64)
 		if !ok {
@@ -39734,6 +39935,9 @@ func (m *ItemMutation) AddedFields() []string {
 	if m.addyield_pct != nil {
 		fields = append(fields, item.FieldYieldPct)
 	}
+	if m.addunit_content_qty != nil {
+		fields = append(fields, item.FieldUnitContentQty)
+	}
 	if m.addmin_selling_price != nil {
 		fields = append(fields, item.FieldMinSellingPrice)
 	}
@@ -39779,6 +39983,8 @@ func (m *ItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPurchasePackSize()
 	case item.FieldYieldPct:
 		return m.AddedYieldPct()
+	case item.FieldUnitContentQty:
+		return m.AddedUnitContentQty()
 	case item.FieldMinSellingPrice:
 		return m.AddedMinSellingPrice()
 	case item.FieldMaxSellingPrice:
@@ -39874,6 +40080,13 @@ func (m *ItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddYieldPct(v)
+		return nil
+	case item.FieldUnitContentQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUnitContentQty(v)
 		return nil
 	case item.FieldMinSellingPrice:
 		v, ok := value.(float64)
@@ -40020,6 +40233,12 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldYieldPct) {
 		fields = append(fields, item.FieldYieldPct)
 	}
+	if m.FieldCleared(item.FieldUnitContentQty) {
+		fields = append(fields, item.FieldUnitContentQty)
+	}
+	if m.FieldCleared(item.FieldUnitContentUom) {
+		fields = append(fields, item.FieldUnitContentUom)
+	}
 	if m.FieldCleared(item.FieldMinSellingPrice) {
 		fields = append(fields, item.FieldMinSellingPrice)
 	}
@@ -40159,6 +40378,12 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldYieldPct:
 		m.ClearYieldPct()
+		return nil
+	case item.FieldUnitContentQty:
+		m.ClearUnitContentQty()
+		return nil
+	case item.FieldUnitContentUom:
+		m.ClearUnitContentUom()
 		return nil
 	case item.FieldMinSellingPrice:
 		m.ClearMinSellingPrice()
@@ -40350,6 +40575,15 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldYieldPct:
 		m.ResetYieldPct()
+		return nil
+	case item.FieldUnitContentQty:
+		m.ResetUnitContentQty()
+		return nil
+	case item.FieldUnitContentUom:
+		m.ResetUnitContentUom()
+		return nil
+	case item.FieldStockTrackingMode:
+		m.ResetStockTrackingMode()
 		return nil
 	case item.FieldMinSellingPrice:
 		m.ResetMinSellingPrice()
@@ -85408,45 +85642,47 @@ func (m *TenantMutation) ResetEdge(name string) error {
 // TenantInventoryConfigMutation represents an operation that mutates the TenantInventoryConfig nodes in the graph.
 type TenantInventoryConfigMutation struct {
 	config
-	op                               Op
-	typ                              string
-	id                               *uuid.UUID
-	tenant_id                        *uuid.UUID
-	low_stock_threshold_pct          *float64
-	addlow_stock_threshold_pct       *float64
-	critical_stock_threshold_pct     *float64
-	addcritical_stock_threshold_pct  *float64
-	default_reorder_level            *int
-	adddefault_reorder_level         *int
-	unit_reorder_defaults            *map[string]int
-	expiry_warning_days              *int
-	addexpiry_warning_days           *int
-	enable_low_stock_notifications   *bool
-	enable_expiry_notifications      *bool
-	notification_email               *string
-	default_warehouse_id             *string
-	costing_method                   *tenantinventoryconfig.CostingMethod
-	enable_lot_tracking              *bool
-	enable_expiry_tracking           *bool
-	purchase_order_approval_required *bool
-	auto_adjust_on_transfer          *bool
-	lots_module_enabled              *bool
-	recipes_module_enabled           *bool
-	purchase_orders_enabled          *bool
-	supplier_management_enabled      *bool
-	enable_room_pricing              *bool
-	enable_facility_booking          *bool
-	enable_conference_packages       *bool
-	default_target_margin_percent    *float64
-	adddefault_target_margin_percent *float64
-	prices_inclusive_of_tax          *bool
-	default_tax_code                 *string
-	created_at                       *time.Time
-	updated_at                       *time.Time
-	clearedFields                    map[string]struct{}
-	done                             bool
-	oldValue                         func(context.Context) (*TenantInventoryConfig, error)
-	predicates                       []predicate.TenantInventoryConfig
+	op                                 Op
+	typ                                string
+	id                                 *uuid.UUID
+	tenant_id                          *uuid.UUID
+	low_stock_threshold_pct            *float64
+	addlow_stock_threshold_pct         *float64
+	critical_stock_threshold_pct       *float64
+	addcritical_stock_threshold_pct    *float64
+	default_reorder_level              *int
+	adddefault_reorder_level           *int
+	unit_reorder_defaults              *map[string]int
+	expiry_warning_days                *int
+	addexpiry_warning_days             *int
+	enable_low_stock_notifications     *bool
+	enable_expiry_notifications        *bool
+	notification_email                 *string
+	default_warehouse_id               *string
+	costing_method                     *tenantinventoryconfig.CostingMethod
+	enable_lot_tracking                *bool
+	enable_expiry_tracking             *bool
+	purchase_order_approval_required   *bool
+	auto_adjust_on_transfer            *bool
+	recipe_items_non_depleting_default *bool
+	record_theoretical_usage           *bool
+	lots_module_enabled                *bool
+	recipes_module_enabled             *bool
+	purchase_orders_enabled            *bool
+	supplier_management_enabled        *bool
+	enable_room_pricing                *bool
+	enable_facility_booking            *bool
+	enable_conference_packages         *bool
+	default_target_margin_percent      *float64
+	adddefault_target_margin_percent   *float64
+	prices_inclusive_of_tax            *bool
+	default_tax_code                   *string
+	created_at                         *time.Time
+	updated_at                         *time.Time
+	clearedFields                      map[string]struct{}
+	done                               bool
+	oldValue                           func(context.Context) (*TenantInventoryConfig, error)
+	predicates                         []predicate.TenantInventoryConfig
 }
 
 var _ ent.Mutation = (*TenantInventoryConfigMutation)(nil)
@@ -86212,6 +86448,78 @@ func (m *TenantInventoryConfigMutation) ResetAutoAdjustOnTransfer() {
 	m.auto_adjust_on_transfer = nil
 }
 
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (m *TenantInventoryConfigMutation) SetRecipeItemsNonDepletingDefault(b bool) {
+	m.recipe_items_non_depleting_default = &b
+}
+
+// RecipeItemsNonDepletingDefault returns the value of the "recipe_items_non_depleting_default" field in the mutation.
+func (m *TenantInventoryConfigMutation) RecipeItemsNonDepletingDefault() (r bool, exists bool) {
+	v := m.recipe_items_non_depleting_default
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipeItemsNonDepletingDefault returns the old "recipe_items_non_depleting_default" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldRecipeItemsNonDepletingDefault(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipeItemsNonDepletingDefault is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipeItemsNonDepletingDefault requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipeItemsNonDepletingDefault: %w", err)
+	}
+	return oldValue.RecipeItemsNonDepletingDefault, nil
+}
+
+// ResetRecipeItemsNonDepletingDefault resets all changes to the "recipe_items_non_depleting_default" field.
+func (m *TenantInventoryConfigMutation) ResetRecipeItemsNonDepletingDefault() {
+	m.recipe_items_non_depleting_default = nil
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (m *TenantInventoryConfigMutation) SetRecordTheoreticalUsage(b bool) {
+	m.record_theoretical_usage = &b
+}
+
+// RecordTheoreticalUsage returns the value of the "record_theoretical_usage" field in the mutation.
+func (m *TenantInventoryConfigMutation) RecordTheoreticalUsage() (r bool, exists bool) {
+	v := m.record_theoretical_usage
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecordTheoreticalUsage returns the old "record_theoretical_usage" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldRecordTheoreticalUsage(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecordTheoreticalUsage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecordTheoreticalUsage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecordTheoreticalUsage: %w", err)
+	}
+	return oldValue.RecordTheoreticalUsage, nil
+}
+
+// ResetRecordTheoreticalUsage resets all changes to the "record_theoretical_usage" field.
+func (m *TenantInventoryConfigMutation) ResetRecordTheoreticalUsage() {
+	m.record_theoretical_usage = nil
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (m *TenantInventoryConfigMutation) SetLotsModuleEnabled(b bool) {
 	m.lots_module_enabled = &b
@@ -86725,7 +87033,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 29)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -86770,6 +87078,12 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	}
 	if m.auto_adjust_on_transfer != nil {
 		fields = append(fields, tenantinventoryconfig.FieldAutoAdjustOnTransfer)
+	}
+	if m.recipe_items_non_depleting_default != nil {
+		fields = append(fields, tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault)
+	}
+	if m.record_theoretical_usage != nil {
+		fields = append(fields, tenantinventoryconfig.FieldRecordTheoreticalUsage)
 	}
 	if m.lots_module_enabled != nil {
 		fields = append(fields, tenantinventoryconfig.FieldLotsModuleEnabled)
@@ -86845,6 +87159,10 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchaseOrderApprovalRequired()
 	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
 		return m.AutoAdjustOnTransfer()
+	case tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault:
+		return m.RecipeItemsNonDepletingDefault()
+	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
+		return m.RecordTheoreticalUsage()
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		return m.LotsModuleEnabled()
 	case tenantinventoryconfig.FieldRecipesModuleEnabled:
@@ -86908,6 +87226,10 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldPurchaseOrderApprovalRequired(ctx)
 	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
 		return m.OldAutoAdjustOnTransfer(ctx)
+	case tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault:
+		return m.OldRecipeItemsNonDepletingDefault(ctx)
+	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
+		return m.OldRecordTheoreticalUsage(ctx)
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		return m.OldLotsModuleEnabled(ctx)
 	case tenantinventoryconfig.FieldRecipesModuleEnabled:
@@ -87045,6 +87367,20 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAutoAdjustOnTransfer(v)
+		return nil
+	case tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipeItemsNonDepletingDefault(v)
+		return nil
+	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecordTheoreticalUsage(v)
 		return nil
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		v, ok := value.(bool)
@@ -87319,6 +87655,12 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldAutoAdjustOnTransfer:
 		m.ResetAutoAdjustOnTransfer()
+		return nil
+	case tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault:
+		m.ResetRecipeItemsNonDepletingDefault()
+		return nil
+	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
+		m.ResetRecordTheoreticalUsage()
 		return nil
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		m.ResetLotsModuleEnabled()

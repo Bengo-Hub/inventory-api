@@ -277,6 +277,34 @@ func (_u *TenantInventoryConfigUpdate) SetNillableAutoAdjustOnTransfer(v *bool) 
 	return _u
 }
 
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (_u *TenantInventoryConfigUpdate) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetRecipeItemsNonDepletingDefault(v)
+	return _u
+}
+
+// SetNillableRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableRecipeItemsNonDepletingDefault(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetRecipeItemsNonDepletingDefault(*v)
+	}
+	return _u
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (_u *TenantInventoryConfigUpdate) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetRecordTheoreticalUsage(v)
+	return _u
+}
+
+// SetNillableRecordTheoreticalUsage sets the "record_theoretical_usage" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableRecordTheoreticalUsage(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetRecordTheoreticalUsage(*v)
+	}
+	return _u
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (_u *TenantInventoryConfigUpdate) SetLotsModuleEnabled(v bool) *TenantInventoryConfigUpdate {
 	_u.mutation.SetLotsModuleEnabled(v)
@@ -570,6 +598,12 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if value, ok := _u.mutation.AutoAdjustOnTransfer(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldAutoAdjustOnTransfer, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecipeItemsNonDepletingDefault(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecordTheoreticalUsage(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)
@@ -877,6 +911,34 @@ func (_u *TenantInventoryConfigUpdateOne) SetAutoAdjustOnTransfer(v bool) *Tenan
 func (_u *TenantInventoryConfigUpdateOne) SetNillableAutoAdjustOnTransfer(v *bool) *TenantInventoryConfigUpdateOne {
 	if v != nil {
 		_u.SetAutoAdjustOnTransfer(*v)
+	}
+	return _u
+}
+
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (_u *TenantInventoryConfigUpdateOne) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetRecipeItemsNonDepletingDefault(v)
+	return _u
+}
+
+// SetNillableRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableRecipeItemsNonDepletingDefault(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetRecipeItemsNonDepletingDefault(*v)
+	}
+	return _u
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (_u *TenantInventoryConfigUpdateOne) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetRecordTheoreticalUsage(v)
+	return _u
+}
+
+// SetNillableRecordTheoreticalUsage sets the "record_theoretical_usage" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableRecordTheoreticalUsage(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetRecordTheoreticalUsage(*v)
 	}
 	return _u
 }
@@ -1204,6 +1266,12 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.AutoAdjustOnTransfer(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldAutoAdjustOnTransfer, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecipeItemsNonDepletingDefault(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecordTheoreticalUsage(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)

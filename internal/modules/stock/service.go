@@ -16,8 +16,6 @@ import (
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
-	"github.com/bengobox/inventory-service/internal/ent/recipe"
-	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
@@ -90,6 +88,11 @@ type ConsumptionRequest struct {
 type ConsumptionItem struct {
 	SKU      string  `json:"sku"`
 	Quantity float64 `json:"quantity"`
+	// UOM optionally carries the unit the quantity is expressed in (sale-line uom_code).
+	// When it differs from the item's stock unit it is converted before deduction —
+	// including the content-per-unit bridge (a 30 ml pour of a bottle stocked in pieces
+	// deducts 0.04 pieces). Empty = already in stock units (legacy behavior).
+	UOM string `json:"uom,omitempty"`
 	// Modifiers are selected modifier options whose stock must also be consumed.
 	// Mirrors the pos.sale.finalized modifiers contract.
 	Modifiers []ModifierLine `json:"modifiers,omitempty"`
@@ -303,6 +306,38 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		"available":       newAvailable,
 	})
 
+	// Expense-bearing downward adjustments (floor-stock issue of consumables, damage,
+	// expiry, shrinkage) additionally publish a VALUED inventory.stock.adjusted event so
+	// treasury posts the operating-expense/wastage journal entry — without this, issued
+	// serviettes/tissues and written-off stock never reach the books.
+	if qtyChange < 0 && expenseBearingReason(adjReason) {
+		costValue := 0.0
+		if itm.CostPrice != nil {
+			costValue = round4(-qtyChange * *itm.CostPrice)
+		}
+		uom := ""
+		if itm.UnitID != nil {
+			if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
+				uom = u.Abbreviation
+			}
+		}
+		s.writeOutboxEvent(ctx, tx, tenantID, adj.ID, "inventory", "stock.adjusted", map[string]any{
+			"tenant_id":     tenantID.String(),
+			"adjustment_id": adj.ID.String(),
+			"item_id":       itm.ID.String(),
+			"sku":           itm.Sku,
+			"item_name":     itm.Name,
+			"warehouse_id":  whID.String(),
+			"reason":        string(adjReason),
+			"quantity":      -qtyChange,
+			"uom":           uom,
+			"cost_value":    costValue,
+			"reference":     req.Reference,
+			"notes":         req.Notes,
+			"adjusted_at":   now.UTC().Format(time.RFC3339),
+		})
+	}
+
 	// Check for low stock and publish event
 	s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 
@@ -505,6 +540,11 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 }
 
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
+	// Non-depleting items are never auto-86'd or alerted: their balances are not
+	// maintained by sales, so a zero/low reading is meaningless noise.
+	if s.itemNonDepletingLazy(ctx, itm) {
+		return
+	}
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	if bal.Available <= 0 {
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
@@ -645,7 +685,7 @@ func (s *Service) resolveStockSKU(ctx context.Context, tenantID uuid.UUID, sku s
 // since inventory owns the option→SKU mapping). The resolved SKU is then run through the same
 // variant→parent + BOM explosion as any item, so a modifier that is itself a recipe explodes.
 // Best-effort per modifier: an option without a SKU (price-only, e.g. "No Sauce") is skipped.
-func (s *Service) modifierConsumption(ctx context.Context, tenantID uuid.UUID, mods []ModifierLine, lineQty float64) []explodedIngredient {
+func (s *Service) modifierConsumption(ctx context.Context, tenantID, warehouseID uuid.UUID, mods []ModifierLine, lineQty float64) []explodedIngredient {
 	var out []explodedIngredient
 	for _, m := range mods {
 		sku := m.SKU
@@ -666,7 +706,7 @@ func (s *Service) modifierConsumption(ctx context.Context, tenantID uuid.UUID, m
 		}
 		qty := perUnit * lineQty
 		stockSKU := s.resolveStockSKU(ctx, tenantID, sku)
-		if ings, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, qty); isBOM {
+		if ings, isBOM := s.explodeBOM(ctx, tenantID, warehouseID, stockSKU, qty); isBOM {
 			out = append(out, ings...)
 		} else {
 			out = append(out, explodedIngredient{SKU: stockSKU, Quantity: qty})
@@ -675,59 +715,31 @@ func (s *Service) modifierConsumption(ctx context.Context, tenantID uuid.UUID, m
 	return out
 }
 
-// explodedIngredient holds a single resolved ingredient SKU + quantity.
-type explodedIngredient struct {
-	SKU      string
-	Quantity float64
-}
-
-// explodeBOM resolves a menu-item SKU to its raw ingredients using the recipe/BOM table.
-// If the SKU has no recipe or the recipe has no ingredients, returns the original SKU × qty.
-// portionsRequested is the number of portions of the menu item to produce.
-func (s *Service) explodeBOM(ctx context.Context, tenantID uuid.UUID, sku string, portionsRequested float64) ([]explodedIngredient, bool) {
-	// A variant SKU has no recipe of its own — it shares the parent item's BOM. Resolve
-	// to the parent's SKU so the recipe lookup hits (a real-item SKU passes through).
-	sku = s.resolveStockSKU(ctx, tenantID, sku)
-	r, err := s.client.Recipe.Query().
-		Where(recipe.TenantID(tenantID), recipe.Sku(sku), recipe.IsActive(true)).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
-		}).
-		Only(ctx)
-	if err != nil || len(r.Edges.Ingredients) == 0 {
-		return nil, false
-	}
-
-	outputQty := r.OutputQty
-	if outputQty <= 0 {
-		outputQty = 1
-	}
-
-	ingredients := make([]explodedIngredient, 0, len(r.Edges.Ingredients))
-	for _, ing := range r.Edges.Ingredients {
-		// Scale ingredient by (portions / outputQty). Keep the result fractional —
-		// a recipe needing 0.5 L per portion must reserve/consume 0.5 L, not 1.
-		qty := (ing.Quantity / outputQty) * portionsRequested
-		if qty < 0 {
-			qty = 0
-		}
-		ingredients = append(ingredients, explodedIngredient{SKU: ing.ItemSku, Quantity: qty})
-	}
-	return ingredients, true
-}
+// explodedIngredient + explodeBOM live in bom.go: the ONE shared BOM-explosion path
+// (unit conversion, content-per-unit bridge, sub-recipe backflush, waste factor) used
+// by reservations, S2S consumption and the POS sale-finalized consumer alike.
 
 // reserveIngredient reserves a single resolved ingredient SKU in a warehouse, decrementing
 // available + incrementing reserved (capped at on-hand). Returns the qty actually reserved,
-// the available qty seen, and whether the request was fully satisfied. Shared by the parent
-// line and modifier reservation so both go through identical balance handling.
-func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, whID uuid.UUID, ing explodedIngredient) (reservedQty, availableQty float64, fullyReserved bool, err error) {
+// the available qty seen, whether the request was fully satisfied, and whether the line was
+// SKIPPED (non-depleting item or unit-mismatch line: no stock effect, never constrains the
+// order — callers must not record skipped lines on the reservation, or release/consume
+// would move stock that was never held). Shared by the parent line and modifier reservation
+// so both go through identical balance handling.
+func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, whID uuid.UUID, ing explodedIngredient, cfg *ent.TenantInventoryConfig) (reservedQty, availableQty float64, fullyReserved, skipped bool, err error) {
+	if ing.UnitMismatch {
+		return 0, 0, true, true, nil
+	}
 	itm, qerr := tx.Item.Query().
 		Where(item.TenantID(tenantID), item.Sku(ing.SKU), item.IsActive(true)).
 		Only(ctx)
 	if qerr != nil {
 		s.log.Warn("ingredient item not found during reservation",
 			zap.String("sku", ing.SKU), zap.Error(qerr))
-		return 0, 0, false, nil
+		return 0, 0, false, false, nil
+	}
+	if isNonDepleting(itm, cfg) {
+		return 0, 0, true, true, nil
 	}
 
 	bal, berr := tx.InventoryBalance.Query().
@@ -739,9 +751,9 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 		First(ctx)
 	if berr != nil {
 		if ent.IsNotFound(berr) {
-			return 0, 0, false, nil
+			return 0, 0, false, false, nil
 		}
-		return 0, 0, false, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, berr)
+		return 0, 0, false, false, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, berr)
 	}
 
 	availableQty = bal.Available
@@ -756,10 +768,10 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 			SetAvailable(bal.Available - reserveQty).
 			SetReserved(bal.Reserved + reserveQty).
 			Save(ctx); uerr != nil {
-			return 0, 0, false, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, uerr)
+			return 0, 0, false, false, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, uerr)
 		}
 	}
-	return reserveQty, availableQty, fullyReserved, nil
+	return reserveQty, availableQty, fullyReserved, false, nil
 }
 
 // CreateReservation reserves stock for an order within a transaction.
@@ -791,13 +803,16 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 	}()
 
 	reservedItems := make([]entschema.ReservedItemJSON, 0, len(req.Items))
+	// Tenant policy resolved once per reservation: non-depleting items are skipped
+	// (no stock held, never constrain the order).
+	cfg := s.tenantConfig(ctx, tenantID)
 
 	for _, ri := range req.Items {
 		// Resolve a variant SKU to its stock-bearing parent SKU (real items pass through),
 		// then expand recipe/BOM into raw ingredients before reserving. If the SKU has no
 		// recipe, falls back to a direct reservation against the resolved (parent) SKU.
 		stockSKU := s.resolveStockSKU(ctx, tenantID, ri.SKU)
-		ingredientsToReserve, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, ri.Quantity)
+		ingredientsToReserve, isBOM := s.explodeBOM(ctx, tenantID, whID, stockSKU, ri.Quantity)
 		if !isBOM {
 			ingredientsToReserve = []explodedIngredient{{SKU: stockSKU, Quantity: ri.Quantity}}
 		}
@@ -806,9 +821,15 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		fullyReserved := true
 
 		for _, ing := range ingredientsToReserve {
-			reserveQty, availableQty, ingFully, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ing)
+			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ing, cfg)
 			if rerr != nil {
 				return nil, rerr
+			}
+			if skipped {
+				// No stock effect (non-depleting / unit-mismatch): must not be recorded
+				// on the reservation or release/consume would move stock never held.
+				// The line never constrains the order (treated as fully reserved).
+				continue
 			}
 			if !ingFully {
 				fullyReserved = false
@@ -836,10 +857,13 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		// Reserve selected modifier stock (e.g. "Extra Cheese") as additional ingredient
 		// lines, so ordering S2S reservations deduct modifier stock the same way POS sales
 		// do. Recorded as their own reserved-item entries for audit/release.
-		for _, ming := range s.modifierConsumption(ctx, tenantID, ri.Modifiers, ri.Quantity) {
-			reserveQty, availableQty, ingFully, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ming)
+		for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ri.Modifiers, ri.Quantity) {
+			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ming, cfg)
 			if rerr != nil {
 				return nil, rerr
+			}
+			if skipped {
+				continue
 			}
 			if !ingFully {
 				fullyReserved = false
@@ -1158,77 +1182,153 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		}
 	}()
 
+	// Tenant policy resolved once: non-depletion + theoretical-usage recording.
+	cfg := s.tenantConfig(ctx, tenantID)
+
 	// Explode each requested SKU into its raw ingredients (mirrors CreateReservation) so
 	// callers may pass a menu-item SKU and we consume the recipe BOM. A SKU with no recipe
 	// passes through unchanged, so directly-stocked goods still deduct correctly. Without
 	// this, POS sale backflush (which sends menu SKUs) deducted the menu item's own balance
 	// instead of its ingredients.
-	type consumeLine struct {
-		sku string
-		qty float64
-	}
-	flattened := make([]consumeLine, 0, len(req.Items))
+	flattened := make([]explodedIngredient, 0, len(req.Items))
 	for _, ci := range req.Items {
+		// A non-depleting menu item is never exploded: its usage is recorded
+		// theoretically (AvT reporting) but no ingredient stock moves. Its modifiers
+		// still deduct below — modifier items carry their own tracking mode.
+		if itm, ierr := s.ResolveItemBySKU(ctx, tenantID, ci.SKU); ierr == nil && isNonDepleting(itm, cfg) {
+			flattened = append(flattened, explodedIngredient{SKU: itm.Sku, Quantity: ci.Quantity, Theoretical: true, RequestedUOM: ci.UOM})
+			for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ci.Modifiers, ci.Quantity) {
+				flattened = append(flattened, ming)
+			}
+			continue
+		}
+
 		// Map a variant SKU to its parent (real items unchanged) so both the BOM
 		// explosion and the direct fallback deduct the parent item's balance.
 		stockSKU := s.resolveStockSKU(ctx, tenantID, ci.SKU)
-		ingredients, isBOM := s.explodeBOM(ctx, tenantID, stockSKU, ci.Quantity)
+		ingredients, isBOM := s.explodeBOM(ctx, tenantID, whID, stockSKU, ci.Quantity)
 		if !isBOM {
-			flattened = append(flattened, consumeLine{sku: stockSKU, qty: ci.Quantity})
-		} else {
-			for _, ing := range ingredients {
-				flattened = append(flattened, consumeLine{sku: ing.SKU, qty: ing.Quantity})
+			// Direct line — convert a sale-line UOM (e.g. a 30 ml pour of a bottle
+			// stocked in pieces) into the item's stock unit when one is provided.
+			line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity}
+			if ci.UOM != "" {
+				if itm, ierr := s.client.Item.Query().
+					Where(item.TenantID(tenantID), item.Sku(stockSKU)).
+					WithUnits().
+					Only(ctx); ierr == nil {
+					if converted, ok := ConvertToStockUnit(itm, ci.Quantity, ci.UOM); ok {
+						if converted != ci.Quantity {
+							line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
+						}
+						line.Quantity = round4(converted)
+					} else {
+						line.UnitMismatch = true
+						line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
+						line.Quantity = 0
+					}
+				}
 			}
+			flattened = append(flattened, line)
+		} else {
+			flattened = append(flattened, ingredients...)
 		}
 		// Consume selected modifier stock as additional lines (mirrors POS sale backflush
 		// and the reservation path), so ordering S2S consumption deducts modifier stock.
-		for _, ming := range s.modifierConsumption(ctx, tenantID, ci.Modifiers, ci.Quantity) {
-			flattened = append(flattened, consumeLine{sku: ming.SKU, qty: ming.Quantity})
+		for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ci.Modifiers, ci.Quantity) {
+			flattened = append(flattened, ming)
 		}
 	}
 
 	method := s.costingMethod(ctx, tenantID)
-	consumptionItems := make([]entschema.ConsumptionItemJSON, len(flattened))
-	for i, cl := range flattened {
-		itm, err := tx.Item.Query().
-			Where(item.TenantID(tenantID), item.Sku(cl.sku)).
-			Only(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("stock: item not found: sku=%s: %w", cl.sku, err)
+	consumptionItems := make([]entschema.ConsumptionItemJSON, 0, len(flattened))
+	for _, cl := range flattened {
+		entry := entschema.ConsumptionItemJSON{
+			SKU:          cl.SKU,
+			Quantity:     cl.Quantity,
+			UnitMismatch: cl.UnitMismatch,
+			Theoretical:  cl.Theoretical,
+			RequestedUOM: cl.RequestedUOM,
 		}
 
-		bal, err := tx.InventoryBalance.Query().
+		if cl.UnitMismatch {
+			// Cross-dimension line with no conversion bridge: deducting the raw number
+			// would corrupt the balance. Record the full theoretical need as shortfall
+			// so variance reports surface it, but touch no stock.
+			entry.Quantity = cl.RequestedQty
+			entry.ShortfallQty = cl.RequestedQty
+			consumptionItems = append(consumptionItems, entry)
+			continue
+		}
+
+		itm, ierr := tx.Item.Query().
+			Where(item.TenantID(tenantID), item.Sku(cl.SKU)).
+			Only(ctx)
+		if ierr != nil {
+			// Resilient event processing: one unknown SKU must not poison the whole
+			// sale (NAK/redelivery storms on the consumer). Record it as unsatisfied.
+			s.log.Warn("consumption: item not found — recorded with shortfall, no deduction",
+				zap.String("sku", cl.SKU), zap.String("tenant_id", tenantID.String()))
+			entry.ShortfallQty = cl.Quantity
+			consumptionItems = append(consumptionItems, entry)
+			continue
+		}
+
+		// Non-depleting ingredient/goods (e.g. ice cubes flagged non_depleting): record
+		// theoretical usage only, per tenant policy.
+		if cl.Theoretical || isNonDepleting(itm, cfg) {
+			entry.Theoretical = true
+			if cfg == nil || cfg.RecordTheoreticalUsage {
+				consumptionItems = append(consumptionItems, entry)
+			}
+			continue
+		}
+
+		bal, berr := tx.InventoryBalance.Query().
 			Where(
 				inventorybalance.TenantID(tenantID),
 				inventorybalance.ItemID(itm.ID),
 				inventorybalance.WarehouseID(whID),
 			).
 			First(ctx)
-		if err == nil {
-			deduct := cl.qty // keep fractional — do not truncate sub-unit consumption
+		switch {
+		case berr == nil:
+			deduct := cl.Quantity // keep fractional — do not truncate sub-unit consumption
+			if deduct > bal.OnHand {
+				// Oversell signal: theoretical need exceeded on-hand; balances floor at
+				// zero but the gap is recorded for actual-vs-theoretical reconciliation.
+				entry.ShortfallQty = round4(deduct - bal.OnHand)
+				s.log.Warn("consumption exceeds on-hand — floored at zero",
+					zap.String("sku", cl.SKU),
+					zap.Float64("needed", deduct),
+					zap.Float64("on_hand", bal.OnHand),
+				)
+			}
 			updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(max(0, bal.OnHand-deduct)).
 				SetAvailable(max(0, bal.Available-deduct)).
 				Save(ctx)
 			if updateErr != nil {
-				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.sku, updateErr)
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.SKU, updateErr)
 			}
 
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+		case ent.IsNotFound(berr):
+			// No balance row here: nothing to deduct — record the full quantity as
+			// shortfall instead of silently pretending the stock moved.
+			entry.ShortfallQty = cl.Quantity
+		default:
+			return nil, fmt.Errorf("stock: query balance for sku=%s: %w", cl.SKU, berr)
 		}
 
 		// Lot-ordered consumption: when a costing method other than weighted-average is configured,
 		// draw down InventoryLot rows in FIFO/LIFO/FEFO order so lot quantities, expiry and cost
 		// layers stay accurate. Best-effort — never fails the sale.
 		if method != "wavg" {
-			s.consumeLots(ctx, tx, tenantID, itm.ID, whID, cl.qty, method)
+			s.consumeLots(ctx, tx, tenantID, itm.ID, whID, cl.Quantity, method)
 		}
 
-		consumptionItems[i] = entschema.ConsumptionItemJSON{
-			SKU:      cl.sku,
-			Quantity: cl.qty,
-		}
+		consumptionItems = append(consumptionItems, entry)
 	}
 
 	reason := req.Reason

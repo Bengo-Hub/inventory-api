@@ -72,6 +72,16 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Bool("auto_adjust_on_transfer").
 			Default(true).
 			Comment("Automatically adjust stock balances when a transfer is completed"),
+		// Non-depletion (manual stock tracking) policy — AccuPOS-style opt-out for small
+		// tenants who count stock manually. Applies to RECIPE-type items whose
+		// stock_tracking_mode is "default"; GOODS/INGREDIENT items always deplete unless
+		// individually flagged non_depleting.
+		field.Bool("recipe_items_non_depleting_default").
+			Default(false).
+			Comment("When true, RECIPE-type items sell without depleting ingredient stock unless individually set to tracked"),
+		field.Bool("record_theoretical_usage").
+			Default(true).
+			Comment("When true, non-depleting sales still write theoretical Consumption rows so AvT/food-cost reports stay meaningful"),
 		// Module toggles — tenant admin controls active inventory modules
 		field.Bool("lots_module_enabled").
 			Default(false).

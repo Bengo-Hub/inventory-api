@@ -49,6 +49,10 @@ type TenantInventoryConfig struct {
 	PurchaseOrderApprovalRequired bool `json:"purchase_order_approval_required,omitempty"`
 	// Automatically adjust stock balances when a transfer is completed
 	AutoAdjustOnTransfer bool `json:"auto_adjust_on_transfer,omitempty"`
+	// When true, RECIPE-type items sell without depleting ingredient stock unless individually set to tracked
+	RecipeItemsNonDepletingDefault bool `json:"recipe_items_non_depleting_default,omitempty"`
+	// When true, non-depleting sales still write theoretical Consumption rows so AvT/food-cost reports stay meaningful
+	RecordTheoreticalUsage bool `json:"record_theoretical_usage,omitempty"`
 	// Lot/batch inventory module
 	LotsModuleEnabled bool `json:"lots_module_enabled,omitempty"`
 	// Bill-of-materials / recipe module for production use cases
@@ -83,7 +87,7 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenantinventoryconfig.FieldUnitReorderDefaults:
 			values[i] = new([]byte)
-		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, tenantinventoryconfig.FieldRecordTheoreticalUsage, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
 			values[i] = new(sql.NullBool)
 		case tenantinventoryconfig.FieldLowStockThresholdPct, tenantinventoryconfig.FieldCriticalStockThresholdPct, tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
@@ -209,6 +213,18 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 				return fmt.Errorf("unexpected type %T for field auto_adjust_on_transfer", values[i])
 			} else if value.Valid {
 				_m.AutoAdjustOnTransfer = value.Bool
+			}
+		case tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field recipe_items_non_depleting_default", values[i])
+			} else if value.Valid {
+				_m.RecipeItemsNonDepletingDefault = value.Bool
+			}
+		case tenantinventoryconfig.FieldRecordTheoreticalUsage:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field record_theoretical_usage", values[i])
+			} else if value.Valid {
+				_m.RecordTheoreticalUsage = value.Bool
 			}
 		case tenantinventoryconfig.FieldLotsModuleEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -367,6 +383,12 @@ func (_m *TenantInventoryConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("auto_adjust_on_transfer=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AutoAdjustOnTransfer))
+	builder.WriteString(", ")
+	builder.WriteString("recipe_items_non_depleting_default=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RecipeItemsNonDepletingDefault))
+	builder.WriteString(", ")
+	builder.WriteString("record_theoretical_usage=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RecordTheoreticalUsage))
 	builder.WriteString(", ")
 	builder.WriteString("lots_module_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LotsModuleEnabled))

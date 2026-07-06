@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -86,6 +87,8 @@ type RecipesServicer interface {
 	RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error
 	// RecalculateRecipeCosts recomputes total/unit cost for a single recipe from current ingredient prices.
 	RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error
+	// AuditRecipeUnits lists existing recipe lines whose units cannot deduct stock.
+	AuditRecipeUnits(ctx context.Context, tenantID uuid.UUID) ([]recipes.UnitIssue, error)
 }
 
 // UnitsServicer defines the contract for unit management.
@@ -271,6 +274,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 			rec.Use(invmiddleware.RequireOutletUseCase(h.orm, h.log, "hospitality", "quick_service", "warehouse", "manufacturing"))
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
+			rec.Get("/recipes/unit-audit", h.AuditRecipeUnits)
 			rec.Get("/recipes/{recipeID}", h.GetRecipe)
 			rec.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
 			rec.With(perm(rbac.PermRecipesChange)).Post("/recipes/{recipeID}/recompute-cost", h.RecomputeRecipeCost)
@@ -633,6 +637,14 @@ func (h *InventoryHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) 
 
 	result, err := h.recipeSvc.CreateRecipe(r.Context(), tenantID, req)
 	if err != nil {
+		var unitErr *recipes.UnitValidationError
+		if errors.As(err, &unitErr) {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+				"error":   map[string]string{"code": "UNIT_MISMATCH", "message": unitErr.Error()},
+				"issues":  unitErr.Issues,
+			})
+			return
+		}
 		h.log.Error("create recipe failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
 		return
@@ -663,12 +675,39 @@ func (h *InventoryHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) 
 
 	result, err := h.recipeSvc.UpdateRecipe(r.Context(), tenantID, recipeID, req)
 	if err != nil {
+		var unitErr *recipes.UnitValidationError
+		if errors.As(err, &unitErr) {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+				"error":  map[string]string{"code": "UNIT_MISMATCH", "message": unitErr.Error()},
+				"issues": unitErr.Issues,
+			})
+			return
+		}
 		h.log.Error("update recipe failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+// AuditRecipeUnits handles GET /v1/{tenant}/inventory/recipes/unit-audit — lists every
+// existing recipe line whose unit cannot deduct stock (legacy cross-dimension data),
+// with per-line remediation guidance. Powers the recipes data-quality audit in the UI
+// and the tenant remediation reports.
+func (h *InventoryHandler) AuditRecipeUnits(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	issues, err := h.recipeSvc.AuditRecipeUnits(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("recipe unit audit failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "AUDIT_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"issues": issues, "count": len(issues)})
 }
 
 // DeleteRecipe handles DELETE /v1/{tenant}/inventory/recipes/{recipeID}

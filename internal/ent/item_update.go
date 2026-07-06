@@ -1060,6 +1060,67 @@ func (_u *ItemUpdate) ClearYieldPct() *ItemUpdate {
 	return _u
 }
 
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (_u *ItemUpdate) SetUnitContentQty(v float64) *ItemUpdate {
+	_u.mutation.ResetUnitContentQty()
+	_u.mutation.SetUnitContentQty(v)
+	return _u
+}
+
+// SetNillableUnitContentQty sets the "unit_content_qty" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUnitContentQty(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetUnitContentQty(*v)
+	}
+	return _u
+}
+
+// AddUnitContentQty adds value to the "unit_content_qty" field.
+func (_u *ItemUpdate) AddUnitContentQty(v float64) *ItemUpdate {
+	_u.mutation.AddUnitContentQty(v)
+	return _u
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (_u *ItemUpdate) ClearUnitContentQty() *ItemUpdate {
+	_u.mutation.ClearUnitContentQty()
+	return _u
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (_u *ItemUpdate) SetUnitContentUom(v string) *ItemUpdate {
+	_u.mutation.SetUnitContentUom(v)
+	return _u
+}
+
+// SetNillableUnitContentUom sets the "unit_content_uom" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUnitContentUom(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetUnitContentUom(*v)
+	}
+	return _u
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (_u *ItemUpdate) ClearUnitContentUom() *ItemUpdate {
+	_u.mutation.ClearUnitContentUom()
+	return _u
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (_u *ItemUpdate) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpdate {
+	_u.mutation.SetStockTrackingMode(v)
+	return _u
+}
+
+// SetNillableStockTrackingMode sets the "stock_tracking_mode" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableStockTrackingMode(v *item.StockTrackingMode) *ItemUpdate {
+	if v != nil {
+		_u.SetStockTrackingMode(*v)
+	}
+	return _u
+}
+
 // SetMinSellingPrice sets the "min_selling_price" field.
 func (_u *ItemUpdate) SetMinSellingPrice(v float64) *ItemUpdate {
 	_u.mutation.ResetMinSellingPrice()
@@ -1857,6 +1918,16 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.UnitContentUom(); ok {
+		if err := item.UnitContentUomValidator(v); err != nil {
+			return &ValidationError{Name: "unit_content_uom", err: fmt.Errorf(`ent: validator failed for field "Item.unit_content_uom": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.StockTrackingMode(); ok {
+		if err := item.StockTrackingModeValidator(v); err != nil {
+			return &ValidationError{Name: "stock_tracking_mode", err: fmt.Errorf(`ent: validator failed for field "Item.stock_tracking_mode": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventVenue(); ok {
 		if err := item.EventVenueValidator(v); err != nil {
 			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
@@ -2151,6 +2222,24 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.YieldPctCleared() {
 		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UnitContentQty(); ok {
+		_spec.SetField(item.FieldUnitContentQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnitContentQty(); ok {
+		_spec.AddField(item.FieldUnitContentQty, field.TypeFloat64, value)
+	}
+	if _u.mutation.UnitContentQtyCleared() {
+		_spec.ClearField(item.FieldUnitContentQty, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UnitContentUom(); ok {
+		_spec.SetField(item.FieldUnitContentUom, field.TypeString, value)
+	}
+	if _u.mutation.UnitContentUomCleared() {
+		_spec.ClearField(item.FieldUnitContentUom, field.TypeString)
+	}
+	if value, ok := _u.mutation.StockTrackingMode(); ok {
+		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.MinSellingPrice(); ok {
 		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
@@ -3907,6 +3996,67 @@ func (_u *ItemUpdateOne) ClearYieldPct() *ItemUpdateOne {
 	return _u
 }
 
+// SetUnitContentQty sets the "unit_content_qty" field.
+func (_u *ItemUpdateOne) SetUnitContentQty(v float64) *ItemUpdateOne {
+	_u.mutation.ResetUnitContentQty()
+	_u.mutation.SetUnitContentQty(v)
+	return _u
+}
+
+// SetNillableUnitContentQty sets the "unit_content_qty" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUnitContentQty(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetUnitContentQty(*v)
+	}
+	return _u
+}
+
+// AddUnitContentQty adds value to the "unit_content_qty" field.
+func (_u *ItemUpdateOne) AddUnitContentQty(v float64) *ItemUpdateOne {
+	_u.mutation.AddUnitContentQty(v)
+	return _u
+}
+
+// ClearUnitContentQty clears the value of the "unit_content_qty" field.
+func (_u *ItemUpdateOne) ClearUnitContentQty() *ItemUpdateOne {
+	_u.mutation.ClearUnitContentQty()
+	return _u
+}
+
+// SetUnitContentUom sets the "unit_content_uom" field.
+func (_u *ItemUpdateOne) SetUnitContentUom(v string) *ItemUpdateOne {
+	_u.mutation.SetUnitContentUom(v)
+	return _u
+}
+
+// SetNillableUnitContentUom sets the "unit_content_uom" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUnitContentUom(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetUnitContentUom(*v)
+	}
+	return _u
+}
+
+// ClearUnitContentUom clears the value of the "unit_content_uom" field.
+func (_u *ItemUpdateOne) ClearUnitContentUom() *ItemUpdateOne {
+	_u.mutation.ClearUnitContentUom()
+	return _u
+}
+
+// SetStockTrackingMode sets the "stock_tracking_mode" field.
+func (_u *ItemUpdateOne) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpdateOne {
+	_u.mutation.SetStockTrackingMode(v)
+	return _u
+}
+
+// SetNillableStockTrackingMode sets the "stock_tracking_mode" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableStockTrackingMode(v *item.StockTrackingMode) *ItemUpdateOne {
+	if v != nil {
+		_u.SetStockTrackingMode(*v)
+	}
+	return _u
+}
+
 // SetMinSellingPrice sets the "min_selling_price" field.
 func (_u *ItemUpdateOne) SetMinSellingPrice(v float64) *ItemUpdateOne {
 	_u.mutation.ResetMinSellingPrice()
@@ -4717,6 +4867,16 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.UnitContentUom(); ok {
+		if err := item.UnitContentUomValidator(v); err != nil {
+			return &ValidationError{Name: "unit_content_uom", err: fmt.Errorf(`ent: validator failed for field "Item.unit_content_uom": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.StockTrackingMode(); ok {
+		if err := item.StockTrackingModeValidator(v); err != nil {
+			return &ValidationError{Name: "stock_tracking_mode", err: fmt.Errorf(`ent: validator failed for field "Item.stock_tracking_mode": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventVenue(); ok {
 		if err := item.EventVenueValidator(v); err != nil {
 			return &ValidationError{Name: "event_venue", err: fmt.Errorf(`ent: validator failed for field "Item.event_venue": %w`, err)}
@@ -5028,6 +5188,24 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.YieldPctCleared() {
 		_spec.ClearField(item.FieldYieldPct, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UnitContentQty(); ok {
+		_spec.SetField(item.FieldUnitContentQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedUnitContentQty(); ok {
+		_spec.AddField(item.FieldUnitContentQty, field.TypeFloat64, value)
+	}
+	if _u.mutation.UnitContentQtyCleared() {
+		_spec.ClearField(item.FieldUnitContentQty, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.UnitContentUom(); ok {
+		_spec.SetField(item.FieldUnitContentUom, field.TypeString, value)
+	}
+	if _u.mutation.UnitContentUomCleared() {
+		_spec.ClearField(item.FieldUnitContentUom, field.TypeString)
+	}
+	if value, ok := _u.mutation.StockTrackingMode(); ok {
+		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.MinSellingPrice(); ok {
 		_spec.SetField(item.FieldMinSellingPrice, field.TypeFloat64, value)
