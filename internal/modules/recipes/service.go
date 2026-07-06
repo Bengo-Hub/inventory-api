@@ -67,6 +67,10 @@ type RecipeIngredientDTO struct {
 	ItemSKU        string     `json:"item_sku"`
 	ItemName       string     `json:"item_name"`
 	ItemCostPrice  *float64   `json:"item_cost_price,omitempty"`
+	// The ingredient item's own base/stock unit. ItemCostPrice is per this unit,
+	// so a line written in another unit (e.g. ml against a per-L item) must be
+	// converted before multiplying — clients need this to preview line costs.
+	ItemUnitID     *uuid.UUID `json:"item_unit_id,omitempty"`
 	Quantity       float64    `json:"quantity"`
 	UnitOfMeasure  string     `json:"unit_of_measure"`
 	UnitID         *uuid.UUID `json:"unit_id,omitempty"`
@@ -478,6 +482,7 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 		if ing.Edges.Item != nil {
 			ingDTO.ItemName = ing.Edges.Item.Name
 			ingDTO.ItemCostPrice = ing.Edges.Item.CostPrice
+			ingDTO.ItemUnitID = ing.Edges.Item.UnitID
 			for _, tag := range ing.Edges.Item.Tags {
 				if strings.HasPrefix(tag, "contains_") {
 					allergenSet[tag] = struct{}{}
