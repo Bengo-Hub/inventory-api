@@ -1,4 +1,4 @@
-h1:8JwroBtVJ8wv8Mr8eAT/k1WuSss1dYQZhp1VryB8Fas=
+h1:VdAxc8TAcCPjmljEVKpqkhyFW76IItQBgusJQKB2wAU=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -49,3 +49,4 @@ h1:8JwroBtVJ8wv8Mr8eAT/k1WuSss1dYQZhp1VryB8Fas=
 20260626220000_add_contract_project_id.sql h1:gqmFHxXDNOWfmi8YLnEtE2DzrCn3B5euAG4Jbgxo5Ec=
 20260628111627_add_po_quotation_reference.sql h1:bxt9OTWxbHpMbNruubksVvaUJFqQAApQc+QdfREriFg=
 20260628130620_add_item_preferred_supplier.sql h1:ozeqORhaJx4Lc6/dYhniDPmExrrdLmoP+1BVK1tTkR0=
+20260706093044_add_item_non_billable.sql h1:sWeEPXM6mygMJevsOafsg+lX2vf33dKi8CSdHqfXhiQ=

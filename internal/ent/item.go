@@ -68,6 +68,8 @@ type Item struct {
 	AllowBackorder bool `json:"allow_backorder,omitempty"`
 	// Hidden from new listings but remaining stock still sellable
 	IsDiscontinued bool `json:"is_discontinued,omitempty"`
+	// Never charged at POS even if a selling price exists (free accompaniments, supplies); stock still deducts
+	NonBillable bool `json:"non_billable,omitempty"`
 	// Reference to Unit
 	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// Item type for master data classification: GOODS (Retail/Inventory), SERVICE (Non-stockable), RECIPE (Hospitality assembled), INGREDIENT (Raw material), VOUCHER (Digital), EQUIPMENT (Assets)
@@ -375,7 +377,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
+		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldNonBillable, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
 		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
@@ -536,6 +538,12 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_discontinued", values[i])
 			} else if value.Valid {
 				_m.IsDiscontinued = value.Bool
+			}
+		case item.FieldNonBillable:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field non_billable", values[i])
+			} else if value.Valid {
+				_m.NonBillable = value.Bool
 			}
 		case item.FieldUnitID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -1006,6 +1014,9 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_discontinued=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDiscontinued))
+	builder.WriteString(", ")
+	builder.WriteString("non_billable=")
+	builder.WriteString(fmt.Sprintf("%v", _m.NonBillable))
 	builder.WriteString(", ")
 	if v := _m.UnitID; v != nil {
 		builder.WriteString("unit_id=")

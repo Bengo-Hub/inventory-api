@@ -432,6 +432,20 @@ func (_u *ItemUpdate) SetNillableIsDiscontinued(v *bool) *ItemUpdate {
 	return _u
 }
 
+// SetNonBillable sets the "non_billable" field.
+func (_u *ItemUpdate) SetNonBillable(v bool) *ItemUpdate {
+	_u.mutation.SetNonBillable(v)
+	return _u
+}
+
+// SetNillableNonBillable sets the "non_billable" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableNonBillable(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetNonBillable(*v)
+	}
+	return _u
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_u *ItemUpdate) SetUnitID(v uuid.UUID) *ItemUpdate {
 	_u.mutation.SetUnitID(v)
@@ -1959,6 +1973,9 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.IsDiscontinued(); ok {
 		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.NonBillable(); ok {
+		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
 	}
@@ -3258,6 +3275,20 @@ func (_u *ItemUpdateOne) SetIsDiscontinued(v bool) *ItemUpdateOne {
 func (_u *ItemUpdateOne) SetNillableIsDiscontinued(v *bool) *ItemUpdateOne {
 	if v != nil {
 		_u.SetIsDiscontinued(*v)
+	}
+	return _u
+}
+
+// SetNonBillable sets the "non_billable" field.
+func (_u *ItemUpdateOne) SetNonBillable(v bool) *ItemUpdateOne {
+	_u.mutation.SetNonBillable(v)
+	return _u
+}
+
+// SetNillableNonBillable sets the "non_billable" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableNonBillable(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetNonBillable(*v)
 	}
 	return _u
 }
@@ -4818,6 +4849,9 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.IsDiscontinued(); ok {
 		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.NonBillable(); ok {
+		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)

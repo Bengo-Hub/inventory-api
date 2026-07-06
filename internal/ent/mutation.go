@@ -34532,6 +34532,7 @@ type ItemMutation struct {
 	addreturn_window_days      *int
 	allow_backorder            *bool
 	is_discontinued            *bool
+	non_billable               *bool
 	_type                      *item.Type
 	use_case                   *item.UseCase
 	meal_plan                  *item.MealPlan
@@ -35699,6 +35700,42 @@ func (m *ItemMutation) OldIsDiscontinued(ctx context.Context) (v bool, err error
 // ResetIsDiscontinued resets all changes to the "is_discontinued" field.
 func (m *ItemMutation) ResetIsDiscontinued() {
 	m.is_discontinued = nil
+}
+
+// SetNonBillable sets the "non_billable" field.
+func (m *ItemMutation) SetNonBillable(b bool) {
+	m.non_billable = &b
+}
+
+// NonBillable returns the value of the "non_billable" field in the mutation.
+func (m *ItemMutation) NonBillable() (r bool, exists bool) {
+	v := m.non_billable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNonBillable returns the old "non_billable" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldNonBillable(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNonBillable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNonBillable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNonBillable: %w", err)
+	}
+	return oldValue.NonBillable, nil
+}
+
+// ResetNonBillable resets all changes to the "non_billable" field.
+func (m *ItemMutation) ResetNonBillable() {
+	m.non_billable = nil
 }
 
 // SetUnitID sets the "unit_id" field.
@@ -38733,7 +38770,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 63)
+	fields := make([]string, 0, 64)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -38796,6 +38833,9 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.is_discontinued != nil {
 		fields = append(fields, item.FieldIsDiscontinued)
+	}
+	if m.non_billable != nil {
+		fields = append(fields, item.FieldNonBillable)
 	}
 	if m.units != nil {
 		fields = append(fields, item.FieldUnitID)
@@ -38973,6 +39013,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.AllowBackorder()
 	case item.FieldIsDiscontinued:
 		return m.IsDiscontinued()
+	case item.FieldNonBillable:
+		return m.NonBillable()
 	case item.FieldUnitID:
 		return m.UnitID()
 	case item.FieldType:
@@ -39108,6 +39150,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldAllowBackorder(ctx)
 	case item.FieldIsDiscontinued:
 		return m.OldIsDiscontinued(ctx)
+	case item.FieldNonBillable:
+		return m.OldNonBillable(ctx)
 	case item.FieldUnitID:
 		return m.OldUnitID(ctx)
 	case item.FieldType:
@@ -39347,6 +39391,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsDiscontinued(v)
+		return nil
+	case item.FieldNonBillable:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNonBillable(v)
 		return nil
 	case item.FieldUnitID:
 		v, ok := value.(uuid.UUID)
@@ -40203,6 +40254,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldIsDiscontinued:
 		m.ResetIsDiscontinued()
+		return nil
+	case item.FieldNonBillable:
+		m.ResetNonBillable()
 		return nil
 	case item.FieldUnitID:
 		m.ResetUnitID()

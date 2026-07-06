@@ -156,6 +156,11 @@ func IsDiscontinued(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldIsDiscontinued, v))
 }
 
+// NonBillable applies equality check predicate on the "non_billable" field. It's identical to NonBillableEQ.
+func NonBillable(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNonBillable, v))
+}
+
 // UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
 func UnitID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
@@ -1464,6 +1469,16 @@ func IsDiscontinuedEQ(v bool) predicate.Item {
 // IsDiscontinuedNEQ applies the NEQ predicate on the "is_discontinued" field.
 func IsDiscontinuedNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldIsDiscontinued, v))
+}
+
+// NonBillableEQ applies the EQ predicate on the "non_billable" field.
+func NonBillableEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNonBillable, v))
+}
+
+// NonBillableNEQ applies the NEQ predicate on the "non_billable" field.
+func NonBillableNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldNonBillable, v))
 }
 
 // UnitIDEQ applies the EQ predicate on the "unit_id" field.

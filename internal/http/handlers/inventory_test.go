@@ -291,9 +291,10 @@ func TestGetStockAvailability_Success(t *testing.T) {
 	var avail items.StockAvailability
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&avail))
 	assert.Equal(t, "LATTE-001", avail.SKU)
-	assert.Equal(t, 50, avail.OnHand)
-	assert.Equal(t, 45, avail.Available)
-	assert.Equal(t, 5, avail.Reserved)
+	// Stock quantities are float64 (fractional units like 4.5 L are valid).
+	assert.Equal(t, float64(50), avail.OnHand)
+	assert.Equal(t, float64(45), avail.Available)
+	assert.Equal(t, float64(5), avail.Reserved)
 }
 
 func TestGetStockAvailability_NotFound(t *testing.T) {

@@ -896,6 +896,11 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 			ctx = items.WithIncludeVariants(ctx)
 		}
 	}
+	// ?include_non_billable=1 widens the type filter to also return non-billable items
+	// (free accompaniments / supplies) — used by the POS catalog proxy.
+	if v := r.URL.Query().Get("include_non_billable"); v == "1" || strings.EqualFold(v, "true") {
+		ctx = items.WithIncludeNonBillable(ctx)
+	}
 
 	p := pagination.Parse(r)
 	results, total, err := h.itemsSvc.ListItems(ctx, tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)
