@@ -62,6 +62,11 @@ func hospitalityItems() []itemDef {
 		{"MIN-PAS-001", "Spaghetti Bolognese", "Classic beef bolognese with parmesan and garlic bread", "main-courses", entitem.TypeRECIPE, "PLATE", imgMain1, 30, nil, nil},
 		{"MIN-RIC-001", "Pilau Rice Bowl", "Spiced pilau rice with choice of beef, chicken or veg", "main-courses", entitem.TypeRECIPE, "BOWL", imgPilau, 50, nil, nil},
 
+		// ── Accompaniments (free sides — the "non_billable" tag flags Item.non_billable:
+		// never charged at the till even though mains reference them; stock still deducts) ──
+		{"ACC-UGL-001", "Ugali [ACC]", "Free ugali accompaniment served with mains", "accompaniments", entitem.TypeRECIPE, "PLATE", imgChickenUgali, 60, []string{"non_billable", "accompaniment"}, nil},
+		{"ACC-GRN-001", "Steamed Greens [ACC]", "Free sukuma wiki / spinach side served with mains", "accompaniments", entitem.TypeRECIPE, "PLATE", imgSalad, 60, []string{"non_billable", "accompaniment"}, nil},
+
 		// ── Breakfast (RECIPE) ─────────────────────────────────────────────────
 		{"BRK-FUL-001", "Full English Breakfast", "Eggs, bacon, sausage, beans, toast, tomato", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50, nil, nil},
 		{"BRK-PAN-001", "Pancake Stack", "Fluffy pancakes with maple syrup and berries", "breakfast", entitem.TypeRECIPE, "PLATE", imgBreakfast, 50, nil, nil},

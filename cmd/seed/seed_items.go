@@ -147,6 +147,16 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug
 		if tags == nil {
 			tags = []string{}
 		}
+		// The "non_billable" tag flags free accompaniments/supplies (Item.non_billable):
+		// never charged at the POS even with a price; stock still deducts. Tag-driven so
+		// the positional itemDef literals across the seed files stay untouched.
+		nonBillable := false
+		for _, t := range tags {
+			if t == "non_billable" {
+				nonBillable = true
+				break
+			}
+		}
 
 		_, err := client.Item.Get(ctx, id)
 		switch {
@@ -164,6 +174,7 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug
 				SetImageURL(imgURL).
 				SetTags(tags).
 				SetIsActive(true).
+				SetNonBillable(nonBillable).
 				SetNillableCostPrice(def.CostPrice)
 			if _, createErr := create.Save(ctx); createErr != nil {
 				return fmt.Errorf("create item %s: %w", def.SKU, createErr)
@@ -180,7 +191,8 @@ func seedItems(ctx context.Context, client *ent.Client, tenantID uuid.UUID, slug
 				SetType(def.ItemType).
 				SetUseCase(useCase).
 				SetImageURL(imgURL).
-				SetTags(tags)
+				SetTags(tags).
+				SetNonBillable(nonBillable)
 			if def.CostPrice != nil {
 				update = update.SetCostPrice(*def.CostPrice)
 			}
