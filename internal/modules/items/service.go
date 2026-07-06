@@ -746,13 +746,18 @@ func enumPtrToStr[T ~string](v *T) *string {
 func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	// Pre-compute outlet-scoped EXCLUSIONS when outlet context is active.
 	//
-	// Rule: an outlet hides only items that are stocked EXCLUSIVELY in some OTHER outlet's
-	// warehouses (they belong to a different location). Items with a balance here stay, and —
-	// crucially — items with NO balance row anywhere stay too: made-to-order RECIPE menu items
-	// never carry own stock (their BOM ingredients do), and a newly created GOODS item hasn't
-	// been received yet. The previous rule ("keep only items with a balance in this outlet's
-	// warehouses") silently hid every balance-less item the moment the outlet had ANY stock —
-	// urban-loft's POS lost 135 of its 269 sellable items (94 recipes + 41 goods) that way.
+	// Rule: an outlet hides only STOCK-TRACKED items (GOODS/INGREDIENT) that are stocked
+	// EXCLUSIVELY in some OTHER outlet's warehouses — that stock belongs to a different
+	// location. Everything else always passes the outlet scope:
+	//   - items with a balance in this outlet's (or a shared, outlet-less) warehouse;
+	//   - items with NO balance row anywhere (a new GOODS item not yet received — its stock
+	//     simply surfaces as 0);
+	//   - made-to-order types (RECIPE/SERVICE/VOUCHER) and non-billable accompaniments,
+	//     which never carry own stock (a recipe's BOM ingredients do).
+	// The previous rule ("keep only items with a balance in this outlet's warehouses")
+	// collapsed whole catalogs the moment an outlet had ANY stock: urban-loft's POS lost 135
+	// of its 269 sellable items (94 recipes + 41 unreceived goods), and the demo QSR outlet
+	// shrank to 2 items once its prep stock was mirrored in.
 	var outletExcludeIDs []uuid.UUID
 	if outletID != nil {
 		wIDs, _ := s.client.Warehouse.Query().
@@ -779,10 +784,27 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				stockedElsewhere[b.ItemID] = struct{}{}
 			}
 		}
-		for id := range stockedElsewhere {
-			if _, ok := stockedHere[id]; !ok {
-				outletExcludeIDs = append(outletExcludeIDs, id)
+		var candidates []uuid.UUID
+		// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central
+		// store) is not location-separated — it sells the tenant catalog and receives stock
+		// later. Only outlets with their own stock hide other outlets' goods.
+		if len(stockedHere) > 0 {
+			candidates = make([]uuid.UUID, 0, len(stockedElsewhere))
+			for id := range stockedElsewhere {
+				if _, ok := stockedHere[id]; !ok {
+					candidates = append(candidates, id)
+				}
 			}
+		}
+		if len(candidates) > 0 {
+			// Only stock-tracked, billable types are location-bound; recipes/services/vouchers
+			// and free accompaniments are menu entries, not stock, and must never be hidden.
+			outletExcludeIDs, _ = s.client.Item.Query().
+				Where(
+					item.IDIn(candidates...),
+					item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
+					item.NonBillable(false),
+				).IDs(ctx)
 		}
 	}
 
