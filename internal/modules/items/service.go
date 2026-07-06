@@ -949,9 +949,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				dto.Available = &bs.available
 				dto.OnHand = &bs.onHand
 			}
-			// Cost-plus-margin suggested price for GOODS: prefer the item's own
+			// Cost-plus-margin suggested price for GOODS ONLY: prefer the item's own
 			// target_margin_percent, falling back to the tenant default. price = cost/(1-m).
-			if it.CostPrice != nil && *it.CostPrice > 0 {
+			// INGREDIENT/EQUIPMENT items are consumed to make recipe items, never sold —
+			// deriving a retail figure for them pollutes lists with meaningless prices;
+			// their only meaningful money field is cost_price per BASE unit.
+			if it.Type == item.TypeGOODS && it.CostPrice != nil && *it.CostPrice > 0 {
 				var m float64
 				if it.TargetMarginPercent != nil && *it.TargetMarginPercent > 0 && *it.TargetMarginPercent < 100 {
 					m = *it.TargetMarginPercent
