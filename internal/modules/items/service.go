@@ -37,6 +37,23 @@ import (
 // gated because it is wasteful for large catalogs that don't need variations.
 type includeVariantsKey struct{}
 
+// includeNonBillableKey is a context flag set by the HTTP layer (?include_non_billable=1).
+// It widens ListItems' type filter to ALSO return non-billable items of any type — the POS
+// catalog proxy uses it so free accompaniments and supplies (tissue, packaging) reach the
+// terminal even when their item type is outside the use-case's sellable types.
+type includeNonBillableKey struct{}
+
+// WithIncludeNonBillable returns a context that instructs ListItems to OR non-billable
+// items into the type filter.
+func WithIncludeNonBillable(ctx context.Context) context.Context {
+	return context.WithValue(ctx, includeNonBillableKey{}, true)
+}
+
+func includeNonBillable(ctx context.Context) bool {
+	v, _ := ctx.Value(includeNonBillableKey{}).(bool)
+	return v
+}
+
 // WithIncludeVariants returns a context that instructs ListItems to eager-load
 // each item's active variants and surface them on the DTO.
 func WithIncludeVariants(ctx context.Context) context.Context {
@@ -94,6 +111,10 @@ type ItemDTO struct {
 	CountryOfOrigin  string `json:"country_of_origin,omitempty"`  // customs / marketplace compliance
 	HSCode           string `json:"hs_code,omitempty"`            // customs tariff code
 	IsReturnable     bool   `json:"is_returnable"`                // customer return allowed
+	// Non-billable: never charged at POS even when a selling price exists (free
+	// accompaniments like ugali, consumable supplies like tissue/packaging); stock still
+	// deducts. Pointer so partial updates never clobber the stored flag.
+	NonBillable      *bool  `json:"non_billable,omitempty"`
 	ReturnWindowDays *int   `json:"return_window_days,omitempty"` // nil = tenant default
 	AllowBackorder   bool   `json:"allow_backorder"`              // order when out of stock
 	IsDiscontinued   bool   `json:"is_discontinued"`              // hidden from new listings, stock still sellable
@@ -580,6 +601,9 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 	}, nil
 }
 
+// boolPtr returns a pointer copy of b (DTO pointer-bool fields, e.g. non_billable).
+func boolPtr(b bool) *bool { return &b }
+
 func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	dto := &ItemDTO{
 		ID:                      i.ID,
@@ -604,6 +628,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		CountryOfOrigin:         i.CountryOfOrigin,
 		HSCode:                  i.HsCode,
 		IsReturnable:            i.IsReturnable,
+		NonBillable:             boolPtr(i.NonBillable),
 		ReturnWindowDays:        i.ReturnWindowDays,
 		AllowBackorder:          i.AllowBackorder,
 		IsDiscontinued:          i.IsDiscontinued,
@@ -766,14 +791,17 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		}
 		if typeFilter != "" {
 			types := strings.Split(typeFilter, ",")
-			if len(types) == 1 {
-				q = q.Where(item.TypeEQ(item.Type(strings.TrimSpace(types[0]))))
+			typeVals := make([]item.Type, 0, len(types))
+			for _, t := range types {
+				typeVals = append(typeVals, item.Type(strings.TrimSpace(t)))
+			}
+			typePred := item.TypeIn(typeVals...)
+			if includeNonBillable(ctx) {
+				// Non-billable items (free accompaniments, supplies) surface regardless of
+				// their type so the POS terminal can ring them up at KES 0.
+				q = q.Where(item.Or(typePred, item.NonBillable(true)))
 			} else {
-				typeVals := make([]item.Type, 0, len(types))
-				for _, t := range types {
-					typeVals = append(typeVals, item.Type(strings.TrimSpace(t)))
-				}
-				q = q.Where(item.TypeIn(typeVals...))
+				q = q.Where(typePred)
 			}
 		}
 		if useCase != "" {
@@ -1486,6 +1514,10 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	}
 	// E-commerce attributes (optional). is_returnable is intentionally NOT set here so the
 	// schema default (true) applies — a `bool` DTO can't distinguish "unset" from false.
+	// non_billable is a pointer for exactly that reason: set only when the client sent it.
+	if dto.NonBillable != nil {
+		createBuilder = createBuilder.SetNonBillable(*dto.NonBillable)
+	}
 	if dto.GTIN != "" {
 		createBuilder = createBuilder.SetGtin(dto.GTIN)
 	}
@@ -1842,6 +1874,10 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	// edit form that doesn't yet carry these) never clobbers existing values. The
 	// boolean flags (is_returnable/allow_backorder/is_discontinued) are deliberately
 	// omitted from the update path for the same reason until the edit UI sends them.
+	// non_billable is a pointer, so presence is explicit and safe to apply.
+	if dto.NonBillable != nil {
+		updateBuilder = updateBuilder.SetNonBillable(*dto.NonBillable)
+	}
 	if dto.GTIN != "" {
 		updateBuilder = updateBuilder.SetGtin(dto.GTIN)
 	}

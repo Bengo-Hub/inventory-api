@@ -86,6 +86,13 @@ func (Item) Fields() []ent.Field {
 		field.Bool("is_discontinued").
 			Default(false).
 			Comment("Hidden from new listings but remaining stock still sellable"),
+		// Non-billable items are never charged at the point of sale, even when a selling
+		// price is set: free accompaniments (ugali, greens) and consumable supplies (tissue,
+		// packaging) that must reach the POS terminal and deduct stock without billing the
+		// customer. Downstream catalogs (pos-api) force their price to 0.
+		field.Bool("non_billable").
+			Default(false).
+			Comment("Never charged at POS even if a selling price exists (free accompaniments, supplies); stock still deducts"),
 		field.UUID("unit_id", uuid.UUID{}).
 			Optional().
 			Nillable().

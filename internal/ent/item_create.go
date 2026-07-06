@@ -311,6 +311,20 @@ func (_c *ItemCreate) SetNillableIsDiscontinued(v *bool) *ItemCreate {
 	return _c
 }
 
+// SetNonBillable sets the "non_billable" field.
+func (_c *ItemCreate) SetNonBillable(v bool) *ItemCreate {
+	_c.mutation.SetNonBillable(v)
+	return _c
+}
+
+// SetNillableNonBillable sets the "non_billable" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableNonBillable(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetNonBillable(*v)
+	}
+	return _c
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_c *ItemCreate) SetUnitID(v uuid.UUID) *ItemCreate {
 	_c.mutation.SetUnitID(v)
@@ -1195,6 +1209,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultIsDiscontinued
 		_c.mutation.SetIsDiscontinued(v)
 	}
+	if _, ok := _c.mutation.NonBillable(); !ok {
+		v := item.DefaultNonBillable
+		_c.mutation.SetNonBillable(v)
+	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		v := item.DefaultType
 		_c.mutation.SetType(v)
@@ -1302,6 +1320,9 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsDiscontinued(); !ok {
 		return &ValidationError{Name: "is_discontinued", err: errors.New(`ent: missing required field "Item.is_discontinued"`)}
+	}
+	if _, ok := _c.mutation.NonBillable(); !ok {
+		return &ValidationError{Name: "non_billable", err: errors.New(`ent: missing required field "Item.non_billable"`)}
 	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Item.type"`)}
@@ -1485,6 +1506,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsDiscontinued(); ok {
 		_spec.SetField(item.FieldIsDiscontinued, field.TypeBool, value)
 		_node.IsDiscontinued = value
+	}
+	if value, ok := _c.mutation.NonBillable(); ok {
+		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
+		_node.NonBillable = value
 	}
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
@@ -2314,6 +2339,18 @@ func (u *ItemUpsert) SetIsDiscontinued(v bool) *ItemUpsert {
 // UpdateIsDiscontinued sets the "is_discontinued" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateIsDiscontinued() *ItemUpsert {
 	u.SetExcluded(item.FieldIsDiscontinued)
+	return u
+}
+
+// SetNonBillable sets the "non_billable" field.
+func (u *ItemUpsert) SetNonBillable(v bool) *ItemUpsert {
+	u.Set(item.FieldNonBillable, v)
+	return u
+}
+
+// UpdateNonBillable sets the "non_billable" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateNonBillable() *ItemUpsert {
+	u.SetExcluded(item.FieldNonBillable)
 	return u
 }
 
@@ -3514,6 +3551,20 @@ func (u *ItemUpsertOne) SetIsDiscontinued(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateIsDiscontinued() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateIsDiscontinued()
+	})
+}
+
+// SetNonBillable sets the "non_billable" field.
+func (u *ItemUpsertOne) SetNonBillable(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNonBillable(v)
+	})
+}
+
+// UpdateNonBillable sets the "non_billable" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateNonBillable() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNonBillable()
 	})
 }
 
@@ -5006,6 +5057,20 @@ func (u *ItemUpsertBulk) SetIsDiscontinued(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateIsDiscontinued() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateIsDiscontinued()
+	})
+}
+
+// SetNonBillable sets the "non_billable" field.
+func (u *ItemUpsertBulk) SetNonBillable(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNonBillable(v)
+	})
+}
+
+// UpdateNonBillable sets the "non_billable" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateNonBillable() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNonBillable()
 	})
 }
 
