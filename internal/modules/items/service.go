@@ -2036,11 +2036,27 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	}
 
 	// Update reorder level/quantity on all InventoryBalance records for this item if provided.
+	// Reorder policy LIVES on the balance (per warehouse) — the item DTO only mirrors it —
+	// so an edit on a never-stocked item must CREATE the default-warehouse balance row or
+	// the form's reorder values would silently vanish on save.
 	if dto.ReorderLevel > 0 || dto.ReorderQuantity > 0 {
 		bals, balErr := tx.InventoryBalance.Query().
 			Where(inventorybalance.ItemID(i.ID), inventorybalance.TenantID(tenantID)).
 			All(ctx)
 		if balErr == nil {
+			if len(bals) == 0 {
+				if wh, whErr := tx.Warehouse.Query().
+					Where(warehouse.TenantID(tenantID), warehouse.IsDefault(true), warehouse.IsActive(true)).
+					First(ctx); whErr == nil {
+					_, _ = tx.InventoryBalance.Create().
+						SetTenantID(tenantID).
+						SetItemID(i.ID).
+						SetWarehouseID(wh.ID).
+						SetReorderLevel(dto.ReorderLevel).
+						SetReorderQuantity(dto.ReorderQuantity).
+						Save(ctx)
+				}
+			}
 			for _, bal := range bals {
 				upd := tx.InventoryBalance.UpdateOneID(bal.ID)
 				if dto.ReorderLevel > 0 {
