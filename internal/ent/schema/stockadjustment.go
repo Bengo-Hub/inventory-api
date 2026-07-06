@@ -27,8 +27,8 @@ func (StockAdjustment) Fields() []ent.Field {
 		field.Enum("reason").
 			Values("damaged", "expired", "shrinkage", "found", "correction",
 				"transfer_in", "transfer_out", "return", "initial_count",
-				"opening_balance", "count_variance", "other").
-			Comment("Reason for adjustment"),
+				"opening_balance", "count_variance", "internal_consumption", "other").
+			Comment("Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury"),
 		field.String("reference").Optional().Comment("External reference (e.g. PO number, transfer ID)"),
 		field.Text("notes").Optional().Comment("Free-text notes"),
 		field.UUID("adjusted_by", uuid.UUID{}).Comment("User who made the adjustment"),

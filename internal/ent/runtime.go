@@ -951,24 +951,28 @@ func init() {
 	itemDescYieldPct := itemFields[53].Descriptor()
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
+	// itemDescUnitContentUom is the schema descriptor for unit_content_uom field.
+	itemDescUnitContentUom := itemFields[55].Descriptor()
+	// item.UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
+	item.UnitContentUomValidator = itemDescUnitContentUom.Validators[0].(func(string) error)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[58].Descriptor()
+	itemDescBookedCapacity := itemFields[61].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[61].Descriptor()
+	itemDescEventVenue := itemFields[64].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[62].Descriptor()
+	itemDescMetadata := itemFields[65].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[63].Descriptor()
+	itemDescCreatedAt := itemFields[66].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[64].Descriptor()
+	itemDescUpdatedAt := itemFields[67].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -2103,48 +2107,56 @@ func init() {
 	tenantinventoryconfigDescAutoAdjustOnTransfer := tenantinventoryconfigFields[15].Descriptor()
 	// tenantinventoryconfig.DefaultAutoAdjustOnTransfer holds the default value on creation for the auto_adjust_on_transfer field.
 	tenantinventoryconfig.DefaultAutoAdjustOnTransfer = tenantinventoryconfigDescAutoAdjustOnTransfer.Default.(bool)
+	// tenantinventoryconfigDescRecipeItemsNonDepletingDefault is the schema descriptor for recipe_items_non_depleting_default field.
+	tenantinventoryconfigDescRecipeItemsNonDepletingDefault := tenantinventoryconfigFields[16].Descriptor()
+	// tenantinventoryconfig.DefaultRecipeItemsNonDepletingDefault holds the default value on creation for the recipe_items_non_depleting_default field.
+	tenantinventoryconfig.DefaultRecipeItemsNonDepletingDefault = tenantinventoryconfigDescRecipeItemsNonDepletingDefault.Default.(bool)
+	// tenantinventoryconfigDescRecordTheoreticalUsage is the schema descriptor for record_theoretical_usage field.
+	tenantinventoryconfigDescRecordTheoreticalUsage := tenantinventoryconfigFields[17].Descriptor()
+	// tenantinventoryconfig.DefaultRecordTheoreticalUsage holds the default value on creation for the record_theoretical_usage field.
+	tenantinventoryconfig.DefaultRecordTheoreticalUsage = tenantinventoryconfigDescRecordTheoreticalUsage.Default.(bool)
 	// tenantinventoryconfigDescLotsModuleEnabled is the schema descriptor for lots_module_enabled field.
-	tenantinventoryconfigDescLotsModuleEnabled := tenantinventoryconfigFields[16].Descriptor()
+	tenantinventoryconfigDescLotsModuleEnabled := tenantinventoryconfigFields[18].Descriptor()
 	// tenantinventoryconfig.DefaultLotsModuleEnabled holds the default value on creation for the lots_module_enabled field.
 	tenantinventoryconfig.DefaultLotsModuleEnabled = tenantinventoryconfigDescLotsModuleEnabled.Default.(bool)
 	// tenantinventoryconfigDescRecipesModuleEnabled is the schema descriptor for recipes_module_enabled field.
-	tenantinventoryconfigDescRecipesModuleEnabled := tenantinventoryconfigFields[17].Descriptor()
+	tenantinventoryconfigDescRecipesModuleEnabled := tenantinventoryconfigFields[19].Descriptor()
 	// tenantinventoryconfig.DefaultRecipesModuleEnabled holds the default value on creation for the recipes_module_enabled field.
 	tenantinventoryconfig.DefaultRecipesModuleEnabled = tenantinventoryconfigDescRecipesModuleEnabled.Default.(bool)
 	// tenantinventoryconfigDescPurchaseOrdersEnabled is the schema descriptor for purchase_orders_enabled field.
-	tenantinventoryconfigDescPurchaseOrdersEnabled := tenantinventoryconfigFields[18].Descriptor()
+	tenantinventoryconfigDescPurchaseOrdersEnabled := tenantinventoryconfigFields[20].Descriptor()
 	// tenantinventoryconfig.DefaultPurchaseOrdersEnabled holds the default value on creation for the purchase_orders_enabled field.
 	tenantinventoryconfig.DefaultPurchaseOrdersEnabled = tenantinventoryconfigDescPurchaseOrdersEnabled.Default.(bool)
 	// tenantinventoryconfigDescSupplierManagementEnabled is the schema descriptor for supplier_management_enabled field.
-	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[19].Descriptor()
+	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[21].Descriptor()
 	// tenantinventoryconfig.DefaultSupplierManagementEnabled holds the default value on creation for the supplier_management_enabled field.
 	tenantinventoryconfig.DefaultSupplierManagementEnabled = tenantinventoryconfigDescSupplierManagementEnabled.Default.(bool)
 	// tenantinventoryconfigDescEnableRoomPricing is the schema descriptor for enable_room_pricing field.
-	tenantinventoryconfigDescEnableRoomPricing := tenantinventoryconfigFields[20].Descriptor()
+	tenantinventoryconfigDescEnableRoomPricing := tenantinventoryconfigFields[22].Descriptor()
 	// tenantinventoryconfig.DefaultEnableRoomPricing holds the default value on creation for the enable_room_pricing field.
 	tenantinventoryconfig.DefaultEnableRoomPricing = tenantinventoryconfigDescEnableRoomPricing.Default.(bool)
 	// tenantinventoryconfigDescEnableFacilityBooking is the schema descriptor for enable_facility_booking field.
-	tenantinventoryconfigDescEnableFacilityBooking := tenantinventoryconfigFields[21].Descriptor()
+	tenantinventoryconfigDescEnableFacilityBooking := tenantinventoryconfigFields[23].Descriptor()
 	// tenantinventoryconfig.DefaultEnableFacilityBooking holds the default value on creation for the enable_facility_booking field.
 	tenantinventoryconfig.DefaultEnableFacilityBooking = tenantinventoryconfigDescEnableFacilityBooking.Default.(bool)
 	// tenantinventoryconfigDescEnableConferencePackages is the schema descriptor for enable_conference_packages field.
-	tenantinventoryconfigDescEnableConferencePackages := tenantinventoryconfigFields[22].Descriptor()
+	tenantinventoryconfigDescEnableConferencePackages := tenantinventoryconfigFields[24].Descriptor()
 	// tenantinventoryconfig.DefaultEnableConferencePackages holds the default value on creation for the enable_conference_packages field.
 	tenantinventoryconfig.DefaultEnableConferencePackages = tenantinventoryconfigDescEnableConferencePackages.Default.(bool)
 	// tenantinventoryconfigDescDefaultTargetMarginPercent is the schema descriptor for default_target_margin_percent field.
-	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[23].Descriptor()
+	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[25].Descriptor()
 	// tenantinventoryconfig.DefaultDefaultTargetMarginPercent holds the default value on creation for the default_target_margin_percent field.
 	tenantinventoryconfig.DefaultDefaultTargetMarginPercent = tenantinventoryconfigDescDefaultTargetMarginPercent.Default.(float64)
 	// tenantinventoryconfigDescPricesInclusiveOfTax is the schema descriptor for prices_inclusive_of_tax field.
-	tenantinventoryconfigDescPricesInclusiveOfTax := tenantinventoryconfigFields[24].Descriptor()
+	tenantinventoryconfigDescPricesInclusiveOfTax := tenantinventoryconfigFields[26].Descriptor()
 	// tenantinventoryconfig.DefaultPricesInclusiveOfTax holds the default value on creation for the prices_inclusive_of_tax field.
 	tenantinventoryconfig.DefaultPricesInclusiveOfTax = tenantinventoryconfigDescPricesInclusiveOfTax.Default.(bool)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[26].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[28].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[27].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[29].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -213,6 +213,24 @@ func (Item) Fields() []ent.Field {
 			Nillable().
 			Default(1.0).
 			Comment("Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct"),
+		// Content-per-unit — bridges count-stocked packaged goods (a 750ml whiskey bottle
+		// stocked in pieces) to volume/mass recipe lines (a 30ml tot). A recipe line of
+		// 30 ml deducts 30/750 = 0.04 pieces; 25 tots deplete exactly one bottle.
+		field.Float("unit_content_qty").
+			Optional().
+			Nillable().
+			Comment("How much of unit_content_uom ONE stock unit contains (e.g. 750 for a 750ml bottle stocked in pieces)"),
+		field.String("unit_content_uom").
+			Optional().
+			MaxLen(20).
+			Comment("Unit of the per-stock-unit content (e.g. 'ml', 'g') — enables cross-dimension recipe deduction"),
+		// Stock tracking mode — AccuPOS/Square-style per-item depletion control.
+		// "default": RECIPE-type items follow TenantInventoryConfig.recipe_items_non_depleting_default,
+		// everything else is tracked. Explicit "tracked"/"non_depleting" always wins.
+		field.Enum("stock_tracking_mode").
+			Values("default", "tracked", "non_depleting").
+			Default("default").
+			Comment("Depletion behavior: default (tenant policy for recipes), tracked (always deplete), non_depleting (sell without stock effect; excluded from stock-out cascade)"),
 		// Selling-price guardrails (Phase 4) — hard floor/ceiling enforced at price upsert AND POS sale.
 		field.Float("min_selling_price").
 			Optional().

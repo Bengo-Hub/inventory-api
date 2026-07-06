@@ -120,6 +120,16 @@ func AutoAdjustOnTransfer(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldAutoAdjustOnTransfer, v))
 }
 
+// RecipeItemsNonDepletingDefault applies equality check predicate on the "recipe_items_non_depleting_default" field. It's identical to RecipeItemsNonDepletingDefaultEQ.
+func RecipeItemsNonDepletingDefault(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldRecipeItemsNonDepletingDefault, v))
+}
+
+// RecordTheoreticalUsage applies equality check predicate on the "record_theoretical_usage" field. It's identical to RecordTheoreticalUsageEQ.
+func RecordTheoreticalUsage(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldRecordTheoreticalUsage, v))
+}
+
 // LotsModuleEnabled applies equality check predicate on the "lots_module_enabled" field. It's identical to LotsModuleEnabledEQ.
 func LotsModuleEnabled(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldLotsModuleEnabled, v))
@@ -618,6 +628,26 @@ func AutoAdjustOnTransferEQ(v bool) predicate.TenantInventoryConfig {
 // AutoAdjustOnTransferNEQ applies the NEQ predicate on the "auto_adjust_on_transfer" field.
 func AutoAdjustOnTransferNEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldAutoAdjustOnTransfer, v))
+}
+
+// RecipeItemsNonDepletingDefaultEQ applies the EQ predicate on the "recipe_items_non_depleting_default" field.
+func RecipeItemsNonDepletingDefaultEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldRecipeItemsNonDepletingDefault, v))
+}
+
+// RecipeItemsNonDepletingDefaultNEQ applies the NEQ predicate on the "recipe_items_non_depleting_default" field.
+func RecipeItemsNonDepletingDefaultNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldRecipeItemsNonDepletingDefault, v))
+}
+
+// RecordTheoreticalUsageEQ applies the EQ predicate on the "record_theoretical_usage" field.
+func RecordTheoreticalUsageEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldRecordTheoreticalUsage, v))
+}
+
+// RecordTheoreticalUsageNEQ applies the NEQ predicate on the "record_theoretical_usage" field.
+func RecordTheoreticalUsageNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldRecordTheoreticalUsage, v))
 }
 
 // LotsModuleEnabledEQ applies the EQ predicate on the "lots_module_enabled" field.

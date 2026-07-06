@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -282,11 +283,34 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 	}
 
 	var finalRecipe *recipes.RecipeDTO
-	existing, rErr := h.recipeSvc.GetRecipeBySKU(r.Context(), tenantID, menuItem.SKU)
-	if rErr == nil && existing != nil {
-		finalRecipe, rErr = h.recipeSvc.UpdateRecipe(r.Context(), tenantID, existing.ID, recipeDTO)
-	} else {
-		finalRecipe, rErr = h.recipeSvc.CreateRecipe(r.Context(), tenantID, recipeDTO)
+	saveRecipe := func() (*recipes.RecipeDTO, error) {
+		existing, gErr := h.recipeSvc.GetRecipeBySKU(r.Context(), tenantID, menuItem.SKU)
+		if gErr == nil && existing != nil {
+			return h.recipeSvc.UpdateRecipe(r.Context(), tenantID, existing.ID, recipeDTO)
+		}
+		return h.recipeSvc.CreateRecipe(r.Context(), tenantID, recipeDTO)
+	}
+	finalRecipe, rErr := saveRecipe()
+	if rErr != nil {
+		// The unit guard rejected cross-dimension lines (e.g. 25 ml of an item stocked
+		// in pieces). Consistent with this handler's per-line skip behavior: drop the
+		// offending lines with actionable warnings and save the rest of the menu item.
+		var unitErr *recipes.UnitValidationError
+		if errors.As(rErr, &unitErr) {
+			bad := make(map[string]bool, len(unitErr.Issues))
+			for _, is := range unitErr.Issues {
+				bad[is.IngredientSKU] = true
+				warnings = append(warnings, fmt.Sprintf("ingredient %q skipped: %s", is.IngredientName, is.Guidance))
+			}
+			kept := recipeDTO.Ingredients[:0]
+			for _, ing := range recipeDTO.Ingredients {
+				if !bad[ing.ItemSKU] {
+					kept = append(kept, ing)
+				}
+			}
+			recipeDTO.Ingredients = kept
+			finalRecipe, rErr = saveRecipe()
+		}
 	}
 	if rErr != nil {
 		writeError(w, http.StatusInternalServerError, "RECIPE_FAILED", rErr.Error())

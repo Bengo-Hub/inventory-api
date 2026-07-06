@@ -122,6 +122,12 @@ const (
 	FieldPreferredSupplierID = "preferred_supplier_id"
 	// FieldYieldPct holds the string denoting the yield_pct field in the database.
 	FieldYieldPct = "yield_pct"
+	// FieldUnitContentQty holds the string denoting the unit_content_qty field in the database.
+	FieldUnitContentQty = "unit_content_qty"
+	// FieldUnitContentUom holds the string denoting the unit_content_uom field in the database.
+	FieldUnitContentUom = "unit_content_uom"
+	// FieldStockTrackingMode holds the string denoting the stock_tracking_mode field in the database.
+	FieldStockTrackingMode = "stock_tracking_mode"
 	// FieldMinSellingPrice holds the string denoting the min_selling_price field in the database.
 	FieldMinSellingPrice = "min_selling_price"
 	// FieldMaxSellingPrice holds the string denoting the max_selling_price field in the database.
@@ -357,6 +363,9 @@ var Columns = []string{
 	FieldPurchaseUnit,
 	FieldPreferredSupplierID,
 	FieldYieldPct,
+	FieldUnitContentQty,
+	FieldUnitContentUom,
+	FieldStockTrackingMode,
 	FieldMinSellingPrice,
 	FieldMaxSellingPrice,
 	FieldTargetMarginPercent,
@@ -415,6 +424,8 @@ var (
 	PurchaseUnitValidator func(string) error
 	// DefaultYieldPct holds the default value on creation for the "yield_pct" field.
 	DefaultYieldPct float64
+	// UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
+	UnitContentUomValidator func(string) error
 	// DefaultBookedCapacity holds the default value on creation for the "booked_capacity" field.
 	DefaultBookedCapacity int
 	// EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
@@ -567,6 +578,33 @@ func OccupancyBasisValidator(ob OccupancyBasis) error {
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for occupancy_basis field: %q", ob)
+	}
+}
+
+// StockTrackingMode defines the type for the "stock_tracking_mode" enum field.
+type StockTrackingMode string
+
+// StockTrackingModeDefault is the default value of the StockTrackingMode enum.
+const DefaultStockTrackingMode = StockTrackingModeDefault
+
+// StockTrackingMode values.
+const (
+	StockTrackingModeDefault      StockTrackingMode = "default"
+	StockTrackingModeTracked      StockTrackingMode = "tracked"
+	StockTrackingModeNonDepleting StockTrackingMode = "non_depleting"
+)
+
+func (stm StockTrackingMode) String() string {
+	return string(stm)
+}
+
+// StockTrackingModeValidator is a validator for the "stock_tracking_mode" field enum values. It is called by the builders before save.
+func StockTrackingModeValidator(stm StockTrackingMode) error {
+	switch stm {
+	case StockTrackingModeDefault, StockTrackingModeTracked, StockTrackingModeNonDepleting:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for stock_tracking_mode field: %q", stm)
 	}
 }
 
@@ -831,6 +869,21 @@ func ByPreferredSupplierID(opts ...sql.OrderTermOption) OrderOption {
 // ByYieldPct orders the results by the yield_pct field.
 func ByYieldPct(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldYieldPct, opts...).ToFunc()
+}
+
+// ByUnitContentQty orders the results by the unit_content_qty field.
+func ByUnitContentQty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitContentQty, opts...).ToFunc()
+}
+
+// ByUnitContentUom orders the results by the unit_content_uom field.
+func ByUnitContentUom(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitContentUom, opts...).ToFunc()
+}
+
+// ByStockTrackingMode orders the results by the stock_tracking_mode field.
+func ByStockTrackingMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockTrackingMode, opts...).ToFunc()
 }
 
 // ByMinSellingPrice orders the results by the min_selling_price field.

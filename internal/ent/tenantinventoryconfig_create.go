@@ -218,6 +218,34 @@ func (_c *TenantInventoryConfigCreate) SetNillableAutoAdjustOnTransfer(v *bool) 
 	return _c
 }
 
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (_c *TenantInventoryConfigCreate) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetRecipeItemsNonDepletingDefault(v)
+	return _c
+}
+
+// SetNillableRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableRecipeItemsNonDepletingDefault(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetRecipeItemsNonDepletingDefault(*v)
+	}
+	return _c
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (_c *TenantInventoryConfigCreate) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetRecordTheoreticalUsage(v)
+	return _c
+}
+
+// SetNillableRecordTheoreticalUsage sets the "record_theoretical_usage" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableRecordTheoreticalUsage(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetRecordTheoreticalUsage(*v)
+	}
+	return _c
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (_c *TenantInventoryConfigCreate) SetLotsModuleEnabled(v bool) *TenantInventoryConfigCreate {
 	_c.mutation.SetLotsModuleEnabled(v)
@@ -479,6 +507,14 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultAutoAdjustOnTransfer
 		_c.mutation.SetAutoAdjustOnTransfer(v)
 	}
+	if _, ok := _c.mutation.RecipeItemsNonDepletingDefault(); !ok {
+		v := tenantinventoryconfig.DefaultRecipeItemsNonDepletingDefault
+		_c.mutation.SetRecipeItemsNonDepletingDefault(v)
+	}
+	if _, ok := _c.mutation.RecordTheoreticalUsage(); !ok {
+		v := tenantinventoryconfig.DefaultRecordTheoreticalUsage
+		_c.mutation.SetRecordTheoreticalUsage(v)
+	}
 	if _, ok := _c.mutation.LotsModuleEnabled(); !ok {
 		v := tenantinventoryconfig.DefaultLotsModuleEnabled
 		_c.mutation.SetLotsModuleEnabled(v)
@@ -571,6 +607,12 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.AutoAdjustOnTransfer(); !ok {
 		return &ValidationError{Name: "auto_adjust_on_transfer", err: errors.New(`ent: missing required field "TenantInventoryConfig.auto_adjust_on_transfer"`)}
+	}
+	if _, ok := _c.mutation.RecipeItemsNonDepletingDefault(); !ok {
+		return &ValidationError{Name: "recipe_items_non_depleting_default", err: errors.New(`ent: missing required field "TenantInventoryConfig.recipe_items_non_depleting_default"`)}
+	}
+	if _, ok := _c.mutation.RecordTheoreticalUsage(); !ok {
+		return &ValidationError{Name: "record_theoretical_usage", err: errors.New(`ent: missing required field "TenantInventoryConfig.record_theoretical_usage"`)}
 	}
 	if _, ok := _c.mutation.LotsModuleEnabled(); !ok {
 		return &ValidationError{Name: "lots_module_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.lots_module_enabled"`)}
@@ -697,6 +739,14 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.AutoAdjustOnTransfer(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldAutoAdjustOnTransfer, field.TypeBool, value)
 		_node.AutoAdjustOnTransfer = value
+	}
+	if value, ok := _c.mutation.RecipeItemsNonDepletingDefault(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, field.TypeBool, value)
+		_node.RecipeItemsNonDepletingDefault = value
+	}
+	if value, ok := _c.mutation.RecordTheoreticalUsage(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
+		_node.RecordTheoreticalUsage = value
 	}
 	if value, ok := _c.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)
@@ -1017,6 +1067,30 @@ func (u *TenantInventoryConfigUpsert) SetAutoAdjustOnTransfer(v bool) *TenantInv
 // UpdateAutoAdjustOnTransfer sets the "auto_adjust_on_transfer" field to the value that was provided on create.
 func (u *TenantInventoryConfigUpsert) UpdateAutoAdjustOnTransfer() *TenantInventoryConfigUpsert {
 	u.SetExcluded(tenantinventoryconfig.FieldAutoAdjustOnTransfer)
+	return u
+}
+
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (u *TenantInventoryConfigUpsert) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, v)
+	return u
+}
+
+// UpdateRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateRecipeItemsNonDepletingDefault() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault)
+	return u
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (u *TenantInventoryConfigUpsert) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldRecordTheoreticalUsage, v)
+	return u
+}
+
+// UpdateRecordTheoreticalUsage sets the "record_theoretical_usage" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldRecordTheoreticalUsage)
 	return u
 }
 
@@ -1477,6 +1551,34 @@ func (u *TenantInventoryConfigUpsertOne) SetAutoAdjustOnTransfer(v bool) *Tenant
 func (u *TenantInventoryConfigUpsertOne) UpdateAutoAdjustOnTransfer() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateAutoAdjustOnTransfer()
+	})
+}
+
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (u *TenantInventoryConfigUpsertOne) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetRecipeItemsNonDepletingDefault(v)
+	})
+}
+
+// UpdateRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateRecipeItemsNonDepletingDefault() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateRecipeItemsNonDepletingDefault()
+	})
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (u *TenantInventoryConfigUpsertOne) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetRecordTheoreticalUsage(v)
+	})
+}
+
+// UpdateRecordTheoreticalUsage sets the "record_theoretical_usage" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateRecordTheoreticalUsage()
 	})
 }
 
@@ -2129,6 +2231,34 @@ func (u *TenantInventoryConfigUpsertBulk) SetAutoAdjustOnTransfer(v bool) *Tenan
 func (u *TenantInventoryConfigUpsertBulk) UpdateAutoAdjustOnTransfer() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateAutoAdjustOnTransfer()
+	})
+}
+
+// SetRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field.
+func (u *TenantInventoryConfigUpsertBulk) SetRecipeItemsNonDepletingDefault(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetRecipeItemsNonDepletingDefault(v)
+	})
+}
+
+// UpdateRecipeItemsNonDepletingDefault sets the "recipe_items_non_depleting_default" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateRecipeItemsNonDepletingDefault() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateRecipeItemsNonDepletingDefault()
+	})
+}
+
+// SetRecordTheoreticalUsage sets the "record_theoretical_usage" field.
+func (u *TenantInventoryConfigUpsertBulk) SetRecordTheoreticalUsage(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetRecordTheoreticalUsage(v)
+	})
+}
+
+// UpdateRecordTheoreticalUsage sets the "record_theoretical_usage" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateRecordTheoreticalUsage()
 	})
 }
 

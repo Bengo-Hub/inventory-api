@@ -152,6 +152,14 @@ type ItemDTO struct {
 	PurchasePackSize *float64 `json:"purchase_pack_size,omitempty"`
 	PurchaseUnit     string   `json:"purchase_unit,omitempty"`
 	YieldPct         *float64 `json:"yield_pct,omitempty"` // 0 < y <= 1; default 1.0
+	// Content-per-unit: how much of UnitContentUOM ONE stock unit contains (a 750ml
+	// whiskey bottle stocked in pieces → 750 + "ml"). Lets ml/g recipe lines (tots,
+	// pours) deduct fractional stock units.
+	UnitContentQty *float64 `json:"unit_content_qty,omitempty"`
+	UnitContentUOM string   `json:"unit_content_uom,omitempty"`
+	// Stock tracking mode: "default" (RECIPE items follow the tenant non-depletion
+	// policy) | "tracked" | "non_depleting" (sells without stock effect).
+	StockTrackingMode string `json:"stock_tracking_mode,omitempty"`
 	// Selling-price guardrails + goods margin (Phase 4).
 	MinSellingPrice     *float64 `json:"min_selling_price,omitempty"`     // hard floor enforced at price upsert & POS
 	MaxSellingPrice     *float64 `json:"max_selling_price,omitempty"`     // hard ceiling enforced at price upsert & POS
@@ -651,6 +659,9 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		PurchasePackSize:        i.PurchasePackSize,
 		PurchaseUnit:            i.PurchaseUnit,
 		YieldPct:                i.YieldPct,
+		UnitContentQty:          i.UnitContentQty,
+		UnitContentUOM:          i.UnitContentUom,
+		StockTrackingMode:       string(i.StockTrackingMode),
 		MinSellingPrice:         i.MinSellingPrice,
 		MaxSellingPrice:         i.MaxSellingPrice,
 		TargetMarginPercent:     i.TargetMarginPercent,
@@ -1535,6 +1546,15 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.PurchaseUnit != "" {
 		createBuilder = createBuilder.SetPurchaseUnit(dto.PurchaseUnit)
 	}
+	if dto.UnitContentQty != nil {
+		createBuilder = createBuilder.SetNillableUnitContentQty(dto.UnitContentQty)
+	}
+	if dto.UnitContentUOM != "" {
+		createBuilder = createBuilder.SetUnitContentUom(dto.UnitContentUOM)
+	}
+	if dto.StockTrackingMode != "" {
+		createBuilder = createBuilder.SetStockTrackingMode(item.StockTrackingMode(dto.StockTrackingMode))
+	}
 	if dto.Manufacturer != "" {
 		createBuilder = createBuilder.SetManufacturer(dto.Manufacturer)
 	}
@@ -1777,6 +1797,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			"tax_code_id":               i.TaxCodeID,
 			"tax_inclusive":             i.TaxInclusive,
 			"cost_price":                i.CostPrice,
+			"unit_content_qty":          i.UnitContentQty,
+			"unit_content_uom":          i.UnitContentUom,
+			"stock_tracking_mode":       i.StockTrackingMode,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -1898,6 +1921,21 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	}
 	if dto.PurchaseUnit != "" {
 		updateBuilder = updateBuilder.SetPurchaseUnit(dto.PurchaseUnit)
+	}
+	// Content-per-unit + tracking mode: pointer/empty-string presence semantics so
+	// partial updates never clobber stored values. unit_content_qty == 0 clears the bridge.
+	if dto.UnitContentQty != nil {
+		if *dto.UnitContentQty <= 0 {
+			updateBuilder = updateBuilder.ClearUnitContentQty().ClearUnitContentUom()
+		} else {
+			updateBuilder = updateBuilder.SetUnitContentQty(*dto.UnitContentQty)
+		}
+	}
+	if dto.UnitContentUOM != "" {
+		updateBuilder = updateBuilder.SetUnitContentUom(dto.UnitContentUOM)
+	}
+	if dto.StockTrackingMode != "" {
+		updateBuilder = updateBuilder.SetStockTrackingMode(item.StockTrackingMode(dto.StockTrackingMode))
 	}
 	// E-commerce attributes — set only when present so a partial update (e.g. an
 	// edit form that doesn't yet carry these) never clobbers existing values. The
@@ -2071,6 +2109,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 			"tax_code_id":               i.TaxCodeID,
 			"tax_inclusive":             i.TaxInclusive,
 			"cost_price":                i.CostPrice,
+			"unit_content_qty":          i.UnitContentQty,
+			"unit_content_uom":          i.UnitContentUom,
+			"stock_tracking_mode":       i.StockTrackingMode,
 		},
 		Timestamp: time.Now().UTC(),
 	}

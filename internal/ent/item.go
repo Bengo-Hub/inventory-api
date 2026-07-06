@@ -132,6 +132,12 @@ type Item struct {
 	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
 	// Usable fraction after trim/cooking loss — 0 < y <= 1. EP cost = purchase_price / pack_size / yield_pct
 	YieldPct *float64 `json:"yield_pct,omitempty"`
+	// How much of unit_content_uom ONE stock unit contains (e.g. 750 for a 750ml bottle stocked in pieces)
+	UnitContentQty *float64 `json:"unit_content_qty,omitempty"`
+	// Unit of the per-stock-unit content (e.g. 'ml', 'g') — enables cross-dimension recipe deduction
+	UnitContentUom string `json:"unit_content_uom,omitempty"`
+	// Depletion behavior: default (tenant policy for recipes), tracked (always deplete), non_depleting (sell without stock effect; excluded from stock-out cascade)
+	StockTrackingMode item.StockTrackingMode `json:"stock_tracking_mode,omitempty"`
 	// Hard minimum selling price (KES). Prices below this are rejected at price upsert and require manager approval at POS
 	MinSellingPrice *float64 `json:"min_selling_price,omitempty"`
 	// Hard maximum selling price (KES). Prices above this are rejected at price upsert and require manager approval at POS
@@ -379,11 +385,11 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldNonBillable, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
 			values[i] = new(sql.NullBool)
-		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
+		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldUnitContentQty, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
 		case item.FieldReturnWindowDays, item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -748,6 +754,25 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.YieldPct = new(float64)
 				*_m.YieldPct = value.Float64
+			}
+		case item.FieldUnitContentQty:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_content_qty", values[i])
+			} else if value.Valid {
+				_m.UnitContentQty = new(float64)
+				*_m.UnitContentQty = value.Float64
+			}
+		case item.FieldUnitContentUom:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_content_uom", values[i])
+			} else if value.Valid {
+				_m.UnitContentUom = value.String
+			}
+		case item.FieldStockTrackingMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_tracking_mode", values[i])
+			} else if value.Valid {
+				_m.StockTrackingMode = item.StockTrackingMode(value.String)
 			}
 		case item.FieldMinSellingPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -1138,6 +1163,17 @@ func (_m *Item) String() string {
 		builder.WriteString("yield_pct=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.UnitContentQty; v != nil {
+		builder.WriteString("unit_content_qty=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("unit_content_uom=")
+	builder.WriteString(_m.UnitContentUom)
+	builder.WriteString(", ")
+	builder.WriteString("stock_tracking_mode=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockTrackingMode))
 	builder.WriteString(", ")
 	if v := _m.MinSellingPrice; v != nil {
 		builder.WriteString("min_selling_price=")

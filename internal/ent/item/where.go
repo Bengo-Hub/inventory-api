@@ -286,6 +286,16 @@ func YieldPct(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldYieldPct, v))
 }
 
+// UnitContentQty applies equality check predicate on the "unit_content_qty" field. It's identical to UnitContentQtyEQ.
+func UnitContentQty(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitContentQty, v))
+}
+
+// UnitContentUom applies equality check predicate on the "unit_content_uom" field. It's identical to UnitContentUomEQ.
+func UnitContentUom(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitContentUom, v))
+}
+
 // MinSellingPrice applies equality check predicate on the "min_selling_price" field. It's identical to MinSellingPriceEQ.
 func MinSellingPrice(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldMinSellingPrice, v))
@@ -2604,6 +2614,151 @@ func YieldPctIsNil() predicate.Item {
 // YieldPctNotNil applies the NotNil predicate on the "yield_pct" field.
 func YieldPctNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldYieldPct))
+}
+
+// UnitContentQtyEQ applies the EQ predicate on the "unit_content_qty" field.
+func UnitContentQtyEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyNEQ applies the NEQ predicate on the "unit_content_qty" field.
+func UnitContentQtyNEQ(v float64) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyIn applies the In predicate on the "unit_content_qty" field.
+func UnitContentQtyIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldUnitContentQty, vs...))
+}
+
+// UnitContentQtyNotIn applies the NotIn predicate on the "unit_content_qty" field.
+func UnitContentQtyNotIn(vs ...float64) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldUnitContentQty, vs...))
+}
+
+// UnitContentQtyGT applies the GT predicate on the "unit_content_qty" field.
+func UnitContentQtyGT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyGTE applies the GTE predicate on the "unit_content_qty" field.
+func UnitContentQtyGTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyLT applies the LT predicate on the "unit_content_qty" field.
+func UnitContentQtyLT(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyLTE applies the LTE predicate on the "unit_content_qty" field.
+func UnitContentQtyLTE(v float64) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldUnitContentQty, v))
+}
+
+// UnitContentQtyIsNil applies the IsNil predicate on the "unit_content_qty" field.
+func UnitContentQtyIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldUnitContentQty))
+}
+
+// UnitContentQtyNotNil applies the NotNil predicate on the "unit_content_qty" field.
+func UnitContentQtyNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldUnitContentQty))
+}
+
+// UnitContentUomEQ applies the EQ predicate on the "unit_content_uom" field.
+func UnitContentUomEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUnitContentUom, v))
+}
+
+// UnitContentUomNEQ applies the NEQ predicate on the "unit_content_uom" field.
+func UnitContentUomNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldUnitContentUom, v))
+}
+
+// UnitContentUomIn applies the In predicate on the "unit_content_uom" field.
+func UnitContentUomIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldUnitContentUom, vs...))
+}
+
+// UnitContentUomNotIn applies the NotIn predicate on the "unit_content_uom" field.
+func UnitContentUomNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldUnitContentUom, vs...))
+}
+
+// UnitContentUomGT applies the GT predicate on the "unit_content_uom" field.
+func UnitContentUomGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldUnitContentUom, v))
+}
+
+// UnitContentUomGTE applies the GTE predicate on the "unit_content_uom" field.
+func UnitContentUomGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldUnitContentUom, v))
+}
+
+// UnitContentUomLT applies the LT predicate on the "unit_content_uom" field.
+func UnitContentUomLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldUnitContentUom, v))
+}
+
+// UnitContentUomLTE applies the LTE predicate on the "unit_content_uom" field.
+func UnitContentUomLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldUnitContentUom, v))
+}
+
+// UnitContentUomContains applies the Contains predicate on the "unit_content_uom" field.
+func UnitContentUomContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldUnitContentUom, v))
+}
+
+// UnitContentUomHasPrefix applies the HasPrefix predicate on the "unit_content_uom" field.
+func UnitContentUomHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldUnitContentUom, v))
+}
+
+// UnitContentUomHasSuffix applies the HasSuffix predicate on the "unit_content_uom" field.
+func UnitContentUomHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldUnitContentUom, v))
+}
+
+// UnitContentUomIsNil applies the IsNil predicate on the "unit_content_uom" field.
+func UnitContentUomIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldUnitContentUom))
+}
+
+// UnitContentUomNotNil applies the NotNil predicate on the "unit_content_uom" field.
+func UnitContentUomNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldUnitContentUom))
+}
+
+// UnitContentUomEqualFold applies the EqualFold predicate on the "unit_content_uom" field.
+func UnitContentUomEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldUnitContentUom, v))
+}
+
+// UnitContentUomContainsFold applies the ContainsFold predicate on the "unit_content_uom" field.
+func UnitContentUomContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldUnitContentUom, v))
+}
+
+// StockTrackingModeEQ applies the EQ predicate on the "stock_tracking_mode" field.
+func StockTrackingModeEQ(v StockTrackingMode) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldStockTrackingMode, v))
+}
+
+// StockTrackingModeNEQ applies the NEQ predicate on the "stock_tracking_mode" field.
+func StockTrackingModeNEQ(v StockTrackingMode) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldStockTrackingMode, v))
+}
+
+// StockTrackingModeIn applies the In predicate on the "stock_tracking_mode" field.
+func StockTrackingModeIn(vs ...StockTrackingMode) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldStockTrackingMode, vs...))
+}
+
+// StockTrackingModeNotIn applies the NotIn predicate on the "stock_tracking_mode" field.
+func StockTrackingModeNotIn(vs ...StockTrackingMode) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldStockTrackingMode, vs...))
 }
 
 // MinSellingPriceEQ applies the EQ predicate on the "min_selling_price" field.

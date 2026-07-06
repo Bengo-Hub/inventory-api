@@ -21,10 +21,17 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
 			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
-			WithIngredients().
+			WithIngredients(func(q *ent.RecipeIngredientQuery) {
+				q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
+			}).
 			WithItem().
 			Only(ctx)
 		if err != nil || r.ItemID == nil || r.Edges.Item == nil {
+			continue
+		}
+		// Non-depleting recipe items are never auto-86'd (they sell regardless of
+		// tracked ingredient levels — the tenant counts stock manually).
+		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
 		if s.allIngredientsAvailable(ctx, tx, tenantID, r.Edges.Ingredients, warehouseID) {
@@ -95,10 +102,16 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
 			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
-			WithIngredients().
+			WithIngredients(func(q *ent.RecipeIngredientQuery) {
+				q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
+			}).
 			WithItem().
 			Only(ctx)
 		if err != nil || r.ItemID == nil || r.Edges.Item == nil {
+			continue
+		}
+		// Non-depleting recipe items were never 86'd, so there is nothing to unblock.
+		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
 		if !s.allIngredientsAvailable(ctx, tx, tenantID, r.Edges.Ingredients, warehouseID) {
@@ -172,9 +185,20 @@ func (s *Service) produciblePortions(ctx context.Context, tx *ent.Tx, tenantID u
 	}
 	min := -1.0
 	for _, ing := range r.Edges.Ingredients {
-		perPortion := ing.Quantity / outputQty
+		if !ingredientConstrains(ctx, s, ing) {
+			continue
+		}
+		perPortion := ing.Quantity * (1 + ing.WastePercent/100) / outputQty
 		if perPortion <= 0 {
 			continue // free/zero-need ingredient never constrains the count
+		}
+		// Balances are in the ingredient's STOCK unit; the recipe line may be in a
+		// kitchen unit (ml of a bottle stocked in pieces). Convert the same way the
+		// deduction path does — including the content-per-unit bridge — so a bottle
+		// with 0.5 pieces left still shows floor(0.5×750/30)=12 tots producible.
+		perPortionStock, ok := ConvertToStockUnit(ing.Edges.Item, perPortion, ing.UnitOfMeasure)
+		if !ok || perPortionStock <= 0 {
+			continue // unconvertible line never deducts, so it never constrains
 		}
 		bal, err := tx.InventoryBalance.Query().
 			Where(
@@ -186,7 +210,7 @@ func (s *Service) produciblePortions(ctx context.Context, tx *ent.Tx, tenantID u
 		if err != nil || bal.Available <= 0 {
 			return 0
 		}
-		portions := math.Floor(bal.Available / perPortion)
+		portions := math.Floor(bal.Available / perPortionStock)
 		if min < 0 || portions < min {
 			min = portions
 		}
@@ -197,10 +221,25 @@ func (s *Service) produciblePortions(ctx context.Context, tx *ent.Tx, tenantID u
 	return min
 }
 
-// allIngredientsAvailable returns true only if every ingredient in the recipe
-// has a balance row with available > 0 in the given warehouse.
+// ingredientConstrains reports whether a recipe line participates in availability
+// gating: non-depleting ingredient items never constrain (their balances are not
+// maintained by sales). Ingredient item edge must be pre-loaded (WithItem).
+func ingredientConstrains(ctx context.Context, s *Service, ing *ent.RecipeIngredient) bool {
+	return !s.itemNonDepletingLazy(ctx, ing.Edges.Item)
+}
+
+// allIngredientsAvailable returns true only if every constraining ingredient in the
+// recipe has a balance row with available > 0 in the given warehouse. Lines that never
+// deduct (non-depleting items, unconvertible cross-dimension units) are skipped so they
+// cannot 86 a recipe. Ingredient item edges must be pre-loaded (WithItem(WithUnits)).
 func (s *Service) allIngredientsAvailable(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, ingredients []*ent.RecipeIngredient, warehouseID uuid.UUID) bool {
 	for _, ing := range ingredients {
+		if !ingredientConstrains(ctx, s, ing) {
+			continue
+		}
+		if _, ok := ConvertToStockUnit(ing.Edges.Item, ing.Quantity, ing.UnitOfMeasure); !ok {
+			continue // unconvertible line never deducts, so it never constrains
+		}
 		bal, err := tx.InventoryBalance.Query().
 			Where(
 				inventorybalance.TenantID(tenantID),

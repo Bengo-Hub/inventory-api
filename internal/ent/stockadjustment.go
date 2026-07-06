@@ -30,7 +30,7 @@ type StockAdjustment struct {
 	QuantityChange float64 `json:"quantity_change,omitempty"`
 	// Stock level after adjustment
 	QuantityAfter float64 `json:"quantity_after,omitempty"`
-	// Reason for adjustment
+	// Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury
 	Reason stockadjustment.Reason `json:"reason,omitempty"`
 	// External reference (e.g. PO number, transfer ID)
 	Reference string `json:"reference,omitempty"`
