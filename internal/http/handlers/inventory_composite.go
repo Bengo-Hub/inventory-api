@@ -359,6 +359,45 @@ func (h *InventoryHandler) createOrUpdateMenuItemByName(r *http.Request, tenantI
 	return h.itemsSvc.CreateItem(r.Context(), tenantID, dto)
 }
 
+// applyIngredientCost updates ONLY the cost/purchase fields of an existing ingredient
+// from a recipe line. The line's dto also carries a name/type/unit resolved from the
+// line itself (e.g. the unit the recipe consumes in, which may be ml against an item
+// stocked in L) — passing it whole to UpdateItem would silently rewrite the item's
+// base unit/name and corrupt the per-base-unit cost basis. Best-effort: on failure the
+// existing item is returned unchanged.
+func (h *InventoryHandler) applyIngredientCost(r *http.Request, tenantID uuid.UUID, existing items.ItemDTO, dto items.ItemDTO) *items.ItemDTO {
+	if dto.CostPrice == nil && dto.PurchasePrice == nil {
+		return &existing
+	}
+	patched := existing
+	if dto.PurchasePrice != nil {
+		patched.PurchasePrice = dto.PurchasePrice
+	}
+	if dto.PurchasePackSize != nil {
+		patched.PurchasePackSize = dto.PurchasePackSize
+	}
+	if dto.PurchaseUnit != "" {
+		patched.PurchaseUnit = dto.PurchaseUnit
+	}
+	if dto.YieldPct != nil {
+		patched.YieldPct = dto.YieldPct
+	}
+	if dto.CostPrice != nil {
+		patched.CostPrice = dto.CostPrice
+	} else {
+		// Purchase fields changed without an explicit EP cost — clear it so the
+		// service's resolveEPCost re-derives cost_price from the new pack.
+		patched.CostPrice = nil
+	}
+	updated, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, existing.ID, patched)
+	if err != nil {
+		h.log.Warn("composite: update ingredient cost failed",
+			zap.String("sku", existing.SKU), zap.Error(err))
+		return &existing
+	}
+	return updated
+}
+
 // resolveOrCreateIngredient finds an ingredient by SKU or name, or creates it.
 // Appends a ReorderSeed entry when a new ingredient is created.
 func (h *InventoryHandler) resolveOrCreateIngredient(
@@ -370,16 +409,10 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 ) (*items.ItemDTO, error) {
 	// Try by SKU first.
 	if dto.SKU != "" {
-		avail, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, dto.SKU)
-		if err == nil {
-			// Update cost_price if provided.
-			if dto.CostPrice != nil || dto.PurchasePrice != nil {
-				_, _ = h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, dto)
-			}
+		if _, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, dto.SKU); err == nil {
 			existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 1, 0, nil, nil, dto.SKU, nil, "")
 			if len(existingList) > 0 {
-				itm := existingList[0]
-				return &itm, nil
+				return h.applyIngredientCost(r, tenantID, existingList[0], dto), nil
 			}
 		}
 	}
@@ -389,10 +422,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 5, 0, nil, nil, dto.Name, nil, "")
 		for _, it := range existingList {
 			if strings.EqualFold(it.Name, dto.Name) {
-				if dto.CostPrice != nil {
-					_, _ = h.itemsSvc.UpdateItem(r.Context(), tenantID, it.ID, dto)
-				}
-				return &it, nil
+				return h.applyIngredientCost(r, tenantID, it, dto), nil
 			}
 		}
 	}
