@@ -744,8 +744,16 @@ func enumPtrToStr[T ~string](v *T) *string {
 // statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
 // outletID: when set, restricts items to those with a balance in the outlet's warehouses or shared warehouses (outlet_id IS NULL).
 func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]ItemDTO, int, error) {
-	// Pre-compute outlet-scoped item IDs when outlet context is active.
-	var outletItemIDs []uuid.UUID
+	// Pre-compute outlet-scoped EXCLUSIONS when outlet context is active.
+	//
+	// Rule: an outlet hides only items that are stocked EXCLUSIVELY in some OTHER outlet's
+	// warehouses (they belong to a different location). Items with a balance here stay, and —
+	// crucially — items with NO balance row anywhere stay too: made-to-order RECIPE menu items
+	// never carry own stock (their BOM ingredients do), and a newly created GOODS item hasn't
+	// been received yet. The previous rule ("keep only items with a balance in this outlet's
+	// warehouses") silently hid every balance-less item the moment the outlet had ANY stock —
+	// urban-loft's POS lost 135 of its 269 sellable items (94 recipes + 41 goods) that way.
+	var outletExcludeIDs []uuid.UUID
 	if outletID != nil {
 		wIDs, _ := s.client.Warehouse.Query().
 			Where(
@@ -755,26 +763,25 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					warehouse.OutletIDIsNil(),
 				),
 			).IDs(ctx)
-		if len(wIDs) > 0 {
-			bals, _ := s.client.InventoryBalance.Query().
-				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
-				All(ctx)
-			idSet := make(map[uuid.UUID]struct{}, len(bals))
-			for _, b := range bals {
-				idSet[b.ItemID] = struct{}{}
+		hereSet := make(map[uuid.UUID]struct{}, len(wIDs))
+		for _, id := range wIDs {
+			hereSet[id] = struct{}{}
+		}
+		bals, _ := s.client.InventoryBalance.Query().
+			Where(inventorybalance.TenantIDEQ(tenantID)).
+			All(ctx)
+		stockedHere := make(map[uuid.UUID]struct{})
+		stockedElsewhere := make(map[uuid.UUID]struct{})
+		for _, b := range bals {
+			if _, ok := hereSet[b.WarehouseID]; ok {
+				stockedHere[b.ItemID] = struct{}{}
+			} else {
+				stockedElsewhere[b.ItemID] = struct{}{}
 			}
-			// Only scope to stocked items when the outlet actually HAS stock. A freshly
-			// provisioned outlet whose warehouse has no balances yet (e.g. a retail till that
-			// hasn't received stock) would otherwise get an EMPTY catalog and be unable to sell
-			// anything — which is what made a retail-use-case POS show no items at all. In that
-			// case leave outletItemIDs nil and fall back to the type/category-filtered catalog,
-			// so the outlet's sellable items still appear (their stock surfaces as 0 until goods
-			// are received).
-			if len(idSet) > 0 {
-				outletItemIDs = make([]uuid.UUID, 0, len(idSet))
-				for id := range idSet {
-					outletItemIDs = append(outletItemIDs, id)
-				}
+		}
+		for id := range stockedElsewhere {
+			if _, ok := stockedHere[id]; !ok {
+				outletExcludeIDs = append(outletExcludeIDs, id)
 			}
 		}
 	}
@@ -829,9 +836,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				s.Where(sqljson.ValueContains(item.FieldTags, tagVal))
 			}))
 		}
-		// Outlet scope: restrict to items with balances in this outlet's warehouses.
-		if outletItemIDs != nil {
-			q = q.Where(item.IDIn(outletItemIDs...))
+		// Outlet scope: hide only items stocked exclusively in OTHER outlets' warehouses.
+		if len(outletExcludeIDs) > 0 {
+			q = q.Where(item.IDNotIn(outletExcludeIDs...))
 		}
 		return q
 	}
