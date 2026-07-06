@@ -41,6 +41,14 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 
 	for i := range dtos {
 		d := &dtos[i]
+		// INGREDIENT items are never sold to customers — they are consumed to produce
+		// recipe items. Deriving a "selling price" for them (cost+margin cooked
+		// suggestion) only pollutes lists with meaningless retail/wholesale figures; the
+		// only price that matters is cost_price per BASE unit, used in recipe line/EP
+		// cost calculations. Skip enrichment entirely.
+		if d.Type == "INGREDIENT" {
+			continue
+		}
 		price := effectivePrice(d, recipePrice, tierPrice)
 		if price <= 0 {
 			continue
