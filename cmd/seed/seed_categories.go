@@ -25,6 +25,9 @@ var categoryDefs = []categoryDef{
 	{"sandwiches", "Sandwiches & Wraps", "SND", "Paninis, wraps, and classic sandwiches", "/media/icons/sandwich-colored.svg"},
 	{"salads", "Salads", "SAL", "Fresh salads and greens", "/media/icons/fresh-colored.svg"},
 	{"main-courses", "Main Courses", "MIN", "Grills, curries, rice dishes, and hearty mains", "/media/icons/burger-colored.svg"},
+	// Name matches pos-api's isAccompanimentCategory matcher so these surface on the
+	// terminal's Accompaniment tab (free sides — non-billable, stock still deducts).
+	{"accompaniments", "Accompaniments", "ACC", "Free sides and accompaniments served with mains", "/media/icons/fresh-colored.svg"},
 	{"light-bites", "Light Bites", "BTE", "Samosas, spring rolls, and quick snacks", "/media/icons/snack-colored.svg"},
 	{"breakfast", "Breakfast", "BRK", "Full breakfasts, pancakes, oats, and morning meals", "/media/icons/breakfast-colored.svg"},
 	{"pizza", "Pizza", "PIZ", "Artisanal and classic pizzas", "/media/icons/pizza-colored.svg"},
