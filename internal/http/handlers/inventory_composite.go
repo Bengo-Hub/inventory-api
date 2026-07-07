@@ -66,7 +66,11 @@ type MenuItemCompositeRequest struct {
 	SellingPrice float64  `json:"selling_price"` // user-provided final price
 	Tags         []string `json:"tags,omitempty"`
 	IsPerishable bool     `json:"is_perishable,omitempty"`
-	ImageURL     string   `json:"image_url,omitempty"`
+	// Non-billable: never charged at POS even when a selling price exists (free
+	// accompaniments like ugali, greens). Pointer so an absent field never clobbers
+	// the stored flag on upsert. When true, selling_price 0 is allowed.
+	NonBillable *bool  `json:"non_billable,omitempty"`
+	ImageURL    string `json:"image_url,omitempty"`
 
 	// ── Recipe fields ─────────────────────────────────────────────────────────
 	Servings            float64  `json:"servings"`              // output_qty; default 1
@@ -124,8 +128,11 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		writeError(w, http.StatusBadRequest, "MISSING_NAME", "name is required")
 		return
 	}
-	if req.SellingPrice <= 0 {
-		writeError(w, http.StatusBadRequest, "MISSING_PRICE", "selling_price must be > 0")
+	// Non-billable accompaniments are rung up at KES 0, so a zero price is valid for
+	// them; every billable menu item still needs a real price.
+	nonBillable := req.NonBillable != nil && *req.NonBillable
+	if req.SellingPrice < 0 || (req.SellingPrice == 0 && !nonBillable) {
+		writeError(w, http.StatusBadRequest, "MISSING_PRICE", "selling_price must be > 0 (0 is allowed only for non-billable items)")
 		return
 	}
 	if req.Servings <= 0 {
@@ -155,6 +162,7 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		IsActive:        true,
 		Tags:            req.Tags,
 		IsPerishable:    req.IsPerishable,
+		NonBillable:     req.NonBillable,
 		ImageURL:        req.ImageURL,
 		SuggestedPrice:  &sp,
 		AddToAllOutlets: true,
