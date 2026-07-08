@@ -55843,6 +55843,7 @@ type PurchaseOrderLineMutation struct {
 	id                    *uuid.UUID
 	item_id               *uuid.UUID
 	variant_id            *uuid.UUID
+	unit_id               *uuid.UUID
 	quantity_ordered      *float64
 	addquantity_ordered   *float64
 	quantity_received     *float64
@@ -56084,6 +56085,55 @@ func (m *PurchaseOrderLineMutation) VariantIDCleared() bool {
 func (m *PurchaseOrderLineMutation) ResetVariantID() {
 	m.variant_id = nil
 	delete(m.clearedFields, purchaseorderline.FieldVariantID)
+}
+
+// SetUnitID sets the "unit_id" field.
+func (m *PurchaseOrderLineMutation) SetUnitID(u uuid.UUID) {
+	m.unit_id = &u
+}
+
+// UnitID returns the value of the "unit_id" field in the mutation.
+func (m *PurchaseOrderLineMutation) UnitID() (r uuid.UUID, exists bool) {
+	v := m.unit_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnitID returns the old "unit_id" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldUnitID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnitID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnitID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnitID: %w", err)
+	}
+	return oldValue.UnitID, nil
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (m *PurchaseOrderLineMutation) ClearUnitID() {
+	m.unit_id = nil
+	m.clearedFields[purchaseorderline.FieldUnitID] = struct{}{}
+}
+
+// UnitIDCleared returns if the "unit_id" field was cleared in this mutation.
+func (m *PurchaseOrderLineMutation) UnitIDCleared() bool {
+	_, ok := m.clearedFields[purchaseorderline.FieldUnitID]
+	return ok
+}
+
+// ResetUnitID resets all changes to the "unit_id" field.
+func (m *PurchaseOrderLineMutation) ResetUnitID() {
+	m.unit_id = nil
+	delete(m.clearedFields, purchaseorderline.FieldUnitID)
 }
 
 // SetQuantityOrdered sets the "quantity_ordered" field.
@@ -56440,7 +56490,7 @@ func (m *PurchaseOrderLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderLineMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.purchase_order != nil {
 		fields = append(fields, purchaseorderline.FieldPoID)
 	}
@@ -56449,6 +56499,9 @@ func (m *PurchaseOrderLineMutation) Fields() []string {
 	}
 	if m.variant_id != nil {
 		fields = append(fields, purchaseorderline.FieldVariantID)
+	}
+	if m.unit_id != nil {
+		fields = append(fields, purchaseorderline.FieldUnitID)
 	}
 	if m.quantity_ordered != nil {
 		fields = append(fields, purchaseorderline.FieldQuantityOrdered)
@@ -56479,6 +56532,8 @@ func (m *PurchaseOrderLineMutation) Field(name string) (ent.Value, bool) {
 		return m.ItemID()
 	case purchaseorderline.FieldVariantID:
 		return m.VariantID()
+	case purchaseorderline.FieldUnitID:
+		return m.UnitID()
 	case purchaseorderline.FieldQuantityOrdered:
 		return m.QuantityOrdered()
 	case purchaseorderline.FieldQuantityReceived:
@@ -56504,6 +56559,8 @@ func (m *PurchaseOrderLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldItemID(ctx)
 	case purchaseorderline.FieldVariantID:
 		return m.OldVariantID(ctx)
+	case purchaseorderline.FieldUnitID:
+		return m.OldUnitID(ctx)
 	case purchaseorderline.FieldQuantityOrdered:
 		return m.OldQuantityOrdered(ctx)
 	case purchaseorderline.FieldQuantityReceived:
@@ -56543,6 +56600,13 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVariantID(v)
+		return nil
+	case purchaseorderline.FieldUnitID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnitID(v)
 		return nil
 	case purchaseorderline.FieldQuantityOrdered:
 		v, ok := value.(float64)
@@ -56675,6 +56739,9 @@ func (m *PurchaseOrderLineMutation) ClearedFields() []string {
 	if m.FieldCleared(purchaseorderline.FieldVariantID) {
 		fields = append(fields, purchaseorderline.FieldVariantID)
 	}
+	if m.FieldCleared(purchaseorderline.FieldUnitID) {
+		fields = append(fields, purchaseorderline.FieldUnitID)
+	}
 	return fields
 }
 
@@ -56692,6 +56759,9 @@ func (m *PurchaseOrderLineMutation) ClearField(name string) error {
 	case purchaseorderline.FieldVariantID:
 		m.ClearVariantID()
 		return nil
+	case purchaseorderline.FieldUnitID:
+		m.ClearUnitID()
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine nullable field %s", name)
 }
@@ -56708,6 +56778,9 @@ func (m *PurchaseOrderLineMutation) ResetField(name string) error {
 		return nil
 	case purchaseorderline.FieldVariantID:
 		m.ResetVariantID()
+		return nil
+	case purchaseorderline.FieldUnitID:
+		m.ResetUnitID()
 		return nil
 	case purchaseorderline.FieldQuantityOrdered:
 		m.ResetQuantityOrdered()

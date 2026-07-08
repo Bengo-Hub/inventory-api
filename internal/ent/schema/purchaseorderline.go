@@ -27,6 +27,10 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("FK to ItemVariant if variant-specific"),
+		field.UUID("unit_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("FK to Unit — unit of measure this line was ordered in (e.g. kg, box); defaults to the item's purchase_unit"),
 		field.Float("quantity_ordered").
 			Default(0),
 		field.Float("quantity_received").

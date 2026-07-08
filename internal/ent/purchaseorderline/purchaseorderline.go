@@ -19,6 +19,8 @@ const (
 	FieldItemID = "item_id"
 	// FieldVariantID holds the string denoting the variant_id field in the database.
 	FieldVariantID = "variant_id"
+	// FieldUnitID holds the string denoting the unit_id field in the database.
+	FieldUnitID = "unit_id"
 	// FieldQuantityOrdered holds the string denoting the quantity_ordered field in the database.
 	FieldQuantityOrdered = "quantity_ordered"
 	// FieldQuantityReceived holds the string denoting the quantity_received field in the database.
@@ -48,6 +50,7 @@ var Columns = []string{
 	FieldPoID,
 	FieldItemID,
 	FieldVariantID,
+	FieldUnitID,
 	FieldQuantityOrdered,
 	FieldQuantityReceived,
 	FieldUnitPrice,
@@ -101,6 +104,11 @@ func ByItemID(opts ...sql.OrderTermOption) OrderOption {
 // ByVariantID orders the results by the variant_id field.
 func ByVariantID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVariantID, opts...).ToFunc()
+}
+
+// ByUnitID orders the results by the unit_id field.
+func ByUnitID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnitID, opts...).ToFunc()
 }
 
 // ByQuantityOrdered orders the results by the quantity_ordered field.

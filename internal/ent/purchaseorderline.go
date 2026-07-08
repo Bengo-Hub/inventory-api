@@ -24,6 +24,8 @@ type PurchaseOrderLine struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// FK to ItemVariant if variant-specific
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
+	// FK to Unit — unit of measure this line was ordered in (e.g. kg, box); defaults to the item's purchase_unit
+	UnitID *uuid.UUID `json:"unit_id,omitempty"`
 	// QuantityOrdered holds the value of the "quantity_ordered" field.
 	QuantityOrdered float64 `json:"quantity_ordered,omitempty"`
 	// QuantityReceived holds the value of the "quantity_received" field.
@@ -65,7 +67,7 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchaseorderline.FieldVariantID:
+		case purchaseorderline.FieldVariantID, purchaseorderline.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent:
 			values[i] = new(sql.NullFloat64)
@@ -110,6 +112,13 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.VariantID = new(uuid.UUID)
 				*_m.VariantID = *value.S.(*uuid.UUID)
+			}
+		case purchaseorderline.FieldUnitID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field unit_id", values[i])
+			} else if value.Valid {
+				_m.UnitID = new(uuid.UUID)
+				*_m.UnitID = *value.S.(*uuid.UUID)
 			}
 		case purchaseorderline.FieldQuantityOrdered:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -190,6 +199,11 @@ func (_m *PurchaseOrderLine) String() string {
 	builder.WriteString(", ")
 	if v := _m.VariantID; v != nil {
 		builder.WriteString("variant_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.UnitID; v != nil {
+		builder.WriteString("unit_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
