@@ -50,6 +50,20 @@ func (_c *PurchaseOrderLineCreate) SetNillableVariantID(v *uuid.UUID) *PurchaseO
 	return _c
 }
 
+// SetUnitID sets the "unit_id" field.
+func (_c *PurchaseOrderLineCreate) SetUnitID(v uuid.UUID) *PurchaseOrderLineCreate {
+	_c.mutation.SetUnitID(v)
+	return _c
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableUnitID(v *uuid.UUID) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetUnitID(*v)
+	}
+	return _c
+}
+
 // SetQuantityOrdered sets the "quantity_ordered" field.
 func (_c *PurchaseOrderLineCreate) SetQuantityOrdered(v float64) *PurchaseOrderLineCreate {
 	_c.mutation.SetQuantityOrdered(v)
@@ -276,6 +290,10 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 		_spec.SetField(purchaseorderline.FieldVariantID, field.TypeUUID, value)
 		_node.VariantID = &value
 	}
+	if value, ok := _c.mutation.UnitID(); ok {
+		_spec.SetField(purchaseorderline.FieldUnitID, field.TypeUUID, value)
+		_node.UnitID = &value
+	}
 	if value, ok := _c.mutation.QuantityOrdered(); ok {
 		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 		_node.QuantityOrdered = value
@@ -404,6 +422,24 @@ func (u *PurchaseOrderLineUpsert) UpdateVariantID() *PurchaseOrderLineUpsert {
 // ClearVariantID clears the value of the "variant_id" field.
 func (u *PurchaseOrderLineUpsert) ClearVariantID() *PurchaseOrderLineUpsert {
 	u.SetNull(purchaseorderline.FieldVariantID)
+	return u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *PurchaseOrderLineUpsert) SetUnitID(v uuid.UUID) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldUnitID, v)
+	return u
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateUnitID() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldUnitID)
+	return u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *PurchaseOrderLineUpsert) ClearUnitID() *PurchaseOrderLineUpsert {
+	u.SetNull(purchaseorderline.FieldUnitID)
 	return u
 }
 
@@ -591,6 +627,27 @@ func (u *PurchaseOrderLineUpsertOne) UpdateVariantID() *PurchaseOrderLineUpsertO
 func (u *PurchaseOrderLineUpsertOne) ClearVariantID() *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.ClearVariantID()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *PurchaseOrderLineUpsertOne) SetUnitID(v uuid.UUID) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateUnitID() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *PurchaseOrderLineUpsertOne) ClearUnitID() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearUnitID()
 	})
 }
 
@@ -960,6 +1017,27 @@ func (u *PurchaseOrderLineUpsertBulk) UpdateVariantID() *PurchaseOrderLineUpsert
 func (u *PurchaseOrderLineUpsertBulk) ClearVariantID() *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.ClearVariantID()
+	})
+}
+
+// SetUnitID sets the "unit_id" field.
+func (u *PurchaseOrderLineUpsertBulk) SetUnitID(v uuid.UUID) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetUnitID(v)
+	})
+}
+
+// UpdateUnitID sets the "unit_id" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateUnitID() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateUnitID()
+	})
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (u *PurchaseOrderLineUpsertBulk) ClearUnitID() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearUnitID()
 	})
 }
 

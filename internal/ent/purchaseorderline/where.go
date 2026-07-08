@@ -69,6 +69,11 @@ func VariantID(v uuid.UUID) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldVariantID, v))
 }
 
+// UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
+func UnitID(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldUnitID, v))
+}
+
 // QuantityOrdered applies equality check predicate on the "quantity_ordered" field. It's identical to QuantityOrderedEQ.
 func QuantityOrdered(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityOrdered, v))
@@ -202,6 +207,56 @@ func VariantIDIsNil() predicate.PurchaseOrderLine {
 // VariantIDNotNil applies the NotNil predicate on the "variant_id" field.
 func VariantIDNotNil() predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldNotNull(FieldVariantID))
+}
+
+// UnitIDEQ applies the EQ predicate on the "unit_id" field.
+func UnitIDEQ(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldUnitID, v))
+}
+
+// UnitIDNEQ applies the NEQ predicate on the "unit_id" field.
+func UnitIDNEQ(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldUnitID, v))
+}
+
+// UnitIDIn applies the In predicate on the "unit_id" field.
+func UnitIDIn(vs ...uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIn(FieldUnitID, vs...))
+}
+
+// UnitIDNotIn applies the NotIn predicate on the "unit_id" field.
+func UnitIDNotIn(vs ...uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldUnitID, vs...))
+}
+
+// UnitIDGT applies the GT predicate on the "unit_id" field.
+func UnitIDGT(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGT(FieldUnitID, v))
+}
+
+// UnitIDGTE applies the GTE predicate on the "unit_id" field.
+func UnitIDGTE(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldUnitID, v))
+}
+
+// UnitIDLT applies the LT predicate on the "unit_id" field.
+func UnitIDLT(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLT(FieldUnitID, v))
+}
+
+// UnitIDLTE applies the LTE predicate on the "unit_id" field.
+func UnitIDLTE(v uuid.UUID) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldUnitID, v))
+}
+
+// UnitIDIsNil applies the IsNil predicate on the "unit_id" field.
+func UnitIDIsNil() predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIsNull(FieldUnitID))
+}
+
+// UnitIDNotNil applies the NotNil predicate on the "unit_id" field.
+func UnitIDNotNil() predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotNull(FieldUnitID))
 }
 
 // QuantityOrderedEQ applies the EQ predicate on the "quantity_ordered" field.

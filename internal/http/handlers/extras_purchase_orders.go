@@ -18,6 +18,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
@@ -166,19 +167,43 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		}
 	}
 
+	// Resolve unit abbreviations for lines that carry a unit_id, same lookup shape as
+	// itemNames/itemSKUs above — PurchaseOrderLine has no Ent edge to Unit (mirrors item_id).
+	unitIDs := make([]uuid.UUID, 0, len(po.Edges.Lines))
+	for _, l := range po.Edges.Lines {
+		if l.UnitID != nil {
+			unitIDs = append(unitIDs, *l.UnitID)
+		}
+	}
+	unitAbbrs := make(map[uuid.UUID]string)
+	if len(unitIDs) > 0 {
+		units, _ := h.orm.Unit.Query().
+			Where(entunit.IDIn(unitIDs...)).
+			All(r.Context())
+		for _, u := range units {
+			unitAbbrs[u.ID] = u.Abbreviation
+		}
+	}
+
 	type lineDTO struct {
-		ID          uuid.UUID `json:"id"`
-		ItemID      uuid.UUID `json:"item_id"`
-		ItemName    string    `json:"item_name"`
-		ItemSKU     string    `json:"item_sku"`
-		Quantity    float64   `json:"quantity"`
-		ReceivedQty float64   `json:"received_qty"`
-		UnitCost    float64   `json:"unit_cost"`
-		TotalCost   float64   `json:"total_cost"`
+		ID          uuid.UUID  `json:"id"`
+		ItemID      uuid.UUID  `json:"item_id"`
+		ItemName    string     `json:"item_name"`
+		ItemSKU     string     `json:"item_sku"`
+		Quantity    float64    `json:"quantity"`
+		ReceivedQty float64    `json:"received_qty"`
+		UnitCost    float64    `json:"unit_cost"`
+		TotalCost   float64    `json:"total_cost"`
+		UnitID      *uuid.UUID `json:"unit_id,omitempty"`
+		Unit        string     `json:"unit,omitempty"`
 	}
 
 	lines := make([]lineDTO, 0, len(po.Edges.Lines))
 	for _, l := range po.Edges.Lines {
+		var unitAbbr string
+		if l.UnitID != nil {
+			unitAbbr = unitAbbrs[*l.UnitID]
+		}
 		lines = append(lines, lineDTO{
 			ID:          l.ID,
 			ItemID:      l.ItemID,
@@ -188,6 +213,8 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 			ReceivedQty: l.QuantityReceived,
 			UnitCost:    l.UnitPrice,
 			TotalCost:   l.TotalPrice,
+			UnitID:      l.UnitID,
+			Unit:        unitAbbr,
 		})
 	}
 
@@ -220,9 +247,10 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 // ─── Purchase Order Writes ────────────────────────────────────────────────────
 
 type createPOLineInput struct {
-	ItemID   uuid.UUID `json:"item_id"`
-	Quantity float64   `json:"quantity"`
-	UnitCost float64   `json:"unit_cost"`
+	ItemID   uuid.UUID  `json:"item_id"`
+	Quantity float64    `json:"quantity"`
+	UnitCost float64    `json:"unit_cost"`
+	UnitID   *uuid.UUID `json:"unit_id"` // FK to Unit — unit of measure ordered in (e.g. kg, box); optional
 }
 
 type createPOInput struct {
@@ -339,6 +367,7 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 			SetQuantityOrdered(l.Quantity).
 			SetUnitPrice(l.UnitCost).
 			SetTotalPrice(float64(l.Quantity) * l.UnitCost).
+			SetNillableUnitID(l.UnitID).
 			Save(r.Context())
 		if err != nil {
 			h.log.Error("create PO line failed", zap.Error(err))
@@ -423,7 +452,8 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		total += lineTotal
 		if _, err = tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).SetItemID(l.ItemID).SetQuantityOrdered(l.Quantity).
-			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).Save(r.Context()); err != nil {
+			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).SetNillableUnitID(l.UnitID).
+			Save(r.Context()); err != nil {
 			_ = tx.Rollback()
 			writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to write amended line")
 			return

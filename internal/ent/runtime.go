@@ -1408,23 +1408,23 @@ func init() {
 	purchaseorderlineFields := schema.PurchaseOrderLine{}.Fields()
 	_ = purchaseorderlineFields
 	// purchaseorderlineDescQuantityOrdered is the schema descriptor for quantity_ordered field.
-	purchaseorderlineDescQuantityOrdered := purchaseorderlineFields[4].Descriptor()
+	purchaseorderlineDescQuantityOrdered := purchaseorderlineFields[5].Descriptor()
 	// purchaseorderline.DefaultQuantityOrdered holds the default value on creation for the quantity_ordered field.
 	purchaseorderline.DefaultQuantityOrdered = purchaseorderlineDescQuantityOrdered.Default.(float64)
 	// purchaseorderlineDescQuantityReceived is the schema descriptor for quantity_received field.
-	purchaseorderlineDescQuantityReceived := purchaseorderlineFields[5].Descriptor()
+	purchaseorderlineDescQuantityReceived := purchaseorderlineFields[6].Descriptor()
 	// purchaseorderline.DefaultQuantityReceived holds the default value on creation for the quantity_received field.
 	purchaseorderline.DefaultQuantityReceived = purchaseorderlineDescQuantityReceived.Default.(float64)
 	// purchaseorderlineDescUnitPrice is the schema descriptor for unit_price field.
-	purchaseorderlineDescUnitPrice := purchaseorderlineFields[6].Descriptor()
+	purchaseorderlineDescUnitPrice := purchaseorderlineFields[7].Descriptor()
 	// purchaseorderline.DefaultUnitPrice holds the default value on creation for the unit_price field.
 	purchaseorderline.DefaultUnitPrice = purchaseorderlineDescUnitPrice.Default.(float64)
 	// purchaseorderlineDescTotalPrice is the schema descriptor for total_price field.
-	purchaseorderlineDescTotalPrice := purchaseorderlineFields[7].Descriptor()
+	purchaseorderlineDescTotalPrice := purchaseorderlineFields[8].Descriptor()
 	// purchaseorderline.DefaultTotalPrice holds the default value on creation for the total_price field.
 	purchaseorderline.DefaultTotalPrice = purchaseorderlineDescTotalPrice.Default.(float64)
 	// purchaseorderlineDescRebatePercent is the schema descriptor for rebate_percent field.
-	purchaseorderlineDescRebatePercent := purchaseorderlineFields[8].Descriptor()
+	purchaseorderlineDescRebatePercent := purchaseorderlineFields[9].Descriptor()
 	// purchaseorderline.DefaultRebatePercent holds the default value on creation for the rebate_percent field.
 	purchaseorderline.DefaultRebatePercent = purchaseorderlineDescRebatePercent.Default.(float64)
 	// purchaseorderlineDescID is the schema descriptor for id field.

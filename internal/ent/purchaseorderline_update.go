@@ -77,6 +77,26 @@ func (_u *PurchaseOrderLineUpdate) ClearVariantID() *PurchaseOrderLineUpdate {
 	return _u
 }
 
+// SetUnitID sets the "unit_id" field.
+func (_u *PurchaseOrderLineUpdate) SetUnitID(v uuid.UUID) *PurchaseOrderLineUpdate {
+	_u.mutation.SetUnitID(v)
+	return _u
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableUnitID(v *uuid.UUID) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetUnitID(*v)
+	}
+	return _u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *PurchaseOrderLineUpdate) ClearUnitID() *PurchaseOrderLineUpdate {
+	_u.mutation.ClearUnitID()
+	return _u
+}
+
 // SetQuantityOrdered sets the "quantity_ordered" field.
 func (_u *PurchaseOrderLineUpdate) SetQuantityOrdered(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.ResetQuantityOrdered()
@@ -260,6 +280,12 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if _u.mutation.VariantIDCleared() {
 		_spec.ClearField(purchaseorderline.FieldVariantID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.UnitID(); ok {
+		_spec.SetField(purchaseorderline.FieldUnitID, field.TypeUUID, value)
+	}
+	if _u.mutation.UnitIDCleared() {
+		_spec.ClearField(purchaseorderline.FieldUnitID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.QuantityOrdered(); ok {
 		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)
 	}
@@ -384,6 +410,26 @@ func (_u *PurchaseOrderLineUpdateOne) SetNillableVariantID(v *uuid.UUID) *Purcha
 // ClearVariantID clears the value of the "variant_id" field.
 func (_u *PurchaseOrderLineUpdateOne) ClearVariantID() *PurchaseOrderLineUpdateOne {
 	_u.mutation.ClearVariantID()
+	return _u
+}
+
+// SetUnitID sets the "unit_id" field.
+func (_u *PurchaseOrderLineUpdateOne) SetUnitID(v uuid.UUID) *PurchaseOrderLineUpdateOne {
+	_u.mutation.SetUnitID(v)
+	return _u
+}
+
+// SetNillableUnitID sets the "unit_id" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableUnitID(v *uuid.UUID) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetUnitID(*v)
+	}
+	return _u
+}
+
+// ClearUnitID clears the value of the "unit_id" field.
+func (_u *PurchaseOrderLineUpdateOne) ClearUnitID() *PurchaseOrderLineUpdateOne {
+	_u.mutation.ClearUnitID()
 	return _u
 }
 
@@ -599,6 +645,12 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 	}
 	if _u.mutation.VariantIDCleared() {
 		_spec.ClearField(purchaseorderline.FieldVariantID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.UnitID(); ok {
+		_spec.SetField(purchaseorderline.FieldUnitID, field.TypeUUID, value)
+	}
+	if _u.mutation.UnitIDCleared() {
+		_spec.ClearField(purchaseorderline.FieldUnitID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.QuantityOrdered(); ok {
 		_spec.SetField(purchaseorderline.FieldQuantityOrdered, field.TypeFloat64, value)

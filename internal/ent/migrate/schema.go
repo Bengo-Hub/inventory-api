@@ -1965,6 +1965,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "item_id", Type: field.TypeUUID},
 		{Name: "variant_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity_ordered", Type: field.TypeFloat64, Default: 0},
 		{Name: "quantity_received", Type: field.TypeFloat64, Default: 0},
 		{Name: "unit_price", Type: field.TypeFloat64, Default: 0},
@@ -1980,7 +1981,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_order_lines_purchase_orders_lines",
-				Columns:    []*schema.Column{PurchaseOrderLinesColumns[8]},
+				Columns:    []*schema.Column{PurchaseOrderLinesColumns[9]},
 				RefColumns: []*schema.Column{PurchaseOrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1989,7 +1990,7 @@ var (
 			{
 				Name:    "purchaseorderline_po_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{PurchaseOrderLinesColumns[8], PurchaseOrderLinesColumns[1]},
+				Columns: []*schema.Column{PurchaseOrderLinesColumns[9], PurchaseOrderLinesColumns[1]},
 			},
 		},
 	}
