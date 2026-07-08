@@ -13,7 +13,7 @@ import (
 
 // @title Inventory Service API
 // @version 0.1.0
-// @description HTTP API for the BengoBox inventory service. Provides catalog, warehouse, and inventory management capabilities.
+// @description HTTP API for the Codevertex inventory service. Provides catalog, warehouse, and inventory management capabilities.
 // @BasePath /api/v1
 // @schemes http https
 // @securityDefinitions.apikey bearerAuth

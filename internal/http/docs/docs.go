@@ -5029,7 +5029,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "Inventory Service API",
-	Description:      "HTTP API for the BengoBox inventory service. Provides catalog, warehouse, and inventory management capabilities.",
+	Description:      "HTTP API for the Codevertex inventory service. Provides catalog, warehouse, and inventory management capabilities.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

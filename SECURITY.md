@@ -32,5 +32,5 @@ We will acknowledge reports within 48 hours and coordinate remediation and discl
 - Protect message brokers (NATS/Kafka) with TLS and authentication.
 - Monitor audit logs for suspicious stock movements or failed attempts.
 
-Thank you for helping keep the BengoBox platform secure.
+Thank you for helping keep the Codevertex platform secure.
 

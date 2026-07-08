@@ -5,7 +5,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "HTTP API for the BengoBox inventory service. Provides catalog, warehouse, and inventory management capabilities.",
+        "description": "HTTP API for the Codevertex inventory service. Provides catalog, warehouse, and inventory management capabilities.",
         "title": "Inventory Service API",
         "contact": {},
         "version": "0.1.0"
