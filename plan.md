@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**System Purpose**: Centralized inventory backbone for all BengoBox domains (cafe, POS, ecommerce, logistics) with real-time stock visibility. Harmonizes purchasing, warehouse operations, and fulfillment so downstream services consume accurate product and availability data.
+**System Purpose**: Centralized inventory backbone for all Codevertex domains (cafe, POS, ecommerce, logistics) with real-time stock visibility. Harmonizes purchasing, warehouse operations, and fulfillment so downstream services consume accurate product and availability data.
 
 **Key Capabilities**:
 - Master data management (items, variants, BOMs, suppliers)

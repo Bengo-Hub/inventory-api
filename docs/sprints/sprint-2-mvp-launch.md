@@ -3,7 +3,7 @@
 **Status:** 🟡 P0 Core Done — BOM availability + reservation/consumption events + order auto-consume/release consumer implemented; recipe seed (39 items) and RBAC seed fully done in `cmd/seed/main.go`. SKU cross-reference with ordering-backend, integration tests, and RBAC role distinction (S2-13/S2-14) still pending.
 **Start:** 2026-03-06
 **Deadline:** 2026-03-27
-**Goal:** Ship inventory-api changes required for BengoBox MVP launch at Urban Loft Cafe (Busia outlet)
+**Goal:** Ship inventory-api changes required for Codevertex MVP launch at Urban Loft Cafe (Busia outlet)
 
 ---
 

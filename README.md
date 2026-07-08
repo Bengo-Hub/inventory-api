@@ -1,6 +1,6 @@
 # Inventory Service
 
-The Inventory Service provides a unified stock, purchasing, and reservation backbone for all BengoBox channels (food delivery, POS, ecommerce, logistics) keyed to the shared `tenant_slug`/outlet registry that spans every Go microservice.  
+The Inventory Service provides a unified stock, purchasing, and reservation backbone for all Codevertex channels (food delivery, POS, ecommerce, logistics) keyed to the shared `tenant_slug`/outlet registry that spans every Go microservice.  
 It exposes APIs and events for real-time availability, replenishment, and compliance tracking.
 
 ## Highlights

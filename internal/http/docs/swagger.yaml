@@ -787,7 +787,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: HTTP API for the BengoBox inventory service. Provides catalog, warehouse,
+  description: HTTP API for the Codevertex inventory service. Provides catalog, warehouse,
     and inventory management capabilities.
   title: Inventory Service API
   version: 0.1.0

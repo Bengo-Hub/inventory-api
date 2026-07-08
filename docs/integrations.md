@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document provides detailed integration information for all external services and systems integrated with the Inventory service, including internal BengoBox microservices and external third-party services.
+This document provides detailed integration information for all external services and systems integrated with the Inventory service, including internal Codevertex microservices and external third-party services.
 
 ---
 
 ## Table of Contents
 
-1. [Internal BengoBox Service Integrations](#internal-bengobox-service-integrations)
+1. [Internal Codevertex Service Integrations](#internal-bengobox-service-integrations)
 2. [External Third-Party Integrations](#external-third-party-integrations)
 3. [Integration Patterns](#integration-patterns)
 4. [Two-Tier Configuration Management](#two-tier-configuration-management)
@@ -18,7 +18,7 @@ This document provides detailed integration information for all external service
 
 ---
 
-## Internal BengoBox Service Integrations
+## Internal Codevertex Service Integrations
 
 ### Auth Service
 
