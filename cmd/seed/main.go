@@ -60,6 +60,9 @@ func main() {
 	if err := seedUnits(ctx, client); err != nil {
 		log.Fatalf("seed units: %v", err)
 	}
+	if err := seedGlobalCategories(ctx, client); err != nil {
+		log.Fatalf("seed global categories: %v", err)
+	}
 	if err := seedPermissions(ctx, client); err != nil {
 		log.Fatalf("seed permissions: %v", err)
 	}

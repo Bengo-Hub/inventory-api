@@ -45,8 +45,22 @@ var unitDefs = []unitDef{
 	{"FULL", "full", "count"},
 	{"GLS", "gls", "volume"},
 	{"TOT", "tot", "volume"},
-	{"DAY", "day", "other"},
-	{"HOUR", "hour", "other"},
+	// Service / time-based units. Type "service" (percentage/effort-based) and "time"
+	// (duration-based) let the document item form show service-appropriate units for
+	// SERVICE items — distinct from the measurement units used for GOODS. See treasury-ui
+	// unit-kind convention (lib/api/inventory unitKind).
+	{"DAY", "day", "time"},
+	{"HOUR", "hour", "time"},
+	{"WEEK", "week", "time"},
+	{"MONTH", "month", "time"},
+	{"YEAR", "year", "time"},
+	{"PERCENT", "%", "service"},
+	{"PROJECT", "project", "service"},
+	{"MILESTONE", "milestone", "service"},
+	{"SESSION", "session", "service"},
+	{"VISIT", "visit", "service"},
+	{"UNIT", "unit", "service"},
+	{"LUMPSUM", "lumpsum", "service"},
 }
 
 func unitUUID(name string) uuid.UUID {
