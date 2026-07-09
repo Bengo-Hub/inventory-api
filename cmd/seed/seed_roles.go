@@ -47,37 +47,52 @@ var rolePermMap = map[string][]string{
 		"inventory.units.view",
 		"inventory.tickets.add", "inventory.tickets.view", "inventory.tickets.change", "inventory.tickets.delete", "inventory.tickets.manage",
 		// Procurement / manufacturing / assets (matches the prior items.add+change grant;
-		// asset delete stays admin-only, mirroring no items.delete).
-		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage",
+		// asset delete stays admin-only, mirroring no items.delete). procurement.delete covers
+		// supplier/RFQ deletion — a manager-tier action, not left admin-only like items/assets.
+		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage", "inventory.procurement.delete",
 		"inventory.manufacturing.view", "inventory.manufacturing.add", "inventory.manufacturing.change", "inventory.manufacturing.manage",
 		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
+		// Approval AUTHORITY (configuring the matrix + being eligible as an approver_role) stays
+		// manager/admin only — see accountant below, which is deliberately NOT given add/change/manage
+		// here despite owning full procurement CRUD (segregation of duties: the role that raises/
+		// submits a PO should not also be the one signing it off).
 		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
 		// Audit trail visibility + cycle-count lifecycle (managers approve count variance).
 		"inventory.audit.view",
 		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change", "inventory.stock_count.approve",
 	},
-	// accountant — finance/back-office. Owns purchasing (procurement), approves purchase orders,
-	// maintains the fixed-asset register, and makes stock valuation adjustments. Read access to the
-	// rest of inventory for costing/reconciliation. Catalog/recipe deletes stay admin-only.
+	// accountant — finance/back-office. Owns purchasing (procurement) end-to-end and warehouse/stock
+	// management for costing and valuation, but deliberately WITHOUT approval authority: raising and
+	// managing purchase orders is an accountant task, signing off on them is a manager/admin task
+	// (segregation of duties). Catalog/recipe deletes stay admin-only.
 	"accountant": {
 		"inventory.items.view", "inventory.items.add", "inventory.items.change",
 		"inventory.variants.view",
 		"inventory.categories.view",
-		"inventory.warehouses.view",
+		// Full warehouse management (create/edit/deactivate locations) — same tier as
+		// warehouse_manager for this feature, per explicit request: accountant manages the
+		// warehouses their stock valuations live in, not just views them.
+		"inventory.warehouses.view", "inventory.warehouses.add", "inventory.warehouses.change", "inventory.warehouses.delete", "inventory.warehouses.manage",
 		// Valuation write-offs / cost adjustments.
-		"inventory.stock.view", "inventory.stock.add", "inventory.stock.change", "inventory.stock.manage",
+		"inventory.stock.view", "inventory.stock.add", "inventory.stock.change", "inventory.stock.delete", "inventory.stock.manage",
+		// Cycle/physical stock counts — can run and record counts, but NOT approve the variance
+		// (inventory.stock_count.approve is manager/admin only, mirroring the procurement rule below).
+		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change",
 		"inventory.recipes.view",
 		"inventory.consumptions.view",
 		"inventory.reservations.view",
 		"inventory.units.view",
 		"inventory.tickets.view",
-		// Purchases — full procurement lifecycle (requisitions, POs, goods receipts, returns).
-		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage",
+		// Purchases — full procurement lifecycle (requisitions, POs, goods receipts, returns,
+		// suppliers, RFQs — including delete, e.g. removing a supplier/RFQ).
+		"inventory.procurement.view", "inventory.procurement.add", "inventory.procurement.change", "inventory.procurement.manage", "inventory.procurement.delete",
 		"inventory.manufacturing.view",
 		// Fixed-asset register (asset accounting / depreciation).
 		"inventory.assets.view", "inventory.assets.add", "inventory.assets.change", "inventory.assets.manage",
-		// Approve purchase orders / run the approval matrix.
-		"inventory.approvals.view", "inventory.approvals.add", "inventory.approvals.change", "inventory.approvals.manage",
+		// View-only on approvals: accountant can see rule config and request status, but cannot
+		// create/edit approval rules or otherwise hold approval authority — that's manager/admin
+		// only (inventory.approvals.add/change/manage deliberately omitted; see warehouse_manager).
+		"inventory.approvals.view",
 		// Tax/compliance settings visibility.
 		"inventory.settings.view",
 	},
