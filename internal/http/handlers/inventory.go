@@ -939,8 +939,17 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// ?include=variants opts into eager-loading each item's active variations.
+	// ?id=<uuid> restricts the list to a single item by primary key while reusing the full
+	// list enrichment — the item-detail page fetches this way so it renders the same enriched
+	// shape (category name, effective price, on-hand, images) as a catalog row.
 	ctx := r.Context()
+	if idStr := r.URL.Query().Get("id"); idStr != "" {
+		if itemID, parseErr := uuid.Parse(idStr); parseErr == nil {
+			ctx = items.WithItemIDFilter(ctx, itemID)
+		}
+	}
+
+	// ?include=variants opts into eager-loading each item's active variations.
 	for _, inc := range strings.Split(r.URL.Query().Get("include"), ",") {
 		if strings.TrimSpace(inc) == "variants" {
 			ctx = items.WithIncludeVariants(ctx)
