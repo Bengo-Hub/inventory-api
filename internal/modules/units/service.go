@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/unit"
-	"github.com/Bengo-Hub/shared-events"
 )
 
 type UnitDTO struct {
@@ -34,6 +34,50 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 		client: client,
 		log:    log.Named("units.service"),
 	}
+}
+
+// DuplicateUnitError is returned by CreateUnit/UpdateUnit when a case-insensitive
+// name or abbreviation collision is found. Units are a GLOBAL table (see the
+// service methods' unused tenantID params), so this is a system-wide check, not
+// per-tenant. Handlers use errors.As to map this to a 409 with an actionable
+// message instead of a raw 500 / DB constraint error.
+type DuplicateUnitError struct {
+	Field string // "name" or "abbreviation"
+	Value string
+}
+
+func (e *DuplicateUnitError) Error() string {
+	return fmt.Sprintf("a unit with %s %q already exists", e.Field, e.Value)
+}
+
+// checkDuplicateUnit looks for an existing ACTIVE unit whose name or (if given)
+// abbreviation case-insensitively matches, excluding excludeID (used by updates so
+// a unit doesn't collide with itself). Soft-deleted (is_active=false) units never
+// block reuse of their name/abbreviation, mirroring ListUnits' active-only scope.
+func checkDuplicateUnit(ctx context.Context, uc *ent.UnitClient, name, abbreviation string, excludeID *uuid.UUID) error {
+	nameQ := uc.Query().Where(unit.IsActive(true), unit.NameEqualFold(name))
+	if excludeID != nil {
+		nameQ = nameQ.Where(unit.IDNEQ(*excludeID))
+	}
+	if existing, err := nameQ.Only(ctx); err == nil {
+		return &DuplicateUnitError{Field: "name", Value: existing.Name}
+	} else if !ent.IsNotFound(err) {
+		return fmt.Errorf("units: check duplicate name: %w", err)
+	}
+
+	if abbreviation == "" {
+		return nil
+	}
+	abbrQ := uc.Query().Where(unit.IsActive(true), unit.AbbreviationEqualFold(abbreviation))
+	if excludeID != nil {
+		abbrQ = abbrQ.Where(unit.IDNEQ(*excludeID))
+	}
+	if existing, err := abbrQ.Only(ctx); err == nil {
+		return &DuplicateUnitError{Field: "abbreviation", Value: existing.Abbreviation}
+	} else if !ent.IsNotFound(err) {
+		return fmt.Errorf("units: check duplicate abbreviation: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error) {
@@ -92,9 +136,18 @@ func (s *Service) DeleteUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID) err
 }
 
 func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
-	upd := s.client.Unit.UpdateOneID(id).
-		SetName(dto.Name).
-		SetNillableAbbreviation(&dto.Abbreviation)
+	if err := checkDuplicateUnit(ctx, s.client.Unit, dto.Name, dto.Abbreviation, &id); err != nil {
+		return nil, err
+	}
+
+	upd := s.client.Unit.UpdateOneID(id).SetName(dto.Name)
+	// Empty abbreviation means "clear it" (stored as NULL, not "") so it never
+	// collides with another unit's blank abbreviation under the unique index.
+	if dto.Abbreviation != "" {
+		upd = upd.SetAbbreviation(dto.Abbreviation)
+	} else {
+		upd = upd.ClearAbbreviation()
+	}
 	if dto.Type != "" {
 		upd = upd.SetType(dto.Type)
 	} else {
@@ -104,6 +157,9 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, fmt.Errorf("units: unit not found")
+		}
+		if ent.IsConstraintError(err) {
+			return nil, &DuplicateUnitError{Field: "name", Value: dto.Name}
 		}
 		return nil, fmt.Errorf("units: update unit: %w", err)
 	}
@@ -127,14 +183,30 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		}
 	}()
 
+	if err = checkDuplicateUnit(ctx, tx.Unit, dto.Name, dto.Abbreviation, nil); err != nil {
+		return nil, err
+	}
+
 	cre := tx.Unit.Create().
 		SetName(dto.Name).
-		SetNillableAbbreviation(&dto.Abbreviation).
 		SetIsActive(true)
+	// Blank abbreviation is left unset (NULL) rather than "" so it never collides
+	// with another unit's blank abbreviation under the unique index.
+	if dto.Abbreviation != "" {
+		cre = cre.SetAbbreviation(dto.Abbreviation)
+	}
 	if dto.Type != "" {
 		cre = cre.SetType(dto.Type)
 	}
 	u, err := cre.Save(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			err = &DuplicateUnitError{Field: "name", Value: dto.Name}
+		} else {
+			err = fmt.Errorf("units: create unit: %w", err)
+		}
+		return nil, err
+	}
 	// Publish event to outbox
 	event := &events.Event{
 		ID:            uuid.New(),

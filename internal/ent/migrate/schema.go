@@ -1529,7 +1529,7 @@ var (
 		Indexes: []*schema.Index{
 			{
 				Name:    "itemcategory_tenant_id_name",
-				Unique:  false,
+				Unique:  true,
 				Columns: []*schema.Column{ItemCategoriesColumns[14], ItemCategoriesColumns[1]},
 			},
 			{
@@ -3156,6 +3156,11 @@ var (
 				Name:    "unit_name",
 				Unique:  true,
 				Columns: []*schema.Column{UnitsColumns[1]},
+			},
+			{
+				Name:    "unit_abbreviation",
+				Unique:  true,
+				Columns: []*schema.Column{UnitsColumns[2]},
 			},
 		},
 	}

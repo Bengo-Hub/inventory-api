@@ -55,5 +55,12 @@ func (Unit) Edges() []ent.Edge {
 func (Unit) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("name").Unique(),
+		// Units are a GLOBAL reference table (shared across all tenants — see
+		// units.Service, whose tenantID params are intentionally unused), so this is a
+		// true system-wide uniqueness guarantee, not per-tenant. Case-insensitive
+		// duplicate rejection is additionally enforced in units.Service.CreateUnit /
+		// UpdateUnit (EqualFold pre-check) since Postgres unique indexes are
+		// case-sensitive. NULL abbreviations (no abbreviation given) never collide.
+		index.Fields("abbreviation").Unique(),
 	}
 }

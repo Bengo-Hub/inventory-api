@@ -73,51 +73,51 @@ var StandardTags = []string{
 }
 
 type ItemDTO struct {
-	ID              uuid.UUID      `json:"id"`
-	SKU             string         `json:"sku"`
-	Name            string         `json:"name"`
-	Description     string         `json:"description,omitempty"`
-	CategoryID      *uuid.UUID     `json:"category_id,omitempty"`
-	BrandID         *uuid.UUID     `json:"brand_id,omitempty"`
-	UnitID          *uuid.UUID     `json:"unit_id,omitempty"`
+	ID          uuid.UUID  `json:"id"`
+	SKU         string     `json:"sku"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	CategoryID  *uuid.UUID `json:"category_id,omitempty"`
+	BrandID     *uuid.UUID `json:"brand_id,omitempty"`
+	UnitID      *uuid.UUID `json:"unit_id,omitempty"`
 	// Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).
 	// Accepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).
-	PreferredSupplierID   *uuid.UUID `json:"preferred_supplier_id,omitempty"`
-	PreferredSupplierName string     `json:"preferred_supplier_name,omitempty"`
-	Type            string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
-	IsActive        bool           `json:"is_active"`
-	ImageURL        string         `json:"image_url,omitempty"`
-	Tags            []string       `json:"tags,omitempty"`
-	Metadata        map[string]any `json:"metadata,omitempty"`
-	InitialQuantity float64        `json:"initial_quantity,omitempty"` // opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)
-	ReorderLevel    int            `json:"reorder_level"`
-	ReorderQuantity int            `json:"reorder_quantity"`
-	SuggestedPrice  *float64       `json:"suggested_price,omitempty"`
-	AddToAllOutlets bool           `json:"add_to_all_outlets,omitempty"`
-	CategoryName    string         `json:"category_name,omitempty"`
-	BrandName       string         `json:"brand_name,omitempty"`
-	BrandCode       string         `json:"brand_code,omitempty"`
+	PreferredSupplierID   *uuid.UUID     `json:"preferred_supplier_id,omitempty"`
+	PreferredSupplierName string         `json:"preferred_supplier_name,omitempty"`
+	Type                  string         `json:"type"` // GOODS | SERVICE | RECIPE | INGREDIENT
+	IsActive              bool           `json:"is_active"`
+	ImageURL              string         `json:"image_url,omitempty"`
+	Tags                  []string       `json:"tags,omitempty"`
+	Metadata              map[string]any `json:"metadata,omitempty"`
+	InitialQuantity       float64        `json:"initial_quantity,omitempty"` // opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)
+	ReorderLevel          int            `json:"reorder_level"`
+	ReorderQuantity       int            `json:"reorder_quantity"`
+	SuggestedPrice        *float64       `json:"suggested_price,omitempty"`
+	AddToAllOutlets       bool           `json:"add_to_all_outlets,omitempty"`
+	CategoryName          string         `json:"category_name,omitempty"`
+	BrandName             string         `json:"brand_name,omitempty"`
+	BrandCode             string         `json:"brand_code,omitempty"`
 	// Item-attribute fields (retail / pharmacy)
 	Manufacturer string `json:"manufacturer,omitempty"` // retail/pharmacy
 	Model        string `json:"model,omitempty"`        // retail only
 	// E-commerce / online-store attributes
-	GTIN             string `json:"gtin,omitempty"`               // GTIN-8/12/13/14 for marketplace feeds
-	MPN              string `json:"mpn,omitempty"`                // manufacturer part number
-	Condition        string `json:"condition,omitempty"`          // NEW | REFURBISHED | USED | OPEN_BOX
-	Slug             string `json:"slug,omitempty"`               // storefront URL slug / SEO
-	ShortDescription string `json:"short_description,omitempty"`   // product-card description
-	MetaTitle        string `json:"meta_title,omitempty"`         // SEO
-	MetaDescription  string `json:"meta_description,omitempty"`    // SEO
-	CountryOfOrigin  string `json:"country_of_origin,omitempty"`  // customs / marketplace compliance
-	HSCode           string `json:"hs_code,omitempty"`            // customs tariff code
-	IsReturnable     bool   `json:"is_returnable"`                // customer return allowed
+	GTIN             string `json:"gtin,omitempty"`              // GTIN-8/12/13/14 for marketplace feeds
+	MPN              string `json:"mpn,omitempty"`               // manufacturer part number
+	Condition        string `json:"condition,omitempty"`         // NEW | REFURBISHED | USED | OPEN_BOX
+	Slug             string `json:"slug,omitempty"`              // storefront URL slug / SEO
+	ShortDescription string `json:"short_description,omitempty"` // product-card description
+	MetaTitle        string `json:"meta_title,omitempty"`        // SEO
+	MetaDescription  string `json:"meta_description,omitempty"`  // SEO
+	CountryOfOrigin  string `json:"country_of_origin,omitempty"` // customs / marketplace compliance
+	HSCode           string `json:"hs_code,omitempty"`           // customs tariff code
+	IsReturnable     bool   `json:"is_returnable"`               // customer return allowed
 	// Non-billable: never charged at POS even when a selling price exists (free
 	// accompaniments like ugali, consumable supplies like tissue/packaging); stock still
 	// deducts. Pointer so partial updates never clobber the stored flag.
-	NonBillable      *bool  `json:"non_billable,omitempty"`
-	ReturnWindowDays *int   `json:"return_window_days,omitempty"` // nil = tenant default
-	AllowBackorder   bool   `json:"allow_backorder"`              // order when out of stock
-	IsDiscontinued   bool   `json:"is_discontinued"`              // hidden from new listings, stock still sellable
+	NonBillable      *bool `json:"non_billable,omitempty"`
+	ReturnWindowDays *int  `json:"return_window_days,omitempty"` // nil = tenant default
+	AllowBackorder   bool  `json:"allow_backorder"`              // order when out of stock
+	IsDiscontinued   bool  `json:"is_discontinued"`              // hidden from new listings, stock still sellable
 	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
 	// HasVariants is always populated; Variants is populated when variants are eager-loaded
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
@@ -1117,9 +1117,50 @@ func (s *Service) DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) er
 	return nil
 }
 
+// DuplicateCategoryError is returned by CreateCategory/UpdateCategory when a
+// case-insensitive name collision is found within the tenant's visible category
+// set (its own categories + global ones). Category names are unique per tenant
+// regardless of parent — see the schema comment on ItemCategory.Indexes for why.
+// Handlers use errors.As to map this to a 409 with an actionable message instead
+// of a raw 500 / DB constraint error.
+type DuplicateCategoryError struct {
+	Name string
+}
+
+func (e *DuplicateCategoryError) Error() string {
+	return fmt.Sprintf("a category named %q already exists", e.Name)
+}
+
+// checkDuplicateCategory looks for an existing ACTIVE category (tenant-owned or
+// global — the same set ListCategories shows the tenant) whose name
+// case-insensitively matches, excluding excludeID (used by updates so a category
+// doesn't collide with itself). Soft-deleted categories never block reuse of
+// their name.
+func (s *Service) checkDuplicateCategory(ctx context.Context, tenantID uuid.UUID, name string, excludeID *uuid.UUID) error {
+	q := s.client.ItemCategory.Query().Where(
+		itemcategory.IsActive(true),
+		itemcategory.Or(itemcategory.TenantID(tenantID), itemcategory.IsGlobal(true)),
+		itemcategory.NameEqualFold(name),
+	)
+	if excludeID != nil {
+		q = q.Where(itemcategory.IDNEQ(*excludeID))
+	}
+	existing, err := q.Only(ctx)
+	if err == nil {
+		return &DuplicateCategoryError{Name: existing.Name}
+	}
+	if !ent.IsNotFound(err) {
+		return fmt.Errorf("items: check duplicate category: %w", err)
+	}
+	return nil
+}
+
 // CreateCategory creates a new item category for the tenant.
 // When dto.IsGlobal is true, the category is visible to all tenants.
 func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
+	if err := s.checkDuplicateCategory(ctx, tenantID, dto.Name, nil); err != nil {
+		return nil, err
+	}
 	q := s.client.ItemCategory.Create().
 		SetTenantID(tenantID).
 		SetName(dto.Name).
@@ -1139,6 +1180,9 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 	}
 	c, err := q.Save(ctx)
 	if err != nil {
+		if ent.IsConstraintError(err) {
+			return nil, &DuplicateCategoryError{Name: dto.Name}
+		}
 		return nil, fmt.Errorf("items: create category: %w", err)
 	}
 	if s.cache != nil {
@@ -1168,6 +1212,9 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		}
 		return nil, fmt.Errorf("items: query category for update: %w", err)
 	}
+	if err := s.checkDuplicateCategory(ctx, tenantID, dto.Name, &id); err != nil {
+		return nil, err
+	}
 	q := s.client.ItemCategory.UpdateOneID(id).
 		SetName(dto.Name).
 		SetIsActive(dto.IsActive)
@@ -1187,6 +1234,9 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 	}
 	c, err := q.Save(ctx)
 	if err != nil {
+		if ent.IsConstraintError(err) {
+			return nil, &DuplicateCategoryError{Name: dto.Name}
+		}
 		return nil, fmt.Errorf("items: update category: %w", err)
 	}
 	if s.cache != nil {

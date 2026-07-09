@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -640,8 +641,8 @@ func (h *InventoryHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) 
 		var unitErr *recipes.UnitValidationError
 		if errors.As(err, &unitErr) {
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-				"error":   map[string]string{"code": "UNIT_MISMATCH", "message": unitErr.Error()},
-				"issues":  unitErr.Issues,
+				"error":  map[string]string{"code": "UNIT_MISMATCH", "message": unitErr.Error()},
+				"issues": unitErr.Issues,
 			})
 			return
 		}
@@ -849,6 +850,11 @@ func (h *InventoryHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.unitSvc.CreateUnit(r.Context(), tenantID, req)
 	if err != nil {
+		var dupErr *units.DuplicateUnitError
+		if errors.As(err, &dupErr) {
+			writeError(w, http.StatusConflict, "DUPLICATE_UNIT", fmt.Sprintf("A unit with %s %q already exists.", dupErr.Field, dupErr.Value))
+			return
+		}
 		h.log.Error("create unit failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
 		return
@@ -876,6 +882,11 @@ func (h *InventoryHandler) UpdateUnit(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.unitSvc.UpdateUnit(r.Context(), tenantID, unitID, req)
 	if err != nil {
+		var dupErr *units.DuplicateUnitError
+		if errors.As(err, &dupErr) {
+			writeError(w, http.StatusConflict, "DUPLICATE_UNIT", fmt.Sprintf("A unit with %s %q already exists.", dupErr.Field, dupErr.Value))
+			return
+		}
 		h.log.Error("update unit failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
@@ -1431,6 +1442,11 @@ func (h *InventoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request
 	}
 	result, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, req)
 	if err != nil {
+		var dupErr *items.DuplicateCategoryError
+		if errors.As(err, &dupErr) {
+			writeError(w, http.StatusConflict, "DUPLICATE_CATEGORY", fmt.Sprintf("A category named %q already exists.", dupErr.Name))
+			return
+		}
 		h.log.Error("create category failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
 		return
@@ -1461,6 +1477,11 @@ func (h *InventoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request
 	}
 	result, err := h.itemsSvc.UpdateCategory(r.Context(), tenantID, categoryID, req)
 	if err != nil {
+		var dupErr *items.DuplicateCategoryError
+		if errors.As(err, &dupErr) {
+			writeError(w, http.StatusConflict, "DUPLICATE_CATEGORY", fmt.Sprintf("A category named %q already exists.", dupErr.Name))
+			return
+		}
 		h.log.Error("update category failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
