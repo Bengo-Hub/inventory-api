@@ -334,7 +334,6 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		writeError(w, http.StatusBadRequest, "INVALID_STATE", "Only draft goods receipts can be posted")
 		return
 	}
-	grnLines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
 	po, err := h.orm.PurchaseOrder.Query().Where(entpo.ID(g.PurchaseOrderID), entpo.TenantID(tenantID)).WithSupplier().Only(r.Context())
 	if err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
@@ -343,6 +342,28 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
 		return
 	}
+	if _, err := h.postGoodsReceiptCore(r.Context(), tenantID, g, po); err != nil {
+		h.log.Error("post goods receipt failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to post goods receipt")
+		return
+	}
+
+	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
+	writeJSON(w, http.StatusOK, grnToDTO(g, lines))
+}
+
+// postGoodsReceiptCore posts an already-created DRAFT goods receipt: stock-in each accepted
+// line (applyStockIn — same low-stock/recipe-reenable cascade as any other stock-in), create
+// FIFO/FEFO lot layers + register serials, advance the originating PO's line
+// quantity_received, recompute the PO's status (partially_received vs received), accrue
+// supplier rebate, and publish goods_receipt.posted (+ purchase_order.received on full
+// receipt) — the events treasury consumes to post the vendor bill / run auto-payout. Shared
+// by the manual multi-line GRN-post endpoint above and ReceivePurchaseOrder's auto-generated
+// "receive everything now" GRN, so BOTH paths record a real goods receipt and post to the
+// ledger identically — no divergent, ad-hoc stock-bump-only path.
+func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenantID uuid.UUID, g *ent.GoodsReceipt, po *ent.PurchaseOrder) (fully bool, err error) {
+	grnLines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(ctx)
+
 	var warehouseID uuid.UUID
 	if po.WarehouseID != nil {
 		warehouseID = *po.WarehouseID
@@ -364,7 +385,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		if items, e := h.orm.Item.Query().
 			Where(entitem.TenantID(tenantID), entitem.IDIn(ids...)).
 			Select(entitem.FieldID, entitem.FieldTrackLots, entitem.FieldIsPerishable, entitem.FieldShelfLifeDays).
-			All(r.Context()); e == nil {
+			All(ctx); e == nil {
 			for _, it := range items {
 				lotInfo[it.ID] = struct {
 					track bool
@@ -374,16 +395,14 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		}
 	}
 
-	tx, err := h.orm.Tx(r.Context())
+	tx, err := h.orm.Tx(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
-		return
+		return false, err
 	}
 	for _, l := range grnLines {
-		if err = h.applyStockIn(r.Context(), tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
+		if err = h.applyStockIn(ctx, tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
 			_ = tx.Rollback()
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update inventory balance")
-			return
+			return false, err
 		}
 		// Create a FIFO/FEFO lot layer for lot-tracked / perishable items (or when a lot number
 		// was captured), so consumeLots has procurement layers + costing. Expiry seeds from the
@@ -405,7 +424,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 			} else if info.shelf != nil && *info.shelf > 0 {
 				lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *info.shelf))
 			}
-			if _, e := lc.Save(r.Context()); e != nil {
+			if _, e := lc.Save(ctx); e != nil {
 				h.log.Warn("create inventory lot on GRN failed", zap.String("lot", lotNo), zap.Error(e))
 			}
 		}
@@ -416,31 +435,28 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 			if _, e := tx.InventorySerial.Create().
 				SetTenantID(tenantID).SetItemID(l.ItemID).SetWarehouseID(warehouseID).
 				SetSerialNumber(sn).SetStatus("available").SetGoodsReceiptLineID(lineID).
-				Save(r.Context()); e != nil {
+				Save(ctx); e != nil {
 				h.log.Warn("register inventory serial failed", zap.String("serial", sn), zap.Error(e))
 			}
 		}
 		if l.PurchaseOrderLineID != nil {
-			if _, err = tx.PurchaseOrderLine.UpdateOneID(*l.PurchaseOrderLineID).AddQuantityReceived(l.QuantityAccepted).Save(r.Context()); err != nil {
+			if _, err = tx.PurchaseOrderLine.UpdateOneID(*l.PurchaseOrderLineID).AddQuantityReceived(l.QuantityAccepted).Save(ctx); err != nil {
 				_ = tx.Rollback()
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update PO line")
-				return
+				return false, err
 			}
 		}
 	}
-	if _, err = tx.GoodsReceipt.UpdateOneID(g.ID).SetStatus(entgr.StatusPosted).Save(r.Context()); err != nil {
+	if _, err = tx.GoodsReceipt.UpdateOneID(g.ID).SetStatus(entgr.StatusPosted).Save(ctx); err != nil {
 		_ = tx.Rollback()
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to mark GRN posted")
-		return
+		return false, err
 	}
 	if err = tx.Commit(); err != nil {
-		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit")
-		return
+		return false, err
 	}
 
 	// Recompute PO status from line receipts (fully vs partially received).
-	poLines, _ := h.orm.PurchaseOrderLine.Query().Where(entpoline.PoID(po.ID)).All(r.Context())
-	fully := len(poLines) > 0
+	poLines, _ := h.orm.PurchaseOrderLine.Query().Where(entpoline.PoID(po.ID)).All(ctx)
+	fully = len(poLines) > 0
 	anyReceived := false
 	for _, pl := range poLines {
 		if pl.QuantityReceived > 0 {
@@ -457,7 +473,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		newStatus = "partially_received"
 	}
 	if newStatus != po.Status.String() {
-		_, _ = h.orm.PurchaseOrder.UpdateOneID(po.ID).SetStatus(entpo.Status(newStatus)).Save(r.Context())
+		_, _ = h.orm.PurchaseOrder.UpdateOneID(po.ID).SetStatus(entpo.Status(newStatus)).Save(ctx)
 	}
 
 	// Accrue supplier rebate from the PO lines' rebate_percent on the quantity received so far.
@@ -480,7 +496,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		grItemIDs = append(grItemIDs, l.ItemID)
 	}
 	grNames, grSkus := map[uuid.UUID]string{}, map[uuid.UUID]string{}
-	if items, e := h.orm.Item.Query().Where(entitem.IDIn(grItemIDs...)).All(r.Context()); e == nil {
+	if items, e := h.orm.Item.Query().Where(entitem.IDIn(grItemIDs...)).All(ctx); e == nil {
 		for _, it := range items {
 			grNames[it.ID] = it.Name
 			grSkus[it.ID] = it.Sku
@@ -523,14 +539,13 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 	for k, v := range supplierPaymentFields(po) {
 		grPayload[k] = v
 	}
-	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.posted", grPayload)
+	h.publishOutbox(ctx, tenantID, "inventory", g.ID, "goods_receipt.posted", grPayload)
 	// On full receipt, emit the enriched purchase_order.received event for treasury auto-payout.
 	if fully {
 		h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
 	}
 
-	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
-	writeJSON(w, http.StatusOK, grnToDTO(g, lines))
+	return fully, nil
 }
 
 // derefInt returns the pointed-to int, or 0 when nil (for event payloads where treasury defaults).

@@ -14,7 +14,6 @@ import (
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
-	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
@@ -581,6 +580,13 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 //	@Failure      500   {object}  map[string]string
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/purchase-orders/{poID}/receive [put]
+// ReceivePurchaseOrder is the quick-action equivalent of receiving everything still
+// outstanding on the PO right now: it auto-generates a goods receipt covering every line's
+// remaining quantity (fully accepted, unit cost from the PO line), then posts it through
+// EXACTLY the same path as the manual multi-line GRN flow (postGoodsReceiptCore) — stock-in,
+// lot/serial capture, PO-line quantity_received tracking, approval gating, and the
+// goods_receipt.posted / purchase_order.received ledger events. There is no longer a
+// separate, ad-hoc stock-bump that skips the GRN paper trail.
 func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -607,122 +613,63 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft, sent, or partially-received orders can be received")
 		return
 	}
-
-	tx, err := h.orm.Tx(r.Context())
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to begin transaction")
-		return
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
 	if po.WarehouseID == nil {
-		_ = tx.Rollback()
 		writeError(w, http.StatusBadRequest, "MISSING_WAREHOUSE", "Assign a destination warehouse before receiving this purchase order")
 		return
 	}
+
+	var remaining []*ent.PurchaseOrderLine
 	for _, line := range po.Edges.Lines {
-		qty := line.QuantityOrdered
-		bal, balErr := tx.InventoryBalance.Query().
-			Where(entinventorybalance.TenantID(tenantID), entinventorybalance.ItemID(line.ItemID)).
-			First(r.Context())
-		if balErr != nil {
-			if !ent.IsNotFound(balErr) {
-				err = balErr
-				writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to query balance")
-				return
-			}
-			_, err = tx.InventoryBalance.Create().
-				SetTenantID(tenantID).
-				SetItemID(line.ItemID).
-				SetWarehouseID(*po.WarehouseID).
-				SetOnHand(qty).
-				SetAvailable(qty).
-				SetReserved(0).
-				Save(r.Context())
-		} else {
-			_, err = tx.InventoryBalance.UpdateOneID(bal.ID).
-				SetOnHand(bal.OnHand + qty).
-				SetAvailable(bal.Available + qty).
-				Save(r.Context())
-		}
-		if err != nil {
-			h.log.Error("update balance on PO receive failed", zap.Error(err))
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to update inventory balance")
-			return
+		if line.QuantityOrdered > line.QuantityReceived {
+			remaining = append(remaining, line)
 		}
 	}
-
-	if _, err = tx.PurchaseOrder.UpdateOneID(poID).SetStatus("received").Save(r.Context()); err != nil {
-		h.log.Error("mark PO received failed", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to mark order received")
+	if len(remaining) == 0 {
+		writeError(w, http.StatusBadRequest, "NOTHING_TO_RECEIVE", "All lines are already fully received")
 		return
 	}
 
-	if err = tx.Commit(); err != nil {
-		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit")
+	grnNumber := "GRN-" + strings.ToUpper(uuid.New().String()[:8])
+	if h.docSvc != nil {
+		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeGRN); derr == nil && n != "" {
+			grnNumber = n
+		}
+	}
+	g, err := h.orm.GoodsReceipt.Create().
+		SetTenantID(tenantID).SetGrnNumber(grnNumber).SetPurchaseOrderID(poID).
+		SetNillableSupplierID(po.SupplierID).SetNillableWarehouseID(po.WarehouseID).
+		SetNotes("Auto-generated via Mark Received").
+		Save(r.Context())
+	if err != nil {
+		h.log.Error("auto-create GRN on mark-received failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to record goods receipt")
 		return
 	}
+	for _, line := range remaining {
+		qty := line.QuantityOrdered - line.QuantityReceived
+		lineID := line.ID
+		if _, lerr := h.orm.GoodsReceiptLine.Create().
+			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(line.ItemID).
+			SetPurchaseOrderLineID(lineID).
+			SetQuantityReceived(qty).SetQuantityAccepted(qty).SetQuantityRejected(0).
+			SetUnitCost(line.UnitPrice).
+			Save(r.Context()); lerr != nil {
+			h.log.Warn("auto GRN line create failed", zap.Error(lerr))
+		}
+	}
+	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.created", map[string]any{
+		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": poID,
+	})
 
-	// Publish inventory.purchase_order.received with enriched supplier payment details for treasury auto-payout
-	go func() {
-		ctx := context.Background()
+	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
+		return // GRN stays in draft, awaiting/rejected sign-off; PO status is untouched.
+	}
 
-		payload := map[string]any{
-			"po_id":        po.ID,
-			"po_number":    po.PoNumber,
-			"tenant_id":    tenantID,
-			"supplier_id":  po.SupplierID,
-			"total_amount": po.TotalAmount,
-			"currency":     po.Currency,
-		}
-		if po.Edges.Supplier != nil {
-			supplier := po.Edges.Supplier
-			payload["supplier_name"] = supplier.Name
-			payload["supplier_contact_email"] = supplier.ContactEmail
-			payload["supplier_contact_phone"] = supplier.ContactPhone
-			payload["supplier_payment_method"] = supplier.PaymentMethodType
-			payload["supplier_mpesa_phone"] = supplier.MpesaPhone
-			payload["supplier_mpesa_business_name"] = supplier.MpesaBusinessName
-			payload["supplier_bank_account_number"] = supplier.BankAccountNumber
-			payload["supplier_bank_name"] = supplier.BankName
-			payload["supplier_tax_pin"] = supplier.TaxPin
-			payload["supplier_paystack_recipient_code"] = supplier.PaystackRecipientCode
-			payload["requires_invoice_before_payment"] = supplier.RequiresInvoiceBeforePayment
-			payload["auto_pay_enabled"] = supplier.AutoPayEnabled
-		}
-
-		evt := &events.Event{
-			ID:            uuid.New(),
-			TenantID:      tenantID,
-			AggregateType: "inventory",
-			AggregateID:   po.ID,
-			EventType:     "purchase_order.received",
-			Payload:       payload,
-			Timestamp:     time.Now().UTC(),
-		}
-		evtPayload, marshalErr := evt.ToJSON()
-		if marshalErr != nil {
-			h.log.Warn("PO received event: marshal failed", zap.Error(marshalErr))
-			return
-		}
-		_, writeErr := h.orm.OutboxEvent.Create().
-			SetID(evt.ID).
-			SetTenantID(tenantID).
-			SetAggregateType(evt.AggregateType).
-			SetAggregateID(evt.AggregateID.String()).
-			SetEventType(evt.EventType).
-			SetPayload(json.RawMessage(evtPayload)).
-			SetStatus("PENDING").
-			SetCreatedAt(evt.Timestamp).
-			Save(ctx)
-		if writeErr != nil {
-			h.log.Warn("PO received event: outbox write failed", zap.Error(writeErr))
-		}
-	}()
+	if _, err = h.postGoodsReceiptCore(r.Context(), tenantID, g, po); err != nil {
+		h.log.Error("post goods receipt on mark-received failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to post goods receipt")
+		return
+	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "received"})
 }
