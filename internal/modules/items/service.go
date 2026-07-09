@@ -43,6 +43,25 @@ type includeVariantsKey struct{}
 // terminal even when their item type is outside the use-case's sellable types.
 type includeNonBillableKey struct{}
 
+// itemIDFilterKey is a context flag set by the HTTP layer (?id=<uuid>) to restrict ListItems
+// to a single item by primary key while REUSING the full list enrichment (category name,
+// effective/tax price, on-hand/available, images, preferred supplier). The item-detail page
+// fetches by id this way, so it renders the same fully-enriched shape as the catalog list
+// instead of the availability-only /items/{sku} endpoint.
+type itemIDFilterKey struct{}
+
+// WithItemIDFilter returns a context that restricts ListItems to the single item with this id.
+func WithItemIDFilter(ctx context.Context, id uuid.UUID) context.Context {
+	return context.WithValue(ctx, itemIDFilterKey{}, id)
+}
+
+func itemIDFilter(ctx context.Context) *uuid.UUID {
+	if v, ok := ctx.Value(itemIDFilterKey{}).(uuid.UUID); ok && v != uuid.Nil {
+		return &v
+	}
+	return nil
+}
+
 // WithIncludeNonBillable returns a context that instructs ListItems to OR non-billable
 // items into the type filter.
 func WithIncludeNonBillable(ctx context.Context) context.Context {
@@ -821,6 +840,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().Where(item.TenantID(tenantID))
+		// Single-item detail fetch (?id=<uuid>): scope to exactly this item and let the rest
+		// of the filters/enrichment run unchanged so the detail page gets the same shape as a
+		// list row.
+		if id := itemIDFilter(ctx); id != nil {
+			q = q.Where(item.ID(*id))
+		}
 		switch statusFilter {
 		case "inactive":
 			q = q.Where(item.IsActive(false))
@@ -870,7 +895,10 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			}))
 		}
 		// Outlet scope: hide only items stocked exclusively in OTHER outlets' warehouses.
-		if len(outletExcludeIDs) > 0 {
+		// A direct single-item fetch (?id=) is an explicit lookup, not a browse, so it must
+		// never be hidden by outlet scoping — otherwise the detail page 404s for an item
+		// stocked in another outlet.
+		if len(outletExcludeIDs) > 0 && itemIDFilter(ctx) == nil {
 			q = q.Where(item.IDNotIn(outletExcludeIDs...))
 		}
 		return q
