@@ -86,7 +86,14 @@ func (ItemCategory) Edges() []ent.Edge {
 // Indexes of the ItemCategory.
 func (ItemCategory) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("tenant_id", "name"),
+		// Category names are unique per tenant regardless of parent (a tenant's
+		// category tree is shallow in practice — see cmd/seed/seed_categories.go,
+		// which seeds only root categories — and a flat per-tenant namespace avoids
+		// the Postgres NULL != NULL pitfall a per-parent unique index would hit for
+		// every root category, since parent_id is nullable). Case-insensitive
+		// duplicate rejection is additionally enforced in items.Service.CreateCategory
+		// / UpdateCategory (EqualFold pre-check) since this index is case-sensitive.
+		index.Fields("tenant_id", "name").Unique(),
 		index.Fields("tenant_id", "parent_id"),
 		index.Fields("path"),
 		index.Fields("tenant_id", "sort_order"),
