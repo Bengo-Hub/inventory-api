@@ -3853,6 +3853,43 @@ paths:
       summary: Food-cost variance report document (PDF/CSV)
       tags:
       - Reports
+  /{tenant}/inventory/reports/ingredient-utilization.pdf:
+    get:
+      parameters:
+      - description: pdf | csv
+        in: query
+        name: format
+        type: string
+      - description: Ingredient item ID
+        in: query
+        name: item_id
+        required: true
+        type: string
+      - description: Warehouse ID
+        in: query
+        name: warehouse_id
+        required: true
+        type: string
+      - description: period start (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: period end (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - bearerAuth: []
+      summary: Ingredient utilization report document (PDF/CSV)
+      tags:
+      - Reports
   /{tenant}/inventory/reports/ingredient-utilization/by-recipe:
     get:
       parameters:

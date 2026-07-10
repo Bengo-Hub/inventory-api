@@ -15,6 +15,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
+	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -102,15 +103,16 @@ func (s *Service) GetSummary(ctx context.Context, tenantID, itemID, warehouseID 
 		summary.ConsumedCost = consumedAgg[0].Cost
 	}
 
-	// GoodsReceiptLine has no warehouse_id of its own (it belongs to a GoodsReceipt that
-	// does) — purchased totals are tenant+item scoped across all warehouses. Volumes per
-	// item per period are small, so summing in Go avoids an extra join for one report.
+	// GoodsReceiptLine has no warehouse_id of its own — it belongs to a GoodsReceipt that
+	// does, so the warehouse scope is applied via HasGoodsReceiptWith. Volumes per item per
+	// period are small, so summing in Go avoids a dedicated aggregate query for one report.
 	receiptLines, err := s.client.GoodsReceiptLine.Query().
 		Where(
 			goodsreceiptline.TenantID(tenantID),
 			goodsreceiptline.ItemID(itemID),
 			goodsreceiptline.CreatedAtGTE(from),
 			goodsreceiptline.CreatedAtLTE(to),
+			goodsreceiptline.HasGoodsReceiptWith(goodsreceipt.WarehouseID(warehouseID)),
 		).
 		All(ctx)
 	if err != nil {
