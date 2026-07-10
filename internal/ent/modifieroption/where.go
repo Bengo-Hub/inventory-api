@@ -76,6 +76,16 @@ func PriceAdjustment(v float64) predicate.ModifierOption {
 	return predicate.ModifierOption(sql.FieldEQ(FieldPriceAdjustment, v))
 }
 
+// DeductionQty applies equality check predicate on the "deduction_qty" field. It's identical to DeductionQtyEQ.
+func DeductionQty(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldEQ(FieldDeductionQty, v))
+}
+
+// DeductionUnit applies equality check predicate on the "deduction_unit" field. It's identical to DeductionUnitEQ.
+func DeductionUnit(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldEQ(FieldDeductionUnit, v))
+}
+
 // IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
 func IsDefault(v bool) predicate.ModifierOption {
 	return predicate.ModifierOption(sql.FieldEQ(FieldIsDefault, v))
@@ -299,6 +309,121 @@ func PriceAdjustmentLT(v float64) predicate.ModifierOption {
 // PriceAdjustmentLTE applies the LTE predicate on the "price_adjustment" field.
 func PriceAdjustmentLTE(v float64) predicate.ModifierOption {
 	return predicate.ModifierOption(sql.FieldLTE(FieldPriceAdjustment, v))
+}
+
+// DeductionQtyEQ applies the EQ predicate on the "deduction_qty" field.
+func DeductionQtyEQ(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldEQ(FieldDeductionQty, v))
+}
+
+// DeductionQtyNEQ applies the NEQ predicate on the "deduction_qty" field.
+func DeductionQtyNEQ(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldNEQ(FieldDeductionQty, v))
+}
+
+// DeductionQtyIn applies the In predicate on the "deduction_qty" field.
+func DeductionQtyIn(vs ...float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldIn(FieldDeductionQty, vs...))
+}
+
+// DeductionQtyNotIn applies the NotIn predicate on the "deduction_qty" field.
+func DeductionQtyNotIn(vs ...float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldNotIn(FieldDeductionQty, vs...))
+}
+
+// DeductionQtyGT applies the GT predicate on the "deduction_qty" field.
+func DeductionQtyGT(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldGT(FieldDeductionQty, v))
+}
+
+// DeductionQtyGTE applies the GTE predicate on the "deduction_qty" field.
+func DeductionQtyGTE(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldGTE(FieldDeductionQty, v))
+}
+
+// DeductionQtyLT applies the LT predicate on the "deduction_qty" field.
+func DeductionQtyLT(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldLT(FieldDeductionQty, v))
+}
+
+// DeductionQtyLTE applies the LTE predicate on the "deduction_qty" field.
+func DeductionQtyLTE(v float64) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldLTE(FieldDeductionQty, v))
+}
+
+// DeductionUnitEQ applies the EQ predicate on the "deduction_unit" field.
+func DeductionUnitEQ(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldEQ(FieldDeductionUnit, v))
+}
+
+// DeductionUnitNEQ applies the NEQ predicate on the "deduction_unit" field.
+func DeductionUnitNEQ(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldNEQ(FieldDeductionUnit, v))
+}
+
+// DeductionUnitIn applies the In predicate on the "deduction_unit" field.
+func DeductionUnitIn(vs ...string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldIn(FieldDeductionUnit, vs...))
+}
+
+// DeductionUnitNotIn applies the NotIn predicate on the "deduction_unit" field.
+func DeductionUnitNotIn(vs ...string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldNotIn(FieldDeductionUnit, vs...))
+}
+
+// DeductionUnitGT applies the GT predicate on the "deduction_unit" field.
+func DeductionUnitGT(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldGT(FieldDeductionUnit, v))
+}
+
+// DeductionUnitGTE applies the GTE predicate on the "deduction_unit" field.
+func DeductionUnitGTE(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldGTE(FieldDeductionUnit, v))
+}
+
+// DeductionUnitLT applies the LT predicate on the "deduction_unit" field.
+func DeductionUnitLT(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldLT(FieldDeductionUnit, v))
+}
+
+// DeductionUnitLTE applies the LTE predicate on the "deduction_unit" field.
+func DeductionUnitLTE(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldLTE(FieldDeductionUnit, v))
+}
+
+// DeductionUnitContains applies the Contains predicate on the "deduction_unit" field.
+func DeductionUnitContains(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldContains(FieldDeductionUnit, v))
+}
+
+// DeductionUnitHasPrefix applies the HasPrefix predicate on the "deduction_unit" field.
+func DeductionUnitHasPrefix(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldHasPrefix(FieldDeductionUnit, v))
+}
+
+// DeductionUnitHasSuffix applies the HasSuffix predicate on the "deduction_unit" field.
+func DeductionUnitHasSuffix(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldHasSuffix(FieldDeductionUnit, v))
+}
+
+// DeductionUnitIsNil applies the IsNil predicate on the "deduction_unit" field.
+func DeductionUnitIsNil() predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldIsNull(FieldDeductionUnit))
+}
+
+// DeductionUnitNotNil applies the NotNil predicate on the "deduction_unit" field.
+func DeductionUnitNotNil() predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldNotNull(FieldDeductionUnit))
+}
+
+// DeductionUnitEqualFold applies the EqualFold predicate on the "deduction_unit" field.
+func DeductionUnitEqualFold(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldEqualFold(FieldDeductionUnit, v))
+}
+
+// DeductionUnitContainsFold applies the ContainsFold predicate on the "deduction_unit" field.
+func DeductionUnitContainsFold(v string) predicate.ModifierOption {
+	return predicate.ModifierOption(sql.FieldContainsFold(FieldDeductionUnit, v))
 }
 
 // IsDefaultEQ applies the EQ predicate on the "is_default" field.

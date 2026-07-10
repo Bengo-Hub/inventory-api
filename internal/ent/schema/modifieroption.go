@@ -32,6 +32,12 @@ func (ModifierOption) Fields() []ent.Field {
 		field.Float("price_adjustment").
 			Default(0).
 			Comment("Price delta: +50 for Large, -10 for No Sauce"),
+		field.Float("deduction_qty").
+			Default(1).
+			Comment("How much of the linked SKU one selection of this option consumes per sold unit of the parent line (e.g. 20 for 20g of honey on 'Extra Honey'). Defaults to 1 (a single natural unit of the SKU) when the option was never given a specific amount."),
+		field.String("deduction_unit").
+			Optional().
+			Comment("Unit deduction_qty is expressed in (e.g. 'g', 'ml'). Empty means the linked item's own natural stock unit."),
 		field.Bool("is_default").
 			Default(false),
 		field.Bool("is_active").

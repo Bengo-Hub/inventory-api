@@ -1255,24 +1255,28 @@ func init() {
 	modifieroptionDescPriceAdjustment := modifieroptionFields[4].Descriptor()
 	// modifieroption.DefaultPriceAdjustment holds the default value on creation for the price_adjustment field.
 	modifieroption.DefaultPriceAdjustment = modifieroptionDescPriceAdjustment.Default.(float64)
+	// modifieroptionDescDeductionQty is the schema descriptor for deduction_qty field.
+	modifieroptionDescDeductionQty := modifieroptionFields[5].Descriptor()
+	// modifieroption.DefaultDeductionQty holds the default value on creation for the deduction_qty field.
+	modifieroption.DefaultDeductionQty = modifieroptionDescDeductionQty.Default.(float64)
 	// modifieroptionDescIsDefault is the schema descriptor for is_default field.
-	modifieroptionDescIsDefault := modifieroptionFields[5].Descriptor()
+	modifieroptionDescIsDefault := modifieroptionFields[7].Descriptor()
 	// modifieroption.DefaultIsDefault holds the default value on creation for the is_default field.
 	modifieroption.DefaultIsDefault = modifieroptionDescIsDefault.Default.(bool)
 	// modifieroptionDescIsActive is the schema descriptor for is_active field.
-	modifieroptionDescIsActive := modifieroptionFields[6].Descriptor()
+	modifieroptionDescIsActive := modifieroptionFields[8].Descriptor()
 	// modifieroption.DefaultIsActive holds the default value on creation for the is_active field.
 	modifieroption.DefaultIsActive = modifieroptionDescIsActive.Default.(bool)
 	// modifieroptionDescDisplayOrder is the schema descriptor for display_order field.
-	modifieroptionDescDisplayOrder := modifieroptionFields[7].Descriptor()
+	modifieroptionDescDisplayOrder := modifieroptionFields[9].Descriptor()
 	// modifieroption.DefaultDisplayOrder holds the default value on creation for the display_order field.
 	modifieroption.DefaultDisplayOrder = modifieroptionDescDisplayOrder.Default.(int)
 	// modifieroptionDescCreatedAt is the schema descriptor for created_at field.
-	modifieroptionDescCreatedAt := modifieroptionFields[8].Descriptor()
+	modifieroptionDescCreatedAt := modifieroptionFields[10].Descriptor()
 	// modifieroption.DefaultCreatedAt holds the default value on creation for the created_at field.
 	modifieroption.DefaultCreatedAt = modifieroptionDescCreatedAt.Default.(func() time.Time)
 	// modifieroptionDescUpdatedAt is the schema descriptor for updated_at field.
-	modifieroptionDescUpdatedAt := modifieroptionFields[9].Descriptor()
+	modifieroptionDescUpdatedAt := modifieroptionFields[11].Descriptor()
 	// modifieroption.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	modifieroption.DefaultUpdatedAt = modifieroptionDescUpdatedAt.Default.(func() time.Time)
 	// modifieroption.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -27,6 +27,10 @@ type ModifierOption struct {
 	Sku string `json:"sku,omitempty"`
 	// Price delta: +50 for Large, -10 for No Sauce
 	PriceAdjustment float64 `json:"price_adjustment,omitempty"`
+	// How much of the linked SKU one selection of this option consumes per sold unit of the parent line (e.g. 20 for 20g of honey on 'Extra Honey'). Defaults to 1 (a single natural unit of the SKU) when the option was never given a specific amount.
+	DeductionQty float64 `json:"deduction_qty,omitempty"`
+	// Unit deduction_qty is expressed in (e.g. 'g', 'ml'). Empty means the linked item's own natural stock unit.
+	DeductionUnit string `json:"deduction_unit,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
 	IsDefault bool `json:"is_default,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -70,11 +74,11 @@ func (*ModifierOption) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case modifieroption.FieldIsDefault, modifieroption.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case modifieroption.FieldPriceAdjustment:
+		case modifieroption.FieldPriceAdjustment, modifieroption.FieldDeductionQty:
 			values[i] = new(sql.NullFloat64)
 		case modifieroption.FieldDisplayOrder:
 			values[i] = new(sql.NullInt64)
-		case modifieroption.FieldName, modifieroption.FieldSku:
+		case modifieroption.FieldName, modifieroption.FieldSku, modifieroption.FieldDeductionUnit:
 			values[i] = new(sql.NullString)
 		case modifieroption.FieldCreatedAt, modifieroption.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -124,6 +128,18 @@ func (_m *ModifierOption) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field price_adjustment", values[i])
 			} else if value.Valid {
 				_m.PriceAdjustment = value.Float64
+			}
+		case modifieroption.FieldDeductionQty:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field deduction_qty", values[i])
+			} else if value.Valid {
+				_m.DeductionQty = value.Float64
+			}
+		case modifieroption.FieldDeductionUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field deduction_unit", values[i])
+			} else if value.Valid {
+				_m.DeductionUnit = value.String
 			}
 		case modifieroption.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -207,6 +223,12 @@ func (_m *ModifierOption) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("price_adjustment=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PriceAdjustment))
+	builder.WriteString(", ")
+	builder.WriteString("deduction_qty=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DeductionQty))
+	builder.WriteString(", ")
+	builder.WriteString("deduction_unit=")
+	builder.WriteString(_m.DeductionUnit)
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))

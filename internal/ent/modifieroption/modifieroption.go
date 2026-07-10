@@ -23,6 +23,10 @@ const (
 	FieldSku = "sku"
 	// FieldPriceAdjustment holds the string denoting the price_adjustment field in the database.
 	FieldPriceAdjustment = "price_adjustment"
+	// FieldDeductionQty holds the string denoting the deduction_qty field in the database.
+	FieldDeductionQty = "deduction_qty"
+	// FieldDeductionUnit holds the string denoting the deduction_unit field in the database.
+	FieldDeductionUnit = "deduction_unit"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
 	// FieldIsActive holds the string denoting the is_active field in the database.
@@ -53,6 +57,8 @@ var Columns = []string{
 	FieldName,
 	FieldSku,
 	FieldPriceAdjustment,
+	FieldDeductionQty,
+	FieldDeductionUnit,
 	FieldIsDefault,
 	FieldIsActive,
 	FieldDisplayOrder,
@@ -75,6 +81,8 @@ var (
 	NameValidator func(string) error
 	// DefaultPriceAdjustment holds the default value on creation for the "price_adjustment" field.
 	DefaultPriceAdjustment float64
+	// DefaultDeductionQty holds the default value on creation for the "deduction_qty" field.
+	DefaultDeductionQty float64
 	// DefaultIsDefault holds the default value on creation for the "is_default" field.
 	DefaultIsDefault bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
@@ -117,6 +125,16 @@ func BySku(opts ...sql.OrderTermOption) OrderOption {
 // ByPriceAdjustment orders the results by the price_adjustment field.
 func ByPriceAdjustment(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriceAdjustment, opts...).ToFunc()
+}
+
+// ByDeductionQty orders the results by the deduction_qty field.
+func ByDeductionQty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeductionQty, opts...).ToFunc()
+}
+
+// ByDeductionUnit orders the results by the deduction_unit field.
+func ByDeductionUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeductionUnit, opts...).ToFunc()
 }
 
 // ByIsDefault orders the results by the is_default field.

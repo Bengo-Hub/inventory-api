@@ -99,6 +99,47 @@ func (_u *ModifierOptionUpdate) AddPriceAdjustment(v float64) *ModifierOptionUpd
 	return _u
 }
 
+// SetDeductionQty sets the "deduction_qty" field.
+func (_u *ModifierOptionUpdate) SetDeductionQty(v float64) *ModifierOptionUpdate {
+	_u.mutation.ResetDeductionQty()
+	_u.mutation.SetDeductionQty(v)
+	return _u
+}
+
+// SetNillableDeductionQty sets the "deduction_qty" field if the given value is not nil.
+func (_u *ModifierOptionUpdate) SetNillableDeductionQty(v *float64) *ModifierOptionUpdate {
+	if v != nil {
+		_u.SetDeductionQty(*v)
+	}
+	return _u
+}
+
+// AddDeductionQty adds value to the "deduction_qty" field.
+func (_u *ModifierOptionUpdate) AddDeductionQty(v float64) *ModifierOptionUpdate {
+	_u.mutation.AddDeductionQty(v)
+	return _u
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (_u *ModifierOptionUpdate) SetDeductionUnit(v string) *ModifierOptionUpdate {
+	_u.mutation.SetDeductionUnit(v)
+	return _u
+}
+
+// SetNillableDeductionUnit sets the "deduction_unit" field if the given value is not nil.
+func (_u *ModifierOptionUpdate) SetNillableDeductionUnit(v *string) *ModifierOptionUpdate {
+	if v != nil {
+		_u.SetDeductionUnit(*v)
+	}
+	return _u
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (_u *ModifierOptionUpdate) ClearDeductionUnit() *ModifierOptionUpdate {
+	_u.mutation.ClearDeductionUnit()
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *ModifierOptionUpdate) SetIsDefault(v bool) *ModifierOptionUpdate {
 	_u.mutation.SetIsDefault(v)
@@ -246,6 +287,18 @@ func (_u *ModifierOptionUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.AddedPriceAdjustment(); ok {
 		_spec.AddField(modifieroption.FieldPriceAdjustment, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.DeductionQty(); ok {
+		_spec.SetField(modifieroption.FieldDeductionQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDeductionQty(); ok {
+		_spec.AddField(modifieroption.FieldDeductionQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DeductionUnit(); ok {
+		_spec.SetField(modifieroption.FieldDeductionUnit, field.TypeString, value)
+	}
+	if _u.mutation.DeductionUnitCleared() {
+		_spec.ClearField(modifieroption.FieldDeductionUnit, field.TypeString)
+	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(modifieroption.FieldIsDefault, field.TypeBool, value)
 	}
@@ -376,6 +429,47 @@ func (_u *ModifierOptionUpdateOne) SetNillablePriceAdjustment(v *float64) *Modif
 // AddPriceAdjustment adds value to the "price_adjustment" field.
 func (_u *ModifierOptionUpdateOne) AddPriceAdjustment(v float64) *ModifierOptionUpdateOne {
 	_u.mutation.AddPriceAdjustment(v)
+	return _u
+}
+
+// SetDeductionQty sets the "deduction_qty" field.
+func (_u *ModifierOptionUpdateOne) SetDeductionQty(v float64) *ModifierOptionUpdateOne {
+	_u.mutation.ResetDeductionQty()
+	_u.mutation.SetDeductionQty(v)
+	return _u
+}
+
+// SetNillableDeductionQty sets the "deduction_qty" field if the given value is not nil.
+func (_u *ModifierOptionUpdateOne) SetNillableDeductionQty(v *float64) *ModifierOptionUpdateOne {
+	if v != nil {
+		_u.SetDeductionQty(*v)
+	}
+	return _u
+}
+
+// AddDeductionQty adds value to the "deduction_qty" field.
+func (_u *ModifierOptionUpdateOne) AddDeductionQty(v float64) *ModifierOptionUpdateOne {
+	_u.mutation.AddDeductionQty(v)
+	return _u
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (_u *ModifierOptionUpdateOne) SetDeductionUnit(v string) *ModifierOptionUpdateOne {
+	_u.mutation.SetDeductionUnit(v)
+	return _u
+}
+
+// SetNillableDeductionUnit sets the "deduction_unit" field if the given value is not nil.
+func (_u *ModifierOptionUpdateOne) SetNillableDeductionUnit(v *string) *ModifierOptionUpdateOne {
+	if v != nil {
+		_u.SetDeductionUnit(*v)
+	}
+	return _u
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (_u *ModifierOptionUpdateOne) ClearDeductionUnit() *ModifierOptionUpdateOne {
+	_u.mutation.ClearDeductionUnit()
 	return _u
 }
 
@@ -555,6 +649,18 @@ func (_u *ModifierOptionUpdateOne) sqlSave(ctx context.Context) (_node *Modifier
 	}
 	if value, ok := _u.mutation.AddedPriceAdjustment(); ok {
 		_spec.AddField(modifieroption.FieldPriceAdjustment, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DeductionQty(); ok {
+		_spec.SetField(modifieroption.FieldDeductionQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDeductionQty(); ok {
+		_spec.AddField(modifieroption.FieldDeductionQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DeductionUnit(); ok {
+		_spec.SetField(modifieroption.FieldDeductionUnit, field.TypeString, value)
+	}
+	if _u.mutation.DeductionUnitCleared() {
+		_spec.ClearField(modifieroption.FieldDeductionUnit, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(modifieroption.FieldIsDefault, field.TypeBool, value)

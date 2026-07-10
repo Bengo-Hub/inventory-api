@@ -65,6 +65,34 @@ func (_c *ModifierOptionCreate) SetNillablePriceAdjustment(v *float64) *Modifier
 	return _c
 }
 
+// SetDeductionQty sets the "deduction_qty" field.
+func (_c *ModifierOptionCreate) SetDeductionQty(v float64) *ModifierOptionCreate {
+	_c.mutation.SetDeductionQty(v)
+	return _c
+}
+
+// SetNillableDeductionQty sets the "deduction_qty" field if the given value is not nil.
+func (_c *ModifierOptionCreate) SetNillableDeductionQty(v *float64) *ModifierOptionCreate {
+	if v != nil {
+		_c.SetDeductionQty(*v)
+	}
+	return _c
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (_c *ModifierOptionCreate) SetDeductionUnit(v string) *ModifierOptionCreate {
+	_c.mutation.SetDeductionUnit(v)
+	return _c
+}
+
+// SetNillableDeductionUnit sets the "deduction_unit" field if the given value is not nil.
+func (_c *ModifierOptionCreate) SetNillableDeductionUnit(v *string) *ModifierOptionCreate {
+	if v != nil {
+		_c.SetDeductionUnit(*v)
+	}
+	return _c
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_c *ModifierOptionCreate) SetIsDefault(v bool) *ModifierOptionCreate {
 	_c.mutation.SetIsDefault(v)
@@ -193,6 +221,10 @@ func (_c *ModifierOptionCreate) defaults() {
 		v := modifieroption.DefaultPriceAdjustment
 		_c.mutation.SetPriceAdjustment(v)
 	}
+	if _, ok := _c.mutation.DeductionQty(); !ok {
+		v := modifieroption.DefaultDeductionQty
+		_c.mutation.SetDeductionQty(v)
+	}
 	if _, ok := _c.mutation.IsDefault(); !ok {
 		v := modifieroption.DefaultIsDefault
 		_c.mutation.SetIsDefault(v)
@@ -234,6 +266,9 @@ func (_c *ModifierOptionCreate) check() error {
 	}
 	if _, ok := _c.mutation.PriceAdjustment(); !ok {
 		return &ValidationError{Name: "price_adjustment", err: errors.New(`ent: missing required field "ModifierOption.price_adjustment"`)}
+	}
+	if _, ok := _c.mutation.DeductionQty(); !ok {
+		return &ValidationError{Name: "deduction_qty", err: errors.New(`ent: missing required field "ModifierOption.deduction_qty"`)}
 	}
 	if _, ok := _c.mutation.IsDefault(); !ok {
 		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "ModifierOption.is_default"`)}
@@ -300,6 +335,14 @@ func (_c *ModifierOptionCreate) createSpec() (*ModifierOption, *sqlgraph.CreateS
 	if value, ok := _c.mutation.PriceAdjustment(); ok {
 		_spec.SetField(modifieroption.FieldPriceAdjustment, field.TypeFloat64, value)
 		_node.PriceAdjustment = value
+	}
+	if value, ok := _c.mutation.DeductionQty(); ok {
+		_spec.SetField(modifieroption.FieldDeductionQty, field.TypeFloat64, value)
+		_node.DeductionQty = value
+	}
+	if value, ok := _c.mutation.DeductionUnit(); ok {
+		_spec.SetField(modifieroption.FieldDeductionUnit, field.TypeString, value)
+		_node.DeductionUnit = value
 	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(modifieroption.FieldIsDefault, field.TypeBool, value)
@@ -447,6 +490,42 @@ func (u *ModifierOptionUpsert) UpdatePriceAdjustment() *ModifierOptionUpsert {
 // AddPriceAdjustment adds v to the "price_adjustment" field.
 func (u *ModifierOptionUpsert) AddPriceAdjustment(v float64) *ModifierOptionUpsert {
 	u.Add(modifieroption.FieldPriceAdjustment, v)
+	return u
+}
+
+// SetDeductionQty sets the "deduction_qty" field.
+func (u *ModifierOptionUpsert) SetDeductionQty(v float64) *ModifierOptionUpsert {
+	u.Set(modifieroption.FieldDeductionQty, v)
+	return u
+}
+
+// UpdateDeductionQty sets the "deduction_qty" field to the value that was provided on create.
+func (u *ModifierOptionUpsert) UpdateDeductionQty() *ModifierOptionUpsert {
+	u.SetExcluded(modifieroption.FieldDeductionQty)
+	return u
+}
+
+// AddDeductionQty adds v to the "deduction_qty" field.
+func (u *ModifierOptionUpsert) AddDeductionQty(v float64) *ModifierOptionUpsert {
+	u.Add(modifieroption.FieldDeductionQty, v)
+	return u
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (u *ModifierOptionUpsert) SetDeductionUnit(v string) *ModifierOptionUpsert {
+	u.Set(modifieroption.FieldDeductionUnit, v)
+	return u
+}
+
+// UpdateDeductionUnit sets the "deduction_unit" field to the value that was provided on create.
+func (u *ModifierOptionUpsert) UpdateDeductionUnit() *ModifierOptionUpsert {
+	u.SetExcluded(modifieroption.FieldDeductionUnit)
+	return u
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (u *ModifierOptionUpsert) ClearDeductionUnit() *ModifierOptionUpsert {
+	u.SetNull(modifieroption.FieldDeductionUnit)
 	return u
 }
 
@@ -622,6 +701,48 @@ func (u *ModifierOptionUpsertOne) AddPriceAdjustment(v float64) *ModifierOptionU
 func (u *ModifierOptionUpsertOne) UpdatePriceAdjustment() *ModifierOptionUpsertOne {
 	return u.Update(func(s *ModifierOptionUpsert) {
 		s.UpdatePriceAdjustment()
+	})
+}
+
+// SetDeductionQty sets the "deduction_qty" field.
+func (u *ModifierOptionUpsertOne) SetDeductionQty(v float64) *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.SetDeductionQty(v)
+	})
+}
+
+// AddDeductionQty adds v to the "deduction_qty" field.
+func (u *ModifierOptionUpsertOne) AddDeductionQty(v float64) *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.AddDeductionQty(v)
+	})
+}
+
+// UpdateDeductionQty sets the "deduction_qty" field to the value that was provided on create.
+func (u *ModifierOptionUpsertOne) UpdateDeductionQty() *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.UpdateDeductionQty()
+	})
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (u *ModifierOptionUpsertOne) SetDeductionUnit(v string) *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.SetDeductionUnit(v)
+	})
+}
+
+// UpdateDeductionUnit sets the "deduction_unit" field to the value that was provided on create.
+func (u *ModifierOptionUpsertOne) UpdateDeductionUnit() *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.UpdateDeductionUnit()
+	})
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (u *ModifierOptionUpsertOne) ClearDeductionUnit() *ModifierOptionUpsertOne {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.ClearDeductionUnit()
 	})
 }
 
@@ -973,6 +1094,48 @@ func (u *ModifierOptionUpsertBulk) AddPriceAdjustment(v float64) *ModifierOption
 func (u *ModifierOptionUpsertBulk) UpdatePriceAdjustment() *ModifierOptionUpsertBulk {
 	return u.Update(func(s *ModifierOptionUpsert) {
 		s.UpdatePriceAdjustment()
+	})
+}
+
+// SetDeductionQty sets the "deduction_qty" field.
+func (u *ModifierOptionUpsertBulk) SetDeductionQty(v float64) *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.SetDeductionQty(v)
+	})
+}
+
+// AddDeductionQty adds v to the "deduction_qty" field.
+func (u *ModifierOptionUpsertBulk) AddDeductionQty(v float64) *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.AddDeductionQty(v)
+	})
+}
+
+// UpdateDeductionQty sets the "deduction_qty" field to the value that was provided on create.
+func (u *ModifierOptionUpsertBulk) UpdateDeductionQty() *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.UpdateDeductionQty()
+	})
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (u *ModifierOptionUpsertBulk) SetDeductionUnit(v string) *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.SetDeductionUnit(v)
+	})
+}
+
+// UpdateDeductionUnit sets the "deduction_unit" field to the value that was provided on create.
+func (u *ModifierOptionUpsertBulk) UpdateDeductionUnit() *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.UpdateDeductionUnit()
+	})
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (u *ModifierOptionUpsertBulk) ClearDeductionUnit() *ModifierOptionUpsertBulk {
+	return u.Update(func(s *ModifierOptionUpsert) {
+		s.ClearDeductionUnit()
 	})
 }
 
