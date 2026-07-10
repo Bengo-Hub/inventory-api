@@ -206,6 +206,10 @@ type ItemDTO struct {
 	OnHand    *float64  `json:"on_hand,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// ModifierGroups: this item's selectable modifiers (e.g. "Extra Honey" on a Dawa),
+	// enriched by enrichModifierGroups. Populated by ListItems for every catalog-facing
+	// caller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.
+	ModifierGroups []ItemModifierGroup `json:"modifier_groups,omitempty"`
 }
 
 // VariantDTO is the catalog-facing projection of an ItemVariant. Surfaced on the item
@@ -218,6 +222,25 @@ type VariantDTO struct {
 	Attributes map[string]string `json:"attributes,omitempty"`
 	Barcode    string            `json:"barcode,omitempty"`
 	IsActive   bool              `json:"is_active"`
+}
+
+// ItemModifierOption is the catalog-facing projection of a ModifierOption.
+type ItemModifierOption struct {
+	ID              uuid.UUID `json:"id"`
+	Name            string    `json:"name"`
+	SKU             string    `json:"sku,omitempty"`
+	PriceAdjustment float64   `json:"price_adjustment"`
+	IsDefault       bool      `json:"is_default"`
+}
+
+// ItemModifierGroup is the catalog-facing projection of a ModifierGroup + its options.
+type ItemModifierGroup struct {
+	ID            uuid.UUID            `json:"id"`
+	Name          string               `json:"name"`
+	IsRequired    bool                 `json:"is_required"`
+	MinSelections int                  `json:"min_selections"`
+	MaxSelections int                  `json:"max_selections"`
+	Options       []ItemModifierOption `json:"options"`
 }
 
 type CategoryDTO struct {
@@ -998,6 +1021,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		}
 		// Enrich with effective selling price + tax split for POS/ordering proxies.
 		s.enrichPrices(innerCtx, tenantID, cfg, dtos)
+		s.enrichModifierGroups(innerCtx, dtos)
 		return dtos, nil
 	}
 
@@ -1103,6 +1127,7 @@ func (s *Service) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit,
 		Where(tenantinventoryconfig.TenantID(tenantID)).
 		Only(ctx)
 	s.enrichPrices(ctx, tenantID, cfg, dtos)
+	s.enrichModifierGroups(ctx, dtos)
 	return dtos, total, nil
 }
 

@@ -689,18 +689,26 @@ func (s *Service) modifierConsumption(ctx context.Context, tenantID, warehouseID
 	var out []explodedIngredient
 	for _, m := range mods {
 		sku := m.SKU
-		if sku == "" && m.InventoryModifierOptionID != "" {
+		// perUnit is how much of sku ONE selection of this option consumes (e.g. 20 for 20g
+		// of honey on "Extra Honey") — authoritative source is the option's own deduction_qty,
+		// NOT the caller-sent Quantity: every known caller (pos-api's sale-finalized event)
+		// actually populates Quantity with the PARENT LINE's quantity, not a per-unit amount,
+		// which would double-count once multiplied by lineQty below. Only fall back to the
+		// caller's Quantity when the option can't be resolved at all (bare-sku legacy callers).
+		perUnit := m.Quantity
+		if m.InventoryModifierOptionID != "" {
 			if oid, perr := uuid.Parse(m.InventoryModifierOptionID); perr == nil {
 				if opt, oerr := s.client.ModifierOption.Get(ctx, oid); oerr == nil {
-					sku = opt.Sku
+					if sku == "" {
+						sku = opt.Sku
+					}
+					perUnit = opt.DeductionQty
 				}
 			}
 		}
 		if sku == "" {
 			continue
 		}
-		// One modifier application per sold unit of the parent line.
-		perUnit := m.Quantity
 		if perUnit <= 0 {
 			perUnit = 1
 		}
