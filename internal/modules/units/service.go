@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -135,7 +136,18 @@ func (s *Service) DeleteUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID) err
 	return nil
 }
 
+// normalizeAbbreviation lowercases and trims a unit abbreviation so it always
+// matches the canonical casing units.NormalizeUnit expects (kg, ml, pc, ...),
+// regardless of whether the caller is a UI form, a direct API client, or a
+// bulk import — the abbreviation is a short code, not a display string, so
+// there is no legitimate reason for it to carry mixed case.
+func normalizeAbbreviation(abbr string) string {
+	return strings.ToLower(strings.TrimSpace(abbr))
+}
+
 func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
+	dto.Name = strings.TrimSpace(dto.Name)
+	dto.Abbreviation = normalizeAbbreviation(dto.Abbreviation)
 	if err := checkDuplicateUnit(ctx, s.client.Unit, dto.Name, dto.Abbreviation, &id); err != nil {
 		return nil, err
 	}
@@ -173,6 +185,8 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 }
 
 func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*UnitDTO, error) {
+	dto.Name = strings.TrimSpace(dto.Name)
+	dto.Abbreviation = normalizeAbbreviation(dto.Abbreviation)
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("units: begin transaction: %w", err)
