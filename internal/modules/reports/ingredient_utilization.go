@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
@@ -36,6 +37,17 @@ type Service struct {
 // NewService creates a new ingredient-utilization reports Service.
 func NewService(client *ent.Client, log *zap.Logger) *Service {
 	return &Service{client: client, log: log.Named("reports.ingredient_utilization")}
+}
+
+// sumAs aliases a SUM() aggregate to a distinct column name. ent's generated Sum() leaves
+// the SQL expression unaliased, so Postgres names every SUM column literally "sum" — fine
+// for a single aggregate, but TWO Sum() calls in one Aggregate() collide on that same name
+// and silently break Scan() (each destination struct field expects its own column). Every
+// multi-Sum aggregate query in this package must use this instead of the bare ent.Sum.
+func sumAs(field, alias string) ent.AggregateFunc {
+	return func(s *entsql.Selector) string {
+		return entsql.As(entsql.Sum(s.C(field)), alias)
+	}
 }
 
 // IngredientUtilizationSummary is the KPI-tile payload for one ingredient over a period.
@@ -82,8 +94,8 @@ func (s *Service) GetSummary(ctx context.Context, tenantID, itemID, warehouseID 
 	}
 
 	var consumedAgg []struct {
-		Qty  float64 `json:"sum_quantity"`
-		Cost float64 `json:"sum_total_cost"`
+		Qty  float64 `json:"qty"`
+		Cost float64 `json:"cost"`
 	}
 	if err := s.client.ConsumptionLine.Query().
 		Where(
@@ -94,7 +106,7 @@ func (s *Service) GetSummary(ctx context.Context, tenantID, itemID, warehouseID 
 			entconsumptionline.ConsumedAtGTE(from),
 			entconsumptionline.ConsumedAtLTE(to),
 		).
-		Aggregate(ent.Sum(entconsumptionline.FieldQuantity), ent.Sum(entconsumptionline.FieldTotalCost)).
+		Aggregate(sumAs(entconsumptionline.FieldQuantity, "qty"), sumAs(entconsumptionline.FieldTotalCost, "cost")).
 		Scan(ctx, &consumedAgg); err != nil {
 		return nil, fmt.Errorf("reports: sum consumption: %w", err)
 	}
