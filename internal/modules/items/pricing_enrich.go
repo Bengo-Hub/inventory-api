@@ -28,6 +28,7 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 
 	recipePrice := s.recipeSellingPrices(ctx, tenantID, cfg, itemIDs)
 	tierPrice := s.defaultTierPrices(ctx, tenantID, itemIDs)
+	recipeCost := s.recipeCostPerPortion(ctx, tenantID, itemIDs)
 
 	inclusiveDefault := cfg != nil && cfg.PricesInclusiveOfTax
 	defaultTaxCode := ""
@@ -49,6 +50,19 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		if d.Type == "INGREDIENT" {
 			continue
 		}
+		// RECIPE items never carry a raw Item.cost_price (there's nothing to "purchase" —
+		// they're built from ingredients, not stocked): RecalculateRecipeCosts writes
+		// total_cost/cost_per_portion onto the Recipe row only, never back onto the linked
+		// Item. Without this, every RECIPE item's CostPrice silently reads 0 everywhere
+		// that field is consumed downstream (pos-api catalog's view_cost column, the
+		// Most Profitable report) — margin math for the majority of a restaurant/cafe
+		// menu was effectively computing 100% margin on every recipe dish.
+		if d.Type == "RECIPE" && d.CostPrice == nil {
+			if cp, ok := recipeCost[d.ID]; ok && cp > 0 {
+				d.CostPrice = &cp
+			}
+		}
+
 		price := effectivePrice(d, recipePrice, tierPrice)
 		if price <= 0 {
 			continue
@@ -222,6 +236,30 @@ func (s *Service) recipeSellingPrices(ctx context.Context, tenantID uuid.UUID, c
 				out[*r.ItemID] = *r.CostPerPortion / (1 - margin/100)
 			}
 		}
+	}
+	return out
+}
+
+// recipeCostPerPortion maps RECIPE item_id → the recipe's actual production cost per portion
+// (Recipe.cost_per_portion, computed by RecalculateRecipeCosts from ingredient cost_prices —
+// see recipes/costing.go). This is the ONLY place a RECIPE item's true cost lives: it is never
+// written back onto the linked Item row, so Item.cost_price stays nil for every recipe dish.
+func (s *Service) recipeCostPerPortion(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]float64 {
+	out := map[uuid.UUID]float64{}
+	if len(itemIDs) == 0 {
+		return out
+	}
+	recs, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.IsActive(true), recipe.ItemIDIn(itemIDs...)).
+		All(ctx)
+	if err != nil {
+		return out
+	}
+	for _, r := range recs {
+		if r.ItemID == nil || r.CostPerPortion == nil || *r.CostPerPortion <= 0 {
+			continue
+		}
+		out[*r.ItemID] = *r.CostPerPortion
 	}
 	return out
 }
