@@ -1749,6 +1749,8 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "sku", Type: field.TypeString, Nullable: true},
 		{Name: "price_adjustment", Type: field.TypeFloat64, Default: 0},
+		{Name: "deduction_qty", Type: field.TypeFloat64, Default: 1},
+		{Name: "deduction_unit", Type: field.TypeString, Nullable: true},
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "display_order", Type: field.TypeInt, Default: 0},
@@ -1764,7 +1766,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "modifier_options_modifier_groups_options",
-				Columns:    []*schema.Column{ModifierOptionsColumns[9]},
+				Columns:    []*schema.Column{ModifierOptionsColumns[11]},
 				RefColumns: []*schema.Column{ModifierGroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1773,12 +1775,12 @@ var (
 			{
 				Name:    "modifieroption_group_id_name",
 				Unique:  true,
-				Columns: []*schema.Column{ModifierOptionsColumns[9], ModifierOptionsColumns[1]},
+				Columns: []*schema.Column{ModifierOptionsColumns[11], ModifierOptionsColumns[1]},
 			},
 			{
 				Name:    "modifieroption_group_id_display_order",
 				Unique:  false,
-				Columns: []*schema.Column{ModifierOptionsColumns[9], ModifierOptionsColumns[6]},
+				Columns: []*schema.Column{ModifierOptionsColumns[11], ModifierOptionsColumns[8]},
 			},
 		},
 	}

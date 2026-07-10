@@ -39,12 +39,16 @@ type ModifierOptionDTO struct {
 	GroupID         uuid.UUID `json:"group_id"`
 	Name            string    `json:"name"`
 	SKU             string    `json:"sku,omitempty"`
-	PriceAdjustment float64  `json:"price_adjustment"`
-	IsDefault       bool     `json:"is_default"`
-	IsActive        bool     `json:"is_active"`
-	DisplayOrder    int      `json:"display_order"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	PriceAdjustment float64   `json:"price_adjustment"`
+	// DeductionQty/DeductionUnit: how much of SKU one selection consumes per sold unit of the
+	// parent line (e.g. 20 "g" for "Extra Honey" on a Dawa). Defaults to 1 natural unit of SKU.
+	DeductionQty  float64   `json:"deduction_qty"`
+	DeductionUnit string    `json:"deduction_unit,omitempty"`
+	IsDefault     bool      `json:"is_default"`
+	IsActive      bool      `json:"is_active"`
+	DisplayOrder  int       `json:"display_order"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // CreateModifierGroupRequest is the request body for creating a modifier group.
@@ -71,6 +75,8 @@ type CreateModifierOptionRequest struct {
 	Name            string  `json:"name"`
 	SKU             string  `json:"sku,omitempty"`
 	PriceAdjustment float64 `json:"price_adjustment"`
+	DeductionQty    float64 `json:"deduction_qty,omitempty"`
+	DeductionUnit   string  `json:"deduction_unit,omitempty"`
 	IsDefault       bool    `json:"is_default"`
 	IsActive        bool    `json:"is_active"`
 	DisplayOrder    int     `json:"display_order"`
@@ -81,6 +87,8 @@ type UpdateModifierOptionRequest struct {
 	Name            *string  `json:"name,omitempty"`
 	SKU             *string  `json:"sku,omitempty"`
 	PriceAdjustment *float64 `json:"price_adjustment,omitempty"`
+	DeductionQty    *float64 `json:"deduction_qty,omitempty"`
+	DeductionUnit   *string  `json:"deduction_unit,omitempty"`
 	IsDefault       *bool    `json:"is_default,omitempty"`
 	IsActive        *bool    `json:"is_active,omitempty"`
 	DisplayOrder    *int     `json:"display_order,omitempty"`
@@ -348,6 +356,12 @@ func (s *Service) CreateModifierOption(ctx context.Context, tenantID, groupID uu
 	if req.SKU != "" {
 		builder.SetSku(req.SKU)
 	}
+	if req.DeductionQty > 0 {
+		builder.SetDeductionQty(req.DeductionQty)
+	}
+	if req.DeductionUnit != "" {
+		builder.SetDeductionUnit(req.DeductionUnit)
+	}
 
 	opt, err := builder.Save(ctx)
 	if err != nil {
@@ -399,6 +413,12 @@ func (s *Service) UpdateModifierOption(ctx context.Context, tenantID, optionID u
 	}
 	if req.PriceAdjustment != nil {
 		builder.SetPriceAdjustment(*req.PriceAdjustment)
+	}
+	if req.DeductionQty != nil {
+		builder.SetDeductionQty(*req.DeductionQty)
+	}
+	if req.DeductionUnit != nil {
+		builder.SetDeductionUnit(*req.DeductionUnit)
 	}
 	if req.IsDefault != nil {
 		builder.SetIsDefault(*req.IsDefault)
@@ -537,6 +557,8 @@ func (s *Service) mapOptionToDTO(opt *ent.ModifierOption) ModifierOptionDTO {
 		Name:            opt.Name,
 		SKU:             opt.Sku,
 		PriceAdjustment: opt.PriceAdjustment,
+		DeductionQty:    opt.DeductionQty,
+		DeductionUnit:   opt.DeductionUnit,
 		IsDefault:       opt.IsDefault,
 		IsActive:        opt.IsActive,
 		DisplayOrder:    opt.DisplayOrder,

@@ -49596,6 +49596,9 @@ type ModifierOptionMutation struct {
 	sku                 *string
 	price_adjustment    *float64
 	addprice_adjustment *float64
+	deduction_qty       *float64
+	adddeduction_qty    *float64
+	deduction_unit      *string
 	is_default          *bool
 	is_active           *bool
 	display_order       *int
@@ -49891,6 +49894,111 @@ func (m *ModifierOptionMutation) ResetPriceAdjustment() {
 	m.addprice_adjustment = nil
 }
 
+// SetDeductionQty sets the "deduction_qty" field.
+func (m *ModifierOptionMutation) SetDeductionQty(f float64) {
+	m.deduction_qty = &f
+	m.adddeduction_qty = nil
+}
+
+// DeductionQty returns the value of the "deduction_qty" field in the mutation.
+func (m *ModifierOptionMutation) DeductionQty() (r float64, exists bool) {
+	v := m.deduction_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeductionQty returns the old "deduction_qty" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldDeductionQty(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeductionQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeductionQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeductionQty: %w", err)
+	}
+	return oldValue.DeductionQty, nil
+}
+
+// AddDeductionQty adds f to the "deduction_qty" field.
+func (m *ModifierOptionMutation) AddDeductionQty(f float64) {
+	if m.adddeduction_qty != nil {
+		*m.adddeduction_qty += f
+	} else {
+		m.adddeduction_qty = &f
+	}
+}
+
+// AddedDeductionQty returns the value that was added to the "deduction_qty" field in this mutation.
+func (m *ModifierOptionMutation) AddedDeductionQty() (r float64, exists bool) {
+	v := m.adddeduction_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDeductionQty resets all changes to the "deduction_qty" field.
+func (m *ModifierOptionMutation) ResetDeductionQty() {
+	m.deduction_qty = nil
+	m.adddeduction_qty = nil
+}
+
+// SetDeductionUnit sets the "deduction_unit" field.
+func (m *ModifierOptionMutation) SetDeductionUnit(s string) {
+	m.deduction_unit = &s
+}
+
+// DeductionUnit returns the value of the "deduction_unit" field in the mutation.
+func (m *ModifierOptionMutation) DeductionUnit() (r string, exists bool) {
+	v := m.deduction_unit
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeductionUnit returns the old "deduction_unit" field's value of the ModifierOption entity.
+// If the ModifierOption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModifierOptionMutation) OldDeductionUnit(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeductionUnit is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeductionUnit requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeductionUnit: %w", err)
+	}
+	return oldValue.DeductionUnit, nil
+}
+
+// ClearDeductionUnit clears the value of the "deduction_unit" field.
+func (m *ModifierOptionMutation) ClearDeductionUnit() {
+	m.deduction_unit = nil
+	m.clearedFields[modifieroption.FieldDeductionUnit] = struct{}{}
+}
+
+// DeductionUnitCleared returns if the "deduction_unit" field was cleared in this mutation.
+func (m *ModifierOptionMutation) DeductionUnitCleared() bool {
+	_, ok := m.clearedFields[modifieroption.FieldDeductionUnit]
+	return ok
+}
+
+// ResetDeductionUnit resets all changes to the "deduction_unit" field.
+func (m *ModifierOptionMutation) ResetDeductionUnit() {
+	m.deduction_unit = nil
+	delete(m.clearedFields, modifieroption.FieldDeductionUnit)
+}
+
 // SetIsDefault sets the "is_default" field.
 func (m *ModifierOptionMutation) SetIsDefault(b bool) {
 	m.is_default = &b
@@ -50152,7 +50260,7 @@ func (m *ModifierOptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModifierOptionMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.group != nil {
 		fields = append(fields, modifieroption.FieldGroupID)
 	}
@@ -50164,6 +50272,12 @@ func (m *ModifierOptionMutation) Fields() []string {
 	}
 	if m.price_adjustment != nil {
 		fields = append(fields, modifieroption.FieldPriceAdjustment)
+	}
+	if m.deduction_qty != nil {
+		fields = append(fields, modifieroption.FieldDeductionQty)
+	}
+	if m.deduction_unit != nil {
+		fields = append(fields, modifieroption.FieldDeductionUnit)
 	}
 	if m.is_default != nil {
 		fields = append(fields, modifieroption.FieldIsDefault)
@@ -50196,6 +50310,10 @@ func (m *ModifierOptionMutation) Field(name string) (ent.Value, bool) {
 		return m.Sku()
 	case modifieroption.FieldPriceAdjustment:
 		return m.PriceAdjustment()
+	case modifieroption.FieldDeductionQty:
+		return m.DeductionQty()
+	case modifieroption.FieldDeductionUnit:
+		return m.DeductionUnit()
 	case modifieroption.FieldIsDefault:
 		return m.IsDefault()
 	case modifieroption.FieldIsActive:
@@ -50223,6 +50341,10 @@ func (m *ModifierOptionMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldSku(ctx)
 	case modifieroption.FieldPriceAdjustment:
 		return m.OldPriceAdjustment(ctx)
+	case modifieroption.FieldDeductionQty:
+		return m.OldDeductionQty(ctx)
+	case modifieroption.FieldDeductionUnit:
+		return m.OldDeductionUnit(ctx)
 	case modifieroption.FieldIsDefault:
 		return m.OldIsDefault(ctx)
 	case modifieroption.FieldIsActive:
@@ -50270,6 +50392,20 @@ func (m *ModifierOptionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPriceAdjustment(v)
 		return nil
+	case modifieroption.FieldDeductionQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeductionQty(v)
+		return nil
+	case modifieroption.FieldDeductionUnit:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeductionUnit(v)
+		return nil
 	case modifieroption.FieldIsDefault:
 		v, ok := value.(bool)
 		if !ok {
@@ -50316,6 +50452,9 @@ func (m *ModifierOptionMutation) AddedFields() []string {
 	if m.addprice_adjustment != nil {
 		fields = append(fields, modifieroption.FieldPriceAdjustment)
 	}
+	if m.adddeduction_qty != nil {
+		fields = append(fields, modifieroption.FieldDeductionQty)
+	}
 	if m.adddisplay_order != nil {
 		fields = append(fields, modifieroption.FieldDisplayOrder)
 	}
@@ -50329,6 +50468,8 @@ func (m *ModifierOptionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case modifieroption.FieldPriceAdjustment:
 		return m.AddedPriceAdjustment()
+	case modifieroption.FieldDeductionQty:
+		return m.AddedDeductionQty()
 	case modifieroption.FieldDisplayOrder:
 		return m.AddedDisplayOrder()
 	}
@@ -50346,6 +50487,13 @@ func (m *ModifierOptionMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPriceAdjustment(v)
+		return nil
+	case modifieroption.FieldDeductionQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeductionQty(v)
 		return nil
 	case modifieroption.FieldDisplayOrder:
 		v, ok := value.(int)
@@ -50365,6 +50513,9 @@ func (m *ModifierOptionMutation) ClearedFields() []string {
 	if m.FieldCleared(modifieroption.FieldSku) {
 		fields = append(fields, modifieroption.FieldSku)
 	}
+	if m.FieldCleared(modifieroption.FieldDeductionUnit) {
+		fields = append(fields, modifieroption.FieldDeductionUnit)
+	}
 	return fields
 }
 
@@ -50381,6 +50532,9 @@ func (m *ModifierOptionMutation) ClearField(name string) error {
 	switch name {
 	case modifieroption.FieldSku:
 		m.ClearSku()
+		return nil
+	case modifieroption.FieldDeductionUnit:
+		m.ClearDeductionUnit()
 		return nil
 	}
 	return fmt.Errorf("unknown ModifierOption nullable field %s", name)
@@ -50401,6 +50555,12 @@ func (m *ModifierOptionMutation) ResetField(name string) error {
 		return nil
 	case modifieroption.FieldPriceAdjustment:
 		m.ResetPriceAdjustment()
+		return nil
+	case modifieroption.FieldDeductionQty:
+		m.ResetDeductionQty()
+		return nil
+	case modifieroption.FieldDeductionUnit:
+		m.ResetDeductionUnit()
 		return nil
 	case modifieroption.FieldIsDefault:
 		m.ResetIsDefault()
