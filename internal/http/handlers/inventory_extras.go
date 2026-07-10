@@ -176,6 +176,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/reports/ingredient-utilization/summary", h.IngredientUtilizationSummary)
 	r.Get("/inventory/reports/ingredient-utilization/timeseries", h.IngredientUtilizationTimeseries)
 	r.Get("/inventory/reports/ingredient-utilization/by-recipe", h.IngredientUtilizationByRecipe)
+	r.Get("/inventory/reports/ingredient-utilization.pdf", h.IngredientUtilizationReportPDF)
 
 	// Procurement (migrated from ERP procurement/*)
 	h.registerRequisitionRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
