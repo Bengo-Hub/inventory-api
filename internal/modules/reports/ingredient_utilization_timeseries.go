@@ -204,8 +204,8 @@ func (s *Service) GetByRecipe(ctx context.Context, tenantID, itemID, warehouseID
 	var rows []struct {
 		RecipeID  uuid.UUID `json:"recipe_id"`
 		RecipeSku string    `json:"recipe_sku"`
-		Qty       float64   `json:"sum_quantity"`
-		Cost      float64   `json:"sum_total_cost"`
+		Qty       float64   `json:"qty"`
+		Cost      float64   `json:"cost"`
 	}
 	if err := s.client.ItemConsumptionDaily.Query().
 		Where(
@@ -216,7 +216,7 @@ func (s *Service) GetByRecipe(ctx context.Context, tenantID, itemID, warehouseID
 			entid.BucketDateLTE(truncateDay(to)),
 		).
 		GroupBy(entid.FieldRecipeID, entid.FieldRecipeSku).
-		Aggregate(ent.Sum(entid.FieldQuantity), ent.Sum(entid.FieldTotalCost)).
+		Aggregate(sumAs(entid.FieldQuantity, "qty"), sumAs(entid.FieldTotalCost, "cost")).
 		Scan(ctx, &rows); err != nil {
 		return nil, fmt.Errorf("reports: group by recipe: %w", err)
 	}
