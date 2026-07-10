@@ -23,12 +23,12 @@ func TestConvertToStockUnit(t *testing.T) {
 	ml750 := 750.0
 
 	tests := []struct {
-		name    string
-		itm     *ent.Item
-		qty     float64
-		from    string
-		want    float64
-		wantOK  bool
+		name   string
+		itm    *ent.Item
+		qty    float64
+		from   string
+		want   float64
+		wantOK bool
 	}{
 		{"same unit passthrough", itemWithUnit("ml"), 25, "ml", 25, true},
 		{"ml line, litre stock", itemWithUnit("l"), 500, "ml", 0.5, true},

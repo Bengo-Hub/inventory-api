@@ -685,6 +685,56 @@ var (
 			},
 		},
 	}
+	// ConsumptionLinesColumns holds the columns for the "consumption_lines" table.
+	ConsumptionLinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "consumption_id", Type: field.TypeUUID},
+		{Name: "order_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "recipe_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "recipe_sku", Type: field.TypeString, Nullable: true},
+		{Name: "finished_item_sku", Type: field.TypeString},
+		{Name: "ingredient_item_id", Type: field.TypeUUID},
+		{Name: "ingredient_sku", Type: field.TypeString},
+		{Name: "quantity", Type: field.TypeFloat64},
+		{Name: "unit", Type: field.TypeString, Nullable: true},
+		{Name: "unit_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "theoretical", Type: field.TypeBool, Default: false},
+		{Name: "reason", Type: field.TypeString, Default: "sale"},
+		{Name: "consumed_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// ConsumptionLinesTable holds the schema information for the "consumption_lines" table.
+	ConsumptionLinesTable = &schema.Table{
+		Name:       "consumption_lines",
+		Columns:    ConsumptionLinesColumns,
+		PrimaryKey: []*schema.Column{ConsumptionLinesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "consumptionline_tenant_id_ingredient_item_id_consumed_at",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[9], ConsumptionLinesColumns[17]},
+			},
+			{
+				Name:    "consumptionline_tenant_id_recipe_id_consumed_at",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[6], ConsumptionLinesColumns[17]},
+			},
+			{
+				Name:    "consumptionline_tenant_id_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[3]},
+			},
+			{
+				Name:    "consumptionline_consumption_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[2]},
+			},
+		},
+	}
 	// ContractsColumns holds the columns for the "contracts" table.
 	ContractsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1546,6 +1596,39 @@ var (
 				Name:    "itemcategory_tenant_id_sort_order",
 				Unique:  false,
 				Columns: []*schema.Column{ItemCategoriesColumns[14], ItemCategoriesColumns[8]},
+			},
+		},
+	}
+	// ItemConsumptionDailiesColumns holds the columns for the "item_consumption_dailies" table.
+	ItemConsumptionDailiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "item_sku", Type: field.TypeString, Nullable: true},
+		{Name: "recipe_id", Type: field.TypeUUID},
+		{Name: "recipe_sku", Type: field.TypeString, Nullable: true},
+		{Name: "bucket_date", Type: field.TypeTime},
+		{Name: "quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "total_cost", Type: field.TypeFloat64, Default: 0},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ItemConsumptionDailiesTable holds the schema information for the "item_consumption_dailies" table.
+	ItemConsumptionDailiesTable = &schema.Table{
+		Name:       "item_consumption_dailies",
+		Columns:    ItemConsumptionDailiesColumns,
+		PrimaryKey: []*schema.Column{ItemConsumptionDailiesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "itemconsumptiondaily_tenant_id_warehouse_id_item_id_recipe_id_bucket_date",
+				Unique:  true,
+				Columns: []*schema.Column{ItemConsumptionDailiesColumns[1], ItemConsumptionDailiesColumns[2], ItemConsumptionDailiesColumns[4], ItemConsumptionDailiesColumns[6], ItemConsumptionDailiesColumns[8]},
+			},
+			{
+				Name:    "itemconsumptiondaily_tenant_id_item_id_bucket_date",
+				Unique:  false,
+				Columns: []*schema.Column{ItemConsumptionDailiesColumns[1], ItemConsumptionDailiesColumns[4], ItemConsumptionDailiesColumns[8]},
 			},
 		},
 	}
@@ -2810,6 +2893,31 @@ var (
 			},
 		},
 	}
+	// StockLevelEventsColumns holds the columns for the "stock_level_events" table.
+	StockLevelEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "warehouse_id", Type: field.TypeUUID},
+		{Name: "outlet_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "event_type", Type: field.TypeEnum, Enums: []string{"low", "out", "restocked"}},
+		{Name: "on_hand_at_event", Type: field.TypeFloat64, Default: 0},
+		{Name: "reorder_level_at_event", Type: field.TypeFloat64, Default: 0},
+		{Name: "occurred_at", Type: field.TypeTime},
+	}
+	// StockLevelEventsTable holds the schema information for the "stock_level_events" table.
+	StockLevelEventsTable = &schema.Table{
+		Name:       "stock_level_events",
+		Columns:    StockLevelEventsColumns,
+		PrimaryKey: []*schema.Column{StockLevelEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stocklevelevent_tenant_id_item_id_warehouse_id_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{StockLevelEventsColumns[1], StockLevelEventsColumns[2], StockLevelEventsColumns[3], StockLevelEventsColumns[8]},
+			},
+		},
+	}
 	// StockTransfersColumns holds the columns for the "stock_transfers" table.
 	StockTransfersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3453,6 +3561,7 @@ var (
 		BundlesTable,
 		BundleComponentsTable,
 		ConsumptionsTable,
+		ConsumptionLinesTable,
 		ContractsTable,
 		ContractOrderLinksTable,
 		CustomFieldDefinitionsTable,
@@ -3471,6 +3580,7 @@ var (
 		ItemAssetsTable,
 		ItemBrandsTable,
 		ItemCategoriesTable,
+		ItemConsumptionDailiesTable,
 		ItemPricingsTable,
 		ItemTranslationsTable,
 		ItemVariantsTable,
@@ -3502,6 +3612,7 @@ var (
 		StockBreakdownsTable,
 		StockCountsTable,
 		StockCountLinesTable,
+		StockLevelEventsTable,
 		StockTransfersTable,
 		StockTransferLinesTable,
 		SuppliersTable,

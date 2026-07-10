@@ -31,6 +31,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	"github.com/bengobox/inventory-service/internal/ent/contract"
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
@@ -49,6 +50,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemconsumptiondaily"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -80,6 +82,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -174,6 +177,7 @@ func checkColumn(t, c string) error {
 			bundle.Table:                 bundle.ValidColumn,
 			bundlecomponent.Table:        bundlecomponent.ValidColumn,
 			consumption.Table:            consumption.ValidColumn,
+			consumptionline.Table:        consumptionline.ValidColumn,
 			contract.Table:               contract.ValidColumn,
 			contractorderlink.Table:      contractorderlink.ValidColumn,
 			customfielddefinition.Table:  customfielddefinition.ValidColumn,
@@ -192,6 +196,7 @@ func checkColumn(t, c string) error {
 			itemasset.Table:              itemasset.ValidColumn,
 			itembrand.Table:              itembrand.ValidColumn,
 			itemcategory.Table:           itemcategory.ValidColumn,
+			itemconsumptiondaily.Table:   itemconsumptiondaily.ValidColumn,
 			itempricing.Table:            itempricing.ValidColumn,
 			itemtranslation.Table:        itemtranslation.ValidColumn,
 			itemvariant.Table:            itemvariant.ValidColumn,
@@ -223,6 +228,7 @@ func checkColumn(t, c string) error {
 			stockbreakdown.Table:         stockbreakdown.ValidColumn,
 			stockcount.Table:             stockcount.ValidColumn,
 			stockcountline.Table:         stockcountline.ValidColumn,
+			stocklevelevent.Table:        stocklevelevent.ValidColumn,
 			stocktransfer.Table:          stocktransfer.ValidColumn,
 			stocktransferline.Table:      stocktransferline.ValidColumn,
 			supplier.Table:               supplier.ValidColumn,

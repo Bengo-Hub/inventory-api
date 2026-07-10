@@ -237,6 +237,18 @@ func (f ConsumptionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConsumptionMutation", m)
 }
 
+// The ConsumptionLineFunc type is an adapter to allow the use of ordinary
+// function as ConsumptionLine mutator.
+type ConsumptionLineFunc func(context.Context, *ent.ConsumptionLineMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ConsumptionLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ConsumptionLineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConsumptionLineMutation", m)
+}
+
 // The ContractFunc type is an adapter to allow the use of ordinary
 // function as Contract mutator.
 type ContractFunc func(context.Context, *ent.ContractMutation) (ent.Value, error)
@@ -451,6 +463,18 @@ func (f ItemCategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemCategoryMutation", m)
+}
+
+// The ItemConsumptionDailyFunc type is an adapter to allow the use of ordinary
+// function as ItemConsumptionDaily mutator.
+type ItemConsumptionDailyFunc func(context.Context, *ent.ItemConsumptionDailyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemConsumptionDailyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemConsumptionDailyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemConsumptionDailyMutation", m)
 }
 
 // The ItemPricingFunc type is an adapter to allow the use of ordinary
@@ -823,6 +847,18 @@ func (f StockCountLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockCountLineMutation", m)
+}
+
+// The StockLevelEventFunc type is an adapter to allow the use of ordinary
+// function as StockLevelEvent mutator.
+type StockLevelEventFunc func(context.Context, *ent.StockLevelEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockLevelEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockLevelEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockLevelEventMutation", m)
 }
 
 // The StockTransferFunc type is an adapter to allow the use of ordinary

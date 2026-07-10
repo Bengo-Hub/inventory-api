@@ -39,6 +39,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
+	"github.com/bengobox/inventory-service/internal/modules/reports"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
@@ -207,6 +208,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetVarianceService(varianceSvc)
 	menuEngSvc := recipes.NewMenuEngineeringService(ormClient, log, cfg.Services.OrderingURL, cfg.Services.POSURL, cfg.Auth.APIKey)
 	inventoryExtrasHandler.SetMenuEngineeringService(menuEngSvc)
+	reportsSvc := reports.NewService(ormClient, log)
+	inventoryExtrasHandler.SetReportsService(reportsSvc)
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
 	inventoryExtrasHandler.SetDocService(docSvc)
 	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)

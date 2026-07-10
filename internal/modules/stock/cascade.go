@@ -99,6 +99,15 @@ func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, 
 // Best-effort: errors are logged, the parent transaction is never aborted.
 func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) {
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
+	var outletUUID *uuid.UUID
+	if oid, perr := uuid.Parse(outletID); perr == nil {
+		outletUUID = &oid
+	}
+	if bal, berr := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
+		First(ctx); berr == nil {
+		s.persistStockLevelEvent(ctx, tx, tenantID, itemID, warehouseID, outletUUID, "restocked", bal.Available, bal.ReorderLevel)
+	}
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
 			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).

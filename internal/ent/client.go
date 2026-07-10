@@ -35,6 +35,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	"github.com/bengobox/inventory-service/internal/ent/contract"
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
@@ -53,6 +54,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemconsumptiondaily"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -84,6 +86,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -144,6 +147,8 @@ type Client struct {
 	BundleComponent *BundleComponentClient
 	// Consumption is the client for interacting with the Consumption builders.
 	Consumption *ConsumptionClient
+	// ConsumptionLine is the client for interacting with the ConsumptionLine builders.
+	ConsumptionLine *ConsumptionLineClient
 	// Contract is the client for interacting with the Contract builders.
 	Contract *ContractClient
 	// ContractOrderLink is the client for interacting with the ContractOrderLink builders.
@@ -180,6 +185,8 @@ type Client struct {
 	ItemBrand *ItemBrandClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
+	// ItemConsumptionDaily is the client for interacting with the ItemConsumptionDaily builders.
+	ItemConsumptionDaily *ItemConsumptionDailyClient
 	// ItemPricing is the client for interacting with the ItemPricing builders.
 	ItemPricing *ItemPricingClient
 	// ItemTranslation is the client for interacting with the ItemTranslation builders.
@@ -242,6 +249,8 @@ type Client struct {
 	StockCount *StockCountClient
 	// StockCountLine is the client for interacting with the StockCountLine builders.
 	StockCountLine *StockCountLineClient
+	// StockLevelEvent is the client for interacting with the StockLevelEvent builders.
+	StockLevelEvent *StockLevelEventClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
 	StockTransfer *StockTransferClient
 	// StockTransferLine is the client for interacting with the StockTransferLine builders.
@@ -302,6 +311,7 @@ func (c *Client) init() {
 	c.Bundle = NewBundleClient(c.config)
 	c.BundleComponent = NewBundleComponentClient(c.config)
 	c.Consumption = NewConsumptionClient(c.config)
+	c.ConsumptionLine = NewConsumptionLineClient(c.config)
 	c.Contract = NewContractClient(c.config)
 	c.ContractOrderLink = NewContractOrderLinkClient(c.config)
 	c.CustomFieldDefinition = NewCustomFieldDefinitionClient(c.config)
@@ -320,6 +330,7 @@ func (c *Client) init() {
 	c.ItemAsset = NewItemAssetClient(c.config)
 	c.ItemBrand = NewItemBrandClient(c.config)
 	c.ItemCategory = NewItemCategoryClient(c.config)
+	c.ItemConsumptionDaily = NewItemConsumptionDailyClient(c.config)
 	c.ItemPricing = NewItemPricingClient(c.config)
 	c.ItemTranslation = NewItemTranslationClient(c.config)
 	c.ItemVariant = NewItemVariantClient(c.config)
@@ -351,6 +362,7 @@ func (c *Client) init() {
 	c.StockBreakdown = NewStockBreakdownClient(c.config)
 	c.StockCount = NewStockCountClient(c.config)
 	c.StockCountLine = NewStockCountLineClient(c.config)
+	c.StockLevelEvent = NewStockLevelEventClient(c.config)
 	c.StockTransfer = NewStockTransferClient(c.config)
 	c.StockTransferLine = NewStockTransferLineClient(c.config)
 	c.Supplier = NewSupplierClient(c.config)
@@ -477,6 +489,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Bundle:                 NewBundleClient(cfg),
 		BundleComponent:        NewBundleComponentClient(cfg),
 		Consumption:            NewConsumptionClient(cfg),
+		ConsumptionLine:        NewConsumptionLineClient(cfg),
 		Contract:               NewContractClient(cfg),
 		ContractOrderLink:      NewContractOrderLinkClient(cfg),
 		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
@@ -495,6 +508,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ItemAsset:              NewItemAssetClient(cfg),
 		ItemBrand:              NewItemBrandClient(cfg),
 		ItemCategory:           NewItemCategoryClient(cfg),
+		ItemConsumptionDaily:   NewItemConsumptionDailyClient(cfg),
 		ItemPricing:            NewItemPricingClient(cfg),
 		ItemTranslation:        NewItemTranslationClient(cfg),
 		ItemVariant:            NewItemVariantClient(cfg),
@@ -526,6 +540,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StockBreakdown:         NewStockBreakdownClient(cfg),
 		StockCount:             NewStockCountClient(cfg),
 		StockCountLine:         NewStockCountLineClient(cfg),
+		StockLevelEvent:        NewStockLevelEventClient(cfg),
 		StockTransfer:          NewStockTransferClient(cfg),
 		StockTransferLine:      NewStockTransferLineClient(cfg),
 		Supplier:               NewSupplierClient(cfg),
@@ -579,6 +594,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Bundle:                 NewBundleClient(cfg),
 		BundleComponent:        NewBundleComponentClient(cfg),
 		Consumption:            NewConsumptionClient(cfg),
+		ConsumptionLine:        NewConsumptionLineClient(cfg),
 		Contract:               NewContractClient(cfg),
 		ContractOrderLink:      NewContractOrderLinkClient(cfg),
 		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
@@ -597,6 +613,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ItemAsset:              NewItemAssetClient(cfg),
 		ItemBrand:              NewItemBrandClient(cfg),
 		ItemCategory:           NewItemCategoryClient(cfg),
+		ItemConsumptionDaily:   NewItemConsumptionDailyClient(cfg),
 		ItemPricing:            NewItemPricingClient(cfg),
 		ItemTranslation:        NewItemTranslationClient(cfg),
 		ItemVariant:            NewItemVariantClient(cfg),
@@ -628,6 +645,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StockBreakdown:         NewStockBreakdownClient(cfg),
 		StockCount:             NewStockCountClient(cfg),
 		StockCountLine:         NewStockCountLineClient(cfg),
+		StockLevelEvent:        NewStockLevelEventClient(cfg),
 		StockTransfer:          NewStockTransferClient(cfg),
 		StockTransferLine:      NewStockTransferLineClient(cfg),
 		Supplier:               NewSupplierClient(cfg),
@@ -676,21 +694,23 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
 		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
-		c.Consumption, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
-		c.CustomFieldValue, c.DocumentSequence, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemBrand, c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
+		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
+		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
+		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventorySerial,
+		c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory,
+		c.ItemConsumptionDaily, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
 		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
 		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
 		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
 		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
-		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.StockCount, c.StockCountLine, c.StockLevelEvent, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -704,21 +724,23 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
 		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
-		c.Consumption, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
-		c.CustomFieldValue, c.DocumentSequence, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemBrand, c.ItemCategory, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
+		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
+		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
+		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
+		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventorySerial,
+		c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory,
+		c.ItemConsumptionDaily, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
 		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
 		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
 		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
 		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockTransfer, c.StockTransferLine,
-		c.Supplier, c.SupplierPerformance, c.SupplierResponse, c.Tenant,
-		c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet, c.UserRoleAssignment,
-		c.VariantAttribute, c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.StockCount, c.StockCountLine, c.StockLevelEvent, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
+		c.UserRoleAssignment, c.VariantAttribute, c.Warehouse, c.WarehouseLocation,
+		c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -765,6 +787,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BundleComponent.mutate(ctx, m)
 	case *ConsumptionMutation:
 		return c.Consumption.mutate(ctx, m)
+	case *ConsumptionLineMutation:
+		return c.ConsumptionLine.mutate(ctx, m)
 	case *ContractMutation:
 		return c.Contract.mutate(ctx, m)
 	case *ContractOrderLinkMutation:
@@ -801,6 +825,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ItemBrand.mutate(ctx, m)
 	case *ItemCategoryMutation:
 		return c.ItemCategory.mutate(ctx, m)
+	case *ItemConsumptionDailyMutation:
+		return c.ItemConsumptionDaily.mutate(ctx, m)
 	case *ItemPricingMutation:
 		return c.ItemPricing.mutate(ctx, m)
 	case *ItemTranslationMutation:
@@ -863,6 +889,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.StockCount.mutate(ctx, m)
 	case *StockCountLineMutation:
 		return c.StockCountLine.mutate(ctx, m)
+	case *StockLevelEventMutation:
+		return c.StockLevelEvent.mutate(ctx, m)
 	case *StockTransferMutation:
 		return c.StockTransfer.mutate(ctx, m)
 	case *StockTransferLineMutation:
@@ -3566,6 +3594,139 @@ func (c *ConsumptionClient) mutate(ctx context.Context, m *ConsumptionMutation) 
 		return (&ConsumptionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Consumption mutation op: %q", m.Op())
+	}
+}
+
+// ConsumptionLineClient is a client for the ConsumptionLine schema.
+type ConsumptionLineClient struct {
+	config
+}
+
+// NewConsumptionLineClient returns a client for the ConsumptionLine from the given config.
+func NewConsumptionLineClient(c config) *ConsumptionLineClient {
+	return &ConsumptionLineClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `consumptionline.Hooks(f(g(h())))`.
+func (c *ConsumptionLineClient) Use(hooks ...Hook) {
+	c.hooks.ConsumptionLine = append(c.hooks.ConsumptionLine, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `consumptionline.Intercept(f(g(h())))`.
+func (c *ConsumptionLineClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ConsumptionLine = append(c.inters.ConsumptionLine, interceptors...)
+}
+
+// Create returns a builder for creating a ConsumptionLine entity.
+func (c *ConsumptionLineClient) Create() *ConsumptionLineCreate {
+	mutation := newConsumptionLineMutation(c.config, OpCreate)
+	return &ConsumptionLineCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ConsumptionLine entities.
+func (c *ConsumptionLineClient) CreateBulk(builders ...*ConsumptionLineCreate) *ConsumptionLineCreateBulk {
+	return &ConsumptionLineCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ConsumptionLineClient) MapCreateBulk(slice any, setFunc func(*ConsumptionLineCreate, int)) *ConsumptionLineCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ConsumptionLineCreateBulk{err: fmt.Errorf("calling to ConsumptionLineClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ConsumptionLineCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ConsumptionLineCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ConsumptionLine.
+func (c *ConsumptionLineClient) Update() *ConsumptionLineUpdate {
+	mutation := newConsumptionLineMutation(c.config, OpUpdate)
+	return &ConsumptionLineUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ConsumptionLineClient) UpdateOne(_m *ConsumptionLine) *ConsumptionLineUpdateOne {
+	mutation := newConsumptionLineMutation(c.config, OpUpdateOne, withConsumptionLine(_m))
+	return &ConsumptionLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ConsumptionLineClient) UpdateOneID(id uuid.UUID) *ConsumptionLineUpdateOne {
+	mutation := newConsumptionLineMutation(c.config, OpUpdateOne, withConsumptionLineID(id))
+	return &ConsumptionLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ConsumptionLine.
+func (c *ConsumptionLineClient) Delete() *ConsumptionLineDelete {
+	mutation := newConsumptionLineMutation(c.config, OpDelete)
+	return &ConsumptionLineDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ConsumptionLineClient) DeleteOne(_m *ConsumptionLine) *ConsumptionLineDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ConsumptionLineClient) DeleteOneID(id uuid.UUID) *ConsumptionLineDeleteOne {
+	builder := c.Delete().Where(consumptionline.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ConsumptionLineDeleteOne{builder}
+}
+
+// Query returns a query builder for ConsumptionLine.
+func (c *ConsumptionLineClient) Query() *ConsumptionLineQuery {
+	return &ConsumptionLineQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeConsumptionLine},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ConsumptionLine entity by its id.
+func (c *ConsumptionLineClient) Get(ctx context.Context, id uuid.UUID) (*ConsumptionLine, error) {
+	return c.Query().Where(consumptionline.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ConsumptionLineClient) GetX(ctx context.Context, id uuid.UUID) *ConsumptionLine {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ConsumptionLineClient) Hooks() []Hook {
+	return c.hooks.ConsumptionLine
+}
+
+// Interceptors returns the client interceptors.
+func (c *ConsumptionLineClient) Interceptors() []Interceptor {
+	return c.inters.ConsumptionLine
+}
+
+func (c *ConsumptionLineClient) mutate(ctx context.Context, m *ConsumptionLineMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ConsumptionLineCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ConsumptionLineUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ConsumptionLineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ConsumptionLineDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ConsumptionLine mutation op: %q", m.Op())
 	}
 }
 
@@ -6632,6 +6793,139 @@ func (c *ItemCategoryClient) mutate(ctx context.Context, m *ItemCategoryMutation
 		return (&ItemCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ItemCategory mutation op: %q", m.Op())
+	}
+}
+
+// ItemConsumptionDailyClient is a client for the ItemConsumptionDaily schema.
+type ItemConsumptionDailyClient struct {
+	config
+}
+
+// NewItemConsumptionDailyClient returns a client for the ItemConsumptionDaily from the given config.
+func NewItemConsumptionDailyClient(c config) *ItemConsumptionDailyClient {
+	return &ItemConsumptionDailyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `itemconsumptiondaily.Hooks(f(g(h())))`.
+func (c *ItemConsumptionDailyClient) Use(hooks ...Hook) {
+	c.hooks.ItemConsumptionDaily = append(c.hooks.ItemConsumptionDaily, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `itemconsumptiondaily.Intercept(f(g(h())))`.
+func (c *ItemConsumptionDailyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ItemConsumptionDaily = append(c.inters.ItemConsumptionDaily, interceptors...)
+}
+
+// Create returns a builder for creating a ItemConsumptionDaily entity.
+func (c *ItemConsumptionDailyClient) Create() *ItemConsumptionDailyCreate {
+	mutation := newItemConsumptionDailyMutation(c.config, OpCreate)
+	return &ItemConsumptionDailyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ItemConsumptionDaily entities.
+func (c *ItemConsumptionDailyClient) CreateBulk(builders ...*ItemConsumptionDailyCreate) *ItemConsumptionDailyCreateBulk {
+	return &ItemConsumptionDailyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ItemConsumptionDailyClient) MapCreateBulk(slice any, setFunc func(*ItemConsumptionDailyCreate, int)) *ItemConsumptionDailyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ItemConsumptionDailyCreateBulk{err: fmt.Errorf("calling to ItemConsumptionDailyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ItemConsumptionDailyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ItemConsumptionDailyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ItemConsumptionDaily.
+func (c *ItemConsumptionDailyClient) Update() *ItemConsumptionDailyUpdate {
+	mutation := newItemConsumptionDailyMutation(c.config, OpUpdate)
+	return &ItemConsumptionDailyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemConsumptionDailyClient) UpdateOne(_m *ItemConsumptionDaily) *ItemConsumptionDailyUpdateOne {
+	mutation := newItemConsumptionDailyMutation(c.config, OpUpdateOne, withItemConsumptionDaily(_m))
+	return &ItemConsumptionDailyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemConsumptionDailyClient) UpdateOneID(id uuid.UUID) *ItemConsumptionDailyUpdateOne {
+	mutation := newItemConsumptionDailyMutation(c.config, OpUpdateOne, withItemConsumptionDailyID(id))
+	return &ItemConsumptionDailyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ItemConsumptionDaily.
+func (c *ItemConsumptionDailyClient) Delete() *ItemConsumptionDailyDelete {
+	mutation := newItemConsumptionDailyMutation(c.config, OpDelete)
+	return &ItemConsumptionDailyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ItemConsumptionDailyClient) DeleteOne(_m *ItemConsumptionDaily) *ItemConsumptionDailyDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ItemConsumptionDailyClient) DeleteOneID(id uuid.UUID) *ItemConsumptionDailyDeleteOne {
+	builder := c.Delete().Where(itemconsumptiondaily.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemConsumptionDailyDeleteOne{builder}
+}
+
+// Query returns a query builder for ItemConsumptionDaily.
+func (c *ItemConsumptionDailyClient) Query() *ItemConsumptionDailyQuery {
+	return &ItemConsumptionDailyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeItemConsumptionDaily},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ItemConsumptionDaily entity by its id.
+func (c *ItemConsumptionDailyClient) Get(ctx context.Context, id uuid.UUID) (*ItemConsumptionDaily, error) {
+	return c.Query().Where(itemconsumptiondaily.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemConsumptionDailyClient) GetX(ctx context.Context, id uuid.UUID) *ItemConsumptionDaily {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ItemConsumptionDailyClient) Hooks() []Hook {
+	return c.hooks.ItemConsumptionDaily
+}
+
+// Interceptors returns the client interceptors.
+func (c *ItemConsumptionDailyClient) Interceptors() []Interceptor {
+	return c.inters.ItemConsumptionDaily
+}
+
+func (c *ItemConsumptionDailyClient) mutate(ctx context.Context, m *ItemConsumptionDailyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ItemConsumptionDailyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ItemConsumptionDailyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ItemConsumptionDailyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ItemConsumptionDailyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ItemConsumptionDaily mutation op: %q", m.Op())
 	}
 }
 
@@ -11254,6 +11548,139 @@ func (c *StockCountLineClient) mutate(ctx context.Context, m *StockCountLineMuta
 	}
 }
 
+// StockLevelEventClient is a client for the StockLevelEvent schema.
+type StockLevelEventClient struct {
+	config
+}
+
+// NewStockLevelEventClient returns a client for the StockLevelEvent from the given config.
+func NewStockLevelEventClient(c config) *StockLevelEventClient {
+	return &StockLevelEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stocklevelevent.Hooks(f(g(h())))`.
+func (c *StockLevelEventClient) Use(hooks ...Hook) {
+	c.hooks.StockLevelEvent = append(c.hooks.StockLevelEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stocklevelevent.Intercept(f(g(h())))`.
+func (c *StockLevelEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockLevelEvent = append(c.inters.StockLevelEvent, interceptors...)
+}
+
+// Create returns a builder for creating a StockLevelEvent entity.
+func (c *StockLevelEventClient) Create() *StockLevelEventCreate {
+	mutation := newStockLevelEventMutation(c.config, OpCreate)
+	return &StockLevelEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockLevelEvent entities.
+func (c *StockLevelEventClient) CreateBulk(builders ...*StockLevelEventCreate) *StockLevelEventCreateBulk {
+	return &StockLevelEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockLevelEventClient) MapCreateBulk(slice any, setFunc func(*StockLevelEventCreate, int)) *StockLevelEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockLevelEventCreateBulk{err: fmt.Errorf("calling to StockLevelEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockLevelEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockLevelEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockLevelEvent.
+func (c *StockLevelEventClient) Update() *StockLevelEventUpdate {
+	mutation := newStockLevelEventMutation(c.config, OpUpdate)
+	return &StockLevelEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockLevelEventClient) UpdateOne(_m *StockLevelEvent) *StockLevelEventUpdateOne {
+	mutation := newStockLevelEventMutation(c.config, OpUpdateOne, withStockLevelEvent(_m))
+	return &StockLevelEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockLevelEventClient) UpdateOneID(id uuid.UUID) *StockLevelEventUpdateOne {
+	mutation := newStockLevelEventMutation(c.config, OpUpdateOne, withStockLevelEventID(id))
+	return &StockLevelEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockLevelEvent.
+func (c *StockLevelEventClient) Delete() *StockLevelEventDelete {
+	mutation := newStockLevelEventMutation(c.config, OpDelete)
+	return &StockLevelEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockLevelEventClient) DeleteOne(_m *StockLevelEvent) *StockLevelEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockLevelEventClient) DeleteOneID(id uuid.UUID) *StockLevelEventDeleteOne {
+	builder := c.Delete().Where(stocklevelevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockLevelEventDeleteOne{builder}
+}
+
+// Query returns a query builder for StockLevelEvent.
+func (c *StockLevelEventClient) Query() *StockLevelEventQuery {
+	return &StockLevelEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockLevelEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockLevelEvent entity by its id.
+func (c *StockLevelEventClient) Get(ctx context.Context, id uuid.UUID) (*StockLevelEvent, error) {
+	return c.Query().Where(stocklevelevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockLevelEventClient) GetX(ctx context.Context, id uuid.UUID) *StockLevelEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockLevelEventClient) Hooks() []Hook {
+	return c.hooks.StockLevelEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockLevelEventClient) Interceptors() []Interceptor {
+	return c.inters.StockLevelEvent
+}
+
+func (c *StockLevelEventClient) mutate(ctx context.Context, m *StockLevelEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockLevelEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockLevelEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockLevelEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockLevelEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockLevelEvent mutation op: %q", m.Op())
+	}
+}
+
 // StockTransferClient is a client for the StockTransfer schema.
 type StockTransferClient struct {
 	config
@@ -13543,40 +13970,40 @@ type (
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
-		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, InventoryBalance,
-		InventoryLot, InventoryPermission, InventoryRole, InventorySerial,
-		InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockTransfer, StockTransferLine, Supplier, SupplierPerformance,
-		SupplierResponse, Tenant, TenantInventoryConfig, Ticket, Unit, UserOutlet,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Hook
+		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
+		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
+		DocumentSequence, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
+		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
+		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockCount, StockCountLine, StockLevelEvent, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserOutlet, UserRoleAssignment,
+		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, Contract,
-		ContractOrderLink, CustomFieldDefinition, CustomFieldValue, DocumentSequence,
-		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, InventoryBalance,
-		InventoryLot, InventoryPermission, InventoryRole, InventorySerial,
-		InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockTransfer, StockTransferLine, Supplier, SupplierPerformance,
-		SupplierResponse, Tenant, TenantInventoryConfig, Ticket, Unit, UserOutlet,
-		UserRoleAssignment, VariantAttribute, Warehouse, WarehouseLocation,
-		Warranty []ent.Interceptor
+		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
+		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
+		DocumentSequence, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
+		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
+		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
+		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
+		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockCount, StockCountLine, StockLevelEvent, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserOutlet, UserRoleAssignment,
+		VariantAttribute, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )
