@@ -29,7 +29,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.livenessResponse"
+                            "$ref": "#/definitions/handlers.livenessResponse"
                         }
                     }
                 }
@@ -69,13 +69,200 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                            "$ref": "#/definitions/handlers.readinessResponse"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                            "$ref": "#/definitions/handlers.readinessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/approval-requests": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "List approval requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by module",
+                        "name": "module",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by document ID",
+                        "name": "object_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Only requests awaiting the caller",
+                        "name": "inbox",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.approvalRequestDTO"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/approval-rules": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "List approval rules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by module",
+                        "name": "module",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.approvalRuleDTO"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Create an approval rule with steps",
+                "parameters": [
+                    {
+                        "description": "Rule payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.approvalRulePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.approvalRuleDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/asset-audits/{recID}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Complete an asset audit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Audit record ID",
+                        "name": "recID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional verification results",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -149,7 +336,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetCategoryPayload"
+                            "$ref": "#/definitions/handlers.assetCategoryPayload"
                         }
                     }
                 ],
@@ -213,7 +400,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetCategoryPayload"
+                            "$ref": "#/definitions/handlers.assetCategoryPayload"
                         }
                     }
                 ],
@@ -298,6 +485,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/asset-dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Fixed-asset KPI dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/asset-disposals/{recID}/complete": {
             "post": {
                 "security": [
@@ -371,6 +592,69 @@ const docTemplate = `{
                         "name": "recID",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/asset-transfers/{recID}/approve": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assets"
+                ],
+                "summary": "Approve a pending asset transfer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transfer record ID",
+                        "name": "recID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "approved_by",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "type": "object"
+                        }
                     }
                 ],
                 "responses": {
@@ -539,7 +823,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetPayload"
+                            "$ref": "#/definitions/handlers.assetPayload"
                         }
                     }
                 ],
@@ -653,7 +937,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetPayload"
+                            "$ref": "#/definitions/handlers.assetPayload"
                         }
                     }
                 ],
@@ -1463,7 +1747,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.BulkImportResult"
+                            "$ref": "#/definitions/handlers.BulkImportResult"
                         }
                     }
                 }
@@ -1548,7 +1832,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractPayload"
+                            "$ref": "#/definitions/handlers.contractPayload"
                         }
                     }
                 ],
@@ -1556,7 +1840,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1607,7 +1891,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1660,7 +1944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractPayload"
+                            "$ref": "#/definitions/handlers.contractPayload"
                         }
                     }
                 ],
@@ -1668,7 +1952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1719,7 +2003,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1843,7 +2127,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1862,6 +2146,111 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/goods-receipts": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "List goods receipts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by PO",
+                        "name": "purchase_order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/goods-receipts/{grnID}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Get a goods receipt with its lines",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "GRN ID",
+                        "name": "grnID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.grnDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/goods-receipts/{grnID}/post": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Post a goods receipt — stock-in accepted qty + advance the PO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "GRN ID",
+                        "name": "grnID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.grnDTO"
                         }
                     }
                 }
@@ -1905,7 +2294,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeRequest"
+                            "$ref": "#/definitions/handlers.MenuItemCompositeRequest"
                         }
                     }
                 ],
@@ -1913,7 +2302,74 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeResponse"
+                            "$ref": "#/definitions/handlers.MenuItemCompositeResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/manufacturing/analytics": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manufacturing"
+                ],
+                "summary": "Historical manufacturing analytics (daily)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date YYYY-MM-DD",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date YYYY-MM-DD",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/manufacturing/analytics/recompute": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manufacturing"
+                ],
+                "summary": "Rebuild daily manufacturing analytics snapshots",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1943,6 +2399,64 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/manufacturing/material-check": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manufacturing"
+                ],
+                "summary": "Preview raw-material availability for a recipe + quantity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recipe ID",
+                        "name": "recipe_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Planned output quantity",
+                        "name": "quantity",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2066,7 +2580,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchPayload"
+                            "$ref": "#/definitions/handlers.productionBatchPayload"
                         }
                     }
                 ],
@@ -2074,7 +2588,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2125,7 +2639,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2187,7 +2701,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2250,7 +2764,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2312,7 +2826,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.batchRawMaterialDTO"
+                                "$ref": "#/definitions/handlers.batchRawMaterialDTO"
                             }
                         }
                     },
@@ -2366,7 +2880,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                                "$ref": "#/definitions/handlers.qualityCheckDTO"
                             }
                         }
                     },
@@ -2428,7 +2942,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                            "$ref": "#/definitions/handlers.qualityCheckDTO"
                         }
                     },
                     "400": {
@@ -2488,7 +3002,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2521,6 +3035,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/production-batches/{batchID}/usage": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manufacturing"
+                ],
+                "summary": "Raw-material usage audit trail for a production batch",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Production batch ID",
+                        "name": "batchID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.rawMaterialUsageDTO"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/purchase-orders": {
             "get": {
                 "security": [
@@ -2541,16 +3091,32 @@ const docTemplate = `{
                         "description": "Filter by PO number or supplier name",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (1-based)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (max 100)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_http_handlers.purchaseOrderDTO"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
@@ -2596,7 +3162,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.createPOInput"
+                            "$ref": "#/definitions/handlers.createPOInput"
                         }
                     }
                 ],
@@ -2656,7 +3222,71 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseOrderDTO"
+                            "$ref": "#/definitions/handlers.purchaseOrderDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/purchase-orders/{poID}/amend": {
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Amend a draft/sent purchase order's lines",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase order ID",
+                        "name": "poID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Amended lines + notes/expected_date",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.createPOInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
@@ -2729,6 +3359,97 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/purchase-orders/{poID}/goods-receipts": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Create a draft goods receipt against a purchase order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase order ID",
+                        "name": "poID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "GRN payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.grnPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.grnDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/purchase-orders/{poID}/match": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "3-way match for a purchase order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase order ID",
+                        "name": "poID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Total invoiced quantity",
+                        "name": "invoiced_qty",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Invoice total amount",
+                        "name": "invoice_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2911,6 +3632,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/purchase-orders/{poID}/submit-for-approval": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Submit a purchase order for approval",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase order ID",
+                        "name": "poID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/purchase-returns": {
             "get": {
                 "security": [
@@ -2984,7 +3739,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnPayload"
+                            "$ref": "#/definitions/handlers.purchaseReturnPayload"
                         }
                     }
                 ],
@@ -2992,7 +3747,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
                         }
                     },
                     "400": {
@@ -3043,7 +3798,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
                         }
                     },
                     "400": {
@@ -3094,7 +3849,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
                         }
                     },
                     "400": {
@@ -3122,6 +3877,315 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/deadstock.pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Deadstock report document (PDF/CSV)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pdf | csv",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "lookback window (default 90)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/food-cost-variance.pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Food-cost variance report document (PDF/CSV)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pdf | csv",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "period start (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "period end (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/ingredient-utilization/by-recipe": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Which recipes consumed this ingredient, and how much",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ingredient item ID",
+                        "name": "item_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Warehouse ID",
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period start (YYYY-MM-DD), default 30 days ago",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period end (YYYY-MM-DD), default now",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/reports.RecipeBreakdownRow"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/ingredient-utilization/summary": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Ingredient utilization KPI tiles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ingredient item ID",
+                        "name": "item_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Warehouse ID",
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period start (YYYY-MM-DD), default 30 days ago",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period end (YYYY-MM-DD), default now",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/reports.IngredientUtilizationSummary"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/ingredient-utilization/timeseries": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Ingredient utilization trend, stacked by recipe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ingredient item ID",
+                        "name": "item_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Warehouse ID",
+                        "name": "warehouse_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period start (YYYY-MM-DD), default 30 days ago",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Period end (YYYY-MM-DD), default now",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "day|week|biweek|month (default day)",
+                        "name": "granularity",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Restrict to these recipe IDs (repeatable)",
+                        "name": "recipe_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/reports.TimeseriesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/menu-engineering.pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Menu engineering report document (PDF/CSV)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pdf | csv",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "period start (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "period end (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/reports/stock-valuation.pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Stock valuation report document (PDF/CSV)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pdf | csv",
+                        "name": "format",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     }
                 }
@@ -3206,7 +4270,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionPayload"
+                            "$ref": "#/definitions/handlers.requisitionPayload"
                         }
                     }
                 ],
@@ -3214,7 +4278,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3265,7 +4329,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3316,7 +4380,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3440,7 +4504,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3491,7 +4555,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3542,7 +4606,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -3639,7 +4703,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryPayload"
+                            "$ref": "#/definitions/handlers.serviceDeliveryPayload"
                         }
                     }
                 ],
@@ -3647,7 +4711,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryDTO"
+                            "$ref": "#/definitions/handlers.serviceDeliveryDTO"
                         }
                     },
                     "400": {
@@ -3710,7 +4774,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryDTO"
+                            "$ref": "#/definitions/handlers.serviceDeliveryDTO"
                         }
                     },
                     "400": {
@@ -3807,7 +4871,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.supplierPerfPayload"
+                            "$ref": "#/definitions/handlers.supplierPerfPayload"
                         }
                     }
                 ],
@@ -3815,7 +4879,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.supplierPerfDTO"
+                            "$ref": "#/definitions/handlers.supplierPerfDTO"
                         }
                     },
                     "400": {
@@ -3838,311 +4902,52 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/{tenant}/inventory/supplier-performance/recompute": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Recompute supplier performance from PO + GRN data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "github_com_bengobox_inventory-service_internal_modules_items.ItemDTO": {
-            "type": "object",
-            "properties": {
-                "add_to_all_outlets": {
-                    "type": "boolean"
-                },
-                "available": {
-                    "description": "Current stock levels (aggregated across all warehouses).\nPopulated by ListItems; nil when no balance row exists.",
-                    "type": "integer"
-                },
-                "barcode": {
-                    "description": "Extended fields for POS, logistics, compliance",
-                    "type": "string"
-                },
-                "barcode_type": {
-                    "type": "string"
-                },
-                "booked_capacity": {
-                    "type": "integer"
-                },
-                "category_id": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                },
-                "cost_price": {
-                    "description": "Cost / pricing fields",
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "dimensions_cm": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "format": "float64"
-                    }
-                },
-                "event_end_at": {
-                    "type": "string"
-                },
-                "event_start_at": {
-                    "type": "string"
-                },
-                "event_venue": {
-                    "type": "string"
-                },
-                "extra_bed_allowed": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "initial_quantity": {
-                    "type": "integer"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "is_perishable": {
-                    "type": "boolean"
-                },
-                "max_adults": {
-                    "type": "integer"
-                },
-                "max_children": {
-                    "type": "integer"
-                },
-                "meal_plan": {
-                    "description": "RO | BB | HB | FB | AI",
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "name": {
-                    "type": "string"
-                },
-                "occupancy_basis": {
-                    "type": "string"
-                },
-                "on_hand": {
-                    "type": "integer"
-                },
-                "purchase_pack_size": {
-                    "type": "number"
-                },
-                "purchase_price": {
-                    "description": "Purchase / supplier fields — enable auto EP-cost calculation",
-                    "type": "number"
-                },
-                "purchase_unit": {
-                    "type": "string"
-                },
-                "reorder_level": {
-                    "type": "integer"
-                },
-                "reorder_quantity": {
-                    "type": "integer"
-                },
-                "requires_age_verification": {
-                    "type": "boolean"
-                },
-                "single_supplement": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "suggested_price": {
-                    "type": "number"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tax_code_id": {
-                    "description": "KRA eTIMS tax fields",
-                    "type": "string"
-                },
-                "tax_inclusive": {
-                    "type": "boolean"
-                },
-                "total_capacity": {
-                    "description": "Event capacity fields — SERVICE type only",
-                    "type": "integer"
-                },
-                "track_lots": {
-                    "type": "boolean"
-                },
-                "track_serial_numbers": {
-                    "type": "boolean"
-                },
-                "type": {
-                    "description": "GOODS | SERVICE | RECIPE | INGREDIENT",
-                    "type": "string"
-                },
-                "unit_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "use_case": {
-                    "description": "Hospitality fields — room-type / facility / amenity SERVICE items",
-                    "type": "string"
-                },
-                "weight_kg": {
-                    "type": "number"
-                },
-                "yield_pct": {
-                    "description": "0 \u003c y \u003c= 1; default 1.0",
-                    "type": "number"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO": {
-            "type": "object",
-            "properties": {
-                "allergens": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cost_per_portion": {
-                    "type": "number"
-                },
-                "food_cost_pct": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ingredients": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO"
-                    }
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "item_id": {
-                    "type": "string"
-                },
-                "item_name": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "output_qty": {
-                    "type": "number"
-                },
-                "prep_time_minutes": {
-                    "type": "integer"
-                },
-                "selling_price": {
-                    "description": "Selling-price based costing (user-provided; never overwritten by system)",
-                    "type": "number"
-                },
-                "servings": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "OK - healthy | OK - above target FC% | LOSS - cost \u003e= price",
-                    "type": "string"
-                },
-                "suggested_price": {
-                    "type": "number"
-                },
-                "target_margin_percent": {
-                    "type": "number"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "total_cost": {
-                    "type": "number"
-                },
-                "unit_of_measure": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO": {
-            "type": "object",
-            "properties": {
-                "display_order": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "item_cost_price": {
-                    "type": "number"
-                },
-                "item_id": {
-                    "type": "string"
-                },
-                "item_name": {
-                    "type": "string"
-                },
-                "item_sku": {
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "sub_recipe_id": {
-                    "type": "string"
-                },
-                "sub_recipe_name": {
-                    "type": "string"
-                },
-                "unit_id": {
-                    "type": "string"
-                },
-                "unit_of_measure": {
-                    "type": "string"
-                },
-                "waste_percent": {
-                    "type": "number"
-                }
-            }
-        },
-        "internal_http_handlers.BulkImportResult": {
+        "handlers.BulkImportResult": {
             "type": "object",
             "properties": {
                 "items": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "modifiers": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "recipes": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "stock": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 }
             }
         },
-        "internal_http_handlers.MenuItemCompositeRequest": {
+        "handlers.MenuItemCompositeRequest": {
             "type": "object",
             "properties": {
                 "category_name": {
@@ -4158,7 +4963,7 @@ const docTemplate = `{
                     "description": "── Ingredient lines ──────────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemIngredientInput"
+                        "$ref": "#/definitions/handlers.MenuItemIngredientInput"
                     }
                 },
                 "is_perishable": {
@@ -4168,11 +4973,15 @@ const docTemplate = `{
                     "description": "── Modifiers (optional) ──────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierInput"
+                        "$ref": "#/definitions/handlers.MenuItemModifierInput"
                     }
                 },
                 "name": {
                     "type": "string"
+                },
+                "non_billable": {
+                    "description": "Non-billable: never charged at POS even when a selling price exists (free\naccompaniments like ugali, greens). Pointer so an absent field never clobbers\nthe stored flag on upsert. When true, selling_price 0 is allowed.",
+                    "type": "boolean"
                 },
                 "prep_time_minutes": {
                     "type": "integer"
@@ -4201,19 +5010,19 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemCompositeResponse": {
+        "handlers.MenuItemCompositeResponse": {
             "type": "object",
             "properties": {
                 "item": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemDTO"
+                    "$ref": "#/definitions/items.ItemDTO"
                 },
                 "recipe": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO"
+                    "$ref": "#/definitions/recipes.RecipeDTO"
                 },
                 "reorder_seeds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.ReorderSeed"
+                        "$ref": "#/definitions/handlers.ReorderSeed"
                     }
                 },
                 "warnings": {
@@ -4224,7 +5033,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemIngredientInput": {
+        "handlers.MenuItemIngredientInput": {
             "type": "object",
             "properties": {
                 "cost_price": {
@@ -4269,7 +5078,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemModifierInput": {
+        "handlers.MenuItemModifierInput": {
             "type": "object",
             "properties": {
                 "group_name": {
@@ -4287,12 +5096,12 @@ const docTemplate = `{
                 "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierOptionInput"
+                        "$ref": "#/definitions/handlers.MenuItemModifierOptionInput"
                     }
                 }
             }
         },
-        "internal_http_handlers.MenuItemModifierOptionInput": {
+        "handlers.MenuItemModifierOptionInput": {
             "type": "object",
             "properties": {
                 "is_default": {
@@ -4310,7 +5119,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.ReorderSeed": {
+        "handlers.ReorderSeed": {
             "type": "object",
             "properties": {
                 "reorder_level": {
@@ -4328,7 +5137,163 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.assetCategoryPayload": {
+        "handlers.approvalActionDTO": {
+            "type": "object",
+            "properties": {
+                "acted_at": {
+                    "type": "string"
+                },
+                "acted_by": {
+                    "type": "string"
+                },
+                "approver_role": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.approvalRequestDTO": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.approvalActionDTO"
+                    }
+                },
+                "amount": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_sequence": {
+                    "type": "integer"
+                },
+                "current_step": {
+                    "$ref": "#/definitions/handlers.approvalActionDTO"
+                },
+                "decided_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "object_id": {
+                    "type": "string"
+                },
+                "object_reference": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.approvalRuleDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_amount": {
+                    "type": "number"
+                },
+                "min_amount": {
+                    "type": "number"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.approvalStepDTO"
+                    }
+                }
+            }
+        },
+        "handlers.approvalRulePayload": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_amount": {
+                    "type": "number"
+                },
+                "min_amount": {
+                    "type": "number"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.approvalStepPayload"
+                    }
+                }
+            }
+        },
+        "handlers.approvalStepDTO": {
+            "type": "object",
+            "properties": {
+                "approver_role": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.approvalStepPayload": {
+            "type": "object",
+            "properties": {
+                "approver_role": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.assetCategoryPayload": {
             "type": "object",
             "properties": {
                 "depreciation_rate": {
@@ -4348,7 +5313,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.assetPayload": {
+        "handlers.assetPayload": {
             "type": "object",
             "properties": {
                 "asset_tag": {
@@ -4376,6 +5341,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "item_id": {
                     "type": "string"
                 },
                 "location": {
@@ -4410,9 +5378,12 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.batchRawMaterialDTO": {
+        "handlers.batchRawMaterialDTO": {
             "type": "object",
             "properties": {
+                "cost": {
+                    "type": "number"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4427,7 +5398,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.contractDTO": {
+        "handlers.contractDTO": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -4437,6 +5408,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "rfq_id": {
                     "type": "string"
                 },
                 "start_date": {
@@ -4459,10 +5436,16 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.contractPayload": {
+        "handlers.contractPayload": {
             "type": "object",
             "properties": {
                 "end_date": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "rfq_id": {
                     "type": "string"
                 },
                 "start_date": {
@@ -4482,9 +5465,12 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.createPOInput": {
+        "handlers.createPOInput": {
             "type": "object",
             "properties": {
+                "additional_shipping_charges": {
+                    "type": "number"
+                },
                 "expected_date": {
                     "description": "accepts \"YYYY-MM-DD\" or RFC3339",
                     "type": "string"
@@ -4492,10 +5478,66 @@ const docTemplate = `{
                 "line_items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.createPOLineInput"
+                        "$ref": "#/definitions/handlers.createPOLineInput"
                     }
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "pay_term_days": {
+                    "type": "integer"
+                },
+                "supplier_id": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.createPOLineInput": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unit_cost": {
+                    "type": "number"
+                },
+                "unit_id": {
+                    "description": "FK to Unit — unit of measure ordered in (e.g. kg, box); optional",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.grnDTO": {
+            "type": "object",
+            "properties": {
+                "grn_number": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.grnLineDTO"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "purchase_order_id": {
+                    "type": "string"
+                },
+                "received_date": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "supplier_id": {
@@ -4506,21 +5548,102 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.createPOLineInput": {
+        "handlers.grnLineDTO": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "item_id": {
                     "type": "string"
                 },
-                "quantity": {
-                    "type": "integer"
+                "purchase_order_line_id": {
+                    "type": "string"
+                },
+                "quantity_accepted": {
+                    "type": "number"
+                },
+                "quantity_received": {
+                    "type": "number"
+                },
+                "quantity_rejected": {
+                    "type": "number"
+                },
+                "rejection_reason": {
+                    "type": "string"
+                },
+                "serials": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "unit_cost": {
                     "type": "number"
                 }
             }
         },
-        "internal_http_handlers.importResult": {
+        "handlers.grnLinePayload": {
+            "type": "object",
+            "properties": {
+                "expiry_date": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "lot_number": {
+                    "description": "Lot/batch capture for lot-tracked items: a lot number + optional expiry. Becomes an\nInventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.",
+                    "type": "string"
+                },
+                "purchase_order_line_id": {
+                    "type": "string"
+                },
+                "quantity_accepted": {
+                    "type": "number"
+                },
+                "quantity_received": {
+                    "type": "number"
+                },
+                "quantity_rejected": {
+                    "type": "number"
+                },
+                "rejection_reason": {
+                    "type": "string"
+                },
+                "serials": {
+                    "description": "Serials are captured for serial-tracked items: one serial per accepted unit. Each becomes\nan InventorySerial row (status=available) when the GRN is posted.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "unit_cost": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.grnPayload": {
+            "type": "object",
+            "properties": {
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.grnLinePayload"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "received_by": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.importResult": {
             "type": "object",
             "properties": {
                 "created": {
@@ -4540,7 +5663,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.livenessResponse": {
+        "handlers.livenessResponse": {
             "type": "object",
             "properties": {
                 "service": {
@@ -4553,7 +5676,27 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.productionBatchDTO": {
+        "handlers.materialVarianceDTO": {
+            "type": "object",
+            "properties": {
+                "actual": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "planned": {
+                    "type": "number"
+                },
+                "variance": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.productionBatchDTO": {
             "type": "object",
             "properties": {
                 "actual_quantity": {
@@ -4574,6 +5717,12 @@ const docTemplate = `{
                 "labor_cost": {
                     "type": "number"
                 },
+                "material_variance": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.materialVarianceDTO"
+                    }
+                },
                 "notes": {
                     "type": "string"
                 },
@@ -4589,13 +5738,13 @@ const docTemplate = `{
                 "quality_checks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                        "$ref": "#/definitions/handlers.qualityCheckDTO"
                     }
                 },
                 "raw_materials": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.batchRawMaterialDTO"
+                        "$ref": "#/definitions/handlers.batchRawMaterialDTO"
                     }
                 },
                 "recipe_id": {
@@ -4604,15 +5753,29 @@ const docTemplate = `{
                 "scheduled_date": {
                     "type": "string"
                 },
+                "scrap_quantity": {
+                    "type": "number"
+                },
                 "start_date": {
                     "type": "string"
                 },
                 "status": {
                     "type": "string"
+                },
+                "unit_cost": {
+                    "type": "number"
+                },
+                "yield_variance": {
+                    "description": "Variance (populated on the detail view only).",
+                    "type": "number"
+                },
+                "yield_variance_pct": {
+                    "description": "(actual-planned)/planned * 100",
+                    "type": "number"
                 }
             }
         },
-        "internal_http_handlers.productionBatchPayload": {
+        "handlers.productionBatchPayload": {
             "type": "object",
             "properties": {
                 "created_by": {
@@ -4644,9 +5807,12 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseOrderDTO": {
+        "handlers.purchaseOrderDTO": {
             "type": "object",
             "properties": {
+                "additional_shipping_charges": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -4658,6 +5824,9 @@ const docTemplate = `{
                 },
                 "notes": {
                     "type": "string"
+                },
+                "pay_term_days": {
+                    "type": "integer"
                 },
                 "po_number": {
                     "type": "string"
@@ -4682,7 +5851,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnDTO": {
+        "handlers.purchaseReturnDTO": {
             "type": "object",
             "properties": {
                 "date_returned": {
@@ -4711,7 +5880,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnLinePayload": {
+        "handlers.purchaseReturnLinePayload": {
             "type": "object",
             "properties": {
                 "item_id": {
@@ -4725,13 +5894,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnPayload": {
+        "handlers.purchaseReturnPayload": {
             "type": "object",
             "properties": {
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.purchaseReturnLinePayload"
+                        "$ref": "#/definitions/handlers.purchaseReturnLinePayload"
                     }
                 },
                 "purchase_order_id": {
@@ -4745,7 +5914,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.qualityCheckDTO": {
+        "handlers.qualityCheckDTO": {
             "type": "object",
             "properties": {
                 "check_date": {
@@ -4765,7 +5934,36 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.readinessResponse": {
+        "handlers.rawMaterialUsageDTO": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "finished_item_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "raw_item_id": {
+                    "type": "string"
+                },
+                "raw_sku": {
+                    "type": "string"
+                },
+                "transaction_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.readinessResponse": {
             "type": "object",
             "properties": {
                 "dependencies": {
@@ -4780,7 +5978,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionDTO": {
+        "handlers.requisitionDTO": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -4792,7 +5990,7 @@ const docTemplate = `{
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.requisitionLineDTO"
+                        "$ref": "#/definitions/handlers.requisitionLineDTO"
                     }
                 },
                 "notes": {
@@ -4821,14 +6019,20 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionLineDTO": {
+        "handlers.requisitionLineDTO": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
                 },
+                "duration": {
+                    "type": "string"
+                },
                 "estimated_price": {
                     "type": "number"
+                },
+                "expected_deliverables": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -4840,7 +6044,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "number"
+                },
+                "service_description": {
+                    "type": "string"
+                },
+                "specifications": {
+                    "type": "string"
                 },
                 "supplier_id": {
                     "type": "string"
@@ -4850,14 +6060,20 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionLinePayload": {
+        "handlers.requisitionLinePayload": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
                 },
+                "duration": {
+                    "type": "string"
+                },
                 "estimated_price": {
                     "type": "number"
+                },
+                "expected_deliverables": {
+                    "type": "string"
                 },
                 "item_id": {
                     "type": "string"
@@ -4867,7 +6083,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "number"
+                },
+                "service_description": {
+                    "description": "Service details (item_type=service)",
+                    "type": "string"
+                },
+                "specifications": {
+                    "description": "External-item details (item_type=external)",
+                    "type": "string"
                 },
                 "supplier_id": {
                     "type": "string"
@@ -4877,13 +6101,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionPayload": {
+        "handlers.requisitionPayload": {
             "type": "object",
             "properties": {
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.requisitionLinePayload"
+                        "$ref": "#/definitions/handlers.requisitionLinePayload"
                     }
                 },
                 "notes": {
@@ -4893,6 +6117,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "priority": {
+                    "type": "string"
+                },
+                "project_id": {
                     "type": "string"
                 },
                 "purpose": {
@@ -4910,7 +6137,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.serviceDeliveryDTO": {
+        "handlers.serviceDeliveryDTO": {
             "type": "object",
             "properties": {
                 "deliverables": {
@@ -4936,7 +6163,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.serviceDeliveryPayload": {
+        "handlers.serviceDeliveryPayload": {
             "type": "object",
             "properties": {
                 "deliverables": {
@@ -4956,7 +6183,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.supplierPerfDTO": {
+        "handlers.supplierPerfDTO": {
             "type": "object",
             "properties": {
                 "average_lead_time_days": {
@@ -4985,7 +6212,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.supplierPerfPayload": {
+        "handlers.supplierPerfPayload": {
             "type": "object",
             "properties": {
                 "average_lead_time_days": {
@@ -5008,6 +6235,720 @@ const docTemplate = `{
                 },
                 "total_spend": {
                     "type": "number"
+                }
+            }
+        },
+        "items.ItemDTO": {
+            "type": "object",
+            "properties": {
+                "add_to_all_outlets": {
+                    "type": "boolean"
+                },
+                "allow_backorder": {
+                    "description": "order when out of stock",
+                    "type": "boolean"
+                },
+                "available": {
+                    "description": "Current stock levels (aggregated across all warehouses).\nPopulated by ListItems; nil when no balance row exists.",
+                    "type": "number"
+                },
+                "barcode": {
+                    "description": "Extended fields for POS, logistics, compliance",
+                    "type": "string"
+                },
+                "barcode_type": {
+                    "type": "string"
+                },
+                "booked_capacity": {
+                    "type": "integer"
+                },
+                "brand_code": {
+                    "type": "string"
+                },
+                "brand_id": {
+                    "type": "string"
+                },
+                "brand_name": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "condition": {
+                    "description": "NEW | REFURBISHED | USED | OPEN_BOX",
+                    "type": "string"
+                },
+                "cost_price": {
+                    "description": "Cost / pricing fields",
+                    "type": "number"
+                },
+                "country_of_origin": {
+                    "description": "customs / marketplace compliance",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "dimensions_cm": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "duration_minutes": {
+                    "description": "service duration (salon/barber)",
+                    "type": "integer"
+                },
+                "event_end_at": {
+                    "type": "string"
+                },
+                "event_start_at": {
+                    "type": "string"
+                },
+                "event_venue": {
+                    "type": "string"
+                },
+                "extra_bed_allowed": {
+                    "type": "boolean"
+                },
+                "gtin": {
+                    "description": "E-commerce / online-store attributes",
+                    "type": "string"
+                },
+                "has_variants": {
+                    "description": "Product variations — surfaced from the ItemVariant edge so retail can sell variations.\nHasVariants is always populated; Variants is populated when variants are eager-loaded\n(inline for single-item reads, or for the list when ?include=variants is requested).",
+                    "type": "boolean"
+                },
+                "hs_code": {
+                    "description": "customs tariff code",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "images": {
+                    "description": "Images surfaces the item's IMAGE assets (multi-image gallery). Populated when the\n` + "`" + `assets` + "`" + ` edge is eager-loaded; primary first. ImageURL above remains the primary\nimage URL for backward compatibility with single-image clients.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemImageDTO"
+                    }
+                },
+                "initial_quantity": {
+                    "description": "opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)",
+                    "type": "number"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_controlled_substance": {
+                    "description": "pharmacy: scheduled drugs",
+                    "type": "boolean"
+                },
+                "is_discontinued": {
+                    "description": "hidden from new listings, stock still sellable",
+                    "type": "boolean"
+                },
+                "is_perishable": {
+                    "type": "boolean"
+                },
+                "is_returnable": {
+                    "description": "customer return allowed",
+                    "type": "boolean"
+                },
+                "manufacturer": {
+                    "description": "Item-attribute fields (retail / pharmacy)",
+                    "type": "string"
+                },
+                "max_adults": {
+                    "type": "integer"
+                },
+                "max_children": {
+                    "type": "integer"
+                },
+                "max_selling_price": {
+                    "description": "hard ceiling enforced at price upsert \u0026 POS",
+                    "type": "number"
+                },
+                "meal_plan": {
+                    "description": "RO | BB | HB | FB | AI",
+                    "type": "string"
+                },
+                "meta_description": {
+                    "description": "SEO",
+                    "type": "string"
+                },
+                "meta_title": {
+                    "description": "SEO",
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "min_selling_price": {
+                    "description": "Selling-price guardrails + goods margin (Phase 4).",
+                    "type": "number"
+                },
+                "model": {
+                    "description": "retail only",
+                    "type": "string"
+                },
+                "modifier_groups": {
+                    "description": "ModifierGroups: this item's selectable modifiers (e.g. \"Extra Honey\" on a Dawa),\nenriched by enrichModifierGroups. Populated by ListItems for every catalog-facing\ncaller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemModifierGroup"
+                    }
+                },
+                "mpn": {
+                    "description": "manufacturer part number",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "net_price": {
+                    "description": "selling price excluding tax",
+                    "type": "number"
+                },
+                "non_billable": {
+                    "description": "Non-billable: never charged at POS even when a selling price exists (free\naccompaniments like ugali, consumable supplies like tissue/packaging); stock still\ndeducts. Pointer so partial updates never clobber the stored flag.",
+                    "type": "boolean"
+                },
+                "occupancy_basis": {
+                    "type": "string"
+                },
+                "on_hand": {
+                    "type": "number"
+                },
+                "preferred_supplier_id": {
+                    "description": "Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).\nAccepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).",
+                    "type": "string"
+                },
+                "preferred_supplier_name": {
+                    "type": "string"
+                },
+                "purchase_pack_size": {
+                    "type": "number"
+                },
+                "purchase_price": {
+                    "description": "Purchase / supplier fields — enable auto EP-cost calculation",
+                    "type": "number"
+                },
+                "purchase_unit": {
+                    "type": "string"
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "reorder_quantity": {
+                    "type": "integer"
+                },
+                "requires_age_verification": {
+                    "type": "boolean"
+                },
+                "return_window_days": {
+                    "description": "nil = tenant default",
+                    "type": "integer"
+                },
+                "selling_price": {
+                    "description": "Effective customer-facing price + tax split — enriched at read time for the POS/ordering\nproxies (recipe selling price → default pricing tier → cost+margin suggestion).",
+                    "type": "number"
+                },
+                "shelf_life_days": {
+                    "description": "default shelf life; seeds lot expiry at receipt",
+                    "type": "integer"
+                },
+                "short_description": {
+                    "description": "product-card description",
+                    "type": "string"
+                },
+                "single_supplement": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "slug": {
+                    "description": "storefront URL slug / SEO",
+                    "type": "string"
+                },
+                "stock_tracking_mode": {
+                    "description": "Stock tracking mode: \"default\" (RECIPE items follow the tenant non-depletion\npolicy) | \"tracked\" | \"non_depleting\" (sells without stock effect).",
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "target_margin_percent": {
+                    "description": "GOODS auto-pricing margin %",
+                    "type": "number"
+                },
+                "tax_amount": {
+                    "description": "tax portion of the selling price",
+                    "type": "number"
+                },
+                "tax_code_id": {
+                    "description": "KRA eTIMS tax fields",
+                    "type": "string"
+                },
+                "tax_inclusive": {
+                    "type": "boolean"
+                },
+                "tax_rate": {
+                    "description": "VAT rate % applied (resolved from treasury-api)",
+                    "type": "number"
+                },
+                "total_capacity": {
+                    "description": "Event capacity fields — SERVICE type only",
+                    "type": "integer"
+                },
+                "track_lots": {
+                    "type": "boolean"
+                },
+                "track_serial_numbers": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "GOODS | SERVICE | RECIPE | INGREDIENT",
+                    "type": "string"
+                },
+                "unit_content_qty": {
+                    "description": "Content-per-unit: how much of UnitContentUOM ONE stock unit contains (a 750ml\nwhiskey bottle stocked in pieces → 750 + \"ml\"). Lets ml/g recipe lines (tots,\npours) deduct fractional stock units.",
+                    "type": "number"
+                },
+                "unit_content_uom": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "use_case": {
+                    "description": "Hospitality fields — room-type / facility / amenity SERVICE items",
+                    "type": "string"
+                },
+                "variants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.VariantDTO"
+                    }
+                },
+                "weight_kg": {
+                    "type": "number"
+                },
+                "yield_pct": {
+                    "description": "0 \u003c y \u003c= 1; default 1.0",
+                    "type": "number"
+                }
+            }
+        },
+        "items.ItemImageDTO": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "display_order": {
+                    "type": "integer"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_primary": {
+                    "type": "boolean"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.ItemModifierGroup": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_required": {
+                    "type": "boolean"
+                },
+                "max_selections": {
+                    "type": "integer"
+                },
+                "min_selections": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemModifierOption"
+                    }
+                }
+            }
+        },
+        "items.ItemModifierOption": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_adjustment": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.VariantDTO": {
+            "type": "object",
+            "properties": {
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "recipes.RecipeDTO": {
+            "type": "object",
+            "properties": {
+                "allergens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cost_per_portion": {
+                    "type": "number"
+                },
+                "food_cost_pct": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/recipes.RecipeIngredientDTO"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "menu | bom",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "output_qty": {
+                    "type": "number"
+                },
+                "prep_time_minutes": {
+                    "type": "integer"
+                },
+                "requires_qc": {
+                    "type": "boolean"
+                },
+                "selling_price": {
+                    "description": "Selling-price based costing (user-provided; never overwritten by system)",
+                    "type": "number"
+                },
+                "servings": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "OK - healthy | OK - above target FC% | LOSS - cost \u003e= price",
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "target_margin_percent": {
+                    "type": "number"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "total_cost": {
+                    "type": "number"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                }
+            }
+        },
+        "recipes.RecipeIngredientDTO": {
+            "type": "object",
+            "properties": {
+                "display_order": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_cost_price": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "item_unit_id": {
+                    "description": "The ingredient item's own base/stock unit. ItemCostPrice is per this unit,\nso a line written in another unit (e.g. ml against a per-L item) must be\nconverted before multiplying — clients need this to preview line costs.",
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "sub_recipe_id": {
+                    "type": "string"
+                },
+                "sub_recipe_name": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                },
+                "waste_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.IngredientUtilizationSummary": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "number"
+                },
+                "consumed_cost": {
+                    "type": "number"
+                },
+                "consumed_qty": {
+                    "type": "number"
+                },
+                "daily_velocity": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "last_restock_at": {
+                    "type": "string"
+                },
+                "on_hand": {
+                    "type": "number"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "projected_days_of_cover": {
+                    "type": "number"
+                },
+                "purchased_cost": {
+                    "type": "number"
+                },
+                "purchased_qty": {
+                    "type": "number"
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.RecipeBreakdownRow": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "pct_of_total": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "recipe_id": {
+                    "type": "string"
+                },
+                "recipe_name": {
+                    "type": "string"
+                },
+                "recipe_sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.StockLevelEventDTO": {
+            "type": "object",
+            "properties": {
+                "event_type": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "on_hand_at_event": {
+                    "type": "number"
+                },
+                "reorder_level_at_event": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.TimeseriesPoint": {
+            "type": "object",
+            "properties": {
+                "bucket_end": {
+                    "type": "string"
+                },
+                "bucket_start": {
+                    "type": "string"
+                },
+                "by_recipe": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.TimeseriesRecipeSlice"
+                    }
+                },
+                "cost": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.TimeseriesRecipeSlice": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "recipe_id": {
+                    "type": "string"
+                },
+                "recipe_name": {
+                    "type": "string"
+                },
+                "recipe_sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.TimeseriesResponse": {
+            "type": "object",
+            "properties": {
+                "granularity": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.TimeseriesPoint"
+                    }
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "stock_level_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.StockLevelEventDTO"
+                    }
                 }
             }
         }

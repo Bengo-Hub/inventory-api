@@ -139,16 +139,16 @@ type AdjustStockRequest struct {
 
 // AdjustStockResponse represents the result of a stock adjustment.
 type AdjustStockResponse struct {
-	ID           uuid.UUID `json:"id"`
-	SKU          string    `json:"sku"`
-	OnHand       float64   `json:"on_hand"`
-	Available    float64   `json:"available"`
-	Reserved     float64   `json:"reserved"`
-	Reason       string    `json:"reason"`
-	QtyBefore    float64   `json:"quantity_before"`
-	QtyChange    float64   `json:"quantity_change"`
-	QtyAfter     float64   `json:"quantity_after"`
-	AdjustedAt   time.Time `json:"adjusted_at"`
+	ID         uuid.UUID `json:"id"`
+	SKU        string    `json:"sku"`
+	OnHand     float64   `json:"on_hand"`
+	Available  float64   `json:"available"`
+	Reserved   float64   `json:"reserved"`
+	Reason     string    `json:"reason"`
+	QtyBefore  float64   `json:"quantity_before"`
+	QtyChange  float64   `json:"quantity_change"`
+	QtyAfter   float64   `json:"quantity_after"`
+	AdjustedAt time.Time `json:"adjusted_at"`
 }
 
 // StockAdjustmentDTO represents a stock adjustment for listing.
@@ -546,7 +546,12 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 		return
 	}
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
+	var outletUUID *uuid.UUID
+	if oid, perr := uuid.Parse(outletID); perr == nil {
+		outletUUID = &oid
+	}
 	if bal.Available <= 0 {
+		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "out", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
 			"tenant_id":    tenantID.String(),
 			"item_id":      itm.ID.String(),
@@ -566,6 +571,7 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 		// Cascade: mark recipe items as unavailable when an ingredient runs out.
 		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID)
 	} else if bal.Available <= float64(bal.ReorderLevel) {
+		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "low", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
 			"item_id":       itm.ID.String(),
@@ -926,9 +932,9 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 	}
 
 	s.writeOutboxEvent(ctx, tx, tenantID, resv.ID, "inventory", "reservation.confirmed", map[string]any{
-		"order_id":    req.OrderID.String(),
+		"order_id":     req.OrderID.String(),
 		"warehouse_id": whID.String(),
-		"items":       reservedItems,
+		"items":        reservedItems,
 	})
 
 	if err = tx.Commit(); err != nil {
@@ -1143,9 +1149,9 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 	}
 
 	s.writeOutboxEvent(ctx, tx, tenantID, reservationID, "inventory", "stock.consumed", map[string]any{
-		"order_id":     resv.OrderID.String(),
-		"consumed_at":  now.UTC().Format(time.RFC3339),
-		"items_count":  len(resv.Items),
+		"order_id":    resv.OrderID.String(),
+		"consumed_at": now.UTC().Format(time.RFC3339),
+		"items_count": len(resv.Items),
 	})
 
 	if err = tx.Commit(); err != nil {
@@ -1204,8 +1210,9 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		// theoretically (AvT reporting) but no ingredient stock moves. Its modifiers
 		// still deduct below — modifier items carry their own tracking mode.
 		if itm, ierr := s.ResolveItemBySKU(ctx, tenantID, ci.SKU); ierr == nil && isNonDepleting(itm, cfg) {
-			flattened = append(flattened, explodedIngredient{SKU: itm.Sku, Quantity: ci.Quantity, Theoretical: true, RequestedUOM: ci.UOM})
+			flattened = append(flattened, explodedIngredient{SKU: itm.Sku, Quantity: ci.Quantity, Theoretical: true, RequestedUOM: ci.UOM, FinishedItemSKU: itm.Sku})
 			for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ci.Modifiers, ci.Quantity) {
+				ming.FinishedItemSKU = itm.Sku
 				flattened = append(flattened, ming)
 			}
 			continue
@@ -1218,7 +1225,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		if !isBOM {
 			// Direct line — convert a sale-line UOM (e.g. a 30 ml pour of a bottle
 			// stocked in pieces) into the item's stock unit when one is provided.
-			line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity}
+			line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU}
 			if ci.UOM != "" {
 				if itm, ierr := s.client.Item.Query().
 					Where(item.TenantID(tenantID), item.Sku(stockSKU)).
@@ -1238,16 +1245,30 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			}
 			flattened = append(flattened, line)
 		} else {
+			// BOM lines already carry RecipeID/RecipeSKU from explodeBOM; FinishedItemSKU
+			// is the sale-line context only RecordConsumption knows.
+			for i := range ingredients {
+				ingredients[i].FinishedItemSKU = stockSKU
+			}
 			flattened = append(flattened, ingredients...)
 		}
 		// Consume selected modifier stock as additional lines (mirrors POS sale backflush
 		// and the reservation path), so ordering S2S consumption deducts modifier stock.
 		for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ci.Modifiers, ci.Quantity) {
+			ming.FinishedItemSKU = stockSKU
 			flattened = append(flattened, ming)
 		}
 	}
 
 	method := s.costingMethod(ctx, tenantID)
+	reason := req.Reason
+	if reason == "" {
+		reason = "sale"
+	}
+	consumptionID := uuid.New()
+	now := time.Now()
+	outletID := s.resolveOutletID(ctx, tx, whID)
+
 	consumptionItems := make([]entschema.ConsumptionItemJSON, 0, len(flattened))
 	for _, cl := range flattened {
 		entry := entschema.ConsumptionItemJSON{
@@ -1287,6 +1308,22 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			entry.Theoretical = true
 			if cfg == nil || cfg.RecordTheoreticalUsage {
 				consumptionItems = append(consumptionItems, entry)
+				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
+					consumptionID:    consumptionID,
+					orderID:          req.OrderID,
+					warehouseID:      whID,
+					outletID:         outletID,
+					recipeID:         cl.RecipeID,
+					recipeSKU:        cl.RecipeSKU,
+					finishedItemSKU:  cl.FinishedItemSKU,
+					ingredientItemID: itm.ID,
+					ingredientSKU:    cl.SKU,
+					quantity:         cl.Quantity,
+					unitCost:         itemCostPrice(itm),
+					theoretical:      true,
+					reason:           reason,
+					consumedAt:       now,
+				})
 			}
 			continue
 		}
@@ -1321,6 +1358,22 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+
+			s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
+				consumptionID:    consumptionID,
+				orderID:          req.OrderID,
+				warehouseID:      whID,
+				outletID:         outletID,
+				recipeID:         cl.RecipeID,
+				recipeSKU:        cl.RecipeSKU,
+				finishedItemSKU:  cl.FinishedItemSKU,
+				ingredientItemID: itm.ID,
+				ingredientSKU:    cl.SKU,
+				quantity:         cl.Quantity,
+				unitCost:         itemCostPrice(itm),
+				reason:           reason,
+				consumedAt:       now,
+			})
 		case ent.IsNotFound(berr):
 			// No balance row here: nothing to deduct — record the full quantity as
 			// shortfall instead of silently pretending the stock moved.
@@ -1339,13 +1392,8 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		consumptionItems = append(consumptionItems, entry)
 	}
 
-	reason := req.Reason
-	if reason == "" {
-		reason = "sale"
-	}
-
-	now := time.Now()
 	builder := tx.Consumption.Create().
+		SetID(consumptionID).
 		SetTenantID(tenantID).
 		SetOrderID(req.OrderID).
 		SetItems(consumptionItems).
@@ -1491,13 +1539,13 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.U
 
 func (s *Service) mapReservation(r *ent.Reservation) *ReservationResponse {
 	resp := &ReservationResponse{
-		ID:        r.ID,
-		TenantID:  r.TenantID,
-		OrderID:   r.OrderID,
-		Status:    r.Status,
-		ExpiresAt: r.ExpiresAt,
+		ID:          r.ID,
+		TenantID:    r.TenantID,
+		OrderID:     r.OrderID,
+		Status:      r.Status,
+		ExpiresAt:   r.ExpiresAt,
 		ConfirmedAt: r.ConfirmedAt,
-		CreatedAt: r.CreatedAt,
+		CreatedAt:   r.CreatedAt,
 	}
 
 	resp.Items = make([]ReservedItem, len(r.Items))

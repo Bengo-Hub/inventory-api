@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
+	"github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	"github.com/bengobox/inventory-service/internal/ent/contract"
 	"github.com/bengobox/inventory-service/internal/ent/contractorderlink"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
@@ -42,6 +43,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/itemasset"
 	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/itemconsumptiondaily"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/itemtranslation"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
@@ -73,6 +75,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -517,6 +520,32 @@ func init() {
 	consumptionDescID := consumptionFields[0].Descriptor()
 	// consumption.DefaultID holds the default value on creation for the id field.
 	consumption.DefaultID = consumptionDescID.Default.(func() uuid.UUID)
+	consumptionlineFields := schema.ConsumptionLine{}.Fields()
+	_ = consumptionlineFields
+	// consumptionlineDescUnitCost is the schema descriptor for unit_cost field.
+	consumptionlineDescUnitCost := consumptionlineFields[13].Descriptor()
+	// consumptionline.DefaultUnitCost holds the default value on creation for the unit_cost field.
+	consumptionline.DefaultUnitCost = consumptionlineDescUnitCost.Default.(float64)
+	// consumptionlineDescTotalCost is the schema descriptor for total_cost field.
+	consumptionlineDescTotalCost := consumptionlineFields[14].Descriptor()
+	// consumptionline.DefaultTotalCost holds the default value on creation for the total_cost field.
+	consumptionline.DefaultTotalCost = consumptionlineDescTotalCost.Default.(float64)
+	// consumptionlineDescTheoretical is the schema descriptor for theoretical field.
+	consumptionlineDescTheoretical := consumptionlineFields[15].Descriptor()
+	// consumptionline.DefaultTheoretical holds the default value on creation for the theoretical field.
+	consumptionline.DefaultTheoretical = consumptionlineDescTheoretical.Default.(bool)
+	// consumptionlineDescReason is the schema descriptor for reason field.
+	consumptionlineDescReason := consumptionlineFields[16].Descriptor()
+	// consumptionline.DefaultReason holds the default value on creation for the reason field.
+	consumptionline.DefaultReason = consumptionlineDescReason.Default.(string)
+	// consumptionlineDescCreatedAt is the schema descriptor for created_at field.
+	consumptionlineDescCreatedAt := consumptionlineFields[18].Descriptor()
+	// consumptionline.DefaultCreatedAt holds the default value on creation for the created_at field.
+	consumptionline.DefaultCreatedAt = consumptionlineDescCreatedAt.Default.(func() time.Time)
+	// consumptionlineDescID is the schema descriptor for id field.
+	consumptionlineDescID := consumptionlineFields[0].Descriptor()
+	// consumptionline.DefaultID holds the default value on creation for the id field.
+	consumptionline.DefaultID = consumptionlineDescID.Default.(func() uuid.UUID)
 	contractFields := schema.Contract{}.Fields()
 	_ = contractFields
 	// contractDescTitle is the schema descriptor for title field.
@@ -1077,6 +1106,26 @@ func init() {
 	itemcategoryDescID := itemcategoryFields[0].Descriptor()
 	// itemcategory.DefaultID holds the default value on creation for the id field.
 	itemcategory.DefaultID = itemcategoryDescID.Default.(func() uuid.UUID)
+	itemconsumptiondailyFields := schema.ItemConsumptionDaily{}.Fields()
+	_ = itemconsumptiondailyFields
+	// itemconsumptiondailyDescQuantity is the schema descriptor for quantity field.
+	itemconsumptiondailyDescQuantity := itemconsumptiondailyFields[9].Descriptor()
+	// itemconsumptiondaily.DefaultQuantity holds the default value on creation for the quantity field.
+	itemconsumptiondaily.DefaultQuantity = itemconsumptiondailyDescQuantity.Default.(float64)
+	// itemconsumptiondailyDescTotalCost is the schema descriptor for total_cost field.
+	itemconsumptiondailyDescTotalCost := itemconsumptiondailyFields[10].Descriptor()
+	// itemconsumptiondaily.DefaultTotalCost holds the default value on creation for the total_cost field.
+	itemconsumptiondaily.DefaultTotalCost = itemconsumptiondailyDescTotalCost.Default.(float64)
+	// itemconsumptiondailyDescUpdatedAt is the schema descriptor for updated_at field.
+	itemconsumptiondailyDescUpdatedAt := itemconsumptiondailyFields[11].Descriptor()
+	// itemconsumptiondaily.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	itemconsumptiondaily.DefaultUpdatedAt = itemconsumptiondailyDescUpdatedAt.Default.(func() time.Time)
+	// itemconsumptiondaily.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	itemconsumptiondaily.UpdateDefaultUpdatedAt = itemconsumptiondailyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// itemconsumptiondailyDescID is the schema descriptor for id field.
+	itemconsumptiondailyDescID := itemconsumptiondailyFields[0].Descriptor()
+	// itemconsumptiondaily.DefaultID holds the default value on creation for the id field.
+	itemconsumptiondaily.DefaultID = itemconsumptiondailyDescID.Default.(func() uuid.UUID)
 	itempricingFields := schema.ItemPricing{}.Fields()
 	_ = itempricingFields
 	// itempricingDescPrice is the schema descriptor for price field.
@@ -1909,6 +1958,24 @@ func init() {
 	stockcountlineDescID := stockcountlineFields[0].Descriptor()
 	// stockcountline.DefaultID holds the default value on creation for the id field.
 	stockcountline.DefaultID = stockcountlineDescID.Default.(func() uuid.UUID)
+	stockleveleventFields := schema.StockLevelEvent{}.Fields()
+	_ = stockleveleventFields
+	// stockleveleventDescOnHandAtEvent is the schema descriptor for on_hand_at_event field.
+	stockleveleventDescOnHandAtEvent := stockleveleventFields[6].Descriptor()
+	// stocklevelevent.DefaultOnHandAtEvent holds the default value on creation for the on_hand_at_event field.
+	stocklevelevent.DefaultOnHandAtEvent = stockleveleventDescOnHandAtEvent.Default.(float64)
+	// stockleveleventDescReorderLevelAtEvent is the schema descriptor for reorder_level_at_event field.
+	stockleveleventDescReorderLevelAtEvent := stockleveleventFields[7].Descriptor()
+	// stocklevelevent.DefaultReorderLevelAtEvent holds the default value on creation for the reorder_level_at_event field.
+	stocklevelevent.DefaultReorderLevelAtEvent = stockleveleventDescReorderLevelAtEvent.Default.(float64)
+	// stockleveleventDescOccurredAt is the schema descriptor for occurred_at field.
+	stockleveleventDescOccurredAt := stockleveleventFields[8].Descriptor()
+	// stocklevelevent.DefaultOccurredAt holds the default value on creation for the occurred_at field.
+	stocklevelevent.DefaultOccurredAt = stockleveleventDescOccurredAt.Default.(func() time.Time)
+	// stockleveleventDescID is the schema descriptor for id field.
+	stockleveleventDescID := stockleveleventFields[0].Descriptor()
+	// stocklevelevent.DefaultID holds the default value on creation for the id field.
+	stocklevelevent.DefaultID = stockleveleventDescID.Default.(func() uuid.UUID)
 	stocktransferFields := schema.StockTransfer{}.Fields()
 	_ = stocktransferFields
 	// stocktransferDescTransferNumber is the schema descriptor for transfer_number field.

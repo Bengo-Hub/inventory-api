@@ -39,6 +39,17 @@ type explodedIngredient struct {
 	// differs from the deducted stock quantity (post-conversion audit trail).
 	RequestedQty float64
 	RequestedUOM string
+	// RecipeID/RecipeSKU identify the TOP-level menu recipe this ingredient line was
+	// exploded for — propagated unchanged through sub-recipe backflush recursion, so a
+	// prep-recipe ingredient (lemon juice's raw lemons) still attributes to the menu item
+	// (a cocktail), not the intermediate prep. Zero/empty for a line resolved outside BOM
+	// explosion (direct-sale item with no recipe).
+	RecipeID  uuid.UUID
+	RecipeSKU string
+	// FinishedItemSKU is the sale-line SKU this line was consumed for — set by the caller
+	// (RecordConsumption) uniformly across BOM'd, direct, and modifier-derived lines, since
+	// only the caller knows the sale-line context. Equals RecipeSKU for BOM'd lines.
+	FinishedItemSKU string
 }
 
 // round4 rounds to 4 decimal places to avoid floating-point drift accumulating on balances.
@@ -147,10 +158,14 @@ func ConvertToStockUnit(itm *ent.Item, qty float64, fromUOM string) (float64, bo
 // backflushes: the sub-recipe's own BOM is exploded (depth-capped) so tenants that
 // don't record prep batches still deplete raw materials.
 func (s *Service) explodeBOM(ctx context.Context, tenantID, warehouseID uuid.UUID, sku string, portionsRequested float64) ([]explodedIngredient, bool) {
-	return s.explodeBOMDepth(ctx, tenantID, warehouseID, sku, portionsRequested, 0)
+	return s.explodeBOMDepth(ctx, tenantID, warehouseID, sku, portionsRequested, 0, uuid.Nil, "")
 }
 
-func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uuid.UUID, sku string, portionsRequested float64, depth int) ([]explodedIngredient, bool) {
+// topRecipeID/topRecipeSKU are uuid.Nil/"" on the initial (depth-0) call — the function
+// establishes them from the recipe it resolves and passes them down unchanged through any
+// sub-recipe backflush recursion, so every returned ingredient attributes to the ORIGINAL
+// menu recipe, not an intermediate prep recipe.
+func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uuid.UUID, sku string, portionsRequested float64, depth int, topRecipeID uuid.UUID, topRecipeSKU string) ([]explodedIngredient, bool) {
 	// A variant SKU has no recipe of its own — it shares the parent item's BOM. Resolve
 	// to the parent's SKU so the recipe lookup hits (a real-item SKU passes through).
 	sku = s.resolveStockSKU(ctx, tenantID, sku)
@@ -164,6 +179,11 @@ func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uui
 		Only(ctx)
 	if err != nil || len(r.Edges.Ingredients) == 0 {
 		return nil, false
+	}
+
+	if topRecipeID == uuid.Nil {
+		topRecipeID = r.ID
+		topRecipeSKU = r.Sku
 	}
 
 	outputQty := r.OutputQty
@@ -191,7 +211,7 @@ func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uui
 				// (a 480 ml lemon-juice batch has output_qty 480, unit ml).
 				subQty, ok := ConvertToStockUnit(ingItem, qty, ing.UnitOfMeasure)
 				if ok {
-					if subIngs, isBOM := s.explodeBOMDepth(ctx, tenantID, warehouseID, ing.Edges.SubRecipe.Sku, subQty, depth+1); isBOM {
+					if subIngs, isBOM := s.explodeBOMDepth(ctx, tenantID, warehouseID, ing.Edges.SubRecipe.Sku, subQty, depth+1, topRecipeID, topRecipeSKU); isBOM {
 						ingredients = append(ingredients, subIngs...)
 						continue
 					}
@@ -213,11 +233,13 @@ func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uui
 				UnitMismatch: true,
 				RequestedQty: round4(qty),
 				RequestedUOM: ing.UnitOfMeasure,
+				RecipeID:     topRecipeID,
+				RecipeSKU:    topRecipeSKU,
 			})
 			continue
 		}
 
-		line := explodedIngredient{SKU: ing.ItemSku, Quantity: round4(converted)}
+		line := explodedIngredient{SKU: ing.ItemSku, Quantity: round4(converted), RecipeID: topRecipeID, RecipeSKU: topRecipeSKU}
 		if converted != qty {
 			line.RequestedQty = round4(qty)
 			line.RequestedUOM = ing.UnitOfMeasure

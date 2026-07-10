@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
+	"github.com/bengobox/inventory-service/internal/modules/reports"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -29,6 +30,7 @@ type InventoryExtrasHandler struct {
 	bundleSvc    *bundles.Service
 	varianceSvc  *recipes.VarianceService
 	menuEngSvc   *recipes.MenuEngineeringService
+	reportsSvc   *reports.Service
 	docSvc       *documents.Service
 	stockSvc     *stock.Service
 }
@@ -171,6 +173,9 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/reports/food-cost-variance.pdf", h.FoodCostVarianceReportPDF)
 	r.Get("/inventory/reports/menu-engineering", h.MenuEngineeringReport)
 	r.Get("/inventory/reports/menu-engineering.pdf", h.MenuEngineeringReportPDF)
+	r.Get("/inventory/reports/ingredient-utilization/summary", h.IngredientUtilizationSummary)
+	r.Get("/inventory/reports/ingredient-utilization/timeseries", h.IngredientUtilizationTimeseries)
+	r.Get("/inventory/reports/ingredient-utilization/by-recipe", h.IngredientUtilizationByRecipe)
 
 	// Procurement (migrated from ERP procurement/*)
 	h.registerRequisitionRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)

@@ -63,6 +63,9 @@ type BundleComponent func(*sql.Selector)
 // Consumption is the predicate function for consumption builders.
 type Consumption func(*sql.Selector)
 
+// ConsumptionLine is the predicate function for consumptionline builders.
+type ConsumptionLine func(*sql.Selector)
+
 // Contract is the predicate function for contract builders.
 type Contract func(*sql.Selector)
 
@@ -116,6 +119,9 @@ type ItemBrand func(*sql.Selector)
 
 // ItemCategory is the predicate function for itemcategory builders.
 type ItemCategory func(*sql.Selector)
+
+// ItemConsumptionDaily is the predicate function for itemconsumptiondaily builders.
+type ItemConsumptionDaily func(*sql.Selector)
 
 // ItemPricing is the predicate function for itempricing builders.
 type ItemPricing func(*sql.Selector)
@@ -209,6 +215,9 @@ type StockCount func(*sql.Selector)
 
 // StockCountLine is the predicate function for stockcountline builders.
 type StockCountLine func(*sql.Selector)
+
+// StockLevelEvent is the predicate function for stocklevelevent builders.
+type StockLevelEvent func(*sql.Selector)
 
 // StockTransfer is the predicate function for stocktransfer builders.
 type StockTransfer func(*sql.Selector)

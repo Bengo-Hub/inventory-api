@@ -50,6 +50,8 @@ type Tx struct {
 	BundleComponent *BundleComponentClient
 	// Consumption is the client for interacting with the Consumption builders.
 	Consumption *ConsumptionClient
+	// ConsumptionLine is the client for interacting with the ConsumptionLine builders.
+	ConsumptionLine *ConsumptionLineClient
 	// Contract is the client for interacting with the Contract builders.
 	Contract *ContractClient
 	// ContractOrderLink is the client for interacting with the ContractOrderLink builders.
@@ -86,6 +88,8 @@ type Tx struct {
 	ItemBrand *ItemBrandClient
 	// ItemCategory is the client for interacting with the ItemCategory builders.
 	ItemCategory *ItemCategoryClient
+	// ItemConsumptionDaily is the client for interacting with the ItemConsumptionDaily builders.
+	ItemConsumptionDaily *ItemConsumptionDailyClient
 	// ItemPricing is the client for interacting with the ItemPricing builders.
 	ItemPricing *ItemPricingClient
 	// ItemTranslation is the client for interacting with the ItemTranslation builders.
@@ -148,6 +152,8 @@ type Tx struct {
 	StockCount *StockCountClient
 	// StockCountLine is the client for interacting with the StockCountLine builders.
 	StockCountLine *StockCountLineClient
+	// StockLevelEvent is the client for interacting with the StockLevelEvent builders.
+	StockLevelEvent *StockLevelEventClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
 	StockTransfer *StockTransferClient
 	// StockTransferLine is the client for interacting with the StockTransferLine builders.
@@ -328,6 +334,7 @@ func (tx *Tx) init() {
 	tx.Bundle = NewBundleClient(tx.config)
 	tx.BundleComponent = NewBundleComponentClient(tx.config)
 	tx.Consumption = NewConsumptionClient(tx.config)
+	tx.ConsumptionLine = NewConsumptionLineClient(tx.config)
 	tx.Contract = NewContractClient(tx.config)
 	tx.ContractOrderLink = NewContractOrderLinkClient(tx.config)
 	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
@@ -346,6 +353,7 @@ func (tx *Tx) init() {
 	tx.ItemAsset = NewItemAssetClient(tx.config)
 	tx.ItemBrand = NewItemBrandClient(tx.config)
 	tx.ItemCategory = NewItemCategoryClient(tx.config)
+	tx.ItemConsumptionDaily = NewItemConsumptionDailyClient(tx.config)
 	tx.ItemPricing = NewItemPricingClient(tx.config)
 	tx.ItemTranslation = NewItemTranslationClient(tx.config)
 	tx.ItemVariant = NewItemVariantClient(tx.config)
@@ -377,6 +385,7 @@ func (tx *Tx) init() {
 	tx.StockBreakdown = NewStockBreakdownClient(tx.config)
 	tx.StockCount = NewStockCountClient(tx.config)
 	tx.StockCountLine = NewStockCountLineClient(tx.config)
+	tx.StockLevelEvent = NewStockLevelEventClient(tx.config)
 	tx.StockTransfer = NewStockTransferClient(tx.config)
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)
 	tx.Supplier = NewSupplierClient(tx.config)

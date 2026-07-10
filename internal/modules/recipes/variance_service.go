@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
-	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
+	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	entfcv "github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 )
@@ -91,24 +91,35 @@ func (s *VarianceService) CalculatePeriodVariance(ctx context.Context, tenantID 
 		soldQty = map[string]float64{}
 	}
 
-	// 3. Load consumption records for the period to compute actual cost.
-	consumptions, err := s.client.Consumption.Query().
+	// 3. Sum actual ingredient cost per recipe from ConsumptionLine — the normalized,
+	// recipe-attributed rows RecordConsumption writes alongside the flattened Consumption
+	// JSON blob (see stock/consumption_lines.go). Grouping by recipe_sku and summing
+	// total_cost (a per-line quantity × cost_price-at-consumption-time snapshot) gives a
+	// real actual cost per recipe — the previous implementation matched Consumption.items
+	// (ingredient SKUs) against recipe SKUs, which only ever matched a recipe by
+	// coincidence since BOM explosion writes ingredient SKUs, never the recipe's own SKU.
+	var actualRows []struct {
+		RecipeSku string  `json:"recipe_sku"`
+		Cost      float64 `json:"sum"`
+	}
+	if err := s.client.ConsumptionLine.Query().
 		Where(
-			entconsumption.TenantID(tenantID),
-			entconsumption.ProcessedAtGTE(start),
-			entconsumption.ProcessedAtLTE(end),
+			entconsumptionline.TenantID(tenantID),
+			entconsumptionline.ConsumedAtGTE(start),
+			entconsumptionline.ConsumedAtLTE(end),
+			entconsumptionline.RecipeIDNotNil(),
+			entconsumptionline.Theoretical(false),
 		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("variance: load consumptions: %w", err)
+		GroupBy(entconsumptionline.FieldRecipeSku).
+		Aggregate(ent.Sum(entconsumptionline.FieldTotalCost)).
+		Scan(ctx, &actualRows); err != nil {
+		return nil, fmt.Errorf("variance: sum consumption lines: %w", err)
 	}
 
-	// Build SKU → total consumed quantity from Consumption records.
-	actualConsumed := map[string]float64{}
-	for _, c := range consumptions {
-		for _, it := range c.Items {
-			actualConsumed[it.SKU] += it.Quantity
-		}
+	// Build SKU → actual ingredient cost incurred for that recipe in the period.
+	actualCostBySKU := make(map[string]float64, len(actualRows))
+	for _, row := range actualRows {
+		actualCostBySKU[row.RecipeSku] = row.Cost
 	}
 
 	// 4. For each recipe with sales, compute theoretical and actual costs.
@@ -126,15 +137,12 @@ func (s *VarianceService) CalculatePeriodVariance(ctx context.Context, tenantID 
 			theoreticalCost = qty * *r.CostPerPortion
 		}
 
-		// Actual cost: sum consumed ingredient costs.
-		// For simplicity we track actual as consumed qty × ingredient cost_price via stock adjustments.
-		// Here we use Consumption records tagged with recipe SKU when available.
-		actualCost := actualConsumed[sku] * func() float64 {
-			if r.CostPerPortion != nil {
-				return *r.CostPerPortion
-			}
-			return 0
-		}()
+		// Actual cost: real ingredient cost incurred for this recipe in the period, summed
+		// from ConsumptionLine (each line's quantity × cost_price snapshotted at the
+		// moment it was consumed — see §3 above). A recipe with sales but zero actual
+		// cost here genuinely had no attributed ConsumptionLine rows yet (e.g. sold before
+		// this attribution shipped, or fully non-depleting) rather than a broken lookup.
+		actualCost := actualCostBySKU[sku]
 
 		var variancePct float64
 		if theoreticalCost > 0 {
