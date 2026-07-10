@@ -11,12 +11,14 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/pagination"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
@@ -45,7 +47,10 @@ type purchaseOrderDTO struct {
 //	@Tags         Procurement
 //	@Produce      json
 //	@Param        search  query     string  false  "Filter by PO number or supplier name"
-//	@Success      200     {array}   purchaseOrderDTO
+//	@Param        status  query     string  false  "Filter by status"
+//	@Param        page    query     int     false  "Page number (1-based)"
+//	@Param        limit   query     int     false  "Page size (max 100)"
+//	@Success      200     {object}  map[string]interface{}
 //	@Failure      400     {object}  map[string]string
 //	@Failure      500     {object}  map[string]string
 //	@Security     bearerAuth
@@ -56,13 +61,26 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
-	search := r.URL.Query().Get("search")
+	p := pagination.Parse(r)
 
-	orders, err := h.orm.PurchaseOrder.Query().
-		Where(entpurchaseorder.TenantID(tenantID)).
+	q := h.orm.PurchaseOrder.Query().Where(entpurchaseorder.TenantID(tenantID))
+	if s := r.URL.Query().Get("status"); s != "" {
+		q = q.Where(entpurchaseorder.StatusEQ(entpurchaseorder.Status(s)))
+	}
+	if search := strings.TrimSpace(r.URL.Query().Get("search")); search != "" {
+		q = q.Where(entpurchaseorder.Or(
+			entpurchaseorder.PoNumberContainsFold(search),
+			entpurchaseorder.HasSupplierWith(entsupplier.NameContainsFold(search)),
+		))
+	}
+
+	total, _ := q.Clone().Count(r.Context())
+	orders, err := q.
 		WithSupplier().
 		WithWarehouse().
-		Order(entpurchaseorder.ByCreatedAt()).
+		Order(ent.Desc(entpurchaseorder.FieldCreatedAt)).
+		Limit(p.Limit).
+		Offset(p.Offset).
 		All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list purchase orders")
@@ -78,13 +96,6 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		warehouseName := ""
 		if o.Edges.Warehouse != nil {
 			warehouseName = o.Edges.Warehouse.Name
-		}
-		if search != "" {
-			needle := strings.ToLower(search)
-			if !strings.Contains(strings.ToLower(o.PoNumber), needle) &&
-				!strings.Contains(strings.ToLower(supplierName), needle) {
-				continue
-			}
 		}
 		dto := purchaseOrderDTO{
 			ID:                        o.ID,
@@ -105,7 +116,7 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		}
 		result = append(result, dto)
 	}
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
 }
 
 // GetPurchaseOrder handles GET /inventory/purchase-orders/{poID}.
