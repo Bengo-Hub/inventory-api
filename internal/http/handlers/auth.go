@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
@@ -20,15 +23,50 @@ type AuthHandler struct {
 	logger      *zap.Logger
 	rbacService *rbac.Service
 	orm         *ent.Client
+	authURL     string
+	internalKey string
+	http        *http.Client
 }
 
-// NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(logger *zap.Logger, rbacService *rbac.Service, orm *ent.Client) *AuthHandler {
+// NewAuthHandler creates a new AuthHandler. authURL/internalKey let /auth/me forward the
+// email-verification block from auth-api so the UI can show the graduated verify banner.
+func NewAuthHandler(logger *zap.Logger, rbacService *rbac.Service, orm *ent.Client, authURL, internalKey string) *AuthHandler {
 	return &AuthHandler{
 		logger:      logger.Named("auth.Handler"),
 		rbacService: rbacService,
 		orm:         orm,
+		authURL:     authURL,
+		internalKey: internalKey,
+		http:        &http.Client{Timeout: 5 * time.Second},
 	}
+}
+
+// fetchEmailVerification returns auth-api's computed email-verification block for the user
+// (opaque JSON, forwarded verbatim to the UI). Best-effort: returns nil on any error so
+// /auth/me never fails because of it.
+func (h *AuthHandler) fetchEmailVerification(ctx context.Context, userID uuid.UUID) json.RawMessage {
+	if h.authURL == "" || h.internalKey == "" {
+		return nil
+	}
+	url := strings.TrimRight(h.authURL, "/") + "/api/v1/s2s/users/" + userID.String() + "/email-verification"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("X-API-Key", h.internalKey)
+	resp, err := h.http.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	var raw json.RawMessage
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return nil
+	}
+	return raw
 }
 
 // MeResponse is the payload returned by GET /auth/me.
@@ -45,6 +83,9 @@ type MeResponse struct {
 	// when the user had none, so the UI never loads an empty outlet while the tenant has one.
 	OutletID   string `json:"outlet_id,omitempty"`
 	OutletName string `json:"outlet_name,omitempty"`
+	// EmailVerification is auth-api's computed graduated verify state, forwarded verbatim so
+	// the UI can render the same banner as the accounts portal.
+	EmailVerification json.RawMessage `json:"email_verification,omitempty"`
 }
 
 // Me handles GET /auth/me.
@@ -132,6 +173,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		IsSuperUser:     claims.IsSuperuser() || isAdmin,
 		OutletID:        outletID,
 		OutletName:      outletName,
+		EmailVerification: h.fetchEmailVerification(r.Context(), userID),
 	})
 }
 

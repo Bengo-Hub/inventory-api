@@ -169,7 +169,7 @@ func New(ctx context.Context) (*App, error) {
 	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService, rbacRepo)
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
-	authHandler := handlers.NewAuthHandler(log, rbacService, ormClient)
+	authHandler := handlers.NewAuthHandler(log, rbacService, ormClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey)
 
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
