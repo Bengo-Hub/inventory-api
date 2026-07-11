@@ -87,7 +87,7 @@ type paymentConfirmedEnvelope struct {
 			UnitPrice float64        `json:"unit_price"`
 			Metadata  map[string]any `json:"metadata"`
 		} `json:"lines"`
-	} `json:"data"`
+	} `json:"payload"` // shared-events nests business fields under `payload`, not `data`
 }
 
 func (c *TicketIssuanceConsumer) handleMessage(msg *nats.Msg) {
