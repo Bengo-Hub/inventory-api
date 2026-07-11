@@ -27,6 +27,13 @@ func (p *painter) drawFooter(d *PurchaseOrderDoc, fY float64) {
 		p.pdf.SetX(leftX)
 		p.pdf.MultiCell(contentW, 3.2, p.tr(meta), "", "C", false)
 	}
+	// Platform-owner (Codevertex) advertisement — shown on every inventory document.
+	p.pdf.SetX(leftX)
+	p.pdf.SetFont("Helvetica", "B", 6.4)
+	p.pdf.MultiCell(contentW, 3.0, p.tr(providerFooterLead), "", "C", false)
+	p.pdf.SetX(leftX)
+	p.pdf.SetFont("Helvetica", "", 6.0)
+	p.pdf.MultiCell(contentW, 3.0, p.tr(providerFooterContact), "", "C", false)
 }
 
 func footerMeta(b Branding) string {
