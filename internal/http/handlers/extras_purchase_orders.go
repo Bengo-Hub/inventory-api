@@ -322,8 +322,9 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 
 	var total float64
 	for _, l := range req.LineItems {
-		total += float64(l.Quantity) * l.UnitCost
+		total += roundDecimal(l.Quantity * l.UnitCost)
 	}
+	total = roundDecimal(total)
 
 	// Configurable per-tenant document number (e.g. PO-260625-000001). Falls back to the legacy
 	// timestamp form only if the sequence service is unavailable, so creation never fails on it.
@@ -376,7 +377,7 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 			SetItemID(l.ItemID).
 			SetQuantityOrdered(l.Quantity).
 			SetUnitPrice(l.UnitCost).
-			SetTotalPrice(float64(l.Quantity) * l.UnitCost).
+			SetTotalPrice(roundDecimal(l.Quantity * l.UnitCost)).
 			SetNillableUnitID(l.UnitID).
 			Save(r.Context())
 		if err != nil {
@@ -458,7 +459,7 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 	}
 	var total float64
 	for _, l := range req.LineItems {
-		lineTotal := float64(l.Quantity) * l.UnitCost
+		lineTotal := roundDecimal(l.Quantity * l.UnitCost)
 		total += lineTotal
 		if _, err = tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).SetItemID(l.ItemID).SetQuantityOrdered(l.Quantity).
@@ -469,7 +470,7 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 			return
 		}
 	}
-	upd := tx.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(total).SetNotes(req.Notes)
+	upd := tx.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(roundDecimal(total)).SetNotes(req.Notes)
 	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
 		if t, e := time.Parse("2006-01-02", *req.ExpectedDate); e == nil {
 			upd = upd.SetExpectedDate(t)
