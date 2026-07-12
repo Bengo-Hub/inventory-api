@@ -90,6 +90,34 @@ type paymentConfirmedEnvelope struct {
 	} `json:"payload"` // shared-events nests business fields under `payload`, not `data`
 }
 
+// parseAttendees decodes the per-line `attendees` metadata (a JSON array of {name,email})
+// set by the storefront checkout into typed Attendee values. Tolerant of the map[string]any
+// shape JSON unmarshalling produces; returns nil when absent/malformed so issuance falls back
+// to a single buyer-named ticket for the line quantity.
+func parseAttendees(v any) []tickets.Attendee {
+	arr, ok := v.([]any)
+	if !ok || len(arr) == 0 {
+		return nil
+	}
+	out := make([]tickets.Attendee, 0, len(arr))
+	for _, el := range arr {
+		m, ok := el.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := m["name"].(string)
+		email, _ := m["email"].(string)
+		if name == "" && email == "" {
+			continue
+		}
+		out = append(out, tickets.Attendee{Name: name, Email: email})
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 func (c *TicketIssuanceConsumer) handleMessage(msg *nats.Msg) {
 	ctx := context.Background()
 
@@ -144,6 +172,7 @@ func (c *TicketIssuanceConsumer) handleMessage(msg *nats.Msg) {
 
 		tierID, _ := line.Metadata["tier_id"].(string)
 		tierName, _ := line.Metadata["tier_name"].(string)
+		attendees := parseAttendees(line.Metadata["attendees"])
 		oid := orderID
 		if _, err := c.ticketsSvc.IssueTicket(ctx, tenantID, tickets.IssueInput{
 			EventItemID: evItem.ID,
@@ -151,6 +180,7 @@ func (c *TicketIssuanceConsumer) handleMessage(msg *nats.Msg) {
 			TierID:      tierID,
 			TierName:    tierName,
 			Quantity:    line.Quantity,
+			Attendees:   attendees,
 			UnitPrice:   line.UnitPrice,
 			BuyerName:   env.Data.CustomerName,
 			BuyerEmail:  env.Data.CustomerEmail,
