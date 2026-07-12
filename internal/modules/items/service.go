@@ -129,14 +129,17 @@ type ItemDTO struct {
 	MetaDescription  string `json:"meta_description,omitempty"`  // SEO
 	CountryOfOrigin  string `json:"country_of_origin,omitempty"` // customs / marketplace compliance
 	HSCode           string `json:"hs_code,omitempty"`           // customs tariff code
-	IsReturnable     bool   `json:"is_returnable"`               // customer return allowed
+	// Pointers so a partial update (a client that doesn't send them) never clobbers the
+	// stored flag, and so create can distinguish "unset" (use schema default) from an
+	// explicit false — same rationale as NonBillable below. A plain bool can't do either.
+	IsReturnable *bool `json:"is_returnable,omitempty"` // customer return allowed
 	// Non-billable: never charged at POS even when a selling price exists (free
 	// accompaniments like ugali, consumable supplies like tissue/packaging); stock still
 	// deducts. Pointer so partial updates never clobber the stored flag.
 	NonBillable      *bool `json:"non_billable,omitempty"`
 	ReturnWindowDays *int  `json:"return_window_days,omitempty"` // nil = tenant default
-	AllowBackorder   bool  `json:"allow_backorder"`              // order when out of stock
-	IsDiscontinued   bool  `json:"is_discontinued"`              // hidden from new listings, stock still sellable
+	AllowBackorder   *bool `json:"allow_backorder,omitempty"`    // order when out of stock
+	IsDiscontinued   *bool `json:"is_discontinued,omitempty"`    // hidden from new listings, stock still sellable
 	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
 	// HasVariants is always populated; Variants is populated when variants are eager-loaded
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
@@ -677,11 +680,11 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		MetaDescription:         i.MetaDescription,
 		CountryOfOrigin:         i.CountryOfOrigin,
 		HSCode:                  i.HsCode,
-		IsReturnable:            i.IsReturnable,
+		IsReturnable:            boolPtr(i.IsReturnable),
 		NonBillable:             boolPtr(i.NonBillable),
 		ReturnWindowDays:        i.ReturnWindowDays,
-		AllowBackorder:          i.AllowBackorder,
-		IsDiscontinued:          i.IsDiscontinued,
+		AllowBackorder:          boolPtr(i.AllowBackorder),
+		IsDiscontinued:          boolPtr(i.IsDiscontinued),
 		ImageURL:                s.resolveMediaURL(i.ImageURL),
 		Tags:                    i.Tags,
 		Metadata:                i.Metadata,
@@ -1667,9 +1670,10 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.Model != "" {
 		createBuilder = createBuilder.SetModel(dto.Model)
 	}
-	// E-commerce attributes (optional). is_returnable is intentionally NOT set here so the
-	// schema default (true) applies — a `bool` DTO can't distinguish "unset" from false.
-	// non_billable is a pointer for exactly that reason: set only when the client sent it.
+	// E-commerce attributes (optional). is_returnable/allow_backorder/is_discontinued and
+	// non_billable are all pointers: set only when the client sent them, so an omitted flag
+	// falls through to the ent schema default (e.g. is_returnable defaults true) instead of
+	// being forced to false by a zero-valued bool.
 	if dto.NonBillable != nil {
 		createBuilder = createBuilder.SetNonBillable(*dto.NonBillable)
 	}
@@ -1702,8 +1706,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	}
 	createBuilder = createBuilder.
 		SetNillableReturnWindowDays(dto.ReturnWindowDays).
-		SetAllowBackorder(dto.AllowBackorder).
-		SetIsDiscontinued(dto.IsDiscontinued)
+		SetNillableIsReturnable(dto.IsReturnable).
+		SetNillableAllowBackorder(dto.AllowBackorder).
+		SetNillableIsDiscontinued(dto.IsDiscontinued)
 	if dto.Barcode != "" {
 		createBuilder = createBuilder.SetBarcode(dto.Barcode)
 	}
@@ -2044,13 +2049,17 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		updateBuilder = updateBuilder.SetStockTrackingMode(item.StockTrackingMode(dto.StockTrackingMode))
 	}
 	// E-commerce attributes — set only when present so a partial update (e.g. an
-	// edit form that doesn't yet carry these) never clobbers existing values. The
-	// boolean flags (is_returnable/allow_backorder/is_discontinued) are deliberately
-	// omitted from the update path for the same reason until the edit UI sends them.
-	// non_billable is a pointer, so presence is explicit and safe to apply.
+	// edit form that doesn't carry these) never clobbers existing values. The boolean
+	// flags (is_returnable/allow_backorder/is_discontinued) and non_billable are all
+	// pointers, so presence is explicit: SetNillable applies them only when the client
+	// actually sent a value, leaving stored values untouched otherwise.
 	if dto.NonBillable != nil {
 		updateBuilder = updateBuilder.SetNonBillable(*dto.NonBillable)
 	}
+	updateBuilder = updateBuilder.
+		SetNillableIsReturnable(dto.IsReturnable).
+		SetNillableAllowBackorder(dto.AllowBackorder).
+		SetNillableIsDiscontinued(dto.IsDiscontinued)
 	if dto.GTIN != "" {
 		updateBuilder = updateBuilder.SetGtin(dto.GTIN)
 	}
