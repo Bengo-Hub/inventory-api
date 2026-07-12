@@ -31,7 +31,16 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 	return &Service{client: client, log: log.Named("tickets.service")}
 }
 
-// IssueInput is the payload to issue one ticket (covering `Quantity` seats).
+// Attendee is a single named ticket-holder (collected per ticket at checkout).
+type Attendee struct {
+	Name  string `json:"name,omitempty"`
+	Email string `json:"email,omitempty"`
+}
+
+// IssueInput is the payload to issue tickets for one event line. Without Attendees it issues a
+// single row covering `Quantity` seats under the buyer; with Attendees it issues one row per
+// attendee (each seat named with its own holder name/email), which powers per-attendee ticket
+// emails and individual check-in.
 type IssueInput struct {
 	EventItemID uuid.UUID      `json:"event_item_id"`
 	OrderID     *uuid.UUID     `json:"order_id,omitempty"`
@@ -41,6 +50,7 @@ type IssueInput struct {
 	BuyerName   string         `json:"buyer_name,omitempty"`
 	BuyerEmail  string         `json:"buyer_email,omitempty"`
 	Quantity    int            `json:"quantity,omitempty"`
+	Attendees   []Attendee     `json:"attendees,omitempty"`
 	UnitPrice   float64        `json:"unit_price,omitempty"`
 	Currency    string         `json:"currency,omitempty"`
 	ValidFrom   *time.Time     `json:"valid_from,omitempty"`
@@ -91,6 +101,11 @@ func (s *Service) IssueTicket(ctx context.Context, tenantID uuid.UUID, in IssueI
 	qty := in.Quantity
 	if qty <= 0 {
 		qty = 1
+	}
+	// Per-attendee issuance: when named attendees are supplied, the seat count is the number of
+	// attendees (one ticket row each). Capacity accounting below uses this effective qty.
+	if len(in.Attendees) > 0 {
+		qty = len(in.Attendees)
 	}
 	currency := in.Currency
 	if currency == "" {
@@ -158,66 +173,97 @@ func (s *Service) IssueTicket(ctx context.Context, tenantID uuid.UUID, in IssueI
 		}
 	}
 
-	code, cerr := generateTicketCode()
-	if cerr != nil {
-		err = fmt.Errorf("tickets: generate code: %w", cerr)
-		return nil, err
+	// Build the per-seat holder list. Without named attendees this is a single row covering the
+	// whole quantity under the buyer; with attendees it's one row per attendee (seat qty 1 each),
+	// named with the attendee's own name/email so each seat gets its own ticket + check-in.
+	type seat struct {
+		name  string
+		email string
+		qty   int
+	}
+	var seats []seat
+	if len(in.Attendees) > 0 {
+		for _, a := range in.Attendees {
+			name, email := a.Name, a.Email
+			if name == "" {
+				name = in.BuyerName
+			}
+			if email == "" {
+				email = in.BuyerEmail
+			}
+			seats = append(seats, seat{name: name, email: email, qty: 1})
+		}
+	} else {
+		seats = []seat{{name: in.BuyerName, email: in.BuyerEmail, qty: qty}}
 	}
 
-	create := tx.Ticket.Create().
-		SetTenantID(tenantID).
-		SetEventItemID(in.EventItemID).
-		SetCode(code).
-		SetQuantity(qty).
-		SetUnitPrice(in.UnitPrice).
-		SetTotalPrice(in.UnitPrice*float64(qty)).
-		SetCurrency(currency).
-		SetStatus(entticket.StatusIssued)
-	if in.OrderID != nil {
-		create = create.SetOrderID(*in.OrderID)
-	}
-	if in.TierID != "" {
-		create = create.SetTierID(in.TierID)
-	}
-	if in.TierName != "" {
-		create = create.SetTierName(in.TierName)
-	}
-	if in.BuyerID != nil {
-		create = create.SetBuyerID(*in.BuyerID)
-	}
-	if in.BuyerName != "" {
-		create = create.SetBuyerName(in.BuyerName)
-	}
-	if in.BuyerEmail != "" {
-		create = create.SetBuyerEmail(in.BuyerEmail)
-	}
-	if in.ValidFrom != nil {
-		create = create.SetValidFrom(*in.ValidFrom)
-	}
-	if in.ValidUntil != nil {
-		create = create.SetValidUntil(*in.ValidUntil)
-	}
-	if in.Metadata != nil {
-		create = create.SetMetadata(in.Metadata)
-	}
+	issued := make([]*ent.Ticket, 0, len(seats))
+	for _, st := range seats {
+		code, cerr := generateTicketCode()
+		if cerr != nil {
+			err = fmt.Errorf("tickets: generate code: %w", cerr)
+			return nil, err
+		}
 
-	ticket, err := create.Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("tickets: create ticket: %w", err)
+		create := tx.Ticket.Create().
+			SetTenantID(tenantID).
+			SetEventItemID(in.EventItemID).
+			SetCode(code).
+			SetQuantity(st.qty).
+			SetUnitPrice(in.UnitPrice).
+			SetTotalPrice(in.UnitPrice*float64(st.qty)).
+			SetCurrency(currency).
+			SetStatus(entticket.StatusIssued)
+		if in.OrderID != nil {
+			create = create.SetOrderID(*in.OrderID)
+		}
+		if in.TierID != "" {
+			create = create.SetTierID(in.TierID)
+		}
+		if in.TierName != "" {
+			create = create.SetTierName(in.TierName)
+		}
+		if in.BuyerID != nil {
+			create = create.SetBuyerID(*in.BuyerID)
+		}
+		if st.name != "" {
+			create = create.SetBuyerName(st.name)
+		}
+		if st.email != "" {
+			create = create.SetBuyerEmail(st.email)
+		}
+		if in.ValidFrom != nil {
+			create = create.SetValidFrom(*in.ValidFrom)
+		}
+		if in.ValidUntil != nil {
+			create = create.SetValidUntil(*in.ValidUntil)
+		}
+		if in.Metadata != nil {
+			create = create.SetMetadata(in.Metadata)
+		}
+
+		var ticket *ent.Ticket
+		ticket, err = create.Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("tickets: create ticket: %w", err)
+		}
+		issued = append(issued, ticket)
+
+		// Emit per ticket so each seat/attendee triggers its own downstream ticket email.
+		if err = s.emit(ctx, tx, tenantID, ticket, "ticket.issued"); err != nil {
+			return nil, err
+		}
 	}
 
 	if _, err = tx.Item.UpdateOneID(in.EventItemID).SetBookedCapacity(booked + qty).Save(ctx); err != nil {
 		return nil, fmt.Errorf("tickets: increment booked_capacity: %w", err)
 	}
 
-	if err = s.emit(ctx, tx, tenantID, ticket, "ticket.issued"); err != nil {
-		return nil, err
-	}
-
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("tickets: commit: %w", err)
 	}
-	return ticket, nil
+	// Return the first issued ticket as the representative (callers only need success + a handle).
+	return issued[0], nil
 }
 
 // GetByCode fetches a ticket by its code within a tenant.
