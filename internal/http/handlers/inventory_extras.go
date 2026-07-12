@@ -148,7 +148,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	// Purchase Orders — mutations require the purchase_orders subscription feature.
 	// (Only POST/PUT are gated: they pass through the group's auth so claims are present.
 	// GET list/detail stay open like other inventory reads.)
-	feat := authclient.RequireFeature("purchase_orders")
+	feat := authclient.RequireFeatureCode("purchase_orders")
 	r.Get("/inventory/purchase-orders", h.ListPurchaseOrders)
 	r.Get("/inventory/purchase-orders/{poID}", h.GetPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementAdd)).Post("/inventory/purchase-orders", h.CreatePurchaseOrder)

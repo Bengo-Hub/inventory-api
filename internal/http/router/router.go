@@ -261,7 +261,7 @@ func New(
 						})
 					})
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
-					g.Use(authclient.RequireActiveSubscriptionForMutations())
+					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
@@ -335,7 +335,7 @@ func New(
 						})
 					})
 					// Subscription gate for mutations
-					g.Use(authclient.RequireActiveSubscriptionForMutations())
+					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)

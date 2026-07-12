@@ -234,13 +234,13 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/availability/bom", h.GetBOMAvailability)
 
 		// Stock adjustments — requires stock_tracking feature
-		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
-		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
-		inv.With(authclient.RequireFeature("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
 		// GET is exempt from the group-level auth (public/S2S reads), so opt back into
 		// auth here to populate claims before the feature check — otherwise logged-in
 		// users hit a spurious 401 "missing claims".
-		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeature("stock_tracking")).Get("/adjustments", h.ListAdjustments)
+		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/adjustments", h.ListAdjustments)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
@@ -304,10 +304,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermUnitsDelete)).Delete("/units/{unitID}", h.DeleteUnit)
 
 		// CSV bulk import (legacy — items only) — requires bulk_import feature
-		inv.With(authclient.RequireFeature("bulk_import"), perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
+		inv.With(authclient.RequireFeatureCode("bulk_import"), perm(rbac.PermItemsAdd)).Post("/items/import", h.ImportItems)
 		// Multi-format bulk import (CSV/XLSX — items, recipes, modifiers, stock) — requires bulk_import feature
-		inv.With(authclient.RequireFeature("bulk_import"), perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
-		inv.With(authclient.RequireFeature("bulk_import")).Get("/import-template", h.ImportTemplate)
+		inv.With(authclient.RequireFeatureCode("bulk_import"), perm(rbac.PermItemsAdd)).Post("/bulk-import", h.BulkImport)
+		inv.With(authclient.RequireFeatureCode("bulk_import")).Get("/import-template", h.ImportTemplate)
 		// Composite menu-item create: item + recipe + ingredients + modifiers in one call
 		inv.With(perm(rbac.PermItemsAdd)).Post("/items/menu-item", h.CreateMenuItemComposite)
 
