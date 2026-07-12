@@ -480,9 +480,10 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	totalRebate := 0.0
 	for _, pl := range poLines {
 		if pl.RebatePercent > 0 {
-			totalRebate += pl.QuantityReceived * pl.UnitPrice * pl.RebatePercent / 100.0
+			totalRebate += roundDecimal(pl.QuantityReceived * pl.UnitPrice * pl.RebatePercent / 100.0)
 		}
 	}
+	totalRebate = roundDecimal(totalRebate)
 
 	// Enriched goods_receipt.posted payload: treasury's per-GR vendor-bill subscriber needs
 	// goods_receipt_id/gr_number/po_id/supplier_*/received_amount + per-GR lines (it was getting
