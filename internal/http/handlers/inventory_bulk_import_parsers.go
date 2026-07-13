@@ -8,13 +8,32 @@ import (
 	"time"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// loadWarehouseMap returns a lower-cased code/name → ID map for the tenant's warehouses, so
+// InitialStock rows can target a specific branch by warehouse_code (preferred — matches the
+// auto-synced outlet code exactly) or warehouse_name.
+func (h *InventoryHandler) loadWarehouseMap(r *http.Request, tenantID uuid.UUID) map[string]uuid.UUID {
+	whs, err := h.orm.Warehouse.Query().Where(entwarehouse.TenantID(tenantID)).All(r.Context())
+	if err != nil {
+		return map[string]uuid.UUID{}
+	}
+	m := make(map[string]uuid.UUID, len(whs)*2)
+	for _, w := range whs {
+		m[strings.ToLower(strings.TrimSpace(w.Code))] = w.ID
+		m[strings.ToLower(strings.TrimSpace(w.Name))] = w.ID
+	}
+	return m
+}
 
 // resolveOrCreateModifierGroup returns the group UUID for (itemID, groupName),
 // creating it if it doesn't exist. Re-entrant: if a unique-constraint error fires
@@ -407,13 +426,25 @@ func (h *InventoryHandler) parseXLSXModifiers(
 }
 
 // parseXLSXInitialStock processes the "InitialStock" sheet.
-// Rows: item_sku | warehouse_name | quantity | lot_number | expiry_date
-// defaultWarehouse is used when a row's warehouse_name cell is empty.
+// Rows: item_sku | warehouse_code | warehouse_name | quantity | lot_number | expiry_date
+// defaultWarehouse (a code or name) is used when a row has neither warehouse_code nor
+// warehouse_name.
+//
+// warehouse_code/warehouse_name is resolved against a REAL warehouse via whMap and passed
+// through to AdjustStock as WarehouseID, and the "current balance" used to compute the delta
+// is looked up AT THAT SPECIFIC WAREHOUSE. Previously this used
+// items.Service.GetStockAvailability, which is tenant+item scoped only (no warehouse
+// filter — it takes whichever InventoryBalance row happens to be `.First()`) and never
+// passed a WarehouseID to AdjustStock at all, so every row silently landed on the same one
+// warehouse regardless of what the sheet said — a single-branch tenant never noticed, but a
+// multi-warehouse import (opening stock across N branches for the same item) would corrupt
+// every warehouse but the first one touched.
 func (h *InventoryHandler) parseXLSXInitialStock(
 	r *http.Request,
 	tenantID uuid.UUID,
 	rows [][]string,
 	defaultWarehouse string,
+	whMap map[string]uuid.UUID,
 ) importResult {
 	colMap := xlsxColMap(rows)
 	var res importResult
@@ -425,37 +456,65 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		col := xlsxRowToColFn(row, colMap)
 
 		itemSKU := col(nil, "item_sku")
-		qtyStr  := col(nil, "quantity")
-		whName  := col(nil, "warehouse_name")
+		qtyStr := col(nil, "quantity")
+		whRef := col(nil, "warehouse_code")
+		if whRef == "" {
+			whRef = col(nil, "warehouse_name")
+		}
+		if whRef == "" {
+			whRef = defaultWarehouse
+		}
 		lotNumber := col(nil, "lot_number")
 		expiryStr := col(nil, "expiry_date")
-		if whName == "" {
-			whName = defaultWarehouse
-		}
 		if itemSKU == "" || qtyStr == "" {
 			continue
 		}
 		qty, err := strconv.ParseFloat(qtyStr, 64)
-		if err != nil || qty <= 0 {
+		if err != nil {
+			continue
+		}
+		if whRef == "" {
+			res.Failed++
+			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: no warehouse_code/warehouse_name given and no default warehouse set", itemSKU))
+			continue
+		}
+		whID, ok := whMap[strings.ToLower(strings.TrimSpace(whRef))]
+		if !ok {
+			res.Failed++
+			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: warehouse %q not found for this tenant", itemSKU, whRef))
 			continue
 		}
 
-		// Get current balance to compute the delta.
-		avail, stockErr := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, itemSKU)
-		if stockErr != nil {
+		itm, itemErr := h.orm.Item.Query().
+			Where(entitem.TenantID(tenantID), entitem.Sku(itemSKU)).
+			Only(r.Context())
+		if itemErr != nil {
 			res.Failed++
 			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: item not found for stock adjustment", itemSKU))
 			continue
 		}
 
-		delta := qty - avail.OnHand
+		// Current on-hand AT THIS WAREHOUSE ONLY (0 if no balance row exists there yet).
+		currentOnHand := 0.0
+		if bal, balErr := h.orm.InventoryBalance.Query().
+			Where(
+				entinventorybalance.TenantID(tenantID),
+				entinventorybalance.ItemID(itm.ID),
+				entinventorybalance.WarehouseID(whID),
+			).
+			First(r.Context()); balErr == nil {
+			currentOnHand = bal.OnHand
+		}
+
+		delta := qty - currentOnHand
 		if delta == 0 {
 			res.Updated++ // already at target
 		} else if _, adjErr := h.stockSvc.AdjustStock(r.Context(), tenantID, stock.AdjustStockRequest{
-			SKU:        itemSKU,
-			Adjustment: delta,
-			Reason:     "opening_balance",
-			Notes:      "Bulk import opening stock",
+			SKU:         itemSKU,
+			Adjustment:  delta,
+			Reason:      "opening_balance",
+			Notes:       "Bulk import opening stock",
+			WarehouseID: whID,
 		}); adjErr != nil {
 			res.Failed++
 			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: stock adjustment: %s", itemSKU, adjErr.Error()))
@@ -471,21 +530,21 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 			lotExists, _ := h.orm.InventoryLot.Query().
 				Where(
 					entinventorylot.TenantID(tenantID),
-					entinventorylot.ItemID(avail.ItemID),
-					entinventorylot.WarehouseID(avail.WarehouseID),
+					entinventorylot.ItemID(itm.ID),
+					entinventorylot.WarehouseID(whID),
 					entinventorylot.LotNumber(lotNumber),
 				).Exist(r.Context())
 			if !lotExists {
 				lc := h.orm.InventoryLot.Create().
 					SetTenantID(tenantID).
-					SetItemID(avail.ItemID).
-					SetWarehouseID(avail.WarehouseID).
+					SetItemID(itm.ID).
+					SetWarehouseID(whID).
 					SetLotNumber(lotNumber).
 					SetQuantity(qty)
 				if exp := parseTimePtr(expiryStr); exp != nil {
 					lc = lc.SetExpiryDate(*exp)
-				} else if it, e := h.orm.Item.Get(r.Context(), avail.ItemID); e == nil && it.ShelfLifeDays != nil && *it.ShelfLifeDays > 0 {
-					lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *it.ShelfLifeDays))
+				} else if itm.ShelfLifeDays != nil && *itm.ShelfLifeDays > 0 {
+					lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *itm.ShelfLifeDays))
 				}
 				if _, lerr := lc.Save(r.Context()); lerr != nil {
 					res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: lot create: %s", itemSKU, lerr.Error()))

@@ -189,7 +189,8 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 5: InitialStock ─────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("InitialStock"); sheetErr == nil && len(rows) > 1 {
-		result.Stock = h.parseXLSXInitialStock(r, tenantID, rows, defaultWarehouse)
+		whMap := h.loadWarehouseMap(r, tenantID)
+		result.Stock = h.parseXLSXInitialStock(r, tenantID, rows, defaultWarehouse, whMap)
 	}
 
 	h.log.Info("bulk import complete",
@@ -415,6 +416,17 @@ func buildItemDTOFromRow(
 	}
 	if sp := parseFloat(col(row, "selling_price")); sp != nil {
 		dto.SuggestedPrice = sp
+	}
+	// Retail/Wholesale tier pricing: these guardrail fields are already wired end-to-end
+	// (CreateItem → applyGuardrailTierPrices → EnsureGuardrailTierPrices materializes
+	// Retail=max_selling_price / Wholesale=min_selling_price as real ItemPricing rows,
+	// auto-creating either tier if it doesn't exist yet) — bulk import just needed to
+	// populate them from the sheet, which it never did before.
+	if v := parseFloat(col(row, "min_selling_price")); v != nil {
+		dto.MinSellingPrice = v
+	}
+	if v := parseFloat(col(row, "max_selling_price")); v != nil {
+		dto.MaxSellingPrice = v
 	}
 
 	// Category / Unit resolution by name
