@@ -24,7 +24,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 	// ── Sheet: Items ──────────────────────────────────────────────────────────
 	itemHeaders := []string{
 		"sku", "name", "type", "description", "category_name", "unit_name",
-		"cost_price", "selling_price", "is_perishable", "track_lots",
+		"cost_price", "selling_price", "min_selling_price", "max_selling_price", "is_perishable", "track_lots",
 		"reorder_level", "reorder_quantity", "barcode", "tags", "image_url",
 		"requires_age_verification", "is_active", "initial_quantity", "warehouse_name",
 		// Extended (full Item alignment)
@@ -39,7 +39,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 	itemExample := []any{
 		"INGR-BEEF-STEAK", "Beef steak (sirloin)", "INGREDIENT",
 		"Butchery retail", "Raw Ingredients", "g",
-		0.9375, "", "TRUE", "FALSE",
+		0.9375, "", "", "", "TRUE", "FALSE",
 		100, 500, "", "halal", "",
 		"FALSE", "TRUE", 0, "",
 		"FOOD_BEVERAGE", "", "FALSE",
@@ -52,7 +52,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 	itemExampleGoods := []any{
 		"SOD001", "Soda 300ml", "GOODS",
 		"Resale beverage", "Soft Drink", "each",
-		35, 150, "FALSE", "FALSE",
+		35, 150, 130, 150, "FALSE", "FALSE",
 		10, 50, "", "", "",
 		"FALSE", "TRUE", 24, "",
 		"FOOD_BEVERAGE", "", "FALSE",
@@ -65,7 +65,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 	itemExampleRecipe := []any{
 		"BEE006", "Beef Grilled (200g)", "RECIPE",
 		"Grilled sirloin steak", "Main Dishes", "portion",
-		227.73, 900, "FALSE", "FALSE",
+		227.73, 900, "", "", "FALSE", "FALSE",
 		0, 0, "", "", "",
 		"FALSE", "TRUE", 0, "",
 		"FOOD_BEVERAGE", "", "FALSE",
@@ -112,10 +112,12 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 	writeXLSXRow(xl, "ModifierOptions", 2, moExample)
 
 	// ── Sheet: InitialStock ───────────────────────────────────────────────────
+	// One row per (item, warehouse) — an item stocked at multiple branches needs multiple
+	// rows, each targeting a different warehouse_code/warehouse_name.
 	isHeaders := []string{
-		"item_sku", "warehouse_name", "quantity", "lot_number", "expiry_date",
+		"item_sku", "warehouse_code", "warehouse_name", "quantity", "lot_number", "expiry_date",
 	}
-	isExample := []any{"INGR-BEEF-STEAK", "Main Warehouse", 5000, "", ""}
+	isExample := []any{"INGR-BEEF-STEAK", "MAIN", "Main Warehouse", 5000, "", ""}
 	xl.NewSheet("InitialStock")
 	writeXLSXHeader(xl, "InitialStock", isHeaders)
 	writeXLSXRow(xl, "InitialStock", 2, isExample)
@@ -130,7 +132,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"RecipeIngredients", "BOM lines. recipe_sku must exist in Items. quantity = per-serving."},
 		{"ModifierGroups", "Modifier groups attached to items (e.g. 'Pizza Extras', 'Burger Extras')."},
 		{"ModifierOptions", "Individual options inside a group. price_adjustment is the delta in KES."},
-		{"InitialStock", "Opening stock quantities (absolute, not delta). Leave blank if using Items.initial_quantity."},
+		{"InitialStock", "Opening stock quantities (absolute, not delta), one row per (item, warehouse). warehouse_code (matches the outlet's code exactly, e.g. MAIN) is preferred over warehouse_name — each is resolved against a REAL warehouse, so a typo'd/unknown warehouse fails that row with a clear error rather than silently landing on the wrong branch. Leave blank if using Items.initial_quantity (single-warehouse only)."},
 		{""},
 		{"ITEMS — FIELD REFERENCE"},
 		{"Field", "Required", "Type", "Notes"},
@@ -142,6 +144,8 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"unit_name", "NO", "string", "Auto-created if not found. E.g. g, ml, kg, each, portion"},
 		{"cost_price", "NO", "number", "Purchase/EP cost in KES."},
 		{"selling_price", "NO", "number", "Suggested sell price in KES (stored as suggested_price on the item)."},
+		{"min_selling_price", "NO", "number", "Wholesale/bulk price. Materialized as the tenant's WHOLESALE pricing-tier price (tier auto-created if missing). Leave blank to skip wholesale pricing for this item."},
+		{"max_selling_price", "NO", "number", "Retail ceiling price. Materialized as the tenant's default RETAIL pricing-tier price (tier auto-created if missing) — this is what POS/ordering actually charges, taking priority over selling_price."},
 		{"is_perishable", "NO", "TRUE/FALSE", "Default FALSE."},
 		{"track_lots", "NO", "TRUE/FALSE", "Default FALSE."},
 		{"reorder_level", "NO", "integer", "Trigger reorder when stock falls below this."},
@@ -150,7 +154,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"tags", "NO", "string", "Comma-separated. E.g. halal,vegan"},
 		{"requires_age_verification", "NO", "TRUE/FALSE", "Set TRUE for alcohol/tobacco."},
 		{"is_active", "NO", "TRUE/FALSE", "Default TRUE."},
-		{"initial_quantity", "NO", "integer", "Set opening stock when creating new items."},
+		{"initial_quantity", "NO", "integer", "Set opening stock when creating new items. Single-warehouse only — for multiple branches, use the InitialStock sheet instead (one row per item per warehouse)."},
 		{"warehouse_name", "NO", "string", "Leave blank to use primary warehouse."},
 		{"use_case", "NO", "string", "RETAIL | PHARMACY | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY. Drives POS classification."},
 		{"tax_code_id", "NO", "string", "KRA eTIMS tax category code (e.g. VAT16). Resolved against treasury tax codes."},
