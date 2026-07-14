@@ -14,6 +14,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 )
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
@@ -75,6 +76,19 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 	if warehouseIDStr != "" {
 		if wid, e := uuid.Parse(warehouseIDStr); e == nil {
 			balQuery = balQuery.Where(entinventorybalance.WarehouseID(wid))
+		}
+	} else if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+		// Outlet drill-down (X-Outlet-ID) with no explicit warehouse filter: scope the stock
+		// list to the selected outlet's warehouses (+ shared/HQ warehouses with no outlet link),
+		// mirroring the ListItems outlet separation — selecting a branch anywhere in the app
+		// must show that branch's stock, not the whole tenant's.
+		if outletID, e := uuid.Parse(outletStr); e == nil {
+			balQuery = balQuery.Where(entinventorybalance.HasWarehouseWith(
+				entwarehouse.Or(
+					entwarehouse.OutletIDEQ(outletID),
+					entwarehouse.OutletIDIsNil(),
+				),
+			))
 		}
 	}
 

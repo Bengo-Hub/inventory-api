@@ -175,9 +175,12 @@ type StockAdjustmentDTO struct {
 type ListAdjustmentsRequest struct {
 	ItemID      uuid.UUID `json:"item_id,omitempty"`
 	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
-	Reason      string    `json:"reason,omitempty"`
-	DateFrom    time.Time `json:"date_from,omitempty"`
-	DateTo      time.Time `json:"date_to,omitempty"`
+	// WarehouseIDs restricts to a set of warehouses (outlet drill-down: the selected outlet's
+	// warehouses + shared ones). Ignored when the explicit WarehouseID is set.
+	WarehouseIDs []uuid.UUID `json:"warehouse_ids,omitempty"`
+	Reason       string      `json:"reason,omitempty"`
+	DateFrom     time.Time   `json:"date_from,omitempty"`
+	DateTo       time.Time   `json:"date_to,omitempty"`
 }
 
 // AdjustStock adjusts stock levels for an item, creates an audit trail, and publishes events.
@@ -386,6 +389,8 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 	}
 	if req.WarehouseID != uuid.Nil {
 		q = q.Where(stockadjustment.WarehouseID(req.WarehouseID))
+	} else if len(req.WarehouseIDs) > 0 {
+		q = q.Where(stockadjustment.WarehouseIDIn(req.WarehouseIDs...))
 	}
 	if req.Reason != "" {
 		reason := stockadjustment.Reason(req.Reason)
