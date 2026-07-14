@@ -2,10 +2,12 @@ package items
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -169,6 +171,48 @@ func (s *Service) EnsureGuardrailTierPrices(ctx context.Context, tenantID, itemI
 		}
 	}
 	return nil
+}
+
+// SetSellingPriceBySKU repoints an item's customer-facing selling price everywhere the POS
+// price-resolve reads it: the Retail/max guardrail plus the materialized RETAIL tier row,
+// and — when the Wholesale/min guardrail was equal to the old ceiling (single-price item)
+// or would now exceed the new price — the min guardrail and WHOLESALE tier row too.
+// The corrective tool behind pos-api's "also update the catalog price" line edit; RECIPE
+// items must additionally update their recipe via recipes.SetSellingPriceByItem (the
+// recipe price outranks tier rows for those).
+func (s *Service) SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*ItemDTO, error) {
+	if price < 0 {
+		return nil, fmt.Errorf("items: price cannot be negative")
+	}
+	itm, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(sku)).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: item %q: %w", sku, err)
+	}
+
+	collapseMin := itm.MinSellingPrice != nil &&
+		(*itm.MinSellingPrice > price ||
+			(itm.MaxSellingPrice != nil && *itm.MinSellingPrice == *itm.MaxSellingPrice))
+
+	upd := s.client.Item.UpdateOneID(itm.ID).SetMaxSellingPrice(price)
+	if collapseMin {
+		upd = upd.SetMinSellingPrice(price)
+	}
+	itm, err = upd.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: set selling price for %q: %w", sku, err)
+	}
+
+	minP := 0.0
+	if collapseMin {
+		minP = price
+	}
+	if err := s.EnsureGuardrailTierPrices(ctx, tenantID, itm.ID, price, minP); err != nil {
+		return nil, fmt.Errorf("items: upsert tier prices for %q: %w", sku, err)
+	}
+	dto := s.mapToDTO(itm)
+	return dto, nil
 }
 
 // upsertItemTierPrice upserts the all-outlets (outlet_id IS NULL) ItemPricing row for the given

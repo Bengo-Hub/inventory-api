@@ -71,6 +71,12 @@ type RecipeIngredientDTO struct {
 	// so a line written in another unit (e.g. ml against a per-L item) must be
 	// converted before multiplying — clients need this to preview line costs.
 	ItemUnitID     *uuid.UUID `json:"item_unit_id,omitempty"`
+	// Content-per-unit bridge from the ingredient item (a 700 ml bottle stocked in
+	// btl → 700 + "ml"). Clients need this to know a cross-dimension line (30 ml of
+	// a btl-stocked bottle) deducts fractional stock units instead of flagging it
+	// as un-deductible — mirrors stock.ConvertToStockUnit.
+	ItemUnitContentQty *float64 `json:"item_unit_content_qty,omitempty"`
+	ItemUnitContentUom string   `json:"item_unit_content_uom,omitempty"`
 	Quantity       float64    `json:"quantity"`
 	UnitOfMeasure  string     `json:"unit_of_measure"`
 	UnitID         *uuid.UUID `json:"unit_id,omitempty"`
@@ -498,6 +504,8 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 			ingDTO.ItemName = ing.Edges.Item.Name
 			ingDTO.ItemCostPrice = ing.Edges.Item.CostPrice
 			ingDTO.ItemUnitID = ing.Edges.Item.UnitID
+			ingDTO.ItemUnitContentQty = ing.Edges.Item.UnitContentQty
+			ingDTO.ItemUnitContentUom = ing.Edges.Item.UnitContentUom
 			for _, tag := range ing.Edges.Item.Tags {
 				if strings.HasPrefix(tag, "contains_") {
 					allergenSet[tag] = struct{}{}

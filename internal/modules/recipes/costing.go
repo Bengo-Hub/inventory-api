@@ -27,6 +27,32 @@ func foodCostStatus(fcPct, target float64) string {
 	return "OK - healthy"
 }
 
+// SetSellingPriceByItem updates the selling price of the active recipe linked to an item.
+// RECIPE items are priced by their recipe at the POS (the recipe price outranks raw tier
+// rows), so a catalog price correction must land here or it silently never takes effect.
+// Recomputes food_cost_pct/status from the stored cost_per_portion. Returns false when
+// the item has no active recipe (nothing to update — not an error).
+func (s *Service) SetSellingPriceByItem(ctx context.Context, tenantID, itemID uuid.UUID, price float64) (bool, error) {
+	r, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.ItemID(itemID), recipe.IsActive(true)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("recipes: load recipe for item %s: %w", itemID, err)
+	}
+	upd := s.client.Recipe.UpdateOneID(r.ID).SetSellingPrice(price)
+	if r.CostPerPortion != nil && price > 0 {
+		fcPct := *r.CostPerPortion / price
+		upd = upd.SetFoodCostPct(fcPct).SetStatus(foodCostStatus(fcPct, defaultFoodCostTarget))
+	}
+	if _, err := upd.Save(ctx); err != nil {
+		return false, fmt.Errorf("recipes: set selling price for recipe %s: %w", r.ID, err)
+	}
+	return true, nil
+}
+
 // RecalculateRecipeCosts computes and persists total_cost, cost_per_portion, and suggested_price
 // for a recipe by summing ingredient cost_prices (and sub-recipe cost_per_portion) and applying
 // the target (or tenant-default) margin.
