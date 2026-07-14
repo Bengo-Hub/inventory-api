@@ -15,8 +15,9 @@ import (
 
 // cascadeIngredientStockOut publishes stock.out for any RECIPE-type items whose
 // recipe can no longer be produced because itemID (an ingredient) hit zero.
+// notification carries the tenant's alert-email opt-in block (computed once by the caller).
 // Best-effort: errors are logged, the parent transaction is never aborted.
-func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) {
+func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, notification map[string]any) {
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().
@@ -47,7 +48,7 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 			"warehouse_id": warehouseID.String(),
 			"outlet_id":    outletID,
 			"reason":       "ingredient_depleted",
-			"notification": map[string]any{"target": "staff"},
+			"notification": notification,
 		})
 		s.log.Info("cascade stock.out: recipe item blocked",
 			zap.String("recipe_sku", recipeItem.Sku),
@@ -106,7 +107,11 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 	if bal, berr := tx.InventoryBalance.Query().
 		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
 		First(ctx); berr == nil {
-		s.persistStockLevelEvent(ctx, tx, tenantID, itemID, warehouseID, outletUUID, "restocked", bal.Available, bal.ReorderLevel)
+		// Skip when the alert state machine is already re-armed (checkAndPublishLowStock
+		// may have just recorded the recovery edge for this same receipt).
+		if s.lastStockLevelState(ctx, tx, tenantID, itemID, warehouseID) != stockBandOK {
+			s.persistStockLevelEvent(ctx, tx, tenantID, itemID, warehouseID, outletUUID, "restocked", bal.Available, bal.ReorderLevel)
+		}
 	}
 	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
 		r, err := tx.Recipe.Query().

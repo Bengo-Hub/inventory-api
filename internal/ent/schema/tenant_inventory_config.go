@@ -39,11 +39,13 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Int("expiry_warning_days").
 			Default(30).
 			Comment("Days before expiry to trigger expiry-approaching alert"),
-		// Notification toggles
+		// Notification toggles — OPT-IN (default false): alert emails to the tenant contact
+		// are noisy for tenants that don't maintain ingredient balances, and burst volume
+		// from a busy outlet has tripped the shared SMTP provider's abuse detection.
 		field.Bool("enable_low_stock_notifications").
-			Default(true),
+			Default(false),
 		field.Bool("enable_expiry_notifications").
-			Default(true),
+			Default(false),
 		field.String("notification_email").
 			Optional().
 			Nillable().

@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
@@ -545,12 +546,40 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 	if s.itemNonDepletingLazy(ctx, itm) {
 		return
 	}
+
+	// Band the balance and compare against the last recorded band so events fire only on
+	// a TRANSITION (ok→low, low→out, out→low, …), never repeatedly while the balance sits
+	// in the same band. Without this, every sale of an already-depleted ingredient
+	// republished stock.out — hundreds of duplicate alert emails a day per busy tenant.
+	state := stockBandOK
+	if bal.Available <= 0 {
+		state = stockBandOut
+	} else if bal.Available <= float64(bal.ReorderLevel) {
+		state = stockBandLow
+	}
+	prev := s.lastStockLevelState(ctx, tx, tenantID, itm.ID, warehouseID)
+
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
 	var outletUUID *uuid.UUID
 	if oid, perr := uuid.Parse(outletID); perr == nil {
 		outletUUID = &oid
 	}
-	if bal.Available <= 0 {
+
+	if state == stockBandOK {
+		// Leaving an alerted band re-arms the state machine (and gives reports the
+		// recovery edge of the phase band). No outbox event: goods-receipt paths already
+		// publish stock.updated/stock.in for catalog consumers.
+		if prev == stockBandLow || prev == stockBandOut {
+			s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "restocked", bal.Available, bal.ReorderLevel)
+		}
+		return
+	}
+	if state == prev {
+		return
+	}
+
+	notification := s.stockAlertNotification(ctx, tenantID)
+	if state == stockBandOut {
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "out", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
 			"tenant_id":    tenantID.String(),
@@ -560,17 +589,15 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			"available":    bal.Available,
 			"warehouse_id": warehouseID.String(),
 			"outlet_id":    outletID,
-			"notification": map[string]any{
-				"target": "staff",
-			},
+			"notification": notification,
 		})
 		s.log.Warn("stock-out alert published",
 			zap.String("sku", itm.Sku),
 			zap.Float64("available", bal.Available),
 		)
 		// Cascade: mark recipe items as unavailable when an ingredient runs out.
-		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID)
-	} else if bal.Available <= float64(bal.ReorderLevel) {
+		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID, notification)
+	} else {
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "low", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
 			"tenant_id":     tenantID.String(),
@@ -580,9 +607,8 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			"available":     bal.Available,
 			"reorder_level": bal.ReorderLevel,
 			"warehouse_id":  warehouseID.String(),
-			"notification": map[string]any{
-				"target": "staff",
-			},
+			"outlet_id":     outletID,
+			"notification":  notification,
 		})
 		s.log.Info("low stock alert published",
 			zap.String("sku", itm.Sku),
@@ -590,6 +616,52 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			zap.Int("reorder_level", bal.ReorderLevel),
 		)
 	}
+}
+
+// Stock bands for the low/out alert state machine. Values match the StockLevelEvent
+// event_type enum so lastStockLevelState can compare them directly.
+const (
+	stockBandOK  = "ok"
+	stockBandLow = "low"
+	stockBandOut = "out"
+)
+
+// lastStockLevelState returns the band recorded by the most recent StockLevelEvent for the
+// item+warehouse ("low"/"out"), "ok" after a restock, or "" when no event exists yet.
+func (s *Service) lastStockLevelState(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) string {
+	ev, err := tx.StockLevelEvent.Query().
+		Where(
+			stocklevelevent.TenantID(tenantID),
+			stocklevelevent.ItemID(itemID),
+			stocklevelevent.WarehouseID(warehouseID),
+		).
+		Order(ent.Desc(stocklevelevent.FieldOccurredAt)).
+		First(ctx)
+	if err != nil {
+		return ""
+	}
+	if ev.EventType == stocklevelevent.EventTypeRestocked {
+		return stockBandOK
+	}
+	return string(ev.EventType)
+}
+
+// stockAlertNotification builds the notification block embedded in stock.low/stock.out
+// events. Alert emails are OPT-IN: enabled only when the tenant's inventory config has
+// enable_low_stock_notifications set — a missing config row means no emails. The optional
+// notification_email overrides the tenant contact address downstream.
+func (s *Service) stockAlertNotification(ctx context.Context, tenantID uuid.UUID) map[string]any {
+	n := map[string]any{"target": "staff", "enabled": false}
+	cfg, err := s.client.TenantInventoryConfig.Query().
+		Where(enttenantcfg.TenantID(tenantID)).Only(ctx)
+	if err != nil || cfg == nil {
+		return n
+	}
+	n["enabled"] = cfg.EnableLowStockNotifications
+	if cfg.NotificationEmail != nil && *cfg.NotificationEmail != "" {
+		n["email"] = *cfg.NotificationEmail
+	}
+	return n
 }
 
 // resolveWarehouseID returns the provided warehouse ID or the tenant's default warehouse.
