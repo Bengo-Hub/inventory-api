@@ -45,6 +45,7 @@ type ItemsServicer interface {
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
+	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
@@ -90,6 +91,9 @@ type RecipesServicer interface {
 	RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error
 	// AuditRecipeUnits lists existing recipe lines whose units cannot deduct stock.
 	AuditRecipeUnits(ctx context.Context, tenantID uuid.UUID) ([]recipes.UnitIssue, error)
+	// SetSellingPriceByItem updates the linked recipe's selling price (RECIPE items are
+	// priced by their recipe at the POS). Returns false when the item has no active recipe.
+	SetSellingPriceByItem(ctx context.Context, tenantID, itemID uuid.UUID, price float64) (bool, error)
 }
 
 // UnitsServicer defines the contract for unit management.
@@ -215,6 +219,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermItemsAdd)).Post("/items", h.CreateItem)
 		inv.Get("/items/{sku}", h.GetStockAvailability)
 		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
+		// Targeted price correction (guardrails + tier rows + recipe selling price) —
+		// called S2S by pos-api's "also update the catalog price" order-line edit.
+		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/price", h.SetItemPrice)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
 
@@ -1113,6 +1120,61 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+// SetItemPrice handles PATCH /v1/{tenant}/inventory/items/{sku}/price — a targeted
+// selling-price correction that lands everywhere the POS price-resolve reads: the item's
+// guardrails + RETAIL/WHOLESALE tier rows, and the linked recipe's selling_price for
+// RECIPE items (recipe price outranks tier rows there). Called S2S by pos-api when a
+// manager corrects a mispriced order line and opts to fix the catalog too.
+func (h *InventoryHandler) SetItemPrice(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	var req struct {
+		Price *float64 `json:"price"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Price == nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "price is required")
+		return
+	}
+	if *req.Price < 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_PRICE", "price cannot be negative")
+		return
+	}
+
+	dto, err := h.itemsSvc.SetSellingPriceBySKU(r.Context(), tenantID, sku, *req.Price)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+			return
+		}
+		h.log.Error("set item price failed", zap.Error(err), zap.String("sku", sku))
+		writeError(w, http.StatusInternalServerError, "PRICE_UPDATE_FAILED", err.Error())
+		return
+	}
+
+	recipeUpdated := false
+	if dto.Type == "RECIPE" && h.recipeSvc != nil {
+		recipeUpdated, err = h.recipeSvc.SetSellingPriceByItem(r.Context(), tenantID, dto.ID, *req.Price)
+		if err != nil {
+			// The item-side update already landed; report the partial failure rather than 500.
+			h.log.Warn("set recipe selling price failed", zap.Error(err), zap.String("sku", sku))
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"sku":            sku,
+		"price":          *req.Price,
+		"recipe_updated": recipeUpdated,
+	})
 }
 
 // AdjustStock handles POST /v1/{tenant}/inventory/adjust — adjusts stock levels for an item.
