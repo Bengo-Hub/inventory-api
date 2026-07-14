@@ -20,6 +20,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -1378,6 +1379,21 @@ func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		req.WarehouseID = whID
+	} else if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+		// Outlet drill-down (X-Outlet-ID) with no explicit warehouse filter: scope to the
+		// selected outlet's warehouses (+ shared ones with no outlet link), mirroring the
+		// stock-levels list and ListItems outlet separation.
+		if outletID, e := uuid.Parse(outletStr); e == nil {
+			whIDs, werr := h.orm.Warehouse.Query().
+				Where(
+					entwarehouse.TenantID(tenantID),
+					entwarehouse.Or(entwarehouse.OutletIDEQ(outletID), entwarehouse.OutletIDIsNil()),
+				).
+				IDs(r.Context())
+			if werr == nil && len(whIDs) > 0 {
+				req.WarehouseIDs = whIDs
+			}
+		}
 	}
 
 	if reason := r.URL.Query().Get("reason"); reason != "" {
