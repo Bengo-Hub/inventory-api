@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -430,6 +431,31 @@ func (h *InventorySettingsHandler) RegisterRoutes(r chi.Router) {
 	// details are verified before saving — one source of truth across services.
 	r.Get("/inventory/banks/{country}", h.ListBanks)
 	r.Get("/inventory/banks/resolve", h.ResolveBankAccount)
+	// KRA eTIMS code lists (proxied from treasury S2S, cached ~1h) — drive the item form's
+	// classification / packaging / quantity-unit dropdowns. ?type=&q=&limit=
+	r.Get("/inventory/etims/code-lists", h.ListEtimsCodeLists)
+}
+
+// ListEtimsCodeLists proxies treasury's cached KRA eTIMS code lists for form dropdowns.
+func (h *InventorySettingsHandler) ListEtimsCodeLists(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.treasury == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"codes":[],"total":0}`))
+		return
+	}
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	raw, err := h.treasury.GetEtimsCodeLists(r.Context(), tenantID, r.URL.Query().Get("type"), r.URL.Query().Get("q"), limit)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "CODE_LISTS_FAILED", "failed to load KRA code lists")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(raw)
 }
 
 // ListBanks proxies the Paystack bank list for a country via treasury S2S.
