@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -145,14 +146,15 @@ func (h *InventoryExtrasHandler) publishOutbox(ctx context.Context, tenantID uui
 }
 
 func (h *InventoryExtrasHandler) registerRequisitionRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
+	featGate := authclient.RequireFeatureCode("requisitions")
 	r.Get("/inventory/requisitions", h.ListRequisitions)
 	r.Get("/inventory/requisitions/{reqID}", h.GetRequisition)
-	r.With(perm(add)).Post("/inventory/requisitions", h.CreateRequisition)
-	r.With(perm(change)).Post("/inventory/requisitions/{reqID}/submit", h.SubmitRequisition)
-	r.With(perm(change)).Post("/inventory/requisitions/{reqID}/review", h.ReviewRequisition)
-	r.With(perm(change)).Post("/inventory/requisitions/{reqID}/approve", h.ApproveRequisition)
-	r.With(perm(change)).Post("/inventory/requisitions/{reqID}/reject", h.RejectRequisition)
-	r.With(perm(add)).Post("/inventory/requisitions/{reqID}/convert-to-po", h.ConvertRequisitionToPO)
+	r.With(featGate, perm(add)).Post("/inventory/requisitions", h.CreateRequisition)
+	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/submit", h.SubmitRequisition)
+	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/review", h.ReviewRequisition)
+	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/approve", h.ApproveRequisition)
+	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/reject", h.RejectRequisition)
+	r.With(featGate, perm(add)).Post("/inventory/requisitions/{reqID}/convert-to-po", h.ConvertRequisitionToPO)
 }
 
 // ListRequisitions handles GET /inventory/requisitions.

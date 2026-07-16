@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -51,13 +52,14 @@ func contractToDTO(c *ent.Contract) contractDTO {
 }
 
 func (h *InventoryExtrasHandler) registerContractRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
+	featGate := authclient.RequireFeatureCode("procurement_contracts")
 	r.Get("/inventory/contracts", h.ListContracts)
 	r.Get("/inventory/contracts/{contractID}", h.GetContract)
-	r.With(perm(add)).Post("/inventory/contracts", h.CreateContract)
-	r.With(perm(change)).Put("/inventory/contracts/{contractID}", h.UpdateContract)
-	r.With(perm(change)).Post("/inventory/contracts/{contractID}/activate", h.ActivateContract)
-	r.With(perm(change)).Post("/inventory/contracts/{contractID}/terminate", h.TerminateContract)
-	r.With(perm(change)).Post("/inventory/contracts/{contractID}/link-order", h.LinkContractOrder)
+	r.With(featGate, perm(add)).Post("/inventory/contracts", h.CreateContract)
+	r.With(featGate, perm(change)).Put("/inventory/contracts/{contractID}", h.UpdateContract)
+	r.With(featGate, perm(change)).Post("/inventory/contracts/{contractID}/activate", h.ActivateContract)
+	r.With(featGate, perm(change)).Post("/inventory/contracts/{contractID}/terminate", h.TerminateContract)
+	r.With(featGate, perm(change)).Post("/inventory/contracts/{contractID}/link-order", h.LinkContractOrder)
 }
 
 // ListContracts handles GET /inventory/contracts.

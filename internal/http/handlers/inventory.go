@@ -293,16 +293,19 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Events — SERVICE-type items with event_start_at set
 		inv.Get("/events", h.ListEventItems)
 
-		// Event ticketing (sell seats with capacity enforcement + check-in)
+		// Event ticketing (sell seats with capacity enforcement + check-in).
+		// Mutations are tier-gated by events_module (use-case PowerSuite: hospitality Gold);
+		// reads + the public PDF stay open so already-sold tickets keep working everywhere.
 		if h.ticketsSvc != nil {
+			eventsFeat := authclient.RequireFeatureCode("events_module")
 			inv.Get("/events/{id}/availability", h.GetEventAvailability)
 			// Public branded ticket PDF (with QR) by code — GET, no perm (the code is the secret).
 			inv.Get("/tickets/{code}/pdf", h.GetPublicTicketPDF)
 			inv.With(perm(rbac.PermTicketsView)).Get("/tickets", h.ListTickets)
 			inv.With(perm(rbac.PermTicketsView)).Get("/tickets/{code}", h.GetTicket)
-			inv.With(perm(rbac.PermTicketsAdd)).Post("/tickets", h.CreateTicket)
-			inv.With(perm(rbac.PermTicketsChange)).Post("/tickets/{code}/redeem", h.RedeemTicket)
-			inv.With(perm(rbac.PermTicketsChange)).Post("/tickets/{id}/cancel", h.CancelTicket)
+			inv.With(eventsFeat, perm(rbac.PermTicketsAdd)).Post("/tickets", h.CreateTicket)
+			inv.With(eventsFeat, perm(rbac.PermTicketsChange)).Post("/tickets/{code}/redeem", h.RedeemTicket)
+			inv.With(eventsFeat, perm(rbac.PermTicketsChange)).Post("/tickets/{id}/cancel", h.CancelTicket)
 		}
 
 		// Units (manage is platform-only; view is open)

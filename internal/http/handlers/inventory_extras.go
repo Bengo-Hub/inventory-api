@@ -24,15 +24,35 @@ import (
 
 // InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
 type InventoryExtrasHandler struct {
-	log          *zap.Logger
-	orm          *ent.Client
-	rbacSvc      *rbac.Service
-	bundleSvc    *bundles.Service
-	varianceSvc  *recipes.VarianceService
-	menuEngSvc   *recipes.MenuEngineeringService
-	reportsSvc   *reports.Service
-	docSvc       *documents.Service
-	stockSvc     *stock.Service
+	log         *zap.Logger
+	orm         *ent.Client
+	rbacSvc     *rbac.Service
+	bundleSvc   *bundles.Service
+	varianceSvc *recipes.VarianceService
+	menuEngSvc  *recipes.MenuEngineeringService
+	reportsSvc  *reports.Service
+	docSvc      *documents.Service
+	stockSvc    *stock.Service
+	// authForFeatureGet authenticates feature-gated GET routes. The tenant router group
+	// only authenticates non-GET requests, so a GET behind RequireFeatureCode must parse
+	// claims itself or every caller 401s (same gotcha inventory.go solves with
+	// requireAuthForFeatureGet).
+	authForFeatureGet func(http.Handler) http.Handler
+}
+
+// SetAuthForFeatureGets wires the auth middleware used in front of feature-gated GETs
+// (RequireAnyAuth: SSO or terminal PIN sessions).
+func (h *InventoryExtrasHandler) SetAuthForFeatureGets(mw func(http.Handler) http.Handler) {
+	h.authForFeatureGet = mw
+}
+
+// featureGetAuth returns the wired auth middleware or a pass-through (tests / setups
+// without auth keep prior behavior).
+func (h *InventoryExtrasHandler) featureGetAuth() func(http.Handler) http.Handler {
+	if h.authForFeatureGet == nil {
+		return func(next http.Handler) http.Handler { return next }
+	}
+	return h.authForFeatureGet
 }
 
 // SetDocService injects the document-generation service (PDF + numbering).
@@ -132,11 +152,13 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/stock", h.ListStock)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/stock/{sku}/reorder-config", h.UpdateReorderConfig)
 
-	// Lots & Batches
+	// Lots & Batches — tier-gated (pharmacy family all tiers; hosp/retail never; see
+	// docs/subscription-plans in subscriptions-api). Reads stay open per convention.
+	lotsFeat := authclient.RequireFeatureCode("lots_batches")
 	r.Get("/inventory/lots", h.ListLots)
-	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/lots", h.CreateLot)
-	r.With(perm(rbac.PermItemsChange)).Put("/inventory/lots/{lotID}", h.UpdateLot)
-	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/lots/{lotID}", h.DeleteLot)
+	r.With(lotsFeat, perm(rbac.PermItemsAdd)).Post("/inventory/lots", h.CreateLot)
+	r.With(lotsFeat, perm(rbac.PermItemsChange)).Put("/inventory/lots/{lotID}", h.UpdateLot)
+	r.With(lotsFeat, perm(rbac.PermItemsDelete)).Delete("/inventory/lots/{lotID}", h.DeleteLot)
 
 	// Suppliers
 	r.Get("/inventory/suppliers", h.ListSuppliers)
@@ -168,15 +190,21 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/bundles/{bundleID}", h.UpdateBundle)
 	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/bundles/{bundleID}", h.DeleteBundle)
 
-	// Reports
-	r.Get("/inventory/reports/food-cost-variance", h.FoodCostVarianceReport)
-	r.Get("/inventory/reports/food-cost-variance.pdf", h.FoodCostVarianceReportPDF)
-	r.Get("/inventory/reports/menu-engineering", h.MenuEngineeringReport)
-	r.Get("/inventory/reports/menu-engineering.pdf", h.MenuEngineeringReportPDF)
-	r.Get("/inventory/reports/ingredient-utilization/summary", h.IngredientUtilizationSummary)
-	r.Get("/inventory/reports/ingredient-utilization/timeseries", h.IngredientUtilizationTimeseries)
-	r.Get("/inventory/reports/ingredient-utilization/by-recipe", h.IngredientUtilizationByRecipe)
-	r.Get("/inventory/reports/ingredient-utilization.pdf", h.IngredientUtilizationReportPDF)
+	// Reports — the read IS the feature here, so the GETs are gated (unlike module reads):
+	// per-tier report gating from the use-case PowerSuite specs. "Ingredient Utilization"
+	// is being renamed "Stock Reconciliation" product-wide (routes kept for compatibility).
+	getAuth := h.featureGetAuth()
+	fcvFeat := authclient.RequireFeatureCode("report_food_cost_variance")
+	menuFeat := authclient.RequireFeatureCode("report_menu_engineering")
+	reconFeat := authclient.RequireFeatureCode("report_stock_reconciliation")
+	r.With(getAuth, fcvFeat).Get("/inventory/reports/food-cost-variance", h.FoodCostVarianceReport)
+	r.With(getAuth, fcvFeat).Get("/inventory/reports/food-cost-variance.pdf", h.FoodCostVarianceReportPDF)
+	r.With(getAuth, menuFeat).Get("/inventory/reports/menu-engineering", h.MenuEngineeringReport)
+	r.With(getAuth, menuFeat).Get("/inventory/reports/menu-engineering.pdf", h.MenuEngineeringReportPDF)
+	r.With(getAuth, reconFeat).Get("/inventory/reports/ingredient-utilization/summary", h.IngredientUtilizationSummary)
+	r.With(getAuth, reconFeat).Get("/inventory/reports/ingredient-utilization/timeseries", h.IngredientUtilizationTimeseries)
+	r.With(getAuth, reconFeat).Get("/inventory/reports/ingredient-utilization/by-recipe", h.IngredientUtilizationByRecipe)
+	r.With(getAuth, reconFeat).Get("/inventory/reports/ingredient-utilization.pdf", h.IngredientUtilizationReportPDF)
 
 	// Procurement (migrated from ERP procurement/*)
 	h.registerRequisitionRoutes(r, perm, rbac.PermProcurementAdd, rbac.PermProcurementChange)
@@ -194,6 +222,9 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Fixed assets register (migrated from ERP assets/*)
 	h.registerAssetRoutes(r, perm, rbac.PermAssetsAdd, rbac.PermAssetsChange, rbac.PermAssetsDelete)
+
+	// Warranty tracking for serialized items (retail use case, warranties feature)
+	h.registerWarrantyRoutes(r, perm)
 
 	// Approval matrix (rules + requests) gating purchase orders and requisitions
 	h.registerApprovalRoutes(r, perm)

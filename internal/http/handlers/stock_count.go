@@ -44,14 +44,16 @@ func (h *StockCountHandler) RegisterRoutes(r chi.Router) {
 		}
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
+	// Stock take is tier-gated (use-case PowerSuite: hosp/duka tier 2+, dawa tier 3).
+	featGate := authclient.RequireFeatureCode("stock_take")
 	r.Route("/inventory/stock-counts", func(sc chi.Router) {
 		sc.Get("/", h.List)
-		sc.With(perm(rbac.PermStockCountAdd)).Post("/", h.Create)
+		sc.With(featGate, perm(rbac.PermStockCountAdd)).Post("/", h.Create)
 		sc.Get("/{id}", h.Get)
-		sc.With(perm(rbac.PermStockCountChange)).Post("/{id}/lines", h.UpsertLine)
-		sc.With(perm(rbac.PermStockCountChange)).Post("/{id}/submit", h.Submit)
-		sc.With(perm(rbac.PermStockCountApprove)).Post("/{id}/approve", h.Approve)
-		sc.With(perm(rbac.PermStockCountChange)).Post("/{id}/cancel", h.Cancel)
+		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/lines", h.UpsertLine)
+		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/submit", h.Submit)
+		sc.With(featGate, perm(rbac.PermStockCountApprove)).Post("/{id}/approve", h.Approve)
+		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/cancel", h.Cancel)
 	})
 }
 
