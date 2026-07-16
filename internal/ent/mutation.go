@@ -36020,6 +36020,9 @@ type ItemMutation struct {
 	appendtags                 []string
 	tax_code_id                *string
 	tax_inclusive              *bool
+	etims_item_cls_cd          *string
+	etims_pkg_unit_cd          *string
+	etims_qty_unit_cd          *string
 	cost_price                 *float64
 	addcost_price              *float64
 	purchase_price             *float64
@@ -38421,6 +38424,153 @@ func (m *ItemMutation) ResetTaxInclusive() {
 	m.tax_inclusive = nil
 }
 
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (m *ItemMutation) SetEtimsItemClsCd(s string) {
+	m.etims_item_cls_cd = &s
+}
+
+// EtimsItemClsCd returns the value of the "etims_item_cls_cd" field in the mutation.
+func (m *ItemMutation) EtimsItemClsCd() (r string, exists bool) {
+	v := m.etims_item_cls_cd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEtimsItemClsCd returns the old "etims_item_cls_cd" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEtimsItemClsCd(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEtimsItemClsCd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEtimsItemClsCd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEtimsItemClsCd: %w", err)
+	}
+	return oldValue.EtimsItemClsCd, nil
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (m *ItemMutation) ClearEtimsItemClsCd() {
+	m.etims_item_cls_cd = nil
+	m.clearedFields[item.FieldEtimsItemClsCd] = struct{}{}
+}
+
+// EtimsItemClsCdCleared returns if the "etims_item_cls_cd" field was cleared in this mutation.
+func (m *ItemMutation) EtimsItemClsCdCleared() bool {
+	_, ok := m.clearedFields[item.FieldEtimsItemClsCd]
+	return ok
+}
+
+// ResetEtimsItemClsCd resets all changes to the "etims_item_cls_cd" field.
+func (m *ItemMutation) ResetEtimsItemClsCd() {
+	m.etims_item_cls_cd = nil
+	delete(m.clearedFields, item.FieldEtimsItemClsCd)
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (m *ItemMutation) SetEtimsPkgUnitCd(s string) {
+	m.etims_pkg_unit_cd = &s
+}
+
+// EtimsPkgUnitCd returns the value of the "etims_pkg_unit_cd" field in the mutation.
+func (m *ItemMutation) EtimsPkgUnitCd() (r string, exists bool) {
+	v := m.etims_pkg_unit_cd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEtimsPkgUnitCd returns the old "etims_pkg_unit_cd" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEtimsPkgUnitCd(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEtimsPkgUnitCd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEtimsPkgUnitCd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEtimsPkgUnitCd: %w", err)
+	}
+	return oldValue.EtimsPkgUnitCd, nil
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (m *ItemMutation) ClearEtimsPkgUnitCd() {
+	m.etims_pkg_unit_cd = nil
+	m.clearedFields[item.FieldEtimsPkgUnitCd] = struct{}{}
+}
+
+// EtimsPkgUnitCdCleared returns if the "etims_pkg_unit_cd" field was cleared in this mutation.
+func (m *ItemMutation) EtimsPkgUnitCdCleared() bool {
+	_, ok := m.clearedFields[item.FieldEtimsPkgUnitCd]
+	return ok
+}
+
+// ResetEtimsPkgUnitCd resets all changes to the "etims_pkg_unit_cd" field.
+func (m *ItemMutation) ResetEtimsPkgUnitCd() {
+	m.etims_pkg_unit_cd = nil
+	delete(m.clearedFields, item.FieldEtimsPkgUnitCd)
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (m *ItemMutation) SetEtimsQtyUnitCd(s string) {
+	m.etims_qty_unit_cd = &s
+}
+
+// EtimsQtyUnitCd returns the value of the "etims_qty_unit_cd" field in the mutation.
+func (m *ItemMutation) EtimsQtyUnitCd() (r string, exists bool) {
+	v := m.etims_qty_unit_cd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEtimsQtyUnitCd returns the old "etims_qty_unit_cd" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEtimsQtyUnitCd(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEtimsQtyUnitCd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEtimsQtyUnitCd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEtimsQtyUnitCd: %w", err)
+	}
+	return oldValue.EtimsQtyUnitCd, nil
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (m *ItemMutation) ClearEtimsQtyUnitCd() {
+	m.etims_qty_unit_cd = nil
+	m.clearedFields[item.FieldEtimsQtyUnitCd] = struct{}{}
+}
+
+// EtimsQtyUnitCdCleared returns if the "etims_qty_unit_cd" field was cleared in this mutation.
+func (m *ItemMutation) EtimsQtyUnitCdCleared() bool {
+	_, ok := m.clearedFields[item.FieldEtimsQtyUnitCd]
+	return ok
+}
+
+// ResetEtimsQtyUnitCd resets all changes to the "etims_qty_unit_cd" field.
+func (m *ItemMutation) ResetEtimsQtyUnitCd() {
+	m.etims_qty_unit_cd = nil
+	delete(m.clearedFields, item.FieldEtimsQtyUnitCd)
+}
+
 // SetCostPrice sets the "cost_price" field.
 func (m *ItemMutation) SetCostPrice(f float64) {
 	m.cost_price = &f
@@ -40385,7 +40535,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 67)
+	fields := make([]string, 0, 70)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -40526,6 +40676,15 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.tax_inclusive != nil {
 		fields = append(fields, item.FieldTaxInclusive)
+	}
+	if m.etims_item_cls_cd != nil {
+		fields = append(fields, item.FieldEtimsItemClsCd)
+	}
+	if m.etims_pkg_unit_cd != nil {
+		fields = append(fields, item.FieldEtimsPkgUnitCd)
+	}
+	if m.etims_qty_unit_cd != nil {
+		fields = append(fields, item.FieldEtimsQtyUnitCd)
 	}
 	if m.cost_price != nil {
 		fields = append(fields, item.FieldCostPrice)
@@ -40689,6 +40848,12 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.TaxCodeID()
 	case item.FieldTaxInclusive:
 		return m.TaxInclusive()
+	case item.FieldEtimsItemClsCd:
+		return m.EtimsItemClsCd()
+	case item.FieldEtimsPkgUnitCd:
+		return m.EtimsPkgUnitCd()
+	case item.FieldEtimsQtyUnitCd:
+		return m.EtimsQtyUnitCd()
 	case item.FieldCostPrice:
 		return m.CostPrice()
 	case item.FieldPurchasePrice:
@@ -40832,6 +40997,12 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTaxCodeID(ctx)
 	case item.FieldTaxInclusive:
 		return m.OldTaxInclusive(ctx)
+	case item.FieldEtimsItemClsCd:
+		return m.OldEtimsItemClsCd(ctx)
+	case item.FieldEtimsPkgUnitCd:
+		return m.OldEtimsPkgUnitCd(ctx)
+	case item.FieldEtimsQtyUnitCd:
+		return m.OldEtimsQtyUnitCd(ctx)
 	case item.FieldCostPrice:
 		return m.OldCostPrice(ctx)
 	case item.FieldPurchasePrice:
@@ -41209,6 +41380,27 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTaxInclusive(v)
+		return nil
+	case item.FieldEtimsItemClsCd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEtimsItemClsCd(v)
+		return nil
+	case item.FieldEtimsPkgUnitCd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEtimsPkgUnitCd(v)
+		return nil
+	case item.FieldEtimsQtyUnitCd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEtimsQtyUnitCd(v)
 		return nil
 	case item.FieldCostPrice:
 		v, ok := value.(float64)
@@ -41671,6 +41863,15 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldTaxCodeID) {
 		fields = append(fields, item.FieldTaxCodeID)
 	}
+	if m.FieldCleared(item.FieldEtimsItemClsCd) {
+		fields = append(fields, item.FieldEtimsItemClsCd)
+	}
+	if m.FieldCleared(item.FieldEtimsPkgUnitCd) {
+		fields = append(fields, item.FieldEtimsPkgUnitCd)
+	}
+	if m.FieldCleared(item.FieldEtimsQtyUnitCd) {
+		fields = append(fields, item.FieldEtimsQtyUnitCd)
+	}
 	if m.FieldCleared(item.FieldCostPrice) {
 		fields = append(fields, item.FieldCostPrice)
 	}
@@ -41816,6 +42017,15 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldTaxCodeID:
 		m.ClearTaxCodeID()
+		return nil
+	case item.FieldEtimsItemClsCd:
+		m.ClearEtimsItemClsCd()
+		return nil
+	case item.FieldEtimsPkgUnitCd:
+		m.ClearEtimsPkgUnitCd()
+		return nil
+	case item.FieldEtimsQtyUnitCd:
+		m.ClearEtimsQtyUnitCd()
 		return nil
 	case item.FieldCostPrice:
 		m.ClearCostPrice()
@@ -42013,6 +42223,15 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldTaxInclusive:
 		m.ResetTaxInclusive()
+		return nil
+	case item.FieldEtimsItemClsCd:
+		m.ResetEtimsItemClsCd()
+		return nil
+	case item.FieldEtimsPkgUnitCd:
+		m.ResetEtimsPkgUnitCd()
+		return nil
+	case item.FieldEtimsQtyUnitCd:
+		m.ResetEtimsQtyUnitCd()
 		return nil
 	case item.FieldCostPrice:
 		m.ResetCostPrice()
@@ -93030,6 +93249,7 @@ type UnitMutation struct {
 	name                      *string
 	abbreviation              *string
 	_type                     *string
+	kra_qty_unit_cd           *string
 	is_active                 *bool
 	created_at                *time.Time
 	updated_at                *time.Time
@@ -93283,6 +93503,55 @@ func (m *UnitMutation) ResetType() {
 	delete(m.clearedFields, unit.FieldType)
 }
 
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (m *UnitMutation) SetKraQtyUnitCd(s string) {
+	m.kra_qty_unit_cd = &s
+}
+
+// KraQtyUnitCd returns the value of the "kra_qty_unit_cd" field in the mutation.
+func (m *UnitMutation) KraQtyUnitCd() (r string, exists bool) {
+	v := m.kra_qty_unit_cd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKraQtyUnitCd returns the old "kra_qty_unit_cd" field's value of the Unit entity.
+// If the Unit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnitMutation) OldKraQtyUnitCd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKraQtyUnitCd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKraQtyUnitCd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKraQtyUnitCd: %w", err)
+	}
+	return oldValue.KraQtyUnitCd, nil
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (m *UnitMutation) ClearKraQtyUnitCd() {
+	m.kra_qty_unit_cd = nil
+	m.clearedFields[unit.FieldKraQtyUnitCd] = struct{}{}
+}
+
+// KraQtyUnitCdCleared returns if the "kra_qty_unit_cd" field was cleared in this mutation.
+func (m *UnitMutation) KraQtyUnitCdCleared() bool {
+	_, ok := m.clearedFields[unit.FieldKraQtyUnitCd]
+	return ok
+}
+
+// ResetKraQtyUnitCd resets all changes to the "kra_qty_unit_cd" field.
+func (m *UnitMutation) ResetKraQtyUnitCd() {
+	m.kra_qty_unit_cd = nil
+	delete(m.clearedFields, unit.FieldKraQtyUnitCd)
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *UnitMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -93533,7 +93802,7 @@ func (m *UnitMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnitMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.name != nil {
 		fields = append(fields, unit.FieldName)
 	}
@@ -93542,6 +93811,9 @@ func (m *UnitMutation) Fields() []string {
 	}
 	if m._type != nil {
 		fields = append(fields, unit.FieldType)
+	}
+	if m.kra_qty_unit_cd != nil {
+		fields = append(fields, unit.FieldKraQtyUnitCd)
 	}
 	if m.is_active != nil {
 		fields = append(fields, unit.FieldIsActive)
@@ -93566,6 +93838,8 @@ func (m *UnitMutation) Field(name string) (ent.Value, bool) {
 		return m.Abbreviation()
 	case unit.FieldType:
 		return m.GetType()
+	case unit.FieldKraQtyUnitCd:
+		return m.KraQtyUnitCd()
 	case unit.FieldIsActive:
 		return m.IsActive()
 	case unit.FieldCreatedAt:
@@ -93587,6 +93861,8 @@ func (m *UnitMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldAbbreviation(ctx)
 	case unit.FieldType:
 		return m.OldType(ctx)
+	case unit.FieldKraQtyUnitCd:
+		return m.OldKraQtyUnitCd(ctx)
 	case unit.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case unit.FieldCreatedAt:
@@ -93622,6 +93898,13 @@ func (m *UnitMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetType(v)
+		return nil
+	case unit.FieldKraQtyUnitCd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKraQtyUnitCd(v)
 		return nil
 	case unit.FieldIsActive:
 		v, ok := value.(bool)
@@ -93680,6 +93963,9 @@ func (m *UnitMutation) ClearedFields() []string {
 	if m.FieldCleared(unit.FieldType) {
 		fields = append(fields, unit.FieldType)
 	}
+	if m.FieldCleared(unit.FieldKraQtyUnitCd) {
+		fields = append(fields, unit.FieldKraQtyUnitCd)
+	}
 	return fields
 }
 
@@ -93700,6 +93986,9 @@ func (m *UnitMutation) ClearField(name string) error {
 	case unit.FieldType:
 		m.ClearType()
 		return nil
+	case unit.FieldKraQtyUnitCd:
+		m.ClearKraQtyUnitCd()
+		return nil
 	}
 	return fmt.Errorf("unknown Unit nullable field %s", name)
 }
@@ -93716,6 +94005,9 @@ func (m *UnitMutation) ResetField(name string) error {
 		return nil
 	case unit.FieldType:
 		m.ResetType()
+		return nil
+	case unit.FieldKraQtyUnitCd:
+		m.ResetKraQtyUnitCd()
 		return nil
 	case unit.FieldIsActive:
 		m.ResetIsActive()

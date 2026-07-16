@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -204,6 +206,30 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", "invalid request body")
 		return
+	}
+
+	// Alert/tracking toggles are plan-gated per the use-case PowerSuite specs
+	// (docs/subscription-plans in subscriptions-api): ENABLING one requires the
+	// matching subscription feature; disabling is always allowed. Exempt/demo/
+	// service-charge tenants pass via FeatureEnabled.
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		wantsLocked := func(v *bool, feature string) bool {
+			return v != nil && *v && !claims.FeatureEnabled(feature)
+		}
+		switch {
+		case wantsLocked(input.EnableLowStockNotifications, "stock_alerts"):
+			authclient.WriteFeatureLocked(w, "stock_alerts", "")
+			return
+		case wantsLocked(input.EnableExpiryNotifications, "expiry_alerts"):
+			authclient.WriteFeatureLocked(w, "expiry_alerts", "")
+			return
+		case wantsLocked(input.EnableLotTracking, "lots_batches"):
+			authclient.WriteFeatureLocked(w, "lots_batches", "")
+			return
+		case wantsLocked(input.EnableExpiryTracking, "batch_expiry_tracking"):
+			authclient.WriteFeatureLocked(w, "batch_expiry_tracking", "")
+			return
+		}
 	}
 
 	cfg, err := h.getOrCreate(r, tenantID)

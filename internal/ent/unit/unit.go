@@ -21,6 +21,8 @@ const (
 	FieldAbbreviation = "abbreviation"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldKraQtyUnitCd holds the string denoting the kra_qty_unit_cd field in the database.
+	FieldKraQtyUnitCd = "kra_qty_unit_cd"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -55,6 +57,7 @@ var Columns = []string{
 	FieldName,
 	FieldAbbreviation,
 	FieldType,
+	FieldKraQtyUnitCd,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -106,6 +109,11 @@ func ByAbbreviation(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByKraQtyUnitCd orders the results by the kra_qty_unit_cd field.
+func ByKraQtyUnitCd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKraQtyUnitCd, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

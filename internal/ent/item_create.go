@@ -659,6 +659,48 @@ func (_c *ItemCreate) SetNillableTaxInclusive(v *bool) *ItemCreate {
 	return _c
 }
 
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (_c *ItemCreate) SetEtimsItemClsCd(v string) *ItemCreate {
+	_c.mutation.SetEtimsItemClsCd(v)
+	return _c
+}
+
+// SetNillableEtimsItemClsCd sets the "etims_item_cls_cd" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEtimsItemClsCd(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetEtimsItemClsCd(*v)
+	}
+	return _c
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (_c *ItemCreate) SetEtimsPkgUnitCd(v string) *ItemCreate {
+	_c.mutation.SetEtimsPkgUnitCd(v)
+	return _c
+}
+
+// SetNillableEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEtimsPkgUnitCd(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetEtimsPkgUnitCd(*v)
+	}
+	return _c
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (_c *ItemCreate) SetEtimsQtyUnitCd(v string) *ItemCreate {
+	_c.mutation.SetEtimsQtyUnitCd(v)
+	return _c
+}
+
+// SetNillableEtimsQtyUnitCd sets the "etims_qty_unit_cd" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEtimsQtyUnitCd(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetEtimsQtyUnitCd(*v)
+	}
+	return _c
+}
+
 // SetCostPrice sets the "cost_price" field.
 func (_c *ItemCreate) SetCostPrice(v float64) *ItemCreate {
 	_c.mutation.SetCostPrice(v)
@@ -1665,6 +1707,18 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TaxInclusive(); ok {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
 		_node.TaxInclusive = value
+	}
+	if value, ok := _c.mutation.EtimsItemClsCd(); ok {
+		_spec.SetField(item.FieldEtimsItemClsCd, field.TypeString, value)
+		_node.EtimsItemClsCd = &value
+	}
+	if value, ok := _c.mutation.EtimsPkgUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsPkgUnitCd, field.TypeString, value)
+		_node.EtimsPkgUnitCd = &value
+	}
+	if value, ok := _c.mutation.EtimsQtyUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsQtyUnitCd, field.TypeString, value)
+		_node.EtimsQtyUnitCd = &value
 	}
 	if value, ok := _c.mutation.CostPrice(); ok {
 		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
@@ -2842,6 +2896,60 @@ func (u *ItemUpsert) SetTaxInclusive(v bool) *ItemUpsert {
 // UpdateTaxInclusive sets the "tax_inclusive" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateTaxInclusive() *ItemUpsert {
 	u.SetExcluded(item.FieldTaxInclusive)
+	return u
+}
+
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (u *ItemUpsert) SetEtimsItemClsCd(v string) *ItemUpsert {
+	u.Set(item.FieldEtimsItemClsCd, v)
+	return u
+}
+
+// UpdateEtimsItemClsCd sets the "etims_item_cls_cd" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEtimsItemClsCd() *ItemUpsert {
+	u.SetExcluded(item.FieldEtimsItemClsCd)
+	return u
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (u *ItemUpsert) ClearEtimsItemClsCd() *ItemUpsert {
+	u.SetNull(item.FieldEtimsItemClsCd)
+	return u
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (u *ItemUpsert) SetEtimsPkgUnitCd(v string) *ItemUpsert {
+	u.Set(item.FieldEtimsPkgUnitCd, v)
+	return u
+}
+
+// UpdateEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEtimsPkgUnitCd() *ItemUpsert {
+	u.SetExcluded(item.FieldEtimsPkgUnitCd)
+	return u
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (u *ItemUpsert) ClearEtimsPkgUnitCd() *ItemUpsert {
+	u.SetNull(item.FieldEtimsPkgUnitCd)
+	return u
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (u *ItemUpsert) SetEtimsQtyUnitCd(v string) *ItemUpsert {
+	u.Set(item.FieldEtimsQtyUnitCd, v)
+	return u
+}
+
+// UpdateEtimsQtyUnitCd sets the "etims_qty_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEtimsQtyUnitCd() *ItemUpsert {
+	u.SetExcluded(item.FieldEtimsQtyUnitCd)
+	return u
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (u *ItemUpsert) ClearEtimsQtyUnitCd() *ItemUpsert {
+	u.SetNull(item.FieldEtimsQtyUnitCd)
 	return u
 }
 
@@ -4180,6 +4288,69 @@ func (u *ItemUpsertOne) SetTaxInclusive(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateTaxInclusive() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTaxInclusive()
+	})
+}
+
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (u *ItemUpsertOne) SetEtimsItemClsCd(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsItemClsCd(v)
+	})
+}
+
+// UpdateEtimsItemClsCd sets the "etims_item_cls_cd" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEtimsItemClsCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsItemClsCd()
+	})
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (u *ItemUpsertOne) ClearEtimsItemClsCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsItemClsCd()
+	})
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (u *ItemUpsertOne) SetEtimsPkgUnitCd(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsPkgUnitCd(v)
+	})
+}
+
+// UpdateEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEtimsPkgUnitCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsPkgUnitCd()
+	})
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (u *ItemUpsertOne) ClearEtimsPkgUnitCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsPkgUnitCd()
+	})
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (u *ItemUpsertOne) SetEtimsQtyUnitCd(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsQtyUnitCd(v)
+	})
+}
+
+// UpdateEtimsQtyUnitCd sets the "etims_qty_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEtimsQtyUnitCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsQtyUnitCd()
+	})
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (u *ItemUpsertOne) ClearEtimsQtyUnitCd() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsQtyUnitCd()
 	})
 }
 
@@ -5749,6 +5920,69 @@ func (u *ItemUpsertBulk) SetTaxInclusive(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateTaxInclusive() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateTaxInclusive()
+	})
+}
+
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (u *ItemUpsertBulk) SetEtimsItemClsCd(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsItemClsCd(v)
+	})
+}
+
+// UpdateEtimsItemClsCd sets the "etims_item_cls_cd" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEtimsItemClsCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsItemClsCd()
+	})
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (u *ItemUpsertBulk) ClearEtimsItemClsCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsItemClsCd()
+	})
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (u *ItemUpsertBulk) SetEtimsPkgUnitCd(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsPkgUnitCd(v)
+	})
+}
+
+// UpdateEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEtimsPkgUnitCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsPkgUnitCd()
+	})
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (u *ItemUpsertBulk) ClearEtimsPkgUnitCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsPkgUnitCd()
+	})
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (u *ItemUpsertBulk) SetEtimsQtyUnitCd(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEtimsQtyUnitCd(v)
+	})
+}
+
+// UpdateEtimsQtyUnitCd sets the "etims_qty_unit_cd" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEtimsQtyUnitCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEtimsQtyUnitCd()
+	})
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (u *ItemUpsertBulk) ClearEtimsQtyUnitCd() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEtimsQtyUnitCd()
 	})
 }
 

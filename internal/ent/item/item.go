@@ -110,6 +110,12 @@ const (
 	FieldTaxCodeID = "tax_code_id"
 	// FieldTaxInclusive holds the string denoting the tax_inclusive field in the database.
 	FieldTaxInclusive = "tax_inclusive"
+	// FieldEtimsItemClsCd holds the string denoting the etims_item_cls_cd field in the database.
+	FieldEtimsItemClsCd = "etims_item_cls_cd"
+	// FieldEtimsPkgUnitCd holds the string denoting the etims_pkg_unit_cd field in the database.
+	FieldEtimsPkgUnitCd = "etims_pkg_unit_cd"
+	// FieldEtimsQtyUnitCd holds the string denoting the etims_qty_unit_cd field in the database.
+	FieldEtimsQtyUnitCd = "etims_qty_unit_cd"
 	// FieldCostPrice holds the string denoting the cost_price field in the database.
 	FieldCostPrice = "cost_price"
 	// FieldPurchasePrice holds the string denoting the purchase_price field in the database.
@@ -357,6 +363,9 @@ var Columns = []string{
 	FieldTags,
 	FieldTaxCodeID,
 	FieldTaxInclusive,
+	FieldEtimsItemClsCd,
+	FieldEtimsPkgUnitCd,
+	FieldEtimsQtyUnitCd,
 	FieldCostPrice,
 	FieldPurchasePrice,
 	FieldPurchasePackSize,
@@ -839,6 +848,21 @@ func ByTaxCodeID(opts ...sql.OrderTermOption) OrderOption {
 // ByTaxInclusive orders the results by the tax_inclusive field.
 func ByTaxInclusive(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTaxInclusive, opts...).ToFunc()
+}
+
+// ByEtimsItemClsCd orders the results by the etims_item_cls_cd field.
+func ByEtimsItemClsCd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEtimsItemClsCd, opts...).ToFunc()
+}
+
+// ByEtimsPkgUnitCd orders the results by the etims_pkg_unit_cd field.
+func ByEtimsPkgUnitCd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEtimsPkgUnitCd, opts...).ToFunc()
+}
+
+// ByEtimsQtyUnitCd orders the results by the etims_qty_unit_cd field.
+func ByEtimsQtyUnitCd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEtimsQtyUnitCd, opts...).ToFunc()
 }
 
 // ByCostPrice orders the results by the cost_price field.

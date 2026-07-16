@@ -187,6 +187,21 @@ func (Item) Fields() []ent.Field {
 		field.Bool("tax_inclusive").
 			Default(false).
 			Comment("True if selling price already includes VAT; treasury back-calculates tax portion"),
+		// KRA eTIMS catalog classification — curated on the inventory item (source of truth)
+		// and carried on item.created/updated events so treasury-api registers the item with
+		// real codes instead of hardcoded defaults.
+		field.String("etims_item_cls_cd").
+			Optional().
+			Nillable().
+			Comment("KRA eTIMS item classification code (itemClsCd) — 10-digit UNSPSC leaf from KRA selectItemClass, e.g. 5020230602"),
+		field.String("etims_pkg_unit_cd").
+			Optional().
+			Nillable().
+			Comment("KRA eTIMS packaging unit code (pkgUnitCd) from the PKG_UNIT code list, e.g. NT/CT/BX"),
+		field.String("etims_qty_unit_cd").
+			Optional().
+			Nillable().
+			Comment("KRA eTIMS quantity unit code (qtyUnitCd) from the QTY_UNIT code list, e.g. U/KG/LTR — per-item override of the Unit table's kra_qty_unit_cd mapping"),
 		field.Float("cost_price").
 			Optional().
 			Nillable().

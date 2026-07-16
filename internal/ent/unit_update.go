@@ -85,6 +85,26 @@ func (_u *UnitUpdate) ClearType() *UnitUpdate {
 	return _u
 }
 
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (_u *UnitUpdate) SetKraQtyUnitCd(v string) *UnitUpdate {
+	_u.mutation.SetKraQtyUnitCd(v)
+	return _u
+}
+
+// SetNillableKraQtyUnitCd sets the "kra_qty_unit_cd" field if the given value is not nil.
+func (_u *UnitUpdate) SetNillableKraQtyUnitCd(v *string) *UnitUpdate {
+	if v != nil {
+		_u.SetKraQtyUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (_u *UnitUpdate) ClearKraQtyUnitCd() *UnitUpdate {
+	_u.mutation.ClearKraQtyUnitCd()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *UnitUpdate) SetIsActive(v bool) *UnitUpdate {
 	_u.mutation.SetIsActive(v)
@@ -255,6 +275,12 @@ func (_u *UnitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.TypeCleared() {
 		_spec.ClearField(unit.FieldType, field.TypeString)
 	}
+	if value, ok := _u.mutation.KraQtyUnitCd(); ok {
+		_spec.SetField(unit.FieldKraQtyUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.KraQtyUnitCdCleared() {
+		_spec.ClearField(unit.FieldKraQtyUnitCd, field.TypeString)
+	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
 	}
@@ -422,6 +448,26 @@ func (_u *UnitUpdateOne) SetNillableType(v *string) *UnitUpdateOne {
 // ClearType clears the value of the "type" field.
 func (_u *UnitUpdateOne) ClearType() *UnitUpdateOne {
 	_u.mutation.ClearType()
+	return _u
+}
+
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (_u *UnitUpdateOne) SetKraQtyUnitCd(v string) *UnitUpdateOne {
+	_u.mutation.SetKraQtyUnitCd(v)
+	return _u
+}
+
+// SetNillableKraQtyUnitCd sets the "kra_qty_unit_cd" field if the given value is not nil.
+func (_u *UnitUpdateOne) SetNillableKraQtyUnitCd(v *string) *UnitUpdateOne {
+	if v != nil {
+		_u.SetKraQtyUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (_u *UnitUpdateOne) ClearKraQtyUnitCd() *UnitUpdateOne {
+	_u.mutation.ClearKraQtyUnitCd()
 	return _u
 }
 
@@ -624,6 +670,12 @@ func (_u *UnitUpdateOne) sqlSave(ctx context.Context) (_node *Unit, err error) {
 	}
 	if _u.mutation.TypeCleared() {
 		_spec.ClearField(unit.FieldType, field.TypeString)
+	}
+	if value, ok := _u.mutation.KraQtyUnitCd(); ok {
+		_spec.SetField(unit.FieldKraQtyUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.KraQtyUnitCdCleared() {
+		_spec.ClearField(unit.FieldKraQtyUnitCd, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)

@@ -912,6 +912,66 @@ func (_u *ItemUpdate) SetNillableTaxInclusive(v *bool) *ItemUpdate {
 	return _u
 }
 
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (_u *ItemUpdate) SetEtimsItemClsCd(v string) *ItemUpdate {
+	_u.mutation.SetEtimsItemClsCd(v)
+	return _u
+}
+
+// SetNillableEtimsItemClsCd sets the "etims_item_cls_cd" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEtimsItemClsCd(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetEtimsItemClsCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (_u *ItemUpdate) ClearEtimsItemClsCd() *ItemUpdate {
+	_u.mutation.ClearEtimsItemClsCd()
+	return _u
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (_u *ItemUpdate) SetEtimsPkgUnitCd(v string) *ItemUpdate {
+	_u.mutation.SetEtimsPkgUnitCd(v)
+	return _u
+}
+
+// SetNillableEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEtimsPkgUnitCd(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetEtimsPkgUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (_u *ItemUpdate) ClearEtimsPkgUnitCd() *ItemUpdate {
+	_u.mutation.ClearEtimsPkgUnitCd()
+	return _u
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (_u *ItemUpdate) SetEtimsQtyUnitCd(v string) *ItemUpdate {
+	_u.mutation.SetEtimsQtyUnitCd(v)
+	return _u
+}
+
+// SetNillableEtimsQtyUnitCd sets the "etims_qty_unit_cd" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEtimsQtyUnitCd(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetEtimsQtyUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (_u *ItemUpdate) ClearEtimsQtyUnitCd() *ItemUpdate {
+	_u.mutation.ClearEtimsQtyUnitCd()
+	return _u
+}
+
 // SetCostPrice sets the "cost_price" field.
 func (_u *ItemUpdate) SetCostPrice(v float64) *ItemUpdate {
 	_u.mutation.ResetCostPrice()
@@ -2180,6 +2240,24 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.TaxInclusive(); ok {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EtimsItemClsCd(); ok {
+		_spec.SetField(item.FieldEtimsItemClsCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsItemClsCdCleared() {
+		_spec.ClearField(item.FieldEtimsItemClsCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.EtimsPkgUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsPkgUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsPkgUnitCdCleared() {
+		_spec.ClearField(item.FieldEtimsPkgUnitCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.EtimsQtyUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsQtyUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsQtyUnitCdCleared() {
+		_spec.ClearField(item.FieldEtimsQtyUnitCd, field.TypeString)
 	}
 	if value, ok := _u.mutation.CostPrice(); ok {
 		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)
@@ -3848,6 +3926,66 @@ func (_u *ItemUpdateOne) SetNillableTaxInclusive(v *bool) *ItemUpdateOne {
 	return _u
 }
 
+// SetEtimsItemClsCd sets the "etims_item_cls_cd" field.
+func (_u *ItemUpdateOne) SetEtimsItemClsCd(v string) *ItemUpdateOne {
+	_u.mutation.SetEtimsItemClsCd(v)
+	return _u
+}
+
+// SetNillableEtimsItemClsCd sets the "etims_item_cls_cd" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEtimsItemClsCd(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEtimsItemClsCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsItemClsCd clears the value of the "etims_item_cls_cd" field.
+func (_u *ItemUpdateOne) ClearEtimsItemClsCd() *ItemUpdateOne {
+	_u.mutation.ClearEtimsItemClsCd()
+	return _u
+}
+
+// SetEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field.
+func (_u *ItemUpdateOne) SetEtimsPkgUnitCd(v string) *ItemUpdateOne {
+	_u.mutation.SetEtimsPkgUnitCd(v)
+	return _u
+}
+
+// SetNillableEtimsPkgUnitCd sets the "etims_pkg_unit_cd" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEtimsPkgUnitCd(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEtimsPkgUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsPkgUnitCd clears the value of the "etims_pkg_unit_cd" field.
+func (_u *ItemUpdateOne) ClearEtimsPkgUnitCd() *ItemUpdateOne {
+	_u.mutation.ClearEtimsPkgUnitCd()
+	return _u
+}
+
+// SetEtimsQtyUnitCd sets the "etims_qty_unit_cd" field.
+func (_u *ItemUpdateOne) SetEtimsQtyUnitCd(v string) *ItemUpdateOne {
+	_u.mutation.SetEtimsQtyUnitCd(v)
+	return _u
+}
+
+// SetNillableEtimsQtyUnitCd sets the "etims_qty_unit_cd" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEtimsQtyUnitCd(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEtimsQtyUnitCd(*v)
+	}
+	return _u
+}
+
+// ClearEtimsQtyUnitCd clears the value of the "etims_qty_unit_cd" field.
+func (_u *ItemUpdateOne) ClearEtimsQtyUnitCd() *ItemUpdateOne {
+	_u.mutation.ClearEtimsQtyUnitCd()
+	return _u
+}
+
 // SetCostPrice sets the "cost_price" field.
 func (_u *ItemUpdateOne) SetCostPrice(v float64) *ItemUpdateOne {
 	_u.mutation.ResetCostPrice()
@@ -5146,6 +5284,24 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.TaxInclusive(); ok {
 		_spec.SetField(item.FieldTaxInclusive, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.EtimsItemClsCd(); ok {
+		_spec.SetField(item.FieldEtimsItemClsCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsItemClsCdCleared() {
+		_spec.ClearField(item.FieldEtimsItemClsCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.EtimsPkgUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsPkgUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsPkgUnitCdCleared() {
+		_spec.ClearField(item.FieldEtimsPkgUnitCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.EtimsQtyUnitCd(); ok {
+		_spec.SetField(item.FieldEtimsQtyUnitCd, field.TypeString, value)
+	}
+	if _u.mutation.EtimsQtyUnitCdCleared() {
+		_spec.ClearField(item.FieldEtimsQtyUnitCd, field.TypeString)
 	}
 	if value, ok := _u.mutation.CostPrice(); ok {
 		_spec.SetField(item.FieldCostPrice, field.TypeFloat64, value)

@@ -71,6 +71,11 @@ func Type(v string) predicate.Unit {
 	return predicate.Unit(sql.FieldEQ(FieldType, v))
 }
 
+// KraQtyUnitCd applies equality check predicate on the "kra_qty_unit_cd" field. It's identical to KraQtyUnitCdEQ.
+func KraQtyUnitCd(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEQ(FieldKraQtyUnitCd, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.Unit {
 	return predicate.Unit(sql.FieldEQ(FieldIsActive, v))
@@ -299,6 +304,81 @@ func TypeEqualFold(v string) predicate.Unit {
 // TypeContainsFold applies the ContainsFold predicate on the "type" field.
 func TypeContainsFold(v string) predicate.Unit {
 	return predicate.Unit(sql.FieldContainsFold(FieldType, v))
+}
+
+// KraQtyUnitCdEQ applies the EQ predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdEQ(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEQ(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdNEQ applies the NEQ predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdNEQ(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldNEQ(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdIn applies the In predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdIn(vs ...string) predicate.Unit {
+	return predicate.Unit(sql.FieldIn(FieldKraQtyUnitCd, vs...))
+}
+
+// KraQtyUnitCdNotIn applies the NotIn predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdNotIn(vs ...string) predicate.Unit {
+	return predicate.Unit(sql.FieldNotIn(FieldKraQtyUnitCd, vs...))
+}
+
+// KraQtyUnitCdGT applies the GT predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdGT(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldGT(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdGTE applies the GTE predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdGTE(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldGTE(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdLT applies the LT predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdLT(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldLT(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdLTE applies the LTE predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdLTE(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldLTE(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdContains applies the Contains predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdContains(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldContains(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdHasPrefix applies the HasPrefix predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdHasPrefix(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldHasPrefix(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdHasSuffix applies the HasSuffix predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdHasSuffix(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldHasSuffix(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdIsNil applies the IsNil predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdIsNil() predicate.Unit {
+	return predicate.Unit(sql.FieldIsNull(FieldKraQtyUnitCd))
+}
+
+// KraQtyUnitCdNotNil applies the NotNil predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdNotNil() predicate.Unit {
+	return predicate.Unit(sql.FieldNotNull(FieldKraQtyUnitCd))
+}
+
+// KraQtyUnitCdEqualFold applies the EqualFold predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdEqualFold(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldEqualFold(FieldKraQtyUnitCd, v))
+}
+
+// KraQtyUnitCdContainsFold applies the ContainsFold predicate on the "kra_qty_unit_cd" field.
+func KraQtyUnitCdContainsFold(v string) predicate.Unit {
+	return predicate.Unit(sql.FieldContainsFold(FieldKraQtyUnitCd, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.
