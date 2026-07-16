@@ -68,6 +68,10 @@ func New(
 	if inventoryHandler != nil && authMiddleware != nil {
 		inventoryHandler.SetAuthMiddleware(authMiddleware)
 	}
+	// Same for the extras handler's feature-gated report GETs (report_* codes).
+	if inventoryExtrasHandler != nil && authMiddleware != nil {
+		inventoryExtrasHandler.SetAuthForFeatureGets(handlers.RequireAnyAuth(pinSecret, authMiddleware))
+	}
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)

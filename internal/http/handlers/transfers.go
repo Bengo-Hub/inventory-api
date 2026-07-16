@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -53,13 +55,16 @@ func (h *TransferHandler) RegisterRoutes(r chi.Router) {
 		}
 		return invmiddleware.RequirePermission(h.rbacSvc, h.log, code)
 	}
+	// Inter-warehouse transfers are tier-gated (stock_transfers is core tier 1 on the
+	// use-case PowerSuite families, but standalone/legacy plans may lack it).
+	featGate := authclient.RequireFeatureCode("stock_transfers")
 	r.Route("/inventory/transfers", func(tr chi.Router) {
-		tr.With(perm(rbac.PermStockChange)).Post("/", h.CreateTransfer)
+		tr.With(featGate, perm(rbac.PermStockChange)).Post("/", h.CreateTransfer)
 		tr.Get("/", h.ListTransfers)
 		tr.Get("/{transferId}", h.GetTransfer)
-		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/ship", h.ShipTransfer)
-		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/receive", h.ReceiveTransfer)
-		tr.With(perm(rbac.PermStockChange)).Post("/{transferId}/cancel", h.CancelTransfer)
+		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/ship", h.ShipTransfer)
+		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/receive", h.ReceiveTransfer)
+		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/cancel", h.CancelTransfer)
 	})
 }
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -178,19 +179,20 @@ func (h *InventoryExtrasHandler) loadRFQFull(ctx context.Context, tenantID, rfqI
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 func (h *InventoryExtrasHandler) registerRFQRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change, del string) {
+	featGate := authclient.RequireFeatureCode("rfqs")
 	r.Get("/inventory/rfqs", h.ListRFQs)
 	r.Get("/inventory/rfqs/{rfqID}", h.GetRFQ)
 	r.Get("/inventory/rfqs/{rfqID}/comparison", h.RFQComparison)
-	r.With(perm(add)).Post("/inventory/rfqs", h.CreateRFQ)
-	r.With(perm(change)).Put("/inventory/rfqs/{rfqID}", h.UpdateRFQ)
-	r.With(perm(del)).Delete("/inventory/rfqs/{rfqID}", h.DeleteRFQ)
-	r.With(perm(change)).Post("/inventory/rfqs/{rfqID}/suppliers", h.InviteRFQSuppliers)
-	r.With(perm(change)).Delete("/inventory/rfqs/{rfqID}/responses/{responseID}", h.RemoveRFQSupplier)
-	r.With(perm(change)).Post("/inventory/rfqs/{rfqID}/send", h.SendRFQ)
-	r.With(perm(change)).Put("/inventory/rfqs/{rfqID}/responses/{responseID}/quote", h.CaptureRFQQuote)
-	r.With(perm(change)).Post("/inventory/rfqs/{rfqID}/responses/{responseID}/decline", h.DeclineRFQResponse)
-	r.With(perm(change)).Post("/inventory/rfqs/{rfqID}/award", h.AwardRFQ)
-	r.With(perm(add)).Post("/inventory/rfqs/{rfqID}/convert-to-po", h.ConvertRFQToPOs)
+	r.With(featGate, perm(add)).Post("/inventory/rfqs", h.CreateRFQ)
+	r.With(featGate, perm(change)).Put("/inventory/rfqs/{rfqID}", h.UpdateRFQ)
+	r.With(featGate, perm(del)).Delete("/inventory/rfqs/{rfqID}", h.DeleteRFQ)
+	r.With(featGate, perm(change)).Post("/inventory/rfqs/{rfqID}/suppliers", h.InviteRFQSuppliers)
+	r.With(featGate, perm(change)).Delete("/inventory/rfqs/{rfqID}/responses/{responseID}", h.RemoveRFQSupplier)
+	r.With(featGate, perm(change)).Post("/inventory/rfqs/{rfqID}/send", h.SendRFQ)
+	r.With(featGate, perm(change)).Put("/inventory/rfqs/{rfqID}/responses/{responseID}/quote", h.CaptureRFQQuote)
+	r.With(featGate, perm(change)).Post("/inventory/rfqs/{rfqID}/responses/{responseID}/decline", h.DeclineRFQResponse)
+	r.With(featGate, perm(change)).Post("/inventory/rfqs/{rfqID}/award", h.AwardRFQ)
+	r.With(featGate, perm(add)).Post("/inventory/rfqs/{rfqID}/convert-to-po", h.ConvertRFQToPOs)
 }
 
 // ─── Create / list / get / update / delete ───────────────────────────────────

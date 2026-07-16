@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -22,19 +23,20 @@ import (
 // by treasury-api (this service emits inventory.asset.depreciation_due events).
 
 func (h *InventoryExtrasHandler) registerAssetRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change, del string) {
+	featGate := authclient.RequireFeatureCode("fixed_assets")
 	// Categories
 	r.Get("/inventory/asset-categories", h.ListAssetCategories)
-	r.With(perm(add)).Post("/inventory/asset-categories", h.CreateAssetCategory)
-	r.With(perm(change)).Put("/inventory/asset-categories/{catID}", h.UpdateAssetCategory)
-	r.With(perm(del)).Delete("/inventory/asset-categories/{catID}", h.DeleteAssetCategory)
+	r.With(featGate, perm(add)).Post("/inventory/asset-categories", h.CreateAssetCategory)
+	r.With(featGate, perm(change)).Put("/inventory/asset-categories/{catID}", h.UpdateAssetCategory)
+	r.With(featGate, perm(del)).Delete("/inventory/asset-categories/{catID}", h.DeleteAssetCategory)
 	// Assets
 	r.Get("/inventory/asset-dashboard", h.AssetDashboard)
 	r.Get("/inventory/assets", h.ListAssets)
 	r.Get("/inventory/assets/{assetID}", h.GetAsset)
-	r.With(perm(add)).Post("/inventory/assets", h.CreateAsset)
-	r.With(perm(change)).Put("/inventory/assets/{assetID}", h.UpdateAsset)
-	r.With(perm(del)).Delete("/inventory/assets/{assetID}", h.DeleteAsset)
-	r.With(perm(change)).Post("/inventory/assets/{assetID}/depreciation-run", h.RunAssetDepreciation)
+	r.With(featGate, perm(add)).Post("/inventory/assets", h.CreateAsset)
+	r.With(featGate, perm(change)).Put("/inventory/assets/{assetID}", h.UpdateAsset)
+	r.With(featGate, perm(del)).Delete("/inventory/assets/{assetID}", h.DeleteAsset)
+	r.With(featGate, perm(change)).Post("/inventory/assets/{assetID}/depreciation-run", h.RunAssetDepreciation)
 	// Asset operations (maintenance/transfer/disposal/insurance/audit/reservation)
 	h.registerAssetOpsRoutes(r, perm, add, change)
 }

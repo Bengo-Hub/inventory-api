@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -219,17 +220,18 @@ func productionBatchToDTO(b *ent.ProductionBatch, mats []*ent.BatchRawMaterial, 
 }
 
 func (h *InventoryExtrasHandler) registerManufacturingRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
+	featGate := authclient.RequireFeatureCode("manufacturing")
 	r.Get("/inventory/production-batches", h.ListProductionBatches)
 	r.Get("/inventory/manufacturing/material-check", h.CheckMaterialAvailability)
 	r.Get("/inventory/production-batches/{batchID}", h.GetProductionBatch)
-	r.With(perm(add)).Post("/inventory/production-batches", h.CreateProductionBatch)
-	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/start", h.StartProductionBatch)
-	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/complete", h.CompleteProductionBatch)
-	r.With(perm(change)).Post("/inventory/production-batches/{batchID}/cancel", h.CancelProductionBatch)
+	r.With(featGate, perm(add)).Post("/inventory/production-batches", h.CreateProductionBatch)
+	r.With(featGate, perm(change)).Post("/inventory/production-batches/{batchID}/start", h.StartProductionBatch)
+	r.With(featGate, perm(change)).Post("/inventory/production-batches/{batchID}/complete", h.CompleteProductionBatch)
+	r.With(featGate, perm(change)).Post("/inventory/production-batches/{batchID}/cancel", h.CancelProductionBatch)
 	r.Get("/inventory/production-batches/{batchID}/materials", h.ListBatchMaterials)
 	r.Get("/inventory/production-batches/{batchID}/usage", h.ListRawMaterialUsage)
 	r.Get("/inventory/production-batches/{batchID}/quality-checks", h.ListQualityChecks)
-	r.With(perm(add)).Post("/inventory/production-batches/{batchID}/quality-checks", h.CreateQualityCheck)
+	r.With(featGate, perm(add)).Post("/inventory/production-batches/{batchID}/quality-checks", h.CreateQualityCheck)
 }
 
 // rawMaterialUsageDTO is the audit-trail row for raw-material movements.

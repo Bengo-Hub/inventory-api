@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -21,28 +22,29 @@ import (
 // ─── Asset operations: maintenance, transfer, disposal, insurance, audit, reservation ──
 
 func (h *InventoryExtrasHandler) registerAssetOpsRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
+	featGate := authclient.RequireFeatureCode("fixed_assets")
 	r.Get("/inventory/assets/{assetID}/maintenance", h.ListAssetMaintenance)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/maintenance", h.CreateAssetMaintenance)
-	r.With(perm(change)).Post("/inventory/asset-maintenance/{recID}/complete", h.CompleteAssetMaintenance)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/maintenance", h.CreateAssetMaintenance)
+	r.With(featGate, perm(change)).Post("/inventory/asset-maintenance/{recID}/complete", h.CompleteAssetMaintenance)
 
 	r.Get("/inventory/assets/{assetID}/transfers", h.ListAssetTransfers)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/transfers", h.CreateAssetTransfer)
-	r.With(perm(change)).Post("/inventory/asset-transfers/{recID}/approve", h.ApproveAssetTransfer)
-	r.With(perm(change)).Post("/inventory/asset-transfers/{recID}/complete", h.CompleteAssetTransfer)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/transfers", h.CreateAssetTransfer)
+	r.With(featGate, perm(change)).Post("/inventory/asset-transfers/{recID}/approve", h.ApproveAssetTransfer)
+	r.With(featGate, perm(change)).Post("/inventory/asset-transfers/{recID}/complete", h.CompleteAssetTransfer)
 
 	r.Get("/inventory/assets/{assetID}/disposals", h.ListAssetDisposals)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/disposals", h.CreateAssetDisposal)
-	r.With(perm(change)).Post("/inventory/asset-disposals/{recID}/complete", h.CompleteAssetDisposal)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/disposals", h.CreateAssetDisposal)
+	r.With(featGate, perm(change)).Post("/inventory/asset-disposals/{recID}/complete", h.CompleteAssetDisposal)
 
 	r.Get("/inventory/assets/{assetID}/insurance", h.ListAssetInsurance)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/insurance", h.CreateAssetInsurance)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/insurance", h.CreateAssetInsurance)
 
 	r.Get("/inventory/assets/{assetID}/audits", h.ListAssetAudits)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/audits", h.CreateAssetAudit)
-	r.With(perm(change)).Post("/inventory/asset-audits/{recID}/complete", h.CompleteAssetAudit)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/audits", h.CreateAssetAudit)
+	r.With(featGate, perm(change)).Post("/inventory/asset-audits/{recID}/complete", h.CompleteAssetAudit)
 
 	r.Get("/inventory/assets/{assetID}/reservations", h.ListAssetReservations)
-	r.With(perm(add)).Post("/inventory/assets/{assetID}/reservations", h.CreateAssetReservation)
+	r.With(featGate, perm(add)).Post("/inventory/assets/{assetID}/reservations", h.CreateAssetReservation)
 }
 
 // helper: resolve tenant + asset_id from path (asset existence validated lightly)
