@@ -31,6 +31,9 @@ func (Unit) Fields() []ent.Field {
 		field.String("type").
 			Optional().
 			Comment("Unit type: weight, volume, count, length, area, other"),
+		field.String("kra_qty_unit_cd").
+			Optional().
+			Comment("KRA eTIMS quantity-unit code (qtyUnitCd) this unit maps to, e.g. KG→KG, Piece→U, Litre→LTR; items may override per-item via etims_qty_unit_cd"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

@@ -973,35 +973,35 @@ func init() {
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescPurchaseUnit is the schema descriptor for purchase_unit field.
-	itemDescPurchaseUnit := itemFields[51].Descriptor()
+	itemDescPurchaseUnit := itemFields[54].Descriptor()
 	// item.PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
 	item.PurchaseUnitValidator = itemDescPurchaseUnit.Validators[0].(func(string) error)
 	// itemDescYieldPct is the schema descriptor for yield_pct field.
-	itemDescYieldPct := itemFields[53].Descriptor()
+	itemDescYieldPct := itemFields[56].Descriptor()
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescUnitContentUom is the schema descriptor for unit_content_uom field.
-	itemDescUnitContentUom := itemFields[55].Descriptor()
+	itemDescUnitContentUom := itemFields[58].Descriptor()
 	// item.UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
 	item.UnitContentUomValidator = itemDescUnitContentUom.Validators[0].(func(string) error)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[61].Descriptor()
+	itemDescBookedCapacity := itemFields[64].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[64].Descriptor()
+	itemDescEventVenue := itemFields[67].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[65].Descriptor()
+	itemDescMetadata := itemFields[68].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[66].Descriptor()
+	itemDescCreatedAt := itemFields[69].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[67].Descriptor()
+	itemDescUpdatedAt := itemFields[70].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -2283,15 +2283,15 @@ func init() {
 	// unit.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	unit.NameValidator = unitDescName.Validators[0].(func(string) error)
 	// unitDescIsActive is the schema descriptor for is_active field.
-	unitDescIsActive := unitFields[4].Descriptor()
+	unitDescIsActive := unitFields[5].Descriptor()
 	// unit.DefaultIsActive holds the default value on creation for the is_active field.
 	unit.DefaultIsActive = unitDescIsActive.Default.(bool)
 	// unitDescCreatedAt is the schema descriptor for created_at field.
-	unitDescCreatedAt := unitFields[5].Descriptor()
+	unitDescCreatedAt := unitFields[6].Descriptor()
 	// unit.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unit.DefaultCreatedAt = unitDescCreatedAt.Default.(func() time.Time)
 	// unitDescUpdatedAt is the schema descriptor for updated_at field.
-	unitDescUpdatedAt := unitFields[6].Descriptor()
+	unitDescUpdatedAt := unitFields[7].Descriptor()
 	// unit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	unit.DefaultUpdatedAt = unitDescUpdatedAt.Default.(func() time.Time)
 	// unit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

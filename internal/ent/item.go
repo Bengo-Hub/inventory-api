@@ -120,6 +120,12 @@ type Item struct {
 	TaxCodeID string `json:"tax_code_id,omitempty"`
 	// True if selling price already includes VAT; treasury back-calculates tax portion
 	TaxInclusive bool `json:"tax_inclusive,omitempty"`
+	// KRA eTIMS item classification code (itemClsCd) — 10-digit UNSPSC leaf from KRA selectItemClass, e.g. 5020230602
+	EtimsItemClsCd *string `json:"etims_item_cls_cd,omitempty"`
+	// KRA eTIMS packaging unit code (pkgUnitCd) from the PKG_UNIT code list, e.g. NT/CT/BX
+	EtimsPkgUnitCd *string `json:"etims_pkg_unit_cd,omitempty"`
+	// KRA eTIMS quantity unit code (qtyUnitCd) from the QTY_UNIT code list, e.g. U/KG/LTR — per-item override of the Unit table's kra_qty_unit_cd mapping
+	EtimsQtyUnitCd *string `json:"etims_qty_unit_cd,omitempty"`
 	// Edible-portion cost per base unit (KES). Auto-computed when purchase fields are set; otherwise manually entered
 	CostPrice *float64 `json:"cost_price,omitempty"`
 	// Price paid per purchase_unit (KES) — e.g. 750 per kg
@@ -389,7 +395,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case item.FieldReturnWindowDays, item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldEtimsItemClsCd, item.FieldEtimsPkgUnitCd, item.FieldEtimsQtyUnitCd, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -713,6 +719,27 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field tax_inclusive", values[i])
 			} else if value.Valid {
 				_m.TaxInclusive = value.Bool
+			}
+		case item.FieldEtimsItemClsCd:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field etims_item_cls_cd", values[i])
+			} else if value.Valid {
+				_m.EtimsItemClsCd = new(string)
+				*_m.EtimsItemClsCd = value.String
+			}
+		case item.FieldEtimsPkgUnitCd:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field etims_pkg_unit_cd", values[i])
+			} else if value.Valid {
+				_m.EtimsPkgUnitCd = new(string)
+				*_m.EtimsPkgUnitCd = value.String
+			}
+		case item.FieldEtimsQtyUnitCd:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field etims_qty_unit_cd", values[i])
+			} else if value.Valid {
+				_m.EtimsQtyUnitCd = new(string)
+				*_m.EtimsQtyUnitCd = value.String
 			}
 		case item.FieldCostPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -1135,6 +1162,21 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("tax_inclusive=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TaxInclusive))
+	builder.WriteString(", ")
+	if v := _m.EtimsItemClsCd; v != nil {
+		builder.WriteString("etims_item_cls_cd=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.EtimsPkgUnitCd; v != nil {
+		builder.WriteString("etims_pkg_unit_cd=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.EtimsQtyUnitCd; v != nil {
+		builder.WriteString("etims_qty_unit_cd=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.CostPrice; v != nil {
 		builder.WriteString("cost_price=")

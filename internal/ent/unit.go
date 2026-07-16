@@ -24,6 +24,8 @@ type Unit struct {
 	Abbreviation string `json:"abbreviation,omitempty"`
 	// Unit type: weight, volume, count, length, area, other
 	Type string `json:"type,omitempty"`
+	// KRA eTIMS quantity-unit code (qtyUnitCd) this unit maps to, e.g. KG→KG, Piece→U, Litre→LTR; items may override per-item via etims_qty_unit_cd
+	KraQtyUnitCd string `json:"kra_qty_unit_cd,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -72,7 +74,7 @@ func (*Unit) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case unit.FieldIsActive:
 			values[i] = new(sql.NullBool)
-		case unit.FieldName, unit.FieldAbbreviation, unit.FieldType:
+		case unit.FieldName, unit.FieldAbbreviation, unit.FieldType, unit.FieldKraQtyUnitCd:
 			values[i] = new(sql.NullString)
 		case unit.FieldCreatedAt, unit.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -116,6 +118,12 @@ func (_m *Unit) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
 				_m.Type = value.String
+			}
+		case unit.FieldKraQtyUnitCd:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kra_qty_unit_cd", values[i])
+			} else if value.Valid {
+				_m.KraQtyUnitCd = value.String
 			}
 		case unit.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -189,6 +197,9 @@ func (_m *Unit) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(_m.Type)
+	builder.WriteString(", ")
+	builder.WriteString("kra_qty_unit_cd=")
+	builder.WriteString(_m.KraQtyUnitCd)
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

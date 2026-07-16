@@ -60,6 +60,20 @@ func (_c *UnitCreate) SetNillableType(v *string) *UnitCreate {
 	return _c
 }
 
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (_c *UnitCreate) SetKraQtyUnitCd(v string) *UnitCreate {
+	_c.mutation.SetKraQtyUnitCd(v)
+	return _c
+}
+
+// SetNillableKraQtyUnitCd sets the "kra_qty_unit_cd" field if the given value is not nil.
+func (_c *UnitCreate) SetNillableKraQtyUnitCd(v *string) *UnitCreate {
+	if v != nil {
+		_c.SetKraQtyUnitCd(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *UnitCreate) SetIsActive(v bool) *UnitCreate {
 	_c.mutation.SetIsActive(v)
@@ -266,6 +280,10 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 		_spec.SetField(unit.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
+	if value, ok := _c.mutation.KraQtyUnitCd(); ok {
+		_spec.SetField(unit.FieldKraQtyUnitCd, field.TypeString, value)
+		_node.KraQtyUnitCd = value
+	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
@@ -410,6 +428,24 @@ func (u *UnitUpsert) ClearType() *UnitUpsert {
 	return u
 }
 
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (u *UnitUpsert) SetKraQtyUnitCd(v string) *UnitUpsert {
+	u.Set(unit.FieldKraQtyUnitCd, v)
+	return u
+}
+
+// UpdateKraQtyUnitCd sets the "kra_qty_unit_cd" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateKraQtyUnitCd() *UnitUpsert {
+	u.SetExcluded(unit.FieldKraQtyUnitCd)
+	return u
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (u *UnitUpsert) ClearKraQtyUnitCd() *UnitUpsert {
+	u.SetNull(unit.FieldKraQtyUnitCd)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *UnitUpsert) SetIsActive(v bool) *UnitUpsert {
 	u.Set(unit.FieldIsActive, v)
@@ -538,6 +574,27 @@ func (u *UnitUpsertOne) UpdateType() *UnitUpsertOne {
 func (u *UnitUpsertOne) ClearType() *UnitUpsertOne {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearType()
+	})
+}
+
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (u *UnitUpsertOne) SetKraQtyUnitCd(v string) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetKraQtyUnitCd(v)
+	})
+}
+
+// UpdateKraQtyUnitCd sets the "kra_qty_unit_cd" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateKraQtyUnitCd() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateKraQtyUnitCd()
+	})
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (u *UnitUpsertOne) ClearKraQtyUnitCd() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearKraQtyUnitCd()
 	})
 }
 
@@ -840,6 +897,27 @@ func (u *UnitUpsertBulk) UpdateType() *UnitUpsertBulk {
 func (u *UnitUpsertBulk) ClearType() *UnitUpsertBulk {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearType()
+	})
+}
+
+// SetKraQtyUnitCd sets the "kra_qty_unit_cd" field.
+func (u *UnitUpsertBulk) SetKraQtyUnitCd(v string) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetKraQtyUnitCd(v)
+	})
+}
+
+// UpdateKraQtyUnitCd sets the "kra_qty_unit_cd" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateKraQtyUnitCd() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateKraQtyUnitCd()
+	})
+}
+
+// ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
+func (u *UnitUpsertBulk) ClearKraQtyUnitCd() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearKraQtyUnitCd()
 	})
 }
 

@@ -256,6 +256,21 @@ func TaxInclusive(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldTaxInclusive, v))
 }
 
+// EtimsItemClsCd applies equality check predicate on the "etims_item_cls_cd" field. It's identical to EtimsItemClsCdEQ.
+func EtimsItemClsCd(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsItemClsCd, v))
+}
+
+// EtimsPkgUnitCd applies equality check predicate on the "etims_pkg_unit_cd" field. It's identical to EtimsPkgUnitCdEQ.
+func EtimsPkgUnitCd(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsQtyUnitCd applies equality check predicate on the "etims_qty_unit_cd" field. It's identical to EtimsQtyUnitCdEQ.
+func EtimsQtyUnitCd(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsQtyUnitCd, v))
+}
+
 // CostPrice applies equality check predicate on the "cost_price" field. It's identical to CostPriceEQ.
 func CostPrice(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCostPrice, v))
@@ -2309,6 +2324,231 @@ func TaxInclusiveEQ(v bool) predicate.Item {
 // TaxInclusiveNEQ applies the NEQ predicate on the "tax_inclusive" field.
 func TaxInclusiveNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldTaxInclusive, v))
+}
+
+// EtimsItemClsCdEQ applies the EQ predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdNEQ applies the NEQ predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdIn applies the In predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEtimsItemClsCd, vs...))
+}
+
+// EtimsItemClsCdNotIn applies the NotIn predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEtimsItemClsCd, vs...))
+}
+
+// EtimsItemClsCdGT applies the GT predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdGTE applies the GTE predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdLT applies the LT predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdLTE applies the LTE predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdContains applies the Contains predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdHasPrefix applies the HasPrefix predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdHasSuffix applies the HasSuffix predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdIsNil applies the IsNil predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEtimsItemClsCd))
+}
+
+// EtimsItemClsCdNotNil applies the NotNil predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEtimsItemClsCd))
+}
+
+// EtimsItemClsCdEqualFold applies the EqualFold predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldEtimsItemClsCd, v))
+}
+
+// EtimsItemClsCdContainsFold applies the ContainsFold predicate on the "etims_item_cls_cd" field.
+func EtimsItemClsCdContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldEtimsItemClsCd, v))
+}
+
+// EtimsPkgUnitCdEQ applies the EQ predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdNEQ applies the NEQ predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdIn applies the In predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEtimsPkgUnitCd, vs...))
+}
+
+// EtimsPkgUnitCdNotIn applies the NotIn predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEtimsPkgUnitCd, vs...))
+}
+
+// EtimsPkgUnitCdGT applies the GT predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdGTE applies the GTE predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdLT applies the LT predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdLTE applies the LTE predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdContains applies the Contains predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdHasPrefix applies the HasPrefix predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdHasSuffix applies the HasSuffix predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdIsNil applies the IsNil predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEtimsPkgUnitCd))
+}
+
+// EtimsPkgUnitCdNotNil applies the NotNil predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEtimsPkgUnitCd))
+}
+
+// EtimsPkgUnitCdEqualFold applies the EqualFold predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsPkgUnitCdContainsFold applies the ContainsFold predicate on the "etims_pkg_unit_cd" field.
+func EtimsPkgUnitCdContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldEtimsPkgUnitCd, v))
+}
+
+// EtimsQtyUnitCdEQ applies the EQ predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdNEQ applies the NEQ predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdIn applies the In predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEtimsQtyUnitCd, vs...))
+}
+
+// EtimsQtyUnitCdNotIn applies the NotIn predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEtimsQtyUnitCd, vs...))
+}
+
+// EtimsQtyUnitCdGT applies the GT predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdGTE applies the GTE predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdLT applies the LT predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdLTE applies the LTE predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdContains applies the Contains predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdHasPrefix applies the HasPrefix predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdHasSuffix applies the HasSuffix predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdIsNil applies the IsNil predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEtimsQtyUnitCd))
+}
+
+// EtimsQtyUnitCdNotNil applies the NotNil predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEtimsQtyUnitCd))
+}
+
+// EtimsQtyUnitCdEqualFold applies the EqualFold predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldEtimsQtyUnitCd, v))
+}
+
+// EtimsQtyUnitCdContainsFold applies the ContainsFold predicate on the "etims_qty_unit_cd" field.
+func EtimsQtyUnitCdContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldEtimsQtyUnitCd, v))
 }
 
 // CostPriceEQ applies the EQ predicate on the "cost_price" field.

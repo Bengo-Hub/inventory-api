@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/bengobox/inventory-service/internal/ent"
@@ -36,7 +37,11 @@ func (h *AnalyticsHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/analytics/top-items", h.TopItems)
 	r.Get("/inventory/analytics/stock-trends", h.StockTrends)
 	r.Get("/inventory/analytics/distribution", h.Distribution)
-	r.Get("/inventory/analytics/reorder-alerts", h.ReorderAlerts)
+	// Reorder/low-stock alerts are the `stock_alerts` plan feature (excluded from
+	// use-case PowerSuite tier 1) — gated even though it is a read: the endpoint IS
+	// the feature, same as the gated report_* endpoints.
+	r.With(authclient.RequireFeatureCode("stock_alerts")).
+		Get("/inventory/analytics/reorder-alerts", h.ReorderAlerts)
 	r.Get("/inventory/analytics/summary", h.EnhancedSummary)
 }
 
