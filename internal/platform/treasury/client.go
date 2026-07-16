@@ -115,6 +115,53 @@ func (c *Client) fetchTaxCodes(ctx context.Context, tenantID uuid.UUID) ([]TaxCo
 	return out.TaxCodes, nil
 }
 
+// GetEtimsCodeLists proxies treasury's cached KRA eTIMS code lists (raw JSON passthrough:
+// {"codes":[{code_type,code,name,code_detail}],"total":N}) — drives the item form's
+// classification / packaging / quantity-unit dropdowns. Cached ~1h per (tenant,type,q):
+// the lists only change when a device operator re-syncs them from KRA.
+func (c *Client) GetEtimsCodeLists(ctx context.Context, tenantID uuid.UUID, codeType, q string, limit int) (json.RawMessage, error) {
+	if !c.Enabled() {
+		return json.RawMessage(`{"codes":[],"total":0}`), nil
+	}
+	fetch := func(ctx context.Context) (json.RawMessage, error) {
+		qs := url.Values{}
+		if codeType != "" {
+			qs.Set("type", codeType)
+		}
+		if q != "" {
+			qs.Set("q", q)
+		}
+		if limit > 0 {
+			qs.Set("limit", strconv.Itoa(limit))
+		}
+		u := fmt.Sprintf("%s/api/v1/s2s/%s/etims/code-lists?%s", c.baseURL, tenantID.String(), qs.Encode())
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("X-API-Key", c.apiKey)
+		resp, err := c.http.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("treasury: get etims code lists: %w", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			// Treat any failure as "no list yet" — the form falls back to free text.
+			return json.RawMessage(`{"codes":[],"total":0}`), nil
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("treasury: read etims code lists: %w", err)
+		}
+		return json.RawMessage(body), nil
+	}
+	if c.cache != nil {
+		key := sharedcache.Key("inventory", "treasury", "etimscodes", tenantID.String(), codeType, q, strconv.Itoa(limit))
+		return sharedcache.GetOrSet(ctx, c.cache, key, time.Hour, fetch)
+	}
+	return fetch(ctx)
+}
+
 // ListBanks proxies the treasury S2S Paystack bank list for a country (raw JSON passthrough).
 func (c *Client) ListBanks(ctx context.Context, tenantID uuid.UUID, country string) (json.RawMessage, error) {
 	if !c.Enabled() {

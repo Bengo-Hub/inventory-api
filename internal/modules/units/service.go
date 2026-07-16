@@ -21,8 +21,11 @@ type UnitDTO struct {
 	Name         string    `json:"name"`
 	Abbreviation string    `json:"abbreviation,omitempty"`
 	Type         string    `json:"type,omitempty"`
-	IsActive     bool      `json:"is_active"`
-	ItemCount    int       `json:"item_count"`
+	// KRA eTIMS quantity-unit code this unit maps to (e.g. KG, U, LTR) — the default
+	// qtyUnitCd for items measured in this unit during eTIMS registration.
+	KraQtyUnitCd string `json:"kra_qty_unit_cd,omitempty"`
+	IsActive     bool   `json:"is_active"`
+	ItemCount    int    `json:"item_count"`
 }
 
 type Service struct {
@@ -119,6 +122,7 @@ func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error)
 			Name:         u.Name,
 			Abbreviation: u.Abbreviation,
 			Type:         u.Type,
+			KraQtyUnitCd: u.KraQtyUnitCd,
 			IsActive:     u.IsActive,
 			ItemCount:    countMap[u.ID],
 		}
@@ -165,6 +169,11 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 	} else {
 		upd = upd.ClearType()
 	}
+	if kra := strings.ToUpper(strings.TrimSpace(dto.KraQtyUnitCd)); kra != "" {
+		upd = upd.SetKraQtyUnitCd(kra)
+	} else {
+		upd = upd.ClearKraQtyUnitCd()
+	}
 	u, err := upd.Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -180,6 +189,7 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 		Name:         u.Name,
 		Abbreviation: u.Abbreviation,
 		Type:         u.Type,
+		KraQtyUnitCd: u.KraQtyUnitCd,
 		IsActive:     u.IsActive,
 	}, nil
 }
@@ -211,6 +221,9 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 	}
 	if dto.Type != "" {
 		cre = cre.SetType(dto.Type)
+	}
+	if kra := strings.ToUpper(strings.TrimSpace(dto.KraQtyUnitCd)); kra != "" {
+		cre = cre.SetKraQtyUnitCd(kra)
 	}
 	u, err := cre.Save(ctx)
 	if err != nil {
@@ -263,6 +276,7 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		Name:         u.Name,
 		Abbreviation: u.Abbreviation,
 		Type:         u.Type,
+		KraQtyUnitCd: u.KraQtyUnitCd,
 		IsActive:     u.IsActive,
 	}, nil
 }

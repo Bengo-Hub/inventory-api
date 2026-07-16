@@ -189,6 +189,11 @@ type ItemDTO struct {
 	// KRA eTIMS tax fields
 	TaxCodeID    string `json:"tax_code_id,omitempty"`
 	TaxInclusive bool   `json:"tax_inclusive"`
+	// KRA eTIMS catalog classification (drives treasury's eTIMS item registration —
+	// inventory is the item source of truth; empty values fall back at registration).
+	EtimsItemClsCd string `json:"etims_item_cls_cd,omitempty"` // UNSPSC leaf from KRA selectItemClass
+	EtimsPkgUnitCd string `json:"etims_pkg_unit_cd,omitempty"` // KRA packaging unit (NT/CT/BX…)
+	EtimsQtyUnitCd string `json:"etims_qty_unit_cd,omitempty"` // KRA quantity unit override (else the unit's mapping)
 	// Event capacity fields — SERVICE type only
 	TotalCapacity  *int       `json:"total_capacity,omitempty"`
 	BookedCapacity *int       `json:"booked_capacity,omitempty"`
@@ -712,6 +717,9 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		TargetMarginPercent:     i.TargetMarginPercent,
 		TaxCodeID:               i.TaxCodeID,
 		TaxInclusive:            i.TaxInclusive,
+		EtimsItemClsCd:          derefStr(i.EtimsItemClsCd),
+		EtimsPkgUnitCd:          derefStr(i.EtimsPkgUnitCd),
+		EtimsQtyUnitCd:          derefStr(i.EtimsQtyUnitCd),
 		TotalCapacity:           i.TotalCapacity,
 		BookedCapacity:          i.BookedCapacity,
 		EventStartAt:            i.EventStartAt,
@@ -1718,6 +1726,15 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.TaxCodeID != "" {
 		createBuilder = createBuilder.SetTaxCodeID(dto.TaxCodeID)
 	}
+	if dto.EtimsItemClsCd != "" {
+		createBuilder = createBuilder.SetEtimsItemClsCd(dto.EtimsItemClsCd)
+	}
+	if dto.EtimsPkgUnitCd != "" {
+		createBuilder = createBuilder.SetEtimsPkgUnitCd(dto.EtimsPkgUnitCd)
+	}
+	if dto.EtimsQtyUnitCd != "" {
+		createBuilder = createBuilder.SetEtimsQtyUnitCd(dto.EtimsQtyUnitCd)
+	}
 	if dto.TotalCapacity != nil {
 		createBuilder = createBuilder.SetTotalCapacity(*dto.TotalCapacity)
 	}
@@ -1859,12 +1876,14 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		}
 	}
 
-	// Resolve unit name for enriched event payload
-	unitName := ""
+	// Resolve unit name + KRA quantity-unit mapping for the enriched event payload
+	unitName, unitAbbrev, unitKraQty := "", "", ""
 	if dto.UnitID != nil {
 		u, uErr := s.client.Unit.Get(ctx, *dto.UnitID)
 		if uErr == nil {
 			unitName = u.Name
+			unitAbbrev = u.Abbreviation
+			unitKraQty = u.KraQtyUnitCd
 		}
 	}
 
@@ -1914,6 +1933,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		},
 		Timestamp: time.Now().UTC(),
 	}
+	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty)
 
 	payload, err := event.ToJSON()
 	if err != nil {
@@ -2097,6 +2117,15 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	if dto.TaxCodeID != "" {
 		updateBuilder = updateBuilder.SetTaxCodeID(dto.TaxCodeID)
 	}
+	if dto.EtimsItemClsCd != "" {
+		updateBuilder = updateBuilder.SetEtimsItemClsCd(dto.EtimsItemClsCd)
+	}
+	if dto.EtimsPkgUnitCd != "" {
+		updateBuilder = updateBuilder.SetEtimsPkgUnitCd(dto.EtimsPkgUnitCd)
+	}
+	if dto.EtimsQtyUnitCd != "" {
+		updateBuilder = updateBuilder.SetEtimsQtyUnitCd(dto.EtimsQtyUnitCd)
+	}
 	if dto.TotalCapacity != nil {
 		updateBuilder = updateBuilder.SetTotalCapacity(*dto.TotalCapacity)
 	}
@@ -2191,12 +2220,14 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		}
 	}
 
-	// Resolve unit name for enriched event payload
-	unitName := ""
+	// Resolve unit name + KRA quantity-unit mapping for the enriched event payload
+	unitName, unitAbbrev, unitKraQty := "", "", ""
 	if i.UnitID != nil {
 		u, uErr := s.client.Unit.Get(ctx, *i.UnitID)
 		if uErr == nil {
 			unitName = u.Name
+			unitAbbrev = u.Abbreviation
+			unitKraQty = u.KraQtyUnitCd
 		}
 	}
 
@@ -2246,6 +2277,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		},
 		Timestamp: time.Now().UTC(),
 	}
+	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty)
 
 	payload, err := event.ToJSON()
 	if err != nil {
