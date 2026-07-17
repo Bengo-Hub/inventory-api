@@ -48,6 +48,8 @@ type Asset struct {
 	DepreciationRate float64 `json:"depreciation_rate,omitempty"`
 	// DepreciationMethod holds the value of the "depreciation_method" field.
 	DepreciationMethod asset.DepreciationMethod `json:"depreciation_method,omitempty"`
+	// KRA capital-allowance class code (treasury computes the allowance from it)
+	KraCaClass string `json:"kra_ca_class,omitempty"`
 	// AccumulatedDepreciation holds the value of the "accumulated_depreciation" field.
 	AccumulatedDepreciation float64 `json:"accumulated_depreciation,omitempty"`
 	// BookValue holds the value of the "book_value" field.
@@ -100,7 +102,7 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case asset.FieldPurchaseCost, asset.FieldCurrentValue, asset.FieldSalvageValue, asset.FieldDepreciationRate, asset.FieldAccumulatedDepreciation, asset.FieldBookValue:
 			values[i] = new(sql.NullFloat64)
-		case asset.FieldAssetTag, asset.FieldName, asset.FieldDescription, asset.FieldSerialNumber, asset.FieldModel, asset.FieldManufacturer, asset.FieldBarcode, asset.FieldDepreciationMethod, asset.FieldLastDepreciationPeriod, asset.FieldLocation, asset.FieldStatus, asset.FieldCondition, asset.FieldMaintenanceSchedule, asset.FieldNotes:
+		case asset.FieldAssetTag, asset.FieldName, asset.FieldDescription, asset.FieldSerialNumber, asset.FieldModel, asset.FieldManufacturer, asset.FieldBarcode, asset.FieldDepreciationMethod, asset.FieldKraCaClass, asset.FieldLastDepreciationPeriod, asset.FieldLocation, asset.FieldStatus, asset.FieldCondition, asset.FieldMaintenanceSchedule, asset.FieldNotes:
 			values[i] = new(sql.NullString)
 		case asset.FieldPurchaseDate, asset.FieldWarrantyExpiry, asset.FieldLastMaintenance, asset.FieldNextMaintenance, asset.FieldCreatedAt, asset.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -218,6 +220,12 @@ func (_m *Asset) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field depreciation_method", values[i])
 			} else if value.Valid {
 				_m.DepreciationMethod = asset.DepreciationMethod(value.String)
+			}
+		case asset.FieldKraCaClass:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kra_ca_class", values[i])
+			} else if value.Valid {
+				_m.KraCaClass = value.String
 			}
 		case asset.FieldAccumulatedDepreciation:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -425,6 +433,9 @@ func (_m *Asset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("depreciation_method=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DepreciationMethod))
+	builder.WriteString(", ")
+	builder.WriteString("kra_ca_class=")
+	builder.WriteString(_m.KraCaClass)
 	builder.WriteString(", ")
 	builder.WriteString("accumulated_depreciation=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AccumulatedDepreciation))

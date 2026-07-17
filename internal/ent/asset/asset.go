@@ -45,6 +45,8 @@ const (
 	FieldDepreciationRate = "depreciation_rate"
 	// FieldDepreciationMethod holds the string denoting the depreciation_method field in the database.
 	FieldDepreciationMethod = "depreciation_method"
+	// FieldKraCaClass holds the string denoting the kra_ca_class field in the database.
+	FieldKraCaClass = "kra_ca_class"
 	// FieldAccumulatedDepreciation holds the string denoting the accumulated_depreciation field in the database.
 	FieldAccumulatedDepreciation = "accumulated_depreciation"
 	// FieldBookValue holds the string denoting the book_value field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldSalvageValue,
 	FieldDepreciationRate,
 	FieldDepreciationMethod,
+	FieldKraCaClass,
 	FieldAccumulatedDepreciation,
 	FieldBookValue,
 	FieldLastDepreciationPeriod,
@@ -303,6 +306,11 @@ func ByDepreciationRate(opts ...sql.OrderTermOption) OrderOption {
 // ByDepreciationMethod orders the results by the depreciation_method field.
 func ByDepreciationMethod(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDepreciationMethod, opts...).ToFunc()
+}
+
+// ByKraCaClass orders the results by the kra_ca_class field.
+func ByKraCaClass(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKraCaClass, opts...).ToFunc()
 }
 
 // ByAccumulatedDepreciation orders the results by the accumulated_depreciation field.

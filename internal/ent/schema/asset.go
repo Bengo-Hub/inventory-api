@@ -35,6 +35,12 @@ func (Asset) Fields() []ent.Field {
 		field.Float("salvage_value").Default(0),
 		field.Float("depreciation_rate").Default(0),
 		field.Enum("depreciation_method").Values("straight_line", "declining_balance").Default("straight_line"),
+		// KRA capital-allowance class (wear-and-tear pool) this asset belongs to, e.g.
+		// CA_CLASS_1 (37.5%), CA_CLASS_2 (30%), CA_CLASS_3 (25%), CA_CLASS_4 (computers),
+		// CA_IBA (2.5%), CA_COMMERCIAL_BLDG. Inventory owns the asset and its KRA class; the
+		// value is carried on inventory.asset.created/updated so treasury auto-classifies the
+		// synced CapitalAllowanceAsset instead of parking it UNCLASSIFIED (zero allowance).
+		field.String("kra_ca_class").Optional().Comment("KRA capital-allowance class code (treasury computes the allowance from it)"),
 		field.Float("accumulated_depreciation").Default(0),
 		field.Float("book_value").Default(0),
 		field.String("last_depreciation_period").Optional().Comment("YYYY-MM of the last applied depreciation (idempotency guard)"),
