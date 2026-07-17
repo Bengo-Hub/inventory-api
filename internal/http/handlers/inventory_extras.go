@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -91,10 +92,14 @@ func (h *InventoryExtrasHandler) SetBundleService(svc *bundles.Service) {
 
 // publishSupplierEvent writes a supplier event to the outbox table.
 func (h *InventoryExtrasHandler) publishSupplierEvent(ctx context.Context, s *ent.Supplier, eventType string) {
+	// Canonical convention: subject == AggregateType("inventory") + "." + EventType. Callers
+	// pass the full "inventory.supplier.*" subject, so strip the domain prefix to avoid a
+	// doubled subject ("supplier.inventory.supplier.created") that no consumer listens on.
+	eventType = strings.TrimPrefix(eventType, "inventory.")
 	evt := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      s.TenantID,
-		AggregateType: "supplier",
+		AggregateType: "inventory",
 		AggregateID:   s.ID,
 		EventType:     eventType,
 		Payload: map[string]any{

@@ -595,9 +595,9 @@ func (h *PricingTierHandler) publishPricingUpdatedEvent(ctx context.Context, ten
 	evt := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      tenantID,
-		AggregateType: "item_pricing",
+		AggregateType: "inventory",
 		AggregateID:   itemID,
-		EventType:     "inventory.item.pricing_updated",
+		EventType:     "item.pricing_updated",
 		Payload: map[string]any{
 			"item_id":         itemID,
 			"pricing_tier_id": p.PricingTierID,

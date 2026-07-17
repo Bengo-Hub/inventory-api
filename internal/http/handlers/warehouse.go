@@ -443,9 +443,9 @@ func (h *WarehouseHandler) publishWarehouseCreated(ctx context.Context, wh *ent.
 	evt := &events.Event{
 		ID:            uuid.New(),
 		TenantID:      wh.TenantID,
-		AggregateType: "warehouse",
+		AggregateType: "inventory",
 		AggregateID:   wh.ID,
-		EventType:     "inventory.warehouse.created",
+		EventType:     "warehouse.created",
 		Payload: map[string]any{
 			"warehouse_id": wh.ID.String(),
 			"tenant_id":    wh.TenantID.String(),
