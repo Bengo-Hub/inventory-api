@@ -125,6 +125,11 @@ func DepreciationRate(v float64) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldDepreciationRate, v))
 }
 
+// KraCaClass applies equality check predicate on the "kra_ca_class" field. It's identical to KraCaClassEQ.
+func KraCaClass(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldKraCaClass, v))
+}
+
 // AccumulatedDepreciation applies equality check predicate on the "accumulated_depreciation" field. It's identical to AccumulatedDepreciationEQ.
 func AccumulatedDepreciation(v float64) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldAccumulatedDepreciation, v))
@@ -1038,6 +1043,81 @@ func DepreciationMethodIn(vs ...DepreciationMethod) predicate.Asset {
 // DepreciationMethodNotIn applies the NotIn predicate on the "depreciation_method" field.
 func DepreciationMethodNotIn(vs ...DepreciationMethod) predicate.Asset {
 	return predicate.Asset(sql.FieldNotIn(FieldDepreciationMethod, vs...))
+}
+
+// KraCaClassEQ applies the EQ predicate on the "kra_ca_class" field.
+func KraCaClassEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldKraCaClass, v))
+}
+
+// KraCaClassNEQ applies the NEQ predicate on the "kra_ca_class" field.
+func KraCaClassNEQ(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldKraCaClass, v))
+}
+
+// KraCaClassIn applies the In predicate on the "kra_ca_class" field.
+func KraCaClassIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldKraCaClass, vs...))
+}
+
+// KraCaClassNotIn applies the NotIn predicate on the "kra_ca_class" field.
+func KraCaClassNotIn(vs ...string) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldKraCaClass, vs...))
+}
+
+// KraCaClassGT applies the GT predicate on the "kra_ca_class" field.
+func KraCaClassGT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGT(FieldKraCaClass, v))
+}
+
+// KraCaClassGTE applies the GTE predicate on the "kra_ca_class" field.
+func KraCaClassGTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldGTE(FieldKraCaClass, v))
+}
+
+// KraCaClassLT applies the LT predicate on the "kra_ca_class" field.
+func KraCaClassLT(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLT(FieldKraCaClass, v))
+}
+
+// KraCaClassLTE applies the LTE predicate on the "kra_ca_class" field.
+func KraCaClassLTE(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldLTE(FieldKraCaClass, v))
+}
+
+// KraCaClassContains applies the Contains predicate on the "kra_ca_class" field.
+func KraCaClassContains(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContains(FieldKraCaClass, v))
+}
+
+// KraCaClassHasPrefix applies the HasPrefix predicate on the "kra_ca_class" field.
+func KraCaClassHasPrefix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasPrefix(FieldKraCaClass, v))
+}
+
+// KraCaClassHasSuffix applies the HasSuffix predicate on the "kra_ca_class" field.
+func KraCaClassHasSuffix(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldHasSuffix(FieldKraCaClass, v))
+}
+
+// KraCaClassIsNil applies the IsNil predicate on the "kra_ca_class" field.
+func KraCaClassIsNil() predicate.Asset {
+	return predicate.Asset(sql.FieldIsNull(FieldKraCaClass))
+}
+
+// KraCaClassNotNil applies the NotNil predicate on the "kra_ca_class" field.
+func KraCaClassNotNil() predicate.Asset {
+	return predicate.Asset(sql.FieldNotNull(FieldKraCaClass))
+}
+
+// KraCaClassEqualFold applies the EqualFold predicate on the "kra_ca_class" field.
+func KraCaClassEqualFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldEqualFold(FieldKraCaClass, v))
+}
+
+// KraCaClassContainsFold applies the ContainsFold predicate on the "kra_ca_class" field.
+func KraCaClassContainsFold(v string) predicate.Asset {
+	return predicate.Asset(sql.FieldContainsFold(FieldKraCaClass, v))
 }
 
 // AccumulatedDepreciationEQ applies the EQ predicate on the "accumulated_depreciation" field.

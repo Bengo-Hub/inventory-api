@@ -210,6 +210,20 @@ func (_c *AssetCreate) SetNillableDepreciationMethod(v *asset.DepreciationMethod
 	return _c
 }
 
+// SetKraCaClass sets the "kra_ca_class" field.
+func (_c *AssetCreate) SetKraCaClass(v string) *AssetCreate {
+	_c.mutation.SetKraCaClass(v)
+	return _c
+}
+
+// SetNillableKraCaClass sets the "kra_ca_class" field if the given value is not nil.
+func (_c *AssetCreate) SetNillableKraCaClass(v *string) *AssetCreate {
+	if v != nil {
+		_c.SetKraCaClass(*v)
+	}
+	return _c
+}
+
 // SetAccumulatedDepreciation sets the "accumulated_depreciation" field.
 func (_c *AssetCreate) SetAccumulatedDepreciation(v float64) *AssetCreate {
 	_c.mutation.SetAccumulatedDepreciation(v)
@@ -735,6 +749,10 @@ func (_c *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 		_spec.SetField(asset.FieldDepreciationMethod, field.TypeEnum, value)
 		_node.DepreciationMethod = value
 	}
+	if value, ok := _c.mutation.KraCaClass(); ok {
+		_spec.SetField(asset.FieldKraCaClass, field.TypeString, value)
+		_node.KraCaClass = value
+	}
 	if value, ok := _c.mutation.AccumulatedDepreciation(); ok {
 		_spec.SetField(asset.FieldAccumulatedDepreciation, field.TypeFloat64, value)
 		_node.AccumulatedDepreciation = value
@@ -1106,6 +1124,24 @@ func (u *AssetUpsert) SetDepreciationMethod(v asset.DepreciationMethod) *AssetUp
 // UpdateDepreciationMethod sets the "depreciation_method" field to the value that was provided on create.
 func (u *AssetUpsert) UpdateDepreciationMethod() *AssetUpsert {
 	u.SetExcluded(asset.FieldDepreciationMethod)
+	return u
+}
+
+// SetKraCaClass sets the "kra_ca_class" field.
+func (u *AssetUpsert) SetKraCaClass(v string) *AssetUpsert {
+	u.Set(asset.FieldKraCaClass, v)
+	return u
+}
+
+// UpdateKraCaClass sets the "kra_ca_class" field to the value that was provided on create.
+func (u *AssetUpsert) UpdateKraCaClass() *AssetUpsert {
+	u.SetExcluded(asset.FieldKraCaClass)
+	return u
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (u *AssetUpsert) ClearKraCaClass() *AssetUpsert {
+	u.SetNull(asset.FieldKraCaClass)
 	return u
 }
 
@@ -1750,6 +1786,27 @@ func (u *AssetUpsertOne) SetDepreciationMethod(v asset.DepreciationMethod) *Asse
 func (u *AssetUpsertOne) UpdateDepreciationMethod() *AssetUpsertOne {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateDepreciationMethod()
+	})
+}
+
+// SetKraCaClass sets the "kra_ca_class" field.
+func (u *AssetUpsertOne) SetKraCaClass(v string) *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetKraCaClass(v)
+	})
+}
+
+// UpdateKraCaClass sets the "kra_ca_class" field to the value that was provided on create.
+func (u *AssetUpsertOne) UpdateKraCaClass() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateKraCaClass()
+	})
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (u *AssetUpsertOne) ClearKraCaClass() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearKraCaClass()
 	})
 }
 
@@ -2612,6 +2669,27 @@ func (u *AssetUpsertBulk) SetDepreciationMethod(v asset.DepreciationMethod) *Ass
 func (u *AssetUpsertBulk) UpdateDepreciationMethod() *AssetUpsertBulk {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateDepreciationMethod()
+	})
+}
+
+// SetKraCaClass sets the "kra_ca_class" field.
+func (u *AssetUpsertBulk) SetKraCaClass(v string) *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetKraCaClass(v)
+	})
+}
+
+// UpdateKraCaClass sets the "kra_ca_class" field to the value that was provided on create.
+func (u *AssetUpsertBulk) UpdateKraCaClass() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateKraCaClass()
+	})
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (u *AssetUpsertBulk) ClearKraCaClass() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.ClearKraCaClass()
 	})
 }
 

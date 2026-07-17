@@ -309,6 +309,26 @@ func (_u *AssetUpdate) SetNillableDepreciationMethod(v *asset.DepreciationMethod
 	return _u
 }
 
+// SetKraCaClass sets the "kra_ca_class" field.
+func (_u *AssetUpdate) SetKraCaClass(v string) *AssetUpdate {
+	_u.mutation.SetKraCaClass(v)
+	return _u
+}
+
+// SetNillableKraCaClass sets the "kra_ca_class" field if the given value is not nil.
+func (_u *AssetUpdate) SetNillableKraCaClass(v *string) *AssetUpdate {
+	if v != nil {
+		_u.SetKraCaClass(*v)
+	}
+	return _u
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (_u *AssetUpdate) ClearKraCaClass() *AssetUpdate {
+	_u.mutation.ClearKraCaClass()
+	return _u
+}
+
 // SetAccumulatedDepreciation sets the "accumulated_depreciation" field.
 func (_u *AssetUpdate) SetAccumulatedDepreciation(v float64) *AssetUpdate {
 	_u.mutation.ResetAccumulatedDepreciation()
@@ -801,6 +821,12 @@ func (_u *AssetUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.DepreciationMethod(); ok {
 		_spec.SetField(asset.FieldDepreciationMethod, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.KraCaClass(); ok {
+		_spec.SetField(asset.FieldKraCaClass, field.TypeString, value)
+	}
+	if _u.mutation.KraCaClassCleared() {
+		_spec.ClearField(asset.FieldKraCaClass, field.TypeString)
+	}
 	if value, ok := _u.mutation.AccumulatedDepreciation(); ok {
 		_spec.SetField(asset.FieldAccumulatedDepreciation, field.TypeFloat64, value)
 	}
@@ -1197,6 +1223,26 @@ func (_u *AssetUpdateOne) SetNillableDepreciationMethod(v *asset.DepreciationMet
 	if v != nil {
 		_u.SetDepreciationMethod(*v)
 	}
+	return _u
+}
+
+// SetKraCaClass sets the "kra_ca_class" field.
+func (_u *AssetUpdateOne) SetKraCaClass(v string) *AssetUpdateOne {
+	_u.mutation.SetKraCaClass(v)
+	return _u
+}
+
+// SetNillableKraCaClass sets the "kra_ca_class" field if the given value is not nil.
+func (_u *AssetUpdateOne) SetNillableKraCaClass(v *string) *AssetUpdateOne {
+	if v != nil {
+		_u.SetKraCaClass(*v)
+	}
+	return _u
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (_u *AssetUpdateOne) ClearKraCaClass() *AssetUpdateOne {
+	_u.mutation.ClearKraCaClass()
 	return _u
 }
 
@@ -1721,6 +1767,12 @@ func (_u *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error)
 	}
 	if value, ok := _u.mutation.DepreciationMethod(); ok {
 		_spec.SetField(asset.FieldDepreciationMethod, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.KraCaClass(); ok {
+		_spec.SetField(asset.FieldKraCaClass, field.TypeString, value)
+	}
+	if _u.mutation.KraCaClassCleared() {
+		_spec.ClearField(asset.FieldKraCaClass, field.TypeString)
 	}
 	if value, ok := _u.mutation.AccumulatedDepreciation(); ok {
 		_spec.SetField(asset.FieldAccumulatedDepreciation, field.TypeFloat64, value)

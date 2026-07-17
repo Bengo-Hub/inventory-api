@@ -161,6 +161,7 @@ var (
 		{Name: "salvage_value", Type: field.TypeFloat64, Default: 0},
 		{Name: "depreciation_rate", Type: field.TypeFloat64, Default: 0},
 		{Name: "depreciation_method", Type: field.TypeEnum, Enums: []string{"straight_line", "declining_balance"}, Default: "straight_line"},
+		{Name: "kra_ca_class", Type: field.TypeString, Nullable: true},
 		{Name: "accumulated_depreciation", Type: field.TypeFloat64, Default: 0},
 		{Name: "book_value", Type: field.TypeFloat64, Default: 0},
 		{Name: "last_depreciation_period", Type: field.TypeString, Nullable: true},
@@ -195,7 +196,7 @@ var (
 			{
 				Name:    "asset_tenant_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[24]},
+				Columns: []*schema.Column{AssetsColumns[1], AssetsColumns[25]},
 			},
 			{
 				Name:    "asset_tenant_id_category_id",

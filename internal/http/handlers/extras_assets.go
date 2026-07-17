@@ -261,6 +261,7 @@ type assetPayload struct {
 	SalvageValue       float64    `json:"salvage_value"`
 	DepreciationRate   float64    `json:"depreciation_rate"`
 	DepreciationMethod string     `json:"depreciation_method"`
+	KRACAClass         string     `json:"kra_ca_class"` // KRA capital-allowance class → carried to treasury
 	Location           string     `json:"location"`
 	OutletID           *uuid.UUID `json:"outlet_id"`
 	CustodianID        *uuid.UUID `json:"custodian_id"`
@@ -366,6 +367,9 @@ func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Requ
 	if req.DepreciationMethod != "" {
 		c = c.SetDepreciationMethod(entasset.DepreciationMethod(req.DepreciationMethod))
 	}
+	if req.KRACAClass != "" {
+		c = c.SetKraCaClass(req.KRACAClass)
+	}
 	if req.CategoryID != nil {
 		c = c.SetCategoryID(*req.CategoryID)
 	}
@@ -392,10 +396,12 @@ func (h *InventoryExtrasHandler) CreateAsset(w http.ResponseWriter, r *http.Requ
 	}
 	h.publishOutbox(r.Context(), tenantID, "asset", a.ID, "inventory.asset.created", map[string]any{
 		"id": a.ID, "asset_tag": a.AssetTag, "name": a.Name, "purchase_cost": a.PurchaseCost,
-		// Extra fields let treasury auto-register the capital-allowance asset richly
-		// (purchase date + method); ca_class_code is assigned later in the treasury UI.
+		// Extra fields let treasury auto-register the capital-allowance asset richly. When the
+		// KRA class is set here (inventory owns the asset + its class), treasury classifies the
+		// synced CA asset immediately instead of parking it UNCLASSIFIED with zero allowance.
 		"purchase_date":       a.PurchaseDate,
 		"depreciation_method": a.DepreciationMethod,
+		"ca_class_code":       a.KraCaClass,
 	})
 	writeJSON(w, http.StatusCreated, a)
 }
@@ -441,6 +447,9 @@ func (h *InventoryExtrasHandler) UpdateAsset(w http.ResponseWriter, r *http.Requ
 	}
 	if req.DepreciationMethod != "" {
 		upd = upd.SetDepreciationMethod(entasset.DepreciationMethod(req.DepreciationMethod))
+	}
+	if req.KRACAClass != "" {
+		upd = upd.SetKraCaClass(req.KRACAClass)
 	}
 	_ = tenantID
 	updated, err := upd.Save(r.Context())

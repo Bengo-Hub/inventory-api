@@ -3966,6 +3966,7 @@ type AssetMutation struct {
 	depreciation_rate           *float64
 	adddepreciation_rate        *float64
 	depreciation_method         *asset.DepreciationMethod
+	kra_ca_class                *string
 	accumulated_depreciation    *float64
 	addaccumulated_depreciation *float64
 	book_value                  *float64
@@ -4806,6 +4807,55 @@ func (m *AssetMutation) OldDepreciationMethod(ctx context.Context) (v asset.Depr
 // ResetDepreciationMethod resets all changes to the "depreciation_method" field.
 func (m *AssetMutation) ResetDepreciationMethod() {
 	m.depreciation_method = nil
+}
+
+// SetKraCaClass sets the "kra_ca_class" field.
+func (m *AssetMutation) SetKraCaClass(s string) {
+	m.kra_ca_class = &s
+}
+
+// KraCaClass returns the value of the "kra_ca_class" field in the mutation.
+func (m *AssetMutation) KraCaClass() (r string, exists bool) {
+	v := m.kra_ca_class
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKraCaClass returns the old "kra_ca_class" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldKraCaClass(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKraCaClass is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKraCaClass requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKraCaClass: %w", err)
+	}
+	return oldValue.KraCaClass, nil
+}
+
+// ClearKraCaClass clears the value of the "kra_ca_class" field.
+func (m *AssetMutation) ClearKraCaClass() {
+	m.kra_ca_class = nil
+	m.clearedFields[asset.FieldKraCaClass] = struct{}{}
+}
+
+// KraCaClassCleared returns if the "kra_ca_class" field was cleared in this mutation.
+func (m *AssetMutation) KraCaClassCleared() bool {
+	_, ok := m.clearedFields[asset.FieldKraCaClass]
+	return ok
+}
+
+// ResetKraCaClass resets all changes to the "kra_ca_class" field.
+func (m *AssetMutation) ResetKraCaClass() {
+	m.kra_ca_class = nil
+	delete(m.clearedFields, asset.FieldKraCaClass)
 }
 
 // SetAccumulatedDepreciation sets the "accumulated_depreciation" field.
@@ -5735,7 +5785,7 @@ func (m *AssetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AssetMutation) Fields() []string {
-	fields := make([]string, 0, 34)
+	fields := make([]string, 0, 35)
 	if m.tenant_id != nil {
 		fields = append(fields, asset.FieldTenantID)
 	}
@@ -5780,6 +5830,9 @@ func (m *AssetMutation) Fields() []string {
 	}
 	if m.depreciation_method != nil {
 		fields = append(fields, asset.FieldDepreciationMethod)
+	}
+	if m.kra_ca_class != nil {
+		fields = append(fields, asset.FieldKraCaClass)
 	}
 	if m.accumulated_depreciation != nil {
 		fields = append(fields, asset.FieldAccumulatedDepreciation)
@@ -5876,6 +5929,8 @@ func (m *AssetMutation) Field(name string) (ent.Value, bool) {
 		return m.DepreciationRate()
 	case asset.FieldDepreciationMethod:
 		return m.DepreciationMethod()
+	case asset.FieldKraCaClass:
+		return m.KraCaClass()
 	case asset.FieldAccumulatedDepreciation:
 		return m.AccumulatedDepreciation()
 	case asset.FieldBookValue:
@@ -5953,6 +6008,8 @@ func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldDepreciationRate(ctx)
 	case asset.FieldDepreciationMethod:
 		return m.OldDepreciationMethod(ctx)
+	case asset.FieldKraCaClass:
+		return m.OldKraCaClass(ctx)
 	case asset.FieldAccumulatedDepreciation:
 		return m.OldAccumulatedDepreciation(ctx)
 	case asset.FieldBookValue:
@@ -6104,6 +6161,13 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDepreciationMethod(v)
+		return nil
+	case asset.FieldKraCaClass:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKraCaClass(v)
 		return nil
 	case asset.FieldAccumulatedDepreciation:
 		v, ok := value.(float64)
@@ -6364,6 +6428,9 @@ func (m *AssetMutation) ClearedFields() []string {
 	if m.FieldCleared(asset.FieldPurchaseDate) {
 		fields = append(fields, asset.FieldPurchaseDate)
 	}
+	if m.FieldCleared(asset.FieldKraCaClass) {
+		fields = append(fields, asset.FieldKraCaClass)
+	}
 	if m.FieldCleared(asset.FieldLastDepreciationPeriod) {
 		fields = append(fields, asset.FieldLastDepreciationPeriod)
 	}
@@ -6437,6 +6504,9 @@ func (m *AssetMutation) ClearField(name string) error {
 		return nil
 	case asset.FieldPurchaseDate:
 		m.ClearPurchaseDate()
+		return nil
+	case asset.FieldKraCaClass:
+		m.ClearKraCaClass()
 		return nil
 	case asset.FieldLastDepreciationPeriod:
 		m.ClearLastDepreciationPeriod()
@@ -6529,6 +6599,9 @@ func (m *AssetMutation) ResetField(name string) error {
 		return nil
 	case asset.FieldDepreciationMethod:
 		m.ResetDepreciationMethod()
+		return nil
+	case asset.FieldKraCaClass:
+		m.ResetKraCaClass()
 		return nil
 	case asset.FieldAccumulatedDepreciation:
 		m.ResetAccumulatedDepreciation()

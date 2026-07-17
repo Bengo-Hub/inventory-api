@@ -209,23 +209,23 @@ func init() {
 	// asset.DefaultDepreciationRate holds the default value on creation for the depreciation_rate field.
 	asset.DefaultDepreciationRate = assetDescDepreciationRate.Default.(float64)
 	// assetDescAccumulatedDepreciation is the schema descriptor for accumulated_depreciation field.
-	assetDescAccumulatedDepreciation := assetFields[16].Descriptor()
+	assetDescAccumulatedDepreciation := assetFields[17].Descriptor()
 	// asset.DefaultAccumulatedDepreciation holds the default value on creation for the accumulated_depreciation field.
 	asset.DefaultAccumulatedDepreciation = assetDescAccumulatedDepreciation.Default.(float64)
 	// assetDescBookValue is the schema descriptor for book_value field.
-	assetDescBookValue := assetFields[17].Descriptor()
+	assetDescBookValue := assetFields[18].Descriptor()
 	// asset.DefaultBookValue holds the default value on creation for the book_value field.
 	asset.DefaultBookValue = assetDescBookValue.Default.(float64)
 	// assetDescIsActive is the schema descriptor for is_active field.
-	assetDescIsActive := assetFields[31].Descriptor()
+	assetDescIsActive := assetFields[32].Descriptor()
 	// asset.DefaultIsActive holds the default value on creation for the is_active field.
 	asset.DefaultIsActive = assetDescIsActive.Default.(bool)
 	// assetDescCreatedAt is the schema descriptor for created_at field.
-	assetDescCreatedAt := assetFields[33].Descriptor()
+	assetDescCreatedAt := assetFields[34].Descriptor()
 	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
 	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
 	// assetDescUpdatedAt is the schema descriptor for updated_at field.
-	assetDescUpdatedAt := assetFields[34].Descriptor()
+	assetDescUpdatedAt := assetFields[35].Descriptor()
 	// asset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	asset.DefaultUpdatedAt = assetDescUpdatedAt.Default.(func() time.Time)
 	// asset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
