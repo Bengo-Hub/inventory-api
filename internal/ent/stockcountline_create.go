@@ -90,6 +90,20 @@ func (_c *StockCountLineCreate) SetNillableVariance(v *float64) *StockCountLineC
 	return _c
 }
 
+// SetReason sets the "reason" field.
+func (_c *StockCountLineCreate) SetReason(v string) *StockCountLineCreate {
+	_c.mutation.SetReason(v)
+	return _c
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (_c *StockCountLineCreate) SetNillableReason(v *string) *StockCountLineCreate {
+	if v != nil {
+		_c.SetReason(*v)
+	}
+	return _c
+}
+
 // SetPosted sets the "posted" field.
 func (_c *StockCountLineCreate) SetPosted(v bool) *StockCountLineCreate {
 	_c.mutation.SetPosted(v)
@@ -225,6 +239,11 @@ func (_c *StockCountLineCreate) check() error {
 	if _, ok := _c.mutation.SystemQty(); !ok {
 		return &ValidationError{Name: "system_qty", err: errors.New(`ent: missing required field "StockCountLine.system_qty"`)}
 	}
+	if v, ok := _c.mutation.Reason(); ok {
+		if err := stockcountline.ReasonValidator(v); err != nil {
+			return &ValidationError{Name: "reason", err: fmt.Errorf(`ent: validator failed for field "StockCountLine.reason": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Posted(); !ok {
 		return &ValidationError{Name: "posted", err: errors.New(`ent: missing required field "StockCountLine.posted"`)}
 	}
@@ -297,6 +316,10 @@ func (_c *StockCountLineCreate) createSpec() (*StockCountLine, *sqlgraph.CreateS
 	if value, ok := _c.mutation.Variance(); ok {
 		_spec.SetField(stockcountline.FieldVariance, field.TypeFloat64, value)
 		_node.Variance = &value
+	}
+	if value, ok := _c.mutation.Reason(); ok {
+		_spec.SetField(stockcountline.FieldReason, field.TypeString, value)
+		_node.Reason = value
 	}
 	if value, ok := _c.mutation.Posted(); ok {
 		_spec.SetField(stockcountline.FieldPosted, field.TypeBool, value)
@@ -473,6 +496,24 @@ func (u *StockCountLineUpsert) AddVariance(v float64) *StockCountLineUpsert {
 // ClearVariance clears the value of the "variance" field.
 func (u *StockCountLineUpsert) ClearVariance() *StockCountLineUpsert {
 	u.SetNull(stockcountline.FieldVariance)
+	return u
+}
+
+// SetReason sets the "reason" field.
+func (u *StockCountLineUpsert) SetReason(v string) *StockCountLineUpsert {
+	u.Set(stockcountline.FieldReason, v)
+	return u
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockCountLineUpsert) UpdateReason() *StockCountLineUpsert {
+	u.SetExcluded(stockcountline.FieldReason)
+	return u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *StockCountLineUpsert) ClearReason() *StockCountLineUpsert {
+	u.SetNull(stockcountline.FieldReason)
 	return u
 }
 
@@ -681,6 +722,27 @@ func (u *StockCountLineUpsertOne) UpdateVariance() *StockCountLineUpsertOne {
 func (u *StockCountLineUpsertOne) ClearVariance() *StockCountLineUpsertOne {
 	return u.Update(func(s *StockCountLineUpsert) {
 		s.ClearVariance()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *StockCountLineUpsertOne) SetReason(v string) *StockCountLineUpsertOne {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockCountLineUpsertOne) UpdateReason() *StockCountLineUpsertOne {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *StockCountLineUpsertOne) ClearReason() *StockCountLineUpsertOne {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.ClearReason()
 	})
 }
 
@@ -1060,6 +1122,27 @@ func (u *StockCountLineUpsertBulk) UpdateVariance() *StockCountLineUpsertBulk {
 func (u *StockCountLineUpsertBulk) ClearVariance() *StockCountLineUpsertBulk {
 	return u.Update(func(s *StockCountLineUpsert) {
 		s.ClearVariance()
+	})
+}
+
+// SetReason sets the "reason" field.
+func (u *StockCountLineUpsertBulk) SetReason(v string) *StockCountLineUpsertBulk {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.SetReason(v)
+	})
+}
+
+// UpdateReason sets the "reason" field to the value that was provided on create.
+func (u *StockCountLineUpsertBulk) UpdateReason() *StockCountLineUpsertBulk {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.UpdateReason()
+	})
+}
+
+// ClearReason clears the value of the "reason" field.
+func (u *StockCountLineUpsertBulk) ClearReason() *StockCountLineUpsertBulk {
+	return u.Update(func(s *StockCountLineUpsert) {
+		s.ClearReason()
 	})
 }
 

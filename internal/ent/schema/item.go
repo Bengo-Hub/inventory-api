@@ -239,6 +239,14 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			MaxLen(20).
 			Comment("Unit of the per-stock-unit content (e.g. 'ml', 'g') — enables cross-dimension recipe deduction"),
+		// Reusable menu components: a RECIPE-type item flagged here may be picked as an
+		// ingredient in OTHER recipes (e.g. Black Tea 30 ml inside an Iced Passion Tea).
+		// The deduction path already handles it (sub-recipe auto-link + backflush); this
+		// flag only controls which RECIPE items surface in the recipe-ingredient picker so
+		// the whole menu doesn't flood it. GOODS/INGREDIENT are always pickable.
+		field.Bool("usable_in_recipes").
+			Default(false).
+			Comment("RECIPE-type items only: may be used as an ingredient/sub-recipe input in other recipes (surfaces in the recipe-ingredient picker)"),
 		// Stock tracking mode — AccuPOS/Square-style per-item depletion control.
 		// "default": RECIPE-type items follow TenantInventoryConfig.recipe_items_non_depleting_default,
 		// everything else is tracked. Explicit "tracked"/"non_depleting" always wins.

@@ -216,6 +216,9 @@ type StockCount func(*sql.Selector)
 // StockCountLine is the predicate function for stockcountline builders.
 type StockCountLine func(*sql.Selector)
 
+// StockCountTemplate is the predicate function for stockcounttemplate builders.
+type StockCountTemplate func(*sql.Selector)
+
 // StockLevelEvent is the predicate function for stocklevelevent builders.
 type StockLevelEvent func(*sql.Selector)
 

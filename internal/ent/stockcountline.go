@@ -32,6 +32,8 @@ type StockCountLine struct {
 	CountedQty *float64 `json:"counted_qty,omitempty"`
 	// counted_qty - system_qty
 	Variance *float64 `json:"variance,omitempty"`
+	// Variance classification — StockAdjustment reason used when posting (empty = count_variance)
+	Reason string `json:"reason,omitempty"`
 	// True once the variance adjustment was posted
 	Posted bool `json:"posted,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -50,7 +52,7 @@ func (*StockCountLine) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case stockcountline.FieldSystemQty, stockcountline.FieldCountedQty, stockcountline.FieldVariance:
 			values[i] = new(sql.NullFloat64)
-		case stockcountline.FieldSku:
+		case stockcountline.FieldSku, stockcountline.FieldReason:
 			values[i] = new(sql.NullString)
 		case stockcountline.FieldCreatedAt, stockcountline.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -120,6 +122,12 @@ func (_m *StockCountLine) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Variance = new(float64)
 				*_m.Variance = value.Float64
+			}
+		case stockcountline.FieldReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field reason", values[i])
+			} else if value.Valid {
+				_m.Reason = value.String
 			}
 		case stockcountline.FieldPosted:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -199,6 +207,9 @@ func (_m *StockCountLine) String() string {
 		builder.WriteString("variance=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("reason=")
+	builder.WriteString(_m.Reason)
 	builder.WriteString(", ")
 	builder.WriteString("posted=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Posted))

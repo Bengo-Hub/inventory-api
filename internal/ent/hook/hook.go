@@ -849,6 +849,18 @@ func (f StockCountLineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockCountLineMutation", m)
 }
 
+// The StockCountTemplateFunc type is an adapter to allow the use of ordinary
+// function as StockCountTemplate mutator.
+type StockCountTemplateFunc func(context.Context, *ent.StockCountTemplateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockCountTemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockCountTemplateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockCountTemplateMutation", m)
+}
+
 // The StockLevelEventFunc type is an adapter to allow the use of ordinary
 // function as StockLevelEvent mutator.
 type StockLevelEventFunc func(context.Context, *ent.StockLevelEventMutation) (ent.Value, error)

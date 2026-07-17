@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
@@ -16,6 +19,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entcount "github.com/bengobox/inventory-service/internal/ent/stockcount"
 	entcountline "github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	enttemplate "github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -55,12 +59,24 @@ func (h *StockCountHandler) RegisterRoutes(r chi.Router) {
 		sc.With(featGate, perm(rbac.PermStockCountApprove)).Post("/{id}/approve", h.Approve)
 		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/cancel", h.Cancel)
 	})
+	// Reusable department count sheets (kitchen daily sheet, barista counter, …).
+	// Configuring sheets is a supervisor task (change perm); anyone who can count can list them.
+	r.Route("/inventory/stock-count-templates", func(tc chi.Router) {
+		tc.Get("/", h.ListTemplates)
+		tc.With(featGate, perm(rbac.PermStockCountChange)).Post("/", h.CreateTemplate)
+		tc.With(featGate, perm(rbac.PermStockCountChange)).Put("/{id}", h.UpdateTemplate)
+		tc.With(featGate, perm(rbac.PermStockCountChange)).Delete("/{id}", h.DeleteTemplate)
+	})
 }
 
 type createCountRequest struct {
 	WarehouseID uuid.UUID `json:"warehouse_id"`
 	Reference   string    `json:"reference,omitempty"`
 	Snapshot    bool      `json:"snapshot"` // pre-populate lines from current balances
+	// TemplateID starts the count from a department sheet: only the template's items
+	// (explicit + category members) are pre-populated, each at its current system
+	// on-hand — the "expected closing stock". Overrides Snapshot.
+	TemplateID *uuid.UUID `json:"template_id,omitempty"`
 }
 
 // Create handles POST /inventory/stock-counts.
@@ -71,11 +87,36 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req createCountRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.WarehouseID == uuid.Nil {
-		writeError(w, http.StatusBadRequest, "INVALID_BODY", "warehouse_id is required")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
 	ctx := r.Context()
+
+	// Template-driven count: the department sheet supplies the item set and (when the
+	// request doesn't name one) the location; the reference defaults to the sheet name.
+	var tpl *ent.StockCountTemplate
+	if req.TemplateID != nil {
+		var tErr error
+		tpl, tErr = h.orm.StockCountTemplate.Query().
+			Where(enttemplate.ID(*req.TemplateID), enttemplate.TenantID(tenantID)).
+			Only(ctx)
+		if tErr != nil {
+			writeError(w, http.StatusNotFound, "TEMPLATE_NOT_FOUND", "Count sheet template not found")
+			return
+		}
+		if req.WarehouseID == uuid.Nil && tpl.WarehouseID != nil {
+			req.WarehouseID = *tpl.WarehouseID
+		}
+		if req.Reference == "" {
+			req.Reference = tpl.Name + " · " + time.Now().Format("2006-01-02 15:04")
+		}
+	}
+	if req.WarehouseID == uuid.Nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "warehouse_id is required")
+		return
+	}
+
 	b := h.orm.StockCount.Create().
 		SetTenantID(tenantID).
 		SetWarehouseID(req.WarehouseID).
@@ -95,20 +136,79 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Snapshot {
+	switch {
+	case tpl != nil:
+		// Seed exactly the sheet's items: explicit item_ids plus every active item in
+		// its categories, each snapshotted at the warehouse's current on-hand (0 when
+		// no balance row — the sheet still lists it so staff record the physical count).
+		idSet := map[uuid.UUID]struct{}{}
+		for _, id := range tpl.ItemIds {
+			idSet[id] = struct{}{}
+		}
+		if len(tpl.CategoryIds) > 0 {
+			catItems, _ := h.orm.Item.Query().
+				Where(
+					entitem.TenantID(tenantID),
+					entitem.IsActive(true),
+					entitem.CategoryIDIn(tpl.CategoryIds...),
+				).
+				IDs(ctx)
+			for _, id := range catItems {
+				idSet[id] = struct{}{}
+			}
+		}
+		ids := make([]uuid.UUID, 0, len(idSet))
+		for id := range idSet {
+			ids = append(ids, id)
+		}
+		if len(ids) > 0 {
+			itms, _ := h.orm.Item.Query().
+				Where(entitem.TenantID(tenantID), entitem.IDIn(ids...)).
+				All(ctx)
+			onHand := map[uuid.UUID]float64{}
+			bals, _ := h.orm.InventoryBalance.Query().
+				Where(
+					entbalance.TenantID(tenantID),
+					entbalance.WarehouseID(req.WarehouseID),
+					entbalance.ItemIDIn(ids...),
+				).
+				All(ctx)
+			for _, bal := range bals {
+				onHand[bal.ItemID] = bal.OnHand
+			}
+			for _, it := range itms {
+				_, _ = h.orm.StockCountLine.Create().
+					SetTenantID(tenantID).
+					SetStockCountID(count.ID).
+					SetItemID(it.ID).
+					SetSku(it.Sku).
+					SetSystemQty(onHand[it.ID]).
+					Save(ctx)
+			}
+		}
+	case req.Snapshot:
 		balances, _ := h.orm.InventoryBalance.Query().
 			Where(entbalance.TenantID(tenantID), entbalance.WarehouseID(req.WarehouseID)).
 			All(ctx)
+		itemIDs := make([]uuid.UUID, 0, len(balances))
 		for _, bal := range balances {
-			sku := ""
-			if it, e := h.orm.Item.Query().Where(entitem.ID(bal.ItemID), entitem.TenantID(tenantID)).Only(ctx); e == nil {
-				sku = it.Sku
+			itemIDs = append(itemIDs, bal.ItemID)
+		}
+		skuByID := make(map[uuid.UUID]string, len(itemIDs))
+		if len(itemIDs) > 0 {
+			itms, _ := h.orm.Item.Query().
+				Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...)).
+				All(ctx)
+			for _, it := range itms {
+				skuByID[it.ID] = it.Sku
 			}
+		}
+		for _, bal := range balances {
 			_, _ = h.orm.StockCountLine.Create().
 				SetTenantID(tenantID).
 				SetStockCountID(count.ID).
 				SetItemID(bal.ItemID).
-				SetSku(sku).
+				SetSku(skuByID[bal.ItemID]).
 				SetSystemQty(bal.OnHand).
 				Save(ctx)
 		}
@@ -121,6 +221,16 @@ type upsertLineRequest struct {
 	Sku        string    `json:"sku"`
 	SystemQty  *float64  `json:"system_qty,omitempty"`
 	CountedQty float64   `json:"counted_qty"`
+	// Reason classifies the variance for posting (wastage → damaged, pilferage →
+	// shrinkage, surplus → found, …). Empty keeps/clears to plain count_variance.
+	Reason *string `json:"reason,omitempty"`
+}
+
+// varianceReasons are the StockAdjustment reasons a count line's variance may be
+// classified as during review. count_variance is the default when unclassified.
+var varianceReasons = map[string]bool{
+	"damaged": true, "expired": true, "shrinkage": true, "found": true,
+	"correction": true, "count_variance": true, "other": true,
 }
 
 // UpsertLine handles POST /inventory/stock-counts/{id}/lines — record a counted quantity.
@@ -150,21 +260,54 @@ func (h *StockCountHandler) UpsertLine(w http.ResponseWriter, r *http.Request) {
 		sysQty = *req.SystemQty
 	} else if existing != nil {
 		sysQty = existing.SystemQty
+	} else if count, cErr := h.orm.StockCount.Query().
+		Where(entcount.ID(countID), entcount.TenantID(tenantID)).
+		Only(ctx); cErr == nil {
+		// New line without an explicit snapshot qty (scan-added mid-count): snapshot the
+		// warehouse balance now so the variance is measured against something real.
+		if bal, bErr := h.orm.InventoryBalance.Query().
+			Where(
+				entbalance.TenantID(tenantID),
+				entbalance.WarehouseID(count.WarehouseID),
+				entbalance.ItemID(req.ItemID),
+			).
+			First(ctx); bErr == nil {
+			sysQty = bal.OnHand
+		}
 	}
-	variance := req.CountedQty - sysQty
+	// Counts support fractional units (kg/L) — keep 4 dp, matching balance precision.
+	round4 := func(v float64) float64 { return math.Round(v*10000) / 10000 }
+	countedQty := round4(req.CountedQty)
+	variance := round4(countedQty - sysQty)
+
+	reason := ""
+	if req.Reason != nil {
+		reason = strings.ToLower(strings.TrimSpace(*req.Reason))
+		if reason != "" && !varianceReasons[reason] {
+			writeError(w, http.StatusBadRequest, "INVALID_REASON", "reason must be one of: damaged, expired, shrinkage, found, correction, count_variance, other")
+			return
+		}
+	}
 
 	if existing != nil {
-		_, err = existing.Update().SetCountedQty(req.CountedQty).SetVariance(variance).Save(ctx)
+		upd := existing.Update().SetCountedQty(countedQty).SetVariance(variance)
+		if req.Reason != nil {
+			upd = upd.SetReason(reason)
+		}
+		_, err = upd.Save(ctx)
 	} else {
-		_, err = h.orm.StockCountLine.Create().
+		create := h.orm.StockCountLine.Create().
 			SetTenantID(tenantID).
 			SetStockCountID(countID).
 			SetItemID(req.ItemID).
 			SetSku(req.Sku).
 			SetSystemQty(sysQty).
-			SetCountedQty(req.CountedQty).
-			SetVariance(variance).
-			Save(ctx)
+			SetCountedQty(countedQty).
+			SetVariance(variance)
+		if reason != "" {
+			create = create.SetReason(reason)
+		}
+		_, err = create.Save(ctx)
 	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to save line")
@@ -221,12 +364,24 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 		if ln.CountedQty == nil || ln.Variance == nil || *ln.Variance == 0 {
 			continue
 		}
+		// The reviewer's classification (wastage/damaged, pilferage/shrinkage, found, …)
+		// becomes the adjustment reason; unclassified lines post as count_variance. The
+		// note records the direction so reports read "shortage"/"surplus" without
+		// decoding signs.
+		reason := ln.Reason
+		if reason == "" || !varianceReasons[reason] {
+			reason = "count_variance"
+		}
+		direction := "surplus found"
+		if *ln.Variance < 0 {
+			direction = "shortage"
+		}
 		_, adjErr := h.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
 			SKU:         ln.Sku,
 			Adjustment:  *ln.Variance,
-			Reason:      "count_variance",
+			Reason:      reason,
 			Reference:   "stock-count:" + countID.String(),
-			Notes:       "cycle count variance",
+			Notes:       "stock take " + direction + " — physical count reconciliation",
 			AdjustedBy:  approver,
 			WarehouseID: count.WarehouseID,
 		})
@@ -347,13 +502,60 @@ func (h *StockCountHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lines, _ := h.orm.StockCountLine.Query().Where(entcountline.StockCountID(countID)).All(ctx)
+
+	// Enrich lines with the item's name, barcode and stock unit so the count sheet
+	// reads naturally ("Sugar · INGR-SUGAR · kg") and hardware/camera scans can be
+	// matched client-side against barcode OR sku without extra lookups.
+	itemIDs := make([]uuid.UUID, 0, len(lines))
+	for _, ln := range lines {
+		itemIDs = append(itemIDs, ln.ItemID)
+	}
+	type itemInfo struct {
+		name, barcode, unit, itemType, categoryName string
+	}
+	infoByID := make(map[uuid.UUID]itemInfo, len(itemIDs))
+	if len(itemIDs) > 0 {
+		itms, _ := h.orm.Item.Query().
+			Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...)).
+			WithUnits().
+			WithItemCategory().
+			All(ctx)
+		for _, it := range itms {
+			info := itemInfo{name: it.Name, barcode: it.Barcode, itemType: string(it.Type)}
+			if it.Edges.Units != nil {
+				info.unit = it.Edges.Units.Abbreviation
+			}
+			if it.Edges.ItemCategory != nil {
+				info.categoryName = it.Edges.ItemCategory.Name
+			}
+			infoByID[it.ID] = info
+		}
+	}
+
 	lineOut := make([]map[string]any, 0, len(lines))
 	for _, ln := range lines {
+		info := infoByID[ln.ItemID]
 		lineOut = append(lineOut, map[string]any{
 			"id": ln.ID, "item_id": ln.ItemID, "sku": ln.Sku,
-			"system_qty": ln.SystemQty, "counted_qty": ln.CountedQty, "variance": ln.Variance, "posted": ln.Posted,
+			"item_name": info.name, "barcode": info.barcode, "unit": info.unit,
+			"item_type": info.itemType, "category_name": info.categoryName,
+			"system_qty": ln.SystemQty, "counted_qty": ln.CountedQty, "variance": ln.Variance,
+			"reason": ln.Reason, "posted": ln.Posted,
 		})
 	}
+	// Stable, human order: by item name (falling back to SKU) so the sheet matches how
+	// shelves are walked, not insertion order.
+	sort.Slice(lineOut, func(i, j int) bool {
+		ni, _ := lineOut[i]["item_name"].(string)
+		nj, _ := lineOut[j]["item_name"].(string)
+		if ni == "" {
+			ni, _ = lineOut[i]["sku"].(string)
+		}
+		if nj == "" {
+			nj, _ = lineOut[j]["sku"].(string)
+		}
+		return strings.ToLower(ni) < strings.ToLower(nj)
+	})
 	dto := countDTO(count)
 	dto["lines"] = lineOut
 	writeJSON(w, http.StatusOK, dto)
@@ -365,4 +567,156 @@ func countDTO(c *ent.StockCount) map[string]any {
 		"status": c.Status, "counted_by": c.CountedBy, "approved_by": c.ApprovedBy,
 		"approved_at": c.ApprovedAt, "created_at": c.CreatedAt,
 	}
+}
+
+// ── Count-sheet templates (department stock sheets) ─────────────────────────────
+
+type templateRequest struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	WarehouseID *uuid.UUID  `json:"warehouse_id,omitempty"`
+	ItemIDs     []uuid.UUID `json:"item_ids,omitempty"`
+	CategoryIDs []uuid.UUID `json:"category_ids,omitempty"`
+	IsActive    *bool       `json:"is_active,omitempty"`
+}
+
+func templateDTO(t *ent.StockCountTemplate) map[string]any {
+	return map[string]any{
+		"id": t.ID, "name": t.Name, "description": t.Description,
+		"warehouse_id": t.WarehouseID, "item_ids": t.ItemIds, "category_ids": t.CategoryIds,
+		"is_active": t.IsActive, "created_at": t.CreatedAt, "updated_at": t.UpdatedAt,
+	}
+}
+
+// ListTemplates handles GET /inventory/stock-count-templates.
+func (h *StockCountHandler) ListTemplates(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	rows, err := h.orm.StockCountTemplate.Query().
+		Where(enttemplate.TenantID(tenantID)).
+		Order(ent.Asc(enttemplate.FieldName)).
+		All(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "QUERY_FAILED", "Failed to list count sheets")
+		return
+	}
+	out := make([]map[string]any, 0, len(rows))
+	for _, t := range rows {
+		out = append(out, templateDTO(t))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": out})
+}
+
+// CreateTemplate handles POST /inventory/stock-count-templates.
+func (h *StockCountHandler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	var req templateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Name) == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "name is required")
+		return
+	}
+	if len(req.ItemIDs) == 0 && len(req.CategoryIDs) == 0 {
+		writeError(w, http.StatusBadRequest, "EMPTY_SHEET", "Pick at least one item or category for the sheet")
+		return
+	}
+	b := h.orm.StockCountTemplate.Create().
+		SetTenantID(tenantID).
+		SetName(strings.TrimSpace(req.Name)).
+		SetDescription(req.Description).
+		SetItemIds(req.ItemIDs).
+		SetCategoryIds(req.CategoryIDs).
+		SetNillableWarehouseID(req.WarehouseID)
+	t, err := b.Save(r.Context())
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			writeError(w, http.StatusConflict, "DUPLICATE_NAME", "A count sheet with this name already exists")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to create count sheet")
+		return
+	}
+	writeJSON(w, http.StatusCreated, templateDTO(t))
+}
+
+// UpdateTemplate handles PUT /inventory/stock-count-templates/{id}.
+func (h *StockCountHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid template id")
+		return
+	}
+	var req templateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	ctx := r.Context()
+	t, err := h.orm.StockCountTemplate.Query().
+		Where(enttemplate.ID(id), enttemplate.TenantID(tenantID)).
+		Only(ctx)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Count sheet not found")
+		return
+	}
+	upd := t.Update()
+	if strings.TrimSpace(req.Name) != "" {
+		upd = upd.SetName(strings.TrimSpace(req.Name))
+	}
+	upd = upd.SetDescription(req.Description)
+	if req.ItemIDs != nil {
+		upd = upd.SetItemIds(req.ItemIDs)
+	}
+	if req.CategoryIDs != nil {
+		upd = upd.SetCategoryIds(req.CategoryIDs)
+	}
+	if req.WarehouseID != nil {
+		if *req.WarehouseID == uuid.Nil {
+			upd = upd.ClearWarehouseID()
+		} else {
+			upd = upd.SetWarehouseID(*req.WarehouseID)
+		}
+	}
+	if req.IsActive != nil {
+		upd = upd.SetIsActive(*req.IsActive)
+	}
+	updated, err := upd.Save(ctx)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to update count sheet")
+		return
+	}
+	writeJSON(w, http.StatusOK, templateDTO(updated))
+}
+
+// DeleteTemplate handles DELETE /inventory/stock-count-templates/{id}.
+func (h *StockCountHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid template id")
+		return
+	}
+	n, err := h.orm.StockCountTemplate.Delete().
+		Where(enttemplate.ID(id), enttemplate.TenantID(tenantID)).
+		Exec(r.Context())
+	if err != nil || n == 0 {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Count sheet not found")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

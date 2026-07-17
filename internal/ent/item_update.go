@@ -1167,6 +1167,20 @@ func (_u *ItemUpdate) ClearUnitContentUom() *ItemUpdate {
 	return _u
 }
 
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (_u *ItemUpdate) SetUsableInRecipes(v bool) *ItemUpdate {
+	_u.mutation.SetUsableInRecipes(v)
+	return _u
+}
+
+// SetNillableUsableInRecipes sets the "usable_in_recipes" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableUsableInRecipes(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetUsableInRecipes(*v)
+	}
+	return _u
+}
+
 // SetStockTrackingMode sets the "stock_tracking_mode" field.
 func (_u *ItemUpdate) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpdate {
 	_u.mutation.SetStockTrackingMode(v)
@@ -2315,6 +2329,9 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UnitContentUomCleared() {
 		_spec.ClearField(item.FieldUnitContentUom, field.TypeString)
+	}
+	if value, ok := _u.mutation.UsableInRecipes(); ok {
+		_spec.SetField(item.FieldUsableInRecipes, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StockTrackingMode(); ok {
 		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)
@@ -4181,6 +4198,20 @@ func (_u *ItemUpdateOne) ClearUnitContentUom() *ItemUpdateOne {
 	return _u
 }
 
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (_u *ItemUpdateOne) SetUsableInRecipes(v bool) *ItemUpdateOne {
+	_u.mutation.SetUsableInRecipes(v)
+	return _u
+}
+
+// SetNillableUsableInRecipes sets the "usable_in_recipes" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableUsableInRecipes(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetUsableInRecipes(*v)
+	}
+	return _u
+}
+
 // SetStockTrackingMode sets the "stock_tracking_mode" field.
 func (_u *ItemUpdateOne) SetStockTrackingMode(v item.StockTrackingMode) *ItemUpdateOne {
 	_u.mutation.SetStockTrackingMode(v)
@@ -5359,6 +5390,9 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.UnitContentUomCleared() {
 		_spec.ClearField(item.FieldUnitContentUom, field.TypeString)
+	}
+	if value, ok := _u.mutation.UsableInRecipes(); ok {
+		_spec.SetField(item.FieldUsableInRecipes, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StockTrackingMode(); ok {
 		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)

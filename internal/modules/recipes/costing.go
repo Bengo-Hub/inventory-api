@@ -74,10 +74,21 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		effectiveQty := ing.Quantity * (1 + ing.WastePercent/100)
 
 		// Sub-recipe ingredient: use its cost_per_portion instead of a raw item cost.
+		// cost_per_portion is per OUTPUT unit — the prepared item's stock unit by
+		// convention (per ml for a 1000 ml prep batch, per pot/portion for a menu
+		// recipe) — so the line qty must be converted into that unit exactly like the
+		// deduction path does, content-per-unit bridge included: a 30 ml line against
+		// a 300 ml-per-pot Black Tea costs 0.1 × its per-pot cost, not 30 ×.
 		if ing.SubRecipeID != nil && ing.Edges.SubRecipe != nil {
 			sub := ing.Edges.SubRecipe
 			if sub.CostPerPortion != nil {
-				totalCost += effectiveQty * *sub.CostPerPortion
+				qty := effectiveQty
+				if ing.Edges.Item != nil {
+					if converted, ok := stock.ConvertToStockUnit(ing.Edges.Item, effectiveQty, ing.UnitOfMeasure); ok {
+						qty = converted
+					}
+				}
+				totalCost += qty * *sub.CostPerPortion
 				hasCost = true
 			}
 			continue

@@ -68,6 +68,23 @@ func WithIncludeNonBillable(ctx context.Context) context.Context {
 	return context.WithValue(ctx, includeNonBillableKey{}, true)
 }
 
+// recipeInputScopeKey is a context flag set by the HTTP layer (?for_recipe=1). It scopes
+// ListItems to items pickable as recipe-ingredient inputs: all GOODS/INGREDIENT plus
+// RECIPE items explicitly flagged usable_in_recipes (reusable menu components like a
+// Black Tea used inside an Iced Passion Tea). Overrides the plain type filter.
+type recipeInputScopeKey struct{}
+
+// WithRecipeInputScope returns a context that restricts ListItems to recipe-ingredient
+// candidates: GOODS + INGREDIENT + (RECIPE where usable_in_recipes).
+func WithRecipeInputScope(ctx context.Context) context.Context {
+	return context.WithValue(ctx, recipeInputScopeKey{}, true)
+}
+
+func recipeInputScope(ctx context.Context) bool {
+	v, _ := ctx.Value(recipeInputScopeKey{}).(bool)
+	return v
+}
+
 func includeNonBillable(ctx context.Context) bool {
 	v, _ := ctx.Value(includeNonBillableKey{}).(bool)
 	return v
@@ -136,7 +153,11 @@ type ItemDTO struct {
 	// Non-billable: never charged at POS even when a selling price exists (free
 	// accompaniments like ugali, consumable supplies like tissue/packaging); stock still
 	// deducts. Pointer so partial updates never clobber the stored flag.
-	NonBillable      *bool `json:"non_billable,omitempty"`
+	NonBillable *bool `json:"non_billable,omitempty"`
+	// Usable-in-recipes: a RECIPE-type item flagged here may be picked as an ingredient
+	// in other recipes (reusable menu component, e.g. Black Tea inside an Iced Passion
+	// Tea). Pointer for the same partial-update semantics as NonBillable.
+	UsableInRecipes  *bool `json:"usable_in_recipes,omitempty"`
 	ReturnWindowDays *int  `json:"return_window_days,omitempty"` // nil = tenant default
 	AllowBackorder   *bool `json:"allow_backorder,omitempty"`    // order when out of stock
 	IsDiscontinued   *bool `json:"is_discontinued,omitempty"`    // hidden from new listings, stock still sellable
@@ -687,6 +708,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		HSCode:                  i.HsCode,
 		IsReturnable:            boolPtr(i.IsReturnable),
 		NonBillable:             boolPtr(i.NonBillable),
+		UsableInRecipes:         boolPtr(i.UsableInRecipes),
 		ReturnWindowDays:        i.ReturnWindowDays,
 		AllowBackorder:          boolPtr(i.AllowBackorder),
 		IsDiscontinued:          boolPtr(i.IsDiscontinued),
@@ -888,7 +910,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		default:
 			q = q.Where(item.IsActive(true))
 		}
-		if typeFilter != "" {
+		if recipeInputScope(ctx) {
+			// Recipe-ingredient picker scope: raw stock (GOODS/INGREDIENT) plus RECIPE
+			// items explicitly flagged as reusable menu components. Replaces the plain
+			// type filter — the picker's notion of "ingredient" spans types.
+			q = q.Where(item.Or(
+				item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
+				item.And(item.TypeEQ(item.TypeRECIPE), item.UsableInRecipes(true)),
+			))
+		} else if typeFilter != "" {
 			types := strings.Split(typeFilter, ",")
 			typeVals := make([]item.Type, 0, len(types))
 			for _, t := range types {
@@ -1685,6 +1715,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.NonBillable != nil {
 		createBuilder = createBuilder.SetNonBillable(*dto.NonBillable)
 	}
+	if dto.UsableInRecipes != nil {
+		createBuilder = createBuilder.SetUsableInRecipes(*dto.UsableInRecipes)
+	}
 	if dto.GTIN != "" {
 		createBuilder = createBuilder.SetGtin(dto.GTIN)
 	}
@@ -2079,7 +2112,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	updateBuilder = updateBuilder.
 		SetNillableIsReturnable(dto.IsReturnable).
 		SetNillableAllowBackorder(dto.AllowBackorder).
-		SetNillableIsDiscontinued(dto.IsDiscontinued)
+		SetNillableIsDiscontinued(dto.IsDiscontinued).
+		SetNillableUsableInRecipes(dto.UsableInRecipes)
 	if dto.GTIN != "" {
 		updateBuilder = updateBuilder.SetGtin(dto.GTIN)
 	}

@@ -82,6 +82,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
@@ -228,6 +229,7 @@ func checkColumn(t, c string) error {
 			stockbreakdown.Table:         stockbreakdown.ValidColumn,
 			stockcount.Table:             stockcount.ValidColumn,
 			stockcountline.Table:         stockcountline.ValidColumn,
+			stockcounttemplate.Table:     stockcounttemplate.ValidColumn,
 			stocklevelevent.Table:        stocklevelevent.ValidColumn,
 			stocktransfer.Table:          stocktransfer.ValidColumn,
 			stocktransferline.Table:      stocktransferline.ValidColumn,

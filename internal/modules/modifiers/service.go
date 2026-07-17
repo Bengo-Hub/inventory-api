@@ -52,22 +52,28 @@ type ModifierOptionDTO struct {
 }
 
 // CreateModifierGroupRequest is the request body for creating a modifier group.
+// Options may be supplied inline — they are created atomically with the group
+// (the standalone Modifiers page sends the whole group+options in one call).
 type CreateModifierGroupRequest struct {
-	ItemID        uuid.UUID `json:"item_id"`
-	Name          string    `json:"name"`
-	IsRequired    bool      `json:"is_required"`
-	MinSelections int       `json:"min_selections"`
-	MaxSelections int       `json:"max_selections"`
-	DisplayOrder  int       `json:"display_order"`
+	ItemID        uuid.UUID                     `json:"item_id"`
+	Name          string                        `json:"name"`
+	IsRequired    bool                          `json:"is_required"`
+	MinSelections int                           `json:"min_selections"`
+	MaxSelections int                           `json:"max_selections"`
+	DisplayOrder  int                           `json:"display_order"`
+	Options       []CreateModifierOptionRequest `json:"options,omitempty"`
 }
 
 // UpdateModifierGroupRequest is the request body for updating a modifier group.
+// A non-nil Options replaces the group's full option set (delete + recreate);
+// nil leaves existing options untouched.
 type UpdateModifierGroupRequest struct {
-	Name          *string `json:"name,omitempty"`
-	IsRequired    *bool   `json:"is_required,omitempty"`
-	MinSelections *int    `json:"min_selections,omitempty"`
-	MaxSelections *int    `json:"max_selections,omitempty"`
-	DisplayOrder  *int    `json:"display_order,omitempty"`
+	Name          *string                        `json:"name,omitempty"`
+	IsRequired    *bool                          `json:"is_required,omitempty"`
+	MinSelections *int                           `json:"min_selections,omitempty"`
+	MaxSelections *int                           `json:"max_selections,omitempty"`
+	DisplayOrder  *int                           `json:"display_order,omitempty"`
+	Options       *[]CreateModifierOptionRequest `json:"options,omitempty"`
 }
 
 // CreateModifierOptionRequest is the request body for creating a modifier option.
@@ -220,6 +226,12 @@ func (s *Service) CreateModifierGroup(ctx context.Context, tenantID uuid.UUID, r
 		return nil, fmt.Errorf("modifiers: create group: %w", err)
 	}
 
+	// Inline options — created atomically with the group so a single-call client
+	// (the Modifiers page dialog) never ends up with an empty group.
+	if err = createOptions(ctx, tx, g.ID, req.Options); err != nil {
+		return nil, err
+	}
+
 	// Publish inventory.item.updated event for modifier change
 	if err = s.publishItemUpdatedEvent(ctx, tx, tenantID, req.ItemID, "modifier_group_created"); err != nil {
 		return nil, err
@@ -229,8 +241,40 @@ func (s *Service) CreateModifierGroup(ctx context.Context, tenantID uuid.UUID, r
 		return nil, fmt.Errorf("modifiers: commit transaction: %w", err)
 	}
 
-	dto := s.mapGroupToDTO(g)
-	return &dto, nil
+	return s.GetModifierGroup(ctx, tenantID, g.ID)
+}
+
+// createOptions inserts a set of options for a group inside the caller's transaction.
+func createOptions(ctx context.Context, tx *ent.Tx, groupID uuid.UUID, opts []CreateModifierOptionRequest) error {
+	for j, opt := range opts {
+		if opt.Name == "" {
+			continue
+		}
+		order := opt.DisplayOrder
+		if order == 0 {
+			order = j + 1
+		}
+		b := tx.ModifierOption.Create().
+			SetGroupID(groupID).
+			SetName(opt.Name).
+			SetPriceAdjustment(opt.PriceAdjustment).
+			SetIsDefault(opt.IsDefault).
+			SetIsActive(opt.IsActive).
+			SetDisplayOrder(order)
+		if opt.SKU != "" {
+			b.SetSku(opt.SKU)
+		}
+		if opt.DeductionQty > 0 {
+			b.SetDeductionQty(opt.DeductionQty)
+		}
+		if opt.DeductionUnit != "" {
+			b.SetDeductionUnit(opt.DeductionUnit)
+		}
+		if _, err := b.Save(ctx); err != nil {
+			return fmt.Errorf("modifiers: create option %q: %w", opt.Name, err)
+		}
+	}
+	return nil
 }
 
 // UpdateModifierGroup updates an existing modifier group.
@@ -269,6 +313,19 @@ func (s *Service) UpdateModifierGroup(ctx context.Context, tenantID, groupID uui
 		return nil, fmt.Errorf("modifiers: update group: %w", err)
 	}
 
+	// Full option-set replacement when the client sent options (the Modifiers page
+	// edits the whole group in one call). nil leaves existing options untouched.
+	if req.Options != nil {
+		if _, err = tx.ModifierOption.Delete().
+			Where(modifieroption.GroupID(groupID)).
+			Exec(ctx); err != nil {
+			return nil, fmt.Errorf("modifiers: replace options: %w", err)
+		}
+		if err = createOptions(ctx, tx, groupID, *req.Options); err != nil {
+			return nil, err
+		}
+	}
+
 	if err = s.publishItemUpdatedEvent(ctx, tx, tenantID, g.ItemID, "modifier_group_updated"); err != nil {
 		return nil, err
 	}
@@ -277,8 +334,7 @@ func (s *Service) UpdateModifierGroup(ctx context.Context, tenantID, groupID uui
 		return nil, fmt.Errorf("modifiers: commit transaction: %w", err)
 	}
 
-	dto := s.mapGroupToDTO(g)
-	return &dto, nil
+	return s.GetModifierGroup(ctx, tenantID, groupID)
 }
 
 // DeleteModifierGroup deletes a modifier group and its options.

@@ -75,9 +75,10 @@ var rolePermMap = map[string][]string{
 		"inventory.warehouses.view", "inventory.warehouses.add", "inventory.warehouses.change", "inventory.warehouses.delete", "inventory.warehouses.manage",
 		// Valuation write-offs / cost adjustments.
 		"inventory.stock.view", "inventory.stock.add", "inventory.stock.change", "inventory.stock.delete", "inventory.stock.manage",
-		// Cycle/physical stock counts — can run and record counts, but NOT approve the variance
-		// (inventory.stock_count.approve is manager/admin only, mirroring the procurement rule below).
-		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change",
+		// Cycle/physical stock counts — full lifecycle INCLUDING approval: stock-take variance
+		// review/sign-off is a finance-control task (reconciling book stock to physical count),
+		// so manager/admin/accountant all hold it (explicit product decision 2026-07-17).
+		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change", "inventory.stock_count.approve",
 		"inventory.recipes.view",
 		"inventory.consumptions.view",
 		"inventory.reservations.view",
@@ -108,6 +109,10 @@ var rolePermMap = map[string][]string{
 		"inventory.recipes.view",
 		"inventory.tickets.view", "inventory.tickets.add", "inventory.tickets.change",
 		"inventory.procurement.view", "inventory.manufacturing.view", "inventory.assets.view", "inventory.approvals.view",
+		// Shift-close stock counting: chefs/baristas/cashiers (PIN or SSO login, all map
+		// to stock_clerk) run and record department count sheets — recording only, the
+		// variance sign-off stays with manager/admin/accountant (stock_count.approve).
+		"inventory.stock_count.view", "inventory.stock_count.add", "inventory.stock_count.change",
 	},
 	"viewer": {
 		"inventory.items.view",

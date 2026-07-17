@@ -26,6 +26,11 @@ func (StockCountLine) Fields() []ent.Field {
 		field.Float("system_qty").Default(0).Comment("System on-hand snapshot at count time"),
 		field.Float("counted_qty").Optional().Nillable().Comment("Physically counted quantity"),
 		field.Float("variance").Optional().Nillable().Comment("counted_qty - system_qty"),
+		// Variance classification chosen during review (the client's "classified and
+		// investigated as wastage, pilferage, …"). One of the StockAdjustment reasons
+		// (damaged, expired, shrinkage, found, correction, count_variance, other);
+		// empty = plain count_variance. Used as the posted adjustment's reason.
+		field.String("reason").Optional().MaxLen(40).Comment("Variance classification — StockAdjustment reason used when posting (empty = count_variance)"),
 		field.Bool("posted").Default(false).Comment("True once the variance adjustment was posted"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

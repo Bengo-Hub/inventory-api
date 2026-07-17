@@ -132,6 +132,8 @@ const (
 	FieldUnitContentQty = "unit_content_qty"
 	// FieldUnitContentUom holds the string denoting the unit_content_uom field in the database.
 	FieldUnitContentUom = "unit_content_uom"
+	// FieldUsableInRecipes holds the string denoting the usable_in_recipes field in the database.
+	FieldUsableInRecipes = "usable_in_recipes"
 	// FieldStockTrackingMode holds the string denoting the stock_tracking_mode field in the database.
 	FieldStockTrackingMode = "stock_tracking_mode"
 	// FieldMinSellingPrice holds the string denoting the min_selling_price field in the database.
@@ -374,6 +376,7 @@ var Columns = []string{
 	FieldYieldPct,
 	FieldUnitContentQty,
 	FieldUnitContentUom,
+	FieldUsableInRecipes,
 	FieldStockTrackingMode,
 	FieldMinSellingPrice,
 	FieldMaxSellingPrice,
@@ -435,6 +438,8 @@ var (
 	DefaultYieldPct float64
 	// UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
 	UnitContentUomValidator func(string) error
+	// DefaultUsableInRecipes holds the default value on creation for the "usable_in_recipes" field.
+	DefaultUsableInRecipes bool
 	// DefaultBookedCapacity holds the default value on creation for the "booked_capacity" field.
 	DefaultBookedCapacity int
 	// EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
@@ -903,6 +908,11 @@ func ByUnitContentQty(opts ...sql.OrderTermOption) OrderOption {
 // ByUnitContentUom orders the results by the unit_content_uom field.
 func ByUnitContentUom(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUnitContentUom, opts...).ToFunc()
+}
+
+// ByUsableInRecipes orders the results by the usable_in_recipes field.
+func ByUsableInRecipes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsableInRecipes, opts...).ToFunc()
 }
 
 // ByStockTrackingMode orders the results by the stock_tracking_mode field.

@@ -90,6 +90,11 @@ func Variance(v float64) predicate.StockCountLine {
 	return predicate.StockCountLine(sql.FieldEQ(FieldVariance, v))
 }
 
+// Reason applies equality check predicate on the "reason" field. It's identical to ReasonEQ.
+func Reason(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldEQ(FieldReason, v))
+}
+
 // Posted applies equality check predicate on the "posted" field. It's identical to PostedEQ.
 func Posted(v bool) predicate.StockCountLine {
 	return predicate.StockCountLine(sql.FieldEQ(FieldPosted, v))
@@ -428,6 +433,81 @@ func VarianceIsNil() predicate.StockCountLine {
 // VarianceNotNil applies the NotNil predicate on the "variance" field.
 func VarianceNotNil() predicate.StockCountLine {
 	return predicate.StockCountLine(sql.FieldNotNull(FieldVariance))
+}
+
+// ReasonEQ applies the EQ predicate on the "reason" field.
+func ReasonEQ(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldEQ(FieldReason, v))
+}
+
+// ReasonNEQ applies the NEQ predicate on the "reason" field.
+func ReasonNEQ(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldNEQ(FieldReason, v))
+}
+
+// ReasonIn applies the In predicate on the "reason" field.
+func ReasonIn(vs ...string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldIn(FieldReason, vs...))
+}
+
+// ReasonNotIn applies the NotIn predicate on the "reason" field.
+func ReasonNotIn(vs ...string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldNotIn(FieldReason, vs...))
+}
+
+// ReasonGT applies the GT predicate on the "reason" field.
+func ReasonGT(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldGT(FieldReason, v))
+}
+
+// ReasonGTE applies the GTE predicate on the "reason" field.
+func ReasonGTE(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldGTE(FieldReason, v))
+}
+
+// ReasonLT applies the LT predicate on the "reason" field.
+func ReasonLT(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldLT(FieldReason, v))
+}
+
+// ReasonLTE applies the LTE predicate on the "reason" field.
+func ReasonLTE(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldLTE(FieldReason, v))
+}
+
+// ReasonContains applies the Contains predicate on the "reason" field.
+func ReasonContains(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldContains(FieldReason, v))
+}
+
+// ReasonHasPrefix applies the HasPrefix predicate on the "reason" field.
+func ReasonHasPrefix(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldHasPrefix(FieldReason, v))
+}
+
+// ReasonHasSuffix applies the HasSuffix predicate on the "reason" field.
+func ReasonHasSuffix(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldHasSuffix(FieldReason, v))
+}
+
+// ReasonIsNil applies the IsNil predicate on the "reason" field.
+func ReasonIsNil() predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldIsNull(FieldReason))
+}
+
+// ReasonNotNil applies the NotNil predicate on the "reason" field.
+func ReasonNotNil() predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldNotNull(FieldReason))
+}
+
+// ReasonEqualFold applies the EqualFold predicate on the "reason" field.
+func ReasonEqualFold(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldEqualFold(FieldReason, v))
+}
+
+// ReasonContainsFold applies the ContainsFold predicate on the "reason" field.
+func ReasonContainsFold(v string) predicate.StockCountLine {
+	return predicate.StockCountLine(sql.FieldContainsFold(FieldReason, v))
 }
 
 // PostedEQ applies the EQ predicate on the "posted" field.

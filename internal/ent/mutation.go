@@ -84,6 +84,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
@@ -182,6 +183,7 @@ const (
 	TypeStockBreakdown         = "StockBreakdown"
 	TypeStockCount             = "StockCount"
 	TypeStockCountLine         = "StockCountLine"
+	TypeStockCountTemplate     = "StockCountTemplate"
 	TypeStockLevelEvent        = "StockLevelEvent"
 	TypeStockTransfer          = "StockTransfer"
 	TypeStockTransferLine      = "StockTransferLine"
@@ -36108,6 +36110,7 @@ type ItemMutation struct {
 	unit_content_qty           *float64
 	addunit_content_qty        *float64
 	unit_content_uom           *string
+	usable_in_recipes          *bool
 	stock_tracking_mode        *item.StockTrackingMode
 	min_selling_price          *float64
 	addmin_selling_price       *float64
@@ -39141,6 +39144,42 @@ func (m *ItemMutation) ResetUnitContentUom() {
 	delete(m.clearedFields, item.FieldUnitContentUom)
 }
 
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (m *ItemMutation) SetUsableInRecipes(b bool) {
+	m.usable_in_recipes = &b
+}
+
+// UsableInRecipes returns the value of the "usable_in_recipes" field in the mutation.
+func (m *ItemMutation) UsableInRecipes() (r bool, exists bool) {
+	v := m.usable_in_recipes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsableInRecipes returns the old "usable_in_recipes" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldUsableInRecipes(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsableInRecipes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsableInRecipes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsableInRecipes: %w", err)
+	}
+	return oldValue.UsableInRecipes, nil
+}
+
+// ResetUsableInRecipes resets all changes to the "usable_in_recipes" field.
+func (m *ItemMutation) ResetUsableInRecipes() {
+	m.usable_in_recipes = nil
+}
+
 // SetStockTrackingMode sets the "stock_tracking_mode" field.
 func (m *ItemMutation) SetStockTrackingMode(itm item.StockTrackingMode) {
 	m.stock_tracking_mode = &itm
@@ -40608,7 +40647,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 70)
+	fields := make([]string, 0, 71)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -40783,6 +40822,9 @@ func (m *ItemMutation) Fields() []string {
 	if m.unit_content_uom != nil {
 		fields = append(fields, item.FieldUnitContentUom)
 	}
+	if m.usable_in_recipes != nil {
+		fields = append(fields, item.FieldUsableInRecipes)
+	}
 	if m.stock_tracking_mode != nil {
 		fields = append(fields, item.FieldStockTrackingMode)
 	}
@@ -40943,6 +40985,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitContentQty()
 	case item.FieldUnitContentUom:
 		return m.UnitContentUom()
+	case item.FieldUsableInRecipes:
+		return m.UsableInRecipes()
 	case item.FieldStockTrackingMode:
 		return m.StockTrackingMode()
 	case item.FieldMinSellingPrice:
@@ -41092,6 +41136,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUnitContentQty(ctx)
 	case item.FieldUnitContentUom:
 		return m.OldUnitContentUom(ctx)
+	case item.FieldUsableInRecipes:
+		return m.OldUsableInRecipes(ctx)
 	case item.FieldStockTrackingMode:
 		return m.OldStockTrackingMode(ctx)
 	case item.FieldMinSellingPrice:
@@ -41530,6 +41576,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUnitContentUom(v)
+		return nil
+	case item.FieldUsableInRecipes:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsableInRecipes(v)
 		return nil
 	case item.FieldStockTrackingMode:
 		v, ok := value.(item.StockTrackingMode)
@@ -42329,6 +42382,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldUnitContentUom:
 		m.ResetUnitContentUom()
+		return nil
+	case item.FieldUsableInRecipes:
+		m.ResetUsableInRecipes()
 		return nil
 	case item.FieldStockTrackingMode:
 		m.ResetStockTrackingMode()
@@ -79693,6 +79749,7 @@ type StockCountLineMutation struct {
 	addcounted_qty *float64
 	variance       *float64
 	addvariance    *float64
+	reason         *string
 	posted         *bool
 	created_at     *time.Time
 	updated_at     *time.Time
@@ -80146,6 +80203,55 @@ func (m *StockCountLineMutation) ResetVariance() {
 	delete(m.clearedFields, stockcountline.FieldVariance)
 }
 
+// SetReason sets the "reason" field.
+func (m *StockCountLineMutation) SetReason(s string) {
+	m.reason = &s
+}
+
+// Reason returns the value of the "reason" field in the mutation.
+func (m *StockCountLineMutation) Reason() (r string, exists bool) {
+	v := m.reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReason returns the old "reason" field's value of the StockCountLine entity.
+// If the StockCountLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountLineMutation) OldReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReason: %w", err)
+	}
+	return oldValue.Reason, nil
+}
+
+// ClearReason clears the value of the "reason" field.
+func (m *StockCountLineMutation) ClearReason() {
+	m.reason = nil
+	m.clearedFields[stockcountline.FieldReason] = struct{}{}
+}
+
+// ReasonCleared returns if the "reason" field was cleared in this mutation.
+func (m *StockCountLineMutation) ReasonCleared() bool {
+	_, ok := m.clearedFields[stockcountline.FieldReason]
+	return ok
+}
+
+// ResetReason resets all changes to the "reason" field.
+func (m *StockCountLineMutation) ResetReason() {
+	m.reason = nil
+	delete(m.clearedFields, stockcountline.FieldReason)
+}
+
 // SetPosted sets the "posted" field.
 func (m *StockCountLineMutation) SetPosted(b bool) {
 	m.posted = &b
@@ -80288,7 +80394,7 @@ func (m *StockCountLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StockCountLineMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.tenant_id != nil {
 		fields = append(fields, stockcountline.FieldTenantID)
 	}
@@ -80309,6 +80415,9 @@ func (m *StockCountLineMutation) Fields() []string {
 	}
 	if m.variance != nil {
 		fields = append(fields, stockcountline.FieldVariance)
+	}
+	if m.reason != nil {
+		fields = append(fields, stockcountline.FieldReason)
 	}
 	if m.posted != nil {
 		fields = append(fields, stockcountline.FieldPosted)
@@ -80341,6 +80450,8 @@ func (m *StockCountLineMutation) Field(name string) (ent.Value, bool) {
 		return m.CountedQty()
 	case stockcountline.FieldVariance:
 		return m.Variance()
+	case stockcountline.FieldReason:
+		return m.Reason()
 	case stockcountline.FieldPosted:
 		return m.Posted()
 	case stockcountline.FieldCreatedAt:
@@ -80370,6 +80481,8 @@ func (m *StockCountLineMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldCountedQty(ctx)
 	case stockcountline.FieldVariance:
 		return m.OldVariance(ctx)
+	case stockcountline.FieldReason:
+		return m.OldReason(ctx)
 	case stockcountline.FieldPosted:
 		return m.OldPosted(ctx)
 	case stockcountline.FieldCreatedAt:
@@ -80433,6 +80546,13 @@ func (m *StockCountLineMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVariance(v)
+		return nil
+	case stockcountline.FieldReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReason(v)
 		return nil
 	case stockcountline.FieldPosted:
 		v, ok := value.(bool)
@@ -80530,6 +80650,9 @@ func (m *StockCountLineMutation) ClearedFields() []string {
 	if m.FieldCleared(stockcountline.FieldVariance) {
 		fields = append(fields, stockcountline.FieldVariance)
 	}
+	if m.FieldCleared(stockcountline.FieldReason) {
+		fields = append(fields, stockcountline.FieldReason)
+	}
 	return fields
 }
 
@@ -80549,6 +80672,9 @@ func (m *StockCountLineMutation) ClearField(name string) error {
 		return nil
 	case stockcountline.FieldVariance:
 		m.ClearVariance()
+		return nil
+	case stockcountline.FieldReason:
+		m.ClearReason()
 		return nil
 	}
 	return fmt.Errorf("unknown StockCountLine nullable field %s", name)
@@ -80578,6 +80704,9 @@ func (m *StockCountLineMutation) ResetField(name string) error {
 		return nil
 	case stockcountline.FieldVariance:
 		m.ResetVariance()
+		return nil
+	case stockcountline.FieldReason:
+		m.ResetReason()
 		return nil
 	case stockcountline.FieldPosted:
 		m.ResetPosted()
@@ -80638,6 +80767,883 @@ func (m *StockCountLineMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *StockCountLineMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown StockCountLine edge %s", name)
+}
+
+// StockCountTemplateMutation represents an operation that mutates the StockCountTemplate nodes in the graph.
+type StockCountTemplateMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	tenant_id          *uuid.UUID
+	name               *string
+	description        *string
+	warehouse_id       *uuid.UUID
+	item_ids           *[]uuid.UUID
+	appenditem_ids     []uuid.UUID
+	category_ids       *[]uuid.UUID
+	appendcategory_ids []uuid.UUID
+	is_active          *bool
+	created_at         *time.Time
+	updated_at         *time.Time
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*StockCountTemplate, error)
+	predicates         []predicate.StockCountTemplate
+}
+
+var _ ent.Mutation = (*StockCountTemplateMutation)(nil)
+
+// stockcounttemplateOption allows management of the mutation configuration using functional options.
+type stockcounttemplateOption func(*StockCountTemplateMutation)
+
+// newStockCountTemplateMutation creates new mutation for the StockCountTemplate entity.
+func newStockCountTemplateMutation(c config, op Op, opts ...stockcounttemplateOption) *StockCountTemplateMutation {
+	m := &StockCountTemplateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStockCountTemplate,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStockCountTemplateID sets the ID field of the mutation.
+func withStockCountTemplateID(id uuid.UUID) stockcounttemplateOption {
+	return func(m *StockCountTemplateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StockCountTemplate
+		)
+		m.oldValue = func(ctx context.Context) (*StockCountTemplate, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StockCountTemplate.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStockCountTemplate sets the old StockCountTemplate of the mutation.
+func withStockCountTemplate(node *StockCountTemplate) stockcounttemplateOption {
+	return func(m *StockCountTemplateMutation) {
+		m.oldValue = func(context.Context) (*StockCountTemplate, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StockCountTemplateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StockCountTemplateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StockCountTemplate entities.
+func (m *StockCountTemplateMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StockCountTemplateMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StockCountTemplateMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StockCountTemplate.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *StockCountTemplateMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *StockCountTemplateMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *StockCountTemplateMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetName sets the "name" field.
+func (m *StockCountTemplateMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *StockCountTemplateMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *StockCountTemplateMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *StockCountTemplateMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *StockCountTemplateMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *StockCountTemplateMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[stockcounttemplate.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *StockCountTemplateMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[stockcounttemplate.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *StockCountTemplateMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, stockcounttemplate.FieldDescription)
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (m *StockCountTemplateMutation) SetWarehouseID(u uuid.UUID) {
+	m.warehouse_id = &u
+}
+
+// WarehouseID returns the value of the "warehouse_id" field in the mutation.
+func (m *StockCountTemplateMutation) WarehouseID() (r uuid.UUID, exists bool) {
+	v := m.warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWarehouseID returns the old "warehouse_id" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldWarehouseID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWarehouseID: %w", err)
+	}
+	return oldValue.WarehouseID, nil
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (m *StockCountTemplateMutation) ClearWarehouseID() {
+	m.warehouse_id = nil
+	m.clearedFields[stockcounttemplate.FieldWarehouseID] = struct{}{}
+}
+
+// WarehouseIDCleared returns if the "warehouse_id" field was cleared in this mutation.
+func (m *StockCountTemplateMutation) WarehouseIDCleared() bool {
+	_, ok := m.clearedFields[stockcounttemplate.FieldWarehouseID]
+	return ok
+}
+
+// ResetWarehouseID resets all changes to the "warehouse_id" field.
+func (m *StockCountTemplateMutation) ResetWarehouseID() {
+	m.warehouse_id = nil
+	delete(m.clearedFields, stockcounttemplate.FieldWarehouseID)
+}
+
+// SetItemIds sets the "item_ids" field.
+func (m *StockCountTemplateMutation) SetItemIds(u []uuid.UUID) {
+	m.item_ids = &u
+	m.appenditem_ids = nil
+}
+
+// ItemIds returns the value of the "item_ids" field in the mutation.
+func (m *StockCountTemplateMutation) ItemIds() (r []uuid.UUID, exists bool) {
+	v := m.item_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemIds returns the old "item_ids" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldItemIds(ctx context.Context) (v []uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemIds: %w", err)
+	}
+	return oldValue.ItemIds, nil
+}
+
+// AppendItemIds adds u to the "item_ids" field.
+func (m *StockCountTemplateMutation) AppendItemIds(u []uuid.UUID) {
+	m.appenditem_ids = append(m.appenditem_ids, u...)
+}
+
+// AppendedItemIds returns the list of values that were appended to the "item_ids" field in this mutation.
+func (m *StockCountTemplateMutation) AppendedItemIds() ([]uuid.UUID, bool) {
+	if len(m.appenditem_ids) == 0 {
+		return nil, false
+	}
+	return m.appenditem_ids, true
+}
+
+// ClearItemIds clears the value of the "item_ids" field.
+func (m *StockCountTemplateMutation) ClearItemIds() {
+	m.item_ids = nil
+	m.appenditem_ids = nil
+	m.clearedFields[stockcounttemplate.FieldItemIds] = struct{}{}
+}
+
+// ItemIdsCleared returns if the "item_ids" field was cleared in this mutation.
+func (m *StockCountTemplateMutation) ItemIdsCleared() bool {
+	_, ok := m.clearedFields[stockcounttemplate.FieldItemIds]
+	return ok
+}
+
+// ResetItemIds resets all changes to the "item_ids" field.
+func (m *StockCountTemplateMutation) ResetItemIds() {
+	m.item_ids = nil
+	m.appenditem_ids = nil
+	delete(m.clearedFields, stockcounttemplate.FieldItemIds)
+}
+
+// SetCategoryIds sets the "category_ids" field.
+func (m *StockCountTemplateMutation) SetCategoryIds(u []uuid.UUID) {
+	m.category_ids = &u
+	m.appendcategory_ids = nil
+}
+
+// CategoryIds returns the value of the "category_ids" field in the mutation.
+func (m *StockCountTemplateMutation) CategoryIds() (r []uuid.UUID, exists bool) {
+	v := m.category_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryIds returns the old "category_ids" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldCategoryIds(ctx context.Context) (v []uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategoryIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategoryIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryIds: %w", err)
+	}
+	return oldValue.CategoryIds, nil
+}
+
+// AppendCategoryIds adds u to the "category_ids" field.
+func (m *StockCountTemplateMutation) AppendCategoryIds(u []uuid.UUID) {
+	m.appendcategory_ids = append(m.appendcategory_ids, u...)
+}
+
+// AppendedCategoryIds returns the list of values that were appended to the "category_ids" field in this mutation.
+func (m *StockCountTemplateMutation) AppendedCategoryIds() ([]uuid.UUID, bool) {
+	if len(m.appendcategory_ids) == 0 {
+		return nil, false
+	}
+	return m.appendcategory_ids, true
+}
+
+// ClearCategoryIds clears the value of the "category_ids" field.
+func (m *StockCountTemplateMutation) ClearCategoryIds() {
+	m.category_ids = nil
+	m.appendcategory_ids = nil
+	m.clearedFields[stockcounttemplate.FieldCategoryIds] = struct{}{}
+}
+
+// CategoryIdsCleared returns if the "category_ids" field was cleared in this mutation.
+func (m *StockCountTemplateMutation) CategoryIdsCleared() bool {
+	_, ok := m.clearedFields[stockcounttemplate.FieldCategoryIds]
+	return ok
+}
+
+// ResetCategoryIds resets all changes to the "category_ids" field.
+func (m *StockCountTemplateMutation) ResetCategoryIds() {
+	m.category_ids = nil
+	m.appendcategory_ids = nil
+	delete(m.clearedFields, stockcounttemplate.FieldCategoryIds)
+}
+
+// SetIsActive sets the "is_active" field.
+func (m *StockCountTemplateMutation) SetIsActive(b bool) {
+	m.is_active = &b
+}
+
+// IsActive returns the value of the "is_active" field in the mutation.
+func (m *StockCountTemplateMutation) IsActive() (r bool, exists bool) {
+	v := m.is_active
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsActive returns the old "is_active" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldIsActive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsActive is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsActive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
+	}
+	return oldValue.IsActive, nil
+}
+
+// ResetIsActive resets all changes to the "is_active" field.
+func (m *StockCountTemplateMutation) ResetIsActive() {
+	m.is_active = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *StockCountTemplateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *StockCountTemplateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *StockCountTemplateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *StockCountTemplateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *StockCountTemplateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the StockCountTemplate entity.
+// If the StockCountTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockCountTemplateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *StockCountTemplateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the StockCountTemplateMutation builder.
+func (m *StockCountTemplateMutation) Where(ps ...predicate.StockCountTemplate) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StockCountTemplateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StockCountTemplateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StockCountTemplate, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StockCountTemplateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StockCountTemplateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StockCountTemplate).
+func (m *StockCountTemplateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StockCountTemplateMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.tenant_id != nil {
+		fields = append(fields, stockcounttemplate.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, stockcounttemplate.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, stockcounttemplate.FieldDescription)
+	}
+	if m.warehouse_id != nil {
+		fields = append(fields, stockcounttemplate.FieldWarehouseID)
+	}
+	if m.item_ids != nil {
+		fields = append(fields, stockcounttemplate.FieldItemIds)
+	}
+	if m.category_ids != nil {
+		fields = append(fields, stockcounttemplate.FieldCategoryIds)
+	}
+	if m.is_active != nil {
+		fields = append(fields, stockcounttemplate.FieldIsActive)
+	}
+	if m.created_at != nil {
+		fields = append(fields, stockcounttemplate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, stockcounttemplate.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StockCountTemplateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case stockcounttemplate.FieldTenantID:
+		return m.TenantID()
+	case stockcounttemplate.FieldName:
+		return m.Name()
+	case stockcounttemplate.FieldDescription:
+		return m.Description()
+	case stockcounttemplate.FieldWarehouseID:
+		return m.WarehouseID()
+	case stockcounttemplate.FieldItemIds:
+		return m.ItemIds()
+	case stockcounttemplate.FieldCategoryIds:
+		return m.CategoryIds()
+	case stockcounttemplate.FieldIsActive:
+		return m.IsActive()
+	case stockcounttemplate.FieldCreatedAt:
+		return m.CreatedAt()
+	case stockcounttemplate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StockCountTemplateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case stockcounttemplate.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case stockcounttemplate.FieldName:
+		return m.OldName(ctx)
+	case stockcounttemplate.FieldDescription:
+		return m.OldDescription(ctx)
+	case stockcounttemplate.FieldWarehouseID:
+		return m.OldWarehouseID(ctx)
+	case stockcounttemplate.FieldItemIds:
+		return m.OldItemIds(ctx)
+	case stockcounttemplate.FieldCategoryIds:
+		return m.OldCategoryIds(ctx)
+	case stockcounttemplate.FieldIsActive:
+		return m.OldIsActive(ctx)
+	case stockcounttemplate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case stockcounttemplate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown StockCountTemplate field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockCountTemplateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case stockcounttemplate.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case stockcounttemplate.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case stockcounttemplate.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case stockcounttemplate.FieldWarehouseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWarehouseID(v)
+		return nil
+	case stockcounttemplate.FieldItemIds:
+		v, ok := value.([]uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemIds(v)
+		return nil
+	case stockcounttemplate.FieldCategoryIds:
+		v, ok := value.([]uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryIds(v)
+		return nil
+	case stockcounttemplate.FieldIsActive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsActive(v)
+		return nil
+	case stockcounttemplate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case stockcounttemplate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockCountTemplate field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StockCountTemplateMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StockCountTemplateMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockCountTemplateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown StockCountTemplate numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StockCountTemplateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(stockcounttemplate.FieldDescription) {
+		fields = append(fields, stockcounttemplate.FieldDescription)
+	}
+	if m.FieldCleared(stockcounttemplate.FieldWarehouseID) {
+		fields = append(fields, stockcounttemplate.FieldWarehouseID)
+	}
+	if m.FieldCleared(stockcounttemplate.FieldItemIds) {
+		fields = append(fields, stockcounttemplate.FieldItemIds)
+	}
+	if m.FieldCleared(stockcounttemplate.FieldCategoryIds) {
+		fields = append(fields, stockcounttemplate.FieldCategoryIds)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StockCountTemplateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StockCountTemplateMutation) ClearField(name string) error {
+	switch name {
+	case stockcounttemplate.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case stockcounttemplate.FieldWarehouseID:
+		m.ClearWarehouseID()
+		return nil
+	case stockcounttemplate.FieldItemIds:
+		m.ClearItemIds()
+		return nil
+	case stockcounttemplate.FieldCategoryIds:
+		m.ClearCategoryIds()
+		return nil
+	}
+	return fmt.Errorf("unknown StockCountTemplate nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StockCountTemplateMutation) ResetField(name string) error {
+	switch name {
+	case stockcounttemplate.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case stockcounttemplate.FieldName:
+		m.ResetName()
+		return nil
+	case stockcounttemplate.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case stockcounttemplate.FieldWarehouseID:
+		m.ResetWarehouseID()
+		return nil
+	case stockcounttemplate.FieldItemIds:
+		m.ResetItemIds()
+		return nil
+	case stockcounttemplate.FieldCategoryIds:
+		m.ResetCategoryIds()
+		return nil
+	case stockcounttemplate.FieldIsActive:
+		m.ResetIsActive()
+		return nil
+	case stockcounttemplate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case stockcounttemplate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown StockCountTemplate field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StockCountTemplateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StockCountTemplateMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StockCountTemplateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StockCountTemplateMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StockCountTemplateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StockCountTemplateMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StockCountTemplateMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StockCountTemplate unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StockCountTemplateMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StockCountTemplate edge %s", name)
 }
 
 // StockLevelEventMutation represents an operation that mutates the StockLevelEvent nodes in the graph.
