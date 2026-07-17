@@ -203,8 +203,17 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	items := make([]map[string]any, 0, len(lines))
 	consumeItems := make([]stock.ConsumptionItem, 0, len(lines))
 	for _, l := range lines {
-		items = append(items, map[string]any{"item_id": l.ItemID, "quantity": l.Quantity})
-		if sku := h.skuForItem(r.Context(), tenantID, l.ItemID); sku != "" {
+		sku := h.skuForItem(r.Context(), tenantID, l.ItemID)
+		// unit price = line subtotal / qty (the price the goods were received at) so treasury
+		// can value the KRA stockIO(12) return-to-supplier movement.
+		unitPrice := 0.0
+		if l.Quantity != 0 {
+			unitPrice = l.SubTotal / float64(l.Quantity)
+		}
+		items = append(items, map[string]any{
+			"item_id": l.ItemID, "sku": sku, "quantity": l.Quantity, "unit_price": unitPrice,
+		})
+		if sku != "" {
 			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: sku, Quantity: float64(l.Quantity)})
 		}
 	}
