@@ -99,6 +99,11 @@ This document provides detailed integration information for all external service
 **Events Consumed** (✅ wired):
 - `pos.sale.finalized` — BOM backflush; inventory-api performs recipe explosion and decrements `InventoryBalance.on_hand`
 - `pos.return.completed` — Restock returned items
+- `POST /v1/{tenant}/inventory/consumption/reverse` (S2S, 2026-07-17) — BOM-accurate consumption
+  reversal for pos-api's txn-reversal tool: returns the actually-deducted quantities (net of
+  recorded shortfall/theoretical/unit-mismatch) to the balance, writes negative compensating
+  consumption lines + daily-rollup decrements, capped against prior reversals, idempotent on
+  `idempotency_key`. Emits `stock.consumption_reversed`.
 
 **Events Published** (inventory-api → pos-api subscribes):
 - `inventory.catalog.updated` — pos-api refreshes `catalog_items` projection (❌ pos-api NATS subscriber not yet wired — Sprint 6 gap)

@@ -121,15 +121,22 @@ func requisitionToDTO(rq *ent.Requisition, lines []*ent.RequisitionLine) requisi
 
 // publishOutbox writes a generic domain event to the outbox (reused by procurement/mfg/assets handlers).
 func (h *InventoryExtrasHandler) publishOutbox(ctx context.Context, tenantID uuid.UUID, aggregateType string, aggregateID uuid.UUID, eventType string, payload map[string]any) {
-	evt := &events.Event{
-		ID:            uuid.New(),
-		TenantID:      tenantID,
-		AggregateType: aggregateType,
-		AggregateID:   aggregateID,
-		EventType:     eventType,
-		Payload:       payload,
-		Timestamp:     time.Now().UTC(),
+	// The NATS subject the relay publishes on is Event.Subject() == AggregateType + "." +
+	// EventType (shared-events convention). Callers that pass the FULL subject as eventType
+	// (e.g. "inventory.purchase_return.approved") together with a resource aggregateType
+	// ("purchase_return") would otherwise produce a DOUBLED subject
+	// ("purchase_return.inventory.purchase_return.approved") that no subscriber listens on —
+	// silently dropping the event. Normalize to the domain-prefixed convention (matching
+	// writeOutboxEvent and the goods_receipt.posted publisher) so the subject is exactly the
+	// intended "inventory.<resource>.<action>".
+	if strings.HasPrefix(eventType, "inventory.") {
+		aggregateType = "inventory"
+		eventType = strings.TrimPrefix(eventType, "inventory.")
 	}
+	// Build the event the SAME way as the tx-based writeOutboxEvent (events.NewEvent) so every
+	// inventory event — whichever path emits it — carries an identical envelope (Version,
+	// Metadata, subject). No bespoke raw-struct construction.
+	evt := events.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
 	raw, err := evt.ToJSON()
 	if err != nil {
 		h.log.Warn("outbox marshal failed", zap.String("event", eventType), zap.Error(err))

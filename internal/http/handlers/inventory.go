@@ -73,6 +73,7 @@ type StockServicer interface {
 	ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
 	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
+	ReverseConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ReverseConsumptionRequest) (*stock.ReverseConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
@@ -265,6 +266,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Consumption
 		inv.With(perm(rbac.PermConsumptionsAdd)).Post("/consumption", h.RecordConsumption)
+		// Reversal (S2S from pos-api's txn-reversal tool; same auth semantics as /consumption).
+		inv.With(perm(rbac.PermConsumptionsAdd)).Post("/consumption/reverse", h.ReverseConsumption)
 
 		// Summary
 		inv.Get("/summary", h.GetInventorySummary)
@@ -566,6 +569,37 @@ func (h *InventoryHandler) RecordConsumption(w http.ResponseWriter, r *http.Requ
 	}
 
 	writeJSON(w, http.StatusCreated, result)
+}
+
+// ReverseConsumption handles POST /v1/{tenant}/inventory/consumption/reverse — the stock
+// side of a POS sale reversal (called S2S by pos-api's txn-reversal tool). Returns the
+// actually-deducted quantities to the warehouse balance and compensates the utilization
+// records; idempotent on idempotency_key, capped so replays never over-return stock.
+func (h *InventoryHandler) ReverseConsumption(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req stock.ReverseConsumptionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if req.OrderID == uuid.Nil {
+		writeError(w, http.StatusBadRequest, "MISSING_ORDER_ID", "Order ID is required")
+		return
+	}
+
+	result, err := h.stockSvc.ReverseConsumption(r.Context(), tenantID, req)
+	if err != nil {
+		h.log.Error("reverse consumption failed", zap.Error(err))
+		writeError(w, http.StatusUnprocessableEntity, "REVERSAL_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
 }
 
 // ListRecipes handles GET /v1/{tenant}/inventory/recipes
