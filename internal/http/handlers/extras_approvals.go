@@ -184,8 +184,12 @@ type approvalRulePayload struct {
 	Steps     []approvalStepPayload `json:"steps"`
 }
 
+// validApprovalModule accepts every module the ApprovalRule schema supports —
+// procurement, stock movements, manufacturing, assets, RFQs/contracts and stock
+// counts alike. (It used to whitelist only purchase_order/requisition, so rules
+// for any other module 400'd even though the engine + schema fully support them.)
 func validApprovalModule(m string) bool {
-	return m == string(arule.ModulePurchaseOrder) || m == string(arule.ModuleRequisition)
+	return arule.ModuleValidator(arule.Module(m)) == nil
 }
 
 // ListApprovalRules handles GET /inventory/approval-rules.
@@ -261,7 +265,7 @@ func (h *InventoryExtrasHandler) CreateApprovalRule(w http.ResponseWriter, r *ht
 		return
 	}
 	if !validApprovalModule(p.Module) {
-		writeError(w, http.StatusBadRequest, "INVALID_MODULE", "module must be purchase_order or requisition")
+		writeError(w, http.StatusBadRequest, "INVALID_MODULE", "Unknown approval module — use one of the document types listed in the rule builder (purchase_order, requisition, stock_transfer, purchase_return, goods_receipt, production_batch, asset_disposal, asset_transfer, asset_maintenance, rfq, contract, stock_adjustment, stock_writeoff, stock_count)")
 		return
 	}
 	if p.Name == "" {

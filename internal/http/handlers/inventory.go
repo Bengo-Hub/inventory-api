@@ -1005,6 +1005,13 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("include_non_billable"); v == "1" || strings.EqualFold(v, "true") {
 		ctx = items.WithIncludeNonBillable(ctx)
 	}
+	// ?for_recipe=1 scopes the list to recipe-ingredient candidates: GOODS + INGREDIENT
+	// plus RECIPE items flagged usable_in_recipes (reusable menu components like Black
+	// Tea inside an Iced Passion Tea). Used by the recipe-builder ingredient picker;
+	// overrides the plain type filter.
+	if v := r.URL.Query().Get("for_recipe"); v == "1" || strings.EqualFold(v, "true") {
+		ctx = items.WithRecipeInputScope(ctx)
+	}
 
 	p := pagination.Parse(r)
 	results, total, err := h.itemsSvc.ListItems(ctx, tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)

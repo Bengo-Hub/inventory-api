@@ -71,6 +71,15 @@ type MenuItemCompositeRequest struct {
 	// the stored flag on upsert. When true, selling_price 0 is allowed.
 	NonBillable *bool  `json:"non_billable,omitempty"`
 	ImageURL    string `json:"image_url,omitempty"`
+	// Reusable menu component: this RECIPE item may be picked as an ingredient in
+	// OTHER recipes (e.g. Black Tea inside an Iced Passion Tea). Pointer so an absent
+	// field never clobbers the stored flag on upsert.
+	UsableInRecipes *bool `json:"usable_in_recipes,omitempty"`
+	// Content per portion — how much one output portion contains (300 + "ml" for a pot
+	// of tea). Required for OTHER recipes to reference this item in ml/g lines; also
+	// what the deduction/costing paths bridge through.
+	UnitContentQty *float64 `json:"unit_content_qty,omitempty"`
+	UnitContentUOM string   `json:"unit_content_uom,omitempty"`
 
 	// ── Recipe fields ─────────────────────────────────────────────────────────
 	Servings            float64  `json:"servings"`              // output_qty; default 1
@@ -163,6 +172,9 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		Tags:            req.Tags,
 		IsPerishable:    req.IsPerishable,
 		NonBillable:     req.NonBillable,
+		UsableInRecipes: req.UsableInRecipes,
+		UnitContentQty:  req.UnitContentQty,
+		UnitContentUOM:  req.UnitContentUOM,
 		ImageURL:        req.ImageURL,
 		SuggestedPrice:  &sp,
 		AddToAllOutlets: true,
@@ -430,7 +442,12 @@ func (h *InventoryHandler) applyIngredientCost(r *http.Request, tenantID uuid.UU
 	return updated
 }
 
-// resolveOrCreateIngredient finds an ingredient by SKU or name, or creates it.
+// resolveOrCreateIngredient finds an existing item usable as a recipe input — an
+// INGREDIENT, a GOODS item (sodas, bottles) or a reusable RECIPE menu component
+// (Black Tea inside an Iced Passion Tea) — by SKU or name, or creates a NEW
+// INGREDIENT when nothing matches. Resolving across types matters: matching only
+// INGREDIENT used to silently create a duplicate item that shadowed the real
+// GOODS/RECIPE the user picked, so its stock never deducted.
 // Appends a ReorderSeed entry when a new ingredient is created.
 func (h *InventoryHandler) resolveOrCreateIngredient(
 	r *http.Request,
@@ -439,22 +456,33 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 	unitMap map[string]uuid.UUID,
 	seeds *[]ReorderSeed,
 ) (*items.ItemDTO, error) {
-	// Try by SKU first.
+	const inputTypes = "INGREDIENT,GOODS,RECIPE"
+	// RECIPE components are costed by their own BOM (Recipe.cost_per_portion) — never
+	// patch Item cost/purchase fields from a recipe line, it would corrupt nothing today
+	// but imply a purchase basis that doesn't exist.
+	resolve := func(existing items.ItemDTO) *items.ItemDTO {
+		if existing.Type == "RECIPE" {
+			return &existing
+		}
+		return h.applyIngredientCost(r, tenantID, existing, dto)
+	}
+
+	// Try by SKU first (exact match; the list search is a contains-match).
 	if dto.SKU != "" {
-		if _, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, dto.SKU); err == nil {
-			existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 1, 0, nil, nil, dto.SKU, nil, "")
-			if len(existingList) > 0 {
-				return h.applyIngredientCost(r, tenantID, existingList[0], dto), nil
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.SKU, nil, "")
+		for _, it := range existingList {
+			if strings.EqualFold(it.SKU, dto.SKU) {
+				return resolve(it), nil
 			}
 		}
 	}
 
 	// Try by name (case-insensitive search).
 	if dto.Name != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "INGREDIENT", "all", 5, 0, nil, nil, dto.Name, nil, "")
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.Name, nil, "")
 		for _, it := range existingList {
 			if strings.EqualFold(it.Name, dto.Name) {
-				return h.applyIngredientCost(r, tenantID, it, dto), nil
+				return resolve(it), nil
 			}
 		}
 	}

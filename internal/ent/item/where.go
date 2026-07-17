@@ -311,6 +311,11 @@ func UnitContentUom(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitContentUom, v))
 }
 
+// UsableInRecipes applies equality check predicate on the "usable_in_recipes" field. It's identical to UsableInRecipesEQ.
+func UsableInRecipes(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUsableInRecipes, v))
+}
+
 // MinSellingPrice applies equality check predicate on the "min_selling_price" field. It's identical to MinSellingPriceEQ.
 func MinSellingPrice(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldMinSellingPrice, v))
@@ -2979,6 +2984,16 @@ func UnitContentUomEqualFold(v string) predicate.Item {
 // UnitContentUomContainsFold applies the ContainsFold predicate on the "unit_content_uom" field.
 func UnitContentUomContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldUnitContentUom, v))
+}
+
+// UsableInRecipesEQ applies the EQ predicate on the "usable_in_recipes" field.
+func UsableInRecipesEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldUsableInRecipes, v))
+}
+
+// UsableInRecipesNEQ applies the NEQ predicate on the "usable_in_recipes" field.
+func UsableInRecipesNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldUsableInRecipes, v))
 }
 
 // StockTrackingModeEQ applies the EQ predicate on the "stock_tracking_mode" field.

@@ -160,6 +160,26 @@ func (_u *StockCountLineUpdate) ClearVariance() *StockCountLineUpdate {
 	return _u
 }
 
+// SetReason sets the "reason" field.
+func (_u *StockCountLineUpdate) SetReason(v string) *StockCountLineUpdate {
+	_u.mutation.SetReason(v)
+	return _u
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (_u *StockCountLineUpdate) SetNillableReason(v *string) *StockCountLineUpdate {
+	if v != nil {
+		_u.SetReason(*v)
+	}
+	return _u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (_u *StockCountLineUpdate) ClearReason() *StockCountLineUpdate {
+	_u.mutation.ClearReason()
+	return _u
+}
+
 // SetPosted sets the "posted" field.
 func (_u *StockCountLineUpdate) SetPosted(v bool) *StockCountLineUpdate {
 	_u.mutation.SetPosted(v)
@@ -228,6 +248,11 @@ func (_u *StockCountLineUpdate) check() error {
 			return &ValidationError{Name: "sku", err: fmt.Errorf(`ent: validator failed for field "StockCountLine.sku": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Reason(); ok {
+		if err := stockcountline.ReasonValidator(v); err != nil {
+			return &ValidationError{Name: "reason", err: fmt.Errorf(`ent: validator failed for field "StockCountLine.reason": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -278,6 +303,12 @@ func (_u *StockCountLineUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if _u.mutation.VarianceCleared() {
 		_spec.ClearField(stockcountline.FieldVariance, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Reason(); ok {
+		_spec.SetField(stockcountline.FieldReason, field.TypeString, value)
+	}
+	if _u.mutation.ReasonCleared() {
+		_spec.ClearField(stockcountline.FieldReason, field.TypeString)
 	}
 	if value, ok := _u.mutation.Posted(); ok {
 		_spec.SetField(stockcountline.FieldPosted, field.TypeBool, value)
@@ -436,6 +467,26 @@ func (_u *StockCountLineUpdateOne) ClearVariance() *StockCountLineUpdateOne {
 	return _u
 }
 
+// SetReason sets the "reason" field.
+func (_u *StockCountLineUpdateOne) SetReason(v string) *StockCountLineUpdateOne {
+	_u.mutation.SetReason(v)
+	return _u
+}
+
+// SetNillableReason sets the "reason" field if the given value is not nil.
+func (_u *StockCountLineUpdateOne) SetNillableReason(v *string) *StockCountLineUpdateOne {
+	if v != nil {
+		_u.SetReason(*v)
+	}
+	return _u
+}
+
+// ClearReason clears the value of the "reason" field.
+func (_u *StockCountLineUpdateOne) ClearReason() *StockCountLineUpdateOne {
+	_u.mutation.ClearReason()
+	return _u
+}
+
 // SetPosted sets the "posted" field.
 func (_u *StockCountLineUpdateOne) SetPosted(v bool) *StockCountLineUpdateOne {
 	_u.mutation.SetPosted(v)
@@ -517,6 +568,11 @@ func (_u *StockCountLineUpdateOne) check() error {
 			return &ValidationError{Name: "sku", err: fmt.Errorf(`ent: validator failed for field "StockCountLine.sku": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Reason(); ok {
+		if err := stockcountline.ReasonValidator(v); err != nil {
+			return &ValidationError{Name: "reason", err: fmt.Errorf(`ent: validator failed for field "StockCountLine.reason": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -584,6 +640,12 @@ func (_u *StockCountLineUpdateOne) sqlSave(ctx context.Context) (_node *StockCou
 	}
 	if _u.mutation.VarianceCleared() {
 		_spec.ClearField(stockcountline.FieldVariance, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Reason(); ok {
+		_spec.SetField(stockcountline.FieldReason, field.TypeString, value)
+	}
+	if _u.mutation.ReasonCleared() {
+		_spec.ClearField(stockcountline.FieldReason, field.TypeString)
 	}
 	if value, ok := _u.mutation.Posted(); ok {
 		_spec.SetField(stockcountline.FieldPosted, field.TypeBool, value)

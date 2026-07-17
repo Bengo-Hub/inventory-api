@@ -1363,6 +1363,7 @@ var (
 		{Name: "yield_pct", Type: field.TypeFloat64, Nullable: true, Default: 1},
 		{Name: "unit_content_qty", Type: field.TypeFloat64, Nullable: true},
 		{Name: "unit_content_uom", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "usable_in_recipes", Type: field.TypeBool, Default: false},
 		{Name: "stock_tracking_mode", Type: field.TypeEnum, Enums: []string{"default", "tracked", "non_depleting"}, Default: "default"},
 		{Name: "min_selling_price", Type: field.TypeFloat64, Nullable: true},
 		{Name: "max_selling_price", Type: field.TypeFloat64, Nullable: true},
@@ -1389,31 +1390,31 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[66]},
+				Columns:    []*schema.Column{ItemsColumns[67]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_brands_items",
-				Columns:    []*schema.Column{ItemsColumns[67]},
+				Columns:    []*schema.Column{ItemsColumns[68]},
 				RefColumns: []*schema.Column{ItemBrandsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[68]},
+				Columns:    []*schema.Column{ItemsColumns[69]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_suppliers_preferred_items",
-				Columns:    []*schema.Column{ItemsColumns[69]},
+				Columns:    []*schema.Column{ItemsColumns[70]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[70]},
+				Columns:    []*schema.Column{ItemsColumns[71]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1422,42 +1423,42 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[68]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[69]},
 			},
 			{
 				Name:    "item_tenant_id_brand_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[67]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[68]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[28]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[28]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[30]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[30]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[64]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[65]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[66]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[67]},
 			},
 			{
 				Name:    "item_tenant_id_preferred_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[70], ItemsColumns[69]},
+				Columns: []*schema.Column{ItemsColumns[71], ItemsColumns[70]},
 			},
 		},
 	}
@@ -2875,6 +2876,7 @@ var (
 		{Name: "system_qty", Type: field.TypeFloat64, Default: 0},
 		{Name: "counted_qty", Type: field.TypeFloat64, Nullable: true},
 		{Name: "variance", Type: field.TypeFloat64, Nullable: true},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 40},
 		{Name: "posted", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -2894,6 +2896,37 @@ var (
 				Name:    "stockcountline_stock_count_id_item_id",
 				Unique:  true,
 				Columns: []*schema.Column{StockCountLinesColumns[2], StockCountLinesColumns[3]},
+			},
+		},
+	}
+	// StockCountTemplatesColumns holds the columns for the "stock_count_templates" table.
+	StockCountTemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "item_ids", Type: field.TypeJSON, Nullable: true},
+		{Name: "category_ids", Type: field.TypeJSON, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// StockCountTemplatesTable holds the schema information for the "stock_count_templates" table.
+	StockCountTemplatesTable = &schema.Table{
+		Name:       "stock_count_templates",
+		Columns:    StockCountTemplatesColumns,
+		PrimaryKey: []*schema.Column{StockCountTemplatesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockcounttemplate_tenant_id_name",
+				Unique:  true,
+				Columns: []*schema.Column{StockCountTemplatesColumns[1], StockCountTemplatesColumns[2]},
+			},
+			{
+				Name:    "stockcounttemplate_tenant_id_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{StockCountTemplatesColumns[1], StockCountTemplatesColumns[7]},
 			},
 		},
 	}
@@ -3617,6 +3650,7 @@ var (
 		StockBreakdownsTable,
 		StockCountsTable,
 		StockCountLinesTable,
+		StockCountTemplatesTable,
 		StockLevelEventsTable,
 		StockTransfersTable,
 		StockTransferLinesTable,

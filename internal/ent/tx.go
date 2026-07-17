@@ -152,6 +152,8 @@ type Tx struct {
 	StockCount *StockCountClient
 	// StockCountLine is the client for interacting with the StockCountLine builders.
 	StockCountLine *StockCountLineClient
+	// StockCountTemplate is the client for interacting with the StockCountTemplate builders.
+	StockCountTemplate *StockCountTemplateClient
 	// StockLevelEvent is the client for interacting with the StockLevelEvent builders.
 	StockLevelEvent *StockLevelEventClient
 	// StockTransfer is the client for interacting with the StockTransfer builders.
@@ -385,6 +387,7 @@ func (tx *Tx) init() {
 	tx.StockBreakdown = NewStockBreakdownClient(tx.config)
 	tx.StockCount = NewStockCountClient(tx.config)
 	tx.StockCountLine = NewStockCountLineClient(tx.config)
+	tx.StockCountTemplate = NewStockCountTemplateClient(tx.config)
 	tx.StockLevelEvent = NewStockLevelEventClient(tx.config)
 	tx.StockTransfer = NewStockTransferClient(tx.config)
 	tx.StockTransferLine = NewStockTransferLineClient(tx.config)

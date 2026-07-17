@@ -813,6 +813,20 @@ func (_c *ItemCreate) SetNillableUnitContentUom(v *string) *ItemCreate {
 	return _c
 }
 
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (_c *ItemCreate) SetUsableInRecipes(v bool) *ItemCreate {
+	_c.mutation.SetUsableInRecipes(v)
+	return _c
+}
+
+// SetNillableUsableInRecipes sets the "usable_in_recipes" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableUsableInRecipes(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetUsableInRecipes(*v)
+	}
+	return _c
+}
+
 // SetStockTrackingMode sets the "stock_tracking_mode" field.
 func (_c *ItemCreate) SetStockTrackingMode(v item.StockTrackingMode) *ItemCreate {
 	_c.mutation.SetStockTrackingMode(v)
@@ -1345,6 +1359,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultYieldPct
 		_c.mutation.SetYieldPct(v)
 	}
+	if _, ok := _c.mutation.UsableInRecipes(); !ok {
+		v := item.DefaultUsableInRecipes
+		_c.mutation.SetUsableInRecipes(v)
+	}
 	if _, ok := _c.mutation.StockTrackingMode(); !ok {
 		v := item.DefaultStockTrackingMode
 		_c.mutation.SetStockTrackingMode(v)
@@ -1474,6 +1492,9 @@ func (_c *ItemCreate) check() error {
 		if err := item.UnitContentUomValidator(v); err != nil {
 			return &ValidationError{Name: "unit_content_uom", err: fmt.Errorf(`ent: validator failed for field "Item.unit_content_uom": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.UsableInRecipes(); !ok {
+		return &ValidationError{Name: "usable_in_recipes", err: errors.New(`ent: missing required field "Item.usable_in_recipes"`)}
 	}
 	if _, ok := _c.mutation.StockTrackingMode(); !ok {
 		return &ValidationError{Name: "stock_tracking_mode", err: errors.New(`ent: missing required field "Item.stock_tracking_mode"`)}
@@ -1747,6 +1768,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UnitContentUom(); ok {
 		_spec.SetField(item.FieldUnitContentUom, field.TypeString, value)
 		_node.UnitContentUom = value
+	}
+	if value, ok := _c.mutation.UsableInRecipes(); ok {
+		_spec.SetField(item.FieldUsableInRecipes, field.TypeBool, value)
+		_node.UsableInRecipes = value
 	}
 	if value, ok := _c.mutation.StockTrackingMode(); ok {
 		_spec.SetField(item.FieldStockTrackingMode, field.TypeEnum, value)
@@ -3124,6 +3149,18 @@ func (u *ItemUpsert) UpdateUnitContentUom() *ItemUpsert {
 // ClearUnitContentUom clears the value of the "unit_content_uom" field.
 func (u *ItemUpsert) ClearUnitContentUom() *ItemUpsert {
 	u.SetNull(item.FieldUnitContentUom)
+	return u
+}
+
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (u *ItemUpsert) SetUsableInRecipes(v bool) *ItemUpsert {
+	u.Set(item.FieldUsableInRecipes, v)
+	return u
+}
+
+// UpdateUsableInRecipes sets the "usable_in_recipes" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateUsableInRecipes() *ItemUpsert {
+	u.SetExcluded(item.FieldUsableInRecipes)
 	return u
 }
 
@@ -4554,6 +4591,20 @@ func (u *ItemUpsertOne) UpdateUnitContentUom() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearUnitContentUom() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearUnitContentUom()
+	})
+}
+
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (u *ItemUpsertOne) SetUsableInRecipes(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUsableInRecipes(v)
+	})
+}
+
+// UpdateUsableInRecipes sets the "usable_in_recipes" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateUsableInRecipes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUsableInRecipes()
 	})
 }
 
@@ -6186,6 +6237,20 @@ func (u *ItemUpsertBulk) UpdateUnitContentUom() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearUnitContentUom() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearUnitContentUom()
+	})
+}
+
+// SetUsableInRecipes sets the "usable_in_recipes" field.
+func (u *ItemUpsertBulk) SetUsableInRecipes(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetUsableInRecipes(v)
+	})
+}
+
+// UpdateUsableInRecipes sets the "usable_in_recipes" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateUsableInRecipes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateUsableInRecipes()
 	})
 }
 

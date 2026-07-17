@@ -142,6 +142,8 @@ type Item struct {
 	UnitContentQty *float64 `json:"unit_content_qty,omitempty"`
 	// Unit of the per-stock-unit content (e.g. 'ml', 'g') — enables cross-dimension recipe deduction
 	UnitContentUom string `json:"unit_content_uom,omitempty"`
+	// RECIPE-type items only: may be used as an ingredient/sub-recipe input in other recipes (surfaces in the recipe-ingredient picker)
+	UsableInRecipes bool `json:"usable_in_recipes,omitempty"`
 	// Depletion behavior: default (tenant policy for recipes), tracked (always deplete), non_depleting (sell without stock effect; excluded from stock-out cascade)
 	StockTrackingMode item.StockTrackingMode `json:"stock_tracking_mode,omitempty"`
 	// Hard minimum selling price (KES). Prices below this are rejected at price upsert and require manager approval at POS
@@ -389,7 +391,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case item.FieldDimensionsCm, item.FieldTags, item.FieldMetadata:
 			values[i] = new([]byte)
-		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldNonBillable, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive:
+		case item.FieldIsReturnable, item.FieldAllowBackorder, item.FieldIsDiscontinued, item.FieldNonBillable, item.FieldExtraBedAllowed, item.FieldIsActive, item.FieldRequiresAgeVerification, item.FieldIsControlledSubstance, item.FieldIsPerishable, item.FieldTrackSerialNumbers, item.FieldTrackLots, item.FieldTaxInclusive, item.FieldUsableInRecipes:
 			values[i] = new(sql.NullBool)
 		case item.FieldSingleSupplement, item.FieldWeightKg, item.FieldCostPrice, item.FieldPurchasePrice, item.FieldPurchasePackSize, item.FieldYieldPct, item.FieldUnitContentQty, item.FieldMinSellingPrice, item.FieldMaxSellingPrice, item.FieldTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
@@ -794,6 +796,12 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field unit_content_uom", values[i])
 			} else if value.Valid {
 				_m.UnitContentUom = value.String
+			}
+		case item.FieldUsableInRecipes:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field usable_in_recipes", values[i])
+			} else if value.Valid {
+				_m.UsableInRecipes = value.Bool
 			}
 		case item.FieldStockTrackingMode:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -1213,6 +1221,9 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("unit_content_uom=")
 	builder.WriteString(_m.UnitContentUom)
+	builder.WriteString(", ")
+	builder.WriteString("usable_in_recipes=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UsableInRecipes))
 	builder.WriteString(", ")
 	builder.WriteString("stock_tracking_mode=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockTrackingMode))

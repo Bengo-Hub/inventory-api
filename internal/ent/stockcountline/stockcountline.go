@@ -28,6 +28,8 @@ const (
 	FieldCountedQty = "counted_qty"
 	// FieldVariance holds the string denoting the variance field in the database.
 	FieldVariance = "variance"
+	// FieldReason holds the string denoting the reason field in the database.
+	FieldReason = "reason"
 	// FieldPosted holds the string denoting the posted field in the database.
 	FieldPosted = "posted"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -48,6 +50,7 @@ var Columns = []string{
 	FieldSystemQty,
 	FieldCountedQty,
 	FieldVariance,
+	FieldReason,
 	FieldPosted,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -68,6 +71,8 @@ var (
 	SkuValidator func(string) error
 	// DefaultSystemQty holds the default value on creation for the "system_qty" field.
 	DefaultSystemQty float64
+	// ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
+	ReasonValidator func(string) error
 	// DefaultPosted holds the default value on creation for the "posted" field.
 	DefaultPosted bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -121,6 +126,11 @@ func ByCountedQty(opts ...sql.OrderTermOption) OrderOption {
 // ByVariance orders the results by the variance field.
 func ByVariance(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVariance, opts...).ToFunc()
+}
+
+// ByReason orders the results by the reason field.
+func ByReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReason, opts...).ToFunc()
 }
 
 // ByPosted orders the results by the posted field.

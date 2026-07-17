@@ -75,6 +75,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
+	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
@@ -984,24 +985,28 @@ func init() {
 	itemDescUnitContentUom := itemFields[58].Descriptor()
 	// item.UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
 	item.UnitContentUomValidator = itemDescUnitContentUom.Validators[0].(func(string) error)
+	// itemDescUsableInRecipes is the schema descriptor for usable_in_recipes field.
+	itemDescUsableInRecipes := itemFields[59].Descriptor()
+	// item.DefaultUsableInRecipes holds the default value on creation for the usable_in_recipes field.
+	item.DefaultUsableInRecipes = itemDescUsableInRecipes.Default.(bool)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[64].Descriptor()
+	itemDescBookedCapacity := itemFields[65].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[67].Descriptor()
+	itemDescEventVenue := itemFields[68].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[68].Descriptor()
+	itemDescMetadata := itemFields[69].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[69].Descriptor()
+	itemDescCreatedAt := itemFields[70].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[70].Descriptor()
+	itemDescUpdatedAt := itemFields[71].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1940,16 +1945,20 @@ func init() {
 	stockcountlineDescSystemQty := stockcountlineFields[5].Descriptor()
 	// stockcountline.DefaultSystemQty holds the default value on creation for the system_qty field.
 	stockcountline.DefaultSystemQty = stockcountlineDescSystemQty.Default.(float64)
+	// stockcountlineDescReason is the schema descriptor for reason field.
+	stockcountlineDescReason := stockcountlineFields[8].Descriptor()
+	// stockcountline.ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
+	stockcountline.ReasonValidator = stockcountlineDescReason.Validators[0].(func(string) error)
 	// stockcountlineDescPosted is the schema descriptor for posted field.
-	stockcountlineDescPosted := stockcountlineFields[8].Descriptor()
+	stockcountlineDescPosted := stockcountlineFields[9].Descriptor()
 	// stockcountline.DefaultPosted holds the default value on creation for the posted field.
 	stockcountline.DefaultPosted = stockcountlineDescPosted.Default.(bool)
 	// stockcountlineDescCreatedAt is the schema descriptor for created_at field.
-	stockcountlineDescCreatedAt := stockcountlineFields[9].Descriptor()
+	stockcountlineDescCreatedAt := stockcountlineFields[10].Descriptor()
 	// stockcountline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	stockcountline.DefaultCreatedAt = stockcountlineDescCreatedAt.Default.(func() time.Time)
 	// stockcountlineDescUpdatedAt is the schema descriptor for updated_at field.
-	stockcountlineDescUpdatedAt := stockcountlineFields[10].Descriptor()
+	stockcountlineDescUpdatedAt := stockcountlineFields[11].Descriptor()
 	// stockcountline.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	stockcountline.DefaultUpdatedAt = stockcountlineDescUpdatedAt.Default.(func() time.Time)
 	// stockcountline.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1958,6 +1967,30 @@ func init() {
 	stockcountlineDescID := stockcountlineFields[0].Descriptor()
 	// stockcountline.DefaultID holds the default value on creation for the id field.
 	stockcountline.DefaultID = stockcountlineDescID.Default.(func() uuid.UUID)
+	stockcounttemplateFields := schema.StockCountTemplate{}.Fields()
+	_ = stockcounttemplateFields
+	// stockcounttemplateDescName is the schema descriptor for name field.
+	stockcounttemplateDescName := stockcounttemplateFields[2].Descriptor()
+	// stockcounttemplate.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	stockcounttemplate.NameValidator = stockcounttemplateDescName.Validators[0].(func(string) error)
+	// stockcounttemplateDescIsActive is the schema descriptor for is_active field.
+	stockcounttemplateDescIsActive := stockcounttemplateFields[7].Descriptor()
+	// stockcounttemplate.DefaultIsActive holds the default value on creation for the is_active field.
+	stockcounttemplate.DefaultIsActive = stockcounttemplateDescIsActive.Default.(bool)
+	// stockcounttemplateDescCreatedAt is the schema descriptor for created_at field.
+	stockcounttemplateDescCreatedAt := stockcounttemplateFields[8].Descriptor()
+	// stockcounttemplate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockcounttemplate.DefaultCreatedAt = stockcounttemplateDescCreatedAt.Default.(func() time.Time)
+	// stockcounttemplateDescUpdatedAt is the schema descriptor for updated_at field.
+	stockcounttemplateDescUpdatedAt := stockcounttemplateFields[9].Descriptor()
+	// stockcounttemplate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockcounttemplate.DefaultUpdatedAt = stockcounttemplateDescUpdatedAt.Default.(func() time.Time)
+	// stockcounttemplate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockcounttemplate.UpdateDefaultUpdatedAt = stockcounttemplateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockcounttemplateDescID is the schema descriptor for id field.
+	stockcounttemplateDescID := stockcounttemplateFields[0].Descriptor()
+	// stockcounttemplate.DefaultID holds the default value on creation for the id field.
+	stockcounttemplate.DefaultID = stockcounttemplateDescID.Default.(func() uuid.UUID)
 	stockleveleventFields := schema.StockLevelEvent{}.Fields()
 	_ = stockleveleventFields
 	// stockleveleventDescOnHandAtEvent is the schema descriptor for on_hand_at_event field.

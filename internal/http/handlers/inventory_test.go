@@ -193,6 +193,10 @@ func (m *mockStockSvc) Breakdown(ctx context.Context, tenantID uuid.UUID, req st
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockStockSvc) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ReverseConsumptionRequest) (*stock.ReverseConsumptionResponse, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockStockSvc) GetReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error) {
 	if m.getReservationFn != nil {
 		return m.getReservationFn(ctx, tenantID, reservationID)
