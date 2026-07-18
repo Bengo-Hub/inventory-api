@@ -2,15 +2,14 @@ package transfers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
-	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -576,20 +575,5 @@ func (s *Service) buildLineItems(lines []*ent.StockTransferLine) []map[string]an
 // writeOutboxEvent stores a domain event in the outbox within an Ent transaction.
 // Non-fatal: logs on failure so the business operation still succeeds.
 func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, aggregateID uuid.UUID, aggregateType, eventType string, payload map[string]any) {
-	evt := eventslib.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
-	data, err := evt.ToJSON()
-	if err != nil {
-		s.log.Warn("outbox: marshal event", zap.Error(err), zap.String("event_type", eventType))
-		return
-	}
-	_, err = tx.OutboxEvent.Create().
-		SetTenantID(tenantID).
-		SetAggregateType(aggregateType).
-		SetAggregateID(aggregateID.String()).
-		SetEventType(eventType).
-		SetPayload(json.RawMessage(data)).
-		Save(ctx)
-	if err != nil {
-		s.log.Warn("outbox: write event", zap.Error(err), zap.String("event_type", eventType))
-	}
+	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, aggregateID, aggregateType, eventType, payload)
 }

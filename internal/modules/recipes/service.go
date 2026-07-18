@@ -2,16 +2,15 @@ package recipes
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 
-	events "github.com/Bengo-Hub/shared-events"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
@@ -534,22 +533,7 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 // writeOutboxEvent stores a domain event in the outbox within an Ent transaction.
 // Non-fatal — logs on failure so the business operation still succeeds.
 func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, aggregateID uuid.UUID, aggregateType, eventType string, payload map[string]any) {
-	evt := events.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
-	data, err := evt.ToJSON()
-	if err != nil {
-		s.log.Warn("recipes outbox: marshal event", zap.Error(err), zap.String("event_type", eventType))
-		return
-	}
-	_, err = tx.OutboxEvent.Create().
-		SetTenantID(tenantID).
-		SetAggregateType(aggregateType).
-		SetAggregateID(aggregateID.String()).
-		SetEventType(eventType).
-		SetPayload(json.RawMessage(data)).
-		Save(ctx)
-	if err != nil {
-		s.log.Warn("recipes outbox: write event", zap.Error(err), zap.String("event_type", eventType))
-	}
+	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, aggregateID, aggregateType, eventType, payload)
 }
 
 // RecalculateCostsForIngredient recalculates costs for all recipes that use the given
