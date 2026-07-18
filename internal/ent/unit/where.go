@@ -381,6 +381,16 @@ func KraQtyUnitCdContainsFold(v string) predicate.Unit {
 	return predicate.Unit(sql.FieldContainsFold(FieldKraQtyUnitCd, v))
 }
 
+// UseCasesIsNil applies the IsNil predicate on the "use_cases" field.
+func UseCasesIsNil() predicate.Unit {
+	return predicate.Unit(sql.FieldIsNull(FieldUseCases))
+}
+
+// UseCasesNotNil applies the NotNil predicate on the "use_cases" field.
+func UseCasesNotNil() predicate.Unit {
+	return predicate.Unit(sql.FieldNotNull(FieldUseCases))
+}
+
 // IsActiveEQ applies the EQ predicate on the "is_active" field.
 func IsActiveEQ(v bool) predicate.Unit {
 	return predicate.Unit(sql.FieldEQ(FieldIsActive, v))

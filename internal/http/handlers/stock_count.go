@@ -25,6 +25,12 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
+// countableTypes are the item types that physically hold stock and therefore
+// belong on a count sheet. RECIPE/SERVICE/VOUCHER items never track their own
+// stock (a recipe's INGREDIENTS are what gets counted), so they are excluded
+// from snapshot/template seeding and rejected on manual/scan add.
+var countableTypes = []entitem.Type{entitem.TypeGOODS, entitem.TypeINGREDIENT, entitem.TypeEQUIPMENT}
+
 // StockCountHandler manages cycle / physical stock counts and posts approved
 // variance adjustments (reusing stock.Service.AdjustStock).
 type StockCountHandler struct {
@@ -151,6 +157,7 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 					entitem.TenantID(tenantID),
 					entitem.IsActive(true),
 					entitem.CategoryIDIn(tpl.CategoryIds...),
+					entitem.TypeIn(countableTypes...),
 				).
 				IDs(ctx)
 			for _, id := range catItems {
@@ -162,8 +169,10 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, id)
 		}
 		if len(ids) > 0 {
+			// TypeIn also sanitizes explicit item_ids — a sheet that references a
+			// RECIPE/SERVICE item (or an item later converted to one) never seeds it.
 			itms, _ := h.orm.Item.Query().
-				Where(entitem.TenantID(tenantID), entitem.IDIn(ids...)).
+				Where(entitem.TenantID(tenantID), entitem.IDIn(ids...), entitem.TypeIn(countableTypes...)).
 				All(ctx)
 			onHand := map[uuid.UUID]float64{}
 			bals, _ := h.orm.InventoryBalance.Query().
@@ -194,16 +203,21 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		for _, bal := range balances {
 			itemIDs = append(itemIDs, bal.ItemID)
 		}
+		// Only stock-tracked types are countable — legacy/phantom balance rows for
+		// RECIPE items (menu entries hold no stock of their own) never seed a line.
 		skuByID := make(map[uuid.UUID]string, len(itemIDs))
 		if len(itemIDs) > 0 {
 			itms, _ := h.orm.Item.Query().
-				Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...)).
+				Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...), entitem.TypeIn(countableTypes...)).
 				All(ctx)
 			for _, it := range itms {
 				skuByID[it.ID] = it.Sku
 			}
 		}
 		for _, bal := range balances {
+			if _, countable := skuByID[bal.ItemID]; !countable {
+				continue
+			}
 			_, _ = h.orm.StockCountLine.Create().
 				SetTenantID(tenantID).
 				SetStockCountID(count.ID).
@@ -251,6 +265,29 @@ func (h *StockCountHandler) UpsertLine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	// Countable types only: a RECIPE/SERVICE/VOUCHER item holds no stock of its own,
+	// so counting it is meaningless (its INGREDIENTS are what gets counted). Reject
+	// with guidance instead of silently recording an uncorrectable variance.
+	itm, itemErr := h.orm.Item.Query().
+		Where(entitem.ID(req.ItemID), entitem.TenantID(tenantID)).
+		Only(ctx)
+	if itemErr != nil {
+		writeError(w, http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found")
+		return
+	}
+	countable := false
+	for _, t := range countableTypes {
+		if itm.Type == t {
+			countable = true
+			break
+		}
+	}
+	if !countable {
+		writeError(w, http.StatusBadRequest, "NOT_COUNTABLE",
+			itm.Name+" is a "+strings.ToLower(string(itm.Type))+" item — it doesn't hold stock of its own, so it can't be counted. Count its ingredients/goods instead.")
+		return
+	}
+
 	existing, _ := h.orm.StockCountLine.Query().
 		Where(entcountline.StockCountID(countID), entcountline.ItemID(req.ItemID)).
 		Only(ctx)

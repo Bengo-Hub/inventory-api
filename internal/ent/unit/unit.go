@@ -23,6 +23,8 @@ const (
 	FieldType = "type"
 	// FieldKraQtyUnitCd holds the string denoting the kra_qty_unit_cd field in the database.
 	FieldKraQtyUnitCd = "kra_qty_unit_cd"
+	// FieldUseCases holds the string denoting the use_cases field in the database.
+	FieldUseCases = "use_cases"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldAbbreviation,
 	FieldType,
 	FieldKraQtyUnitCd,
+	FieldUseCases,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,

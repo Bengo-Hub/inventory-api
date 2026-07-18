@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,6 +27,8 @@ type Unit struct {
 	Type string `json:"type,omitempty"`
 	// KRA eTIMS quantity-unit code (qtyUnitCd) this unit maps to, e.g. KG→KG, Piece→U, Litre→LTR; items may override per-item via etims_qty_unit_cd
 	KraQtyUnitCd string `json:"kra_qty_unit_cd,omitempty"`
+	// Outlet use_cases this unit is relevant to (hospitality, pharmacy, retail…); empty = all
+	UseCases []string `json:"use_cases,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -72,6 +75,8 @@ func (*Unit) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case unit.FieldUseCases:
+			values[i] = new([]byte)
 		case unit.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case unit.FieldName, unit.FieldAbbreviation, unit.FieldType, unit.FieldKraQtyUnitCd:
@@ -124,6 +129,14 @@ func (_m *Unit) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field kra_qty_unit_cd", values[i])
 			} else if value.Valid {
 				_m.KraQtyUnitCd = value.String
+			}
+		case unit.FieldUseCases:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field use_cases", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UseCases); err != nil {
+					return fmt.Errorf("unmarshal field use_cases: %w", err)
+				}
 			}
 		case unit.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -200,6 +213,9 @@ func (_m *Unit) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("kra_qty_unit_cd=")
 	builder.WriteString(_m.KraQtyUnitCd)
+	builder.WriteString(", ")
+	builder.WriteString("use_cases=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UseCases))
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

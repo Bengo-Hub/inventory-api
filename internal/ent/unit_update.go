@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
@@ -102,6 +103,24 @@ func (_u *UnitUpdate) SetNillableKraQtyUnitCd(v *string) *UnitUpdate {
 // ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
 func (_u *UnitUpdate) ClearKraQtyUnitCd() *UnitUpdate {
 	_u.mutation.ClearKraQtyUnitCd()
+	return _u
+}
+
+// SetUseCases sets the "use_cases" field.
+func (_u *UnitUpdate) SetUseCases(v []string) *UnitUpdate {
+	_u.mutation.SetUseCases(v)
+	return _u
+}
+
+// AppendUseCases appends value to the "use_cases" field.
+func (_u *UnitUpdate) AppendUseCases(v []string) *UnitUpdate {
+	_u.mutation.AppendUseCases(v)
+	return _u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (_u *UnitUpdate) ClearUseCases() *UnitUpdate {
+	_u.mutation.ClearUseCases()
 	return _u
 }
 
@@ -280,6 +299,17 @@ func (_u *UnitUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.KraQtyUnitCdCleared() {
 		_spec.ClearField(unit.FieldKraQtyUnitCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.UseCases(); ok {
+		_spec.SetField(unit.FieldUseCases, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedUseCases(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, unit.FieldUseCases, value)
+		})
+	}
+	if _u.mutation.UseCasesCleared() {
+		_spec.ClearField(unit.FieldUseCases, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
@@ -468,6 +498,24 @@ func (_u *UnitUpdateOne) SetNillableKraQtyUnitCd(v *string) *UnitUpdateOne {
 // ClearKraQtyUnitCd clears the value of the "kra_qty_unit_cd" field.
 func (_u *UnitUpdateOne) ClearKraQtyUnitCd() *UnitUpdateOne {
 	_u.mutation.ClearKraQtyUnitCd()
+	return _u
+}
+
+// SetUseCases sets the "use_cases" field.
+func (_u *UnitUpdateOne) SetUseCases(v []string) *UnitUpdateOne {
+	_u.mutation.SetUseCases(v)
+	return _u
+}
+
+// AppendUseCases appends value to the "use_cases" field.
+func (_u *UnitUpdateOne) AppendUseCases(v []string) *UnitUpdateOne {
+	_u.mutation.AppendUseCases(v)
+	return _u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (_u *UnitUpdateOne) ClearUseCases() *UnitUpdateOne {
+	_u.mutation.ClearUseCases()
 	return _u
 }
 
@@ -676,6 +724,17 @@ func (_u *UnitUpdateOne) sqlSave(ctx context.Context) (_node *Unit, err error) {
 	}
 	if _u.mutation.KraQtyUnitCdCleared() {
 		_spec.ClearField(unit.FieldKraQtyUnitCd, field.TypeString)
+	}
+	if value, ok := _u.mutation.UseCases(); ok {
+		_spec.SetField(unit.FieldUseCases, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedUseCases(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, unit.FieldUseCases, value)
+		})
+	}
+	if _u.mutation.UseCasesCleared() {
+		_spec.ClearField(unit.FieldUseCases, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)

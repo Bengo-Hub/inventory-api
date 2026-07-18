@@ -74,6 +74,12 @@ func (_c *UnitCreate) SetNillableKraQtyUnitCd(v *string) *UnitCreate {
 	return _c
 }
 
+// SetUseCases sets the "use_cases" field.
+func (_c *UnitCreate) SetUseCases(v []string) *UnitCreate {
+	_c.mutation.SetUseCases(v)
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *UnitCreate) SetIsActive(v bool) *UnitCreate {
 	_c.mutation.SetIsActive(v)
@@ -284,6 +290,10 @@ func (_c *UnitCreate) createSpec() (*Unit, *sqlgraph.CreateSpec) {
 		_spec.SetField(unit.FieldKraQtyUnitCd, field.TypeString, value)
 		_node.KraQtyUnitCd = value
 	}
+	if value, ok := _c.mutation.UseCases(); ok {
+		_spec.SetField(unit.FieldUseCases, field.TypeJSON, value)
+		_node.UseCases = value
+	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(unit.FieldIsActive, field.TypeBool, value)
 		_node.IsActive = value
@@ -446,6 +456,24 @@ func (u *UnitUpsert) ClearKraQtyUnitCd() *UnitUpsert {
 	return u
 }
 
+// SetUseCases sets the "use_cases" field.
+func (u *UnitUpsert) SetUseCases(v []string) *UnitUpsert {
+	u.Set(unit.FieldUseCases, v)
+	return u
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *UnitUpsert) UpdateUseCases() *UnitUpsert {
+	u.SetExcluded(unit.FieldUseCases)
+	return u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *UnitUpsert) ClearUseCases() *UnitUpsert {
+	u.SetNull(unit.FieldUseCases)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *UnitUpsert) SetIsActive(v bool) *UnitUpsert {
 	u.Set(unit.FieldIsActive, v)
@@ -595,6 +623,27 @@ func (u *UnitUpsertOne) UpdateKraQtyUnitCd() *UnitUpsertOne {
 func (u *UnitUpsertOne) ClearKraQtyUnitCd() *UnitUpsertOne {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearKraQtyUnitCd()
+	})
+}
+
+// SetUseCases sets the "use_cases" field.
+func (u *UnitUpsertOne) SetUseCases(v []string) *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetUseCases(v)
+	})
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *UnitUpsertOne) UpdateUseCases() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateUseCases()
+	})
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *UnitUpsertOne) ClearUseCases() *UnitUpsertOne {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearUseCases()
 	})
 }
 
@@ -918,6 +967,27 @@ func (u *UnitUpsertBulk) UpdateKraQtyUnitCd() *UnitUpsertBulk {
 func (u *UnitUpsertBulk) ClearKraQtyUnitCd() *UnitUpsertBulk {
 	return u.Update(func(s *UnitUpsert) {
 		s.ClearKraQtyUnitCd()
+	})
+}
+
+// SetUseCases sets the "use_cases" field.
+func (u *UnitUpsertBulk) SetUseCases(v []string) *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.SetUseCases(v)
+	})
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *UnitUpsertBulk) UpdateUseCases() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.UpdateUseCases()
+	})
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *UnitUpsertBulk) ClearUseCases() *UnitUpsertBulk {
+	return u.Update(func(s *UnitUpsert) {
+		s.ClearUseCases()
 	})
 }
 

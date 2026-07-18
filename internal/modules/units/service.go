@@ -24,8 +24,26 @@ type UnitDTO struct {
 	// KRA eTIMS quantity-unit code this unit maps to (e.g. KG, U, LTR) — the default
 	// qtyUnitCd for items measured in this unit during eTIMS registration.
 	KraQtyUnitCd string `json:"kra_qty_unit_cd,omitempty"`
-	IsActive     bool   `json:"is_active"`
-	ItemCount    int    `json:"item_count"`
+	// Outlet use_cases this unit is relevant to (hospitality, pharmacy, retail…);
+	// empty = universal. Units are global — tags keep culinary units (tot, pot,
+	// portion) out of pharmacy/retail pickers.
+	UseCases  []string `json:"use_cases,omitempty"`
+	IsActive  bool     `json:"is_active"`
+	ItemCount int      `json:"item_count"`
+}
+
+// RelevantToUseCase reports whether the unit applies to an outlet use_case:
+// untagged units are universal; tagged units match only their use_cases.
+func (d UnitDTO) RelevantToUseCase(useCase string) bool {
+	if useCase == "" || len(d.UseCases) == 0 {
+		return true
+	}
+	for _, uc := range d.UseCases {
+		if strings.EqualFold(uc, useCase) {
+			return true
+		}
+	}
+	return false
 }
 
 type Service struct {
@@ -123,6 +141,7 @@ func (s *Service) ListUnits(ctx context.Context, _ uuid.UUID) ([]UnitDTO, error)
 			Abbreviation: u.Abbreviation,
 			Type:         u.Type,
 			KraQtyUnitCd: u.KraQtyUnitCd,
+			UseCases:     u.UseCases,
 			IsActive:     u.IsActive,
 			ItemCount:    countMap[u.ID],
 		}
@@ -190,6 +209,7 @@ func (s *Service) UpdateUnit(ctx context.Context, _ uuid.UUID, id uuid.UUID, dto
 		Abbreviation: u.Abbreviation,
 		Type:         u.Type,
 		KraQtyUnitCd: u.KraQtyUnitCd,
+		UseCases:     u.UseCases,
 		IsActive:     u.IsActive,
 	}, nil
 }
@@ -224,6 +244,11 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 	}
 	if kra := strings.ToUpper(strings.TrimSpace(dto.KraQtyUnitCd)); kra != "" {
 		cre = cre.SetKraQtyUnitCd(kra)
+	}
+	// Use-case tags: a unit quick-created from a hospitality outlet is stamped
+	// hospitality so it never pollutes pharmacy/retail pickers. Untagged = universal.
+	if len(dto.UseCases) > 0 {
+		cre = cre.SetUseCases(dto.UseCases)
 	}
 	u, err := cre.Save(ctx)
 	if err != nil {
@@ -277,6 +302,7 @@ func (s *Service) CreateUnit(ctx context.Context, _ uuid.UUID, dto UnitDTO) (*Un
 		Abbreviation: u.Abbreviation,
 		Type:         u.Type,
 		KraQtyUnitCd: u.KraQtyUnitCd,
+		UseCases:     u.UseCases,
 		IsActive:     u.IsActive,
 	}, nil
 }

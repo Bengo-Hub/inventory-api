@@ -1094,15 +1094,15 @@ func init() {
 	// itemcategory.DefaultIsGlobal holds the default value on creation for the is_global field.
 	itemcategory.DefaultIsGlobal = itemcategoryDescIsGlobal.Default.(bool)
 	// itemcategoryDescIsActive is the schema descriptor for is_active field.
-	itemcategoryDescIsActive := itemcategoryFields[12].Descriptor()
+	itemcategoryDescIsActive := itemcategoryFields[13].Descriptor()
 	// itemcategory.DefaultIsActive holds the default value on creation for the is_active field.
 	itemcategory.DefaultIsActive = itemcategoryDescIsActive.Default.(bool)
 	// itemcategoryDescCreatedAt is the schema descriptor for created_at field.
-	itemcategoryDescCreatedAt := itemcategoryFields[13].Descriptor()
+	itemcategoryDescCreatedAt := itemcategoryFields[14].Descriptor()
 	// itemcategory.DefaultCreatedAt holds the default value on creation for the created_at field.
 	itemcategory.DefaultCreatedAt = itemcategoryDescCreatedAt.Default.(func() time.Time)
 	// itemcategoryDescUpdatedAt is the schema descriptor for updated_at field.
-	itemcategoryDescUpdatedAt := itemcategoryFields[14].Descriptor()
+	itemcategoryDescUpdatedAt := itemcategoryFields[15].Descriptor()
 	// itemcategory.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	itemcategory.DefaultUpdatedAt = itemcategoryDescUpdatedAt.Default.(func() time.Time)
 	// itemcategory.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -2316,15 +2316,15 @@ func init() {
 	// unit.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	unit.NameValidator = unitDescName.Validators[0].(func(string) error)
 	// unitDescIsActive is the schema descriptor for is_active field.
-	unitDescIsActive := unitFields[5].Descriptor()
+	unitDescIsActive := unitFields[6].Descriptor()
 	// unit.DefaultIsActive holds the default value on creation for the is_active field.
 	unit.DefaultIsActive = unitDescIsActive.Default.(bool)
 	// unitDescCreatedAt is the schema descriptor for created_at field.
-	unitDescCreatedAt := unitFields[6].Descriptor()
+	unitDescCreatedAt := unitFields[7].Descriptor()
 	// unit.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unit.DefaultCreatedAt = unitDescCreatedAt.Default.(func() time.Time)
 	// unitDescUpdatedAt is the schema descriptor for updated_at field.
-	unitDescUpdatedAt := unitFields[7].Descriptor()
+	unitDescUpdatedAt := unitFields[8].Descriptor()
 	// unit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	unit.DefaultUpdatedAt = unitDescUpdatedAt.Default.(func() time.Time)
 	// unit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

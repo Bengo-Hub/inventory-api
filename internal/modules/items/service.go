@@ -282,6 +282,24 @@ type CategoryDTO struct {
 	ParentName  string     `json:"parent_name,omitempty"`
 	IsActive    bool       `json:"is_active"`
 	IsGlobal    bool       `json:"is_global,omitempty"`
+	// Outlet use_cases this category is relevant to (hospitality, pharmacy,
+	// retail…); empty = universal. Keeps food categories out of a pharmacy
+	// outlet's pickers (and vice versa) on mixed-use tenants.
+	UseCases []string `json:"use_cases,omitempty"`
+}
+
+// RelevantToUseCase reports whether the category applies to an outlet use_case:
+// untagged categories are universal; tagged ones match only their use_cases.
+func (d CategoryDTO) RelevantToUseCase(useCase string) bool {
+	if useCase == "" || len(d.UseCases) == 0 {
+		return true
+	}
+	for _, uc := range d.UseCases {
+		if strings.EqualFold(uc, useCase) {
+			return true
+		}
+	}
+	return false
 }
 
 // StockAvailability matches the DTO expected by the ordering-backend client.
@@ -1272,6 +1290,11 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 	if dto.ParentID != nil {
 		q = q.SetParentID(*dto.ParentID)
 	}
+	// Use-case tags: a category created from a hospitality outlet is stamped
+	// hospitality so it never pollutes pharmacy/retail pickers. Untagged = universal.
+	if len(dto.UseCases) > 0 {
+		q = q.SetUseCases(dto.UseCases)
+	}
 	c, err := q.Save(ctx)
 	if err != nil {
 		if ent.IsConstraintError(err) {
@@ -1430,6 +1453,8 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 				Icon:        s.resolveMediaURL(c.Icon),
 				ParentID:    c.ParentID,
 				IsActive:    c.IsActive,
+				IsGlobal:    c.IsGlobal,
+				UseCases:    c.UseCases,
 			}
 			if c.ParentID != nil {
 				if pName, ok := nameMap[*c.ParentID]; ok {

@@ -165,6 +165,12 @@ func (_c *ItemCategoryCreate) SetNillableIsGlobal(v *bool) *ItemCategoryCreate {
 	return _c
 }
 
+// SetUseCases sets the "use_cases" field.
+func (_c *ItemCategoryCreate) SetUseCases(v []string) *ItemCategoryCreate {
+	_c.mutation.SetUseCases(v)
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *ItemCategoryCreate) SetIsActive(v bool) *ItemCategoryCreate {
 	_c.mutation.SetIsActive(v)
@@ -451,6 +457,10 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.IsGlobal(); ok {
 		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
 		_node.IsGlobal = value
+	}
+	if value, ok := _c.mutation.UseCases(); ok {
+		_spec.SetField(itemcategory.FieldUseCases, field.TypeJSON, value)
+		_node.UseCases = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -778,6 +788,24 @@ func (u *ItemCategoryUpsert) UpdateIsGlobal() *ItemCategoryUpsert {
 	return u
 }
 
+// SetUseCases sets the "use_cases" field.
+func (u *ItemCategoryUpsert) SetUseCases(v []string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldUseCases, v)
+	return u
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateUseCases() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldUseCases)
+	return u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *ItemCategoryUpsert) ClearUseCases() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldUseCases)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *ItemCategoryUpsert) SetIsActive(v bool) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldIsActive, v)
@@ -1060,6 +1088,27 @@ func (u *ItemCategoryUpsertOne) SetIsGlobal(v bool) *ItemCategoryUpsertOne {
 func (u *ItemCategoryUpsertOne) UpdateIsGlobal() *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateIsGlobal()
+	})
+}
+
+// SetUseCases sets the "use_cases" field.
+func (u *ItemCategoryUpsertOne) SetUseCases(v []string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetUseCases(v)
+	})
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateUseCases() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateUseCases()
+	})
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *ItemCategoryUpsertOne) ClearUseCases() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearUseCases()
 	})
 }
 
@@ -1516,6 +1565,27 @@ func (u *ItemCategoryUpsertBulk) SetIsGlobal(v bool) *ItemCategoryUpsertBulk {
 func (u *ItemCategoryUpsertBulk) UpdateIsGlobal() *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.UpdateIsGlobal()
+	})
+}
+
+// SetUseCases sets the "use_cases" field.
+func (u *ItemCategoryUpsertBulk) SetUseCases(v []string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetUseCases(v)
+	})
+}
+
+// UpdateUseCases sets the "use_cases" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateUseCases() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateUseCases()
+	})
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (u *ItemCategoryUpsertBulk) ClearUseCases() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearUseCases()
 	})
 }
 

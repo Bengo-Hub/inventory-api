@@ -37,6 +37,8 @@ const (
 	FieldSortOrder = "sort_order"
 	// FieldIsGlobal holds the string denoting the is_global field in the database.
 	FieldIsGlobal = "is_global"
+	// FieldUseCases holds the string denoting the use_cases field in the database.
+	FieldUseCases = "use_cases"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -100,6 +102,7 @@ var Columns = []string{
 	FieldPath,
 	FieldSortOrder,
 	FieldIsGlobal,
+	FieldUseCases,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,

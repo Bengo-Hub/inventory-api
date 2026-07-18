@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -233,6 +234,24 @@ func (_u *ItemCategoryUpdate) SetNillableIsGlobal(v *bool) *ItemCategoryUpdate {
 	if v != nil {
 		_u.SetIsGlobal(*v)
 	}
+	return _u
+}
+
+// SetUseCases sets the "use_cases" field.
+func (_u *ItemCategoryUpdate) SetUseCases(v []string) *ItemCategoryUpdate {
+	_u.mutation.SetUseCases(v)
+	return _u
+}
+
+// AppendUseCases appends value to the "use_cases" field.
+func (_u *ItemCategoryUpdate) AppendUseCases(v []string) *ItemCategoryUpdate {
+	_u.mutation.AppendUseCases(v)
+	return _u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (_u *ItemCategoryUpdate) ClearUseCases() *ItemCategoryUpdate {
+	_u.mutation.ClearUseCases()
 	return _u
 }
 
@@ -504,6 +523,17 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.IsGlobal(); ok {
 		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.UseCases(); ok {
+		_spec.SetField(itemcategory.FieldUseCases, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedUseCases(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, itemcategory.FieldUseCases, value)
+		})
+	}
+	if _u.mutation.UseCasesCleared() {
+		_spec.ClearField(itemcategory.FieldUseCases, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -928,6 +958,24 @@ func (_u *ItemCategoryUpdateOne) SetNillableIsGlobal(v *bool) *ItemCategoryUpdat
 	return _u
 }
 
+// SetUseCases sets the "use_cases" field.
+func (_u *ItemCategoryUpdateOne) SetUseCases(v []string) *ItemCategoryUpdateOne {
+	_u.mutation.SetUseCases(v)
+	return _u
+}
+
+// AppendUseCases appends value to the "use_cases" field.
+func (_u *ItemCategoryUpdateOne) AppendUseCases(v []string) *ItemCategoryUpdateOne {
+	_u.mutation.AppendUseCases(v)
+	return _u
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (_u *ItemCategoryUpdateOne) ClearUseCases() *ItemCategoryUpdateOne {
+	_u.mutation.ClearUseCases()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemCategoryUpdateOne) SetIsActive(v bool) *ItemCategoryUpdateOne {
 	_u.mutation.SetIsActive(v)
@@ -1226,6 +1274,17 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 	}
 	if value, ok := _u.mutation.IsGlobal(); ok {
 		_spec.SetField(itemcategory.FieldIsGlobal, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.UseCases(); ok {
+		_spec.SetField(itemcategory.FieldUseCases, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedUseCases(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, itemcategory.FieldUseCases, value)
+		})
+	}
+	if _u.mutation.UseCasesCleared() {
+		_spec.ClearField(itemcategory.FieldUseCases, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)

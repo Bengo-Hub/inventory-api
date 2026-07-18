@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -41,6 +42,8 @@ type ItemCategory struct {
 	SortOrder int `json:"sort_order,omitempty"`
 	// If true, visible to all tenants (platform-level data created via bulk import)
 	IsGlobal bool `json:"is_global,omitempty"`
+	// Outlet use_cases this category is relevant to (hospitality, pharmacy, retail…); empty = all
+	UseCases []string `json:"use_cases,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -126,6 +129,8 @@ func (*ItemCategory) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case itemcategory.FieldParentID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case itemcategory.FieldUseCases:
+			values[i] = new([]byte)
 		case itemcategory.FieldIsGlobal, itemcategory.FieldIsActive:
 			values[i] = new(sql.NullBool)
 		case itemcategory.FieldDepth, itemcategory.FieldSortOrder:
@@ -223,6 +228,14 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_global", values[i])
 			} else if value.Valid {
 				_m.IsGlobal = value.Bool
+			}
+		case itemcategory.FieldUseCases:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field use_cases", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UseCases); err != nil {
+					return fmt.Errorf("unmarshal field use_cases: %w", err)
+				}
 			}
 		case itemcategory.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -337,6 +350,9 @@ func (_m *ItemCategory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_global=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsGlobal))
+	builder.WriteString(", ")
+	builder.WriteString("use_cases=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UseCases))
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

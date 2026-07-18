@@ -34,6 +34,13 @@ func (Unit) Fields() []ent.Field {
 		field.String("kra_qty_unit_cd").
 			Optional().
 			Comment("KRA eTIMS quantity-unit code (qtyUnitCd) this unit maps to, e.g. KG→KG, Piece→U, Litre→LTR; items may override per-item via etims_qty_unit_cd"),
+		// Use-case relevance tags. Units are a GLOBAL reference table, but a culinary
+		// unit (tot, pot, portion) is noise in a pharmacy or retail outlet — tagged
+		// units only surface for outlets of those use_cases; EMPTY = universal (kg, g,
+		// L, ml, pc…). Stamped from the creating outlet's use_case on quick-create.
+		field.JSON("use_cases", []string{}).
+			Optional().
+			Comment("Outlet use_cases this unit is relevant to (hospitality, pharmacy, retail…); empty = all"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

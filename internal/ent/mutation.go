@@ -44862,6 +44862,8 @@ type ItemCategoryMutation struct {
 	sort_order                      *int
 	addsort_order                   *int
 	is_global                       *bool
+	use_cases                       *[]string
+	appenduse_cases                 []string
 	is_active                       *bool
 	created_at                      *time.Time
 	updated_at                      *time.Time
@@ -45502,6 +45504,71 @@ func (m *ItemCategoryMutation) ResetIsGlobal() {
 	m.is_global = nil
 }
 
+// SetUseCases sets the "use_cases" field.
+func (m *ItemCategoryMutation) SetUseCases(s []string) {
+	m.use_cases = &s
+	m.appenduse_cases = nil
+}
+
+// UseCases returns the value of the "use_cases" field in the mutation.
+func (m *ItemCategoryMutation) UseCases() (r []string, exists bool) {
+	v := m.use_cases
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUseCases returns the old "use_cases" field's value of the ItemCategory entity.
+// If the ItemCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemCategoryMutation) OldUseCases(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUseCases is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUseCases requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUseCases: %w", err)
+	}
+	return oldValue.UseCases, nil
+}
+
+// AppendUseCases adds s to the "use_cases" field.
+func (m *ItemCategoryMutation) AppendUseCases(s []string) {
+	m.appenduse_cases = append(m.appenduse_cases, s...)
+}
+
+// AppendedUseCases returns the list of values that were appended to the "use_cases" field in this mutation.
+func (m *ItemCategoryMutation) AppendedUseCases() ([]string, bool) {
+	if len(m.appenduse_cases) == 0 {
+		return nil, false
+	}
+	return m.appenduse_cases, true
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (m *ItemCategoryMutation) ClearUseCases() {
+	m.use_cases = nil
+	m.appenduse_cases = nil
+	m.clearedFields[itemcategory.FieldUseCases] = struct{}{}
+}
+
+// UseCasesCleared returns if the "use_cases" field was cleared in this mutation.
+func (m *ItemCategoryMutation) UseCasesCleared() bool {
+	_, ok := m.clearedFields[itemcategory.FieldUseCases]
+	return ok
+}
+
+// ResetUseCases resets all changes to the "use_cases" field.
+func (m *ItemCategoryMutation) ResetUseCases() {
+	m.use_cases = nil
+	m.appenduse_cases = nil
+	delete(m.clearedFields, itemcategory.FieldUseCases)
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *ItemCategoryMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -45860,7 +45927,7 @@ func (m *ItemCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.tenant != nil {
 		fields = append(fields, itemcategory.FieldTenantID)
 	}
@@ -45893,6 +45960,9 @@ func (m *ItemCategoryMutation) Fields() []string {
 	}
 	if m.is_global != nil {
 		fields = append(fields, itemcategory.FieldIsGlobal)
+	}
+	if m.use_cases != nil {
+		fields = append(fields, itemcategory.FieldUseCases)
 	}
 	if m.is_active != nil {
 		fields = append(fields, itemcategory.FieldIsActive)
@@ -45933,6 +46003,8 @@ func (m *ItemCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.SortOrder()
 	case itemcategory.FieldIsGlobal:
 		return m.IsGlobal()
+	case itemcategory.FieldUseCases:
+		return m.UseCases()
 	case itemcategory.FieldIsActive:
 		return m.IsActive()
 	case itemcategory.FieldCreatedAt:
@@ -45970,6 +46042,8 @@ func (m *ItemCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldSortOrder(ctx)
 	case itemcategory.FieldIsGlobal:
 		return m.OldIsGlobal(ctx)
+	case itemcategory.FieldUseCases:
+		return m.OldUseCases(ctx)
 	case itemcategory.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case itemcategory.FieldCreatedAt:
@@ -46061,6 +46135,13 @@ func (m *ItemCategoryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIsGlobal(v)
+		return nil
+	case itemcategory.FieldUseCases:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUseCases(v)
 		return nil
 	case itemcategory.FieldIsActive:
 		v, ok := value.(bool)
@@ -46158,6 +46239,9 @@ func (m *ItemCategoryMutation) ClearedFields() []string {
 	if m.FieldCleared(itemcategory.FieldPath) {
 		fields = append(fields, itemcategory.FieldPath)
 	}
+	if m.FieldCleared(itemcategory.FieldUseCases) {
+		fields = append(fields, itemcategory.FieldUseCases)
+	}
 	return fields
 }
 
@@ -46189,6 +46273,9 @@ func (m *ItemCategoryMutation) ClearField(name string) error {
 		return nil
 	case itemcategory.FieldPath:
 		m.ClearPath()
+		return nil
+	case itemcategory.FieldUseCases:
+		m.ClearUseCases()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemCategory nullable field %s", name)
@@ -46230,6 +46317,9 @@ func (m *ItemCategoryMutation) ResetField(name string) error {
 		return nil
 	case itemcategory.FieldIsGlobal:
 		m.ResetIsGlobal()
+		return nil
+	case itemcategory.FieldUseCases:
+		m.ResetUseCases()
 		return nil
 	case itemcategory.FieldIsActive:
 		m.ResetIsActive()
@@ -94329,6 +94419,8 @@ type UnitMutation struct {
 	abbreviation              *string
 	_type                     *string
 	kra_qty_unit_cd           *string
+	use_cases                 *[]string
+	appenduse_cases           []string
 	is_active                 *bool
 	created_at                *time.Time
 	updated_at                *time.Time
@@ -94631,6 +94723,71 @@ func (m *UnitMutation) ResetKraQtyUnitCd() {
 	delete(m.clearedFields, unit.FieldKraQtyUnitCd)
 }
 
+// SetUseCases sets the "use_cases" field.
+func (m *UnitMutation) SetUseCases(s []string) {
+	m.use_cases = &s
+	m.appenduse_cases = nil
+}
+
+// UseCases returns the value of the "use_cases" field in the mutation.
+func (m *UnitMutation) UseCases() (r []string, exists bool) {
+	v := m.use_cases
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUseCases returns the old "use_cases" field's value of the Unit entity.
+// If the Unit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnitMutation) OldUseCases(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUseCases is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUseCases requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUseCases: %w", err)
+	}
+	return oldValue.UseCases, nil
+}
+
+// AppendUseCases adds s to the "use_cases" field.
+func (m *UnitMutation) AppendUseCases(s []string) {
+	m.appenduse_cases = append(m.appenduse_cases, s...)
+}
+
+// AppendedUseCases returns the list of values that were appended to the "use_cases" field in this mutation.
+func (m *UnitMutation) AppendedUseCases() ([]string, bool) {
+	if len(m.appenduse_cases) == 0 {
+		return nil, false
+	}
+	return m.appenduse_cases, true
+}
+
+// ClearUseCases clears the value of the "use_cases" field.
+func (m *UnitMutation) ClearUseCases() {
+	m.use_cases = nil
+	m.appenduse_cases = nil
+	m.clearedFields[unit.FieldUseCases] = struct{}{}
+}
+
+// UseCasesCleared returns if the "use_cases" field was cleared in this mutation.
+func (m *UnitMutation) UseCasesCleared() bool {
+	_, ok := m.clearedFields[unit.FieldUseCases]
+	return ok
+}
+
+// ResetUseCases resets all changes to the "use_cases" field.
+func (m *UnitMutation) ResetUseCases() {
+	m.use_cases = nil
+	m.appenduse_cases = nil
+	delete(m.clearedFields, unit.FieldUseCases)
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *UnitMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -94881,7 +95038,7 @@ func (m *UnitMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnitMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.name != nil {
 		fields = append(fields, unit.FieldName)
 	}
@@ -94893,6 +95050,9 @@ func (m *UnitMutation) Fields() []string {
 	}
 	if m.kra_qty_unit_cd != nil {
 		fields = append(fields, unit.FieldKraQtyUnitCd)
+	}
+	if m.use_cases != nil {
+		fields = append(fields, unit.FieldUseCases)
 	}
 	if m.is_active != nil {
 		fields = append(fields, unit.FieldIsActive)
@@ -94919,6 +95079,8 @@ func (m *UnitMutation) Field(name string) (ent.Value, bool) {
 		return m.GetType()
 	case unit.FieldKraQtyUnitCd:
 		return m.KraQtyUnitCd()
+	case unit.FieldUseCases:
+		return m.UseCases()
 	case unit.FieldIsActive:
 		return m.IsActive()
 	case unit.FieldCreatedAt:
@@ -94942,6 +95104,8 @@ func (m *UnitMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldType(ctx)
 	case unit.FieldKraQtyUnitCd:
 		return m.OldKraQtyUnitCd(ctx)
+	case unit.FieldUseCases:
+		return m.OldUseCases(ctx)
 	case unit.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case unit.FieldCreatedAt:
@@ -94984,6 +95148,13 @@ func (m *UnitMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetKraQtyUnitCd(v)
+		return nil
+	case unit.FieldUseCases:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUseCases(v)
 		return nil
 	case unit.FieldIsActive:
 		v, ok := value.(bool)
@@ -95045,6 +95216,9 @@ func (m *UnitMutation) ClearedFields() []string {
 	if m.FieldCleared(unit.FieldKraQtyUnitCd) {
 		fields = append(fields, unit.FieldKraQtyUnitCd)
 	}
+	if m.FieldCleared(unit.FieldUseCases) {
+		fields = append(fields, unit.FieldUseCases)
+	}
 	return fields
 }
 
@@ -95068,6 +95242,9 @@ func (m *UnitMutation) ClearField(name string) error {
 	case unit.FieldKraQtyUnitCd:
 		m.ClearKraQtyUnitCd()
 		return nil
+	case unit.FieldUseCases:
+		m.ClearUseCases()
+		return nil
 	}
 	return fmt.Errorf("unknown Unit nullable field %s", name)
 }
@@ -95087,6 +95264,9 @@ func (m *UnitMutation) ResetField(name string) error {
 		return nil
 	case unit.FieldKraQtyUnitCd:
 		m.ResetKraQtyUnitCd()
+		return nil
+	case unit.FieldUseCases:
+		m.ResetUseCases()
 		return nil
 	case unit.FieldIsActive:
 		m.ResetIsActive()
