@@ -179,7 +179,9 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		SuggestedPrice:  &sp,
 		AddToAllOutlets: true,
 	}
-	h.ensureCategory(r, tenantID, req.CategoryName, catMap)
+	// No outlet context on the composite flow — create untagged (universal within the
+	// tenant); the category is tenant-scoped either way.
+	h.ensureCategory(r, tenantID, req.CategoryName, "", catMap)
 	if id, ok := catMap[strings.ToLower(strings.TrimSpace(req.CategoryName))]; ok {
 		itemDTO.CategoryID = &id
 	}
