@@ -59,6 +59,20 @@ func (_c *PurchaseReturnCreate) SetNillablePurchaseOrderID(v *uuid.UUID) *Purcha
 	return _c
 }
 
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (_c *PurchaseReturnCreate) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnCreate {
+	_c.mutation.SetGoodsReceiptID(v)
+	return _c
+}
+
+// SetNillableGoodsReceiptID sets the "goods_receipt_id" field if the given value is not nil.
+func (_c *PurchaseReturnCreate) SetNillableGoodsReceiptID(v *uuid.UUID) *PurchaseReturnCreate {
+	if v != nil {
+		_c.SetGoodsReceiptID(*v)
+	}
+	return _c
+}
+
 // SetSupplierID sets the "supplier_id" field.
 func (_c *PurchaseReturnCreate) SetSupplierID(v uuid.UUID) *PurchaseReturnCreate {
 	_c.mutation.SetSupplierID(v)
@@ -334,6 +348,10 @@ func (_c *PurchaseReturnCreate) createSpec() (*PurchaseReturn, *sqlgraph.CreateS
 		_spec.SetField(purchasereturn.FieldPurchaseOrderID, field.TypeUUID, value)
 		_node.PurchaseOrderID = &value
 	}
+	if value, ok := _c.mutation.GoodsReceiptID(); ok {
+		_spec.SetField(purchasereturn.FieldGoodsReceiptID, field.TypeUUID, value)
+		_node.GoodsReceiptID = &value
+	}
 	if value, ok := _c.mutation.SupplierID(); ok {
 		_spec.SetField(purchasereturn.FieldSupplierID, field.TypeUUID, value)
 		_node.SupplierID = &value
@@ -479,6 +497,24 @@ func (u *PurchaseReturnUpsert) UpdatePurchaseOrderID() *PurchaseReturnUpsert {
 // ClearPurchaseOrderID clears the value of the "purchase_order_id" field.
 func (u *PurchaseReturnUpsert) ClearPurchaseOrderID() *PurchaseReturnUpsert {
 	u.SetNull(purchasereturn.FieldPurchaseOrderID)
+	return u
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsert) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldGoodsReceiptID, v)
+	return u
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateGoodsReceiptID() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldGoodsReceiptID)
+	return u
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsert) ClearGoodsReceiptID() *PurchaseReturnUpsert {
+	u.SetNull(purchasereturn.FieldGoodsReceiptID)
 	return u
 }
 
@@ -700,6 +736,27 @@ func (u *PurchaseReturnUpsertOne) UpdatePurchaseOrderID() *PurchaseReturnUpsertO
 func (u *PurchaseReturnUpsertOne) ClearPurchaseOrderID() *PurchaseReturnUpsertOne {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.ClearPurchaseOrderID()
+	})
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsertOne) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetGoodsReceiptID(v)
+	})
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateGoodsReceiptID() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateGoodsReceiptID()
+	})
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsertOne) ClearGoodsReceiptID() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearGoodsReceiptID()
 	})
 }
 
@@ -1107,6 +1164,27 @@ func (u *PurchaseReturnUpsertBulk) UpdatePurchaseOrderID() *PurchaseReturnUpsert
 func (u *PurchaseReturnUpsertBulk) ClearPurchaseOrderID() *PurchaseReturnUpsertBulk {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.ClearPurchaseOrderID()
+	})
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsertBulk) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetGoodsReceiptID(v)
+	})
+}
+
+// UpdateGoodsReceiptID sets the "goods_receipt_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateGoodsReceiptID() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateGoodsReceiptID()
+	})
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (u *PurchaseReturnUpsertBulk) ClearGoodsReceiptID() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearGoodsReceiptID()
 	})
 }
 

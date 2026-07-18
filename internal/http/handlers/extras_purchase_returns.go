@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -248,6 +250,90 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	}
 	h.publishOutbox(r.Context(), tenantID, "purchase_return", updated.ID, "inventory.purchase_return.approved", retPayload)
 	writeJSON(w, http.StatusOK, purchaseReturnToDTO(updated))
+}
+
+// autoCreateReturnForRejected creates a PENDING supplier return for a posted goods receipt's
+// rejected quantities, prefilled with item, qty and the unit cost the goods were received at
+// (GRN line unit_cost, falling back to the PO line unit_price). The return stays pending —
+// stock-out, the approval gate and the treasury credit note all still run through the normal
+// ApprovePurchaseReturn flow. Idempotent: one auto return per GRN (keyed on goods_receipt_id),
+// so a GRN re-post never duplicates it. Best-effort by design — a failure here must never fail
+// the goods-receipt post itself.
+func (h *InventoryExtrasHandler) autoCreateReturnForRejected(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	g *ent.GoodsReceipt,
+	po *ent.PurchaseOrder,
+	grnLines []*ent.GoodsReceiptLine,
+	unitPriceByItem map[uuid.UUID]float64,
+) *ent.PurchaseReturn {
+	type rejLine struct {
+		itemID   uuid.UUID
+		qty      float64
+		unitCost float64
+		reason   string
+	}
+	var rejected []rejLine
+	for _, l := range grnLines {
+		if l.QuantityRejected <= 0 {
+			continue
+		}
+		cost := l.UnitCost
+		if cost <= 0 {
+			cost = unitPriceByItem[l.ItemID]
+		}
+		rejected = append(rejected, rejLine{itemID: l.ItemID, qty: l.QuantityRejected, unitCost: cost, reason: l.RejectionReason})
+	}
+	if len(rejected) == 0 {
+		return nil
+	}
+	if exists, _ := h.orm.PurchaseReturn.Query().
+		Where(entpr.TenantID(tenantID), entpr.GoodsReceiptID(g.ID)).
+		Exist(ctx); exists {
+		return nil
+	}
+
+	total := 0.0
+	reasons := make([]string, 0, len(rejected)+1)
+	reasons = append(reasons, "Auto-created for items rejected on goods receipt "+g.GrnNumber)
+	for _, rl := range rejected {
+		total += roundDecimal(rl.qty * rl.unitCost)
+		if rl.reason != "" {
+			reasons = append(reasons, rl.reason)
+		}
+	}
+	total = roundDecimal(total)
+
+	num := "PRET-" + strings.ToUpper(uuid.New().String()[:8])
+	create := h.orm.PurchaseReturn.Create().
+		SetTenantID(tenantID).SetReturnNumber(num).
+		SetReason(strings.Join(reasons, "; ")).
+		SetReturnAmount(total).SetReturnAmountDue(total).
+		SetGoodsReceiptID(g.ID).
+		SetPurchaseOrderID(po.ID)
+	if po.SupplierID != nil {
+		create = create.SetSupplierID(*po.SupplierID)
+	}
+	pr, err := create.Save(ctx)
+	if err != nil {
+		h.log.Warn("auto purchase return: create failed", zap.String("grn", g.GrnNumber), zap.Error(err))
+		return nil
+	}
+	for _, rl := range rejected {
+		if _, err := h.orm.PurchaseReturnLine.Create().
+			SetTenantID(tenantID).SetPurchaseReturnID(pr.ID).SetItemID(rl.itemID).
+			SetQuantity(int(math.Round(rl.qty))).SetSubTotal(roundDecimal(rl.qty * rl.unitCost)).
+			Save(ctx); err != nil {
+			h.log.Warn("auto purchase return: create line failed", zap.Error(err))
+		}
+	}
+	h.publishOutbox(ctx, tenantID, "purchase_return", pr.ID, "inventory.purchase_return.created", map[string]any{
+		"id": pr.ID, "return_number": pr.ReturnNumber, "return_amount": total,
+		"goods_receipt_id": g.ID.String(), "auto_created": true,
+	})
+	h.log.Info("auto purchase return created for rejected GRN items",
+		zap.String("return_number", pr.ReturnNumber), zap.String("grn", g.GrnNumber), zap.Float64("amount", total))
+	return pr
 }
 
 func (h *InventoryExtrasHandler) loadPurchaseReturn(w http.ResponseWriter, r *http.Request) (uuid.UUID, *ent.PurchaseReturn, bool) {

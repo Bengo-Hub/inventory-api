@@ -24,6 +24,8 @@ type PurchaseReturn struct {
 	ReturnNumber string `json:"return_number,omitempty"`
 	// FK to originating PurchaseOrder
 	PurchaseOrderID *uuid.UUID `json:"purchase_order_id,omitempty"`
+	// FK to the GoodsReceipt whose rejected lines auto-created this return (idempotency key: one auto return per GRN)
+	GoodsReceiptID *uuid.UUID `json:"goods_receipt_id,omitempty"`
 	// SupplierID holds the value of the "supplier_id" field.
 	SupplierID *uuid.UUID `json:"supplier_id,omitempty"`
 	// Auth user
@@ -69,7 +71,7 @@ func (*PurchaseReturn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchasereturn.FieldPurchaseOrderID, purchasereturn.FieldSupplierID, purchasereturn.FieldAddedBy:
+		case purchasereturn.FieldPurchaseOrderID, purchasereturn.FieldGoodsReceiptID, purchasereturn.FieldSupplierID, purchasereturn.FieldAddedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchasereturn.FieldReturnAmount, purchasereturn.FieldReturnAmountDue:
 			values[i] = new(sql.NullFloat64)
@@ -118,6 +120,13 @@ func (_m *PurchaseReturn) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PurchaseOrderID = new(uuid.UUID)
 				*_m.PurchaseOrderID = *value.S.(*uuid.UUID)
+			}
+		case purchasereturn.FieldGoodsReceiptID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field goods_receipt_id", values[i])
+			} else if value.Valid {
+				_m.GoodsReceiptID = new(uuid.UUID)
+				*_m.GoodsReceiptID = *value.S.(*uuid.UUID)
 			}
 		case purchasereturn.FieldSupplierID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -218,6 +227,11 @@ func (_m *PurchaseReturn) String() string {
 	builder.WriteString(", ")
 	if v := _m.PurchaseOrderID; v != nil {
 		builder.WriteString("purchase_order_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.GoodsReceiptID; v != nil {
+		builder.WriteString("goods_receipt_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

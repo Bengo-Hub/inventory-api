@@ -2091,6 +2091,7 @@ var (
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "return_number", Type: field.TypeString, Nullable: true},
 		{Name: "purchase_order_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "goods_receipt_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "supplier_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "added_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -2114,7 +2115,12 @@ var (
 			{
 				Name:    "purchasereturn_tenant_id_payment_status",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[9]},
+				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[10]},
+			},
+			{
+				Name:    "purchasereturn_tenant_id_goods_receipt_id",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[4]},
 			},
 		},
 	}
