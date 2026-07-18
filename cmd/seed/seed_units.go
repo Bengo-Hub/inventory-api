@@ -15,52 +15,67 @@ type unitDef struct {
 	Name         string
 	Abbreviation string
 	UnitType     string
+	// Outlet use_cases the unit is relevant to (matches Unit.use_cases semantics:
+	// empty = universal, shown for every vertical). Vertical-specific serving /
+	// dispensing units are tagged so a retail outlet's unit picker isn't cluttered
+	// with TOT/POT and a café's isn't cluttered with TABLET/STRIP.
+	UseCases []string
 }
 
+var hospitalityServing = []string{"hospitality", "quick_service"}
+var pharmacyDispensing = []string{"pharmacy"}
+
 var unitDefs = []unitDef{
-	{"PIECE", "pc", "count"},
-	{"CUP", "cup", "volume"},
-	{"SERVING", "srv", "count"},
-	{"BOWL", "bowl", "count"},
-	{"PLATE", "plate", "count"},
-	{"SLICE", "slice", "count"},
-	{"KG", "kg", "weight"},
-	{"GRAM", "g", "weight"},
-	{"LITRE", "L", "volume"},
-	{"ML", "ml", "volume"},
-	{"BOX", "box", "count"},
-	{"BOTTLE", "btl", "count"},
-	{"SHOT", "shot", "volume"},
-	{"PACK", "pack", "count"},
-	{"BAG", "bag", "count"},
-	{"TICKET", "tkt", "count"},
-	{"PORTION", "ptn", "count"},
+	{"PIECE", "pc", "count", nil},
+	{"CUP", "cup", "volume", hospitalityServing},
+	{"SERVING", "srv", "count", hospitalityServing},
+	{"BOWL", "bowl", "count", hospitalityServing},
+	{"PLATE", "plate", "count", hospitalityServing},
+	{"SLICE", "slice", "count", hospitalityServing},
+	{"KG", "kg", "weight", nil},
+	{"GRAM", "g", "weight", nil},
+	{"LITRE", "L", "volume", nil},
+	{"ML", "ml", "volume", nil},
+	{"BOX", "box", "count", nil},
+	{"BOTTLE", "btl", "count", nil},
+	{"SHOT", "shot", "volume", hospitalityServing},
+	{"PACK", "pack", "count", nil},
+	{"BAG", "bag", "count", nil},
+	{"TICKET", "tkt", "count", nil},
+	{"PORTION", "ptn", "count", hospitalityServing},
 	// Sellable / serving units (previously auto-created on import without a type).
-	{"PAIR", "pair", "count"},
-	{"POT", "pot", "count"},
-	{"TIN", "tin", "count"},
-	{"QTR", "qtr", "count"},
-	{"PKT", "pkt", "count"},
-	{"COMBO", "combo", "count"},
-	{"FULL", "full", "count"},
-	{"GLS", "gls", "volume"},
-	{"TOT", "tot", "volume"},
+	{"PAIR", "pair", "count", nil},
+	{"POT", "pot", "count", hospitalityServing},
+	{"TIN", "tin", "count", nil},
+	{"QTR", "qtr", "count", hospitalityServing},
+	{"PKT", "pkt", "count", nil},
+	{"COMBO", "combo", "count", hospitalityServing},
+	{"FULL", "full", "count", hospitalityServing},
+	{"GLS", "gls", "volume", hospitalityServing},
+	{"TOT", "tot", "volume", hospitalityServing},
+	// Pharmacy dispensing units.
+	{"TABLET", "tab", "count", pharmacyDispensing},
+	{"CAPSULE", "cap", "count", pharmacyDispensing},
+	{"STRIP", "strip", "count", pharmacyDispensing},
+	{"SACHET", "sct", "count", pharmacyDispensing},
+	{"VIAL", "vial", "count", pharmacyDispensing},
 	// Service / time-based units. Type "service" (percentage/effort-based) and "time"
 	// (duration-based) let the document item form show service-appropriate units for
 	// SERVICE items — distinct from the measurement units used for GOODS. See treasury-ui
-	// unit-kind convention (lib/api/inventory unitKind).
-	{"DAY", "day", "time"},
-	{"HOUR", "hour", "time"},
-	{"WEEK", "week", "time"},
-	{"MONTH", "month", "time"},
-	{"YEAR", "year", "time"},
-	{"PERCENT", "%", "service"},
-	{"PROJECT", "project", "service"},
-	{"MILESTONE", "milestone", "service"},
-	{"SESSION", "session", "service"},
-	{"VISIT", "visit", "service"},
-	{"UNIT", "unit", "service"},
-	{"LUMPSUM", "lumpsum", "service"},
+	// unit-kind convention (lib/api/inventory unitKind). Untagged: services sell from
+	// every vertical (and treasury document pickers must always see them).
+	{"DAY", "day", "time", nil},
+	{"HOUR", "hour", "time", nil},
+	{"WEEK", "week", "time", nil},
+	{"MONTH", "month", "time", nil},
+	{"YEAR", "year", "time", nil},
+	{"PERCENT", "%", "service", nil},
+	{"PROJECT", "project", "service", nil},
+	{"MILESTONE", "milestone", "service", nil},
+	{"SESSION", "session", "service", nil},
+	{"VISIT", "visit", "service", nil},
+	{"UNIT", "unit", "service", nil},
+	{"LUMPSUM", "lumpsum", "service", nil},
 }
 
 func unitUUID(name string) uuid.UUID {
@@ -73,11 +88,16 @@ func seedUnits(ctx context.Context, client *ent.Client) error {
 		// have random IDs and an empty/"-" type — are fixed in place instead of duplicated.
 		existing, err := client.Unit.Query().Where(entunit.NameEQ(u.Name)).First(ctx)
 		if err == nil {
-			if _, err := client.Unit.UpdateOneID(existing.ID).
+			upd := client.Unit.UpdateOneID(existing.ID).
 				SetAbbreviation(u.Abbreviation).
 				SetType(u.UnitType).
-				SetIsActive(true).
-				Save(ctx); err != nil {
+				SetIsActive(true)
+			if len(u.UseCases) > 0 {
+				upd = upd.SetUseCases(u.UseCases)
+			} else {
+				upd = upd.ClearUseCases()
+			}
+			if _, err := upd.Save(ctx); err != nil {
 				return fmt.Errorf("update unit %s: %w", u.Name, err)
 			}
 			continue
@@ -85,13 +105,16 @@ func seedUnits(ctx context.Context, client *ent.Client) error {
 		if !ent.IsNotFound(err) {
 			return fmt.Errorf("check unit %s: %w", u.Name, err)
 		}
-		if _, err := client.Unit.Create().
+		create := client.Unit.Create().
 			SetID(unitUUID(u.Name)).
 			SetName(u.Name).
 			SetAbbreviation(u.Abbreviation).
 			SetType(u.UnitType).
-			SetIsActive(true).
-			Save(ctx); err != nil {
+			SetIsActive(true)
+		if len(u.UseCases) > 0 {
+			create = create.SetUseCases(u.UseCases)
+		}
+		if _, err := create.Save(ctx); err != nil {
 			return fmt.Errorf("create unit %s: %w", u.Name, err)
 		}
 		log.Printf("unit created: %s (%s)", u.Name, u.UnitType)

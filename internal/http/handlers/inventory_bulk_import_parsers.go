@@ -93,6 +93,7 @@ func (h *InventoryHandler) parseXLSXItems(
 	unitMap map[string]uuid.UUID,
 	brandMap map[string]uuid.UUID,
 	skuToID map[string]uuid.UUID,
+	useCase string,
 ) importResult {
 	colMap := xlsxColMap(rows)
 	var res importResult
@@ -115,7 +116,7 @@ func (h *InventoryHandler) parseXLSXItems(
 		unitName  := col(nil, "unit_name")
 		brandName := col(nil, "brand")
 		if catName != "" {
-			h.ensureCategory(r, tenantID, catName, catMap)
+			h.ensureCategory(r, tenantID, catName, useCase, catMap)
 		}
 		if unitName != "" {
 			h.ensureUnit(r, tenantID, unitName, unitMap)

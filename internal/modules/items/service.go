@@ -1251,7 +1251,10 @@ func (e *DuplicateCategoryError) Error() string {
 func (s *Service) checkDuplicateCategory(ctx context.Context, tenantID uuid.UUID, name string, excludeID *uuid.UUID) error {
 	q := s.client.ItemCategory.Query().Where(
 		itemcategory.IsActive(true),
-		itemcategory.Or(itemcategory.TenantID(tenantID), itemcategory.IsGlobal(true)),
+		itemcategory.Or(
+			itemcategory.TenantID(tenantID),
+			itemcategory.And(itemcategory.IsGlobal(true), itemcategory.TenantID(uuid.Nil)),
+		),
 		itemcategory.NameEqualFold(name),
 	)
 	if excludeID != nil {
@@ -1426,12 +1429,19 @@ func (s *Service) categoryIDsWithItems(ctx context.Context, tenantID uuid.UUID) 
 func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]CategoryDTO, error) {
 	key := sharedcache.Key("inv", "categories", tenantID.String())
 	fetch := func(ctx context.Context) ([]CategoryDTO, error) {
+		// Tenant's own categories + PLATFORM globals only. The global leg is pinned to
+		// the nil tenant (seed_global_categories.go rows): a tenant-owned row flagged
+		// is_global must never leak into other tenants' pickers (bulk import used to
+		// create exactly those — cross-tenant category pollution, fixed 2026-07-18).
 		cats, err := s.client.ItemCategory.Query().
 			Where(
 				itemcategory.IsActive(true),
 				itemcategory.Or(
 					itemcategory.TenantID(tenantID),
-					itemcategory.IsGlobal(true),
+					itemcategory.And(
+						itemcategory.IsGlobal(true),
+						itemcategory.TenantID(uuid.Nil),
+					),
 				),
 			).
 			All(ctx)

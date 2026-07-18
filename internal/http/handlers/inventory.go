@@ -1598,6 +1598,9 @@ func (h *InventoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Name is required")
 		return
 	}
+	// is_global is reserved for platform seeds (nil tenant) — a tenant-facing create
+	// must never mint a category visible to other tenants.
+	req.IsGlobal = false
 	result, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, req)
 	if err != nil {
 		var dupErr *items.DuplicateCategoryError

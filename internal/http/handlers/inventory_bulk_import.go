@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
@@ -160,6 +161,10 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 	unitMap := h.loadUnitMap(r, tenantID)
 	brandMap := h.loadBrandMap(r, tenantID)
 
+	// Auto-created categories inherit the importing warehouse's outlet use_case
+	// so they only surface in that vertical's pickers on mixed-use tenants.
+	importUseCase := h.resolveImportUseCase(r, tenantID, defaultWarehouse)
+
 	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
@@ -170,7 +175,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 1: Items ────────────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("Items"); sheetErr == nil && len(rows) > 1 {
-		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID)
+		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID, importUseCase)
 	}
 
 	// ── Sheet 2: RecipeIngredients ────────────────────────────────────────────
@@ -275,10 +280,15 @@ func (h *InventoryHandler) ensureBrand(r *http.Request, tenantID uuid.UUID, name
 	return &b.ID
 }
 
-// ensureCategory returns an existing category ID or creates a new global one.
-// Categories created via bulk import are marked is_global=true so they are
-// visible to all tenants, avoiding per-tenant duplication.
-func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, name string, m map[string]uuid.UUID) *uuid.UUID {
+// ensureCategory returns an existing category ID (matched case-insensitively via the
+// pre-loaded tenant+platform map) or creates a new TENANT-SCOPED one, stamped with the
+// importing outlet's use_case so it never pollutes other verticals' pickers.
+//
+// Categories are tenant business data — never created is_global here. (A past version
+// marked bulk-imported categories is_global=true "to avoid per-tenant duplication",
+// which leaked every tenant's category tree into every other tenant's dropdowns.
+// Only platform seeds under the nil tenant are legitimately global.)
+func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, name, useCase string, m map[string]uuid.UUID) *uuid.UUID {
 	if name == "" {
 		return nil
 	}
@@ -286,13 +296,16 @@ func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, n
 	if id, ok := m[key]; ok {
 		return &id
 	}
-	c, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, items.CategoryDTO{
+	dto := items.CategoryDTO{
 		Name:     name,
 		IsActive: true,
-		IsGlobal: true,
-	})
+	}
+	if useCase != "" {
+		dto.UseCases = []string{useCase}
+	}
+	c, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, dto)
 	if err != nil {
-		h.log.Error("bulk import: failed to create global category",
+		h.log.Error("bulk import: failed to create category",
 			zap.String("name", name),
 			zap.String("tenant_id", tenantID.String()),
 			zap.Error(err))
@@ -300,6 +313,27 @@ func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, n
 	}
 	m[key] = c.ID
 	return &c.ID
+}
+
+// resolveImportUseCase maps the import's target warehouse (code or name, as passed in
+// the warehouse_name form field) to that warehouse's outlet use_case so auto-created
+// categories can be tagged. Empty ref or no match → "" (untagged = universal within
+// the tenant, which is safe now that created categories are tenant-scoped).
+func (h *InventoryHandler) resolveImportUseCase(r *http.Request, tenantID uuid.UUID, warehouseRef string) string {
+	ref := strings.ToLower(strings.TrimSpace(warehouseRef))
+	if ref == "" {
+		return ""
+	}
+	whs, err := h.orm.Warehouse.Query().Where(entwarehouse.TenantID(tenantID)).All(r.Context())
+	if err != nil {
+		return ""
+	}
+	for _, wh := range whs {
+		if strings.ToLower(strings.TrimSpace(wh.Code)) == ref || strings.ToLower(strings.TrimSpace(wh.Name)) == ref {
+			return wh.UseCase
+		}
+	}
+	return ""
 }
 
 // inferUnitType guesses a category for an ad-hoc imported unit so a newly created unit is
