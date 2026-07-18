@@ -291,7 +291,9 @@ func (s *Service) CreateRecipe(ctx context.Context, tenantID uuid.UUID, dto Reci
 	if dto.ItemID != nil {
 		itemIDStr = dto.ItemID.String()
 	}
-	s.writeOutboxEvent(ctx, tx, tenantID, r.ID, "recipe", "recipe.changed", map[string]any{
+	// Aggregate "inventory" (subject inventory.recipe.changed): aggregate "recipe" doubled
+	// the prefix into recipe.recipe.changed, which no stream binds and nothing consumes.
+	s.writeOutboxEvent(ctx, tx, tenantID, r.ID, "inventory", "recipe.changed", map[string]any{
 		"recipe_id": r.ID.String(),
 		"sku":       dto.SKU,
 		"item_id":   itemIDStr,
@@ -391,7 +393,7 @@ func (s *Service) UpdateRecipe(ctx context.Context, tenantID, id uuid.UUID, dto 
 	if dto.ItemID != nil {
 		updItemIDStr = dto.ItemID.String()
 	}
-	s.writeOutboxEvent(ctx, tx, tenantID, id, "recipe", "recipe.changed", map[string]any{
+	s.writeOutboxEvent(ctx, tx, tenantID, id, "inventory", "recipe.changed", map[string]any{
 		"recipe_id": id.String(),
 		"sku":       dto.SKU,
 		"item_id":   updItemIDStr,

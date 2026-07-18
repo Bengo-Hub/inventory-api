@@ -876,6 +876,19 @@ func (h *InventoryHandler) ListUnits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ?use_case=<outlet use_case> keeps irrelevant units out of other verticals'
+	// pickers: untagged units are universal, tagged ones (tot/pot/portion →
+	// hospitality) only surface for their use_cases.
+	if uc := r.URL.Query().Get("use_case"); uc != "" {
+		filtered := results[:0]
+		for _, u := range results {
+			if u.RelevantToUseCase(uc) {
+				filtered = append(filtered, u)
+			}
+		}
+		results = filtered
+	}
+
 	writeJSON(w, http.StatusOK, results)
 }
 
@@ -1527,6 +1540,20 @@ func (h *InventoryHandler) ListCategories(w http.ResponseWriter, r *http.Request
 		h.log.Error("list categories failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list categories")
 		return
+	}
+
+	// ?use_case=<outlet use_case> keeps other verticals' categories (incl. global
+	// ones) out of this outlet's pickers: untagged categories are universal, tagged
+	// ones only surface for their use_cases. Applied post-cache so the cached list
+	// stays use-case-agnostic.
+	if uc := r.URL.Query().Get("use_case"); uc != "" {
+		filtered := results[:0]
+		for _, c := range results {
+			if c.RelevantToUseCase(uc) {
+				filtered = append(filtered, c)
+			}
+		}
+		results = filtered
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{

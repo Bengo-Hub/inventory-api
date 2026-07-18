@@ -55,6 +55,14 @@ func (ItemCategory) Fields() []ent.Field {
 		field.Bool("is_global").
 			Default(false).
 			Comment("If true, visible to all tenants (platform-level data created via bulk import)"),
+		// Use-case relevance tags: a tenant running mixed outlets (hospitality cafe +
+		// pharmacy) shouldn't see food categories in the pharmacy catalog and vice
+		// versa. Tagged categories only surface for outlets of those use_cases;
+		// EMPTY = universal (backward compatible). Stamped from the creating outlet's
+		// use_case on create.
+		field.JSON("use_cases", []string{}).
+			Optional().
+			Comment("Outlet use_cases this category is relevant to (hospitality, pharmacy, retail…); empty = all"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

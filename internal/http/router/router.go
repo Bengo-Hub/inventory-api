@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"time"
 
@@ -49,6 +50,7 @@ func New(
 	backupsHandler *handlers.Backups,
 	backupDestHandler *handlers.BackupDestinationHandler,
 	pinAuthHandler *handlers.PINAuthHandler,
+	internalServiceKey string,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -250,20 +252,9 @@ func New(
 			// Inventory Routes (Granular auth)
 			if inventoryHandler != nil {
 				tenant.Group(func(g chi.Router) {
-					// Apply authentication only to non-GET requests
-					g.Use(func(next http.Handler) http.Handler {
-						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							if r.Method == http.MethodGet {
-								next.ServeHTTP(w, r)
-								return
-							}
-							if authMiddleware != nil {
-								handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
-							} else {
-								next.ServeHTTP(w, r)
-							}
-						})
-					})
+					// Anonymous GETs are DELIBERATE here (public storefront catalog);
+					// mutations require PIN/SSO auth.
+					g.Use(publicCatalogReads(pinSecret, authMiddleware))
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					inventoryHandler.RegisterRoutes(g)
@@ -324,20 +315,10 @@ func New(
 
 			if inventoryHandler != nil {
 				tenant.Group(func(g chi.Router) {
-					// Apply authentication only to non-GET requests
-					g.Use(func(next http.Handler) http.Handler {
-						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							if r.Method == http.MethodGet {
-								next.ServeHTTP(w, r)
-								return
-							}
-							if authMiddleware != nil {
-								handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
-							} else {
-								next.ServeHTTP(w, r)
-							}
-						})
-					})
+					// The /v1 tree is S2S-only (pos-api, ordering-backend) and its callers
+					// ALWAYS send X-API-Key — so it is fully locked for ALL methods (GETs
+					// included; they previously bypassed auth entirely).
+					g.Use(requireInternalKeyOrAuth(internalServiceKey, pinSecret, authMiddleware))
 					// Subscription gate for mutations
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					inventoryHandler.RegisterRoutes(g)
@@ -371,4 +352,54 @@ func New(
 	})
 
 	return r
+}
+
+// publicCatalogReads leaves GET requests unauthenticated on the /api/v1 tenant tree —
+// DELIBERATE, not a bug: the public cafe storefront (cafe-website, theurbanloftcafe.com)
+// browses the menu/catalog directly from the browser with no credentials. Non-GET requests
+// require terminal-PIN or SSO auth via RequireAnyAuth.
+func publicCatalogReads(pinSecret []byte, authMiddleware *authclient.AuthMiddleware) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if authMiddleware != nil {
+				handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// requireInternalKeyOrAuth guards the /v1 S2S tree for ALL methods. First chance: a
+// constant-time X-API-Key compare against the shared INTERNAL_SERVICE_KEY (the static-compare
+// pattern every other service's S2S receiver uses) — on match a service principal (IsService)
+// is injected so outlet/use-case gates treat the caller exactly like the registered-key path.
+// Otherwise falls back to RequireAnyAuth (terminal PIN JWT → SSO JWT → auth-api registered
+// bng_* API keys). GETs previously bypassed auth entirely on this tree — the only callers are
+// pos-api and ordering-backend, which always send the key, so nothing anonymous depends on it.
+func requireInternalKeyOrAuth(internalKey string, pinSecret []byte, authMiddleware *authclient.AuthMiddleware) func(http.Handler) http.Handler {
+	expected := []byte(internalKey)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if provided := r.Header.Get("X-API-Key"); provided != "" && len(expected) > 0 &&
+				subtle.ConstantTimeCompare([]byte(provided), expected) == 1 {
+				claims := &authclient.Claims{
+					IsService:          true,
+					ServiceName:        "platform-internal",
+					SubscriptionExempt: true,
+				}
+				next.ServeHTTP(w, r.WithContext(authclient.ContextWithClaims(r.Context(), claims)))
+				return
+			}
+			if authMiddleware != nil {
+				handlers.RequireAnyAuth(pinSecret, authMiddleware)(next).ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

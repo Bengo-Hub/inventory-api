@@ -706,6 +706,16 @@ func IsGlobalNEQ(v bool) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldNEQ(FieldIsGlobal, v))
 }
 
+// UseCasesIsNil applies the IsNil predicate on the "use_cases" field.
+func UseCasesIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldUseCases))
+}
+
+// UseCasesNotNil applies the NotNil predicate on the "use_cases" field.
+func UseCasesNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldUseCases))
+}
+
 // IsActiveEQ applies the EQ predicate on the "is_active" field.
 func IsActiveEQ(v bool) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldIsActive, v))
