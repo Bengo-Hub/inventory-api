@@ -59939,6 +59939,7 @@ type PurchaseReturnMutation struct {
 	tenant_id            *uuid.UUID
 	return_number        *string
 	purchase_order_id    *uuid.UUID
+	goods_receipt_id     *uuid.UUID
 	supplier_id          *uuid.UUID
 	added_by             *uuid.UUID
 	reason               *string
@@ -60194,6 +60195,55 @@ func (m *PurchaseReturnMutation) PurchaseOrderIDCleared() bool {
 func (m *PurchaseReturnMutation) ResetPurchaseOrderID() {
 	m.purchase_order_id = nil
 	delete(m.clearedFields, purchasereturn.FieldPurchaseOrderID)
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (m *PurchaseReturnMutation) SetGoodsReceiptID(u uuid.UUID) {
+	m.goods_receipt_id = &u
+}
+
+// GoodsReceiptID returns the value of the "goods_receipt_id" field in the mutation.
+func (m *PurchaseReturnMutation) GoodsReceiptID() (r uuid.UUID, exists bool) {
+	v := m.goods_receipt_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoodsReceiptID returns the old "goods_receipt_id" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldGoodsReceiptID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoodsReceiptID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoodsReceiptID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoodsReceiptID: %w", err)
+	}
+	return oldValue.GoodsReceiptID, nil
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (m *PurchaseReturnMutation) ClearGoodsReceiptID() {
+	m.goods_receipt_id = nil
+	m.clearedFields[purchasereturn.FieldGoodsReceiptID] = struct{}{}
+}
+
+// GoodsReceiptIDCleared returns if the "goods_receipt_id" field was cleared in this mutation.
+func (m *PurchaseReturnMutation) GoodsReceiptIDCleared() bool {
+	_, ok := m.clearedFields[purchasereturn.FieldGoodsReceiptID]
+	return ok
+}
+
+// ResetGoodsReceiptID resets all changes to the "goods_receipt_id" field.
+func (m *PurchaseReturnMutation) ResetGoodsReceiptID() {
+	m.goods_receipt_id = nil
+	delete(m.clearedFields, purchasereturn.FieldGoodsReceiptID)
 }
 
 // SetSupplierID sets the "supplier_id" field.
@@ -60651,7 +60701,7 @@ func (m *PurchaseReturnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseReturnMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, purchasereturn.FieldTenantID)
 	}
@@ -60660,6 +60710,9 @@ func (m *PurchaseReturnMutation) Fields() []string {
 	}
 	if m.purchase_order_id != nil {
 		fields = append(fields, purchasereturn.FieldPurchaseOrderID)
+	}
+	if m.goods_receipt_id != nil {
+		fields = append(fields, purchasereturn.FieldGoodsReceiptID)
 	}
 	if m.supplier_id != nil {
 		fields = append(fields, purchasereturn.FieldSupplierID)
@@ -60699,6 +60752,8 @@ func (m *PurchaseReturnMutation) Field(name string) (ent.Value, bool) {
 		return m.ReturnNumber()
 	case purchasereturn.FieldPurchaseOrderID:
 		return m.PurchaseOrderID()
+	case purchasereturn.FieldGoodsReceiptID:
+		return m.GoodsReceiptID()
 	case purchasereturn.FieldSupplierID:
 		return m.SupplierID()
 	case purchasereturn.FieldAddedBy:
@@ -60730,6 +60785,8 @@ func (m *PurchaseReturnMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldReturnNumber(ctx)
 	case purchasereturn.FieldPurchaseOrderID:
 		return m.OldPurchaseOrderID(ctx)
+	case purchasereturn.FieldGoodsReceiptID:
+		return m.OldGoodsReceiptID(ctx)
 	case purchasereturn.FieldSupplierID:
 		return m.OldSupplierID(ctx)
 	case purchasereturn.FieldAddedBy:
@@ -60775,6 +60832,13 @@ func (m *PurchaseReturnMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPurchaseOrderID(v)
+		return nil
+	case purchasereturn.FieldGoodsReceiptID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoodsReceiptID(v)
 		return nil
 	case purchasereturn.FieldSupplierID:
 		v, ok := value.(uuid.UUID)
@@ -60895,6 +60959,9 @@ func (m *PurchaseReturnMutation) ClearedFields() []string {
 	if m.FieldCleared(purchasereturn.FieldPurchaseOrderID) {
 		fields = append(fields, purchasereturn.FieldPurchaseOrderID)
 	}
+	if m.FieldCleared(purchasereturn.FieldGoodsReceiptID) {
+		fields = append(fields, purchasereturn.FieldGoodsReceiptID)
+	}
 	if m.FieldCleared(purchasereturn.FieldSupplierID) {
 		fields = append(fields, purchasereturn.FieldSupplierID)
 	}
@@ -60924,6 +60991,9 @@ func (m *PurchaseReturnMutation) ClearField(name string) error {
 	case purchasereturn.FieldPurchaseOrderID:
 		m.ClearPurchaseOrderID()
 		return nil
+	case purchasereturn.FieldGoodsReceiptID:
+		m.ClearGoodsReceiptID()
+		return nil
 	case purchasereturn.FieldSupplierID:
 		m.ClearSupplierID()
 		return nil
@@ -60949,6 +61019,9 @@ func (m *PurchaseReturnMutation) ResetField(name string) error {
 		return nil
 	case purchasereturn.FieldPurchaseOrderID:
 		m.ResetPurchaseOrderID()
+		return nil
+	case purchasereturn.FieldGoodsReceiptID:
+		m.ResetGoodsReceiptID()
 		return nil
 	case purchasereturn.FieldSupplierID:
 		m.ResetSupplierID()

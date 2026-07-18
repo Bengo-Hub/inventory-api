@@ -71,6 +71,11 @@ func PurchaseOrderID(v uuid.UUID) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldPurchaseOrderID, v))
 }
 
+// GoodsReceiptID applies equality check predicate on the "goods_receipt_id" field. It's identical to GoodsReceiptIDEQ.
+func GoodsReceiptID(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldGoodsReceiptID, v))
+}
+
 // SupplierID applies equality check predicate on the "supplier_id" field. It's identical to SupplierIDEQ.
 func SupplierID(v uuid.UUID) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldSupplierID, v))
@@ -269,6 +274,56 @@ func PurchaseOrderIDIsNil() predicate.PurchaseReturn {
 // PurchaseOrderIDNotNil applies the NotNil predicate on the "purchase_order_id" field.
 func PurchaseOrderIDNotNil() predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldNotNull(FieldPurchaseOrderID))
+}
+
+// GoodsReceiptIDEQ applies the EQ predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDEQ(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDNEQ applies the NEQ predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDNEQ(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNEQ(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDIn applies the In predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDIn(vs ...uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIn(FieldGoodsReceiptID, vs...))
+}
+
+// GoodsReceiptIDNotIn applies the NotIn predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDNotIn(vs ...uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotIn(FieldGoodsReceiptID, vs...))
+}
+
+// GoodsReceiptIDGT applies the GT predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDGT(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGT(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDGTE applies the GTE predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDGTE(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGTE(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDLT applies the LT predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDLT(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLT(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDLTE applies the LTE predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDLTE(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLTE(FieldGoodsReceiptID, v))
+}
+
+// GoodsReceiptIDIsNil applies the IsNil predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDIsNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIsNull(FieldGoodsReceiptID))
+}
+
+// GoodsReceiptIDNotNil applies the NotNil predicate on the "goods_receipt_id" field.
+func GoodsReceiptIDNotNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotNull(FieldGoodsReceiptID))
 }
 
 // SupplierIDEQ applies the EQ predicate on the "supplier_id" field.

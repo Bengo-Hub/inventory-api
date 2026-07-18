@@ -1,4 +1,4 @@
-h1:dtJSUPXjkWALPdEVKwZmkRG7WXgwtN1M8VMqkKprUNY=
+h1:Phq45b5xZ+smEA5g/sLwyZN86zCCAX2w5AazPoh+Bug=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -62,3 +62,4 @@ h1:dtJSUPXjkWALPdEVKwZmkRG7WXgwtN1M8VMqkKprUNY=
 20260717142516_usable_in_recipes.sql h1:C09fNwDMOULmXVTyOhqTAeFTIrQdYj1JrsoGx+r+fFI=
 20260717143752_stock_count_templates_and_line_reason.sql h1:akZeCGnelb1yeZTSxyL8cVctSexofKPWkJ9qZjmPOSE=
 20260718063755_use_case_tags_units_categories.sql h1:5WxOIZQow/eBqQJikoEk/ddRPf6gLY0+iEbBqb9CKo8=
+20260718171924_purchase_return_goods_receipt_link.sql h1:JPgzV2H7lOyWP336NjCTTu7M08Oveac3RWiOENHVi/E=

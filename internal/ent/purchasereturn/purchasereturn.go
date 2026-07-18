@@ -22,6 +22,8 @@ const (
 	FieldReturnNumber = "return_number"
 	// FieldPurchaseOrderID holds the string denoting the purchase_order_id field in the database.
 	FieldPurchaseOrderID = "purchase_order_id"
+	// FieldGoodsReceiptID holds the string denoting the goods_receipt_id field in the database.
+	FieldGoodsReceiptID = "goods_receipt_id"
 	// FieldSupplierID holds the string denoting the supplier_id field in the database.
 	FieldSupplierID = "supplier_id"
 	// FieldAddedBy holds the string denoting the added_by field in the database.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldTenantID,
 	FieldReturnNumber,
 	FieldPurchaseOrderID,
+	FieldGoodsReceiptID,
 	FieldSupplierID,
 	FieldAddedBy,
 	FieldReason,
@@ -141,6 +144,11 @@ func ByReturnNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByPurchaseOrderID orders the results by the purchase_order_id field.
 func ByPurchaseOrderID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPurchaseOrderID, opts...).ToFunc()
+}
+
+// ByGoodsReceiptID orders the results by the goods_receipt_id field.
+func ByGoodsReceiptID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoodsReceiptID, opts...).ToFunc()
 }
 
 // BySupplierID orders the results by the supplier_id field.

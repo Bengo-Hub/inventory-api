@@ -58,12 +58,17 @@ type grnLineDTO struct {
 	ID                  uuid.UUID  `json:"id"`
 	PurchaseOrderLineID *uuid.UUID `json:"purchase_order_line_id"`
 	ItemID              uuid.UUID  `json:"item_id"`
-	QuantityReceived    float64    `json:"quantity_received"`
-	QuantityAccepted    float64    `json:"quantity_accepted"`
-	QuantityRejected    float64    `json:"quantity_rejected"`
-	UnitCost            float64    `json:"unit_cost"`
-	RejectionReason     string     `json:"rejection_reason"`
-	Serials             []string   `json:"serials,omitempty"`
+	// Human identifiers so the UI never has to render raw item UUIDs in the receipt drawer.
+	ItemName         string   `json:"item_name,omitempty"`
+	Sku              string   `json:"sku,omitempty"`
+	Barcode          string   `json:"barcode,omitempty"`
+	QuantityReceived float64  `json:"quantity_received"`
+	QuantityAccepted float64  `json:"quantity_accepted"`
+	QuantityRejected float64  `json:"quantity_rejected"`
+	UnitCost         float64  `json:"unit_cost"`
+	RejectionReason  string   `json:"rejection_reason"`
+	Serials          []string `json:"serials,omitempty"`
+	LotNumber        string   `json:"lot_number,omitempty"`
 }
 
 type grnDTO struct {
@@ -89,8 +94,42 @@ func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 			ID: l.ID, PurchaseOrderLineID: l.PurchaseOrderLineID, ItemID: l.ItemID,
 			QuantityReceived: l.QuantityReceived, QuantityAccepted: l.QuantityAccepted,
 			QuantityRejected: l.QuantityRejected, UnitCost: l.UnitCost, RejectionReason: l.RejectionReason,
-			Serials: l.Serials,
+			Serials: l.Serials, LotNumber: l.LotNumber,
 		})
+	}
+	return dto
+}
+
+// grnToDTOWithItems is grnToDTO plus item name/SKU/barcode enrichment for line-bearing
+// responses — the receipt drawer must show human identifiers, never raw item UUIDs. The
+// posted-event path already fetched names/SKUs but the API DTO never carried them.
+func (h *InventoryExtrasHandler) grnToDTOWithItems(ctx context.Context, tenantID uuid.UUID, g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
+	dto := grnToDTO(g, lines)
+	if len(lines) == 0 {
+		return dto
+	}
+	ids := make([]uuid.UUID, 0, len(lines))
+	for _, l := range lines {
+		ids = append(ids, l.ItemID)
+	}
+	items, err := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.IDIn(ids...)).
+		Select(entitem.FieldID, entitem.FieldName, entitem.FieldSku, entitem.FieldBarcode).
+		All(ctx)
+	if err != nil {
+		return dto
+	}
+	type ident struct{ name, sku, barcode string }
+	byID := make(map[uuid.UUID]ident, len(items))
+	for _, it := range items {
+		byID[it.ID] = ident{name: it.Name, sku: it.Sku, barcode: it.Barcode}
+	}
+	for i := range dto.Lines {
+		if id, ok := byID[dto.Lines[i].ItemID]; ok {
+			dto.Lines[i].ItemName = id.name
+			dto.Lines[i].Sku = id.sku
+			dto.Lines[i].Barcode = id.barcode
+		}
 	}
 	return dto
 }
@@ -214,7 +253,7 @@ func (h *InventoryExtrasHandler) GetGoodsReceipt(w http.ResponseWriter, r *http.
 		return
 	}
 	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID), entgrl.TenantID(tenantID)).All(r.Context())
-	writeJSON(w, http.StatusOK, grnToDTO(g, lines))
+	writeJSON(w, http.StatusOK, h.grnToDTOWithItems(r.Context(), tenantID, g, lines))
 }
 
 // CreateGoodsReceipt handles POST /inventory/purchase-orders/{poID}/goods-receipts.
@@ -313,7 +352,7 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": poID,
 	})
 	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
-	writeJSON(w, http.StatusCreated, grnToDTO(g, lines))
+	writeJSON(w, http.StatusCreated, h.grnToDTOWithItems(r.Context(), tenantID, g, lines))
 }
 
 // PostGoodsReceipt handles POST /inventory/goods-receipts/{grnID}/post.
@@ -349,7 +388,7 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 	}
 
 	lines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(r.Context())
-	writeJSON(w, http.StatusOK, grnToDTO(g, lines))
+	writeJSON(w, http.StatusOK, h.grnToDTOWithItems(r.Context(), tenantID, g, lines))
 }
 
 // postGoodsReceiptCore posts an already-created DRAFT goods receipt: stock-in each accepted
@@ -545,6 +584,11 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	if fully {
 		h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
 	}
+
+	// Rejected quantities auto-open a PENDING supplier return (prefilled items/qty/unit cost)
+	// awaiting manager approval — previously they were captured on the line and then silently
+	// vanished (no RMA, no AP credit note) unless someone remembered to file one by hand.
+	h.autoCreateReturnForRejected(ctx, tenantID, g, po, grnLines, unitPriceByItem)
 
 	return fully, nil
 }

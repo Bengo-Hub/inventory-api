@@ -1492,19 +1492,19 @@ func init() {
 	purchasereturnFields := schema.PurchaseReturn{}.Fields()
 	_ = purchasereturnFields
 	// purchasereturnDescReturnAmount is the schema descriptor for return_amount field.
-	purchasereturnDescReturnAmount := purchasereturnFields[7].Descriptor()
+	purchasereturnDescReturnAmount := purchasereturnFields[8].Descriptor()
 	// purchasereturn.DefaultReturnAmount holds the default value on creation for the return_amount field.
 	purchasereturn.DefaultReturnAmount = purchasereturnDescReturnAmount.Default.(float64)
 	// purchasereturnDescReturnAmountDue is the schema descriptor for return_amount_due field.
-	purchasereturnDescReturnAmountDue := purchasereturnFields[8].Descriptor()
+	purchasereturnDescReturnAmountDue := purchasereturnFields[9].Descriptor()
 	// purchasereturn.DefaultReturnAmountDue holds the default value on creation for the return_amount_due field.
 	purchasereturn.DefaultReturnAmountDue = purchasereturnDescReturnAmountDue.Default.(float64)
 	// purchasereturnDescDateReturned is the schema descriptor for date_returned field.
-	purchasereturnDescDateReturned := purchasereturnFields[10].Descriptor()
+	purchasereturnDescDateReturned := purchasereturnFields[11].Descriptor()
 	// purchasereturn.DefaultDateReturned holds the default value on creation for the date_returned field.
 	purchasereturn.DefaultDateReturned = purchasereturnDescDateReturned.Default.(func() time.Time)
 	// purchasereturnDescUpdatedAt is the schema descriptor for updated_at field.
-	purchasereturnDescUpdatedAt := purchasereturnFields[11].Descriptor()
+	purchasereturnDescUpdatedAt := purchasereturnFields[12].Descriptor()
 	// purchasereturn.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchasereturn.DefaultUpdatedAt = purchasereturnDescUpdatedAt.Default.(func() time.Time)
 	// purchasereturn.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

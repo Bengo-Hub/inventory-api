@@ -19,6 +19,7 @@ func (PurchaseReturn) Fields() []ent.Field {
 		field.UUID("tenant_id", uuid.UUID{}),
 		field.String("return_number").Optional(),
 		field.UUID("purchase_order_id", uuid.UUID{}).Optional().Nillable().Comment("FK to originating PurchaseOrder"),
+		field.UUID("goods_receipt_id", uuid.UUID{}).Optional().Nillable().Comment("FK to the GoodsReceipt whose rejected lines auto-created this return (idempotency key: one auto return per GRN)"),
 		field.UUID("supplier_id", uuid.UUID{}).Optional().Nillable(),
 		field.UUID("added_by", uuid.UUID{}).Optional().Nillable().Comment("Auth user"),
 		field.Text("reason").Optional(),
@@ -38,5 +39,6 @@ func (PurchaseReturn) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "purchase_order_id"),
 		index.Fields("tenant_id", "payment_status"),
+		index.Fields("tenant_id", "goods_receipt_id"),
 	}
 }

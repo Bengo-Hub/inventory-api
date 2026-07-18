@@ -84,6 +84,26 @@ func (_u *PurchaseReturnUpdate) ClearPurchaseOrderID() *PurchaseReturnUpdate {
 	return _u
 }
 
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (_u *PurchaseReturnUpdate) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnUpdate {
+	_u.mutation.SetGoodsReceiptID(v)
+	return _u
+}
+
+// SetNillableGoodsReceiptID sets the "goods_receipt_id" field if the given value is not nil.
+func (_u *PurchaseReturnUpdate) SetNillableGoodsReceiptID(v *uuid.UUID) *PurchaseReturnUpdate {
+	if v != nil {
+		_u.SetGoodsReceiptID(*v)
+	}
+	return _u
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (_u *PurchaseReturnUpdate) ClearGoodsReceiptID() *PurchaseReturnUpdate {
+	_u.mutation.ClearGoodsReceiptID()
+	return _u
+}
+
 // SetSupplierID sets the "supplier_id" field.
 func (_u *PurchaseReturnUpdate) SetSupplierID(v uuid.UUID) *PurchaseReturnUpdate {
 	_u.mutation.SetSupplierID(v)
@@ -320,6 +340,12 @@ func (_u *PurchaseReturnUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if _u.mutation.PurchaseOrderIDCleared() {
 		_spec.ClearField(purchasereturn.FieldPurchaseOrderID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.GoodsReceiptID(); ok {
+		_spec.SetField(purchasereturn.FieldGoodsReceiptID, field.TypeUUID, value)
+	}
+	if _u.mutation.GoodsReceiptIDCleared() {
+		_spec.ClearField(purchasereturn.FieldGoodsReceiptID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.SupplierID(); ok {
 		_spec.SetField(purchasereturn.FieldSupplierID, field.TypeUUID, value)
 	}
@@ -472,6 +498,26 @@ func (_u *PurchaseReturnUpdateOne) SetNillablePurchaseOrderID(v *uuid.UUID) *Pur
 // ClearPurchaseOrderID clears the value of the "purchase_order_id" field.
 func (_u *PurchaseReturnUpdateOne) ClearPurchaseOrderID() *PurchaseReturnUpdateOne {
 	_u.mutation.ClearPurchaseOrderID()
+	return _u
+}
+
+// SetGoodsReceiptID sets the "goods_receipt_id" field.
+func (_u *PurchaseReturnUpdateOne) SetGoodsReceiptID(v uuid.UUID) *PurchaseReturnUpdateOne {
+	_u.mutation.SetGoodsReceiptID(v)
+	return _u
+}
+
+// SetNillableGoodsReceiptID sets the "goods_receipt_id" field if the given value is not nil.
+func (_u *PurchaseReturnUpdateOne) SetNillableGoodsReceiptID(v *uuid.UUID) *PurchaseReturnUpdateOne {
+	if v != nil {
+		_u.SetGoodsReceiptID(*v)
+	}
+	return _u
+}
+
+// ClearGoodsReceiptID clears the value of the "goods_receipt_id" field.
+func (_u *PurchaseReturnUpdateOne) ClearGoodsReceiptID() *PurchaseReturnUpdateOne {
+	_u.mutation.ClearGoodsReceiptID()
 	return _u
 }
 
@@ -740,6 +786,12 @@ func (_u *PurchaseReturnUpdateOne) sqlSave(ctx context.Context) (_node *Purchase
 	}
 	if _u.mutation.PurchaseOrderIDCleared() {
 		_spec.ClearField(purchasereturn.FieldPurchaseOrderID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.GoodsReceiptID(); ok {
+		_spec.SetField(purchasereturn.FieldGoodsReceiptID, field.TypeUUID, value)
+	}
+	if _u.mutation.GoodsReceiptIDCleared() {
+		_spec.ClearField(purchasereturn.FieldGoodsReceiptID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.SupplierID(); ok {
 		_spec.SetField(purchasereturn.FieldSupplierID, field.TypeUUID, value)
