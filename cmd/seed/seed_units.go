@@ -24,6 +24,8 @@ type unitDef struct {
 
 var hospitalityServing = []string{"hospitality", "quick_service"}
 var pharmacyDispensing = []string{"pharmacy"}
+var serviceOnly = []string{"services"}
+var serviceAndHospitality = []string{"services", "hospitality"} // bookable/billable time & tickets
 
 var unitDefs = []unitDef{
 	{"PIECE", "pc", "count", nil},
@@ -41,7 +43,7 @@ var unitDefs = []unitDef{
 	{"SHOT", "shot", "volume", hospitalityServing},
 	{"PACK", "pack", "count", nil},
 	{"BAG", "bag", "count", nil},
-	{"TICKET", "tkt", "count", nil},
+	{"TICKET", "tkt", "count", serviceAndHospitality},
 	{"PORTION", "ptn", "count", hospitalityServing},
 	// Sellable / serving units (previously auto-created on import without a type).
 	{"PAIR", "pair", "count", nil},
@@ -62,20 +64,22 @@ var unitDefs = []unitDef{
 	// Service / time-based units. Type "service" (percentage/effort-based) and "time"
 	// (duration-based) let the document item form show service-appropriate units for
 	// SERVICE items — distinct from the measurement units used for GOODS. See treasury-ui
-	// unit-kind convention (lib/api/inventory unitKind). Untagged: services sell from
-	// every vertical (and treasury document pickers must always see them).
-	{"DAY", "day", "time", nil},
-	{"HOUR", "hour", "time", nil},
-	{"WEEK", "week", "time", nil},
-	{"MONTH", "month", "time", nil},
-	{"YEAR", "year", "time", nil},
-	{"PERCENT", "%", "service", nil},
-	{"PROJECT", "project", "service", nil},
-	{"MILESTONE", "milestone", "service", nil},
-	{"SESSION", "session", "service", nil},
-	{"VISIT", "visit", "service", nil},
-	{"UNIT", "unit", "service", nil},
-	{"LUMPSUM", "lumpsum", "service", nil},
+	// unit-kind convention (lib/api/inventory unitKind). Tags mirror the live prod
+	// data: time units are bookable in services + hospitality (room nights, venue
+	// hours); pure effort/billing units are services-only. Treasury document pickers
+	// pass no use_case so they always see everything regardless of tags.
+	{"DAY", "day", "time", serviceAndHospitality},
+	{"HOUR", "hour", "time", serviceAndHospitality},
+	{"WEEK", "week", "time", serviceAndHospitality},
+	{"MONTH", "month", "time", serviceAndHospitality},
+	{"YEAR", "year", "time", serviceAndHospitality},
+	{"PERCENT", "%", "service", serviceOnly},
+	{"PROJECT", "project", "service", serviceOnly},
+	{"MILESTONE", "milestone", "service", serviceOnly},
+	{"SESSION", "session", "service", serviceOnly},
+	{"VISIT", "visit", "service", serviceOnly},
+	{"UNIT", "unit", "service", serviceOnly},
+	{"LUMPSUM", "lumpsum", "service", serviceOnly},
 }
 
 func unitUUID(name string) uuid.UUID {
