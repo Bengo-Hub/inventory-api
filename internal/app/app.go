@@ -212,6 +212,7 @@ func New(ctx context.Context) (*App, error) {
 	reportsSvc := reports.NewService(ormClient, log)
 	inventoryExtrasHandler.SetReportsService(reportsSvc)
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
+	transferSvc.WithSequence(docSvc.Seq()) // numeric-by-default transfer numbers via document sequence
 	inventoryExtrasHandler.SetDocService(docSvc)
 	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
 	inventoryExtrasHandler.SetStockService(stockSvc)

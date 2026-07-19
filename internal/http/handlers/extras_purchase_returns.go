@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/modules/documents"
+
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entpr "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
@@ -127,6 +129,18 @@ func (h *InventoryExtrasHandler) GetPurchaseReturn(w http.ResponseWriter, r *htt
 //	@Failure      500   {object}  map[string]string
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/purchase-returns [post]
+// nextReturnNumber mints a purchase-return number through the tenant-configurable document
+// sequence (numeric by default), falling back to a random PRET- token if the sequence is
+// unavailable.
+func (h *InventoryExtrasHandler) nextReturnNumber(ctx context.Context, tenantID uuid.UUID) string {
+	if h.docSvc != nil {
+		if n, derr := h.docSvc.Seq().GenerateNumber(ctx, tenantID, documents.DocTypePurchaseReturn); derr == nil && n != "" {
+			return n
+		}
+	}
+	return "PRET-" + strings.ToUpper(uuid.New().String()[:8])
+}
+
 func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -138,7 +152,7 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
-	num := "PRET-" + strings.ToUpper(uuid.New().String()[:8])
+	num := h.nextReturnNumber(r.Context(), tenantID)
 	var total float64
 	for _, l := range req.Lines {
 		total += l.SubTotal
@@ -304,7 +318,7 @@ func (h *InventoryExtrasHandler) autoCreateReturnForRejected(
 	}
 	total = roundDecimal(total)
 
-	num := "PRET-" + strings.ToUpper(uuid.New().String()[:8])
+	num := h.nextReturnNumber(ctx, tenantID)
 	create := h.orm.PurchaseReturn.Create().
 		SetTenantID(tenantID).SetReturnNumber(num).
 		SetReason(strings.Join(reasons, "; ")).

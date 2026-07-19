@@ -13,12 +13,16 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
 // Service handles stock transfer business logic.
 type Service struct {
 	client *ent.Client
 	log    *zap.Logger
+	// seq, when wired, mints transfer numbers through the tenant-configurable document sequence
+	// (numeric by default) instead of the legacy ad-hoc TRF-YYYYMMDD-NNNN count.
+	seq *documents.SequenceService
 }
 
 // NewService creates a new transfers service.
@@ -27,6 +31,13 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 		client: client,
 		log:    log.Named("transfers.service"),
 	}
+}
+
+// WithSequence wires the document-sequence service so stock-transfer numbers are minted through
+// the tenant's stock_transfer sequence (numeric by default), falling back to the legacy count.
+func (s *Service) WithSequence(seq *documents.SequenceService) *Service {
+	s.seq = seq
+	return s
 }
 
 // CreateTransfer creates a new stock transfer in draft status.
@@ -487,6 +498,11 @@ func (s *Service) CancelTransfer(ctx context.Context, tenantID, transferID uuid.
 // generateTransferNumber generates a unique transfer number for a tenant.
 // Format: TRF-{YYYYMMDD}-{seq}
 func (s *Service) generateTransferNumber(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID) (string, error) {
+	if s.seq != nil {
+		if n, err := s.seq.GenerateNumber(ctx, tenantID, documents.DocTypeStockTransfer); err == nil && n != "" {
+			return n, nil
+		}
+	}
 	today := time.Now().Format("20060102")
 	prefix := fmt.Sprintf("TRF-%s-", today)
 

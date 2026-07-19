@@ -37,15 +37,31 @@ type seqConfig struct {
 	ResetFreq  string
 }
 
+// Platform default is PURE NUMERIC: empty prefix + empty date_format ⇒ formatNumber emits just
+// the zero-padded counter (e.g. "000001"). Tenants who prefer the prefixed/dated style (PO-260707-
+// 000013) opt in per doc type in Settings → Documents, which sets a prefix and/or date_format.
 var seqDefaults = map[string]seqConfig{
-	DocTypePurchaseOrder:   {Prefix: "PO", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeGRN:             {Prefix: "GRN", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypePurchaseReturn:  {Prefix: "PRET", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeRFQ:             {Prefix: "RFQ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeRequisition:     {Prefix: "REQ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeStockTransfer:   {Prefix: "TRF", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeStockAdjustment: {Prefix: "ADJ", Separator: "-", DateFormat: "YYMMDD", Padding: 6, ResetFreq: "never"},
-	DocTypeEventTicket:     {Prefix: "TKT", Separator: "-", DateFormat: "YYMMDD", Padding: 8, ResetFreq: "never"},
+	DocTypePurchaseOrder:   {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeGRN:             {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypePurchaseReturn:  {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeRFQ:             {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeRequisition:     {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeStockTransfer:   {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeStockAdjustment: {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeEventTicket:     {Separator: "-", Padding: 8, ResetFreq: "never"},
+}
+
+// SuggestedPrefixes are the pre-fill hints the Settings UI offers when a tenant switches a doc
+// type to the prefixed format. NOT applied automatically — the platform default is numeric.
+var SuggestedPrefixes = map[string]string{
+	DocTypePurchaseOrder:   "PO",
+	DocTypeGRN:             "GRN",
+	DocTypePurchaseReturn:  "PRET",
+	DocTypeRFQ:             "RFQ",
+	DocTypeRequisition:     "REQ",
+	DocTypeStockTransfer:   "TRF",
+	DocTypeStockAdjustment: "ADJ",
+	DocTypeEventTicket:     "TKT",
 }
 
 // SequenceService generates per-tenant atomic document numbers using optimistic
