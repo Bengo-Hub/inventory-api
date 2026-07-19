@@ -568,6 +568,19 @@ func (h *InventoryHandler) RecordConsumption(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Outlet-scope the deduction to the selling outlet's own warehouse when the body carries no
+	// explicit outlet/warehouse: honour the X-Outlet-ID operating-outlet context (forwarded by
+	// S2S callers such as ordering-backend). Without this, a multi-outlet tenant's consumption
+	// silently falls back to the tenant-default warehouse and shortfalls — same class of bug as
+	// the POS sale backflush. An explicit warehouse_id/outlet_id in the body still wins.
+	if req.OutletID == uuid.Nil && req.WarehouseID == uuid.Nil {
+		if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+			if oid, perr := uuid.Parse(outletStr); perr == nil {
+				req.OutletID = oid
+			}
+		}
+	}
+
 	result, err := h.stockSvc.RecordConsumption(r.Context(), tenantID, req)
 	if err != nil {
 		h.log.Error("record consumption failed", zap.Error(err))
