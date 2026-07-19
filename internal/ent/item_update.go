@@ -1390,6 +1390,26 @@ func (_u *ItemUpdate) ClearEventVenue() *ItemUpdate {
 	return _u
 }
 
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (_u *ItemUpdate) SetEndOfLifeAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetEndOfLifeAt(v)
+	return _u
+}
+
+// SetNillableEndOfLifeAt sets the "end_of_life_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableEndOfLifeAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetEndOfLifeAt(*v)
+	}
+	return _u
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (_u *ItemUpdate) ClearEndOfLifeAt() *ItemUpdate {
+	_u.mutation.ClearEndOfLifeAt()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdate) SetMetadata(v map[string]interface{}) *ItemUpdate {
 	_u.mutation.SetMetadata(v)
@@ -2398,6 +2418,12 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.EventVenueCleared() {
 		_spec.ClearField(item.FieldEventVenue, field.TypeString)
+	}
+	if value, ok := _u.mutation.EndOfLifeAt(); ok {
+		_spec.SetField(item.FieldEndOfLifeAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndOfLifeAtCleared() {
+		_spec.ClearField(item.FieldEndOfLifeAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -4421,6 +4447,26 @@ func (_u *ItemUpdateOne) ClearEventVenue() *ItemUpdateOne {
 	return _u
 }
 
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (_u *ItemUpdateOne) SetEndOfLifeAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetEndOfLifeAt(v)
+	return _u
+}
+
+// SetNillableEndOfLifeAt sets the "end_of_life_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableEndOfLifeAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetEndOfLifeAt(*v)
+	}
+	return _u
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (_u *ItemUpdateOne) ClearEndOfLifeAt() *ItemUpdateOne {
+	_u.mutation.ClearEndOfLifeAt()
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *ItemUpdateOne) SetMetadata(v map[string]interface{}) *ItemUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -5459,6 +5505,12 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.EventVenueCleared() {
 		_spec.ClearField(item.FieldEventVenue, field.TypeString)
+	}
+	if value, ok := _u.mutation.EndOfLifeAt(); ok {
+		_spec.SetField(item.FieldEndOfLifeAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndOfLifeAtCleared() {
+		_spec.ClearField(item.FieldEndOfLifeAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)

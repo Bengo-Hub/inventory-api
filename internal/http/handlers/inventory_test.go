@@ -56,6 +56,14 @@ func (m *mockItemsSvc) DeactivateItemBySKU(ctx context.Context, tenantID uuid.UU
 	return nil
 }
 
+func (m *mockItemsSvc) MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockItemsSvc) RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error) {
 	return nil, fmt.Errorf("not implemented")
 }

@@ -953,6 +953,20 @@ func (_c *ItemCreate) SetNillableEventVenue(v *string) *ItemCreate {
 	return _c
 }
 
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (_c *ItemCreate) SetEndOfLifeAt(v time.Time) *ItemCreate {
+	_c.mutation.SetEndOfLifeAt(v)
+	return _c
+}
+
+// SetNillableEndOfLifeAt sets the "end_of_life_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableEndOfLifeAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetEndOfLifeAt(*v)
+	}
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *ItemCreate) SetMetadata(v map[string]interface{}) *ItemCreate {
 	_c.mutation.SetMetadata(v)
@@ -1808,6 +1822,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.EventVenue(); ok {
 		_spec.SetField(item.FieldEventVenue, field.TypeString, value)
 		_node.EventVenue = &value
+	}
+	if value, ok := _c.mutation.EndOfLifeAt(); ok {
+		_spec.SetField(item.FieldEndOfLifeAt, field.TypeTime, value)
+		_node.EndOfLifeAt = &value
 	}
 	if value, ok := _c.mutation.Metadata(); ok {
 		_spec.SetField(item.FieldMetadata, field.TypeJSON, value)
@@ -3350,6 +3368,24 @@ func (u *ItemUpsert) ClearEventVenue() *ItemUpsert {
 	return u
 }
 
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (u *ItemUpsert) SetEndOfLifeAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldEndOfLifeAt, v)
+	return u
+}
+
+// UpdateEndOfLifeAt sets the "end_of_life_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateEndOfLifeAt() *ItemUpsert {
+	u.SetExcluded(item.FieldEndOfLifeAt)
+	return u
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (u *ItemUpsert) ClearEndOfLifeAt() *ItemUpsert {
+	u.SetNull(item.FieldEndOfLifeAt)
+	return u
+}
+
 // SetMetadata sets the "metadata" field.
 func (u *ItemUpsert) SetMetadata(v map[string]interface{}) *ItemUpsert {
 	u.Set(item.FieldMetadata, v)
@@ -4822,6 +4858,27 @@ func (u *ItemUpsertOne) UpdateEventVenue() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearEventVenue() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearEventVenue()
+	})
+}
+
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (u *ItemUpsertOne) SetEndOfLifeAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEndOfLifeAt(v)
+	})
+}
+
+// UpdateEndOfLifeAt sets the "end_of_life_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateEndOfLifeAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEndOfLifeAt()
+	})
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (u *ItemUpsertOne) ClearEndOfLifeAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEndOfLifeAt()
 	})
 }
 
@@ -6468,6 +6525,27 @@ func (u *ItemUpsertBulk) UpdateEventVenue() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearEventVenue() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearEventVenue()
+	})
+}
+
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (u *ItemUpsertBulk) SetEndOfLifeAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetEndOfLifeAt(v)
+	})
+}
+
+// UpdateEndOfLifeAt sets the "end_of_life_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateEndOfLifeAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateEndOfLifeAt()
+	})
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (u *ItemUpsertBulk) ClearEndOfLifeAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearEndOfLifeAt()
 	})
 }
 
