@@ -152,6 +152,8 @@ const (
 	FieldEventEndAt = "event_end_at"
 	// FieldEventVenue holds the string denoting the event_venue field in the database.
 	FieldEventVenue = "event_venue"
+	// FieldEndOfLifeAt holds the string denoting the end_of_life_at field in the database.
+	FieldEndOfLifeAt = "end_of_life_at"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -386,6 +388,7 @@ var Columns = []string{
 	FieldEventStartAt,
 	FieldEventEndAt,
 	FieldEventVenue,
+	FieldEndOfLifeAt,
 	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -958,6 +961,11 @@ func ByEventEndAt(opts ...sql.OrderTermOption) OrderOption {
 // ByEventVenue orders the results by the event_venue field.
 func ByEventVenue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEventVenue, opts...).ToFunc()
+}
+
+// ByEndOfLifeAt orders the results by the end_of_life_at field.
+func ByEndOfLifeAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndOfLifeAt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

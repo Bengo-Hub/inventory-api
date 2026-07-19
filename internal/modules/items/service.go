@@ -161,6 +161,9 @@ type ItemDTO struct {
 	ReturnWindowDays *int  `json:"return_window_days,omitempty"` // nil = tenant default
 	AllowBackorder   *bool `json:"allow_backorder,omitempty"`    // order when out of stock
 	IsDiscontinued   *bool `json:"is_discontinued,omitempty"`    // hidden from new listings, stock still sellable
+	// End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)
+	// and awaiting hard-delete by the purge scheduler once past the retention window.
+	EndOfLifeAt *time.Time `json:"end_of_life_at,omitempty"`
 	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
 	// HasVariants is always populated; Variants is populated when variants are eager-loaded
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
@@ -730,6 +733,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		ReturnWindowDays:        i.ReturnWindowDays,
 		AllowBackorder:          boolPtr(i.AllowBackorder),
 		IsDiscontinued:          boolPtr(i.IsDiscontinued),
+		EndOfLifeAt:             i.EndOfLifeAt,
 		ImageURL:                s.resolveMediaURL(i.ImageURL),
 		Tags:                    i.Tags,
 		Metadata:                i.Metadata,
@@ -927,11 +931,18 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			q = q.Where(item.ID(*id))
 		}
 		switch statusFilter {
+		case "eol":
+			// Dedicated End-of-Life listing: only items marked EOL (awaiting restore or purge).
+			q = q.Where(item.EndOfLifeAtNotNil())
 		case "inactive":
-			q = q.Where(item.IsActive(false))
+			// Plain inactive items only — EOL items have their own tab (status=eol) and must
+			// not bleed into the regular inactive listing.
+			q = q.Where(item.IsActive(false), item.EndOfLifeAtIsNil())
 		case "all":
-			// no is_active filter
+			// no is_active filter (includes EOL items)
 		default:
+			// Active listing (also the POS/ordering live-catalog source) — EOL items are
+			// is_active=false so they are already excluded here.
 			q = q.Where(item.IsActive(true))
 		}
 		if recipeInputScope(ctx) {

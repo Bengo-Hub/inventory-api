@@ -45,6 +45,8 @@ type ItemsServicer interface {
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
+	MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
+	RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
@@ -225,6 +227,11 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// called S2S by pos-api's "also update the catalog price" order-line edit.
 		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/price", h.SetItemPrice)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
+		// End-of-Life (EOL): mark hides the item everywhere (is_active=false + end_of_life_at)
+		// and schedules it for hard-delete after the retention window; restore un-marks it. The
+		// EOL listing itself reuses GET /items?status=eol.
+		inv.With(perm(rbac.PermItemsDelete)).Post("/items/{sku}/eol", h.MarkItemEOL)
+		inv.With(perm(rbac.PermItemsDelete)).Post("/items/{sku}/eol/restore", h.RestoreItemEOL)
 		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
 
 		// Barcode + label printing (single-item PNG read + bulk label-print job).
@@ -1312,6 +1319,61 @@ func (h *InventoryHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// MarkItemEOL handles POST /v1/{tenant}/inventory/items/{sku}/eol — marks an item End-of-Life.
+// The item is set is_active=false and given an end_of_life_at timestamp, so it immediately
+// disappears from item lists, the POS live catalog, and ordering; an inventory.item.updated event
+// is emitted so downstream catalogs sync. The item is hard-deleted by the purge scheduler once the
+// retention window elapses, unless restored first.
+func (h *InventoryHandler) MarkItemEOL(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	dto, err := h.itemsSvc.MarkItemEOL(r.Context(), tenantID, sku)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+			return
+		}
+		h.log.Error("mark item EOL failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "EOL_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, dto)
+}
+
+// RestoreItemEOL handles POST /v1/{tenant}/inventory/items/{sku}/eol/restore — un-marks an EOL
+// item, clearing end_of_life_at and re-activating it so it reappears everywhere.
+func (h *InventoryHandler) RestoreItemEOL(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	dto, err := h.itemsSvc.RestoreItemEOL(r.Context(), tenantID, sku)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+			return
+		}
+		h.log.Error("restore item EOL failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "EOL_RESTORE_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, dto)
 }
 
 // CreateAdjustment handles POST /v1/{tenant}/inventory/adjustments — creates a stock adjustment with audit trail.

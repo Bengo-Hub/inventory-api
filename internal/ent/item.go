@@ -162,6 +162,8 @@ type Item struct {
 	EventEndAt *time.Time `json:"event_end_at,omitempty"`
 	// Venue name/address for event items
 	EventVenue *string `json:"event_venue,omitempty"`
+	// When the item was marked End-of-Life. Non-null = EOL (hidden everywhere); purged after the EOL retention window; cleared on restore
+	EndOfLifeAt *time.Time `json:"end_of_life_at,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -399,7 +401,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldEtimsItemClsCd, item.FieldEtimsPkgUnitCd, item.FieldEtimsQtyUnitCd, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
-		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldCreatedAt, item.FieldUpdatedAt:
+		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldEndOfLifeAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case item.FieldID, item.FieldTenantID:
 			values[i] = new(uuid.UUID)
@@ -865,6 +867,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.EventVenue = new(string)
 				*_m.EventVenue = value.String
 			}
+		case item.FieldEndOfLifeAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field end_of_life_at", values[i])
+			} else if value.Valid {
+				_m.EndOfLifeAt = new(time.Time)
+				*_m.EndOfLifeAt = value.Time
+			}
 		case item.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
@@ -1266,6 +1275,11 @@ func (_m *Item) String() string {
 	if v := _m.EventVenue; v != nil {
 		builder.WriteString("event_venue=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.EndOfLifeAt; v != nil {
+		builder.WriteString("end_of_life_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")

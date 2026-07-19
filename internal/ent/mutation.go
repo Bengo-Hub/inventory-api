@@ -36125,6 +36125,7 @@ type ItemMutation struct {
 	event_start_at             *time.Time
 	event_end_at               *time.Time
 	event_venue                *string
+	end_of_life_at             *time.Time
 	metadata                   *map[string]interface{}
 	created_at                 *time.Time
 	updated_at                 *time.Time
@@ -39713,6 +39714,55 @@ func (m *ItemMutation) ResetEventVenue() {
 	delete(m.clearedFields, item.FieldEventVenue)
 }
 
+// SetEndOfLifeAt sets the "end_of_life_at" field.
+func (m *ItemMutation) SetEndOfLifeAt(t time.Time) {
+	m.end_of_life_at = &t
+}
+
+// EndOfLifeAt returns the value of the "end_of_life_at" field in the mutation.
+func (m *ItemMutation) EndOfLifeAt() (r time.Time, exists bool) {
+	v := m.end_of_life_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndOfLifeAt returns the old "end_of_life_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldEndOfLifeAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndOfLifeAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndOfLifeAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndOfLifeAt: %w", err)
+	}
+	return oldValue.EndOfLifeAt, nil
+}
+
+// ClearEndOfLifeAt clears the value of the "end_of_life_at" field.
+func (m *ItemMutation) ClearEndOfLifeAt() {
+	m.end_of_life_at = nil
+	m.clearedFields[item.FieldEndOfLifeAt] = struct{}{}
+}
+
+// EndOfLifeAtCleared returns if the "end_of_life_at" field was cleared in this mutation.
+func (m *ItemMutation) EndOfLifeAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldEndOfLifeAt]
+	return ok
+}
+
+// ResetEndOfLifeAt resets all changes to the "end_of_life_at" field.
+func (m *ItemMutation) ResetEndOfLifeAt() {
+	m.end_of_life_at = nil
+	delete(m.clearedFields, item.FieldEndOfLifeAt)
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *ItemMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -40647,7 +40697,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 71)
+	fields := make([]string, 0, 72)
 	if m.tenant != nil {
 		fields = append(fields, item.FieldTenantID)
 	}
@@ -40852,6 +40902,9 @@ func (m *ItemMutation) Fields() []string {
 	if m.event_venue != nil {
 		fields = append(fields, item.FieldEventVenue)
 	}
+	if m.end_of_life_at != nil {
+		fields = append(fields, item.FieldEndOfLifeAt)
+	}
 	if m.metadata != nil {
 		fields = append(fields, item.FieldMetadata)
 	}
@@ -41005,6 +41058,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.EventEndAt()
 	case item.FieldEventVenue:
 		return m.EventVenue()
+	case item.FieldEndOfLifeAt:
+		return m.EndOfLifeAt()
 	case item.FieldMetadata:
 		return m.Metadata()
 	case item.FieldCreatedAt:
@@ -41156,6 +41211,8 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldEventEndAt(ctx)
 	case item.FieldEventVenue:
 		return m.OldEventVenue(ctx)
+	case item.FieldEndOfLifeAt:
+		return m.OldEndOfLifeAt(ctx)
 	case item.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case item.FieldCreatedAt:
@@ -41647,6 +41704,13 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEventVenue(v)
 		return nil
+	case item.FieldEndOfLifeAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndOfLifeAt(v)
+		return nil
 	case item.FieldMetadata:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -42046,6 +42110,9 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldEventVenue) {
 		fields = append(fields, item.FieldEventVenue)
 	}
+	if m.FieldCleared(item.FieldEndOfLifeAt) {
+		fields = append(fields, item.FieldEndOfLifeAt)
+	}
 	return fields
 }
 
@@ -42200,6 +42267,9 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldEventVenue:
 		m.ClearEventVenue()
+		return nil
+	case item.FieldEndOfLifeAt:
+		m.ClearEndOfLifeAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Item nullable field %s", name)
@@ -42412,6 +42482,9 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldEventVenue:
 		m.ResetEventVenue()
+		return nil
+	case item.FieldEndOfLifeAt:
+		m.ResetEndOfLifeAt()
 		return nil
 	case item.FieldMetadata:
 		m.ResetMetadata()

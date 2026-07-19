@@ -356,6 +356,11 @@ func EventVenue(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldEventVenue, v))
 }
 
+// EndOfLifeAt applies equality check predicate on the "end_of_life_at" field. It's identical to EndOfLifeAtEQ.
+func EndOfLifeAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEndOfLifeAt, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCreatedAt, v))
@@ -3439,6 +3444,56 @@ func EventVenueEqualFold(v string) predicate.Item {
 // EventVenueContainsFold applies the ContainsFold predicate on the "event_venue" field.
 func EventVenueContainsFold(v string) predicate.Item {
 	return predicate.Item(sql.FieldContainsFold(FieldEventVenue, v))
+}
+
+// EndOfLifeAtEQ applies the EQ predicate on the "end_of_life_at" field.
+func EndOfLifeAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtNEQ applies the NEQ predicate on the "end_of_life_at" field.
+func EndOfLifeAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtIn applies the In predicate on the "end_of_life_at" field.
+func EndOfLifeAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldEndOfLifeAt, vs...))
+}
+
+// EndOfLifeAtNotIn applies the NotIn predicate on the "end_of_life_at" field.
+func EndOfLifeAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldEndOfLifeAt, vs...))
+}
+
+// EndOfLifeAtGT applies the GT predicate on the "end_of_life_at" field.
+func EndOfLifeAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtGTE applies the GTE predicate on the "end_of_life_at" field.
+func EndOfLifeAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtLT applies the LT predicate on the "end_of_life_at" field.
+func EndOfLifeAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtLTE applies the LTE predicate on the "end_of_life_at" field.
+func EndOfLifeAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldEndOfLifeAt, v))
+}
+
+// EndOfLifeAtIsNil applies the IsNil predicate on the "end_of_life_at" field.
+func EndOfLifeAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldEndOfLifeAt))
+}
+
+// EndOfLifeAtNotNil applies the NotNil predicate on the "end_of_life_at" field.
+func EndOfLifeAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldEndOfLifeAt))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

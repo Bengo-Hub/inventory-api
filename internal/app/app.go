@@ -356,6 +356,14 @@ func New(ctx context.Context) (*App, error) {
 		RetentionDays: cfg.Backup.RetentionDays,
 	}, log).Start(ctx)
 
+	// End-of-Life purge: hard-delete items whose EOL retention window has elapsed (audit-safe:
+	// items with transactional history are skipped and kept hidden). Advisory-lock guarded so
+	// only one replica runs it; tenant-generic.
+	items.NewEOLPurgeScheduler(itemsSvc, sqlDB, items.EOLPurgeConfig{
+		Enabled:       cfg.EOL.PurgeEnabled,
+		RetentionDays: cfg.EOL.RetentionDays,
+	}, log).Start(ctx)
+
 	// Terminal/PIN login: issues + validates HMAC terminal JWTs for warehouse desk sessions.
 	pinAuthHandler := handlers.NewPINAuthHandler(ormClient, rbacService, subsClient, terminalJWTSecret(cfg), log)
 

@@ -998,15 +998,15 @@ func init() {
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[69].Descriptor()
+	itemDescMetadata := itemFields[70].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[70].Descriptor()
+	itemDescCreatedAt := itemFields[71].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[71].Descriptor()
+	itemDescUpdatedAt := itemFields[72].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

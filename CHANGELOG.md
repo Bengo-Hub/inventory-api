@@ -6,6 +6,12 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Added (2026-07-20 — End-of-Life products)
+- **EOL lifecycle:** New nullable `Item.end_of_life_at` field + index `item_tenant_id_end_of_life_at` (Atlas migration `20260720120000_add_item_end_of_life.sql`). Non-null = the item is marked End-of-Life.
+- **Mark / restore endpoints:** `POST /inventory/items/{sku}/eol` and `POST /inventory/items/{sku}/eol/restore` (both require `inventory.items.delete`). Marking sets `is_active=false` + `end_of_life_at=now` in one transaction and emits an enriched `inventory.item.updated` outbox event, so the item disappears immediately from item lists, the POS live catalog (fetched with `status=active`), and ordering, and the pos-api catalog consumer flips `pos_catalog_override.is_available=false` + bumps the catalog version. Restore clears the timestamp and re-activates.
+- **EOL listing:** `GET /inventory/items?status=eol` returns only EOL items (the dedicated "End of Life" tab). `end_of_life_at` added to `ItemDTO` and to item event payloads. Plain `status=inactive` now excludes EOL items so the EOL tab owns them.
+- **Purge scheduler:** New advisory-lock-guarded, tenant-generic `EOLPurgeScheduler` (`EOL_PURGE_ENABLED`, `EOL_RETENTION_DAYS` default 7) hard-deletes items whose retention window has elapsed. Audit-safe: items with transactional history (PO/GRN/adjustment/stock-level-event/transfer/return/requisition/RFQ/stock-count/serial/daily-consumption lines, or used as a recipe ingredient / bundle component elsewhere) are skipped and kept hidden; only owned catalog children (balances, pricing, translations, assets, custom-field values, warranties, lots, own modifier groups/options, variants, bundle, produced recipe) are removed alongside the item.
+
 ### Added (2026-05-27 — Batch 2: UX, RBAC & ERP polish)
 - **Unit type field:** Added `type` (weight/volume/count/length/area/other) to `Unit` schema and Atlas migration `20260527144311_add_unit_type.sql`. `GET /units` now returns `type` and `item_count` per unit.
 - **Items filter params:** `GET /inventory/items` now accepts `category_id`, `unit_id`, and `search` query params for server-side filtering.

@@ -290,6 +290,15 @@ func (Item) Fields() []ent.Field {
 			Nillable().
 			MaxLen(500).
 			Comment("Venue name/address for event items"),
+		// End-of-Life (EOL) lifecycle — generic, tenant-scoped. Non-null = the item is marked
+		// End-of-Life: it is set is_active=false at the same time (so it disappears from item
+		// lists, the POS live catalog, and ordering), surfaces only under the dedicated EOL
+		// listing (status=eol), and is hard-deleted by the purge scheduler once this timestamp
+		// is older than the retention window (default 7 days). Cleared on restore.
+		field.Time("end_of_life_at").
+			Optional().
+			Nillable().
+			Comment("When the item was marked End-of-Life. Non-null = EOL (hidden everywhere); purged after the EOL retention window; cleared on restore"),
 		field.JSON("metadata", map[string]any{}).
 			Default(map[string]any{}),
 		field.Time("created_at").
@@ -351,6 +360,7 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("tenant_id", "category_id"),
 		index.Fields("tenant_id", "brand_id"),
 		index.Fields("tenant_id", "is_active"),
+		index.Fields("tenant_id", "end_of_life_at"),
 		index.Fields("tenant_id", "barcode"),
 		index.Fields("tenant_id", "created_at"),
 		index.Fields("tenant_id", "unit_id"),
