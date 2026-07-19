@@ -379,9 +379,16 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
 		Count(ctx)
 
-	// Only count active items by cross-checking with items table.
+	// Low/out-of-stock tallies must only consider PHYSICAL, stock-bearing item types. SERVICE,
+	// RECIPE and VOUCHER items hold no tracked stock (a facial/massage/event ticket is never
+	// "out of stock"), so counting their zero-balance rows wildly inflated the dashboard's
+	// "Out of Stock" figure. Restrict the stock-status set to GOODS/INGREDIENT/EQUIPMENT.
 	activeItemIDs, _ := h.orm.Item.Query().
-		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
+		Where(
+			entitem.TenantID(tenantID),
+			entitem.IsActive(true),
+			entitem.TypeIn(entitem.TypeGOODS, entitem.TypeINGREDIENT, entitem.TypeEQUIPMENT),
+		).
 		IDs(ctx)
 
 	var lowStock, outOfStock int
