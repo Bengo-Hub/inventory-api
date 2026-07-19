@@ -173,13 +173,31 @@ func (s *BranchSubscriber) handleUpsert(ctx context.Context, evt *sharedevents.E
 			SetIsActive(status != "archived").
 			Save(ctx)
 		if err != nil {
-			return fmt.Errorf("create warehouse mirror: %w", err)
+			// RACE GUARD: this same outlet is processed by TWO paths at startup (the NATS
+			// auth.outlet subscriber AND the delayed ReconcileFromAuthAPI sweep, plus NATS
+			// redelivery), and the query-then-create above is NOT atomic — both can find nothing
+			// and both Create, minting a DUPLICATE warehouse for one outlet (the root cause of
+			// two "Demo Grand Hotel" warehouses). Backed by the (tenant_id, outlet_id) unique
+			// index, the losing Create now returns a constraint error: re-query the row the winner
+			// created and fall through to the update path instead of duplicating.
+			if ent.IsConstraintError(err) {
+				existing, err = s.orm.Warehouse.Query().
+					Where(entwarehouse.TenantID(evt.TenantID), entwarehouse.OutletID(outletID)).First(ctx)
+				if err != nil {
+					return fmt.Errorf("re-query warehouse after create conflict: %w", err)
+				}
+				// fall through to update below
+			} else {
+				return fmt.Errorf("create warehouse mirror: %w", err)
+			}
+		} else {
+			s.logger.Info("warehouse created from auth.outlet event",
+				zap.String("outlet_id", outletIDStr),
+				zap.String("code", whCode),
+				zap.String("use_case", useCase))
 		}
-		s.logger.Info("warehouse created from auth.outlet event",
-			zap.String("outlet_id", outletIDStr),
-			zap.String("code", whCode),
-			zap.String("use_case", useCase))
-	} else {
+	}
+	if wh == nil {
 		upd := s.orm.Warehouse.UpdateOne(existing).
 			SetName(name).
 			SetIsDefault(isHQ).

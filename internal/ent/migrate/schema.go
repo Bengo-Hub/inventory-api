@@ -3487,7 +3487,7 @@ var (
 			},
 			{
 				Name:    "warehouse_tenant_id_outlet_id",
-				Unique:  false,
+				Unique:  true,
 				Columns: []*schema.Column{WarehousesColumns[12], WarehousesColumns[6]},
 			},
 		},
