@@ -863,6 +863,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	// of its 269 sellable items (94 recipes + 41 unreceived goods), and the demo QSR outlet
 	// shrank to 2 items once its prep stock was mirrored in.
 	var outletExcludeIDs []uuid.UUID
+	// outletWarehouseIDs is the set of warehouses this outlet may sell from: its OWN warehouse(s)
+	// plus tenant-wide shared warehouses (outlet_id nil, e.g. a central store). Hoisted to function
+	// scope (not just this exclusion block) because buildDTOs' on-hand aggregation below MUST also
+	// scope to it — summing balances across every warehouse in the tenant let a Malaba-HQ terminal
+	// see (and oversell) stock that was physically sitting at Eldoret/Busia/Home/Nelly/Guest.
+	var outletWarehouseIDs map[uuid.UUID]struct{}
 	if outletID != nil {
 		wIDs, _ := s.client.Warehouse.Query().
 			Where(
@@ -872,9 +878,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					warehouse.OutletIDIsNil(),
 				),
 			).IDs(ctx)
-		hereSet := make(map[uuid.UUID]struct{}, len(wIDs))
+		outletWarehouseIDs = make(map[uuid.UUID]struct{}, len(wIDs))
 		for _, id := range wIDs {
-			hereSet[id] = struct{}{}
+			outletWarehouseIDs[id] = struct{}{}
 		}
 		bals, _ := s.client.InventoryBalance.Query().
 			Where(inventorybalance.TenantIDEQ(tenantID)).
@@ -882,7 +888,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		stockedHere := make(map[uuid.UUID]struct{})
 		stockedElsewhere := make(map[uuid.UUID]struct{})
 		for _, b := range bals {
-			if _, ok := hereSet[b.WarehouseID]; ok {
+			if _, ok := outletWarehouseIDs[b.WarehouseID]; ok {
 				stockedHere[b.ItemID] = struct{}{}
 			} else {
 				stockedElsewhere[b.ItemID] = struct{}{}
@@ -1027,6 +1033,16 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.ItemIDIn(itemIDs...)).
 				All(innerCtx)
 			for _, b := range bals {
+				// Outlet scope: an active outlet only sees/sells its OWN warehouse(s) + shared
+				// (outlet-less) stock — never another outlet's balance summed in. A multi-outlet
+				// tenant (e.g. 7 warehouses) must never let a Malaba-HQ terminal display or oversell
+				// stock that physically lives at a different outlet. No outlet context (HQ/all-
+				// outlets view) keeps the tenant-wide total, matching the existing all-outlets UX.
+				if outletWarehouseIDs != nil {
+					if _, ok := outletWarehouseIDs[b.WarehouseID]; !ok {
+						continue
+					}
+				}
 				prev := balMap[b.ItemID]
 				if prev.reorderLevel == 0 {
 					prev.reorderLevel = b.ReorderLevel
