@@ -76,9 +76,17 @@ type ReservedItem struct {
 
 // ConsumptionRequest matches the ordering-backend client DTO.
 type ConsumptionRequest struct {
-	TenantID       uuid.UUID         `json:"tenant_id"`
-	OrderID        uuid.UUID         `json:"order_id"`
-	WarehouseID    uuid.UUID         `json:"warehouse_id,omitempty"`
+	TenantID uuid.UUID `json:"tenant_id"`
+	OrderID  uuid.UUID `json:"order_id"`
+	// WarehouseID, when set, is the explicit warehouse the sale must deduct from and always wins.
+	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
+	// OutletID scopes the deduction to the SELLING outlet's own warehouse when no explicit
+	// WarehouseID is supplied. Critical for multi-outlet tenants: POS on_hand is outlet-scoped, so
+	// a sale must deduct from the outlet's OWN warehouse — not the tenant-default (often the HQ /
+	// hotel) warehouse, where the item usually has no balance and the deduction silently shortfalls
+	// (root cause of "sold several but stock still shows full"). uuid.Nil = tenant-default fallback
+	// (preserves the legacy behaviour for callers that carry no outlet context).
+	OutletID       uuid.UUID         `json:"outlet_id,omitempty"`
 	Items          []ConsumptionItem `json:"items"`
 	Reason         string            `json:"reason,omitempty"`
 	IdempotencyKey string            `json:"idempotency_key,omitempty"`
@@ -1277,7 +1285,11 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 
 // RecordConsumption records direct stock consumption without a prior reservation.
 func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req ConsumptionRequest) (*ConsumptionResponse, error) {
-	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
+	// Resolve the warehouse OUTLET-AWARE: explicit WarehouseID > the selling outlet's own
+	// warehouse > the tenant default. A multi-outlet sale (e.g. a supermarket outlet) must deduct
+	// from its OWN warehouse — falling back to the tenant-default (HQ/hotel) warehouse deducted
+	// against a warehouse with no balance for the item, silently shortfalling every sale.
+	whID, err := s.resolveWarehouseIDForOutlet(ctx, tenantID, req.WarehouseID, req.OutletID)
 	if err != nil {
 		return nil, err
 	}

@@ -125,6 +125,7 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 			TenantID    string        `json:"tenant_id"`
 			TenantSlug  string        `json:"tenant_slug"`
 			OrderID     string        `json:"order_id"`
+			OutletID    string        `json:"outlet_id"`
 			WarehouseID string        `json:"warehouse_id"`
 			Items       []posSaleItem `json:"items"`
 		} `json:"payload"`
@@ -163,11 +164,22 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 		warehouseID, err = uuid.Parse(envelope.Payload.WarehouseID)
 		if err != nil {
 			c.log.Warn("pos sale events: invalid warehouse_id", zap.String("raw", envelope.Payload.WarehouseID))
-			// Continue with zero UUID (will resolve to default warehouse)
+			// Continue with zero UUID (will resolve to the outlet's / default warehouse)
 		}
 	}
 
-	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, envelope.Payload.Items); err != nil {
+	// The SELLING outlet scopes the warehouse when no explicit warehouse_id is carried: the sale
+	// must deduct from the outlet's OWN warehouse, not the tenant default. pos-api emits outlet_id
+	// on every pos.sale.finalized event; an absent/invalid value simply falls back to the default.
+	var outletID uuid.UUID
+	if envelope.Payload.OutletID != "" {
+		if outletID, err = uuid.Parse(envelope.Payload.OutletID); err != nil {
+			c.log.Warn("pos sale events: invalid outlet_id", zap.String("raw", envelope.Payload.OutletID))
+			outletID = uuid.Nil
+		}
+	}
+
+	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, envelope.Payload.Items); err != nil {
 		c.log.Error("pos sale events: handle sale finalized failed",
 			zap.Error(err),
 			zap.String("order_id", orderID.String()),
@@ -185,7 +197,7 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 // stock.Service.RecordConsumption (the ONE shared deduction path also used by the S2S
 // consumption/reservation endpoints) — the consumer only validates SKUs (so one unknown
 // line never NAK-loops the event) and flips sold serials.
-func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantID, orderID, warehouseID uuid.UUID, saleItems []posSaleItem) error {
+func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantID, orderID, warehouseID, outletID uuid.UUID, saleItems []posSaleItem) error {
 	var consumptionItems []stock.ConsumptionItem
 
 	for _, si := range saleItems {
@@ -237,11 +249,13 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		return nil
 	}
 
-	// Record consumption using existing stock service
+	// Record consumption using existing stock service. OutletID scopes the deduction to the
+	// selling outlet's own warehouse when no explicit warehouse_id was carried.
 	_, err := c.stockSvc.RecordConsumption(ctx, tenantID, stock.ConsumptionRequest{
 		TenantID:       tenantID,
 		OrderID:        orderID,
 		WarehouseID:    warehouseID,
+		OutletID:       outletID,
 		Items:          consumptionItems,
 		Reason:         "pos_sale",
 		IdempotencyKey: fmt.Sprintf("pos-sale-%s", orderID.String()),
