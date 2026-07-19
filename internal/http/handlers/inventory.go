@@ -991,10 +991,8 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var outletID *uuid.UUID
-	if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
-		if oid, err := uuid.Parse(outletStr); err == nil {
-			outletID = &oid
-		}
+	if oid := operatingOutletID(r); oid != uuid.Nil {
+		outletID = &oid
 	}
 
 	// ?id=<uuid> restricts the list to a single item by primary key while reusing the full
@@ -1235,6 +1233,18 @@ func (h *InventoryHandler) SetItemPrice(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// operatingOutletID returns the outlet the request is acting under (from the X-Outlet-ID context),
+// or uuid.Nil when none is set (S2S / platform-wide requests). Stock movements use it to default
+// their warehouse to the operating outlet's own warehouse.
+func operatingOutletID(r *http.Request) uuid.UUID {
+	if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+		if oid, err := uuid.Parse(outletStr); err == nil {
+			return oid
+		}
+	}
+	return uuid.Nil
+}
+
 // AdjustStock handles POST /v1/{tenant}/inventory/adjust — adjusts stock levels for an item.
 func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -1260,6 +1270,9 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if req.Reason == "" {
 		req.Reason = "adjustment"
 	}
+	// Default an unspecified warehouse to the operating outlet's own warehouse (not the tenant
+	// default) so the movement is visible on that outlet's POS terminal.
+	req.OutletID = operatingOutletID(r)
 
 	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)
 	if err != nil {
@@ -1326,6 +1339,9 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	if req.Reason == "" {
 		req.Reason = "other"
 	}
+	// Default an unspecified warehouse to the operating outlet's own warehouse (not the tenant
+	// default) so the movement is visible on that outlet's POS terminal.
+	req.OutletID = operatingOutletID(r)
 
 	// Large-adjustment approval gate: route adjustments whose magnitude falls in a
 	// configured ApprovalRule band through the approval workflow. Safe by default —

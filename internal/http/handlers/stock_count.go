@@ -18,6 +18,7 @@ import (
 	entbalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entcount "github.com/bengobox/inventory-service/internal/ent/stockcount"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	entcountline "github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	enttemplate "github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -116,6 +117,18 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Reference == "" {
 			req.Reference = tpl.Name + " · " + time.Now().Format("2006-01-02 15:04")
+		}
+	}
+	// No explicit warehouse (and none from a template) → default to the operating outlet's own
+	// warehouse so the count — and the adjustments its approval posts — land where that outlet's
+	// POS terminal reads stock, not on the tenant default warehouse.
+	if req.WarehouseID == uuid.Nil {
+		if oid := operatingOutletID(r); oid != uuid.Nil {
+			if wh, e := h.orm.Warehouse.Query().
+				Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletIDEQ(oid), entwarehouse.IsActive(true)).
+				First(ctx); e == nil {
+				req.WarehouseID = wh.ID
+			}
 		}
 	}
 	if req.WarehouseID == uuid.Nil {
