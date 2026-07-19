@@ -80,6 +80,7 @@ type App struct {
 	stockConsumer        *consumers.StockEventsConsumer
 	ticketConsumer       *consumers.TicketIssuanceConsumer
 	treasuryTaxConsumer  *consumers.TreasuryTaxEventsConsumer
+	etimsItemConsumer    *consumers.EtimsItemRegisteredConsumer
 	tenantPurgeConsumer  *consumers.TenantPurgeConsumer
 	quotationConsumer    *consumers.QuotationAcceptedConsumer
 	deliveryNoteConsumer *consumers.DeliveryNoteDispatchedConsumer
@@ -267,6 +268,10 @@ func New(ctx context.Context) (*App, error) {
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
 
+	// eTIMS item-registered write-back consumer — mirrors KRA-assigned classification/pkg/qty
+	// codes onto the inventory item so the Edit form reflects the item's real synced state.
+	etimsItemConsumer := consumers.NewEtimsItemRegisteredConsumer(log, itemsSvc)
+
 	// Tenant purge consumer — on platform-owner-confirmed dormancy purge (tenant.purge),
 	// IRREVERSIBLY deletes ALL of the tenant's inventory data. Uses the raw *sql.DB for
 	// FK-order-independent, transactional deletes.
@@ -380,6 +385,7 @@ func New(ctx context.Context) (*App, error) {
 		stockConsumer:        stockConsumer,
 		ticketConsumer:       ticketConsumer,
 		treasuryTaxConsumer:  treasuryTaxConsumer,
+		etimsItemConsumer:    etimsItemConsumer,
 		tenantPurgeConsumer:  tenantPurgeConsumer,
 		quotationConsumer:    quotationConsumer,
 		deliveryNoteConsumer: deliveryNoteConsumer,
@@ -469,6 +475,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("treasury tax events consumer started")
+			}
+
+			// Start eTIMS item-registered write-back consumer — mirrors KRA codes onto items.
+			if a.etimsItemConsumer != nil {
+				go func() {
+					if err := a.etimsItemConsumer.Start(ctx, js); err != nil {
+						a.log.Error("etims item-registered consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("etims item-registered write-back consumer started")
 			}
 
 			// Start tenant purge consumer — IRREVERSIBLY deletes a tenant's data on a

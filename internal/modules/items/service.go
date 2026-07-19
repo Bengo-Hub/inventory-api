@@ -2377,3 +2377,60 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 
 	return s.mapToDTO(i), nil
 }
+
+// EtimsRegistration carries the KRA-assigned eTIMS codes minted by treasury-api when an item is
+// registered in the eTIMS item master. Empty fields are left untouched.
+type EtimsRegistration struct {
+	ItemCd    string // KRA-assigned itemCd (fixed-width code)
+	ItemClsCd string // classification (UNSPSC)
+	PkgUnitCd string
+	QtyUnitCd string
+}
+
+// SetEtimsRegistration mirrors the KRA-registered eTIMS codes back onto the inventory item — a
+// NARROW, partial update (never the full UpdateItem, which would clobber name/type/metadata). It
+// is the write-back that makes the Edit-Item form show an item's real synced eTIMS classification/
+// package/quantity codes instead of the tenant defaults. Resolves by item UUID, falling back to
+// SKU when the UUID is unknown (an ad-hoc/auto-registered line). Idempotent and best-effort:
+// blank codes are skipped, and a not-found item is a no-op (never an error the consumer must retry).
+func (s *Service) SetEtimsRegistration(ctx context.Context, tenantID uuid.UUID, itemID *uuid.UUID, sku string, reg EtimsRegistration) error {
+	// Resolve the target item: prefer the UUID, else the tenant-scoped SKU.
+	q := s.client.Item.Query().Where(item.TenantID(tenantID))
+	switch {
+	case itemID != nil && *itemID != uuid.Nil:
+		q = q.Where(item.ID(*itemID))
+	case sku != "":
+		q = q.Where(item.Sku(sku))
+	default:
+		return nil // nothing to resolve on
+	}
+	target, err := q.Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil // item not in inventory (e.g. a pure ad-hoc invoice line) — nothing to mirror
+		}
+		return fmt.Errorf("items: resolve item for etims write-back: %w", err)
+	}
+
+	upd := s.client.Item.UpdateOneID(target.ID).Where(item.TenantID(tenantID))
+	changed := false
+	if reg.ItemClsCd != "" {
+		upd = upd.SetEtimsItemClsCd(reg.ItemClsCd)
+		changed = true
+	}
+	if reg.PkgUnitCd != "" {
+		upd = upd.SetEtimsPkgUnitCd(reg.PkgUnitCd)
+		changed = true
+	}
+	if reg.QtyUnitCd != "" {
+		upd = upd.SetEtimsQtyUnitCd(reg.QtyUnitCd)
+		changed = true
+	}
+	if !changed {
+		return nil
+	}
+	if err := upd.Exec(ctx); err != nil {
+		return fmt.Errorf("items: write eTIMS registration codes: %w", err)
+	}
+	return nil
+}
