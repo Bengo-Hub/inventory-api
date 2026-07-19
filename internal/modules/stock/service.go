@@ -130,7 +130,11 @@ type AdjustStockRequest struct {
 	Notes       string     `json:"notes,omitempty"`
 	AdjustedBy  uuid.UUID  `json:"adjusted_by"`
 	WarehouseID uuid.UUID  `json:"warehouse_id,omitempty"`
-	UnitID      *uuid.UUID `json:"unit_id,omitempty"` // optional; when set, records the balance's unit of measure
+	// OutletID is the operating outlet (from the X-Outlet-ID request context). When WarehouseID is
+	// omitted the adjustment defaults to this outlet's own warehouse, not the tenant default — set
+	// by the handler, not trusted from the request body.
+	OutletID uuid.UUID  `json:"-"`
+	UnitID   *uuid.UUID `json:"unit_id,omitempty"` // optional; when set, records the balance's unit of measure
 	// ApprovalIntentID ties a large adjustment to its approval workflow: the
 	// client passes a stable UUID on the first (blocked) attempt and again on the
 	// retry after a manager approves.
@@ -184,7 +188,7 @@ type ListAdjustmentsRequest struct {
 
 // AdjustStock adjusts stock levels for an item, creates an audit trail, and publishes events.
 func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req AdjustStockRequest) (*AdjustStockResponse, error) {
-	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
+	whID, err := s.resolveWarehouseIDForOutlet(ctx, tenantID, req.WarehouseID, req.OutletID)
 	if err != nil {
 		return nil, err
 	}
@@ -669,9 +673,40 @@ func (s *Service) stockAlertNotification(ctx context.Context, tenantID uuid.UUID
 }
 
 // resolveWarehouseID returns the provided warehouse ID or the tenant's default warehouse.
+// Used by S2S / event-driven paths that carry no operating-outlet context.
 func (s *Service) resolveWarehouseID(ctx context.Context, tenantID, warehouseID uuid.UUID) (uuid.UUID, error) {
+	return s.resolveWarehouseIDForOutlet(ctx, tenantID, warehouseID, uuid.Nil)
+}
+
+// resolveWarehouseIDForOutlet resolves the warehouse a stock movement should post to.
+//
+//   - An explicit warehouseID always wins.
+//   - Otherwise, when an operating outlet is in play (X-Outlet-ID), the movement defaults to THAT
+//     outlet's OWN warehouse. This is the key fix for "I stocked it but the POS still shows out of
+//     stock": POS on_hand is outlet-scoped (the outlet's own warehouse ∪ null-outlet warehouses),
+//     so an adjustment/receipt/count that silently defaulted to the tenant's is_default warehouse
+//     (often HQ / the hotel outlet) never surfaced on a different outlet's terminal.
+//   - Falls back to the tenant default only when there is no outlet context, or the outlet has no
+//     warehouse of its own.
+func (s *Service) resolveWarehouseIDForOutlet(ctx context.Context, tenantID, warehouseID, outletID uuid.UUID) (uuid.UUID, error) {
 	if warehouseID != uuid.Nil {
 		return warehouseID, nil
+	}
+	if outletID != uuid.Nil {
+		wh, err := s.client.Warehouse.Query().
+			Where(
+				warehouse.TenantID(tenantID),
+				warehouse.OutletIDEQ(outletID),
+				warehouse.IsActive(true),
+			).
+			First(ctx)
+		if err == nil {
+			return wh.ID, nil
+		}
+		if !ent.IsNotFound(err) {
+			return uuid.Nil, fmt.Errorf("stock: query outlet warehouse: %w", err)
+		}
+		// Outlet has no warehouse of its own → fall through to the tenant default.
 	}
 	wh, err := s.client.Warehouse.Query().
 		Where(

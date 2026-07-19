@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,8 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
@@ -400,6 +403,28 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 // by the manual multi-line GRN-post endpoint above and ReceivePurchaseOrder's auto-generated
 // "receive everything now" GRN, so BOTH paths record a real goods receipt and post to the
 // ledger identically — no divergent, ad-hoc stock-bump-only path.
+// resolveReceiptWarehouse picks a warehouse for a GRN that specified none: the operating outlet's
+// own warehouse (from the X-Outlet-ID context) first, then the tenant default. Mirrors the stock
+// service's outlet-aware resolution so receipts surface on the receiving outlet's POS terminal.
+// Returns uuid.Nil when nothing resolves.
+func (h *InventoryExtrasHandler) resolveReceiptWarehouse(ctx context.Context, tenantID uuid.UUID) uuid.UUID {
+	if outletStr := invmiddleware.GetOutletID(ctx); outletStr != "" {
+		if oid, perr := uuid.Parse(outletStr); perr == nil {
+			if wh, e := h.orm.Warehouse.Query().
+				Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletIDEQ(oid), entwarehouse.IsActive(true)).
+				First(ctx); e == nil {
+				return wh.ID
+			}
+		}
+	}
+	if wh, e := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID), entwarehouse.IsDefault(true), entwarehouse.IsActive(true)).
+		First(ctx); e == nil {
+		return wh.ID
+	}
+	return uuid.Nil
+}
+
 func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenantID uuid.UUID, g *ent.GoodsReceipt, po *ent.PurchaseOrder) (fully bool, err error) {
 	grnLines, _ := h.orm.GoodsReceiptLine.Query().Where(entgrl.GoodsReceiptID(g.ID)).All(ctx)
 
@@ -409,6 +434,15 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	}
 	if g.WarehouseID != nil {
 		warehouseID = *g.WarehouseID
+	}
+	// Neither PO nor GRN carried a warehouse → default to the operating outlet's own warehouse
+	// (from X-Outlet-ID), then the tenant default. Prevents the receipt landing on the zero-UUID
+	// warehouse (invisible to every outlet's POS on_hand).
+	if warehouseID == uuid.Nil {
+		warehouseID = h.resolveReceiptWarehouse(ctx, tenantID)
+	}
+	if warehouseID == uuid.Nil {
+		return false, fmt.Errorf("goods receipt: no warehouse resolved for tenant %s", tenantID)
 	}
 
 	// Lot-tracking + shelf-life per received item, so we can create FIFO/FEFO lot layers on post.
