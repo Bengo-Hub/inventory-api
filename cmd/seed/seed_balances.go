@@ -57,7 +57,18 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID, s
 		}
 	}
 	ucBySKU := useCaseBySKU(slug)
-	targetWarehouse := func(sku string) *ent.Warehouse {
+	targetWarehouse := func(sku string, itemType entitem.Type) *ent.Warehouse {
+		// Manufacturing RAW MATERIALS (INGREDIENT) mis-grouped under a retail vertical — e.g. the
+		// detergent chemicals (Caustic Soda, SLES, Dye…) which share the RETAIL group with the
+		// finished products they make — belong in the MANUFACTURING warehouse, NOT on the
+		// supermarket shelf. seedManufacturingStock stocks them there; routing them to retail too
+		// double-stocked them and polluted the retail catalog. Finished goods (GOODS/RECIPE) in
+		// the same group still route to their retail outlet below.
+		if itemType == entitem.TypeINGREDIENT && ucBySKU[sku] == entitem.UseCaseRETAIL {
+			if w, ok := whByUseCase["manufacturing"]; ok {
+				return w
+			}
+		}
 		var uc string
 		switch ucBySKU[sku] {
 		case entitem.UseCaseRETAIL:
@@ -108,7 +119,7 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID, s
 			return fmt.Errorf("find item %s: %w", def.SKU, err)
 		}
 
-		targetWh := targetWarehouse(def.SKU)
+		targetWh := targetWarehouse(def.SKU, def.ItemType)
 		// Earlier seed runs parked outlet-specific goods in the default warehouse; a stale
 		// EMPTY row there keeps outlet separation hiding the item from its real outlet, so
 		// drop zero-quantity rows sitting in the wrong warehouse before (re)seeding.

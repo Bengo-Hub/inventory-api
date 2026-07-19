@@ -79,6 +79,12 @@ func (Warehouse) Indexes() []ent.Index {
 		index.Fields("tenant_id", "code").Unique(),
 		index.Fields("tenant_id", "is_default"),
 		index.Fields("tenant_id", "is_active"),
-		index.Fields("tenant_id", "outlet_id"),
+		// UNIQUE: one warehouse per (tenant, outlet). The auth.outlet mirror is driven by two
+		// concurrent paths (NATS subscriber + startup reconcile) whose query-then-create race
+		// otherwise minted duplicate warehouses for one outlet (the "two Demo Grand Hotel"
+		// bug). Postgres treats NULLs as distinct, so the seed's outlet-less MAIN warehouse
+		// (outlet_id IS NULL) is unaffected; branch_subscriber's create now catches the
+		// constraint error and falls through to update.
+		index.Fields("tenant_id", "outlet_id").Unique(),
 	}
 }
