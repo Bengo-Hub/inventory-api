@@ -426,6 +426,16 @@ func (h *InventoryHandler) CreateReservation(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Outlet-scope the reservation to the operating outlet's warehouse when the body carries no
+	// explicit outlet/warehouse (X-Outlet-ID forwarded by S2S callers). Mirrors RecordConsumption.
+	if req.OutletID == uuid.Nil && req.WarehouseID == uuid.Nil {
+		if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+			if oid, perr := uuid.Parse(outletStr); perr == nil {
+				req.OutletID = oid
+			}
+		}
+	}
+
 	result, err := h.stockSvc.CreateReservation(r.Context(), tenantID, req)
 	if err != nil {
 		h.log.Error("create reservation failed", zap.Error(err))
