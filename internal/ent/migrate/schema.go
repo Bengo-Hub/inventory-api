@@ -60,6 +60,8 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "approved", "rejected", "cancelled"}, Default: "pending"},
 		{Name: "current_sequence", Type: field.TypeInt, Default: 1},
 		{Name: "submitted_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "payload", Type: field.TypeJSON, Nullable: true},
+		{Name: "executed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "decided_at", Type: field.TypeTime, Nullable: true},

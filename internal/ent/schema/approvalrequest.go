@@ -37,6 +37,15 @@ func (ApprovalRequest) Fields() []ent.Field {
 			Default("pending"),
 		field.Int("current_sequence").Default(1).Comment("Sequence of the step awaiting action"),
 		field.UUID("submitted_by", uuid.UUID{}).Optional().Nillable(),
+		// payload carries the effecting action's replay parameters for gates that mutate state
+		// only AFTER sign-off (e.g. a large stock adjustment): the gated request body is stashed
+		// here on submission and replayed by the approval-execution path the moment the request is
+		// approved, so approving actually posts the stock. Empty for documents (PO/requisition/
+		// stock-count) that persist their own state and re-derive the effect from the object_id.
+		field.JSON("payload", map[string]any{}).Optional().
+			Comment("Effecting-action parameters replayed when the request is approved (e.g. a gated stock adjustment's sku/qty/warehouse)"),
+		field.Time("executed_at").Optional().Nillable().
+			Comment("When the approved effect was applied (idempotency guard so a payload-bearing action posts exactly once)"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.Time("decided_at").Optional().Nillable().Comment("When the request reached a terminal state"),

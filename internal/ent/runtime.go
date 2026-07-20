@@ -124,11 +124,11 @@ func init() {
 	// approvalrequest.DefaultCurrentSequence holds the default value on creation for the current_sequence field.
 	approvalrequest.DefaultCurrentSequence = approvalrequestDescCurrentSequence.Default.(int)
 	// approvalrequestDescCreatedAt is the schema descriptor for created_at field.
-	approvalrequestDescCreatedAt := approvalrequestFields[10].Descriptor()
+	approvalrequestDescCreatedAt := approvalrequestFields[12].Descriptor()
 	// approvalrequest.DefaultCreatedAt holds the default value on creation for the created_at field.
 	approvalrequest.DefaultCreatedAt = approvalrequestDescCreatedAt.Default.(func() time.Time)
 	// approvalrequestDescUpdatedAt is the schema descriptor for updated_at field.
-	approvalrequestDescUpdatedAt := approvalrequestFields[11].Descriptor()
+	approvalrequestDescUpdatedAt := approvalrequestFields[13].Descriptor()
 	// approvalrequest.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	approvalrequest.DefaultUpdatedAt = approvalrequestDescUpdatedAt.Default.(func() time.Time)
 	// approvalrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

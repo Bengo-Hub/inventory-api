@@ -1206,6 +1206,8 @@ type ApprovalRequestMutation struct {
 	current_sequence    *int
 	addcurrent_sequence *int
 	submitted_by        *uuid.UUID
+	payload             *map[string]interface{}
+	executed_at         *time.Time
 	created_at          *time.Time
 	updated_at          *time.Time
 	decided_at          *time.Time
@@ -1725,6 +1727,104 @@ func (m *ApprovalRequestMutation) ResetSubmittedBy() {
 	delete(m.clearedFields, approvalrequest.FieldSubmittedBy)
 }
 
+// SetPayload sets the "payload" field.
+func (m *ApprovalRequestMutation) SetPayload(value map[string]interface{}) {
+	m.payload = &value
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *ApprovalRequestMutation) Payload() (r map[string]interface{}, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the ApprovalRequest entity.
+// If the ApprovalRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApprovalRequestMutation) OldPayload(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (m *ApprovalRequestMutation) ClearPayload() {
+	m.payload = nil
+	m.clearedFields[approvalrequest.FieldPayload] = struct{}{}
+}
+
+// PayloadCleared returns if the "payload" field was cleared in this mutation.
+func (m *ApprovalRequestMutation) PayloadCleared() bool {
+	_, ok := m.clearedFields[approvalrequest.FieldPayload]
+	return ok
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *ApprovalRequestMutation) ResetPayload() {
+	m.payload = nil
+	delete(m.clearedFields, approvalrequest.FieldPayload)
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (m *ApprovalRequestMutation) SetExecutedAt(t time.Time) {
+	m.executed_at = &t
+}
+
+// ExecutedAt returns the value of the "executed_at" field in the mutation.
+func (m *ApprovalRequestMutation) ExecutedAt() (r time.Time, exists bool) {
+	v := m.executed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecutedAt returns the old "executed_at" field's value of the ApprovalRequest entity.
+// If the ApprovalRequest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApprovalRequestMutation) OldExecutedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecutedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecutedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecutedAt: %w", err)
+	}
+	return oldValue.ExecutedAt, nil
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (m *ApprovalRequestMutation) ClearExecutedAt() {
+	m.executed_at = nil
+	m.clearedFields[approvalrequest.FieldExecutedAt] = struct{}{}
+}
+
+// ExecutedAtCleared returns if the "executed_at" field was cleared in this mutation.
+func (m *ApprovalRequestMutation) ExecutedAtCleared() bool {
+	_, ok := m.clearedFields[approvalrequest.FieldExecutedAt]
+	return ok
+}
+
+// ResetExecutedAt resets all changes to the "executed_at" field.
+func (m *ApprovalRequestMutation) ResetExecutedAt() {
+	m.executed_at = nil
+	delete(m.clearedFields, approvalrequest.FieldExecutedAt)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *ApprovalRequestMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1934,7 +2034,7 @@ func (m *ApprovalRequestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ApprovalRequestMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.tenant_id != nil {
 		fields = append(fields, approvalrequest.FieldTenantID)
 	}
@@ -1961,6 +2061,12 @@ func (m *ApprovalRequestMutation) Fields() []string {
 	}
 	if m.submitted_by != nil {
 		fields = append(fields, approvalrequest.FieldSubmittedBy)
+	}
+	if m.payload != nil {
+		fields = append(fields, approvalrequest.FieldPayload)
+	}
+	if m.executed_at != nil {
+		fields = append(fields, approvalrequest.FieldExecutedAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, approvalrequest.FieldCreatedAt)
@@ -1997,6 +2103,10 @@ func (m *ApprovalRequestMutation) Field(name string) (ent.Value, bool) {
 		return m.CurrentSequence()
 	case approvalrequest.FieldSubmittedBy:
 		return m.SubmittedBy()
+	case approvalrequest.FieldPayload:
+		return m.Payload()
+	case approvalrequest.FieldExecutedAt:
+		return m.ExecutedAt()
 	case approvalrequest.FieldCreatedAt:
 		return m.CreatedAt()
 	case approvalrequest.FieldUpdatedAt:
@@ -2030,6 +2140,10 @@ func (m *ApprovalRequestMutation) OldField(ctx context.Context, name string) (en
 		return m.OldCurrentSequence(ctx)
 	case approvalrequest.FieldSubmittedBy:
 		return m.OldSubmittedBy(ctx)
+	case approvalrequest.FieldPayload:
+		return m.OldPayload(ctx)
+	case approvalrequest.FieldExecutedAt:
+		return m.OldExecutedAt(ctx)
 	case approvalrequest.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case approvalrequest.FieldUpdatedAt:
@@ -2107,6 +2221,20 @@ func (m *ApprovalRequestMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubmittedBy(v)
+		return nil
+	case approvalrequest.FieldPayload:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case approvalrequest.FieldExecutedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecutedAt(v)
 		return nil
 	case approvalrequest.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -2195,6 +2323,12 @@ func (m *ApprovalRequestMutation) ClearedFields() []string {
 	if m.FieldCleared(approvalrequest.FieldSubmittedBy) {
 		fields = append(fields, approvalrequest.FieldSubmittedBy)
 	}
+	if m.FieldCleared(approvalrequest.FieldPayload) {
+		fields = append(fields, approvalrequest.FieldPayload)
+	}
+	if m.FieldCleared(approvalrequest.FieldExecutedAt) {
+		fields = append(fields, approvalrequest.FieldExecutedAt)
+	}
 	if m.FieldCleared(approvalrequest.FieldDecidedAt) {
 		fields = append(fields, approvalrequest.FieldDecidedAt)
 	}
@@ -2220,6 +2354,12 @@ func (m *ApprovalRequestMutation) ClearField(name string) error {
 		return nil
 	case approvalrequest.FieldSubmittedBy:
 		m.ClearSubmittedBy()
+		return nil
+	case approvalrequest.FieldPayload:
+		m.ClearPayload()
+		return nil
+	case approvalrequest.FieldExecutedAt:
+		m.ClearExecutedAt()
 		return nil
 	case approvalrequest.FieldDecidedAt:
 		m.ClearDecidedAt()
@@ -2258,6 +2398,12 @@ func (m *ApprovalRequestMutation) ResetField(name string) error {
 		return nil
 	case approvalrequest.FieldSubmittedBy:
 		m.ResetSubmittedBy()
+		return nil
+	case approvalrequest.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case approvalrequest.FieldExecutedAt:
+		m.ResetExecutedAt()
 		return nil
 	case approvalrequest.FieldCreatedAt:
 		m.ResetCreatedAt()

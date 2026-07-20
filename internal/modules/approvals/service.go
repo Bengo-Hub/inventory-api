@@ -81,6 +81,15 @@ func (s *Service) MatchRule(ctx context.Context, tenantID uuid.UUID, module stri
 // object is cancelled first. Returns (request, requiresApproval, error); when no
 // rule matches requiresApproval is false and request is nil.
 func (s *Service) Submit(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID) (*ent.ApprovalRequest, bool, error) {
+	return s.SubmitWithPayload(ctx, tenantID, module, objectID, objectRef, amount, submittedBy, nil)
+}
+
+// SubmitWithPayload is Submit plus an effecting-action payload persisted on the
+// request. The payload is replayed by the approval-execution path when the request
+// is approved — used by gates that mutate state only AFTER sign-off (a large stock
+// adjustment stashes its sku/qty/warehouse here so approving actually posts the
+// stock). Pass nil for documents that persist their own state.
+func (s *Service) SubmitWithPayload(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any) (*ent.ApprovalRequest, bool, error) {
 	rule, err := s.MatchRule(ctx, tenantID, module, amount)
 	if err != nil {
 		return nil, false, err
@@ -115,6 +124,9 @@ func (s *Service) Submit(ctx context.Context, tenantID uuid.UUID, module string,
 		SetCurrentSequence(steps[0].Sequence)
 	if submittedBy != nil {
 		rc = rc.SetSubmittedBy(*submittedBy)
+	}
+	if len(payload) > 0 {
+		rc = rc.SetPayload(payload)
 	}
 	req, err := rc.Save(ctx)
 	if err != nil {
@@ -206,6 +218,36 @@ func (s *Service) Act(ctx context.Context, tenantID, requestID, userID uuid.UUID
 		SetStatus(entreq.StatusApproved).
 		SetDecidedAt(now).
 		Save(ctx)
+}
+
+// ClaimExecution atomically marks an approved request as executed, returning true
+// only for the caller that wins the claim. It is a compare-and-set on executed_at:
+// the UPDATE matches only rows whose executed_at is still null, so exactly one
+// caller ever sees ok=true even if the approval-execution path and a legacy client
+// retry race. Callers apply the effecting action (post the stock) only when ok.
+func (s *Service) ClaimExecution(ctx context.Context, tenantID, requestID uuid.UUID) (bool, error) {
+	n, err := s.orm.ApprovalRequest.Update().
+		Where(
+			entreq.ID(requestID),
+			entreq.TenantID(tenantID),
+			entreq.ExecutedAtIsNil(),
+		).
+		SetExecutedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
+}
+
+// ReleaseExecution clears the execution claim so a failed effecting action can be
+// retried by a later approval-execution pass (the approval itself stays approved).
+func (s *Service) ReleaseExecution(ctx context.Context, tenantID, requestID uuid.UUID) error {
+	_, err := s.orm.ApprovalRequest.Update().
+		Where(entreq.ID(requestID), entreq.TenantID(tenantID)).
+		ClearExecutedAt().
+		Save(ctx)
+	return err
 }
 
 // Latest returns the most recent approval request for an object (nil if none).

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	entreq "github.com/bengobox/inventory-service/internal/ent/requisition"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // approvals returns an approval engine bound to this handler's Ent client.
@@ -558,10 +560,128 @@ func (h *InventoryExtrasHandler) applyApprovalDecision(w http.ResponseWriter, r 
 		return nil, false
 	}
 	h.syncDocFromApproval(r, updated)
+	// Post the approved effect the moment sign-off completes: a gated stock adjustment replays
+	// its stashed payload; a stock count posts its variances. Without this, approving a stock
+	// movement flips the request to "approved" but never moves stock.
+	if updated.Status == areq.StatusApproved {
+		h.executeApprovedAction(r.Context(), updated, userID)
+	}
 	h.publishOutbox(r.Context(), tenantID, "approval_request", updated.ID, "inventory.approval."+string(updated.Status), map[string]any{
 		"id": updated.ID, "module": updated.Module, "object_id": updated.ObjectID, "status": updated.Status,
 	})
 	return updated, true
+}
+
+// executeApprovedAction applies the real-world effect of a just-approved request for
+// modules whose stock movement is deferred until sign-off. It is idempotent via
+// ClaimExecution (a compare-and-set on executed_at), so the effect posts exactly once
+// even if this races a legacy client retry. Modules that carry their own state
+// (purchase_order, requisition) are handled by syncDocFromApproval and no-op here.
+func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req *ent.ApprovalRequest, approver uuid.UUID) {
+	switch req.Module {
+	case areq.ModuleStockAdjustment, areq.ModuleStockWriteoff:
+		if h.stockSvc == nil {
+			h.log.Warn("cannot post approved adjustment: stock service not wired", zap.String("request_id", req.ID.String()))
+			return
+		}
+		adjReq, ok := adjustmentRequestFromPayload(req.Payload)
+		if !ok {
+			h.log.Error("approved adjustment has no replayable payload; stock not posted",
+				zap.String("request_id", req.ID.String()), zap.String("object_id", req.ObjectID.String()))
+			return
+		}
+		won, err := h.approvals().ClaimExecution(ctx, req.TenantID, req.ID)
+		if err != nil {
+			h.log.Error("claim adjustment execution failed", zap.String("request_id", req.ID.String()), zap.Error(err))
+			return
+		}
+		if !won {
+			return // already posted by a prior/racing pass
+		}
+		result, err := h.stockSvc.AdjustStock(ctx, req.TenantID, adjReq)
+		if err != nil {
+			// Release the claim so a later approval-execution pass can retry rather than the
+			// adjustment being lost with the request stuck "approved but unposted".
+			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
+			h.log.Error("post approved adjustment failed", zap.String("request_id", req.ID.String()), zap.String("sku", adjReq.SKU), zap.Error(err))
+			return
+		}
+		h.log.Info("posted approved stock adjustment",
+			zap.String("request_id", req.ID.String()), zap.String("sku", adjReq.SKU),
+			zap.Float64("adjustment", adjReq.Adjustment), zap.Float64("on_hand", result.OnHand))
+		h.publishOutbox(ctx, req.TenantID, "approval_request", req.ID, "inventory.approval.executed", map[string]any{
+			"id": req.ID, "module": req.Module, "sku": adjReq.SKU, "quantity_after": result.QtyAfter,
+		})
+
+	case areq.ModuleStockCount:
+		if h.stockSvc == nil {
+			h.log.Warn("cannot post approved stock count: stock service not wired", zap.String("request_id", req.ID.String()))
+			return
+		}
+		won, err := h.approvals().ClaimExecution(ctx, req.TenantID, req.ID)
+		if err != nil {
+			h.log.Error("claim stock-count execution failed", zap.String("request_id", req.ID.String()), zap.Error(err))
+			return
+		}
+		if !won {
+			return
+		}
+		result, err := h.stockSvc.PostStockCountVariances(ctx, req.TenantID, req.ObjectID, approver)
+		if err != nil {
+			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
+			h.log.Error("post approved stock count failed", zap.String("request_id", req.ID.String()), zap.String("count_id", req.ObjectID.String()), zap.Error(err))
+			return
+		}
+		if len(result.FailedSKUs) > 0 {
+			// Some lines didn't post — release so the operator's next approve retries them.
+			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
+		}
+		h.log.Info("posted approved stock count",
+			zap.String("request_id", req.ID.String()), zap.String("count_id", req.ObjectID.String()),
+			zap.Int("posted_lines", result.Posted), zap.Int("failed_lines", len(result.FailedSKUs)))
+		h.publishOutbox(ctx, req.TenantID, "approval_request", req.ID, "inventory.approval.executed", map[string]any{
+			"id": req.ID, "module": req.Module, "count_id": req.ObjectID, "posted_lines": result.Posted,
+		})
+	}
+}
+
+// adjustmentRequestFromPayload rebuilds an AdjustStockRequest from the map persisted on
+// a gated adjustment's ApprovalRequest. Returns ok=false when the payload is missing or
+// lacks the minimum fields to post (sku + non-zero adjustment).
+func adjustmentRequestFromPayload(payload map[string]any) (stock.AdjustStockRequest, bool) {
+	var req stock.AdjustStockRequest
+	if payload == nil {
+		return req, false
+	}
+	req.SKU, _ = payload["sku"].(string)
+	req.Adjustment, _ = payload["adjustment"].(float64)
+	req.Reason, _ = payload["reason"].(string)
+	req.Reference, _ = payload["reference"].(string)
+	req.Notes, _ = payload["notes"].(string)
+	if s, _ := payload["adjusted_by"].(string); s != "" {
+		if id, err := uuid.Parse(s); err == nil {
+			req.AdjustedBy = id
+		}
+	}
+	if s, _ := payload["warehouse_id"].(string); s != "" {
+		if id, err := uuid.Parse(s); err == nil {
+			req.WarehouseID = id
+		}
+	}
+	if s, _ := payload["outlet_id"].(string); s != "" {
+		if id, err := uuid.Parse(s); err == nil {
+			req.OutletID = id
+		}
+	}
+	if s, _ := payload["unit_id"].(string); s != "" {
+		if id, err := uuid.Parse(s); err == nil {
+			req.UnitID = &id
+		}
+	}
+	if req.SKU == "" || req.Adjustment == 0 {
+		return req, false
+	}
+	return req, true
 }
 
 // runApprovalAction applies a decision and writes the updated request DTO (used by

@@ -188,6 +188,38 @@ func (_u *ApprovalRequestUpdate) ClearSubmittedBy() *ApprovalRequestUpdate {
 	return _u
 }
 
+// SetPayload sets the "payload" field.
+func (_u *ApprovalRequestUpdate) SetPayload(v map[string]interface{}) *ApprovalRequestUpdate {
+	_u.mutation.SetPayload(v)
+	return _u
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (_u *ApprovalRequestUpdate) ClearPayload() *ApprovalRequestUpdate {
+	_u.mutation.ClearPayload()
+	return _u
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (_u *ApprovalRequestUpdate) SetExecutedAt(v time.Time) *ApprovalRequestUpdate {
+	_u.mutation.SetExecutedAt(v)
+	return _u
+}
+
+// SetNillableExecutedAt sets the "executed_at" field if the given value is not nil.
+func (_u *ApprovalRequestUpdate) SetNillableExecutedAt(v *time.Time) *ApprovalRequestUpdate {
+	if v != nil {
+		_u.SetExecutedAt(*v)
+	}
+	return _u
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (_u *ApprovalRequestUpdate) ClearExecutedAt() *ApprovalRequestUpdate {
+	_u.mutation.ClearExecutedAt()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ApprovalRequestUpdate) SetUpdatedAt(v time.Time) *ApprovalRequestUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -359,6 +391,18 @@ func (_u *ApprovalRequestUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.SubmittedByCleared() {
 		_spec.ClearField(approvalrequest.FieldSubmittedBy, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.Payload(); ok {
+		_spec.SetField(approvalrequest.FieldPayload, field.TypeJSON, value)
+	}
+	if _u.mutation.PayloadCleared() {
+		_spec.ClearField(approvalrequest.FieldPayload, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.ExecutedAt(); ok {
+		_spec.SetField(approvalrequest.FieldExecutedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExecutedAtCleared() {
+		_spec.ClearField(approvalrequest.FieldExecutedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(approvalrequest.FieldUpdatedAt, field.TypeTime, value)
@@ -592,6 +636,38 @@ func (_u *ApprovalRequestUpdateOne) ClearSubmittedBy() *ApprovalRequestUpdateOne
 	return _u
 }
 
+// SetPayload sets the "payload" field.
+func (_u *ApprovalRequestUpdateOne) SetPayload(v map[string]interface{}) *ApprovalRequestUpdateOne {
+	_u.mutation.SetPayload(v)
+	return _u
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (_u *ApprovalRequestUpdateOne) ClearPayload() *ApprovalRequestUpdateOne {
+	_u.mutation.ClearPayload()
+	return _u
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (_u *ApprovalRequestUpdateOne) SetExecutedAt(v time.Time) *ApprovalRequestUpdateOne {
+	_u.mutation.SetExecutedAt(v)
+	return _u
+}
+
+// SetNillableExecutedAt sets the "executed_at" field if the given value is not nil.
+func (_u *ApprovalRequestUpdateOne) SetNillableExecutedAt(v *time.Time) *ApprovalRequestUpdateOne {
+	if v != nil {
+		_u.SetExecutedAt(*v)
+	}
+	return _u
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (_u *ApprovalRequestUpdateOne) ClearExecutedAt() *ApprovalRequestUpdateOne {
+	_u.mutation.ClearExecutedAt()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *ApprovalRequestUpdateOne) SetUpdatedAt(v time.Time) *ApprovalRequestUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -793,6 +869,18 @@ func (_u *ApprovalRequestUpdateOne) sqlSave(ctx context.Context) (_node *Approva
 	}
 	if _u.mutation.SubmittedByCleared() {
 		_spec.ClearField(approvalrequest.FieldSubmittedBy, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.Payload(); ok {
+		_spec.SetField(approvalrequest.FieldPayload, field.TypeJSON, value)
+	}
+	if _u.mutation.PayloadCleared() {
+		_spec.ClearField(approvalrequest.FieldPayload, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.ExecutedAt(); ok {
+		_spec.SetField(approvalrequest.FieldExecutedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExecutedAtCleared() {
+		_spec.ClearField(approvalrequest.FieldExecutedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(approvalrequest.FieldUpdatedAt, field.TypeTime, value)

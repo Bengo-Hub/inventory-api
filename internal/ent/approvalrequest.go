@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -36,6 +37,10 @@ type ApprovalRequest struct {
 	CurrentSequence int `json:"current_sequence,omitempty"`
 	// SubmittedBy holds the value of the "submitted_by" field.
 	SubmittedBy *uuid.UUID `json:"submitted_by,omitempty"`
+	// Effecting-action parameters replayed when the request is approved (e.g. a gated stock adjustment's sku/qty/warehouse)
+	Payload map[string]interface{} `json:"payload,omitempty"`
+	// When the approved effect was applied (idempotency guard so a payload-bearing action posts exactly once)
+	ExecutedAt *time.Time `json:"executed_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -73,13 +78,15 @@ func (*ApprovalRequest) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case approvalrequest.FieldRuleID, approvalrequest.FieldSubmittedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case approvalrequest.FieldPayload:
+			values[i] = new([]byte)
 		case approvalrequest.FieldAmount:
 			values[i] = new(sql.NullFloat64)
 		case approvalrequest.FieldCurrentSequence:
 			values[i] = new(sql.NullInt64)
 		case approvalrequest.FieldModule, approvalrequest.FieldObjectReference, approvalrequest.FieldStatus:
 			values[i] = new(sql.NullString)
-		case approvalrequest.FieldCreatedAt, approvalrequest.FieldUpdatedAt, approvalrequest.FieldDecidedAt:
+		case approvalrequest.FieldExecutedAt, approvalrequest.FieldCreatedAt, approvalrequest.FieldUpdatedAt, approvalrequest.FieldDecidedAt:
 			values[i] = new(sql.NullTime)
 		case approvalrequest.FieldID, approvalrequest.FieldTenantID, approvalrequest.FieldObjectID:
 			values[i] = new(uuid.UUID)
@@ -159,6 +166,21 @@ func (_m *ApprovalRequest) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SubmittedBy = new(uuid.UUID)
 				*_m.SubmittedBy = *value.S.(*uuid.UUID)
+			}
+		case approvalrequest.FieldPayload:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field payload", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Payload); err != nil {
+					return fmt.Errorf("unmarshal field payload: %w", err)
+				}
+			}
+		case approvalrequest.FieldExecutedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field executed_at", values[i])
+			} else if value.Valid {
+				_m.ExecutedAt = new(time.Time)
+				*_m.ExecutedAt = value.Time
 			}
 		case approvalrequest.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -249,6 +271,14 @@ func (_m *ApprovalRequest) String() string {
 	if v := _m.SubmittedBy; v != nil {
 		builder.WriteString("submitted_by=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("payload=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString(", ")
+	if v := _m.ExecutedAt; v != nil {
+		builder.WriteString("executed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")

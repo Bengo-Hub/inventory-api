@@ -34,6 +34,10 @@ const (
 	FieldCurrentSequence = "current_sequence"
 	// FieldSubmittedBy holds the string denoting the submitted_by field in the database.
 	FieldSubmittedBy = "submitted_by"
+	// FieldPayload holds the string denoting the payload field in the database.
+	FieldPayload = "payload"
+	// FieldExecutedAt holds the string denoting the executed_at field in the database.
+	FieldExecutedAt = "executed_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -65,6 +69,8 @@ var Columns = []string{
 	FieldStatus,
 	FieldCurrentSequence,
 	FieldSubmittedBy,
+	FieldPayload,
+	FieldExecutedAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldDecidedAt,
@@ -209,6 +215,11 @@ func ByCurrentSequence(opts ...sql.OrderTermOption) OrderOption {
 // BySubmittedBy orders the results by the submitted_by field.
 func BySubmittedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubmittedBy, opts...).ToFunc()
+}
+
+// ByExecutedAt orders the results by the executed_at field.
+func ByExecutedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecutedAt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

@@ -454,65 +454,34 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	posted, totalVar := 0, 0.0
-	failed := make([]string, 0)
-	for _, ln := range lines {
-		if ln.CountedQty == nil || ln.Variance == nil || *ln.Variance == 0 {
-			continue
-		}
-		// The reviewer's classification (wastage/damaged, pilferage/shrinkage, found, …)
-		// becomes the adjustment reason; unclassified lines post as count_variance. The
-		// note records the direction so reports read "shortage"/"surplus" without
-		// decoding signs.
-		reason := ln.Reason
-		if reason == "" || !varianceReasons[reason] {
-			reason = "count_variance"
-		}
-		direction := "surplus found"
-		if *ln.Variance < 0 {
-			direction = "shortage"
-		}
-		_, adjErr := h.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
-			SKU:         ln.Sku,
-			Adjustment:  *ln.Variance,
-			Reason:      reason,
-			Reference:   "stock-count:" + countID.String(),
-			Notes:       "stock take " + direction + " — physical count reconciliation",
-			AdjustedBy:  approver,
-			WarehouseID: count.WarehouseID,
-		})
-		if adjErr != nil {
-			h.log.Warn("post count variance failed", zap.String("sku", ln.Sku), zap.Error(adjErr))
-			failed = append(failed, ln.Sku)
-			continue
-		}
-		_, _ = ln.Update().SetPosted(true).Save(ctx)
-		posted++
-		totalVar += *ln.Variance
+	// Post every unposted variance line (and finalize the count when all post). Shared with
+	// the approval-execution path so a matrix-approved count posts identically — the Posted
+	// flag keeps it idempotent across the RBAC approve and the approval-matrix sign-off.
+	result, err := h.stockSvc.PostStockCountVariances(ctx, tenantID, countID, approver)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to post count variances")
+		return
 	}
+	posted, totalVar := result.Posted, result.TotalVariance
 
-	// All-or-nothing: only mark the count approved once EVERY variance line has posted. Posted lines
-	// are flagged Posted(true), so re-invoking Approve is idempotent (it skips them) — the operator
-	// fixes the failed SKUs and re-approves to post the remainder, instead of the count being marked
-	// approved with some variances silently dropped.
-	if len(failed) > 0 {
+	// All-or-nothing: the count is marked approved only once EVERY variance line has posted. Posted
+	// lines are flagged Posted(true), so re-invoking Approve is idempotent (it skips them) — the
+	// operator fixes the failed SKUs and re-approves to post the remainder, instead of the count
+	// being marked approved with some variances silently dropped.
+	if len(result.FailedSKUs) > 0 {
 		writeJSON(w, http.StatusAccepted, map[string]any{
 			"status":        "partial",
 			"posted_lines":  posted,
-			"failed_skus":   failed,
+			"failed_skus":   result.FailedSKUs,
 			"total_variance": totalVar,
 			"message":       "Some variance lines could not post; resolve them and approve again to finish.",
 		})
 		return
 	}
 
-	updated, err := count.Update().
-		SetStatus("approved").
-		SetApprovedBy(approver).
-		SetApprovedAt(time.Now()).
-		Save(ctx)
+	updated, err := h.orm.StockCount.Query().Where(entcount.ID(countID), entcount.TenantID(tenantID)).Only(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to approve count")
+		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to load approved count")
 		return
 	}
 
