@@ -325,6 +325,20 @@ func (_c *ItemCreate) SetNillableNonBillable(v *bool) *ItemCreate {
 	return _c
 }
 
+// SetNotForSale sets the "not_for_sale" field.
+func (_c *ItemCreate) SetNotForSale(v bool) *ItemCreate {
+	_c.mutation.SetNotForSale(v)
+	return _c
+}
+
+// SetNillableNotForSale sets the "not_for_sale" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableNotForSale(v *bool) *ItemCreate {
+	if v != nil {
+		_c.SetNotForSale(*v)
+	}
+	return _c
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_c *ItemCreate) SetUnitID(v uuid.UUID) *ItemCreate {
 	_c.mutation.SetUnitID(v)
@@ -1325,6 +1339,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultNonBillable
 		_c.mutation.SetNonBillable(v)
 	}
+	if _, ok := _c.mutation.NotForSale(); !ok {
+		v := item.DefaultNotForSale
+		_c.mutation.SetNotForSale(v)
+	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		v := item.DefaultType
 		_c.mutation.SetType(v)
@@ -1443,6 +1461,9 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.NonBillable(); !ok {
 		return &ValidationError{Name: "non_billable", err: errors.New(`ent: missing required field "Item.non_billable"`)}
+	}
+	if _, ok := _c.mutation.NotForSale(); !ok {
+		return &ValidationError{Name: "not_for_sale", err: errors.New(`ent: missing required field "Item.not_for_sale"`)}
 	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Item.type"`)}
@@ -1646,6 +1667,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.NonBillable(); ok {
 		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
 		_node.NonBillable = value
+	}
+	if value, ok := _c.mutation.NotForSale(); ok {
+		_spec.SetField(item.FieldNotForSale, field.TypeBool, value)
+		_node.NotForSale = value
 	}
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
@@ -2519,6 +2544,18 @@ func (u *ItemUpsert) SetNonBillable(v bool) *ItemUpsert {
 // UpdateNonBillable sets the "non_billable" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateNonBillable() *ItemUpsert {
 	u.SetExcluded(item.FieldNonBillable)
+	return u
+}
+
+// SetNotForSale sets the "not_for_sale" field.
+func (u *ItemUpsert) SetNotForSale(v bool) *ItemUpsert {
+	u.Set(item.FieldNotForSale, v)
+	return u
+}
+
+// UpdateNotForSale sets the "not_for_sale" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateNotForSale() *ItemUpsert {
+	u.SetExcluded(item.FieldNotForSale)
 	return u
 }
 
@@ -3871,6 +3908,20 @@ func (u *ItemUpsertOne) SetNonBillable(v bool) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateNonBillable() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateNonBillable()
+	})
+}
+
+// SetNotForSale sets the "not_for_sale" field.
+func (u *ItemUpsertOne) SetNotForSale(v bool) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNotForSale(v)
+	})
+}
+
+// UpdateNotForSale sets the "not_for_sale" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateNotForSale() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNotForSale()
 	})
 }
 
@@ -5538,6 +5589,20 @@ func (u *ItemUpsertBulk) SetNonBillable(v bool) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateNonBillable() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateNonBillable()
+	})
+}
+
+// SetNotForSale sets the "not_for_sale" field.
+func (u *ItemUpsertBulk) SetNotForSale(v bool) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNotForSale(v)
+	})
+}
+
+// UpdateNotForSale sets the "not_for_sale" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateNotForSale() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNotForSale()
 	})
 }
 

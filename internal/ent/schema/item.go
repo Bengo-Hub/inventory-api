@@ -93,6 +93,14 @@ func (Item) Fields() []ent.Field {
 		field.Bool("non_billable").
 			Default(false).
 			Comment("Never charged at POS even if a selling price exists (free accompaniments, supplies); stock still deducts"),
+		// Not-for-sale items are stocked/purchased/counted like any other item but are
+		// EXCLUDED from every sales surface (POS terminal, back-office sales, ordering
+		// storefront): raw ingredients bought pre-portioned, cleaning supplies, internal
+		// consumables. Distinct from non_billable (which still reaches the POS at price 0)
+		// and from is_active=false (which hides the item everywhere including stock).
+		field.Bool("not_for_sale").
+			Default(false).
+			Comment("Excluded from ALL sales surfaces (POS, ordering); still stockable/purchasable — ingredients, internal supplies"),
 		field.UUID("unit_id", uuid.UUID{}).
 			Optional().
 			Nillable().

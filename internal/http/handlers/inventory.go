@@ -45,6 +45,7 @@ type ItemsServicer interface {
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
+	BulkItemAction(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID, action string) (*items.BulkActionResult, error)
 	MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
 	RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
@@ -79,6 +80,7 @@ type StockServicer interface {
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
+	ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error)
 }
 
 // RecipesServicer defines the contract for recipe management.
@@ -227,6 +229,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// called S2S by pos-api's "also update the catalog price" order-line edit.
 		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/price", h.SetItemPrice)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
+		// Bulk multi-select actions (DataTable): delete keeps the delete permission,
+		// status changes (activate/deactivate/not-for-sale) need items.change.
+		inv.With(perm(rbac.PermItemsDelete)).Post("/items/bulk-delete", h.BulkDeleteItems)
+		inv.With(perm(rbac.PermItemsChange)).Post("/items/bulk-status", h.BulkItemStatus)
 		// End-of-Life (EOL): mark hides the item everywhere (is_active=false + end_of_life_at)
 		// and schedules it for hard-delete after the retention window; restore un-marks it. The
 		// EOL listing itself reuses GET /items?status=eol.
@@ -257,6 +263,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// auth here to populate claims before the feature check — otherwise logged-in
 		// users hit a spurious 401 "missing claims".
 		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/adjustments", h.ListAdjustments)
+		// Product stock history — unified per-item ledger (adjustments + purchases +
+		// sales + returns + transfers) with quantities-in/out summary cards. Same
+		// auth/feature gating as the adjustments listing it generalizes.
+		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/items/{sku}/stock-history", h.ItemStockHistory)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)
@@ -1052,6 +1062,21 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	// overrides the plain type filter.
 	if v := r.URL.Query().Get("for_recipe"); v == "1" || strings.EqualFold(v, "true") {
 		ctx = items.WithRecipeInputScope(ctx)
+	}
+	// ?not_for_sale=only|exclude — "only" backs the back-office "Not for selling" filter
+	// checkbox; "exclude" is the sales-surface guarantee (pos-api catalog proxy and
+	// ordering storefront fetch with it so flagged items never leave inventory). Legacy
+	// truthy values ("1"/"true") mean "only" for filter-checkbox ergonomics.
+	switch v := r.URL.Query().Get("not_for_sale"); {
+	case v == "only" || v == "1" || strings.EqualFold(v, "true"):
+		ctx = items.WithNotForSaleFilter(ctx, "only")
+	case v == "exclude" || v == "0" || strings.EqualFold(v, "false"):
+		ctx = items.WithNotForSaleFilter(ctx, "exclude")
+	}
+	// ?sort=<column>&dir=asc|desc — server-driven DataTable sorting over whitelisted
+	// columns (unknown columns silently keep the default SKU order).
+	if sortField := r.URL.Query().Get("sort"); sortField != "" {
+		ctx = items.WithListSort(ctx, sortField, r.URL.Query().Get("dir"))
 	}
 
 	p := pagination.Parse(r)
