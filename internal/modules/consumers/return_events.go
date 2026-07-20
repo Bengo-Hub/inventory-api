@@ -118,6 +118,7 @@ func (c *ReturnEventsConsumer) handlePOSReturn(msg *nats.Msg) {
 		Payload struct {
 			TenantID    string           `json:"tenant_id"`
 			ReturnID    string           `json:"return_id"`
+			OutletID    string           `json:"outlet_id"`
 			WarehouseID string           `json:"warehouse_id"`
 			Lines       []returnLineItem `json:"lines"`
 		} `json:"payload"`
@@ -140,6 +141,12 @@ func (c *ReturnEventsConsumer) handlePOSReturn(msg *nats.Msg) {
 	if envelope.Payload.WarehouseID != "" {
 		warehouseID, _ = uuid.Parse(envelope.Payload.WarehouseID)
 	}
+	// Restock the SELLING outlet's own warehouse when no explicit warehouse_id is carried, so a
+	// return goes back where the item was sold — not the tenant-default warehouse.
+	var outletID uuid.UUID
+	if envelope.Payload.OutletID != "" {
+		outletID, _ = uuid.Parse(envelope.Payload.OutletID)
+	}
 
 	items := make([]stock.RestockItem, 0, len(envelope.Payload.Lines))
 	for _, l := range envelope.Payload.Lines {
@@ -152,7 +159,7 @@ func (c *ReturnEventsConsumer) handlePOSReturn(msg *nats.Msg) {
 	}
 
 	idempKey := fmt.Sprintf("pos-return-%s", envelope.Payload.ReturnID)
-	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, items, idempKey); err != nil {
+	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, outletID, items, idempKey); err != nil {
 		c.log.Error("pos return: restock failed",
 			zap.Error(err),
 			zap.String("return_id", envelope.Payload.ReturnID),
@@ -169,6 +176,7 @@ func (c *ReturnEventsConsumer) handleOrderingReturn(msg *nats.Msg) {
 		Payload struct {
 			TenantID    string           `json:"tenant_id"`
 			ReturnID    string           `json:"return_id"`
+			OutletID    string           `json:"outlet_id"`
 			WarehouseID string           `json:"warehouse_id"`
 			Lines       []returnLineItem `json:"lines"`
 		} `json:"payload"`
@@ -191,6 +199,11 @@ func (c *ReturnEventsConsumer) handleOrderingReturn(msg *nats.Msg) {
 	if envelope.Payload.WarehouseID != "" {
 		warehouseID, _ = uuid.Parse(envelope.Payload.WarehouseID)
 	}
+	// Restock the selling outlet's own warehouse when no explicit warehouse_id is carried.
+	var outletID uuid.UUID
+	if envelope.Payload.OutletID != "" {
+		outletID, _ = uuid.Parse(envelope.Payload.OutletID)
+	}
 
 	items := make([]stock.RestockItem, 0, len(envelope.Payload.Lines))
 	for _, l := range envelope.Payload.Lines {
@@ -203,7 +216,7 @@ func (c *ReturnEventsConsumer) handleOrderingReturn(msg *nats.Msg) {
 	}
 
 	idempKey := fmt.Sprintf("ordering-return-%s", envelope.Payload.ReturnID)
-	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, items, idempKey); err != nil {
+	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, outletID, items, idempKey); err != nil {
 		c.log.Error("ordering return: restock failed",
 			zap.Error(err),
 			zap.String("return_id", envelope.Payload.ReturnID),

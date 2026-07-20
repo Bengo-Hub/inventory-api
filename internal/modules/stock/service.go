@@ -25,9 +25,13 @@ import (
 
 // ReservationRequest matches the ordering-backend client DTO.
 type ReservationRequest struct {
-	TenantID       uuid.UUID         `json:"tenant_id"`
-	OrderID        uuid.UUID         `json:"order_id"`
-	WarehouseID    uuid.UUID         `json:"warehouse_id,omitempty"`
+	TenantID    uuid.UUID `json:"tenant_id"`
+	OrderID     uuid.UUID `json:"order_id"`
+	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
+	// OutletID scopes the reservation to the selling outlet's own warehouse when no explicit
+	// WarehouseID is supplied (same rule as consumption) — an outlet must reserve against its own
+	// stock, not the tenant-default warehouse. uuid.Nil = tenant-default fallback.
+	OutletID       uuid.UUID         `json:"outlet_id,omitempty"`
 	Items          []ReservationItem `json:"items"`
 	ExpiresAt      *time.Time        `json:"expires_at,omitempty"`
 	IdempotencyKey string            `json:"idempotency_key,omitempty"`
@@ -910,7 +914,9 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 // CreateReservation reserves stock for an order within a transaction.
 // If a requested SKU has a recipe, the BOM is exploded and raw ingredients are reserved.
 func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req ReservationRequest) (*ReservationResponse, error) {
-	whID, err := s.resolveWarehouseID(ctx, tenantID, req.WarehouseID)
+	// Outlet-aware (same rule as RecordConsumption): explicit warehouse > selling outlet's own
+	// warehouse > tenant default, so a multi-outlet reservation holds stock in the right place.
+	whID, err := s.resolveWarehouseIDForOutlet(ctx, tenantID, req.WarehouseID, req.OutletID)
 	if err != nil {
 		return nil, err
 	}
@@ -1568,8 +1574,13 @@ type RestockItem struct {
 
 // RestockItems restores stock for returned items, incrementing on_hand and available.
 // Used by return/refund consumers to restock the warehouse after a customer return.
-func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID uuid.UUID, items []RestockItem, idempotencyKey string) error {
-	whID, err := s.resolveWarehouseID(ctx, tenantID, warehouseID)
+//
+// outletID scopes the restock to the SELLING outlet's own warehouse when no explicit warehouseID
+// is supplied (explicit warehouse > outlet's own warehouse > tenant default) — a returned item must
+// go back to the outlet it was sold from, not the tenant-default warehouse. uuid.Nil = legacy
+// tenant-default fallback (manufacturing/production-cancel callers that carry no outlet).
+func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID, outletID uuid.UUID, items []RestockItem, idempotencyKey string) error {
+	whID, err := s.resolveWarehouseIDForOutlet(ctx, tenantID, warehouseID, outletID)
 	if err != nil {
 		return err
 	}

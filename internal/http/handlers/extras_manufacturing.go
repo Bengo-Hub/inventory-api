@@ -598,7 +598,7 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 			}
 		}
 		if fgSKU != "" {
-			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{},
+			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{}, uuid.Nil,
 				[]stock.RestockItem{{SKU: fgSKU, Quantity: body.ActualQuantity}},
 				"production-complete-"+updated.ID.String()); err != nil {
 				h.log.Warn("production complete: finished-goods restock failed", zap.Error(err))
@@ -657,7 +657,7 @@ func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r 
 			returned = append(returned, map[string]any{"item_id": m.ItemID, "quantity": m.Quantity})
 		}
 		if h.stockSvc != nil && len(restock) > 0 {
-			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{}, restock, "production-cancel-"+b.ID.String()); err != nil {
+			if err := h.stockSvc.RestockItems(r.Context(), tenantID, uuid.UUID{}, uuid.Nil, restock, "production-cancel-"+b.ID.String()); err != nil {
 				h.log.Warn("production cancel: material restock failed", zap.Error(err))
 			}
 		}
