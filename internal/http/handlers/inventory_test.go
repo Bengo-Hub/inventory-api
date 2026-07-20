@@ -56,6 +56,10 @@ func (m *mockItemsSvc) DeactivateItemBySKU(ctx context.Context, tenantID uuid.UU
 	return nil
 }
 
+func (m *mockItemsSvc) BulkItemAction(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID, action string) (*items.BulkActionResult, error) {
+	return &items.BulkActionResult{Skipped: []items.BulkSkipped{}}, nil
+}
+
 func (m *mockItemsSvc) MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error) {
 	return nil, fmt.Errorf("not implemented")
 }
@@ -245,6 +249,10 @@ func (m *mockStockSvc) AdjustStock(ctx context.Context, tenantID uuid.UUID, req 
 		return m.adjustStockFn(ctx, tenantID, req)
 	}
 	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockStockSvc) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error) {
+	return &stock.StockHistoryResult{Movements: []stock.MovementRow{}}, nil
 }
 
 func (m *mockStockSvc) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error) {

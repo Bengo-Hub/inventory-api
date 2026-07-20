@@ -60,6 +60,8 @@ const (
 	FieldIsDiscontinued = "is_discontinued"
 	// FieldNonBillable holds the string denoting the non_billable field in the database.
 	FieldNonBillable = "non_billable"
+	// FieldNotForSale holds the string denoting the not_for_sale field in the database.
+	FieldNotForSale = "not_for_sale"
 	// FieldUnitID holds the string denoting the unit_id field in the database.
 	FieldUnitID = "unit_id"
 	// FieldType holds the string denoting the type field in the database.
@@ -342,6 +344,7 @@ var Columns = []string{
 	FieldAllowBackorder,
 	FieldIsDiscontinued,
 	FieldNonBillable,
+	FieldNotForSale,
 	FieldUnitID,
 	FieldType,
 	FieldUseCase,
@@ -417,6 +420,8 @@ var (
 	DefaultIsDiscontinued bool
 	// DefaultNonBillable holds the default value on creation for the "non_billable" field.
 	DefaultNonBillable bool
+	// DefaultNotForSale holds the default value on creation for the "not_for_sale" field.
+	DefaultNotForSale bool
 	// DefaultExtraBedAllowed holds the default value on creation for the "extra_bed_allowed" field.
 	DefaultExtraBedAllowed bool
 	// DefaultIsActive holds the default value on creation for the "is_active" field.
@@ -741,6 +746,11 @@ func ByIsDiscontinued(opts ...sql.OrderTermOption) OrderOption {
 // ByNonBillable orders the results by the non_billable field.
 func ByNonBillable(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNonBillable, opts...).ToFunc()
+}
+
+// ByNotForSale orders the results by the not_for_sale field.
+func ByNotForSale(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNotForSale, opts...).ToFunc()
 }
 
 // ByUnitID orders the results by the unit_id field.

@@ -161,6 +161,11 @@ func NonBillable(v bool) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldNonBillable, v))
 }
 
+// NotForSale applies equality check predicate on the "not_for_sale" field. It's identical to NotForSaleEQ.
+func NotForSale(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNotForSale, v))
+}
+
 // UnitID applies equality check predicate on the "unit_id" field. It's identical to UnitIDEQ.
 func UnitID(v uuid.UUID) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldUnitID, v))
@@ -1514,6 +1519,16 @@ func NonBillableEQ(v bool) predicate.Item {
 // NonBillableNEQ applies the NEQ predicate on the "non_billable" field.
 func NonBillableNEQ(v bool) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldNonBillable, v))
+}
+
+// NotForSaleEQ applies the EQ predicate on the "not_for_sale" field.
+func NotForSaleEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldNotForSale, v))
+}
+
+// NotForSaleNEQ applies the NEQ predicate on the "not_for_sale" field.
+func NotForSaleNEQ(v bool) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldNotForSale, v))
 }
 
 // UnitIDEQ applies the EQ predicate on the "unit_id" field.

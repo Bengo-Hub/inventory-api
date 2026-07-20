@@ -101,6 +101,64 @@ func includeVariants(ctx context.Context) bool {
 	return v
 }
 
+// notForSaleFilterKey is a context flag set by the HTTP layer (?not_for_sale=only|exclude).
+// "only" scopes the list to flagged items (the back-office "Not for selling" filter checkbox);
+// "exclude" removes them — sales-surface fetches (POS catalog proxy, ordering storefront)
+// use it as the server-side guarantee that not-for-sale items never leave inventory.
+// Unset keeps the default back-office behaviour: all items listed.
+type notForSaleFilterKey struct{}
+
+// WithNotForSaleFilter scopes ListItems by the not_for_sale flag: mode "only" or "exclude".
+func WithNotForSaleFilter(ctx context.Context, mode string) context.Context {
+	return context.WithValue(ctx, notForSaleFilterKey{}, mode)
+}
+
+func notForSaleFilter(ctx context.Context) string {
+	v, _ := ctx.Value(notForSaleFilterKey{}).(string)
+	return v
+}
+
+// listSortKey carries a validated ?sort=&dir= request into ListItems (DataTable server sort).
+type listSortKey struct{}
+
+// ListSortFields whitelists sortable Item columns (query-param value → ent field).
+var ListSortFields = map[string]string{
+	"sku":               item.FieldSku,
+	"name":              item.FieldName,
+	"type":              item.FieldType,
+	"cost_price":        item.FieldCostPrice,
+	"min_selling_price": item.FieldMinSellingPrice,
+	"max_selling_price": item.FieldMaxSellingPrice,
+	"is_active":         item.FieldIsActive,
+	"created_at":        item.FieldCreatedAt,
+	"updated_at":        item.FieldUpdatedAt,
+}
+
+// WithListSort orders ListItems by a whitelisted column; dir "desc" descends, else ascends.
+// Unknown fields are ignored (default SKU order) so a stale client can't 500 the list.
+func WithListSort(ctx context.Context, field, dir string) context.Context {
+	if _, ok := ListSortFields[field]; !ok {
+		return ctx
+	}
+	if dir != "desc" {
+		dir = "asc"
+	}
+	return context.WithValue(ctx, listSortKey{}, [2]string{field, dir})
+}
+
+// listOrder resolves the ctx sort into an ent order option (default: SKU ascending).
+func listOrder(ctx context.Context) item.OrderOption {
+	if v, ok := ctx.Value(listSortKey{}).([2]string); ok {
+		if field, known := ListSortFields[v[0]]; known {
+			if v[1] == "desc" {
+				return item.OrderOption(ent.Desc(field))
+			}
+			return item.OrderOption(ent.Asc(field))
+		}
+	}
+	return item.OrderOption(ent.Asc(item.FieldSku))
+}
+
 // StandardTags defines well-known dietary and allergen tag values.
 var StandardTags = []string{
 	"vegan", "vegetarian", "gluten_free", "dairy_free", "nut_free",
@@ -154,6 +212,11 @@ type ItemDTO struct {
 	// accompaniments like ugali, consumable supplies like tissue/packaging); stock still
 	// deducts. Pointer so partial updates never clobber the stored flag.
 	NonBillable *bool `json:"non_billable,omitempty"`
+	// Not-for-sale: excluded from EVERY sales surface (POS terminal, back-office sales,
+	// ordering storefront) while remaining fully stockable/purchasable — raw ingredients,
+	// cleaning supplies, internal consumables. Distinct from NonBillable (still sold at 0)
+	// and is_active=false (hidden everywhere). Pointer for partial-update semantics.
+	NotForSale *bool `json:"not_for_sale,omitempty"`
 	// Usable-in-recipes: a RECIPE-type item flagged here may be picked as an ingredient
 	// in other recipes (reusable menu component, e.g. Black Tea inside an Iced Passion
 	// Tea). Pointer for the same partial-update semantics as NonBillable.
@@ -729,6 +792,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		HSCode:                  i.HsCode,
 		IsReturnable:            boolPtr(i.IsReturnable),
 		NonBillable:             boolPtr(i.NonBillable),
+		NotForSale:              boolPtr(i.NotForSale),
 		UsableInRecipes:         boolPtr(i.UsableInRecipes),
 		ReturnWindowDays:        i.ReturnWindowDays,
 		AllowBackorder:          boolPtr(i.AllowBackorder),
@@ -968,6 +1032,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				q = q.Where(typePred)
 			}
 		}
+		// Not-for-sale scope: "exclude" is the sales-surface guarantee (POS/ordering
+		// fetches never receive flagged items); "only" backs the back-office
+		// "Not for selling" filter checkbox. Unset lists everything.
+		switch notForSaleFilter(ctx) {
+		case "only":
+			q = q.Where(item.NotForSale(true))
+		case "exclude":
+			q = q.Where(item.NotForSale(false))
+		}
 		if useCase != "" {
 			q = q.Where(item.UseCaseEQ(item.UseCase(useCase)))
 		}
@@ -1119,7 +1192,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	if total == 0 {
 		return []ItemDTO{}, 0, nil
 	}
-	listQuery := buildQuery().Order(ent.Asc(item.FieldSku)).Limit(limit).Offset(offset)
+	listQuery := buildQuery().Order(listOrder(ctx)).Limit(limit).Offset(offset)
 	// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
 	listQuery = listQuery.WithAssets(func(aq *ent.ItemAssetQuery) {
 		aq.Where(itemasset.AssetType(AssetTypeImage)).
@@ -1777,6 +1850,9 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.NonBillable != nil {
 		createBuilder = createBuilder.SetNonBillable(*dto.NonBillable)
 	}
+	if dto.NotForSale != nil {
+		createBuilder = createBuilder.SetNotForSale(*dto.NotForSale)
+	}
 	if dto.UsableInRecipes != nil {
 		createBuilder = createBuilder.SetUsableInRecipes(*dto.UsableInRecipes)
 	}
@@ -2175,7 +2251,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetNillableIsReturnable(dto.IsReturnable).
 		SetNillableAllowBackorder(dto.AllowBackorder).
 		SetNillableIsDiscontinued(dto.IsDiscontinued).
-		SetNillableUsableInRecipes(dto.UsableInRecipes)
+		SetNillableUsableInRecipes(dto.UsableInRecipes).
+		SetNillableNotForSale(dto.NotForSale)
 	if dto.GTIN != "" {
 		updateBuilder = updateBuilder.SetGtin(dto.GTIN)
 	}

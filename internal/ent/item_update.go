@@ -446,6 +446,20 @@ func (_u *ItemUpdate) SetNillableNonBillable(v *bool) *ItemUpdate {
 	return _u
 }
 
+// SetNotForSale sets the "not_for_sale" field.
+func (_u *ItemUpdate) SetNotForSale(v bool) *ItemUpdate {
+	_u.mutation.SetNotForSale(v)
+	return _u
+}
+
+// SetNillableNotForSale sets the "not_for_sale" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableNotForSale(v *bool) *ItemUpdate {
+	if v != nil {
+		_u.SetNotForSale(*v)
+	}
+	return _u
+}
+
 // SetUnitID sets the "unit_id" field.
 func (_u *ItemUpdate) SetUnitID(v uuid.UUID) *ItemUpdate {
 	_u.mutation.SetUnitID(v)
@@ -2141,6 +2155,9 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.NonBillable(); ok {
 		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.NotForSale(); ok {
+		_spec.SetField(item.FieldNotForSale, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)
 	}
@@ -3499,6 +3516,20 @@ func (_u *ItemUpdateOne) SetNonBillable(v bool) *ItemUpdateOne {
 func (_u *ItemUpdateOne) SetNillableNonBillable(v *bool) *ItemUpdateOne {
 	if v != nil {
 		_u.SetNonBillable(*v)
+	}
+	return _u
+}
+
+// SetNotForSale sets the "not_for_sale" field.
+func (_u *ItemUpdateOne) SetNotForSale(v bool) *ItemUpdateOne {
+	_u.mutation.SetNotForSale(v)
+	return _u
+}
+
+// SetNillableNotForSale sets the "not_for_sale" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableNotForSale(v *bool) *ItemUpdateOne {
+	if v != nil {
+		_u.SetNotForSale(*v)
 	}
 	return _u
 }
@@ -5227,6 +5258,9 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.NonBillable(); ok {
 		_spec.SetField(item.FieldNonBillable, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.NotForSale(); ok {
+		_spec.SetField(item.FieldNotForSale, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(item.FieldType, field.TypeEnum, value)

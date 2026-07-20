@@ -1,6 +1,937 @@
 basePath: /api/v1
 definitions:
-  github_com_bengobox_inventory-service_internal_modules_items.ItemDTO:
+  handlers.BulkImportResult:
+    properties:
+      items:
+        $ref: '#/definitions/handlers.importResult'
+      modifiers:
+        $ref: '#/definitions/handlers.importResult'
+      recipes:
+        $ref: '#/definitions/handlers.importResult'
+      stock:
+        $ref: '#/definitions/handlers.importResult'
+    type: object
+  handlers.MenuItemCompositeRequest:
+    properties:
+      category_name:
+        type: string
+      description:
+        type: string
+      image_url:
+        type: string
+      ingredients:
+        description: ── Ingredient lines ──────────────────────────────────────────────────────
+        items:
+          $ref: '#/definitions/handlers.MenuItemIngredientInput'
+        type: array
+      is_perishable:
+        type: boolean
+      modifiers:
+        description: ── Modifiers (optional) ──────────────────────────────────────────────────
+        items:
+          $ref: '#/definitions/handlers.MenuItemModifierInput'
+        type: array
+      name:
+        type: string
+      non_billable:
+        description: |-
+          Non-billable: never charged at POS even when a selling price exists (free
+          accompaniments like ugali, greens). Pointer so an absent field never clobbers
+          the stored flag on upsert. When true, selling_price 0 is allowed.
+        type: boolean
+      prep_time_minutes:
+        type: integer
+      selling_price:
+        description: user-provided final price
+        type: number
+      servings:
+        description: ── Recipe fields ─────────────────────────────────────────────────────────
+        type: number
+      sku:
+        description: ── Item fields ───────────────────────────────────────────────────────────
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      target_margin_percent:
+        description: fallback to tenant default
+        type: number
+      unit_content_qty:
+        description: |-
+          Content per portion — how much one output portion contains (300 + "ml" for a pot
+          of tea). Required for OTHER recipes to reference this item in ml/g lines; also
+          what the deduction/costing paths bridge through.
+        type: number
+      unit_content_uom:
+        type: string
+      usable_in_recipes:
+        description: |-
+          Reusable menu component: this RECIPE item may be picked as an ingredient in
+          OTHER recipes (e.g. Black Tea inside an Iced Passion Tea). Pointer so an absent
+          field never clobbers the stored flag on upsert.
+        type: boolean
+    type: object
+  handlers.MenuItemCompositeResponse:
+    properties:
+      item:
+        $ref: '#/definitions/items.ItemDTO'
+      recipe:
+        $ref: '#/definitions/recipes.RecipeDTO'
+      reorder_seeds:
+        items:
+          $ref: '#/definitions/handlers.ReorderSeed'
+        type: array
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  handlers.MenuItemIngredientInput:
+    properties:
+      cost_price:
+        description: If EP cost is known directly, set cost_price (bypasses purchase
+          field calculation).
+        type: number
+      ingredient_name:
+        description: Reference — one of these two must be set.
+        type: string
+      ingredient_sku:
+        description: matched by SKU (takes priority)
+        type: string
+      notes:
+        type: string
+      purchase_pack_size:
+        type: number
+      purchase_price:
+        description: Optional purchase/supplier fields — only needed when creating
+          a NEW ingredient.
+        type: number
+      purchase_unit:
+        type: string
+      qty:
+        description: Quantity and unit for this recipe line.
+        type: number
+      unit:
+        description: e.g. "g", "ml", "tsp", "clove"
+        type: string
+      waste_percent:
+        description: Optional waste factor (0-99, default 0).
+        type: number
+      yield_pct:
+        type: number
+    type: object
+  handlers.MenuItemModifierInput:
+    properties:
+      group_name:
+        type: string
+      is_required:
+        type: boolean
+      max_selections:
+        type: integer
+      min_selections:
+        type: integer
+      options:
+        items:
+          $ref: '#/definitions/handlers.MenuItemModifierOptionInput'
+        type: array
+    type: object
+  handlers.MenuItemModifierOptionInput:
+    properties:
+      is_default:
+        type: boolean
+      name:
+        type: string
+      price_adjustment:
+        type: number
+      stock_sku:
+        description: inventory item SKU for stock deduction
+        type: string
+    type: object
+  handlers.ReorderSeed:
+    properties:
+      reorder_level:
+        type: integer
+      reorder_qty:
+        type: integer
+      sku:
+        type: string
+      source:
+        description: '"DEFAULT" or "UNIT_DEFAULT"'
+        type: string
+    type: object
+  handlers.approvalActionDTO:
+    properties:
+      acted_at:
+        type: string
+      acted_by:
+        type: string
+      approver_role:
+        type: string
+      comment:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sequence:
+        type: integer
+      status:
+        type: string
+    type: object
+  handlers.approvalRequestDTO:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/handlers.approvalActionDTO'
+        type: array
+      amount:
+        type: number
+      created_at:
+        type: string
+      current_sequence:
+        type: integer
+      current_step:
+        $ref: '#/definitions/handlers.approvalActionDTO'
+      decided_at:
+        type: string
+      id:
+        type: string
+      module:
+        type: string
+      object_id:
+        type: string
+      object_reference:
+        type: string
+      status:
+        type: string
+    type: object
+  handlers.approvalRuleDTO:
+    properties:
+      id:
+        type: string
+      is_active:
+        type: boolean
+      max_amount:
+        type: number
+      min_amount:
+        type: number
+      module:
+        type: string
+      name:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/handlers.approvalStepDTO'
+        type: array
+    type: object
+  handlers.approvalRulePayload:
+    properties:
+      is_active:
+        type: boolean
+      max_amount:
+        type: number
+      min_amount:
+        type: number
+      module:
+        type: string
+      name:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/handlers.approvalStepPayload'
+        type: array
+    type: object
+  handlers.approvalStepDTO:
+    properties:
+      approver_role:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sequence:
+        type: integer
+    type: object
+  handlers.approvalStepPayload:
+    properties:
+      approver_role:
+        type: string
+      name:
+        type: string
+      sequence:
+        type: integer
+    type: object
+  handlers.assetCategoryPayload:
+    properties:
+      depreciation_rate:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: string
+      useful_life_years:
+        type: integer
+    type: object
+  handlers.assetPayload:
+    properties:
+      asset_tag:
+        type: string
+      barcode:
+        type: string
+      category_id:
+        type: string
+      condition:
+        type: string
+      created_by:
+        type: string
+      custodian_id:
+        type: string
+      depreciation_method:
+        type: string
+      depreciation_rate:
+        type: number
+      description:
+        type: string
+      item_id:
+        type: string
+      kra_ca_class:
+        description: KRA capital-allowance class → carried to treasury
+        type: string
+      location:
+        type: string
+      manufacturer:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      purchase_cost:
+        type: number
+      purchase_date:
+        type: string
+      salvage_value:
+        type: number
+      serial_number:
+        type: string
+    type: object
+  handlers.batchRawMaterialDTO:
+    properties:
+      cost:
+        type: number
+      id:
+        type: string
+      item_id:
+        type: string
+      quantity:
+        type: number
+      unit_id:
+        type: string
+    type: object
+  handlers.bulkItemActionRequest:
+    properties:
+      action:
+        description: 'bulk-status only: one of activate | deactivate | not_for_sale_on
+          | not_for_sale_off.'
+        type: string
+      ids:
+        description: Item ids (uuids). The DataTable selects by row id.
+        items:
+          type: string
+        type: array
+    type: object
+  handlers.contractDTO:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+      rfq_id:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      supplier_id:
+        type: string
+      terms:
+        type: string
+      title:
+        type: string
+      value:
+        type: number
+    type: object
+  handlers.contractPayload:
+    properties:
+      end_date:
+        type: string
+      project_id:
+        type: string
+      rfq_id:
+        type: string
+      start_date:
+        type: string
+      supplier_id:
+        type: string
+      terms:
+        type: string
+      title:
+        type: string
+      value:
+        type: number
+    type: object
+  handlers.createPOInput:
+    properties:
+      additional_shipping_charges:
+        type: number
+      expected_date:
+        description: accepts "YYYY-MM-DD" or RFC3339
+        type: string
+      line_items:
+        items:
+          $ref: '#/definitions/handlers.createPOLineInput'
+        type: array
+      notes:
+        type: string
+      pay_term_days:
+        type: integer
+      supplier_id:
+        type: string
+      warehouse_id:
+        type: string
+    type: object
+  handlers.createPOLineInput:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: number
+      unit_cost:
+        type: number
+      unit_id:
+        description: FK to Unit — unit of measure ordered in (e.g. kg, box); optional
+        type: string
+    type: object
+  handlers.grnDTO:
+    properties:
+      grn_number:
+        type: string
+      id:
+        type: string
+      lines:
+        items:
+          $ref: '#/definitions/handlers.grnLineDTO'
+        type: array
+      notes:
+        type: string
+      purchase_order_id:
+        type: string
+      received_date:
+        type: string
+      status:
+        type: string
+      supplier_id:
+        type: string
+      warehouse_id:
+        type: string
+    type: object
+  handlers.grnLineDTO:
+    properties:
+      barcode:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      item_name:
+        description: Human identifiers so the UI never has to render raw item UUIDs
+          in the receipt drawer.
+        type: string
+      lot_number:
+        type: string
+      purchase_order_line_id:
+        type: string
+      quantity_accepted:
+        type: number
+      quantity_received:
+        type: number
+      quantity_rejected:
+        type: number
+      rejection_reason:
+        type: string
+      serials:
+        items:
+          type: string
+        type: array
+      sku:
+        type: string
+      unit_cost:
+        type: number
+    type: object
+  handlers.grnLinePayload:
+    properties:
+      expiry_date:
+        type: string
+      item_id:
+        type: string
+      lot_number:
+        description: |-
+          Lot/batch capture for lot-tracked items: a lot number + optional expiry. Becomes an
+          InventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.
+        type: string
+      purchase_order_line_id:
+        type: string
+      quantity_accepted:
+        type: number
+      quantity_received:
+        type: number
+      quantity_rejected:
+        type: number
+      rejection_reason:
+        type: string
+      serials:
+        description: |-
+          Serials are captured for serial-tracked items: one serial per accepted unit. Each becomes
+          an InventorySerial row (status=available) when the GRN is posted.
+        items:
+          type: string
+        type: array
+      unit_cost:
+        type: number
+    type: object
+  handlers.grnPayload:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/handlers.grnLinePayload'
+        type: array
+      notes:
+        type: string
+      received_by:
+        type: string
+      warehouse_id:
+        type: string
+    type: object
+  handlers.importResult:
+    properties:
+      created:
+        type: integer
+      errors:
+        items:
+          type: string
+        type: array
+      failed:
+        type: integer
+      updated:
+        type: integer
+    type: object
+  handlers.livenessResponse:
+    properties:
+      service:
+        example: inventory-api
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  handlers.materialVarianceDTO:
+    properties:
+      actual:
+        type: number
+      item_id:
+        type: string
+      item_sku:
+        type: string
+      planned:
+        type: number
+      variance:
+        type: number
+    type: object
+  handlers.productionBatchDTO:
+    properties:
+      actual_quantity:
+        type: number
+      batch_number:
+        type: string
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      labor_cost:
+        type: number
+      material_variance:
+        items:
+          $ref: '#/definitions/handlers.materialVarianceDTO'
+        type: array
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      overhead_cost:
+        type: number
+      planned_quantity:
+        type: number
+      quality_checks:
+        items:
+          $ref: '#/definitions/handlers.qualityCheckDTO'
+        type: array
+      raw_materials:
+        items:
+          $ref: '#/definitions/handlers.batchRawMaterialDTO'
+        type: array
+      recipe_id:
+        type: string
+      scheduled_date:
+        type: string
+      scrap_quantity:
+        type: number
+      start_date:
+        type: string
+      status:
+        type: string
+      unit_cost:
+        type: number
+      yield_variance:
+        description: Variance (populated on the detail view only).
+        type: number
+      yield_variance_pct:
+        description: (actual-planned)/planned * 100
+        type: number
+    type: object
+  handlers.productionBatchPayload:
+    properties:
+      created_by:
+        type: string
+      labor_cost:
+        type: number
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      overhead_cost:
+        type: number
+      planned_quantity:
+        type: number
+      recipe_id:
+        type: string
+      scheduled_date:
+        type: string
+      supervisor_id:
+        type: string
+    type: object
+  handlers.purchaseOrderDTO:
+    properties:
+      additional_shipping_charges:
+        type: number
+      created_at:
+        type: string
+      expected_date:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      pay_term_days:
+        type: integer
+      po_number:
+        type: string
+      status:
+        type: string
+      supplier_id:
+        type: string
+      supplier_name:
+        type: string
+      total_amount:
+        type: number
+      warehouse_id:
+        type: string
+      warehouse_name:
+        type: string
+    type: object
+  handlers.purchaseReturnDTO:
+    properties:
+      date_returned:
+        type: string
+      id:
+        type: string
+      payment_status:
+        type: string
+      purchase_order_id:
+        type: string
+      reason:
+        type: string
+      return_amount:
+        type: number
+      return_number:
+        type: string
+      supplier_id:
+        type: string
+    type: object
+  handlers.purchaseReturnLinePayload:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+      sub_total:
+        type: number
+    type: object
+  handlers.purchaseReturnPayload:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/handlers.purchaseReturnLinePayload'
+        type: array
+      purchase_order_id:
+        type: string
+      reason:
+        type: string
+      supplier_id:
+        type: string
+    type: object
+  handlers.qualityCheckDTO:
+    properties:
+      check_date:
+        type: string
+      id:
+        type: string
+      inspector_id:
+        type: string
+      notes:
+        type: string
+      result:
+        type: string
+    type: object
+  handlers.rawMaterialUsageDTO:
+    properties:
+      cost:
+        type: number
+      finished_item_id:
+        type: string
+      id:
+        type: string
+      occurred_at:
+        type: string
+      quantity:
+        type: number
+      raw_item_id:
+        type: string
+      raw_sku:
+        type: string
+      transaction_type:
+        type: string
+    type: object
+  handlers.readinessResponse:
+    properties:
+      dependencies:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        example: OK
+        type: string
+    type: object
+  handlers.requisitionDTO:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      lines:
+        items:
+          $ref: '#/definitions/handlers.requisitionLineDTO'
+        type: array
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      priority:
+        type: string
+      purpose:
+        type: string
+      reference_number:
+        type: string
+      request_type:
+        type: string
+      required_by_date:
+        type: string
+      status:
+        type: string
+    type: object
+  handlers.requisitionLineDTO:
+    properties:
+      description:
+        type: string
+      duration:
+        type: string
+      estimated_price:
+        type: number
+      expected_deliverables:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      item_type:
+        type: string
+      quantity:
+        type: number
+      service_description:
+        type: string
+      specifications:
+        type: string
+      supplier_id:
+        type: string
+      urgent:
+        type: boolean
+    type: object
+  handlers.requisitionLinePayload:
+    properties:
+      description:
+        type: string
+      duration:
+        type: string
+      estimated_price:
+        type: number
+      expected_deliverables:
+        type: string
+      item_id:
+        type: string
+      item_type:
+        description: inventory | external | service
+        type: string
+      quantity:
+        type: number
+      service_description:
+        description: Service details (item_type=service)
+        type: string
+      specifications:
+        description: External-item details (item_type=external)
+        type: string
+      supplier_id:
+        type: string
+      urgent:
+        type: boolean
+    type: object
+  handlers.requisitionPayload:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/handlers.requisitionLinePayload'
+        type: array
+      notes:
+        type: string
+      outlet_id:
+        type: string
+      priority:
+        type: string
+      project_id:
+        type: string
+      purpose:
+        type: string
+      request_type:
+        description: inventory | external_item | service
+        type: string
+      requester_id:
+        type: string
+      required_by_date:
+        type: string
+    type: object
+  handlers.serviceDeliveryDTO:
+    properties:
+      deliverables:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      provider_id:
+        type: string
+      requisition_line_id:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+    type: object
+  handlers.serviceDeliveryPayload:
+    properties:
+      deliverables:
+        type: string
+      end_date:
+        type: string
+      provider_id:
+        type: string
+      requisition_line_id:
+        type: string
+      start_date:
+        type: string
+    type: object
+  handlers.supplierPerfDTO:
+    properties:
+      average_lead_time_days:
+        type: number
+      defect_rate:
+        type: number
+      id:
+        type: string
+      on_time_delivery_rate:
+        type: number
+      period_end:
+        type: string
+      period_start:
+        type: string
+      supplier_id:
+        type: string
+      total_spend:
+        type: number
+    type: object
+  handlers.supplierPerfPayload:
+    properties:
+      average_lead_time_days:
+        type: number
+      defect_rate:
+        type: number
+      on_time_delivery_rate:
+        type: number
+      period_end:
+        type: string
+      period_start:
+        type: string
+      supplier_id:
+        type: string
+      total_spend:
+        type: number
+    type: object
+  items.BulkActionResult:
+    properties:
+      processed:
+        type: integer
+      skipped:
+        items:
+          $ref: '#/definitions/items.BulkSkipped'
+        type: array
+    type: object
+  items.BulkSkipped:
+    properties:
+      id:
+        type: string
+      reason:
+        type: string
+    type: object
+  items.ItemDTO:
     properties:
       add_to_all_outlets:
         type: boolean
@@ -50,6 +981,22 @@ definitions:
       duration_minutes:
         description: service duration (salon/barber)
         type: integer
+      end_of_life_at:
+        description: |-
+          End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)
+          and awaiting hard-delete by the purge scheduler once past the retention window.
+        type: string
+      etims_item_cls_cd:
+        description: |-
+          KRA eTIMS catalog classification (drives treasury's eTIMS item registration —
+          inventory is the item source of truth; empty values fall back at registration).
+        type: string
+      etims_pkg_unit_cd:
+        description: KRA packaging unit (NT/CT/BX…)
+        type: string
+      etims_qty_unit_cd:
+        description: KRA quantity unit override (else the unit's mapping)
+        type: string
       event_end_at:
         type: string
       event_start_at:
@@ -80,7 +1027,7 @@ definitions:
           `assets` edge is eager-loaded; primary first. ImageURL above remains the primary
           image URL for backward compatibility with single-image clients.
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemImageDTO'
+          $ref: '#/definitions/items.ItemImageDTO'
         type: array
       initial_quantity:
         description: opening on-hand in the item's base unit; fractional allowed (e.g.
@@ -136,7 +1083,7 @@ definitions:
           enriched by enrichModifierGroups. Populated by ListItems for every catalog-facing
           caller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemModifierGroup'
+          $ref: '#/definitions/items.ItemModifierGroup'
         type: array
       mpn:
         description: manufacturer part number
@@ -151,6 +1098,13 @@ definitions:
           Non-billable: never charged at POS even when a selling price exists (free
           accompaniments like ugali, consumable supplies like tissue/packaging); stock still
           deducts. Pointer so partial updates never clobber the stored flag.
+        type: boolean
+      not_for_sale:
+        description: |-
+          Not-for-sale: excluded from EVERY sales surface (POS terminal, back-office sales,
+          ordering storefront) while remaining fully stockable/purchasable — raw ingredients,
+          cleaning supplies, internal consumables. Distinct from NonBillable (still sold at 0)
+          and is_active=false (hidden everywhere). Pointer for partial-update semantics.
         type: boolean
       occupancy_basis:
         type: string
@@ -244,12 +1198,18 @@ definitions:
         type: string
       updated_at:
         type: string
+      usable_in_recipes:
+        description: |-
+          Usable-in-recipes: a RECIPE-type item flagged here may be picked as an ingredient
+          in other recipes (reusable menu component, e.g. Black Tea inside an Iced Passion
+          Tea). Pointer for the same partial-update semantics as NonBillable.
+        type: boolean
       use_case:
         description: Hospitality fields — room-type / facility / amenity SERVICE items
         type: string
       variants:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.VariantDTO'
+          $ref: '#/definitions/items.VariantDTO'
         type: array
       weight_kg:
         type: number
@@ -257,7 +1217,7 @@ definitions:
         description: 0 < y <= 1; default 1.0
         type: number
     type: object
-  github_com_bengobox_inventory-service_internal_modules_items.ItemImageDTO:
+  items.ItemImageDTO:
     properties:
       created_at:
         type: string
@@ -274,7 +1234,7 @@ definitions:
       url:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_items.ItemModifierGroup:
+  items.ItemModifierGroup:
     properties:
       id:
         type: string
@@ -288,10 +1248,10 @@ definitions:
         type: string
       options:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemModifierOption'
+          $ref: '#/definitions/items.ItemModifierOption'
         type: array
     type: object
-  github_com_bengobox_inventory-service_internal_modules_items.ItemModifierOption:
+  items.ItemModifierOption:
     properties:
       id:
         type: string
@@ -304,7 +1264,7 @@ definitions:
       sku:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_items.VariantDTO:
+  items.VariantDTO:
     properties:
       attributes:
         additionalProperties:
@@ -323,7 +1283,7 @@ definitions:
       sku:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO:
+  recipes.RecipeDTO:
     properties:
       allergens:
         items:
@@ -337,7 +1297,7 @@ definitions:
         type: string
       ingredients:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO'
+          $ref: '#/definitions/recipes.RecipeIngredientDTO'
         type: array
       is_active:
         type: boolean
@@ -378,7 +1338,7 @@ definitions:
       unit_of_measure:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO:
+  recipes.RecipeIngredientDTO:
     properties:
       display_order:
         type: integer
@@ -391,6 +1351,15 @@ definitions:
       item_name:
         type: string
       item_sku:
+        type: string
+      item_unit_content_qty:
+        description: |-
+          Content-per-unit bridge from the ingredient item (a 700 ml bottle stocked in
+          btl → 700 + "ml"). Clients need this to know a cross-dimension line (30 ml of
+          a btl-stocked bottle) deducts fractional stock units instead of flagging it
+          as un-deductible — mirrors stock.ConvertToStockUnit.
+        type: number
+      item_unit_content_uom:
         type: string
       item_unit_id:
         description: |-
@@ -413,7 +1382,7 @@ definitions:
       waste_percent:
         type: number
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.IngredientUtilizationSummary:
+  reports.IngredientUtilizationSummary:
     properties:
       available:
         type: number
@@ -450,7 +1419,7 @@ definitions:
       warehouse_id:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.RecipeBreakdownRow:
+  reports.RecipeBreakdownRow:
     properties:
       cost:
         type: number
@@ -465,7 +1434,7 @@ definitions:
       recipe_sku:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.StockLevelEventDTO:
+  reports.StockLevelEventDTO:
     properties:
       event_type:
         type: string
@@ -476,7 +1445,7 @@ definitions:
       reorder_level_at_event:
         type: number
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesPoint:
+  reports.TimeseriesPoint:
     properties:
       bucket_end:
         type: string
@@ -484,14 +1453,14 @@ definitions:
         type: string
       by_recipe:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesRecipeSlice'
+          $ref: '#/definitions/reports.TimeseriesRecipeSlice'
         type: array
       cost:
         type: number
       quantity:
         type: number
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesRecipeSlice:
+  reports.TimeseriesRecipeSlice:
     properties:
       cost:
         type: number
@@ -504,895 +1473,96 @@ definitions:
       recipe_sku:
         type: string
     type: object
-  github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesResponse:
+  reports.TimeseriesResponse:
     properties:
       granularity:
         type: string
       points:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesPoint'
+          $ref: '#/definitions/reports.TimeseriesPoint'
         type: array
       reorder_level:
         type: integer
       stock_level_events:
         items:
-          $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.StockLevelEventDTO'
+          $ref: '#/definitions/reports.StockLevelEventDTO'
         type: array
     type: object
-  internal_http_handlers.BulkImportResult:
+  stock.MovementRow:
     properties:
-      items:
-        $ref: '#/definitions/internal_http_handlers.importResult'
-      modifiers:
-        $ref: '#/definitions/internal_http_handlers.importResult'
-      recipes:
-        $ref: '#/definitions/internal_http_handlers.importResult'
-      stock:
-        $ref: '#/definitions/internal_http_handlers.importResult'
-    type: object
-  internal_http_handlers.MenuItemCompositeRequest:
-    properties:
-      category_name:
+      actor_id:
+        description: ActorID is the adjusting/receiving/initiating user when recorded.
         type: string
-      description:
+      counterparty:
+        description: 'Counterparty: supplier name (purchases) or order reference (sales).'
         type: string
-      image_url:
+      label:
+        description: Human label, e.g. "Adjustment (damaged)".
         type: string
-      ingredients:
-        description: ── Ingredient lines ──────────────────────────────────────────────────────
-        items:
-          $ref: '#/definitions/internal_http_handlers.MenuItemIngredientInput'
-        type: array
-      is_perishable:
-        type: boolean
-      modifiers:
-        description: ── Modifiers (optional) ──────────────────────────────────────────────────
-        items:
-          $ref: '#/definitions/internal_http_handlers.MenuItemModifierInput'
-        type: array
-      name:
+      occurred_at:
         type: string
-      non_billable:
+      quantity_after:
+        description: Stock level after the movement — known only for StockAdjustment
+          rows.
+        type: number
+      quantity_change:
+        type: number
+      reference:
+        type: string
+      type:
         description: |-
-          Non-billable: never charged at POS even when a selling price exists (free
-          accompaniments like ugali, greens). Pointer so an absent field never clobbers
-          the stored flag on upsert. When true, selling_price 0 is allowed.
-        type: boolean
-      prep_time_minutes:
-        type: integer
-      selling_price:
-        description: user-provided final price
-        type: number
-      servings:
-        description: ── Recipe fields ─────────────────────────────────────────────────────────
-        type: number
-      sku:
-        description: ── Item fields ───────────────────────────────────────────────────────────
+          Type: opening_stock | purchase | sale | sell_return | purchase_return |
+          transfer_in | transfer_out | adjustment.
         type: string
-      tags:
-        items:
-          type: string
-        type: array
-      target_margin_percent:
-        description: fallback to tenant default
-        type: number
-    type: object
-  internal_http_handlers.MenuItemCompositeResponse:
-    properties:
-      item:
-        $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemDTO'
-      recipe:
-        $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO'
-      reorder_seeds:
-        items:
-          $ref: '#/definitions/internal_http_handlers.ReorderSeed'
-        type: array
-      warnings:
-        items:
-          type: string
-        type: array
-    type: object
-  internal_http_handlers.MenuItemIngredientInput:
-    properties:
-      cost_price:
-        description: If EP cost is known directly, set cost_price (bypasses purchase
-          field calculation).
-        type: number
-      ingredient_name:
-        description: Reference — one of these two must be set.
-        type: string
-      ingredient_sku:
-        description: matched by SKU (takes priority)
-        type: string
-      notes:
-        type: string
-      purchase_pack_size:
-        type: number
-      purchase_price:
-        description: Optional purchase/supplier fields — only needed when creating
-          a NEW ingredient.
-        type: number
-      purchase_unit:
-        type: string
-      qty:
-        description: Quantity and unit for this recipe line.
-        type: number
-      unit:
-        description: e.g. "g", "ml", "tsp", "clove"
-        type: string
-      waste_percent:
-        description: Optional waste factor (0-99, default 0).
-        type: number
-      yield_pct:
-        type: number
-    type: object
-  internal_http_handlers.MenuItemModifierInput:
-    properties:
-      group_name:
-        type: string
-      is_required:
-        type: boolean
-      max_selections:
-        type: integer
-      min_selections:
-        type: integer
-      options:
-        items:
-          $ref: '#/definitions/internal_http_handlers.MenuItemModifierOptionInput'
-        type: array
-    type: object
-  internal_http_handlers.MenuItemModifierOptionInput:
-    properties:
-      is_default:
-        type: boolean
-      name:
-        type: string
-      price_adjustment:
-        type: number
-      stock_sku:
-        description: inventory item SKU for stock deduction
-        type: string
-    type: object
-  internal_http_handlers.ReorderSeed:
-    properties:
-      reorder_level:
-        type: integer
-      reorder_qty:
-        type: integer
-      sku:
-        type: string
-      source:
-        description: '"DEFAULT" or "UNIT_DEFAULT"'
-        type: string
-    type: object
-  internal_http_handlers.approvalActionDTO:
-    properties:
-      acted_at:
-        type: string
-      acted_by:
-        type: string
-      approver_role:
-        type: string
-      comment:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      sequence:
-        type: integer
-      status:
-        type: string
-    type: object
-  internal_http_handlers.approvalRequestDTO:
-    properties:
-      actions:
-        items:
-          $ref: '#/definitions/internal_http_handlers.approvalActionDTO'
-        type: array
-      amount:
-        type: number
-      created_at:
-        type: string
-      current_sequence:
-        type: integer
-      current_step:
-        $ref: '#/definitions/internal_http_handlers.approvalActionDTO'
-      decided_at:
-        type: string
-      id:
-        type: string
-      module:
-        type: string
-      object_id:
-        type: string
-      object_reference:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_http_handlers.approvalRuleDTO:
-    properties:
-      id:
-        type: string
-      is_active:
-        type: boolean
-      max_amount:
-        type: number
-      min_amount:
-        type: number
-      module:
-        type: string
-      name:
-        type: string
-      steps:
-        items:
-          $ref: '#/definitions/internal_http_handlers.approvalStepDTO'
-        type: array
-    type: object
-  internal_http_handlers.approvalRulePayload:
-    properties:
-      is_active:
-        type: boolean
-      max_amount:
-        type: number
-      min_amount:
-        type: number
-      module:
-        type: string
-      name:
-        type: string
-      steps:
-        items:
-          $ref: '#/definitions/internal_http_handlers.approvalStepPayload'
-        type: array
-    type: object
-  internal_http_handlers.approvalStepDTO:
-    properties:
-      approver_role:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      sequence:
-        type: integer
-    type: object
-  internal_http_handlers.approvalStepPayload:
-    properties:
-      approver_role:
-        type: string
-      name:
-        type: string
-      sequence:
-        type: integer
-    type: object
-  internal_http_handlers.assetCategoryPayload:
-    properties:
-      depreciation_rate:
-        type: number
-      description:
-        type: string
-      name:
-        type: string
-      parent_id:
-        type: string
-      useful_life_years:
-        type: integer
-    type: object
-  internal_http_handlers.assetPayload:
-    properties:
-      asset_tag:
-        type: string
-      barcode:
-        type: string
-      category_id:
-        type: string
-      condition:
-        type: string
-      created_by:
-        type: string
-      custodian_id:
-        type: string
-      depreciation_method:
-        type: string
-      depreciation_rate:
-        type: number
-      description:
-        type: string
-      item_id:
-        type: string
-      location:
-        type: string
-      manufacturer:
-        type: string
-      model:
-        type: string
-      name:
-        type: string
-      notes:
-        type: string
-      outlet_id:
-        type: string
-      purchase_cost:
-        type: number
-      purchase_date:
-        type: string
-      salvage_value:
-        type: number
-      serial_number:
-        type: string
-    type: object
-  internal_http_handlers.batchRawMaterialDTO:
-    properties:
-      cost:
-        type: number
-      id:
-        type: string
-      item_id:
-        type: string
-      quantity:
-        type: number
-      unit_id:
-        type: string
-    type: object
-  internal_http_handlers.contractDTO:
-    properties:
-      created_at:
-        type: string
-      end_date:
-        type: string
-      id:
-        type: string
-      project_id:
-        type: string
-      rfq_id:
-        type: string
-      start_date:
-        type: string
-      status:
-        type: string
-      supplier_id:
-        type: string
-      terms:
-        type: string
-      title:
-        type: string
-      value:
-        type: number
-    type: object
-  internal_http_handlers.contractPayload:
-    properties:
-      end_date:
-        type: string
-      project_id:
-        type: string
-      rfq_id:
-        type: string
-      start_date:
-        type: string
-      supplier_id:
-        type: string
-      terms:
-        type: string
-      title:
-        type: string
-      value:
-        type: number
-    type: object
-  internal_http_handlers.createPOInput:
-    properties:
-      additional_shipping_charges:
-        type: number
-      expected_date:
-        description: accepts "YYYY-MM-DD" or RFC3339
-        type: string
-      line_items:
-        items:
-          $ref: '#/definitions/internal_http_handlers.createPOLineInput'
-        type: array
-      notes:
-        type: string
-      pay_term_days:
-        type: integer
-      supplier_id:
-        type: string
-      warehouse_id:
-        type: string
-    type: object
-  internal_http_handlers.createPOLineInput:
-    properties:
-      item_id:
-        type: string
-      quantity:
-        type: number
-      unit_cost:
-        type: number
-      unit_id:
-        description: FK to Unit — unit of measure ordered in (e.g. kg, box); optional
-        type: string
-    type: object
-  internal_http_handlers.grnDTO:
-    properties:
-      grn_number:
-        type: string
-      id:
-        type: string
-      lines:
-        items:
-          $ref: '#/definitions/internal_http_handlers.grnLineDTO'
-        type: array
-      notes:
-        type: string
-      purchase_order_id:
-        type: string
-      received_date:
-        type: string
-      status:
-        type: string
-      supplier_id:
-        type: string
-      warehouse_id:
-        type: string
-    type: object
-  internal_http_handlers.grnLineDTO:
-    properties:
-      id:
-        type: string
-      item_id:
-        type: string
-      purchase_order_line_id:
-        type: string
-      quantity_accepted:
-        type: number
-      quantity_received:
-        type: number
-      quantity_rejected:
-        type: number
-      rejection_reason:
-        type: string
-      serials:
-        items:
-          type: string
-        type: array
-      unit_cost:
-        type: number
-    type: object
-  internal_http_handlers.grnLinePayload:
-    properties:
-      expiry_date:
-        type: string
-      item_id:
-        type: string
-      lot_number:
-        description: |-
-          Lot/batch capture for lot-tracked items: a lot number + optional expiry. Becomes an
-          InventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.
-        type: string
-      purchase_order_line_id:
-        type: string
-      quantity_accepted:
-        type: number
-      quantity_received:
-        type: number
-      quantity_rejected:
-        type: number
-      rejection_reason:
-        type: string
-      serials:
-        description: |-
-          Serials are captured for serial-tracked items: one serial per accepted unit. Each becomes
-          an InventorySerial row (status=available) when the GRN is posted.
-        items:
-          type: string
-        type: array
-      unit_cost:
-        type: number
-    type: object
-  internal_http_handlers.grnPayload:
-    properties:
-      lines:
-        items:
-          $ref: '#/definitions/internal_http_handlers.grnLinePayload'
-        type: array
-      notes:
-        type: string
-      received_by:
-        type: string
-      warehouse_id:
-        type: string
-    type: object
-  internal_http_handlers.importResult:
-    properties:
-      created:
-        type: integer
-      errors:
-        items:
-          type: string
-        type: array
-      failed:
-        type: integer
-      updated:
-        type: integer
-    type: object
-  internal_http_handlers.livenessResponse:
-    properties:
-      service:
-        example: inventory-api
-        type: string
-      status:
-        example: ok
-        type: string
-    type: object
-  internal_http_handlers.materialVarianceDTO:
-    properties:
-      actual:
-        type: number
-      item_id:
-        type: string
-      item_sku:
-        type: string
-      planned:
-        type: number
-      variance:
-        type: number
-    type: object
-  internal_http_handlers.productionBatchDTO:
-    properties:
-      actual_quantity:
-        type: number
-      batch_number:
-        type: string
-      created_at:
-        type: string
-      end_date:
-        type: string
-      id:
-        type: string
-      labor_cost:
-        type: number
-      material_variance:
-        items:
-          $ref: '#/definitions/internal_http_handlers.materialVarianceDTO'
-        type: array
-      notes:
-        type: string
-      outlet_id:
-        type: string
-      overhead_cost:
-        type: number
-      planned_quantity:
-        type: number
-      quality_checks:
-        items:
-          $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
-        type: array
-      raw_materials:
-        items:
-          $ref: '#/definitions/internal_http_handlers.batchRawMaterialDTO'
-        type: array
-      recipe_id:
-        type: string
-      scheduled_date:
-        type: string
-      scrap_quantity:
-        type: number
-      start_date:
-        type: string
-      status:
-        type: string
-      unit_cost:
-        type: number
-      yield_variance:
-        description: Variance (populated on the detail view only).
-        type: number
-      yield_variance_pct:
-        description: (actual-planned)/planned * 100
-        type: number
-    type: object
-  internal_http_handlers.productionBatchPayload:
-    properties:
-      created_by:
-        type: string
-      labor_cost:
-        type: number
-      notes:
-        type: string
-      outlet_id:
-        type: string
-      overhead_cost:
-        type: number
-      planned_quantity:
-        type: number
-      recipe_id:
-        type: string
-      scheduled_date:
-        type: string
-      supervisor_id:
-        type: string
-    type: object
-  internal_http_handlers.purchaseOrderDTO:
-    properties:
-      additional_shipping_charges:
-        type: number
-      created_at:
-        type: string
-      expected_date:
-        type: string
-      id:
-        type: string
-      notes:
-        type: string
-      pay_term_days:
-        type: integer
-      po_number:
-        type: string
-      status:
-        type: string
-      supplier_id:
-        type: string
-      supplier_name:
-        type: string
-      total_amount:
-        type: number
       warehouse_id:
         type: string
       warehouse_name:
         type: string
     type: object
-  internal_http_handlers.purchaseReturnDTO:
+  stock.StockHistoryItem:
     properties:
-      date_returned:
-        type: string
       id:
         type: string
-      payment_status:
+      name:
         type: string
-      purchase_order_id:
+      sku:
         type: string
-      reason:
-        type: string
-      return_amount:
-        type: number
-      return_number:
-        type: string
-      supplier_id:
+      unit_abbreviation:
         type: string
     type: object
-  internal_http_handlers.purchaseReturnLinePayload:
+  stock.StockHistoryResult:
     properties:
-      item_id:
-        type: string
-      quantity:
+      item:
+        $ref: '#/definitions/stock.StockHistoryItem'
+      movements:
+        items:
+          $ref: '#/definitions/stock.MovementRow'
+        type: array
+      summary:
+        $ref: '#/definitions/stock.StockHistorySummary'
+      total:
         type: integer
-      sub_total:
-        type: number
     type: object
-  internal_http_handlers.purchaseReturnPayload:
+  stock.StockHistorySummary:
     properties:
-      lines:
-        items:
-          $ref: '#/definitions/internal_http_handlers.purchaseReturnLinePayload'
-        type: array
-      purchase_order_id:
-        type: string
-      reason:
-        type: string
-      supplier_id:
-        type: string
-    type: object
-  internal_http_handlers.qualityCheckDTO:
-    properties:
-      check_date:
-        type: string
-      id:
-        type: string
-      inspector_id:
-        type: string
-      notes:
-        type: string
-      result:
-        type: string
-    type: object
-  internal_http_handlers.rawMaterialUsageDTO:
-    properties:
-      cost:
+      current_stock:
         type: number
-      finished_item_id:
-        type: string
-      id:
-        type: string
-      occurred_at:
-        type: string
-      quantity:
+      opening_stock:
         type: number
-      raw_item_id:
-        type: string
-      raw_sku:
-        type: string
-      transaction_type:
-        type: string
-    type: object
-  internal_http_handlers.readinessResponse:
-    properties:
-      dependencies:
-        additionalProperties:
-          type: string
-        type: object
-      status:
-        example: OK
-        type: string
-    type: object
-  internal_http_handlers.requisitionDTO:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: string
-      lines:
-        items:
-          $ref: '#/definitions/internal_http_handlers.requisitionLineDTO'
-        type: array
-      notes:
-        type: string
-      outlet_id:
-        type: string
-      priority:
-        type: string
-      purpose:
-        type: string
-      reference_number:
-        type: string
-      request_type:
-        type: string
-      required_by_date:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_http_handlers.requisitionLineDTO:
-    properties:
-      description:
-        type: string
-      duration:
-        type: string
-      estimated_price:
+      total_adjusted:
+        description: Net of miscellaneous adjustments (damage, shrinkage, found, corrections…).
         type: number
-      expected_deliverables:
-        type: string
-      id:
-        type: string
-      item_id:
-        type: string
-      item_type:
-        type: string
-      quantity:
+      total_purchase_returns:
         type: number
-      service_description:
-        type: string
-      specifications:
-        type: string
-      supplier_id:
-        type: string
-      urgent:
-        type: boolean
-    type: object
-  internal_http_handlers.requisitionLinePayload:
-    properties:
-      description:
-        type: string
-      duration:
-        type: string
-      estimated_price:
+      total_purchased:
         type: number
-      expected_deliverables:
-        type: string
-      item_id:
-        type: string
-      item_type:
-        description: inventory | external | service
-        type: string
-      quantity:
+      total_sell_returns:
         type: number
-      service_description:
-        description: Service details (item_type=service)
-        type: string
-      specifications:
-        description: External-item details (item_type=external)
-        type: string
-      supplier_id:
-        type: string
-      urgent:
-        type: boolean
-    type: object
-  internal_http_handlers.requisitionPayload:
-    properties:
-      lines:
-        items:
-          $ref: '#/definitions/internal_http_handlers.requisitionLinePayload'
-        type: array
-      notes:
-        type: string
-      outlet_id:
-        type: string
-      priority:
-        type: string
-      project_id:
-        type: string
-      purpose:
-        type: string
-      request_type:
-        description: inventory | external_item | service
-        type: string
-      requester_id:
-        type: string
-      required_by_date:
-        type: string
-    type: object
-  internal_http_handlers.serviceDeliveryDTO:
-    properties:
-      deliverables:
-        type: string
-      end_date:
-        type: string
-      id:
-        type: string
-      provider_id:
-        type: string
-      requisition_line_id:
-        type: string
-      start_date:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_http_handlers.serviceDeliveryPayload:
-    properties:
-      deliverables:
-        type: string
-      end_date:
-        type: string
-      provider_id:
-        type: string
-      requisition_line_id:
-        type: string
-      start_date:
-        type: string
-    type: object
-  internal_http_handlers.supplierPerfDTO:
-    properties:
-      average_lead_time_days:
+      total_sold:
         type: number
-      defect_rate:
+      transfers_in:
         type: number
-      id:
-        type: string
-      on_time_delivery_rate:
-        type: number
-      period_end:
-        type: string
-      period_start:
-        type: string
-      supplier_id:
-        type: string
-      total_spend:
-        type: number
-    type: object
-  internal_http_handlers.supplierPerfPayload:
-    properties:
-      average_lead_time_days:
-        type: number
-      defect_rate:
-        type: number
-      on_time_delivery_rate:
-        type: number
-      period_end:
-        type: string
-      period_start:
-        type: string
-      supplier_id:
-        type: string
-      total_spend:
+      transfers_out:
         type: number
     type: object
 info:
@@ -1428,7 +1598,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_http_handlers.approvalRequestDTO'
+              $ref: '#/definitions/handlers.approvalRequestDTO'
             type: array
       security:
       - bearerAuth: []
@@ -1449,7 +1619,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_http_handlers.approvalRuleDTO'
+              $ref: '#/definitions/handlers.approvalRuleDTO'
             type: array
       security:
       - bearerAuth: []
@@ -1465,14 +1635,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.approvalRulePayload'
+          $ref: '#/definitions/handlers.approvalRulePayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.approvalRuleDTO'
+            $ref: '#/definitions/handlers.approvalRuleDTO'
       security:
       - bearerAuth: []
       summary: Create an approval rule with steps
@@ -1556,7 +1726,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.assetCategoryPayload'
+          $ref: '#/definitions/handlers.assetCategoryPayload'
       produces:
       - application/json
       responses:
@@ -1630,7 +1800,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.assetCategoryPayload'
+          $ref: '#/definitions/handlers.assetCategoryPayload'
       produces:
       - application/json
       responses:
@@ -1865,7 +2035,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.assetPayload'
+          $ref: '#/definitions/handlers.assetPayload'
       produces:
       - application/json
       responses:
@@ -1971,7 +2141,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.assetPayload'
+          $ref: '#/definitions/handlers.assetPayload'
       produces:
       - application/json
       responses:
@@ -2460,7 +2630,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.BulkImportResult'
+            $ref: '#/definitions/handlers.BulkImportResult'
       summary: Bulk import inventory items, recipes, modifiers and opening stock
       tags:
       - inventory
@@ -2509,14 +2679,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.contractPayload'
+          $ref: '#/definitions/handlers.contractPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.contractDTO'
+            $ref: '#/definitions/handlers.contractDTO'
         "400":
           description: Bad Request
           schema:
@@ -2548,7 +2718,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.contractDTO'
+            $ref: '#/definitions/handlers.contractDTO'
         "400":
           description: Bad Request
           schema:
@@ -2580,14 +2750,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.contractPayload'
+          $ref: '#/definitions/handlers.contractPayload'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.contractDTO'
+            $ref: '#/definitions/handlers.contractDTO'
         "400":
           description: Bad Request
           schema:
@@ -2619,7 +2789,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.contractDTO'
+            $ref: '#/definitions/handlers.contractDTO'
         "400":
           description: Bad Request
           schema:
@@ -2698,7 +2868,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.contractDTO'
+            $ref: '#/definitions/handlers.contractDTO'
         "400":
           description: Bad Request
           schema:
@@ -2754,7 +2924,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.grnDTO'
+            $ref: '#/definitions/handlers.grnDTO'
       security:
       - bearerAuth: []
       summary: Get a goods receipt with its lines
@@ -2774,7 +2944,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.grnDTO'
+            $ref: '#/definitions/handlers.grnDTO'
       security:
       - bearerAuth: []
       summary: Post a goods receipt — stock-in accepted qty + advance the PO
@@ -2792,6 +2962,119 @@ paths:
       summary: Download inventory import template
       tags:
       - inventory
+  /{tenant}/inventory/items/{sku}/stock-history:
+    get:
+      description: Per-item summary (opening stock, purchases, sold, sell/purchase
+        returns, transfers in/out, net adjustments, current stock) plus a unified
+        paginated movement ledger. Optional warehouse and date-range scoping.
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Item SKU
+        in: path
+        name: sku
+        required: true
+        type: string
+      - description: Scope to one warehouse
+        in: query
+        name: warehouse_id
+        type: string
+      - description: RFC3339 or YYYY-MM-DD lower bound
+        in: query
+        name: date_from
+        type: string
+      - description: RFC3339 or YYYY-MM-DD upper bound
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stock.StockHistoryResult'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Product stock history
+      tags:
+      - stock
+  /{tenant}/inventory/items/bulk-delete:
+    post:
+      consumes:
+      - application/json
+      description: Soft-deletes the given items (is_active=false). Idempotent — already-inactive
+        or unknown ids are reported in skipped.
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Item ids
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.bulkItemActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/items.BulkActionResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Bulk delete items
+      tags:
+      - items
+  /{tenant}/inventory/items/bulk-status:
+    post:
+      consumes:
+      - application/json
+      description: 'Applies one status action to many items: activate, deactivate,
+        not_for_sale_on, not_for_sale_off. Idempotent — items already in the target
+        state are reported in skipped.'
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Item ids + action
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.bulkItemActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/items.BulkActionResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Bulk change item status
+      tags:
+      - items
   /{tenant}/inventory/items/menu-item:
     post:
       consumes:
@@ -2802,14 +3085,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.MenuItemCompositeRequest'
+          $ref: '#/definitions/handlers.MenuItemCompositeRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.MenuItemCompositeResponse'
+            $ref: '#/definitions/handlers.MenuItemCompositeResponse'
       summary: Define a complete menu item with recipe, ingredients, and modifiers
         in one call
       tags:
@@ -2979,14 +3262,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.productionBatchPayload'
+          $ref: '#/definitions/handlers.productionBatchPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+            $ref: '#/definitions/handlers.productionBatchDTO'
         "400":
           description: Bad Request
           schema:
@@ -3018,7 +3301,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+            $ref: '#/definitions/handlers.productionBatchDTO'
         "400":
           description: Bad Request
           schema:
@@ -3057,7 +3340,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+            $ref: '#/definitions/handlers.productionBatchDTO'
         "400":
           description: Bad Request
           schema:
@@ -3097,7 +3380,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+            $ref: '#/definitions/handlers.productionBatchDTO'
         "400":
           description: Bad Request
           schema:
@@ -3136,7 +3419,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_http_handlers.batchRawMaterialDTO'
+              $ref: '#/definitions/handlers.batchRawMaterialDTO'
             type: array
         "400":
           description: Bad Request
@@ -3170,7 +3453,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
+              $ref: '#/definitions/handlers.qualityCheckDTO'
             type: array
         "400":
           description: Bad Request
@@ -3210,7 +3493,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.qualityCheckDTO'
+            $ref: '#/definitions/handlers.qualityCheckDTO'
         "400":
           description: Bad Request
           schema:
@@ -3248,7 +3531,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.productionBatchDTO'
+            $ref: '#/definitions/handlers.productionBatchDTO'
         "400":
           description: Bad Request
           schema:
@@ -3287,7 +3570,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/internal_http_handlers.rawMaterialUsageDTO'
+              $ref: '#/definitions/handlers.rawMaterialUsageDTO'
             type: array
       security:
       - bearerAuth: []
@@ -3347,7 +3630,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.createPOInput'
+          $ref: '#/definitions/handlers.createPOInput'
       produces:
       - application/json
       responses:
@@ -3387,7 +3670,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.purchaseOrderDTO'
+            $ref: '#/definitions/handlers.purchaseOrderDTO'
         "400":
           description: Bad Request
           schema:
@@ -3420,7 +3703,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.createPOInput'
+          $ref: '#/definitions/handlers.createPOInput'
       produces:
       - application/json
       responses:
@@ -3495,14 +3778,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.grnPayload'
+          $ref: '#/definitions/handlers.grnPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.grnDTO'
+            $ref: '#/definitions/handlers.grnDTO'
       security:
       - bearerAuth: []
       summary: Create a draft goods receipt against a purchase order
@@ -3711,14 +3994,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.purchaseReturnPayload'
+          $ref: '#/definitions/handlers.purchaseReturnPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+            $ref: '#/definitions/handlers.purchaseReturnDTO'
         "400":
           description: Bad Request
           schema:
@@ -3750,7 +4033,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+            $ref: '#/definitions/handlers.purchaseReturnDTO'
         "400":
           description: Bad Request
           schema:
@@ -3782,7 +4065,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.purchaseReturnDTO'
+            $ref: '#/definitions/handlers.purchaseReturnDTO'
         "400":
           description: Bad Request
           schema:
@@ -3919,7 +4202,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.RecipeBreakdownRow'
+              $ref: '#/definitions/reports.RecipeBreakdownRow'
             type: array
       summary: Which recipes consumed this ingredient, and how much
       tags:
@@ -3949,7 +4232,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.IngredientUtilizationSummary'
+            $ref: '#/definitions/reports.IngredientUtilizationSummary'
       summary: Ingredient utilization KPI tiles
       tags:
       - Reports
@@ -3989,7 +4272,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesResponse'
+            $ref: '#/definitions/reports.TimeseriesResponse'
       summary: Ingredient utilization trend, stacked by recipe
       tags:
       - Reports
@@ -4084,14 +4367,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.requisitionPayload'
+          $ref: '#/definitions/handlers.requisitionPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4123,7 +4406,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4155,7 +4438,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4234,7 +4517,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4266,7 +4549,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4298,7 +4581,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.requisitionDTO'
+            $ref: '#/definitions/handlers.requisitionDTO'
         "400":
           description: Bad Request
           schema:
@@ -4357,14 +4640,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.serviceDeliveryPayload'
+          $ref: '#/definitions/handlers.serviceDeliveryPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.serviceDeliveryDTO'
+            $ref: '#/definitions/handlers.serviceDeliveryDTO'
         "400":
           description: Bad Request
           schema:
@@ -4404,7 +4687,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.serviceDeliveryDTO'
+            $ref: '#/definitions/handlers.serviceDeliveryDTO'
         "400":
           description: Bad Request
           schema:
@@ -4463,14 +4746,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_http_handlers.supplierPerfPayload'
+          $ref: '#/definitions/handlers.supplierPerfPayload'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_http_handlers.supplierPerfDTO'
+            $ref: '#/definitions/handlers.supplierPerfDTO'
         "400":
           description: Bad Request
           schema:
@@ -4512,7 +4795,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.livenessResponse'
+            $ref: '#/definitions/handlers.livenessResponse'
       summary: Service liveness probe
       tags:
       - Health
@@ -4538,11 +4821,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_http_handlers.readinessResponse'
+            $ref: '#/definitions/handlers.readinessResponse'
         "503":
           description: Service Unavailable
           schema:
-            $ref: '#/definitions/internal_http_handlers.readinessResponse'
+            $ref: '#/definitions/handlers.readinessResponse'
       summary: Readiness probe
       tags:
       - Health
