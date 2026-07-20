@@ -22,6 +22,7 @@ import (
 	entcountline "github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	enttemplate "github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
@@ -35,17 +36,23 @@ var countableTypes = []entitem.Type{entitem.TypeGOODS, entitem.TypeINGREDIENT, e
 // StockCountHandler manages cycle / physical stock counts and posts approved
 // variance adjustments (reusing stock.Service.AdjustStock).
 type StockCountHandler struct {
-	log      *zap.Logger
-	orm      *ent.Client
-	stockSvc *stock.Service
-	rbacSvc  *rbac.Service
-	auditSvc *audit.Service
+	log         *zap.Logger
+	orm         *ent.Client
+	stockSvc    *stock.Service
+	rbacSvc     *rbac.Service
+	auditSvc    *audit.Service
+	approvalSvc *approvals.Service
 }
 
 // NewStockCountHandler constructs a stock-count handler.
 func NewStockCountHandler(log *zap.Logger, orm *ent.Client, stockSvc *stock.Service, rbacSvc *rbac.Service, auditSvc *audit.Service) *StockCountHandler {
 	return &StockCountHandler{log: log.Named("stock_count.handler"), orm: orm, stockSvc: stockSvc, rbacSvc: rbacSvc, auditSvc: auditSvc}
 }
+
+// SetApprovalService wires the approval engine so a configured stock_count ApprovalRule gates the
+// variance-posting Approve step. Optional — with no service (or no matching rule) the count's own
+// RBAC-gated review→approve lifecycle is the only control (auto-approve by default).
+func (h *StockCountHandler) SetApprovalService(a *approvals.Service) { h.approvalSvc = a }
 
 // RegisterRoutes wires stock-count routes onto the inventory group.
 func (h *StockCountHandler) RegisterRoutes(r chi.Router) {
@@ -408,6 +415,45 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	lines, _ := h.orm.StockCountLine.Query().
 		Where(entcountline.StockCountID(countID), entcountline.Posted(false)).
 		All(ctx)
+
+	// Approval-engine gate: a configured stock_count ApprovalRule routes the variance posting
+	// through the workflow, keyed on the count itself (objectID = countID). With no matching rule
+	// the count's own RBAC review→approve step is authoritative (auto-approve — the default), so a
+	// tenant that has not configured a rule is never blocked. The gate amount is the total absolute
+	// variance being posted (net offsets don't mask a large exposure).
+	if h.approvalSvc != nil {
+		gateAmount := 0.0
+		for _, ln := range lines {
+			if ln.CountedQty == nil || ln.Variance == nil {
+				continue
+			}
+			if v := *ln.Variance; v < 0 {
+				gateAmount -= v
+			} else {
+				gateAmount += v
+			}
+		}
+		ok, state, _ := h.approvalSvc.Satisfied(ctx, tenantID, "stock_count", countID, gateAmount)
+		if !ok {
+			// A rule exists but the count isn't approved yet: create the request on first sight,
+			// then report it as pending so the configured approver(s) can act.
+			if state == "not_submitted" {
+				if _, gated, _ := h.approvalSvc.Submit(ctx, tenantID, "stock_count", countID, "stock-count:"+countID.String(), gateAmount, &approver); gated {
+					writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+						"approval_required": true, "module": "stock_count", "object_id": countID, "state": "pending",
+					})
+					return
+				}
+				// Submit reported no rule after all (raced/removed) — fall through and post.
+			} else {
+				writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+					"error": "STOCK_COUNT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
+					"module": "stock_count", "object_id": countID, "state": state,
+				})
+				return
+			}
+		}
+	}
 	posted, totalVar := 0, 0.0
 	failed := make([]string, 0)
 	for _, ln := range lines {
