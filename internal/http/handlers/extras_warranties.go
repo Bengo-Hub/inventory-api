@@ -30,6 +30,8 @@ type warrantyDTO struct {
 	ItemID        uuid.UUID  `json:"item_id"`
 	ItemName      string     `json:"item_name"`
 	ItemSKU       string     `json:"item_sku"`
+	ItemModel     string     `json:"item_model,omitempty"`
+	ItemBrand     string     `json:"item_brand,omitempty"`
 	SerialNumber  string     `json:"serial_number"`
 	CustomerID    *uuid.UUID `json:"customer_id,omitempty"`
 	PurchaseDate  time.Time  `json:"purchase_date"`
@@ -60,6 +62,13 @@ func warrantyToDTO(wt *ent.Warranty) warrantyDTO {
 	if wt.Edges.Item != nil {
 		dto.ItemName = wt.Edges.Item.Name
 		dto.ItemSKU = wt.Edges.Item.Sku
+		// Brand/model flow into the warranty: the return desk verifies the exact product a
+		// serial belongs to. model is per-item free text; brand comes from the ItemBrand edge
+		// when loaded (WithItemBrand on the item query below).
+		dto.ItemModel = wt.Edges.Item.Model
+		if wt.Edges.Item.Edges.ItemBrand != nil {
+			dto.ItemBrand = wt.Edges.Item.Edges.ItemBrand.Name
+		}
 	}
 	// Surface time-based expiry without requiring a background job: an "active" row whose
 	// coverage window has lapsed reads as expired (the claim/void writes still persist real
@@ -91,7 +100,7 @@ func (h *InventoryExtrasHandler) ListWarranties(w http.ResponseWriter, r *http.R
 	}
 	q := h.orm.Warranty.Query().
 		Where(entwarranty.TenantID(tenantID)).
-		WithItem().
+		WithItem(func(iq *ent.ItemQuery) { iq.WithItemBrand() }).
 		Order(ent.Desc(entwarranty.FieldCreatedAt))
 	if s := r.URL.Query().Get("status"); s != "" {
 		q = q.Where(entwarranty.StatusEQ(entwarranty.Status(s)))
@@ -134,7 +143,7 @@ func (h *InventoryExtrasHandler) LookupWarrantyBySerial(w http.ResponseWriter, r
 	}
 	rows, err := h.orm.Warranty.Query().
 		Where(entwarranty.TenantID(tenantID), entwarranty.SerialNumberEqualFold(serial)).
-		WithItem().
+		WithItem(func(iq *ent.ItemQuery) { iq.WithItemBrand() }).
 		Order(ent.Desc(entwarranty.FieldWarrantyEnd)).
 		All(r.Context())
 	if err != nil {
@@ -162,7 +171,7 @@ func (h *InventoryExtrasHandler) GetWarranty(w http.ResponseWriter, r *http.Requ
 	}
 	wt, err := h.orm.Warranty.Query().
 		Where(entwarranty.ID(id), entwarranty.TenantID(tenantID)).
-		WithItem().
+		WithItem(func(iq *ent.ItemQuery) { iq.WithItemBrand() }).
 		Only(r.Context())
 	if err != nil {
 		if ent.IsNotFound(err) {
