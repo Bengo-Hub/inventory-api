@@ -1304,6 +1304,14 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	// default) so the movement is visible on that outlet's POS terminal.
 	req.OutletID = operatingOutletID(r)
 
+	// Same approval gate as CreateAdjustment: a configured stock_adjustment/stock_writeoff
+	// ApprovalRule routes the movement through the workflow BEFORE any stock is mutated. With
+	// no rule the movement applies immediately (auto-approve). This closes the /adjust bypass
+	// so both adjustment entry points enforce the same control.
+	if !h.gateStockAdjustment(w, r, tenantID, req) {
+		return
+	}
+
 	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)
 	if err != nil {
 		h.log.Error("adjust stock failed", zap.Error(err))
@@ -1399,6 +1407,68 @@ func (h *InventoryHandler) RestoreItemEOL(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, dto)
 }
 
+// adjustmentApprovalModule maps a stock-adjustment reason to the approval module it gates under:
+// damage/expiry/shrinkage are write-offs (a stricter, finance-owned control), everything else is a
+// plain stock adjustment.
+func adjustmentApprovalModule(reason string) string {
+	switch reason {
+	case "damaged", "expired", "shrinkage":
+		return "stock_writeoff"
+	}
+	return "stock_adjustment"
+}
+
+// gateStockAdjustment enforces the stock-adjustment / stock-writeoff approval workflow BEFORE any
+// stock is mutated. It returns true when the caller may proceed to apply the adjustment:
+//   - no approval engine is wired, OR
+//   - no active ApprovalRule matches this magnitude for the module (auto-approve — the default,
+//     so a tenant with no rule configured is never blocked), OR
+//   - the referenced ApprovalIntentID has already been approved by a manager.
+//
+// It returns false AND has already written the 422 response when approval is pending/required, so
+// the caller must simply `return`. Shared by AdjustStock (/adjust) and CreateAdjustment
+// (/adjustments) so both entry points enforce the identical control — no bypass.
+func (h *InventoryHandler) gateStockAdjustment(w http.ResponseWriter, r *http.Request, tenantID uuid.UUID, req stock.AdjustStockRequest) bool {
+	if h.approvalSvc == nil {
+		return true
+	}
+	module := adjustmentApprovalModule(req.Reason)
+	amount := req.Adjustment
+	if amount < 0 {
+		amount = -amount
+	}
+	actor := req.AdjustedBy
+	if actor == uuid.Nil {
+		if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+			actor, _ = claims.UserID()
+		}
+	}
+	if req.ApprovalIntentID != nil {
+		// Retry after a manager decision — only proceed when approved.
+		ok, state, _ := h.approvalSvc.Satisfied(r.Context(), tenantID, module, *req.ApprovalIntentID, amount)
+		if !ok {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+				"error": "ADJUSTMENT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
+				"intent_id": req.ApprovalIntentID, "state": state, "module": module,
+			})
+			return false
+		}
+		return true
+	}
+	// First attempt — create the approval request only if a rule gates this amount.
+	intent := uuid.New()
+	request, gated, _ := h.approvalSvc.Submit(r.Context(), tenantID, module, intent, req.Reference, amount, &actor)
+	if gated {
+		resp := map[string]any{"approval_required": true, "intent_id": intent, "module": module}
+		if request != nil {
+			resp["request_id"] = request.ID
+		}
+		writeJSON(w, http.StatusUnprocessableEntity, resp)
+		return false
+	}
+	return true
+}
+
 // CreateAdjustment handles POST /v1/{tenant}/inventory/adjustments — creates a stock adjustment with audit trail.
 func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -1428,48 +1498,12 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	// default) so the movement is visible on that outlet's POS terminal.
 	req.OutletID = operatingOutletID(r)
 
-	// Large-adjustment approval gate: route adjustments whose magnitude falls in a
-	// configured ApprovalRule band through the approval workflow. Safe by default —
-	// with no rule configured for the stock_adjustment/stock_writeoff module,
-	// nothing is blocked.
-	if h.approvalSvc != nil {
-		module := "stock_adjustment"
-		if req.Reason == "damaged" || req.Reason == "expired" || req.Reason == "shrinkage" {
-			module = "stock_writeoff"
-		}
-		amount := req.Adjustment
-		if amount < 0 {
-			amount = -amount
-		}
-		actor := req.AdjustedBy
-		if actor == uuid.Nil {
-			if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
-				actor, _ = claims.UserID()
-			}
-		}
-		if req.ApprovalIntentID != nil {
-			// Retry after a manager decision — only proceed when approved.
-			ok, state, _ := h.approvalSvc.Satisfied(r.Context(), tenantID, module, *req.ApprovalIntentID, amount)
-			if !ok {
-				writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-					"error": "ADJUSTMENT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
-					"intent_id": req.ApprovalIntentID, "state": state,
-				})
-				return
-			}
-		} else {
-			// First attempt — create the approval request if a rule gates this amount.
-			intent := uuid.New()
-			request, gated, _ := h.approvalSvc.Submit(r.Context(), tenantID, module, intent, req.Reference, amount, &actor)
-			if gated {
-				resp := map[string]any{"approval_required": true, "intent_id": intent, "module": module}
-				if request != nil {
-					resp["request_id"] = request.ID
-				}
-				writeJSON(w, http.StatusUnprocessableEntity, resp)
-				return
-			}
-		}
+	// Large-adjustment approval gate (shared with /adjust): route adjustments whose magnitude
+	// falls in a configured ApprovalRule band through the approval workflow BEFORE mutating
+	// stock. Safe by default — with no rule configured for the stock_adjustment/stock_writeoff
+	// module, nothing is blocked and the adjustment applies immediately.
+	if !h.gateStockAdjustment(w, r, tenantID, req) {
+		return
 	}
 
 	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)

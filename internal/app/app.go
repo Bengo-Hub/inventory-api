@@ -198,6 +198,7 @@ func New(ctx context.Context) (*App, error) {
 	warehouseHandler.SetAuditService(auditSvc)
 	inventoryHandler.SetAuditService(auditSvc)
 	stockCountHandler := handlers.NewStockCountHandler(log, ormClient, stockSvc, rbacService, auditSvc)
+	stockCountHandler.SetApprovalService(approvals.NewService(ormClient))
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
