@@ -91,6 +91,11 @@ func SubmittedBy(v uuid.UUID) predicate.ApprovalRequest {
 	return predicate.ApprovalRequest(sql.FieldEQ(FieldSubmittedBy, v))
 }
 
+// ExecutedAt applies equality check predicate on the "executed_at" field. It's identical to ExecutedAtEQ.
+func ExecutedAt(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldEQ(FieldExecutedAt, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.ApprovalRequest {
 	return predicate.ApprovalRequest(sql.FieldEQ(FieldCreatedAt, v))
@@ -479,6 +484,66 @@ func SubmittedByIsNil() predicate.ApprovalRequest {
 // SubmittedByNotNil applies the NotNil predicate on the "submitted_by" field.
 func SubmittedByNotNil() predicate.ApprovalRequest {
 	return predicate.ApprovalRequest(sql.FieldNotNull(FieldSubmittedBy))
+}
+
+// PayloadIsNil applies the IsNil predicate on the "payload" field.
+func PayloadIsNil() predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldIsNull(FieldPayload))
+}
+
+// PayloadNotNil applies the NotNil predicate on the "payload" field.
+func PayloadNotNil() predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldNotNull(FieldPayload))
+}
+
+// ExecutedAtEQ applies the EQ predicate on the "executed_at" field.
+func ExecutedAtEQ(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldEQ(FieldExecutedAt, v))
+}
+
+// ExecutedAtNEQ applies the NEQ predicate on the "executed_at" field.
+func ExecutedAtNEQ(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldNEQ(FieldExecutedAt, v))
+}
+
+// ExecutedAtIn applies the In predicate on the "executed_at" field.
+func ExecutedAtIn(vs ...time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldIn(FieldExecutedAt, vs...))
+}
+
+// ExecutedAtNotIn applies the NotIn predicate on the "executed_at" field.
+func ExecutedAtNotIn(vs ...time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldNotIn(FieldExecutedAt, vs...))
+}
+
+// ExecutedAtGT applies the GT predicate on the "executed_at" field.
+func ExecutedAtGT(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldGT(FieldExecutedAt, v))
+}
+
+// ExecutedAtGTE applies the GTE predicate on the "executed_at" field.
+func ExecutedAtGTE(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldGTE(FieldExecutedAt, v))
+}
+
+// ExecutedAtLT applies the LT predicate on the "executed_at" field.
+func ExecutedAtLT(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldLT(FieldExecutedAt, v))
+}
+
+// ExecutedAtLTE applies the LTE predicate on the "executed_at" field.
+func ExecutedAtLTE(v time.Time) predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldLTE(FieldExecutedAt, v))
+}
+
+// ExecutedAtIsNil applies the IsNil predicate on the "executed_at" field.
+func ExecutedAtIsNil() predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldIsNull(FieldExecutedAt))
+}
+
+// ExecutedAtNotNil applies the NotNil predicate on the "executed_at" field.
+func ExecutedAtNotNil() predicate.ApprovalRequest {
+	return predicate.ApprovalRequest(sql.FieldNotNull(FieldExecutedAt))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

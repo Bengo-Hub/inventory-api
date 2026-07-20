@@ -127,6 +127,26 @@ func (_c *ApprovalRequestCreate) SetNillableSubmittedBy(v *uuid.UUID) *ApprovalR
 	return _c
 }
 
+// SetPayload sets the "payload" field.
+func (_c *ApprovalRequestCreate) SetPayload(v map[string]interface{}) *ApprovalRequestCreate {
+	_c.mutation.SetPayload(v)
+	return _c
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (_c *ApprovalRequestCreate) SetExecutedAt(v time.Time) *ApprovalRequestCreate {
+	_c.mutation.SetExecutedAt(v)
+	return _c
+}
+
+// SetNillableExecutedAt sets the "executed_at" field if the given value is not nil.
+func (_c *ApprovalRequestCreate) SetNillableExecutedAt(v *time.Time) *ApprovalRequestCreate {
+	if v != nil {
+		_c.SetExecutedAt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *ApprovalRequestCreate) SetCreatedAt(v time.Time) *ApprovalRequestCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -367,6 +387,14 @@ func (_c *ApprovalRequestCreate) createSpec() (*ApprovalRequest, *sqlgraph.Creat
 		_spec.SetField(approvalrequest.FieldSubmittedBy, field.TypeUUID, value)
 		_node.SubmittedBy = &value
 	}
+	if value, ok := _c.mutation.Payload(); ok {
+		_spec.SetField(approvalrequest.FieldPayload, field.TypeJSON, value)
+		_node.Payload = value
+	}
+	if value, ok := _c.mutation.ExecutedAt(); ok {
+		_spec.SetField(approvalrequest.FieldExecutedAt, field.TypeTime, value)
+		_node.ExecutedAt = &value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(approvalrequest.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -582,6 +610,42 @@ func (u *ApprovalRequestUpsert) UpdateSubmittedBy() *ApprovalRequestUpsert {
 // ClearSubmittedBy clears the value of the "submitted_by" field.
 func (u *ApprovalRequestUpsert) ClearSubmittedBy() *ApprovalRequestUpsert {
 	u.SetNull(approvalrequest.FieldSubmittedBy)
+	return u
+}
+
+// SetPayload sets the "payload" field.
+func (u *ApprovalRequestUpsert) SetPayload(v map[string]interface{}) *ApprovalRequestUpsert {
+	u.Set(approvalrequest.FieldPayload, v)
+	return u
+}
+
+// UpdatePayload sets the "payload" field to the value that was provided on create.
+func (u *ApprovalRequestUpsert) UpdatePayload() *ApprovalRequestUpsert {
+	u.SetExcluded(approvalrequest.FieldPayload)
+	return u
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (u *ApprovalRequestUpsert) ClearPayload() *ApprovalRequestUpsert {
+	u.SetNull(approvalrequest.FieldPayload)
+	return u
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (u *ApprovalRequestUpsert) SetExecutedAt(v time.Time) *ApprovalRequestUpsert {
+	u.Set(approvalrequest.FieldExecutedAt, v)
+	return u
+}
+
+// UpdateExecutedAt sets the "executed_at" field to the value that was provided on create.
+func (u *ApprovalRequestUpsert) UpdateExecutedAt() *ApprovalRequestUpsert {
+	u.SetExcluded(approvalrequest.FieldExecutedAt)
+	return u
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (u *ApprovalRequestUpsert) ClearExecutedAt() *ApprovalRequestUpsert {
+	u.SetNull(approvalrequest.FieldExecutedAt)
 	return u
 }
 
@@ -824,6 +888,48 @@ func (u *ApprovalRequestUpsertOne) UpdateSubmittedBy() *ApprovalRequestUpsertOne
 func (u *ApprovalRequestUpsertOne) ClearSubmittedBy() *ApprovalRequestUpsertOne {
 	return u.Update(func(s *ApprovalRequestUpsert) {
 		s.ClearSubmittedBy()
+	})
+}
+
+// SetPayload sets the "payload" field.
+func (u *ApprovalRequestUpsertOne) SetPayload(v map[string]interface{}) *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.SetPayload(v)
+	})
+}
+
+// UpdatePayload sets the "payload" field to the value that was provided on create.
+func (u *ApprovalRequestUpsertOne) UpdatePayload() *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.UpdatePayload()
+	})
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (u *ApprovalRequestUpsertOne) ClearPayload() *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.ClearPayload()
+	})
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (u *ApprovalRequestUpsertOne) SetExecutedAt(v time.Time) *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.SetExecutedAt(v)
+	})
+}
+
+// UpdateExecutedAt sets the "executed_at" field to the value that was provided on create.
+func (u *ApprovalRequestUpsertOne) UpdateExecutedAt() *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.UpdateExecutedAt()
+	})
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (u *ApprovalRequestUpsertOne) ClearExecutedAt() *ApprovalRequestUpsertOne {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.ClearExecutedAt()
 	})
 }
 
@@ -1238,6 +1344,48 @@ func (u *ApprovalRequestUpsertBulk) UpdateSubmittedBy() *ApprovalRequestUpsertBu
 func (u *ApprovalRequestUpsertBulk) ClearSubmittedBy() *ApprovalRequestUpsertBulk {
 	return u.Update(func(s *ApprovalRequestUpsert) {
 		s.ClearSubmittedBy()
+	})
+}
+
+// SetPayload sets the "payload" field.
+func (u *ApprovalRequestUpsertBulk) SetPayload(v map[string]interface{}) *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.SetPayload(v)
+	})
+}
+
+// UpdatePayload sets the "payload" field to the value that was provided on create.
+func (u *ApprovalRequestUpsertBulk) UpdatePayload() *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.UpdatePayload()
+	})
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (u *ApprovalRequestUpsertBulk) ClearPayload() *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.ClearPayload()
+	})
+}
+
+// SetExecutedAt sets the "executed_at" field.
+func (u *ApprovalRequestUpsertBulk) SetExecutedAt(v time.Time) *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.SetExecutedAt(v)
+	})
+}
+
+// UpdateExecutedAt sets the "executed_at" field to the value that was provided on create.
+func (u *ApprovalRequestUpsertBulk) UpdateExecutedAt() *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.UpdateExecutedAt()
+	})
+}
+
+// ClearExecutedAt clears the value of the "executed_at" field.
+func (u *ApprovalRequestUpsertBulk) ClearExecutedAt() *ApprovalRequestUpsertBulk {
+	return u.Update(func(s *ApprovalRequestUpsert) {
+		s.ClearExecutedAt()
 	})
 }
 

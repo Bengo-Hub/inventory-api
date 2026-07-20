@@ -1444,20 +1444,31 @@ func (h *InventoryHandler) gateStockAdjustment(w http.ResponseWriter, r *http.Re
 		}
 	}
 	if req.ApprovalIntentID != nil {
-		// Retry after a manager decision — only proceed when approved.
+		// Retry after a manager decision. The adjustment now posts SERVER-SIDE the moment the
+		// request is approved (the payload stashed at submission is replayed by the approval-
+		// execution path), so this legacy retry must NOT re-apply — that would double-post. Report
+		// the current state instead of mutating stock.
 		ok, state, _ := h.approvalSvc.Satisfied(r.Context(), tenantID, module, *req.ApprovalIntentID, amount)
-		if !ok {
-			writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-				"error": "ADJUSTMENT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
-				"intent_id": req.ApprovalIntentID, "state": state, "module": module,
+		if ok {
+			writeJSON(w, http.StatusOK, map[string]any{
+				"approval_required": false, "state": "approved", "module": module,
+				"intent_id": req.ApprovalIntentID,
+				"message":   "This adjustment was approved and has already been posted.",
 			})
 			return false
 		}
-		return true
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"error": "ADJUSTMENT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
+			"intent_id": req.ApprovalIntentID, "state": state, "module": module,
+		})
+		return false
 	}
-	// First attempt — create the approval request only if a rule gates this amount.
+	// First attempt — create the approval request only if a rule gates this amount. The full
+	// adjustment is stashed on the request as its payload so the approval-execution path can post
+	// the stock the instant a manager approves (without this, an approved adjustment never moves
+	// stock — the client never retries and nothing else replays it).
 	intent := uuid.New()
-	request, gated, _ := h.approvalSvc.Submit(r.Context(), tenantID, module, intent, req.Reference, amount, &actor)
+	request, gated, _ := h.approvalSvc.SubmitWithPayload(r.Context(), tenantID, module, intent, req.Reference, amount, &actor, adjustmentPayload(req, actor))
 	if gated {
 		resp := map[string]any{"approval_required": true, "intent_id": intent, "module": module}
 		if request != nil {
@@ -1467,6 +1478,31 @@ func (h *InventoryHandler) gateStockAdjustment(w http.ResponseWriter, r *http.Re
 		return false
 	}
 	return true
+}
+
+// adjustmentPayload serializes a gated stock adjustment into the map persisted on its
+// ApprovalRequest, so the approval-execution path can rebuild the exact AdjustStockRequest
+// and post it once approved. Warehouse/outlet are stored as strings and re-resolved by
+// AdjustStock at replay time (there is no HTTP outlet context then).
+func adjustmentPayload(req stock.AdjustStockRequest, actor uuid.UUID) map[string]any {
+	p := map[string]any{
+		"sku":        req.SKU,
+		"adjustment": req.Adjustment,
+		"reason":     req.Reason,
+		"reference":  req.Reference,
+		"notes":      req.Notes,
+		"adjusted_by": actor.String(),
+	}
+	if req.WarehouseID != uuid.Nil {
+		p["warehouse_id"] = req.WarehouseID.String()
+	}
+	if req.OutletID != uuid.Nil {
+		p["outlet_id"] = req.OutletID.String()
+	}
+	if req.UnitID != nil {
+		p["unit_id"] = req.UnitID.String()
+	}
+	return p
 }
 
 // CreateAdjustment handles POST /v1/{tenant}/inventory/adjustments — creates a stock adjustment with audit trail.
