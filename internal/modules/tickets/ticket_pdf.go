@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"image/png"
-	"io"
-	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
 	"github.com/go-pdf/fpdf"
@@ -73,33 +71,11 @@ func qrPNG(content string, size int) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// fetchLogo best-effort downloads a logo image; returns nil on any failure (PDF renders without it).
+// fetchLogo resolves the tenant logo through the shared cache.FetchLogo — it handles a hosted URL as
+// well as an inline base64 data: URI, and sniffs the fpdf image type from the real bytes (not a
+// mislabeled Content-Type). Returns nil on any failure (the ticket then renders without a logo).
 func fetchLogo(url string) ([]byte, string) {
-	if url == "" {
-		return nil, ""
-	}
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(url) //nolint:noctx
-	if err != nil {
-		return nil, ""
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, ""
-	}
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(&io.LimitedReader{R: resp.Body, N: 5 << 20}); err != nil {
-		return nil, ""
-	}
-	ct := resp.Header.Get("Content-Type")
-	switch {
-	case strings.Contains(ct, "png"):
-		return buf.Bytes(), "PNG"
-	case strings.Contains(ct, "jpeg"), strings.Contains(ct, "jpg"):
-		return buf.Bytes(), "JPG"
-	default:
-		return nil, ""
-	}
+	return sharedcache.FetchLogo(url)
 }
 
 // RenderTicketPDF renders a branded A5 event ticket with an embedded QR of the ticket code.

@@ -1,10 +1,7 @@
 package documents
 
 import (
-	"io"
-	"net/http"
-	"strings"
-	"time"
+	sharedcache "github.com/Bengo-Hub/cache"
 
 	"github.com/bengobox/inventory-service/internal/modules/documents/render"
 )
@@ -17,41 +14,15 @@ func RenderPurchaseOrderPDF(d PurchaseOrderDoc) ([]byte, error) {
 	return render.Render(&d, logo, logoType)
 }
 
-// FetchLogoBytes downloads a tenant logo from the (trusted auth-api) URL, returning the raw
-// bytes and the fpdf image-type ("PNG"/"JPG"/"GIF"). Graceful: returns (nil, "") on any failure
-// so callers (e.g. report PDFs) still render without a logo. Exported wrapper over fetchLogoBytes.
+// FetchLogoBytes downloads a tenant logo and returns the raw bytes + fpdf image-type
+// ("PNG"/"JPG"/"GIF"). Graceful: returns (nil, "") on any failure so callers (e.g. report PDFs)
+// still render without a logo. Exported wrapper over fetchLogoBytes.
 func FetchLogoBytes(url string) ([]byte, string) { return fetchLogoBytes(url) }
 
-// fetchLogoBytes downloads a logo from the (trusted auth-api) URL. Graceful: returns
-// nil on any failure so the document still renders without a logo.
+// fetchLogoBytes resolves the tenant logo through the shared cache.FetchLogo — it handles a hosted
+// URL as well as an inline base64 data: URI (http.Get cannot fetch a data: URI), and sniffs the
+// fpdf image type from the real bytes rather than a mislabeled Content-Type. Graceful: returns
+// (nil, "") on any failure so the document still renders without a logo.
 func fetchLogoBytes(url string) ([]byte, string) {
-	if strings.TrimSpace(url) == "" {
-		return nil, ""
-	}
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-		return nil, ""
-	}
-	defer resp.Body.Close()
-	b, err := io.ReadAll(io.LimitReader(resp.Body, 5<<20))
-	if err != nil || len(b) == 0 {
-		return nil, ""
-	}
-	return b, imgType(b)
-}
-
-// imgType returns the fpdf image-type string for the given raw image bytes.
-func imgType(b []byte) string {
-	switch {
-	case len(b) >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF:
-		return "JPG"
-	case len(b) >= 4 && b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46:
-		return "GIF"
-	default:
-		return "PNG"
-	}
+	return sharedcache.FetchLogo(url)
 }
