@@ -57,6 +57,13 @@ func globalCategoryUUID(slug string) uuid.UUID {
 // categories (is_global=true, nil tenant) so every tenant's document item form has a
 // sensible default set to pick from, split by item type. Reconciles by deterministic ID.
 func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
+	// Global categories are owned by the reserved nil "platform-global" tenant (is_global=true,
+	// visible to every tenant). item_categories.tenant_id is FK-constrained to tenants(id), so
+	// that sentinel row must exist first — otherwise every global insert fails the FK, which is
+	// exactly why globals were silently absent in environments where it was never provisioned.
+	if err := ensureGlobalTenant(ctx, client); err != nil {
+		return err
+	}
 	for _, cat := range globalCategoryDefs {
 		id := globalCategoryUUID(cat.Slug)
 		_, err := client.ItemCategory.Get(ctx, id)
@@ -90,5 +97,25 @@ func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
 			}
 		}
 	}
+	return nil
+}
+
+// ensureGlobalTenant idempotently provisions the reserved nil tenant that owns platform-global
+// rows (currently is_global categories). It mirrors how units/tax codes model shared platform
+// data, and satisfies the item_categories → tenants FK so global categories can be seeded.
+func ensureGlobalTenant(ctx context.Context, client *ent.Client) error {
+	if _, err := client.Tenant.Get(ctx, uuid.Nil); err == nil {
+		return nil // already provisioned
+	} else if !ent.IsNotFound(err) {
+		return fmt.Errorf("check platform-global tenant: %w", err)
+	}
+	if _, err := client.Tenant.Create().
+		SetID(uuid.Nil).
+		SetName("Platform Global").
+		SetSlug("__platform_global__").
+		Save(ctx); err != nil && !ent.IsConstraintError(err) {
+		return fmt.Errorf("create platform-global tenant: %w", err)
+	}
+	log.Printf("platform-global tenant ensured (nil sentinel)")
 	return nil
 }
