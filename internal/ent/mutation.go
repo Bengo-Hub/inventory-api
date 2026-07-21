@@ -98,6 +98,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
+	"github.com/bengobox/inventory-service/internal/ent/vendorbalancecache"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -197,6 +198,7 @@ const (
 	TypeUserOutlet             = "UserOutlet"
 	TypeUserRoleAssignment     = "UserRoleAssignment"
 	TypeVariantAttribute       = "VariantAttribute"
+	TypeVendorBalanceCache     = "VendorBalanceCache"
 	TypeWarehouse              = "Warehouse"
 	TypeWarehouseLocation      = "WarehouseLocation"
 	TypeWarranty               = "Warranty"
@@ -97737,6 +97739,776 @@ func (m *VariantAttributeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *VariantAttributeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown VariantAttribute edge %s", name)
+}
+
+// VendorBalanceCacheMutation represents an operation that mutates the VendorBalanceCache nodes in the graph.
+type VendorBalanceCacheMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	tenant_id           *uuid.UUID
+	vendor_id           *uuid.UUID
+	vendor_identifier   *string
+	vendor_name         *string
+	balance_owed        *string
+	outstanding_payable *string
+	currency            *string
+	synced_at           *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*VendorBalanceCache, error)
+	predicates          []predicate.VendorBalanceCache
+}
+
+var _ ent.Mutation = (*VendorBalanceCacheMutation)(nil)
+
+// vendorbalancecacheOption allows management of the mutation configuration using functional options.
+type vendorbalancecacheOption func(*VendorBalanceCacheMutation)
+
+// newVendorBalanceCacheMutation creates new mutation for the VendorBalanceCache entity.
+func newVendorBalanceCacheMutation(c config, op Op, opts ...vendorbalancecacheOption) *VendorBalanceCacheMutation {
+	m := &VendorBalanceCacheMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeVendorBalanceCache,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withVendorBalanceCacheID sets the ID field of the mutation.
+func withVendorBalanceCacheID(id uuid.UUID) vendorbalancecacheOption {
+	return func(m *VendorBalanceCacheMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *VendorBalanceCache
+		)
+		m.oldValue = func(ctx context.Context) (*VendorBalanceCache, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().VendorBalanceCache.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withVendorBalanceCache sets the old VendorBalanceCache of the mutation.
+func withVendorBalanceCache(node *VendorBalanceCache) vendorbalancecacheOption {
+	return func(m *VendorBalanceCacheMutation) {
+		m.oldValue = func(context.Context) (*VendorBalanceCache, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m VendorBalanceCacheMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m VendorBalanceCacheMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of VendorBalanceCache entities.
+func (m *VendorBalanceCacheMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *VendorBalanceCacheMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *VendorBalanceCacheMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().VendorBalanceCache.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *VendorBalanceCacheMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *VendorBalanceCacheMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *VendorBalanceCacheMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetVendorID sets the "vendor_id" field.
+func (m *VendorBalanceCacheMutation) SetVendorID(u uuid.UUID) {
+	m.vendor_id = &u
+}
+
+// VendorID returns the value of the "vendor_id" field in the mutation.
+func (m *VendorBalanceCacheMutation) VendorID() (r uuid.UUID, exists bool) {
+	v := m.vendor_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVendorID returns the old "vendor_id" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldVendorID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVendorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVendorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVendorID: %w", err)
+	}
+	return oldValue.VendorID, nil
+}
+
+// ClearVendorID clears the value of the "vendor_id" field.
+func (m *VendorBalanceCacheMutation) ClearVendorID() {
+	m.vendor_id = nil
+	m.clearedFields[vendorbalancecache.FieldVendorID] = struct{}{}
+}
+
+// VendorIDCleared returns if the "vendor_id" field was cleared in this mutation.
+func (m *VendorBalanceCacheMutation) VendorIDCleared() bool {
+	_, ok := m.clearedFields[vendorbalancecache.FieldVendorID]
+	return ok
+}
+
+// ResetVendorID resets all changes to the "vendor_id" field.
+func (m *VendorBalanceCacheMutation) ResetVendorID() {
+	m.vendor_id = nil
+	delete(m.clearedFields, vendorbalancecache.FieldVendorID)
+}
+
+// SetVendorIdentifier sets the "vendor_identifier" field.
+func (m *VendorBalanceCacheMutation) SetVendorIdentifier(s string) {
+	m.vendor_identifier = &s
+}
+
+// VendorIdentifier returns the value of the "vendor_identifier" field in the mutation.
+func (m *VendorBalanceCacheMutation) VendorIdentifier() (r string, exists bool) {
+	v := m.vendor_identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVendorIdentifier returns the old "vendor_identifier" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldVendorIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVendorIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVendorIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVendorIdentifier: %w", err)
+	}
+	return oldValue.VendorIdentifier, nil
+}
+
+// ClearVendorIdentifier clears the value of the "vendor_identifier" field.
+func (m *VendorBalanceCacheMutation) ClearVendorIdentifier() {
+	m.vendor_identifier = nil
+	m.clearedFields[vendorbalancecache.FieldVendorIdentifier] = struct{}{}
+}
+
+// VendorIdentifierCleared returns if the "vendor_identifier" field was cleared in this mutation.
+func (m *VendorBalanceCacheMutation) VendorIdentifierCleared() bool {
+	_, ok := m.clearedFields[vendorbalancecache.FieldVendorIdentifier]
+	return ok
+}
+
+// ResetVendorIdentifier resets all changes to the "vendor_identifier" field.
+func (m *VendorBalanceCacheMutation) ResetVendorIdentifier() {
+	m.vendor_identifier = nil
+	delete(m.clearedFields, vendorbalancecache.FieldVendorIdentifier)
+}
+
+// SetVendorName sets the "vendor_name" field.
+func (m *VendorBalanceCacheMutation) SetVendorName(s string) {
+	m.vendor_name = &s
+}
+
+// VendorName returns the value of the "vendor_name" field in the mutation.
+func (m *VendorBalanceCacheMutation) VendorName() (r string, exists bool) {
+	v := m.vendor_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVendorName returns the old "vendor_name" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldVendorName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVendorName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVendorName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVendorName: %w", err)
+	}
+	return oldValue.VendorName, nil
+}
+
+// ClearVendorName clears the value of the "vendor_name" field.
+func (m *VendorBalanceCacheMutation) ClearVendorName() {
+	m.vendor_name = nil
+	m.clearedFields[vendorbalancecache.FieldVendorName] = struct{}{}
+}
+
+// VendorNameCleared returns if the "vendor_name" field was cleared in this mutation.
+func (m *VendorBalanceCacheMutation) VendorNameCleared() bool {
+	_, ok := m.clearedFields[vendorbalancecache.FieldVendorName]
+	return ok
+}
+
+// ResetVendorName resets all changes to the "vendor_name" field.
+func (m *VendorBalanceCacheMutation) ResetVendorName() {
+	m.vendor_name = nil
+	delete(m.clearedFields, vendorbalancecache.FieldVendorName)
+}
+
+// SetBalanceOwed sets the "balance_owed" field.
+func (m *VendorBalanceCacheMutation) SetBalanceOwed(s string) {
+	m.balance_owed = &s
+}
+
+// BalanceOwed returns the value of the "balance_owed" field in the mutation.
+func (m *VendorBalanceCacheMutation) BalanceOwed() (r string, exists bool) {
+	v := m.balance_owed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBalanceOwed returns the old "balance_owed" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldBalanceOwed(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBalanceOwed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBalanceOwed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBalanceOwed: %w", err)
+	}
+	return oldValue.BalanceOwed, nil
+}
+
+// ResetBalanceOwed resets all changes to the "balance_owed" field.
+func (m *VendorBalanceCacheMutation) ResetBalanceOwed() {
+	m.balance_owed = nil
+}
+
+// SetOutstandingPayable sets the "outstanding_payable" field.
+func (m *VendorBalanceCacheMutation) SetOutstandingPayable(s string) {
+	m.outstanding_payable = &s
+}
+
+// OutstandingPayable returns the value of the "outstanding_payable" field in the mutation.
+func (m *VendorBalanceCacheMutation) OutstandingPayable() (r string, exists bool) {
+	v := m.outstanding_payable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutstandingPayable returns the old "outstanding_payable" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldOutstandingPayable(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutstandingPayable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutstandingPayable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutstandingPayable: %w", err)
+	}
+	return oldValue.OutstandingPayable, nil
+}
+
+// ResetOutstandingPayable resets all changes to the "outstanding_payable" field.
+func (m *VendorBalanceCacheMutation) ResetOutstandingPayable() {
+	m.outstanding_payable = nil
+}
+
+// SetCurrency sets the "currency" field.
+func (m *VendorBalanceCacheMutation) SetCurrency(s string) {
+	m.currency = &s
+}
+
+// Currency returns the value of the "currency" field in the mutation.
+func (m *VendorBalanceCacheMutation) Currency() (r string, exists bool) {
+	v := m.currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrency returns the old "currency" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrency: %w", err)
+	}
+	return oldValue.Currency, nil
+}
+
+// ResetCurrency resets all changes to the "currency" field.
+func (m *VendorBalanceCacheMutation) ResetCurrency() {
+	m.currency = nil
+}
+
+// SetSyncedAt sets the "synced_at" field.
+func (m *VendorBalanceCacheMutation) SetSyncedAt(t time.Time) {
+	m.synced_at = &t
+}
+
+// SyncedAt returns the value of the "synced_at" field in the mutation.
+func (m *VendorBalanceCacheMutation) SyncedAt() (r time.Time, exists bool) {
+	v := m.synced_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSyncedAt returns the old "synced_at" field's value of the VendorBalanceCache entity.
+// If the VendorBalanceCache object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VendorBalanceCacheMutation) OldSyncedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSyncedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSyncedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSyncedAt: %w", err)
+	}
+	return oldValue.SyncedAt, nil
+}
+
+// ResetSyncedAt resets all changes to the "synced_at" field.
+func (m *VendorBalanceCacheMutation) ResetSyncedAt() {
+	m.synced_at = nil
+}
+
+// Where appends a list predicates to the VendorBalanceCacheMutation builder.
+func (m *VendorBalanceCacheMutation) Where(ps ...predicate.VendorBalanceCache) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the VendorBalanceCacheMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *VendorBalanceCacheMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.VendorBalanceCache, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *VendorBalanceCacheMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *VendorBalanceCacheMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (VendorBalanceCache).
+func (m *VendorBalanceCacheMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *VendorBalanceCacheMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.tenant_id != nil {
+		fields = append(fields, vendorbalancecache.FieldTenantID)
+	}
+	if m.vendor_id != nil {
+		fields = append(fields, vendorbalancecache.FieldVendorID)
+	}
+	if m.vendor_identifier != nil {
+		fields = append(fields, vendorbalancecache.FieldVendorIdentifier)
+	}
+	if m.vendor_name != nil {
+		fields = append(fields, vendorbalancecache.FieldVendorName)
+	}
+	if m.balance_owed != nil {
+		fields = append(fields, vendorbalancecache.FieldBalanceOwed)
+	}
+	if m.outstanding_payable != nil {
+		fields = append(fields, vendorbalancecache.FieldOutstandingPayable)
+	}
+	if m.currency != nil {
+		fields = append(fields, vendorbalancecache.FieldCurrency)
+	}
+	if m.synced_at != nil {
+		fields = append(fields, vendorbalancecache.FieldSyncedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *VendorBalanceCacheMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case vendorbalancecache.FieldTenantID:
+		return m.TenantID()
+	case vendorbalancecache.FieldVendorID:
+		return m.VendorID()
+	case vendorbalancecache.FieldVendorIdentifier:
+		return m.VendorIdentifier()
+	case vendorbalancecache.FieldVendorName:
+		return m.VendorName()
+	case vendorbalancecache.FieldBalanceOwed:
+		return m.BalanceOwed()
+	case vendorbalancecache.FieldOutstandingPayable:
+		return m.OutstandingPayable()
+	case vendorbalancecache.FieldCurrency:
+		return m.Currency()
+	case vendorbalancecache.FieldSyncedAt:
+		return m.SyncedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *VendorBalanceCacheMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case vendorbalancecache.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case vendorbalancecache.FieldVendorID:
+		return m.OldVendorID(ctx)
+	case vendorbalancecache.FieldVendorIdentifier:
+		return m.OldVendorIdentifier(ctx)
+	case vendorbalancecache.FieldVendorName:
+		return m.OldVendorName(ctx)
+	case vendorbalancecache.FieldBalanceOwed:
+		return m.OldBalanceOwed(ctx)
+	case vendorbalancecache.FieldOutstandingPayable:
+		return m.OldOutstandingPayable(ctx)
+	case vendorbalancecache.FieldCurrency:
+		return m.OldCurrency(ctx)
+	case vendorbalancecache.FieldSyncedAt:
+		return m.OldSyncedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown VendorBalanceCache field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VendorBalanceCacheMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case vendorbalancecache.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case vendorbalancecache.FieldVendorID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVendorID(v)
+		return nil
+	case vendorbalancecache.FieldVendorIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVendorIdentifier(v)
+		return nil
+	case vendorbalancecache.FieldVendorName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVendorName(v)
+		return nil
+	case vendorbalancecache.FieldBalanceOwed:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBalanceOwed(v)
+		return nil
+	case vendorbalancecache.FieldOutstandingPayable:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutstandingPayable(v)
+		return nil
+	case vendorbalancecache.FieldCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrency(v)
+		return nil
+	case vendorbalancecache.FieldSyncedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSyncedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown VendorBalanceCache field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *VendorBalanceCacheMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *VendorBalanceCacheMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VendorBalanceCacheMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown VendorBalanceCache numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *VendorBalanceCacheMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(vendorbalancecache.FieldVendorID) {
+		fields = append(fields, vendorbalancecache.FieldVendorID)
+	}
+	if m.FieldCleared(vendorbalancecache.FieldVendorIdentifier) {
+		fields = append(fields, vendorbalancecache.FieldVendorIdentifier)
+	}
+	if m.FieldCleared(vendorbalancecache.FieldVendorName) {
+		fields = append(fields, vendorbalancecache.FieldVendorName)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *VendorBalanceCacheMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *VendorBalanceCacheMutation) ClearField(name string) error {
+	switch name {
+	case vendorbalancecache.FieldVendorID:
+		m.ClearVendorID()
+		return nil
+	case vendorbalancecache.FieldVendorIdentifier:
+		m.ClearVendorIdentifier()
+		return nil
+	case vendorbalancecache.FieldVendorName:
+		m.ClearVendorName()
+		return nil
+	}
+	return fmt.Errorf("unknown VendorBalanceCache nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *VendorBalanceCacheMutation) ResetField(name string) error {
+	switch name {
+	case vendorbalancecache.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case vendorbalancecache.FieldVendorID:
+		m.ResetVendorID()
+		return nil
+	case vendorbalancecache.FieldVendorIdentifier:
+		m.ResetVendorIdentifier()
+		return nil
+	case vendorbalancecache.FieldVendorName:
+		m.ResetVendorName()
+		return nil
+	case vendorbalancecache.FieldBalanceOwed:
+		m.ResetBalanceOwed()
+		return nil
+	case vendorbalancecache.FieldOutstandingPayable:
+		m.ResetOutstandingPayable()
+		return nil
+	case vendorbalancecache.FieldCurrency:
+		m.ResetCurrency()
+		return nil
+	case vendorbalancecache.FieldSyncedAt:
+		m.ResetSyncedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown VendorBalanceCache field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *VendorBalanceCacheMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *VendorBalanceCacheMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *VendorBalanceCacheMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *VendorBalanceCacheMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *VendorBalanceCacheMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *VendorBalanceCacheMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *VendorBalanceCacheMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown VendorBalanceCache unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *VendorBalanceCacheMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown VendorBalanceCache edge %s", name)
 }
 
 // WarehouseMutation represents an operation that mutates the Warehouse nodes in the graph.

@@ -258,6 +258,9 @@ type UserRoleAssignment func(*sql.Selector)
 // VariantAttribute is the predicate function for variantattribute builders.
 type VariantAttribute func(*sql.Selector)
 
+// VendorBalanceCache is the predicate function for vendorbalancecache builders.
+type VendorBalanceCache func(*sql.Selector)
+
 // Warehouse is the predicate function for warehouse builders.
 type Warehouse func(*sql.Selector)
 

@@ -89,6 +89,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
+	"github.com/bengobox/inventory-service/internal/ent/vendorbalancecache"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -2385,6 +2386,30 @@ func init() {
 	variantattributeDescID := variantattributeFields[0].Descriptor()
 	// variantattribute.DefaultID holds the default value on creation for the id field.
 	variantattribute.DefaultID = variantattributeDescID.Default.(func() uuid.UUID)
+	vendorbalancecacheFields := schema.VendorBalanceCache{}.Fields()
+	_ = vendorbalancecacheFields
+	// vendorbalancecacheDescBalanceOwed is the schema descriptor for balance_owed field.
+	vendorbalancecacheDescBalanceOwed := vendorbalancecacheFields[5].Descriptor()
+	// vendorbalancecache.DefaultBalanceOwed holds the default value on creation for the balance_owed field.
+	vendorbalancecache.DefaultBalanceOwed = vendorbalancecacheDescBalanceOwed.Default.(string)
+	// vendorbalancecacheDescOutstandingPayable is the schema descriptor for outstanding_payable field.
+	vendorbalancecacheDescOutstandingPayable := vendorbalancecacheFields[6].Descriptor()
+	// vendorbalancecache.DefaultOutstandingPayable holds the default value on creation for the outstanding_payable field.
+	vendorbalancecache.DefaultOutstandingPayable = vendorbalancecacheDescOutstandingPayable.Default.(string)
+	// vendorbalancecacheDescCurrency is the schema descriptor for currency field.
+	vendorbalancecacheDescCurrency := vendorbalancecacheFields[7].Descriptor()
+	// vendorbalancecache.DefaultCurrency holds the default value on creation for the currency field.
+	vendorbalancecache.DefaultCurrency = vendorbalancecacheDescCurrency.Default.(string)
+	// vendorbalancecacheDescSyncedAt is the schema descriptor for synced_at field.
+	vendorbalancecacheDescSyncedAt := vendorbalancecacheFields[8].Descriptor()
+	// vendorbalancecache.DefaultSyncedAt holds the default value on creation for the synced_at field.
+	vendorbalancecache.DefaultSyncedAt = vendorbalancecacheDescSyncedAt.Default.(func() time.Time)
+	// vendorbalancecache.UpdateDefaultSyncedAt holds the default value on update for the synced_at field.
+	vendorbalancecache.UpdateDefaultSyncedAt = vendorbalancecacheDescSyncedAt.UpdateDefault.(func() time.Time)
+	// vendorbalancecacheDescID is the schema descriptor for id field.
+	vendorbalancecacheDescID := vendorbalancecacheFields[0].Descriptor()
+	// vendorbalancecache.DefaultID holds the default value on creation for the id field.
+	vendorbalancecache.DefaultID = vendorbalancecacheDescID.Default.(func() uuid.UUID)
 	warehouseFields := schema.Warehouse{}.Fields()
 	_ = warehouseFields
 	// warehouseDescName is the schema descriptor for name field.

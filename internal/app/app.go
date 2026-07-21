@@ -79,11 +79,12 @@ type App struct {
 	returnConsumer       *consumers.ReturnEventsConsumer
 	stockConsumer        *consumers.StockEventsConsumer
 	ticketConsumer       *consumers.TicketIssuanceConsumer
-	treasuryTaxConsumer  *consumers.TreasuryTaxEventsConsumer
-	etimsItemConsumer    *consumers.EtimsItemRegisteredConsumer
-	tenantPurgeConsumer  *consumers.TenantPurgeConsumer
-	quotationConsumer    *consumers.QuotationAcceptedConsumer
-	deliveryNoteConsumer *consumers.DeliveryNoteDispatchedConsumer
+	treasuryTaxConsumer           *consumers.TreasuryTaxEventsConsumer
+	treasuryVendorBalanceConsumer *consumers.TreasuryVendorBalanceEventsConsumer
+	etimsItemConsumer             *consumers.EtimsItemRegisteredConsumer
+	tenantPurgeConsumer           *consumers.TenantPurgeConsumer
+	quotationConsumer             *consumers.QuotationAcceptedConsumer
+	deliveryNoteConsumer          *consumers.DeliveryNoteDispatchedConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -270,6 +271,10 @@ func New(ctx context.Context) (*App, error) {
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
 
+	// Treasury vendor-balance-updated consumer — closes the one-way sync gap where a bill
+	// payment/vendor refund recorded directly in treasury-ui never reached inventory-api.
+	treasuryVendorBalanceConsumer := consumers.NewTreasuryVendorBalanceEventsConsumer(log, ormClient)
+
 	// eTIMS item-registered write-back consumer — mirrors KRA-assigned classification/pkg/qty
 	// codes onto the inventory item so the Edit form reflects the item's real synced state.
 	etimsItemConsumer := consumers.NewEtimsItemRegisteredConsumer(log, itemsSvc)
@@ -393,12 +398,13 @@ func New(ctx context.Context) (*App, error) {
 		authConsumer:         authConsumer,
 		returnConsumer:       returnConsumer,
 		stockConsumer:        stockConsumer,
-		ticketConsumer:       ticketConsumer,
-		treasuryTaxConsumer:  treasuryTaxConsumer,
-		etimsItemConsumer:    etimsItemConsumer,
-		tenantPurgeConsumer:  tenantPurgeConsumer,
-		quotationConsumer:    quotationConsumer,
-		deliveryNoteConsumer: deliveryNoteConsumer,
+		ticketConsumer:                ticketConsumer,
+		treasuryTaxConsumer:           treasuryTaxConsumer,
+		treasuryVendorBalanceConsumer: treasuryVendorBalanceConsumer,
+		etimsItemConsumer:             etimsItemConsumer,
+		tenantPurgeConsumer:           tenantPurgeConsumer,
+		quotationConsumer:             quotationConsumer,
+		deliveryNoteConsumer:          deliveryNoteConsumer,
 	}, nil
 }
 
@@ -485,6 +491,16 @@ func (a *App) Run(ctx context.Context) error {
 					}
 				}()
 				a.log.Info("treasury tax events consumer started")
+			}
+
+			// Start treasury vendor-balance-updated consumer — keeps VendorBalanceCache fresh.
+			if a.treasuryVendorBalanceConsumer != nil {
+				go func() {
+					if err := a.treasuryVendorBalanceConsumer.Start(ctx, js); err != nil {
+						a.log.Error("treasury vendor balance events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("treasury vendor balance events consumer started")
 			}
 
 			// Start eTIMS item-registered write-back consumer — mirrors KRA codes onto items.

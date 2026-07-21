@@ -96,6 +96,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	"github.com/bengobox/inventory-service/internal/ent/variantattribute"
+	"github.com/bengobox/inventory-service/internal/ent/vendorbalancecache"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/ent/warehouselocation"
 	"github.com/bengobox/inventory-service/internal/ent/warranty"
@@ -243,6 +244,7 @@ func checkColumn(t, c string) error {
 			useroutlet.Table:             useroutlet.ValidColumn,
 			userroleassignment.Table:     userroleassignment.ValidColumn,
 			variantattribute.Table:       variantattribute.ValidColumn,
+			vendorbalancecache.Table:     vendorbalancecache.ValidColumn,
 			warehouse.Table:              warehouse.ValidColumn,
 			warehouselocation.Table:      warehouselocation.ValidColumn,
 			warranty.Table:               warranty.ValidColumn,

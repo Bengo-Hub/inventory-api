@@ -180,6 +180,8 @@ type Tx struct {
 	UserRoleAssignment *UserRoleAssignmentClient
 	// VariantAttribute is the client for interacting with the VariantAttribute builders.
 	VariantAttribute *VariantAttributeClient
+	// VendorBalanceCache is the client for interacting with the VendorBalanceCache builders.
+	VendorBalanceCache *VendorBalanceCacheClient
 	// Warehouse is the client for interacting with the Warehouse builders.
 	Warehouse *WarehouseClient
 	// WarehouseLocation is the client for interacting with the WarehouseLocation builders.
@@ -401,6 +403,7 @@ func (tx *Tx) init() {
 	tx.UserOutlet = NewUserOutletClient(tx.config)
 	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 	tx.VariantAttribute = NewVariantAttributeClient(tx.config)
+	tx.VendorBalanceCache = NewVendorBalanceCacheClient(tx.config)
 	tx.Warehouse = NewWarehouseClient(tx.config)
 	tx.WarehouseLocation = NewWarehouseLocationClient(tx.config)
 	tx.Warranty = NewWarrantyClient(tx.config)
