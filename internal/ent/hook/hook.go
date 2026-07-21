@@ -1017,6 +1017,18 @@ func (f VariantAttributeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VariantAttributeMutation", m)
 }
 
+// The VendorBalanceCacheFunc type is an adapter to allow the use of ordinary
+// function as VendorBalanceCache mutator.
+type VendorBalanceCacheFunc func(context.Context, *ent.VendorBalanceCacheMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f VendorBalanceCacheFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.VendorBalanceCacheMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VendorBalanceCacheMutation", m)
+}
+
 // The WarehouseFunc type is an adapter to allow the use of ordinary
 // function as Warehouse mutator.
 type WarehouseFunc func(context.Context, *ent.WarehouseMutation) (ent.Value, error)

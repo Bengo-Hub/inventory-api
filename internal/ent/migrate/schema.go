@@ -3449,6 +3449,36 @@ var (
 			},
 		},
 	}
+	// VendorBalanceCachesColumns holds the columns for the "vendor_balance_caches" table.
+	VendorBalanceCachesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "vendor_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "vendor_identifier", Type: field.TypeString, Nullable: true},
+		{Name: "vendor_name", Type: field.TypeString, Nullable: true},
+		{Name: "balance_owed", Type: field.TypeString, Default: "0"},
+		{Name: "outstanding_payable", Type: field.TypeString, Default: "0"},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "synced_at", Type: field.TypeTime},
+	}
+	// VendorBalanceCachesTable holds the schema information for the "vendor_balance_caches" table.
+	VendorBalanceCachesTable = &schema.Table{
+		Name:       "vendor_balance_caches",
+		Columns:    VendorBalanceCachesColumns,
+		PrimaryKey: []*schema.Column{VendorBalanceCachesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "vendorbalancecache_tenant_id_vendor_id",
+				Unique:  true,
+				Columns: []*schema.Column{VendorBalanceCachesColumns[1], VendorBalanceCachesColumns[2]},
+			},
+			{
+				Name:    "vendorbalancecache_tenant_id_vendor_identifier",
+				Unique:  false,
+				Columns: []*schema.Column{VendorBalanceCachesColumns[1], VendorBalanceCachesColumns[3]},
+			},
+		},
+	}
 	// WarehousesColumns holds the columns for the "warehouses" table.
 	WarehousesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3681,6 +3711,7 @@ var (
 		UserOutletsTable,
 		UserRoleAssignmentsTable,
 		VariantAttributesTable,
+		VendorBalanceCachesTable,
 		WarehousesTable,
 		WarehouseLocationsTable,
 		WarrantiesTable,
