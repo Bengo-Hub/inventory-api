@@ -1556,8 +1556,14 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 		for _, c := range cats {
 			nameMap[c.ID] = c.Name
 		}
-		dtos := make([]CategoryDTO, len(cats))
-		for i, c := range cats {
+		dtos := make([]CategoryDTO, 0, len(cats))
+		// Case-insensitive de-duplication across the tenant+global union: a tenant that has
+		// its OWN "Beverages" must not ALSO see the platform-global "Beverages" (the picker
+		// would show the name twice, splitting items across two categories). The tenant-owned
+		// row always wins over a same-named global; among same-scope collisions the first
+		// active row wins (data is normally already unique per scope). Keyed on lower(trim(name)).
+		seen := make(map[string]int, len(cats)) // normalized name → index in dtos
+		for _, c := range cats {
 			dto := CategoryDTO{
 				ID:          c.ID,
 				Name:        c.Name,
@@ -1574,7 +1580,16 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 					dto.ParentName = pName
 				}
 			}
-			dtos[i] = dto
+			normName := strings.ToLower(strings.TrimSpace(c.Name))
+			if idx, dup := seen[normName]; dup {
+				// Keep the tenant-owned row over a global one; otherwise keep the existing pick.
+				if dtos[idx].IsGlobal && !dto.IsGlobal {
+					dtos[idx] = dto
+				}
+				continue
+			}
+			seen[normName] = len(dtos)
+			dtos = append(dtos, dto)
 		}
 		return dtos, nil
 	}
