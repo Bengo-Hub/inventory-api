@@ -14,6 +14,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
+	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 )
 
 // Syncer handles dynamic syncing of tenant data from auth-api.
@@ -93,6 +94,9 @@ func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 		if _, updErr := update.Save(ctx); updErr != nil {
 			return uuid.Nil, fmt.Errorf("tenant.Syncer: update tenant: %w", updErr)
 		}
+		if remote.UseCase == "pharmacy" {
+			s.ensurePharmacyInventoryDefaults(ctx, realID)
+		}
 		log.Printf("  [tenant-sync] updated %s (UUID %s) from auth-api", slug, realID)
 		return realID, nil
 	}
@@ -122,6 +126,43 @@ func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 		return uuid.Nil, fmt.Errorf("tenant.Syncer: create tenant: %w", createErr)
 	}
 
+	if remote.UseCase == "pharmacy" {
+		s.ensurePharmacyInventoryDefaults(ctx, created.ID)
+	}
+
 	log.Printf("  [tenant-sync] dynamically created %s (UUID %s, synced from auth-api)", slug, created.ID)
 	return created.ID, nil
+}
+
+// ensurePharmacyInventoryDefaults flips a pharmacy-use-case tenant's costing method to FEFO
+// (first-expire-first-out) and enables lot tracking — the batch-allocation behavior the DAWA
+// workflow requires. Best-effort/idempotent: only touches a config row that's still on the
+// factory defaults (wavg/no-lot-tracking), so it never clobbers an admin's later, deliberate
+// override back to something else.
+func (s *Syncer) ensurePharmacyInventoryDefaults(ctx context.Context, tenantID uuid.UUID) {
+	cfg, err := s.client.TenantInventoryConfig.Query().
+		Where(entconfig.TenantID(tenantID)).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		if _, createErr := s.client.TenantInventoryConfig.Create().
+			SetTenantID(tenantID).
+			SetCostingMethod(entconfig.CostingMethodFefo).
+			SetEnableLotTracking(true).
+			Save(ctx); createErr != nil {
+			log.Printf("  [WARN] pharmacy inventory defaults: create config for %s: %v", tenantID, createErr)
+		}
+		return
+	}
+	if err != nil {
+		log.Printf("  [WARN] pharmacy inventory defaults: query config for %s: %v", tenantID, err)
+		return
+	}
+	if cfg.CostingMethod == entconfig.CostingMethodWavg && !cfg.EnableLotTracking {
+		if _, updErr := cfg.Update().
+			SetCostingMethod(entconfig.CostingMethodFefo).
+			SetEnableLotTracking(true).
+			Save(ctx); updErr != nil {
+			log.Printf("  [WARN] pharmacy inventory defaults: update config for %s: %v", tenantID, updErr)
+		}
+	}
 }

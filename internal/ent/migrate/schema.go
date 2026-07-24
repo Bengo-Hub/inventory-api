@@ -708,6 +708,9 @@ var (
 		{Name: "theoretical", Type: field.TypeBool, Default: false},
 		{Name: "reason", Type: field.TypeString, Default: "sale"},
 		{Name: "consumed_at", Type: field.TypeTime},
+		{Name: "lot_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "lot_number", Type: field.TypeString, Nullable: true},
+		{Name: "expiry_date", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 	}
 	// ConsumptionLinesTable holds the schema information for the "consumption_lines" table.
@@ -735,6 +738,11 @@ var (
 				Name:    "consumptionline_consumption_id",
 				Unique:  false,
 				Columns: []*schema.Column{ConsumptionLinesColumns[2]},
+			},
+			{
+				Name:    "consumptionline_tenant_id_lot_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[18]},
 			},
 		},
 	}
@@ -913,6 +921,65 @@ var (
 				Name:    "documentsequence_tenant_id_doc_type",
 				Unique:  true,
 				Columns: []*schema.Column{DocumentSequencesColumns[1], DocumentSequencesColumns[2]},
+			},
+		},
+	}
+	// DrugInteractionRulesColumns holds the columns for the "drug_interaction_rules" table.
+	DrugInteractionRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "is_global", Type: field.TypeBool, Default: false},
+		{Name: "class_a", Type: field.TypeString},
+		{Name: "class_b", Type: field.TypeString},
+		{Name: "severity", Type: field.TypeEnum, Enums: []string{"minor", "moderate", "major", "contraindicated"}, Default: "moderate"},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "clinical_recommendation", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "source", Type: field.TypeString, Nullable: true},
+		{Name: "is_active", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// DrugInteractionRulesTable holds the schema information for the "drug_interaction_rules" table.
+	DrugInteractionRulesTable = &schema.Table{
+		Name:       "drug_interaction_rules",
+		Columns:    DrugInteractionRulesColumns,
+		PrimaryKey: []*schema.Column{DrugInteractionRulesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "druginteractionrule_tenant_id_class_a_class_b",
+				Unique:  true,
+				Columns: []*schema.Column{DrugInteractionRulesColumns[1], DrugInteractionRulesColumns[3], DrugInteractionRulesColumns[4]},
+			},
+			{
+				Name:    "druginteractionrule_tenant_id_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{DrugInteractionRulesColumns[1], DrugInteractionRulesColumns[9]},
+			},
+			{
+				Name:    "druginteractionrule_is_global",
+				Unique:  false,
+				Columns: []*schema.Column{DrugInteractionRulesColumns[2]},
+			},
+		},
+	}
+	// ExpiryAlertLogsColumns holds the columns for the "expiry_alert_logs" table.
+	ExpiryAlertLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "lot_id", Type: field.TypeUUID},
+		{Name: "tier", Type: field.TypeEnum, Enums: []string{"warning", "critical"}},
+		{Name: "alerted_at", Type: field.TypeTime},
+	}
+	// ExpiryAlertLogsTable holds the schema information for the "expiry_alert_logs" table.
+	ExpiryAlertLogsTable = &schema.Table{
+		Name:       "expiry_alert_logs",
+		Columns:    ExpiryAlertLogsColumns,
+		PrimaryKey: []*schema.Column{ExpiryAlertLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "expiryalertlog_tenant_id_lot_id_tier",
+				Unique:  true,
+				Columns: []*schema.Column{ExpiryAlertLogsColumns[1], ExpiryAlertLogsColumns[2], ExpiryAlertLogsColumns[3]},
 			},
 		},
 	}
@@ -1350,6 +1417,12 @@ var (
 		{Name: "track_serial_numbers", Type: field.TypeBool, Default: false},
 		{Name: "track_lots", Type: field.TypeBool, Default: false},
 		{Name: "shelf_life_days", Type: field.TypeInt, Nullable: true},
+		{Name: "generic_name", Type: field.TypeString, Nullable: true},
+		{Name: "active_ingredient", Type: field.TypeString, Nullable: true},
+		{Name: "dosage_form", Type: field.TypeString, Nullable: true},
+		{Name: "strength", Type: field.TypeString, Nullable: true},
+		{Name: "drug_class", Type: field.TypeString, Nullable: true},
+		{Name: "controlled_substance_schedule", Type: field.TypeEnum, Enums: []string{"NONE", "GENERAL_SALE", "PHARMACY_ONLY", "PRESCRIPTION_ONLY", "PART_I_POISON", "PART_II_POISON", "NARCOTIC_SCHEDULE_I", "NARCOTIC_SCHEDULE_II", "NARCOTIC_SCHEDULE_III", "NARCOTIC_SCHEDULE_IV"}, Default: "NONE"},
 		{Name: "weight_kg", Type: field.TypeFloat64, Nullable: true},
 		{Name: "dimensions_cm", Type: field.TypeJSON, Nullable: true},
 		{Name: "duration_minutes", Type: field.TypeInt, Nullable: true},
@@ -1394,31 +1467,31 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_units_units",
-				Columns:    []*schema.Column{ItemsColumns[69]},
+				Columns:    []*schema.Column{ItemsColumns[75]},
 				RefColumns: []*schema.Column{UnitsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_brands_items",
-				Columns:    []*schema.Column{ItemsColumns[70]},
+				Columns:    []*schema.Column{ItemsColumns[76]},
 				RefColumns: []*schema.Column{ItemBrandsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_item_categories_items",
-				Columns:    []*schema.Column{ItemsColumns[71]},
+				Columns:    []*schema.Column{ItemsColumns[77]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_suppliers_preferred_items",
-				Columns:    []*schema.Column{ItemsColumns[72]},
+				Columns:    []*schema.Column{ItemsColumns[78]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "items_tenants_items",
-				Columns:    []*schema.Column{ItemsColumns[73]},
+				Columns:    []*schema.Column{ItemsColumns[79]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1427,47 +1500,47 @@ var (
 			{
 				Name:    "item_tenant_id_sku",
 				Unique:  true,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[1]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[1]},
 			},
 			{
 				Name:    "item_tenant_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[71]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[77]},
 			},
 			{
 				Name:    "item_tenant_id_brand_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[70]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[76]},
 			},
 			{
 				Name:    "item_tenant_id_is_active",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[29]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[29]},
 			},
 			{
 				Name:    "item_tenant_id_end_of_life_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[65]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[71]},
 			},
 			{
 				Name:    "item_tenant_id_barcode",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[31]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[31]},
 			},
 			{
 				Name:    "item_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[67]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[73]},
 			},
 			{
 				Name:    "item_tenant_id_unit_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[69]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[75]},
 			},
 			{
 				Name:    "item_tenant_id_preferred_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemsColumns[73], ItemsColumns[72]},
+				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[78]},
 			},
 		},
 	}
@@ -2138,6 +2211,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "tenant_id", Type: field.TypeUUID},
 		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "lot_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity", Type: field.TypeInt, Default: 1},
 		{Name: "sub_total", Type: field.TypeFloat64, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
@@ -2151,7 +2225,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_return_lines_purchase_returns_lines",
-				Columns:    []*schema.Column{PurchaseReturnLinesColumns[6]},
+				Columns:    []*schema.Column{PurchaseReturnLinesColumns[7]},
 				RefColumns: []*schema.Column{PurchaseReturnsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2160,7 +2234,7 @@ var (
 			{
 				Name:    "purchasereturnline_tenant_id_purchase_return_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseReturnLinesColumns[1], PurchaseReturnLinesColumns[6]},
+				Columns: []*schema.Column{PurchaseReturnLinesColumns[1], PurchaseReturnLinesColumns[7]},
 			},
 			{
 				Name:    "purchasereturnline_item_id",
@@ -3652,6 +3726,8 @@ var (
 		CustomFieldDefinitionsTable,
 		CustomFieldValuesTable,
 		DocumentSequencesTable,
+		DrugInteractionRulesTable,
+		ExpiryAlertLogsTable,
 		FoodCostVariancesTable,
 		GoodsReceiptsTable,
 		GoodsReceiptLinesTable,

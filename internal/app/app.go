@@ -35,6 +35,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
+	"github.com/bengobox/inventory-service/internal/modules/expiry"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -65,20 +66,20 @@ func terminalJWTSecret(cfg *config.Config) string {
 }
 
 type App struct {
-	cfg                  *config.Config
-	log                  *zap.Logger
-	httpServer           *http.Server
-	db                   *pgxpool.Pool
-	cache                *redis.Client
-	events               *nats.Conn
-	orm                  *ent.Client
-	outboxPublisher      *eventslib.OutboxPoller
-	posSaleConsumer      *consumers.POSSaleEventsConsumer
-	conferenceConsumer   *consumers.ConferenceEventsConsumer
-	authConsumer         *consumers.AuthEventsConsumer
-	returnConsumer       *consumers.ReturnEventsConsumer
-	stockConsumer        *consumers.StockEventsConsumer
-	ticketConsumer       *consumers.TicketIssuanceConsumer
+	cfg                           *config.Config
+	log                           *zap.Logger
+	httpServer                    *http.Server
+	db                            *pgxpool.Pool
+	cache                         *redis.Client
+	events                        *nats.Conn
+	orm                           *ent.Client
+	outboxPublisher               *eventslib.OutboxPoller
+	posSaleConsumer               *consumers.POSSaleEventsConsumer
+	conferenceConsumer            *consumers.ConferenceEventsConsumer
+	authConsumer                  *consumers.AuthEventsConsumer
+	returnConsumer                *consumers.ReturnEventsConsumer
+	stockConsumer                 *consumers.StockEventsConsumer
+	ticketConsumer                *consumers.TicketIssuanceConsumer
 	treasuryTaxConsumer           *consumers.TreasuryTaxEventsConsumer
 	treasuryVendorBalanceConsumer *consumers.TreasuryVendorBalanceEventsConsumer
 	etimsItemConsumer             *consumers.EtimsItemRegisteredConsumer
@@ -370,6 +371,13 @@ func New(ctx context.Context) (*App, error) {
 		RetentionDays: cfg.EOL.RetentionDays,
 	}, log).Start(ctx)
 
+	// Pharmacy (DAWA) lot-expiry alerts: consumes TenantInventoryConfig.expiry_warning_days /
+	// enable_expiry_notifications, previously stored but never read by anything.
+	expirySvc := expiry.NewService(ormClient, log)
+	expiry.NewScheduler(expirySvc, sqlDB, expiry.SchedulerConfig{
+		Enabled: cfg.ExpiryAlert.ScheduleEnabled,
+	}, log).Start(ctx)
+
 	// Terminal/PIN login: issues + validates HMAC terminal JWTs for warehouse desk sessions.
 	pinAuthHandler := handlers.NewPINAuthHandler(ormClient, rbacService, subsClient, terminalJWTSecret(cfg), log)
 
@@ -385,19 +393,19 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:                  cfg,
-		log:                  log,
-		httpServer:           httpServer,
-		db:                   dbPool,
-		cache:                redisClient,
-		events:               natsConn,
-		orm:                  ormClient,
-		outboxPublisher:      outboxPublisher,
-		posSaleConsumer:      posSaleConsumer,
-		conferenceConsumer:   conferenceConsumer,
-		authConsumer:         authConsumer,
-		returnConsumer:       returnConsumer,
-		stockConsumer:        stockConsumer,
+		cfg:                           cfg,
+		log:                           log,
+		httpServer:                    httpServer,
+		db:                            dbPool,
+		cache:                         redisClient,
+		events:                        natsConn,
+		orm:                           ormClient,
+		outboxPublisher:               outboxPublisher,
+		posSaleConsumer:               posSaleConsumer,
+		conferenceConsumer:            conferenceConsumer,
+		authConsumer:                  authConsumer,
+		returnConsumer:                returnConsumer,
+		stockConsumer:                 stockConsumer,
 		ticketConsumer:                ticketConsumer,
 		treasuryTaxConsumer:           treasuryTaxConsumer,
 		treasuryVendorBalanceConsumer: treasuryVendorBalanceConsumer,

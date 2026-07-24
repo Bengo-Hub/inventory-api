@@ -110,6 +110,18 @@ type Item struct {
 	TrackLots bool `json:"track_lots,omitempty"`
 	// Default shelf life in days for perishables — seeds lot expiry_date at goods receipt
 	ShelfLifeDays *int `json:"shelf_life_days,omitempty"`
+	// Pharmacy: INN/generic drug name, distinct from the tenant's brand `name`
+	GenericName string `json:"generic_name,omitempty"`
+	// Pharmacy: active pharmaceutical ingredient, checked against patient allergy flags
+	ActiveIngredient string `json:"active_ingredient,omitempty"`
+	// Pharmacy: tablet, capsule, syrup, injection, etc.
+	DosageForm string `json:"dosage_form,omitempty"`
+	// Pharmacy: e.g. '500mg', '5mg/ml'
+	Strength string `json:"strength,omitempty"`
+	// Pharmacy: therapeutic/interaction class key (e.g. nsaid, ssri, anticoagulant) used by DrugInteractionRule
+	DrugClass string `json:"drug_class,omitempty"`
+	// Kenya Pharmacy & Poisons Board classification — authoritative controlled-substance classification (is_controlled_substance stays as a quick bool filter)
+	ControlledSubstanceSchedule item.ControlledSubstanceSchedule `json:"controlled_substance_schedule,omitempty"`
 	// Weight in kg for shipping/logistics pricing
 	WeightKg *float64 `json:"weight_kg,omitempty"`
 	// Physical dimensions {length, width, height} in cm
@@ -401,7 +413,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case item.FieldReturnWindowDays, item.FieldMaxAdults, item.FieldMaxChildren, item.FieldShelfLifeDays, item.FieldDurationMinutes, item.FieldTotalCapacity, item.FieldBookedCapacity:
 			values[i] = new(sql.NullInt64)
-		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldTaxCodeID, item.FieldEtimsItemClsCd, item.FieldEtimsPkgUnitCd, item.FieldEtimsQtyUnitCd, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
+		case item.FieldSku, item.FieldName, item.FieldDescription, item.FieldManufacturer, item.FieldModel, item.FieldGtin, item.FieldMpn, item.FieldCondition, item.FieldSlug, item.FieldShortDescription, item.FieldMetaTitle, item.FieldMetaDescription, item.FieldCountryOfOrigin, item.FieldHsCode, item.FieldType, item.FieldUseCase, item.FieldMealPlan, item.FieldOccupancyBasis, item.FieldImageURL, item.FieldBarcode, item.FieldBarcodeType, item.FieldGenericName, item.FieldActiveIngredient, item.FieldDosageForm, item.FieldStrength, item.FieldDrugClass, item.FieldControlledSubstanceSchedule, item.FieldTaxCodeID, item.FieldEtimsItemClsCd, item.FieldEtimsPkgUnitCd, item.FieldEtimsQtyUnitCd, item.FieldPurchaseUnit, item.FieldUnitContentUom, item.FieldStockTrackingMode, item.FieldEventVenue:
 			values[i] = new(sql.NullString)
 		case item.FieldEventStartAt, item.FieldEventEndAt, item.FieldEndOfLifeAt, item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -689,6 +701,42 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ShelfLifeDays = new(int)
 				*_m.ShelfLifeDays = int(value.Int64)
+			}
+		case item.FieldGenericName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field generic_name", values[i])
+			} else if value.Valid {
+				_m.GenericName = value.String
+			}
+		case item.FieldActiveIngredient:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field active_ingredient", values[i])
+			} else if value.Valid {
+				_m.ActiveIngredient = value.String
+			}
+		case item.FieldDosageForm:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field dosage_form", values[i])
+			} else if value.Valid {
+				_m.DosageForm = value.String
+			}
+		case item.FieldStrength:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field strength", values[i])
+			} else if value.Valid {
+				_m.Strength = value.String
+			}
+		case item.FieldDrugClass:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field drug_class", values[i])
+			} else if value.Valid {
+				_m.DrugClass = value.String
+			}
+		case item.FieldControlledSubstanceSchedule:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field controlled_substance_schedule", values[i])
+			} else if value.Valid {
+				_m.ControlledSubstanceSchedule = item.ControlledSubstanceSchedule(value.String)
 			}
 		case item.FieldWeightKg:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -1168,6 +1216,24 @@ func (_m *Item) String() string {
 		builder.WriteString("shelf_life_days=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("generic_name=")
+	builder.WriteString(_m.GenericName)
+	builder.WriteString(", ")
+	builder.WriteString("active_ingredient=")
+	builder.WriteString(_m.ActiveIngredient)
+	builder.WriteString(", ")
+	builder.WriteString("dosage_form=")
+	builder.WriteString(_m.DosageForm)
+	builder.WriteString(", ")
+	builder.WriteString("strength=")
+	builder.WriteString(_m.Strength)
+	builder.WriteString(", ")
+	builder.WriteString("drug_class=")
+	builder.WriteString(_m.DrugClass)
+	builder.WriteString(", ")
+	builder.WriteString("controlled_substance_schedule=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ControlledSubstanceSchedule))
 	builder.WriteString(", ")
 	if v := _m.WeightKg; v != nil {
 		builder.WriteString("weight_kg=")

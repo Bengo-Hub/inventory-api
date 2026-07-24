@@ -41,6 +41,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
+	"github.com/bengobox/inventory-service/internal/ent/druginteractionrule"
+	"github.com/bengobox/inventory-service/internal/ent/expiryalertlog"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
@@ -161,6 +163,10 @@ type Client struct {
 	CustomFieldValue *CustomFieldValueClient
 	// DocumentSequence is the client for interacting with the DocumentSequence builders.
 	DocumentSequence *DocumentSequenceClient
+	// DrugInteractionRule is the client for interacting with the DrugInteractionRule builders.
+	DrugInteractionRule *DrugInteractionRuleClient
+	// ExpiryAlertLog is the client for interacting with the ExpiryAlertLog builders.
+	ExpiryAlertLog *ExpiryAlertLogClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
 	// GoodsReceipt is the client for interacting with the GoodsReceipt builders.
@@ -323,6 +329,8 @@ func (c *Client) init() {
 	c.CustomFieldDefinition = NewCustomFieldDefinitionClient(c.config)
 	c.CustomFieldValue = NewCustomFieldValueClient(c.config)
 	c.DocumentSequence = NewDocumentSequenceClient(c.config)
+	c.DrugInteractionRule = NewDrugInteractionRuleClient(c.config)
+	c.ExpiryAlertLog = NewExpiryAlertLogClient(c.config)
 	c.FoodCostVariance = NewFoodCostVarianceClient(c.config)
 	c.GoodsReceipt = NewGoodsReceiptClient(c.config)
 	c.GoodsReceiptLine = NewGoodsReceiptLineClient(c.config)
@@ -503,6 +511,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:       NewCustomFieldValueClient(cfg),
 		DocumentSequence:       NewDocumentSequenceClient(cfg),
+		DrugInteractionRule:    NewDrugInteractionRuleClient(cfg),
+		ExpiryAlertLog:         NewExpiryAlertLogClient(cfg),
 		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
 		GoodsReceipt:           NewGoodsReceiptClient(cfg),
 		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
@@ -610,6 +620,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CustomFieldDefinition:  NewCustomFieldDefinitionClient(cfg),
 		CustomFieldValue:       NewCustomFieldValueClient(cfg),
 		DocumentSequence:       NewDocumentSequenceClient(cfg),
+		DrugInteractionRule:    NewDrugInteractionRuleClient(cfg),
+		ExpiryAlertLog:         NewExpiryAlertLogClient(cfg),
 		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
 		GoodsReceipt:           NewGoodsReceiptClient(cfg),
 		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
@@ -708,21 +720,22 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
-		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventorySerial,
-		c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory,
-		c.ItemConsumptionDaily, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
-		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
-		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
-		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
-		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
-		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
-		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
-		c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
+		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
+		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockCount,
+		c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
+		c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -738,21 +751,22 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine, c.InventoryBalance,
-		c.InventoryLot, c.InventoryPermission, c.InventoryRole, c.InventorySerial,
-		c.InventoryUser, c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory,
-		c.ItemConsumptionDaily, c.ItemPricing, c.ItemTranslation, c.ItemVariant,
-		c.ManufacturingAnalytics, c.ModifierGroup, c.ModifierOption, c.OutboxEvent,
-		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
-		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
-		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
-		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
-		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
-		c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
+		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
+		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
+		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
+		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
+		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
+		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockCount,
+		c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent, c.StockTransfer,
+		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
+		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
+		c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache, c.Warehouse,
+		c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -811,6 +825,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CustomFieldValue.mutate(ctx, m)
 	case *DocumentSequenceMutation:
 		return c.DocumentSequence.mutate(ctx, m)
+	case *DrugInteractionRuleMutation:
+		return c.DrugInteractionRule.mutate(ctx, m)
+	case *ExpiryAlertLogMutation:
+		return c.ExpiryAlertLog.mutate(ctx, m)
 	case *FoodCostVarianceMutation:
 		return c.FoodCostVariance.mutate(ctx, m)
 	case *GoodsReceiptMutation:
@@ -4504,6 +4522,272 @@ func (c *DocumentSequenceClient) mutate(ctx context.Context, m *DocumentSequence
 		return (&DocumentSequenceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown DocumentSequence mutation op: %q", m.Op())
+	}
+}
+
+// DrugInteractionRuleClient is a client for the DrugInteractionRule schema.
+type DrugInteractionRuleClient struct {
+	config
+}
+
+// NewDrugInteractionRuleClient returns a client for the DrugInteractionRule from the given config.
+func NewDrugInteractionRuleClient(c config) *DrugInteractionRuleClient {
+	return &DrugInteractionRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `druginteractionrule.Hooks(f(g(h())))`.
+func (c *DrugInteractionRuleClient) Use(hooks ...Hook) {
+	c.hooks.DrugInteractionRule = append(c.hooks.DrugInteractionRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `druginteractionrule.Intercept(f(g(h())))`.
+func (c *DrugInteractionRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DrugInteractionRule = append(c.inters.DrugInteractionRule, interceptors...)
+}
+
+// Create returns a builder for creating a DrugInteractionRule entity.
+func (c *DrugInteractionRuleClient) Create() *DrugInteractionRuleCreate {
+	mutation := newDrugInteractionRuleMutation(c.config, OpCreate)
+	return &DrugInteractionRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DrugInteractionRule entities.
+func (c *DrugInteractionRuleClient) CreateBulk(builders ...*DrugInteractionRuleCreate) *DrugInteractionRuleCreateBulk {
+	return &DrugInteractionRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DrugInteractionRuleClient) MapCreateBulk(slice any, setFunc func(*DrugInteractionRuleCreate, int)) *DrugInteractionRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DrugInteractionRuleCreateBulk{err: fmt.Errorf("calling to DrugInteractionRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DrugInteractionRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DrugInteractionRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DrugInteractionRule.
+func (c *DrugInteractionRuleClient) Update() *DrugInteractionRuleUpdate {
+	mutation := newDrugInteractionRuleMutation(c.config, OpUpdate)
+	return &DrugInteractionRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DrugInteractionRuleClient) UpdateOne(_m *DrugInteractionRule) *DrugInteractionRuleUpdateOne {
+	mutation := newDrugInteractionRuleMutation(c.config, OpUpdateOne, withDrugInteractionRule(_m))
+	return &DrugInteractionRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DrugInteractionRuleClient) UpdateOneID(id uuid.UUID) *DrugInteractionRuleUpdateOne {
+	mutation := newDrugInteractionRuleMutation(c.config, OpUpdateOne, withDrugInteractionRuleID(id))
+	return &DrugInteractionRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DrugInteractionRule.
+func (c *DrugInteractionRuleClient) Delete() *DrugInteractionRuleDelete {
+	mutation := newDrugInteractionRuleMutation(c.config, OpDelete)
+	return &DrugInteractionRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DrugInteractionRuleClient) DeleteOne(_m *DrugInteractionRule) *DrugInteractionRuleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DrugInteractionRuleClient) DeleteOneID(id uuid.UUID) *DrugInteractionRuleDeleteOne {
+	builder := c.Delete().Where(druginteractionrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DrugInteractionRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for DrugInteractionRule.
+func (c *DrugInteractionRuleClient) Query() *DrugInteractionRuleQuery {
+	return &DrugInteractionRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDrugInteractionRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DrugInteractionRule entity by its id.
+func (c *DrugInteractionRuleClient) Get(ctx context.Context, id uuid.UUID) (*DrugInteractionRule, error) {
+	return c.Query().Where(druginteractionrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DrugInteractionRuleClient) GetX(ctx context.Context, id uuid.UUID) *DrugInteractionRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DrugInteractionRuleClient) Hooks() []Hook {
+	return c.hooks.DrugInteractionRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *DrugInteractionRuleClient) Interceptors() []Interceptor {
+	return c.inters.DrugInteractionRule
+}
+
+func (c *DrugInteractionRuleClient) mutate(ctx context.Context, m *DrugInteractionRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DrugInteractionRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DrugInteractionRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DrugInteractionRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DrugInteractionRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DrugInteractionRule mutation op: %q", m.Op())
+	}
+}
+
+// ExpiryAlertLogClient is a client for the ExpiryAlertLog schema.
+type ExpiryAlertLogClient struct {
+	config
+}
+
+// NewExpiryAlertLogClient returns a client for the ExpiryAlertLog from the given config.
+func NewExpiryAlertLogClient(c config) *ExpiryAlertLogClient {
+	return &ExpiryAlertLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `expiryalertlog.Hooks(f(g(h())))`.
+func (c *ExpiryAlertLogClient) Use(hooks ...Hook) {
+	c.hooks.ExpiryAlertLog = append(c.hooks.ExpiryAlertLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `expiryalertlog.Intercept(f(g(h())))`.
+func (c *ExpiryAlertLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ExpiryAlertLog = append(c.inters.ExpiryAlertLog, interceptors...)
+}
+
+// Create returns a builder for creating a ExpiryAlertLog entity.
+func (c *ExpiryAlertLogClient) Create() *ExpiryAlertLogCreate {
+	mutation := newExpiryAlertLogMutation(c.config, OpCreate)
+	return &ExpiryAlertLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ExpiryAlertLog entities.
+func (c *ExpiryAlertLogClient) CreateBulk(builders ...*ExpiryAlertLogCreate) *ExpiryAlertLogCreateBulk {
+	return &ExpiryAlertLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ExpiryAlertLogClient) MapCreateBulk(slice any, setFunc func(*ExpiryAlertLogCreate, int)) *ExpiryAlertLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ExpiryAlertLogCreateBulk{err: fmt.Errorf("calling to ExpiryAlertLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ExpiryAlertLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ExpiryAlertLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ExpiryAlertLog.
+func (c *ExpiryAlertLogClient) Update() *ExpiryAlertLogUpdate {
+	mutation := newExpiryAlertLogMutation(c.config, OpUpdate)
+	return &ExpiryAlertLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ExpiryAlertLogClient) UpdateOne(_m *ExpiryAlertLog) *ExpiryAlertLogUpdateOne {
+	mutation := newExpiryAlertLogMutation(c.config, OpUpdateOne, withExpiryAlertLog(_m))
+	return &ExpiryAlertLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ExpiryAlertLogClient) UpdateOneID(id uuid.UUID) *ExpiryAlertLogUpdateOne {
+	mutation := newExpiryAlertLogMutation(c.config, OpUpdateOne, withExpiryAlertLogID(id))
+	return &ExpiryAlertLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ExpiryAlertLog.
+func (c *ExpiryAlertLogClient) Delete() *ExpiryAlertLogDelete {
+	mutation := newExpiryAlertLogMutation(c.config, OpDelete)
+	return &ExpiryAlertLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ExpiryAlertLogClient) DeleteOne(_m *ExpiryAlertLog) *ExpiryAlertLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ExpiryAlertLogClient) DeleteOneID(id uuid.UUID) *ExpiryAlertLogDeleteOne {
+	builder := c.Delete().Where(expiryalertlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ExpiryAlertLogDeleteOne{builder}
+}
+
+// Query returns a query builder for ExpiryAlertLog.
+func (c *ExpiryAlertLogClient) Query() *ExpiryAlertLogQuery {
+	return &ExpiryAlertLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeExpiryAlertLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ExpiryAlertLog entity by its id.
+func (c *ExpiryAlertLogClient) Get(ctx context.Context, id uuid.UUID) (*ExpiryAlertLog, error) {
+	return c.Query().Where(expiryalertlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ExpiryAlertLogClient) GetX(ctx context.Context, id uuid.UUID) *ExpiryAlertLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ExpiryAlertLogClient) Hooks() []Hook {
+	return c.hooks.ExpiryAlertLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *ExpiryAlertLogClient) Interceptors() []Interceptor {
+	return c.inters.ExpiryAlertLog
+}
+
+func (c *ExpiryAlertLogClient) mutate(ctx context.Context, m *ExpiryAlertLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ExpiryAlertLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ExpiryAlertLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ExpiryAlertLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ExpiryAlertLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ExpiryAlertLog mutation op: %q", m.Op())
 	}
 }
 
@@ -14254,20 +14538,20 @@ type (
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
 		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
-		DocumentSequence, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
-		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
-		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
-		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
-		Warehouse, WarehouseLocation, Warranty []ent.Hook
+		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
+		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
+		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
+		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
+		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
+		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -14275,19 +14559,19 @@ type (
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
 		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
-		DocumentSequence, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
-		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
-		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
-		PricingTier, ProductionBatch, PurchaseOrder, PurchaseOrderLine, PurchaseReturn,
-		PurchaseReturnLine, QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig,
-		RawMaterialUsage, Recipe, RecipeIngredient, Requisition, RequisitionLine,
-		Reservation, RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
-		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
-		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
+		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
+		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
+		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
+		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
+		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
+		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
+		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )

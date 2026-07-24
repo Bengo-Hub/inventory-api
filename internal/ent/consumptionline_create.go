@@ -198,6 +198,48 @@ func (_c *ConsumptionLineCreate) SetConsumedAt(v time.Time) *ConsumptionLineCrea
 	return _c
 }
 
+// SetLotID sets the "lot_id" field.
+func (_c *ConsumptionLineCreate) SetLotID(v uuid.UUID) *ConsumptionLineCreate {
+	_c.mutation.SetLotID(v)
+	return _c
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableLotID(v *uuid.UUID) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetLotID(*v)
+	}
+	return _c
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (_c *ConsumptionLineCreate) SetLotNumber(v string) *ConsumptionLineCreate {
+	_c.mutation.SetLotNumber(v)
+	return _c
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableLotNumber(v *string) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetLotNumber(*v)
+	}
+	return _c
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_c *ConsumptionLineCreate) SetExpiryDate(v time.Time) *ConsumptionLineCreate {
+	_c.mutation.SetExpiryDate(v)
+	return _c
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableExpiryDate(v *time.Time) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetExpiryDate(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *ConsumptionLineCreate) SetCreatedAt(v time.Time) *ConsumptionLineCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -431,6 +473,18 @@ func (_c *ConsumptionLineCreate) createSpec() (*ConsumptionLine, *sqlgraph.Creat
 	if value, ok := _c.mutation.ConsumedAt(); ok {
 		_spec.SetField(consumptionline.FieldConsumedAt, field.TypeTime, value)
 		_node.ConsumedAt = value
+	}
+	if value, ok := _c.mutation.LotID(); ok {
+		_spec.SetField(consumptionline.FieldLotID, field.TypeUUID, value)
+		_node.LotID = &value
+	}
+	if value, ok := _c.mutation.LotNumber(); ok {
+		_spec.SetField(consumptionline.FieldLotNumber, field.TypeString, value)
+		_node.LotNumber = value
+	}
+	if value, ok := _c.mutation.ExpiryDate(); ok {
+		_spec.SetField(consumptionline.FieldExpiryDate, field.TypeTime, value)
+		_node.ExpiryDate = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(consumptionline.FieldCreatedAt, field.TypeTime, value)
@@ -737,6 +791,60 @@ func (u *ConsumptionLineUpsert) SetConsumedAt(v time.Time) *ConsumptionLineUpser
 // UpdateConsumedAt sets the "consumed_at" field to the value that was provided on create.
 func (u *ConsumptionLineUpsert) UpdateConsumedAt() *ConsumptionLineUpsert {
 	u.SetExcluded(consumptionline.FieldConsumedAt)
+	return u
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *ConsumptionLineUpsert) SetLotID(v uuid.UUID) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldLotID, v)
+	return u
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateLotID() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldLotID)
+	return u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *ConsumptionLineUpsert) ClearLotID() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldLotID)
+	return u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *ConsumptionLineUpsert) SetLotNumber(v string) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldLotNumber, v)
+	return u
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateLotNumber() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldLotNumber)
+	return u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *ConsumptionLineUpsert) ClearLotNumber() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldLotNumber)
+	return u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *ConsumptionLineUpsert) SetExpiryDate(v time.Time) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldExpiryDate, v)
+	return u
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateExpiryDate() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldExpiryDate)
+	return u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *ConsumptionLineUpsert) ClearExpiryDate() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldExpiryDate)
 	return u
 }
 
@@ -1082,6 +1190,69 @@ func (u *ConsumptionLineUpsertOne) SetConsumedAt(v time.Time) *ConsumptionLineUp
 func (u *ConsumptionLineUpsertOne) UpdateConsumedAt() *ConsumptionLineUpsertOne {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.UpdateConsumedAt()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *ConsumptionLineUpsertOne) SetLotID(v uuid.UUID) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateLotID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *ConsumptionLineUpsertOne) ClearLotID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearLotID()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *ConsumptionLineUpsertOne) SetLotNumber(v string) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateLotNumber() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *ConsumptionLineUpsertOne) ClearLotNumber() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *ConsumptionLineUpsertOne) SetExpiryDate(v time.Time) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateExpiryDate() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *ConsumptionLineUpsertOne) ClearExpiryDate() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearExpiryDate()
 	})
 }
 
@@ -1594,6 +1765,69 @@ func (u *ConsumptionLineUpsertBulk) SetConsumedAt(v time.Time) *ConsumptionLineU
 func (u *ConsumptionLineUpsertBulk) UpdateConsumedAt() *ConsumptionLineUpsertBulk {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.UpdateConsumedAt()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *ConsumptionLineUpsertBulk) SetLotID(v uuid.UUID) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateLotID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *ConsumptionLineUpsertBulk) ClearLotID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearLotID()
+	})
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (u *ConsumptionLineUpsertBulk) SetLotNumber(v string) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetLotNumber(v)
+	})
+}
+
+// UpdateLotNumber sets the "lot_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateLotNumber() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateLotNumber()
+	})
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (u *ConsumptionLineUpsertBulk) ClearLotNumber() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearLotNumber()
+	})
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (u *ConsumptionLineUpsertBulk) SetExpiryDate(v time.Time) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetExpiryDate(v)
+	})
+}
+
+// UpdateExpiryDate sets the "expiry_date" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateExpiryDate() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateExpiryDate()
+	})
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (u *ConsumptionLineUpsertBulk) ClearExpiryDate() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearExpiryDate()
 	})
 }
 

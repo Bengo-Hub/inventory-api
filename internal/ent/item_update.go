@@ -814,6 +814,120 @@ func (_u *ItemUpdate) ClearShelfLifeDays() *ItemUpdate {
 	return _u
 }
 
+// SetGenericName sets the "generic_name" field.
+func (_u *ItemUpdate) SetGenericName(v string) *ItemUpdate {
+	_u.mutation.SetGenericName(v)
+	return _u
+}
+
+// SetNillableGenericName sets the "generic_name" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableGenericName(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetGenericName(*v)
+	}
+	return _u
+}
+
+// ClearGenericName clears the value of the "generic_name" field.
+func (_u *ItemUpdate) ClearGenericName() *ItemUpdate {
+	_u.mutation.ClearGenericName()
+	return _u
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (_u *ItemUpdate) SetActiveIngredient(v string) *ItemUpdate {
+	_u.mutation.SetActiveIngredient(v)
+	return _u
+}
+
+// SetNillableActiveIngredient sets the "active_ingredient" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableActiveIngredient(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetActiveIngredient(*v)
+	}
+	return _u
+}
+
+// ClearActiveIngredient clears the value of the "active_ingredient" field.
+func (_u *ItemUpdate) ClearActiveIngredient() *ItemUpdate {
+	_u.mutation.ClearActiveIngredient()
+	return _u
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (_u *ItemUpdate) SetDosageForm(v string) *ItemUpdate {
+	_u.mutation.SetDosageForm(v)
+	return _u
+}
+
+// SetNillableDosageForm sets the "dosage_form" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableDosageForm(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetDosageForm(*v)
+	}
+	return _u
+}
+
+// ClearDosageForm clears the value of the "dosage_form" field.
+func (_u *ItemUpdate) ClearDosageForm() *ItemUpdate {
+	_u.mutation.ClearDosageForm()
+	return _u
+}
+
+// SetStrength sets the "strength" field.
+func (_u *ItemUpdate) SetStrength(v string) *ItemUpdate {
+	_u.mutation.SetStrength(v)
+	return _u
+}
+
+// SetNillableStrength sets the "strength" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableStrength(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetStrength(*v)
+	}
+	return _u
+}
+
+// ClearStrength clears the value of the "strength" field.
+func (_u *ItemUpdate) ClearStrength() *ItemUpdate {
+	_u.mutation.ClearStrength()
+	return _u
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (_u *ItemUpdate) SetDrugClass(v string) *ItemUpdate {
+	_u.mutation.SetDrugClass(v)
+	return _u
+}
+
+// SetNillableDrugClass sets the "drug_class" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableDrugClass(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetDrugClass(*v)
+	}
+	return _u
+}
+
+// ClearDrugClass clears the value of the "drug_class" field.
+func (_u *ItemUpdate) ClearDrugClass() *ItemUpdate {
+	_u.mutation.ClearDrugClass()
+	return _u
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (_u *ItemUpdate) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemUpdate {
+	_u.mutation.SetControlledSubstanceSchedule(v)
+	return _u
+}
+
+// SetNillableControlledSubstanceSchedule sets the "controlled_substance_schedule" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableControlledSubstanceSchedule(v *item.ControlledSubstanceSchedule) *ItemUpdate {
+	if v != nil {
+		_u.SetControlledSubstanceSchedule(*v)
+	}
+	return _u
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_u *ItemUpdate) SetWeightKg(v float64) *ItemUpdate {
 	_u.mutation.ResetWeightKg()
@@ -2021,6 +2135,11 @@ func (_u *ItemUpdate) check() error {
 			return &ValidationError{Name: "occupancy_basis", err: fmt.Errorf(`ent: validator failed for field "Item.occupancy_basis": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ControlledSubstanceSchedule(); ok {
+		if err := item.ControlledSubstanceScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "controlled_substance_schedule", err: fmt.Errorf(`ent: validator failed for field "Item.controlled_substance_schedule": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PurchaseUnit(); ok {
 		if err := item.PurchaseUnitValidator(v); err != nil {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
@@ -2250,6 +2369,39 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ShelfLifeDaysCleared() {
 		_spec.ClearField(item.FieldShelfLifeDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.GenericName(); ok {
+		_spec.SetField(item.FieldGenericName, field.TypeString, value)
+	}
+	if _u.mutation.GenericNameCleared() {
+		_spec.ClearField(item.FieldGenericName, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveIngredient(); ok {
+		_spec.SetField(item.FieldActiveIngredient, field.TypeString, value)
+	}
+	if _u.mutation.ActiveIngredientCleared() {
+		_spec.ClearField(item.FieldActiveIngredient, field.TypeString)
+	}
+	if value, ok := _u.mutation.DosageForm(); ok {
+		_spec.SetField(item.FieldDosageForm, field.TypeString, value)
+	}
+	if _u.mutation.DosageFormCleared() {
+		_spec.ClearField(item.FieldDosageForm, field.TypeString)
+	}
+	if value, ok := _u.mutation.Strength(); ok {
+		_spec.SetField(item.FieldStrength, field.TypeString, value)
+	}
+	if _u.mutation.StrengthCleared() {
+		_spec.ClearField(item.FieldStrength, field.TypeString)
+	}
+	if value, ok := _u.mutation.DrugClass(); ok {
+		_spec.SetField(item.FieldDrugClass, field.TypeString, value)
+	}
+	if _u.mutation.DrugClassCleared() {
+		_spec.ClearField(item.FieldDrugClass, field.TypeString)
+	}
+	if value, ok := _u.mutation.ControlledSubstanceSchedule(); ok {
+		_spec.SetField(item.FieldControlledSubstanceSchedule, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
@@ -3888,6 +4040,120 @@ func (_u *ItemUpdateOne) ClearShelfLifeDays() *ItemUpdateOne {
 	return _u
 }
 
+// SetGenericName sets the "generic_name" field.
+func (_u *ItemUpdateOne) SetGenericName(v string) *ItemUpdateOne {
+	_u.mutation.SetGenericName(v)
+	return _u
+}
+
+// SetNillableGenericName sets the "generic_name" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableGenericName(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetGenericName(*v)
+	}
+	return _u
+}
+
+// ClearGenericName clears the value of the "generic_name" field.
+func (_u *ItemUpdateOne) ClearGenericName() *ItemUpdateOne {
+	_u.mutation.ClearGenericName()
+	return _u
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (_u *ItemUpdateOne) SetActiveIngredient(v string) *ItemUpdateOne {
+	_u.mutation.SetActiveIngredient(v)
+	return _u
+}
+
+// SetNillableActiveIngredient sets the "active_ingredient" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableActiveIngredient(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetActiveIngredient(*v)
+	}
+	return _u
+}
+
+// ClearActiveIngredient clears the value of the "active_ingredient" field.
+func (_u *ItemUpdateOne) ClearActiveIngredient() *ItemUpdateOne {
+	_u.mutation.ClearActiveIngredient()
+	return _u
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (_u *ItemUpdateOne) SetDosageForm(v string) *ItemUpdateOne {
+	_u.mutation.SetDosageForm(v)
+	return _u
+}
+
+// SetNillableDosageForm sets the "dosage_form" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableDosageForm(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetDosageForm(*v)
+	}
+	return _u
+}
+
+// ClearDosageForm clears the value of the "dosage_form" field.
+func (_u *ItemUpdateOne) ClearDosageForm() *ItemUpdateOne {
+	_u.mutation.ClearDosageForm()
+	return _u
+}
+
+// SetStrength sets the "strength" field.
+func (_u *ItemUpdateOne) SetStrength(v string) *ItemUpdateOne {
+	_u.mutation.SetStrength(v)
+	return _u
+}
+
+// SetNillableStrength sets the "strength" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableStrength(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetStrength(*v)
+	}
+	return _u
+}
+
+// ClearStrength clears the value of the "strength" field.
+func (_u *ItemUpdateOne) ClearStrength() *ItemUpdateOne {
+	_u.mutation.ClearStrength()
+	return _u
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (_u *ItemUpdateOne) SetDrugClass(v string) *ItemUpdateOne {
+	_u.mutation.SetDrugClass(v)
+	return _u
+}
+
+// SetNillableDrugClass sets the "drug_class" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableDrugClass(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetDrugClass(*v)
+	}
+	return _u
+}
+
+// ClearDrugClass clears the value of the "drug_class" field.
+func (_u *ItemUpdateOne) ClearDrugClass() *ItemUpdateOne {
+	_u.mutation.ClearDrugClass()
+	return _u
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (_u *ItemUpdateOne) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemUpdateOne {
+	_u.mutation.SetControlledSubstanceSchedule(v)
+	return _u
+}
+
+// SetNillableControlledSubstanceSchedule sets the "controlled_substance_schedule" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableControlledSubstanceSchedule(v *item.ControlledSubstanceSchedule) *ItemUpdateOne {
+	if v != nil {
+		_u.SetControlledSubstanceSchedule(*v)
+	}
+	return _u
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_u *ItemUpdateOne) SetWeightKg(v float64) *ItemUpdateOne {
 	_u.mutation.ResetWeightKg()
@@ -5108,6 +5374,11 @@ func (_u *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "occupancy_basis", err: fmt.Errorf(`ent: validator failed for field "Item.occupancy_basis": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ControlledSubstanceSchedule(); ok {
+		if err := item.ControlledSubstanceScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "controlled_substance_schedule", err: fmt.Errorf(`ent: validator failed for field "Item.controlled_substance_schedule": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PurchaseUnit(); ok {
 		if err := item.PurchaseUnitValidator(v); err != nil {
 			return &ValidationError{Name: "purchase_unit", err: fmt.Errorf(`ent: validator failed for field "Item.purchase_unit": %w`, err)}
@@ -5354,6 +5625,39 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.ShelfLifeDaysCleared() {
 		_spec.ClearField(item.FieldShelfLifeDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.GenericName(); ok {
+		_spec.SetField(item.FieldGenericName, field.TypeString, value)
+	}
+	if _u.mutation.GenericNameCleared() {
+		_spec.ClearField(item.FieldGenericName, field.TypeString)
+	}
+	if value, ok := _u.mutation.ActiveIngredient(); ok {
+		_spec.SetField(item.FieldActiveIngredient, field.TypeString, value)
+	}
+	if _u.mutation.ActiveIngredientCleared() {
+		_spec.ClearField(item.FieldActiveIngredient, field.TypeString)
+	}
+	if value, ok := _u.mutation.DosageForm(); ok {
+		_spec.SetField(item.FieldDosageForm, field.TypeString, value)
+	}
+	if _u.mutation.DosageFormCleared() {
+		_spec.ClearField(item.FieldDosageForm, field.TypeString)
+	}
+	if value, ok := _u.mutation.Strength(); ok {
+		_spec.SetField(item.FieldStrength, field.TypeString, value)
+	}
+	if _u.mutation.StrengthCleared() {
+		_spec.ClearField(item.FieldStrength, field.TypeString)
+	}
+	if value, ok := _u.mutation.DrugClass(); ok {
+		_spec.SetField(item.FieldDrugClass, field.TypeString, value)
+	}
+	if _u.mutation.DrugClassCleared() {
+		_spec.ClearField(item.FieldDrugClass, field.TypeString)
+	}
+	if value, ok := _u.mutation.ControlledSubstanceSchedule(); ok {
+		_spec.SetField(item.FieldControlledSubstanceSchedule, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)

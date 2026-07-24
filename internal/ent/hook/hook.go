@@ -309,6 +309,30 @@ func (f DocumentSequenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DocumentSequenceMutation", m)
 }
 
+// The DrugInteractionRuleFunc type is an adapter to allow the use of ordinary
+// function as DrugInteractionRule mutator.
+type DrugInteractionRuleFunc func(context.Context, *ent.DrugInteractionRuleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DrugInteractionRuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DrugInteractionRuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DrugInteractionRuleMutation", m)
+}
+
+// The ExpiryAlertLogFunc type is an adapter to allow the use of ordinary
+// function as ExpiryAlertLog mutator.
+type ExpiryAlertLogFunc func(context.Context, *ent.ExpiryAlertLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ExpiryAlertLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ExpiryAlertLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpiryAlertLogMutation", m)
+}
+
 // The FoodCostVarianceFunc type is an adapter to allow the use of ordinary
 // function as FoodCostVariance mutator.
 type FoodCostVarianceFunc func(context.Context, *ent.FoodCostVarianceMutation) (ent.Value, error)

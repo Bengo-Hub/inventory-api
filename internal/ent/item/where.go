@@ -241,6 +241,31 @@ func ShelfLifeDays(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldShelfLifeDays, v))
 }
 
+// GenericName applies equality check predicate on the "generic_name" field. It's identical to GenericNameEQ.
+func GenericName(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldGenericName, v))
+}
+
+// ActiveIngredient applies equality check predicate on the "active_ingredient" field. It's identical to ActiveIngredientEQ.
+func ActiveIngredient(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldActiveIngredient, v))
+}
+
+// DosageForm applies equality check predicate on the "dosage_form" field. It's identical to DosageFormEQ.
+func DosageForm(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDosageForm, v))
+}
+
+// Strength applies equality check predicate on the "strength" field. It's identical to StrengthEQ.
+func Strength(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldStrength, v))
+}
+
+// DrugClass applies equality check predicate on the "drug_class" field. It's identical to DrugClassEQ.
+func DrugClass(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDrugClass, v))
+}
+
 // WeightKg applies equality check predicate on the "weight_kg" field. It's identical to WeightKgEQ.
 func WeightKg(v float64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldWeightKg, v))
@@ -2154,6 +2179,401 @@ func ShelfLifeDaysIsNil() predicate.Item {
 // ShelfLifeDaysNotNil applies the NotNil predicate on the "shelf_life_days" field.
 func ShelfLifeDaysNotNil() predicate.Item {
 	return predicate.Item(sql.FieldNotNull(FieldShelfLifeDays))
+}
+
+// GenericNameEQ applies the EQ predicate on the "generic_name" field.
+func GenericNameEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldGenericName, v))
+}
+
+// GenericNameNEQ applies the NEQ predicate on the "generic_name" field.
+func GenericNameNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldGenericName, v))
+}
+
+// GenericNameIn applies the In predicate on the "generic_name" field.
+func GenericNameIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldGenericName, vs...))
+}
+
+// GenericNameNotIn applies the NotIn predicate on the "generic_name" field.
+func GenericNameNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldGenericName, vs...))
+}
+
+// GenericNameGT applies the GT predicate on the "generic_name" field.
+func GenericNameGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldGenericName, v))
+}
+
+// GenericNameGTE applies the GTE predicate on the "generic_name" field.
+func GenericNameGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldGenericName, v))
+}
+
+// GenericNameLT applies the LT predicate on the "generic_name" field.
+func GenericNameLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldGenericName, v))
+}
+
+// GenericNameLTE applies the LTE predicate on the "generic_name" field.
+func GenericNameLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldGenericName, v))
+}
+
+// GenericNameContains applies the Contains predicate on the "generic_name" field.
+func GenericNameContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldGenericName, v))
+}
+
+// GenericNameHasPrefix applies the HasPrefix predicate on the "generic_name" field.
+func GenericNameHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldGenericName, v))
+}
+
+// GenericNameHasSuffix applies the HasSuffix predicate on the "generic_name" field.
+func GenericNameHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldGenericName, v))
+}
+
+// GenericNameIsNil applies the IsNil predicate on the "generic_name" field.
+func GenericNameIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldGenericName))
+}
+
+// GenericNameNotNil applies the NotNil predicate on the "generic_name" field.
+func GenericNameNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldGenericName))
+}
+
+// GenericNameEqualFold applies the EqualFold predicate on the "generic_name" field.
+func GenericNameEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldGenericName, v))
+}
+
+// GenericNameContainsFold applies the ContainsFold predicate on the "generic_name" field.
+func GenericNameContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldGenericName, v))
+}
+
+// ActiveIngredientEQ applies the EQ predicate on the "active_ingredient" field.
+func ActiveIngredientEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientNEQ applies the NEQ predicate on the "active_ingredient" field.
+func ActiveIngredientNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientIn applies the In predicate on the "active_ingredient" field.
+func ActiveIngredientIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldActiveIngredient, vs...))
+}
+
+// ActiveIngredientNotIn applies the NotIn predicate on the "active_ingredient" field.
+func ActiveIngredientNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldActiveIngredient, vs...))
+}
+
+// ActiveIngredientGT applies the GT predicate on the "active_ingredient" field.
+func ActiveIngredientGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientGTE applies the GTE predicate on the "active_ingredient" field.
+func ActiveIngredientGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientLT applies the LT predicate on the "active_ingredient" field.
+func ActiveIngredientLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientLTE applies the LTE predicate on the "active_ingredient" field.
+func ActiveIngredientLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientContains applies the Contains predicate on the "active_ingredient" field.
+func ActiveIngredientContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientHasPrefix applies the HasPrefix predicate on the "active_ingredient" field.
+func ActiveIngredientHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientHasSuffix applies the HasSuffix predicate on the "active_ingredient" field.
+func ActiveIngredientHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientIsNil applies the IsNil predicate on the "active_ingredient" field.
+func ActiveIngredientIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldActiveIngredient))
+}
+
+// ActiveIngredientNotNil applies the NotNil predicate on the "active_ingredient" field.
+func ActiveIngredientNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldActiveIngredient))
+}
+
+// ActiveIngredientEqualFold applies the EqualFold predicate on the "active_ingredient" field.
+func ActiveIngredientEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldActiveIngredient, v))
+}
+
+// ActiveIngredientContainsFold applies the ContainsFold predicate on the "active_ingredient" field.
+func ActiveIngredientContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldActiveIngredient, v))
+}
+
+// DosageFormEQ applies the EQ predicate on the "dosage_form" field.
+func DosageFormEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDosageForm, v))
+}
+
+// DosageFormNEQ applies the NEQ predicate on the "dosage_form" field.
+func DosageFormNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldDosageForm, v))
+}
+
+// DosageFormIn applies the In predicate on the "dosage_form" field.
+func DosageFormIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldDosageForm, vs...))
+}
+
+// DosageFormNotIn applies the NotIn predicate on the "dosage_form" field.
+func DosageFormNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldDosageForm, vs...))
+}
+
+// DosageFormGT applies the GT predicate on the "dosage_form" field.
+func DosageFormGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldDosageForm, v))
+}
+
+// DosageFormGTE applies the GTE predicate on the "dosage_form" field.
+func DosageFormGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldDosageForm, v))
+}
+
+// DosageFormLT applies the LT predicate on the "dosage_form" field.
+func DosageFormLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldDosageForm, v))
+}
+
+// DosageFormLTE applies the LTE predicate on the "dosage_form" field.
+func DosageFormLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldDosageForm, v))
+}
+
+// DosageFormContains applies the Contains predicate on the "dosage_form" field.
+func DosageFormContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldDosageForm, v))
+}
+
+// DosageFormHasPrefix applies the HasPrefix predicate on the "dosage_form" field.
+func DosageFormHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldDosageForm, v))
+}
+
+// DosageFormHasSuffix applies the HasSuffix predicate on the "dosage_form" field.
+func DosageFormHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldDosageForm, v))
+}
+
+// DosageFormIsNil applies the IsNil predicate on the "dosage_form" field.
+func DosageFormIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldDosageForm))
+}
+
+// DosageFormNotNil applies the NotNil predicate on the "dosage_form" field.
+func DosageFormNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldDosageForm))
+}
+
+// DosageFormEqualFold applies the EqualFold predicate on the "dosage_form" field.
+func DosageFormEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldDosageForm, v))
+}
+
+// DosageFormContainsFold applies the ContainsFold predicate on the "dosage_form" field.
+func DosageFormContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldDosageForm, v))
+}
+
+// StrengthEQ applies the EQ predicate on the "strength" field.
+func StrengthEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldStrength, v))
+}
+
+// StrengthNEQ applies the NEQ predicate on the "strength" field.
+func StrengthNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldStrength, v))
+}
+
+// StrengthIn applies the In predicate on the "strength" field.
+func StrengthIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldStrength, vs...))
+}
+
+// StrengthNotIn applies the NotIn predicate on the "strength" field.
+func StrengthNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldStrength, vs...))
+}
+
+// StrengthGT applies the GT predicate on the "strength" field.
+func StrengthGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldStrength, v))
+}
+
+// StrengthGTE applies the GTE predicate on the "strength" field.
+func StrengthGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldStrength, v))
+}
+
+// StrengthLT applies the LT predicate on the "strength" field.
+func StrengthLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldStrength, v))
+}
+
+// StrengthLTE applies the LTE predicate on the "strength" field.
+func StrengthLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldStrength, v))
+}
+
+// StrengthContains applies the Contains predicate on the "strength" field.
+func StrengthContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldStrength, v))
+}
+
+// StrengthHasPrefix applies the HasPrefix predicate on the "strength" field.
+func StrengthHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldStrength, v))
+}
+
+// StrengthHasSuffix applies the HasSuffix predicate on the "strength" field.
+func StrengthHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldStrength, v))
+}
+
+// StrengthIsNil applies the IsNil predicate on the "strength" field.
+func StrengthIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldStrength))
+}
+
+// StrengthNotNil applies the NotNil predicate on the "strength" field.
+func StrengthNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldStrength))
+}
+
+// StrengthEqualFold applies the EqualFold predicate on the "strength" field.
+func StrengthEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldStrength, v))
+}
+
+// StrengthContainsFold applies the ContainsFold predicate on the "strength" field.
+func StrengthContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldStrength, v))
+}
+
+// DrugClassEQ applies the EQ predicate on the "drug_class" field.
+func DrugClassEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldDrugClass, v))
+}
+
+// DrugClassNEQ applies the NEQ predicate on the "drug_class" field.
+func DrugClassNEQ(v string) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldDrugClass, v))
+}
+
+// DrugClassIn applies the In predicate on the "drug_class" field.
+func DrugClassIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldDrugClass, vs...))
+}
+
+// DrugClassNotIn applies the NotIn predicate on the "drug_class" field.
+func DrugClassNotIn(vs ...string) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldDrugClass, vs...))
+}
+
+// DrugClassGT applies the GT predicate on the "drug_class" field.
+func DrugClassGT(v string) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldDrugClass, v))
+}
+
+// DrugClassGTE applies the GTE predicate on the "drug_class" field.
+func DrugClassGTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldDrugClass, v))
+}
+
+// DrugClassLT applies the LT predicate on the "drug_class" field.
+func DrugClassLT(v string) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldDrugClass, v))
+}
+
+// DrugClassLTE applies the LTE predicate on the "drug_class" field.
+func DrugClassLTE(v string) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldDrugClass, v))
+}
+
+// DrugClassContains applies the Contains predicate on the "drug_class" field.
+func DrugClassContains(v string) predicate.Item {
+	return predicate.Item(sql.FieldContains(FieldDrugClass, v))
+}
+
+// DrugClassHasPrefix applies the HasPrefix predicate on the "drug_class" field.
+func DrugClassHasPrefix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasPrefix(FieldDrugClass, v))
+}
+
+// DrugClassHasSuffix applies the HasSuffix predicate on the "drug_class" field.
+func DrugClassHasSuffix(v string) predicate.Item {
+	return predicate.Item(sql.FieldHasSuffix(FieldDrugClass, v))
+}
+
+// DrugClassIsNil applies the IsNil predicate on the "drug_class" field.
+func DrugClassIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldDrugClass))
+}
+
+// DrugClassNotNil applies the NotNil predicate on the "drug_class" field.
+func DrugClassNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldDrugClass))
+}
+
+// DrugClassEqualFold applies the EqualFold predicate on the "drug_class" field.
+func DrugClassEqualFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldEqualFold(FieldDrugClass, v))
+}
+
+// DrugClassContainsFold applies the ContainsFold predicate on the "drug_class" field.
+func DrugClassContainsFold(v string) predicate.Item {
+	return predicate.Item(sql.FieldContainsFold(FieldDrugClass, v))
+}
+
+// ControlledSubstanceScheduleEQ applies the EQ predicate on the "controlled_substance_schedule" field.
+func ControlledSubstanceScheduleEQ(v ControlledSubstanceSchedule) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldControlledSubstanceSchedule, v))
+}
+
+// ControlledSubstanceScheduleNEQ applies the NEQ predicate on the "controlled_substance_schedule" field.
+func ControlledSubstanceScheduleNEQ(v ControlledSubstanceSchedule) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldControlledSubstanceSchedule, v))
+}
+
+// ControlledSubstanceScheduleIn applies the In predicate on the "controlled_substance_schedule" field.
+func ControlledSubstanceScheduleIn(vs ...ControlledSubstanceSchedule) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldControlledSubstanceSchedule, vs...))
+}
+
+// ControlledSubstanceScheduleNotIn applies the NotIn predicate on the "controlled_substance_schedule" field.
+func ControlledSubstanceScheduleNotIn(vs ...ControlledSubstanceSchedule) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldControlledSubstanceSchedule, vs...))
 }
 
 // WeightKgEQ applies the EQ predicate on the "weight_kg" field.

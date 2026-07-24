@@ -37,6 +37,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
+	"github.com/bengobox/inventory-service/internal/ent/druginteractionrule"
+	"github.com/bengobox/inventory-service/internal/ent/expiryalertlog"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
@@ -185,6 +187,8 @@ func checkColumn(t, c string) error {
 			customfielddefinition.Table:  customfielddefinition.ValidColumn,
 			customfieldvalue.Table:       customfieldvalue.ValidColumn,
 			documentsequence.Table:       documentsequence.ValidColumn,
+			druginteractionrule.Table:    druginteractionrule.ValidColumn,
+			expiryalertlog.Table:         expiryalertlog.ValidColumn,
 			foodcostvariance.Table:       foodcostvariance.ValidColumn,
 			goodsreceipt.Table:           goodsreceipt.ValidColumn,
 			goodsreceiptline.Table:       goodsreceiptline.ValidColumn,

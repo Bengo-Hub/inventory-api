@@ -66,6 +66,20 @@ func (ConsumptionLine) Fields() []ent.Field {
 			Default("sale"),
 		field.Time("consumed_at").
 			Comment("Bucketing key for the trend chart; mirrors Consumption.processed_at"),
+		// Lot/batch traceability (pharmacy DAWA use-case, Phase 2): which InventoryLot this
+		// line actually drew from. A single sale line spanning two lots at a FEFO boundary
+		// produces two ConsumptionLine rows, one per lot. Nil for non-lot-tracked items
+		// (wavg costing method, or lots exhausted before this draw). This is what makes
+		// "which sold orders contain batch X" answerable — previously consumeLots decremented
+		// InventoryLot.quantity with no record of which consumption drew from it.
+		field.UUID("lot_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
+		field.String("lot_number").
+			Optional(),
+		field.Time("expiry_date").
+			Optional().
+			Nillable(),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
@@ -79,5 +93,6 @@ func (ConsumptionLine) Indexes() []ent.Index {
 		index.Fields("tenant_id", "recipe_id", "consumed_at"),
 		index.Fields("tenant_id", "order_id"),
 		index.Fields("consumption_id"),
+		index.Fields("tenant_id", "lot_id"),
 	}
 }

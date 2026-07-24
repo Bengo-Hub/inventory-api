@@ -21,6 +21,8 @@ const (
 	FieldPurchaseReturnID = "purchase_return_id"
 	// FieldItemID holds the string denoting the item_id field in the database.
 	FieldItemID = "item_id"
+	// FieldLotID holds the string denoting the lot_id field in the database.
+	FieldLotID = "lot_id"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
 	// FieldSubTotal holds the string denoting the sub_total field in the database.
@@ -46,6 +48,7 @@ var Columns = []string{
 	FieldTenantID,
 	FieldPurchaseReturnID,
 	FieldItemID,
+	FieldLotID,
 	FieldQuantity,
 	FieldSubTotal,
 	FieldCreatedAt,
@@ -93,6 +96,11 @@ func ByPurchaseReturnID(opts ...sql.OrderTermOption) OrderOption {
 // ByItemID orders the results by the item_id field.
 func ByItemID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldItemID, opts...).ToFunc()
+}
+
+// ByLotID orders the results by the lot_id field.
+func ByLotID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLotID, opts...).ToFunc()
 }
 
 // ByQuantity orders the results by the quantity field.

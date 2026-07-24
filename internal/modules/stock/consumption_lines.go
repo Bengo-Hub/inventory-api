@@ -29,6 +29,11 @@ type consumptionLineInput struct {
 	theoretical      bool
 	reason           string
 	consumedAt       time.Time
+	// Lot traceability (pharmacy DAWA use-case) — set when this line was drawn from a
+	// specific InventoryLot via consumeLots. Nil for wavg-costed items.
+	lotID      *uuid.UUID
+	lotNumber  string
+	expiryDate *time.Time
 }
 
 // recordConsumptionLine persists a normalized ConsumptionLine row and folds it into the
@@ -64,6 +69,15 @@ func (s *Service) recordConsumptionLine(ctx context.Context, tx *ent.Tx, tenantI
 	}
 	if in.reason != "" {
 		create.SetReason(in.reason)
+	}
+	if in.lotID != nil {
+		create.SetLotID(*in.lotID)
+	}
+	if in.lotNumber != "" {
+		create.SetLotNumber(in.lotNumber)
+	}
+	if in.expiryDate != nil {
+		create.SetExpiryDate(*in.expiryDate)
 	}
 
 	if _, err := create.Save(ctx); err != nil {

@@ -43,6 +43,20 @@ func (_c *PurchaseReturnLineCreate) SetItemID(v uuid.UUID) *PurchaseReturnLineCr
 	return _c
 }
 
+// SetLotID sets the "lot_id" field.
+func (_c *PurchaseReturnLineCreate) SetLotID(v uuid.UUID) *PurchaseReturnLineCreate {
+	_c.mutation.SetLotID(v)
+	return _c
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_c *PurchaseReturnLineCreate) SetNillableLotID(v *uuid.UUID) *PurchaseReturnLineCreate {
+	if v != nil {
+		_c.SetLotID(*v)
+	}
+	return _c
+}
+
 // SetQuantity sets the "quantity" field.
 func (_c *PurchaseReturnLineCreate) SetQuantity(v int) *PurchaseReturnLineCreate {
 	_c.mutation.SetQuantity(v)
@@ -224,6 +238,10 @@ func (_c *PurchaseReturnLineCreate) createSpec() (*PurchaseReturnLine, *sqlgraph
 		_spec.SetField(purchasereturnline.FieldItemID, field.TypeUUID, value)
 		_node.ItemID = value
 	}
+	if value, ok := _c.mutation.LotID(); ok {
+		_spec.SetField(purchasereturnline.FieldLotID, field.TypeUUID, value)
+		_node.LotID = &value
+	}
 	if value, ok := _c.mutation.Quantity(); ok {
 		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
 		_node.Quantity = value
@@ -338,6 +356,24 @@ func (u *PurchaseReturnLineUpsert) SetItemID(v uuid.UUID) *PurchaseReturnLineUps
 // UpdateItemID sets the "item_id" field to the value that was provided on create.
 func (u *PurchaseReturnLineUpsert) UpdateItemID() *PurchaseReturnLineUpsert {
 	u.SetExcluded(purchasereturnline.FieldItemID)
+	return u
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *PurchaseReturnLineUpsert) SetLotID(v uuid.UUID) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldLotID, v)
+	return u
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateLotID() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldLotID)
+	return u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *PurchaseReturnLineUpsert) ClearLotID() *PurchaseReturnLineUpsert {
+	u.SetNull(purchasereturnline.FieldLotID)
 	return u
 }
 
@@ -467,6 +503,27 @@ func (u *PurchaseReturnLineUpsertOne) SetItemID(v uuid.UUID) *PurchaseReturnLine
 func (u *PurchaseReturnLineUpsertOne) UpdateItemID() *PurchaseReturnLineUpsertOne {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.UpdateItemID()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *PurchaseReturnLineUpsertOne) SetLotID(v uuid.UUID) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateLotID() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *PurchaseReturnLineUpsertOne) ClearLotID() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.ClearLotID()
 	})
 }
 
@@ -769,6 +826,27 @@ func (u *PurchaseReturnLineUpsertBulk) SetItemID(v uuid.UUID) *PurchaseReturnLin
 func (u *PurchaseReturnLineUpsertBulk) UpdateItemID() *PurchaseReturnLineUpsertBulk {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.UpdateItemID()
+	})
+}
+
+// SetLotID sets the "lot_id" field.
+func (u *PurchaseReturnLineUpsertBulk) SetLotID(v uuid.UUID) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetLotID(v)
+	})
+}
+
+// UpdateLotID sets the "lot_id" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateLotID() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateLotID()
+	})
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (u *PurchaseReturnLineUpsertBulk) ClearLotID() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.ClearLotID()
 	})
 }
 

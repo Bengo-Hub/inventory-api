@@ -117,6 +117,20 @@ type ConsumptionResponse struct {
 	OrderID     uuid.UUID `json:"order_id"`
 	Status      string    `json:"status"`
 	ProcessedAt time.Time `json:"processed_at"`
+	// LotsConsumed reports which InventoryLot(s) each SKU was drawn from, when the tenant's
+	// costing method is lot-ordered (fifo/lifo/fefo). Additive field — callers that don't
+	// read it (ordering-backend) are unaffected. pos-api uses this to stamp POSOrderLine's
+	// lot_number/expiry_date so the sold unit's batch is known on the receipt/regulator log.
+	LotsConsumed []ConsumedLot `json:"lots_consumed,omitempty"`
+}
+
+// ConsumedLot is one lot's contribution to a single SKU's consumption within a sale.
+type ConsumedLot struct {
+	SKU        string     `json:"sku"`
+	LotID      uuid.UUID  `json:"lot_id"`
+	LotNumber  string     `json:"lot_number,omitempty"`
+	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
+	Quantity   float64    `json:"quantity"`
 }
 
 // Service handles stock reservation and consumption business logic.
@@ -509,13 +523,26 @@ func (s *Service) costingMethod(ctx context.Context, tenantID uuid.UUID) string 
 	return cfg.CostingMethod.String()
 }
 
+// LotConsumption records one lot's contribution to a consumeLots draw-down — a single sale
+// line can legitimately span two lots at a FEFO/FIFO/LIFO boundary. Returned so callers
+// (RecordConsumption) can persist which lot(s) a sale actually drew from, closing the
+// recall-traceability gap: without this, InventoryLot.quantity decrements but nothing records
+// which order/consumption drew from which batch.
+type LotConsumption struct {
+	LotID      uuid.UUID
+	LotNumber  string
+	ExpiryDate *time.Time
+	QtyTaken   float64
+}
+
 // consumeLots draws down a quantity across a warehouse's active InventoryLot rows for an item in
 // the order dictated by the costing method — fifo=oldest received first, lifo=newest first,
 // fefo=earliest expiry first. Decrements lot quantity and marks a lot depleted at zero. Best-effort:
 // errors are logged, not propagated (the balance is already the authoritative on-hand figure).
-func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qty float64, method string) {
+// Returns the lot(s) actually drawn from, in draw order.
+func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qty float64, method string) []LotConsumption {
 	if qty <= 0 {
-		return
+		return nil
 	}
 	q := tx.InventoryLot.Query().Where(
 		entlot.TenantID(tenantID),
@@ -536,9 +563,10 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 	lots, err := q.All(ctx)
 	if err != nil {
 		s.log.Warn("consumeLots: query lots failed", zap.Error(err))
-		return
+		return nil
 	}
 	remaining := qty
+	drawn := make([]LotConsumption, 0, len(lots))
 	for _, lot := range lots {
 		if remaining <= 0 {
 			break
@@ -554,10 +582,17 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 		}
 		if _, e := upd.Save(ctx); e != nil {
 			s.log.Warn("consumeLots: update lot failed", zap.Error(e))
-			return
+			return drawn
 		}
+		drawn = append(drawn, LotConsumption{
+			LotID:      lot.ID,
+			LotNumber:  lot.LotNumber,
+			ExpiryDate: lot.ExpiryDate,
+			QtyTaken:   take,
+		})
 		remaining -= take
 	}
+	return drawn
 }
 
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
@@ -1399,6 +1434,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 	outletID := s.resolveOutletID(ctx, tx, whID)
 
 	consumptionItems := make([]entschema.ConsumptionItemJSON, 0, len(flattened))
+	lotDraws := make([]ConsumedLot, 0)
 	for _, cl := range flattened {
 		entry := entschema.ConsumptionItemJSON{
 			SKU:          cl.SKU,
@@ -1488,34 +1524,67 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 
-			s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
-				consumptionID:    consumptionID,
-				orderID:          req.OrderID,
-				warehouseID:      whID,
-				outletID:         outletID,
-				recipeID:         cl.RecipeID,
-				recipeSKU:        cl.RecipeSKU,
-				finishedItemSKU:  cl.FinishedItemSKU,
-				ingredientItemID: itm.ID,
-				ingredientSKU:    cl.SKU,
-				quantity:         cl.Quantity,
-				unitCost:         itemCostPrice(itm),
-				reason:           reason,
-				consumedAt:       now,
-			})
+			// Lot-ordered consumption: when a costing method other than weighted-average is
+			// configured, draw down InventoryLot rows in FIFO/LIFO/FEFO order BEFORE persisting
+			// the ConsumptionLine(s), so we can record which lot(s) this sale actually drew
+			// from (recall traceability) — one ConsumptionLine row per lot spanned, rather than
+			// one row for the whole quantity with no batch attribution.
+			var lots []LotConsumption
+			if method != "wavg" {
+				lots = s.consumeLots(ctx, tx, tenantID, itm.ID, whID, deduct, method)
+			}
+			if len(lots) > 0 {
+				for _, lot := range lots {
+					lid := lot.LotID
+					s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
+						consumptionID:    consumptionID,
+						orderID:          req.OrderID,
+						warehouseID:      whID,
+						outletID:         outletID,
+						recipeID:         cl.RecipeID,
+						recipeSKU:        cl.RecipeSKU,
+						finishedItemSKU:  cl.FinishedItemSKU,
+						ingredientItemID: itm.ID,
+						ingredientSKU:    cl.SKU,
+						quantity:         lot.QtyTaken,
+						unitCost:         itemCostPrice(itm),
+						reason:           reason,
+						consumedAt:       now,
+						lotID:            &lid,
+						lotNumber:        lot.LotNumber,
+						expiryDate:       lot.ExpiryDate,
+					})
+					lotDraws = append(lotDraws, ConsumedLot{
+						SKU:        cl.SKU,
+						LotID:      lot.LotID,
+						LotNumber:  lot.LotNumber,
+						ExpiryDate: lot.ExpiryDate,
+						Quantity:   lot.QtyTaken,
+					})
+				}
+			} else {
+				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
+					consumptionID:    consumptionID,
+					orderID:          req.OrderID,
+					warehouseID:      whID,
+					outletID:         outletID,
+					recipeID:         cl.RecipeID,
+					recipeSKU:        cl.RecipeSKU,
+					finishedItemSKU:  cl.FinishedItemSKU,
+					ingredientItemID: itm.ID,
+					ingredientSKU:    cl.SKU,
+					quantity:         cl.Quantity,
+					unitCost:         itemCostPrice(itm),
+					reason:           reason,
+					consumedAt:       now,
+				})
+			}
 		case ent.IsNotFound(berr):
 			// No balance row here: nothing to deduct — record the full quantity as
 			// shortfall instead of silently pretending the stock moved.
 			entry.ShortfallQty = cl.Quantity
 		default:
 			return nil, fmt.Errorf("stock: query balance for sku=%s: %w", cl.SKU, berr)
-		}
-
-		// Lot-ordered consumption: when a costing method other than weighted-average is configured,
-		// draw down InventoryLot rows in FIFO/LIFO/FEFO order so lot quantities, expiry and cost
-		// layers stay accurate. Best-effort — never fails the sale.
-		if method != "wavg" {
-			s.consumeLots(ctx, tx, tenantID, itm.ID, whID, cl.Quantity, method)
 		}
 
 		consumptionItems = append(consumptionItems, entry)
@@ -1552,11 +1621,12 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 	)
 
 	return &ConsumptionResponse{
-		ID:          cons.ID,
-		TenantID:    cons.TenantID,
-		OrderID:     cons.OrderID,
-		Status:      cons.Status,
-		ProcessedAt: cons.ProcessedAt,
+		ID:           cons.ID,
+		TenantID:     cons.TenantID,
+		OrderID:      cons.OrderID,
+		Status:       cons.Status,
+		ProcessedAt:  cons.ProcessedAt,
+		LotsConsumed: lotDraws,
 	}, nil
 }
 

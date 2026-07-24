@@ -48,6 +48,12 @@ const (
 	FieldReason = "reason"
 	// FieldConsumedAt holds the string denoting the consumed_at field in the database.
 	FieldConsumedAt = "consumed_at"
+	// FieldLotID holds the string denoting the lot_id field in the database.
+	FieldLotID = "lot_id"
+	// FieldLotNumber holds the string denoting the lot_number field in the database.
+	FieldLotNumber = "lot_number"
+	// FieldExpiryDate holds the string denoting the expiry_date field in the database.
+	FieldExpiryDate = "expiry_date"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// Table holds the table name of the consumptionline in the database.
@@ -74,6 +80,9 @@ var Columns = []string{
 	FieldTheoretical,
 	FieldReason,
 	FieldConsumedAt,
+	FieldLotID,
+	FieldLotNumber,
+	FieldExpiryDate,
 	FieldCreatedAt,
 }
 
@@ -193,6 +202,21 @@ func ByReason(opts ...sql.OrderTermOption) OrderOption {
 // ByConsumedAt orders the results by the consumed_at field.
 func ByConsumedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConsumedAt, opts...).ToFunc()
+}
+
+// ByLotID orders the results by the lot_id field.
+func ByLotID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLotID, opts...).ToFunc()
+}
+
+// ByLotNumber orders the results by the lot_number field.
+func ByLotNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLotNumber, opts...).ToFunc()
+}
+
+// ByExpiryDate orders the results by the expiry_date field.
+func ByExpiryDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryDate, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

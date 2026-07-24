@@ -605,6 +605,90 @@ func (_c *ItemCreate) SetNillableShelfLifeDays(v *int) *ItemCreate {
 	return _c
 }
 
+// SetGenericName sets the "generic_name" field.
+func (_c *ItemCreate) SetGenericName(v string) *ItemCreate {
+	_c.mutation.SetGenericName(v)
+	return _c
+}
+
+// SetNillableGenericName sets the "generic_name" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableGenericName(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetGenericName(*v)
+	}
+	return _c
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (_c *ItemCreate) SetActiveIngredient(v string) *ItemCreate {
+	_c.mutation.SetActiveIngredient(v)
+	return _c
+}
+
+// SetNillableActiveIngredient sets the "active_ingredient" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableActiveIngredient(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetActiveIngredient(*v)
+	}
+	return _c
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (_c *ItemCreate) SetDosageForm(v string) *ItemCreate {
+	_c.mutation.SetDosageForm(v)
+	return _c
+}
+
+// SetNillableDosageForm sets the "dosage_form" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableDosageForm(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetDosageForm(*v)
+	}
+	return _c
+}
+
+// SetStrength sets the "strength" field.
+func (_c *ItemCreate) SetStrength(v string) *ItemCreate {
+	_c.mutation.SetStrength(v)
+	return _c
+}
+
+// SetNillableStrength sets the "strength" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableStrength(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetStrength(*v)
+	}
+	return _c
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (_c *ItemCreate) SetDrugClass(v string) *ItemCreate {
+	_c.mutation.SetDrugClass(v)
+	return _c
+}
+
+// SetNillableDrugClass sets the "drug_class" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableDrugClass(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetDrugClass(*v)
+	}
+	return _c
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (_c *ItemCreate) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemCreate {
+	_c.mutation.SetControlledSubstanceSchedule(v)
+	return _c
+}
+
+// SetNillableControlledSubstanceSchedule sets the "controlled_substance_schedule" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableControlledSubstanceSchedule(v *item.ControlledSubstanceSchedule) *ItemCreate {
+	if v != nil {
+		_c.SetControlledSubstanceSchedule(*v)
+	}
+	return _c
+}
+
 // SetWeightKg sets the "weight_kg" field.
 func (_c *ItemCreate) SetWeightKg(v float64) *ItemCreate {
 	_c.mutation.SetWeightKg(v)
@@ -1379,6 +1463,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultTrackLots
 		_c.mutation.SetTrackLots(v)
 	}
+	if _, ok := _c.mutation.ControlledSubstanceSchedule(); !ok {
+		v := item.DefaultControlledSubstanceSchedule
+		_c.mutation.SetControlledSubstanceSchedule(v)
+	}
 	if _, ok := _c.mutation.Tags(); !ok {
 		v := item.DefaultTags
 		_c.mutation.SetTags(v)
@@ -1511,6 +1599,14 @@ func (_c *ItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.TrackLots(); !ok {
 		return &ValidationError{Name: "track_lots", err: errors.New(`ent: missing required field "Item.track_lots"`)}
+	}
+	if _, ok := _c.mutation.ControlledSubstanceSchedule(); !ok {
+		return &ValidationError{Name: "controlled_substance_schedule", err: errors.New(`ent: missing required field "Item.controlled_substance_schedule"`)}
+	}
+	if v, ok := _c.mutation.ControlledSubstanceSchedule(); ok {
+		if err := item.ControlledSubstanceScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "controlled_substance_schedule", err: fmt.Errorf(`ent: validator failed for field "Item.controlled_substance_schedule": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Tags(); !ok {
 		return &ValidationError{Name: "tags", err: errors.New(`ent: missing required field "Item.tags"`)}
@@ -1743,6 +1839,30 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ShelfLifeDays(); ok {
 		_spec.SetField(item.FieldShelfLifeDays, field.TypeInt, value)
 		_node.ShelfLifeDays = &value
+	}
+	if value, ok := _c.mutation.GenericName(); ok {
+		_spec.SetField(item.FieldGenericName, field.TypeString, value)
+		_node.GenericName = value
+	}
+	if value, ok := _c.mutation.ActiveIngredient(); ok {
+		_spec.SetField(item.FieldActiveIngredient, field.TypeString, value)
+		_node.ActiveIngredient = value
+	}
+	if value, ok := _c.mutation.DosageForm(); ok {
+		_spec.SetField(item.FieldDosageForm, field.TypeString, value)
+		_node.DosageForm = value
+	}
+	if value, ok := _c.mutation.Strength(); ok {
+		_spec.SetField(item.FieldStrength, field.TypeString, value)
+		_node.Strength = value
+	}
+	if value, ok := _c.mutation.DrugClass(); ok {
+		_spec.SetField(item.FieldDrugClass, field.TypeString, value)
+		_node.DrugClass = value
+	}
+	if value, ok := _c.mutation.ControlledSubstanceSchedule(); ok {
+		_spec.SetField(item.FieldControlledSubstanceSchedule, field.TypeEnum, value)
+		_node.ControlledSubstanceSchedule = value
 	}
 	if value, ok := _c.mutation.WeightKg(); ok {
 		_spec.SetField(item.FieldWeightKg, field.TypeFloat64, value)
@@ -2868,6 +2988,108 @@ func (u *ItemUpsert) AddShelfLifeDays(v int) *ItemUpsert {
 // ClearShelfLifeDays clears the value of the "shelf_life_days" field.
 func (u *ItemUpsert) ClearShelfLifeDays() *ItemUpsert {
 	u.SetNull(item.FieldShelfLifeDays)
+	return u
+}
+
+// SetGenericName sets the "generic_name" field.
+func (u *ItemUpsert) SetGenericName(v string) *ItemUpsert {
+	u.Set(item.FieldGenericName, v)
+	return u
+}
+
+// UpdateGenericName sets the "generic_name" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateGenericName() *ItemUpsert {
+	u.SetExcluded(item.FieldGenericName)
+	return u
+}
+
+// ClearGenericName clears the value of the "generic_name" field.
+func (u *ItemUpsert) ClearGenericName() *ItemUpsert {
+	u.SetNull(item.FieldGenericName)
+	return u
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (u *ItemUpsert) SetActiveIngredient(v string) *ItemUpsert {
+	u.Set(item.FieldActiveIngredient, v)
+	return u
+}
+
+// UpdateActiveIngredient sets the "active_ingredient" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateActiveIngredient() *ItemUpsert {
+	u.SetExcluded(item.FieldActiveIngredient)
+	return u
+}
+
+// ClearActiveIngredient clears the value of the "active_ingredient" field.
+func (u *ItemUpsert) ClearActiveIngredient() *ItemUpsert {
+	u.SetNull(item.FieldActiveIngredient)
+	return u
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (u *ItemUpsert) SetDosageForm(v string) *ItemUpsert {
+	u.Set(item.FieldDosageForm, v)
+	return u
+}
+
+// UpdateDosageForm sets the "dosage_form" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDosageForm() *ItemUpsert {
+	u.SetExcluded(item.FieldDosageForm)
+	return u
+}
+
+// ClearDosageForm clears the value of the "dosage_form" field.
+func (u *ItemUpsert) ClearDosageForm() *ItemUpsert {
+	u.SetNull(item.FieldDosageForm)
+	return u
+}
+
+// SetStrength sets the "strength" field.
+func (u *ItemUpsert) SetStrength(v string) *ItemUpsert {
+	u.Set(item.FieldStrength, v)
+	return u
+}
+
+// UpdateStrength sets the "strength" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateStrength() *ItemUpsert {
+	u.SetExcluded(item.FieldStrength)
+	return u
+}
+
+// ClearStrength clears the value of the "strength" field.
+func (u *ItemUpsert) ClearStrength() *ItemUpsert {
+	u.SetNull(item.FieldStrength)
+	return u
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (u *ItemUpsert) SetDrugClass(v string) *ItemUpsert {
+	u.Set(item.FieldDrugClass, v)
+	return u
+}
+
+// UpdateDrugClass sets the "drug_class" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateDrugClass() *ItemUpsert {
+	u.SetExcluded(item.FieldDrugClass)
+	return u
+}
+
+// ClearDrugClass clears the value of the "drug_class" field.
+func (u *ItemUpsert) ClearDrugClass() *ItemUpsert {
+	u.SetNull(item.FieldDrugClass)
+	return u
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (u *ItemUpsert) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemUpsert {
+	u.Set(item.FieldControlledSubstanceSchedule, v)
+	return u
+}
+
+// UpdateControlledSubstanceSchedule sets the "controlled_substance_schedule" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateControlledSubstanceSchedule() *ItemUpsert {
+	u.SetExcluded(item.FieldControlledSubstanceSchedule)
 	return u
 }
 
@@ -4286,6 +4508,125 @@ func (u *ItemUpsertOne) UpdateShelfLifeDays() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearShelfLifeDays() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearShelfLifeDays()
+	})
+}
+
+// SetGenericName sets the "generic_name" field.
+func (u *ItemUpsertOne) SetGenericName(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetGenericName(v)
+	})
+}
+
+// UpdateGenericName sets the "generic_name" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateGenericName() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateGenericName()
+	})
+}
+
+// ClearGenericName clears the value of the "generic_name" field.
+func (u *ItemUpsertOne) ClearGenericName() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearGenericName()
+	})
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (u *ItemUpsertOne) SetActiveIngredient(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetActiveIngredient(v)
+	})
+}
+
+// UpdateActiveIngredient sets the "active_ingredient" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateActiveIngredient() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateActiveIngredient()
+	})
+}
+
+// ClearActiveIngredient clears the value of the "active_ingredient" field.
+func (u *ItemUpsertOne) ClearActiveIngredient() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearActiveIngredient()
+	})
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (u *ItemUpsertOne) SetDosageForm(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDosageForm(v)
+	})
+}
+
+// UpdateDosageForm sets the "dosage_form" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDosageForm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDosageForm()
+	})
+}
+
+// ClearDosageForm clears the value of the "dosage_form" field.
+func (u *ItemUpsertOne) ClearDosageForm() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDosageForm()
+	})
+}
+
+// SetStrength sets the "strength" field.
+func (u *ItemUpsertOne) SetStrength(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetStrength(v)
+	})
+}
+
+// UpdateStrength sets the "strength" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateStrength() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateStrength()
+	})
+}
+
+// ClearStrength clears the value of the "strength" field.
+func (u *ItemUpsertOne) ClearStrength() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearStrength()
+	})
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (u *ItemUpsertOne) SetDrugClass(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDrugClass(v)
+	})
+}
+
+// UpdateDrugClass sets the "drug_class" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateDrugClass() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDrugClass()
+	})
+}
+
+// ClearDrugClass clears the value of the "drug_class" field.
+func (u *ItemUpsertOne) ClearDrugClass() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDrugClass()
+	})
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (u *ItemUpsertOne) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetControlledSubstanceSchedule(v)
+	})
+}
+
+// UpdateControlledSubstanceSchedule sets the "controlled_substance_schedule" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateControlledSubstanceSchedule() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateControlledSubstanceSchedule()
 	})
 }
 
@@ -5967,6 +6308,125 @@ func (u *ItemUpsertBulk) UpdateShelfLifeDays() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearShelfLifeDays() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearShelfLifeDays()
+	})
+}
+
+// SetGenericName sets the "generic_name" field.
+func (u *ItemUpsertBulk) SetGenericName(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetGenericName(v)
+	})
+}
+
+// UpdateGenericName sets the "generic_name" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateGenericName() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateGenericName()
+	})
+}
+
+// ClearGenericName clears the value of the "generic_name" field.
+func (u *ItemUpsertBulk) ClearGenericName() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearGenericName()
+	})
+}
+
+// SetActiveIngredient sets the "active_ingredient" field.
+func (u *ItemUpsertBulk) SetActiveIngredient(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetActiveIngredient(v)
+	})
+}
+
+// UpdateActiveIngredient sets the "active_ingredient" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateActiveIngredient() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateActiveIngredient()
+	})
+}
+
+// ClearActiveIngredient clears the value of the "active_ingredient" field.
+func (u *ItemUpsertBulk) ClearActiveIngredient() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearActiveIngredient()
+	})
+}
+
+// SetDosageForm sets the "dosage_form" field.
+func (u *ItemUpsertBulk) SetDosageForm(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDosageForm(v)
+	})
+}
+
+// UpdateDosageForm sets the "dosage_form" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDosageForm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDosageForm()
+	})
+}
+
+// ClearDosageForm clears the value of the "dosage_form" field.
+func (u *ItemUpsertBulk) ClearDosageForm() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDosageForm()
+	})
+}
+
+// SetStrength sets the "strength" field.
+func (u *ItemUpsertBulk) SetStrength(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetStrength(v)
+	})
+}
+
+// UpdateStrength sets the "strength" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateStrength() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateStrength()
+	})
+}
+
+// ClearStrength clears the value of the "strength" field.
+func (u *ItemUpsertBulk) ClearStrength() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearStrength()
+	})
+}
+
+// SetDrugClass sets the "drug_class" field.
+func (u *ItemUpsertBulk) SetDrugClass(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetDrugClass(v)
+	})
+}
+
+// UpdateDrugClass sets the "drug_class" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateDrugClass() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateDrugClass()
+	})
+}
+
+// ClearDrugClass clears the value of the "drug_class" field.
+func (u *ItemUpsertBulk) ClearDrugClass() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearDrugClass()
+	})
+}
+
+// SetControlledSubstanceSchedule sets the "controlled_substance_schedule" field.
+func (u *ItemUpsertBulk) SetControlledSubstanceSchedule(v item.ControlledSubstanceSchedule) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetControlledSubstanceSchedule(v)
+	})
+}
+
+// UpdateControlledSubstanceSchedule sets the "controlled_substance_schedule" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateControlledSubstanceSchedule() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateControlledSubstanceSchedule()
 	})
 }
 

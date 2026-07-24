@@ -12,17 +12,18 @@ const namespace = ""
 
 // Config aggregates runtime configuration for the inventory service.
 type Config struct {
-	App       AppConfig
-	HTTP      HTTPConfig
-	Postgres  PostgresConfig
-	Redis     RedisConfig
-	Events    EventsConfig
-	Telemetry TelemetryConfig
-	Auth      AuthConfig
-	Media     MediaConfig
-	Services  ServicesConfig
-	Backup    BackupConfig
-	EOL       EOLConfig
+	App           AppConfig
+	HTTP          HTTPConfig
+	Postgres      PostgresConfig
+	Redis         RedisConfig
+	Events        EventsConfig
+	Telemetry     TelemetryConfig
+	Auth          AuthConfig
+	Media         MediaConfig
+	Services      ServicesConfig
+	Backup        BackupConfig
+	EOL           EOLConfig
+	ExpiryAlert   ExpiryAlertConfig
 	Subscriptions SubscriptionsConfig
 }
 
@@ -32,6 +33,11 @@ type Config struct {
 type EOLConfig struct {
 	PurgeEnabled  bool `envconfig:"EOL_PURGE_ENABLED" default:"true"`
 	RetentionDays int  `envconfig:"EOL_RETENTION_DAYS" default:"7"`
+}
+
+// ExpiryAlertConfig configures the pharmacy (DAWA) lot-expiry alert scan.
+type ExpiryAlertConfig struct {
+	ScheduleEnabled bool `envconfig:"EXPIRY_ALERT_SCHEDULE_ENABLED" default:"true"`
 }
 
 // SubscriptionsConfig holds configuration for the subscriptions S2S client used to gate

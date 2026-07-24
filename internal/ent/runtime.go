@@ -30,6 +30,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/customfielddefinition"
 	"github.com/bengobox/inventory-service/internal/ent/customfieldvalue"
 	"github.com/bengobox/inventory-service/internal/ent/documentsequence"
+	"github.com/bengobox/inventory-service/internal/ent/druginteractionrule"
+	"github.com/bengobox/inventory-service/internal/ent/expiryalertlog"
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
@@ -541,7 +543,7 @@ func init() {
 	// consumptionline.DefaultReason holds the default value on creation for the reason field.
 	consumptionline.DefaultReason = consumptionlineDescReason.Default.(string)
 	// consumptionlineDescCreatedAt is the schema descriptor for created_at field.
-	consumptionlineDescCreatedAt := consumptionlineFields[18].Descriptor()
+	consumptionlineDescCreatedAt := consumptionlineFields[21].Descriptor()
 	// consumptionline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	consumptionline.DefaultCreatedAt = consumptionlineDescCreatedAt.Default.(func() time.Time)
 	// consumptionlineDescID is the schema descriptor for id field.
@@ -670,6 +672,48 @@ func init() {
 	documentsequenceDescID := documentsequenceFields[0].Descriptor()
 	// documentsequence.DefaultID holds the default value on creation for the id field.
 	documentsequence.DefaultID = documentsequenceDescID.Default.(func() uuid.UUID)
+	druginteractionruleFields := schema.DrugInteractionRule{}.Fields()
+	_ = druginteractionruleFields
+	// druginteractionruleDescIsGlobal is the schema descriptor for is_global field.
+	druginteractionruleDescIsGlobal := druginteractionruleFields[2].Descriptor()
+	// druginteractionrule.DefaultIsGlobal holds the default value on creation for the is_global field.
+	druginteractionrule.DefaultIsGlobal = druginteractionruleDescIsGlobal.Default.(bool)
+	// druginteractionruleDescClassA is the schema descriptor for class_a field.
+	druginteractionruleDescClassA := druginteractionruleFields[3].Descriptor()
+	// druginteractionrule.ClassAValidator is a validator for the "class_a" field. It is called by the builders before save.
+	druginteractionrule.ClassAValidator = druginteractionruleDescClassA.Validators[0].(func(string) error)
+	// druginteractionruleDescClassB is the schema descriptor for class_b field.
+	druginteractionruleDescClassB := druginteractionruleFields[4].Descriptor()
+	// druginteractionrule.ClassBValidator is a validator for the "class_b" field. It is called by the builders before save.
+	druginteractionrule.ClassBValidator = druginteractionruleDescClassB.Validators[0].(func(string) error)
+	// druginteractionruleDescIsActive is the schema descriptor for is_active field.
+	druginteractionruleDescIsActive := druginteractionruleFields[9].Descriptor()
+	// druginteractionrule.DefaultIsActive holds the default value on creation for the is_active field.
+	druginteractionrule.DefaultIsActive = druginteractionruleDescIsActive.Default.(bool)
+	// druginteractionruleDescCreatedAt is the schema descriptor for created_at field.
+	druginteractionruleDescCreatedAt := druginteractionruleFields[10].Descriptor()
+	// druginteractionrule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	druginteractionrule.DefaultCreatedAt = druginteractionruleDescCreatedAt.Default.(func() time.Time)
+	// druginteractionruleDescUpdatedAt is the schema descriptor for updated_at field.
+	druginteractionruleDescUpdatedAt := druginteractionruleFields[11].Descriptor()
+	// druginteractionrule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	druginteractionrule.DefaultUpdatedAt = druginteractionruleDescUpdatedAt.Default.(func() time.Time)
+	// druginteractionrule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	druginteractionrule.UpdateDefaultUpdatedAt = druginteractionruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// druginteractionruleDescID is the schema descriptor for id field.
+	druginteractionruleDescID := druginteractionruleFields[0].Descriptor()
+	// druginteractionrule.DefaultID holds the default value on creation for the id field.
+	druginteractionrule.DefaultID = druginteractionruleDescID.Default.(func() uuid.UUID)
+	expiryalertlogFields := schema.ExpiryAlertLog{}.Fields()
+	_ = expiryalertlogFields
+	// expiryalertlogDescAlertedAt is the schema descriptor for alerted_at field.
+	expiryalertlogDescAlertedAt := expiryalertlogFields[4].Descriptor()
+	// expiryalertlog.DefaultAlertedAt holds the default value on creation for the alerted_at field.
+	expiryalertlog.DefaultAlertedAt = expiryalertlogDescAlertedAt.Default.(func() time.Time)
+	// expiryalertlogDescID is the schema descriptor for id field.
+	expiryalertlogDescID := expiryalertlogFields[0].Descriptor()
+	// expiryalertlog.DefaultID holds the default value on creation for the id field.
+	expiryalertlog.DefaultID = expiryalertlogDescID.Default.(func() uuid.UUID)
 	foodcostvarianceFields := schema.FoodCostVariance{}.Fields()
 	_ = foodcostvarianceFields
 	// foodcostvarianceDescRecipeSku is the schema descriptor for recipe_sku field.
@@ -971,47 +1015,47 @@ func init() {
 	// item.DefaultTrackLots holds the default value on creation for the track_lots field.
 	item.DefaultTrackLots = itemDescTrackLots.Default.(bool)
 	// itemDescTags is the schema descriptor for tags field.
-	itemDescTags := itemFields[46].Descriptor()
+	itemDescTags := itemFields[52].Descriptor()
 	// item.DefaultTags holds the default value on creation for the tags field.
 	item.DefaultTags = itemDescTags.Default.([]string)
 	// itemDescTaxInclusive is the schema descriptor for tax_inclusive field.
-	itemDescTaxInclusive := itemFields[48].Descriptor()
+	itemDescTaxInclusive := itemFields[54].Descriptor()
 	// item.DefaultTaxInclusive holds the default value on creation for the tax_inclusive field.
 	item.DefaultTaxInclusive = itemDescTaxInclusive.Default.(bool)
 	// itemDescPurchaseUnit is the schema descriptor for purchase_unit field.
-	itemDescPurchaseUnit := itemFields[55].Descriptor()
+	itemDescPurchaseUnit := itemFields[61].Descriptor()
 	// item.PurchaseUnitValidator is a validator for the "purchase_unit" field. It is called by the builders before save.
 	item.PurchaseUnitValidator = itemDescPurchaseUnit.Validators[0].(func(string) error)
 	// itemDescYieldPct is the schema descriptor for yield_pct field.
-	itemDescYieldPct := itemFields[57].Descriptor()
+	itemDescYieldPct := itemFields[63].Descriptor()
 	// item.DefaultYieldPct holds the default value on creation for the yield_pct field.
 	item.DefaultYieldPct = itemDescYieldPct.Default.(float64)
 	// itemDescUnitContentUom is the schema descriptor for unit_content_uom field.
-	itemDescUnitContentUom := itemFields[59].Descriptor()
+	itemDescUnitContentUom := itemFields[65].Descriptor()
 	// item.UnitContentUomValidator is a validator for the "unit_content_uom" field. It is called by the builders before save.
 	item.UnitContentUomValidator = itemDescUnitContentUom.Validators[0].(func(string) error)
 	// itemDescUsableInRecipes is the schema descriptor for usable_in_recipes field.
-	itemDescUsableInRecipes := itemFields[60].Descriptor()
+	itemDescUsableInRecipes := itemFields[66].Descriptor()
 	// item.DefaultUsableInRecipes holds the default value on creation for the usable_in_recipes field.
 	item.DefaultUsableInRecipes = itemDescUsableInRecipes.Default.(bool)
 	// itemDescBookedCapacity is the schema descriptor for booked_capacity field.
-	itemDescBookedCapacity := itemFields[66].Descriptor()
+	itemDescBookedCapacity := itemFields[72].Descriptor()
 	// item.DefaultBookedCapacity holds the default value on creation for the booked_capacity field.
 	item.DefaultBookedCapacity = itemDescBookedCapacity.Default.(int)
 	// itemDescEventVenue is the schema descriptor for event_venue field.
-	itemDescEventVenue := itemFields[69].Descriptor()
+	itemDescEventVenue := itemFields[75].Descriptor()
 	// item.EventVenueValidator is a validator for the "event_venue" field. It is called by the builders before save.
 	item.EventVenueValidator = itemDescEventVenue.Validators[0].(func(string) error)
 	// itemDescMetadata is the schema descriptor for metadata field.
-	itemDescMetadata := itemFields[71].Descriptor()
+	itemDescMetadata := itemFields[77].Descriptor()
 	// item.DefaultMetadata holds the default value on creation for the metadata field.
 	item.DefaultMetadata = itemDescMetadata.Default.(map[string]interface{})
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[72].Descriptor()
+	itemDescCreatedAt := itemFields[78].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[73].Descriptor()
+	itemDescUpdatedAt := itemFields[79].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 	// item.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1521,15 +1565,15 @@ func init() {
 	purchasereturnlineFields := schema.PurchaseReturnLine{}.Fields()
 	_ = purchasereturnlineFields
 	// purchasereturnlineDescQuantity is the schema descriptor for quantity field.
-	purchasereturnlineDescQuantity := purchasereturnlineFields[4].Descriptor()
+	purchasereturnlineDescQuantity := purchasereturnlineFields[5].Descriptor()
 	// purchasereturnline.DefaultQuantity holds the default value on creation for the quantity field.
 	purchasereturnline.DefaultQuantity = purchasereturnlineDescQuantity.Default.(int)
 	// purchasereturnlineDescSubTotal is the schema descriptor for sub_total field.
-	purchasereturnlineDescSubTotal := purchasereturnlineFields[5].Descriptor()
+	purchasereturnlineDescSubTotal := purchasereturnlineFields[6].Descriptor()
 	// purchasereturnline.DefaultSubTotal holds the default value on creation for the sub_total field.
 	purchasereturnline.DefaultSubTotal = purchasereturnlineDescSubTotal.Default.(float64)
 	// purchasereturnlineDescCreatedAt is the schema descriptor for created_at field.
-	purchasereturnlineDescCreatedAt := purchasereturnlineFields[6].Descriptor()
+	purchasereturnlineDescCreatedAt := purchasereturnlineFields[7].Descriptor()
 	// purchasereturnline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	purchasereturnline.DefaultCreatedAt = purchasereturnlineDescCreatedAt.Default.(func() time.Time)
 	// purchasereturnlineDescID is the schema descriptor for id field.

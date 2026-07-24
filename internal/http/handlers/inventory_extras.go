@@ -239,4 +239,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Document numbering settings (PO/GRN/... sequence config)
 	h.registerDocumentSequenceRoutes(r, perm, rbac.PermSettingsManage)
+
+	// Pharmacy drug-class resolution + interaction-check (S2S, called by pos-api)
+	h.registerPharmacyInteractionRoutes(r)
 }

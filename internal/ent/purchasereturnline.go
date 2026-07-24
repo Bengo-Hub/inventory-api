@@ -25,6 +25,8 @@ type PurchaseReturnLine struct {
 	PurchaseReturnID uuid.UUID `json:"purchase_return_id,omitempty"`
 	// FK to Item (returned stock item)
 	ItemID uuid.UUID `json:"item_id,omitempty"`
+	// FK to InventoryLot for lot-tracked items — lets an RTV target a specific expiring batch (pharmacy DAWA use-case)
+	LotID *uuid.UUID `json:"lot_id,omitempty"`
 	// Quantity holds the value of the "quantity" field.
 	Quantity int `json:"quantity,omitempty"`
 	// SubTotal holds the value of the "sub_total" field.
@@ -62,6 +64,8 @@ func (*PurchaseReturnLine) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case purchasereturnline.FieldLotID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchasereturnline.FieldSubTotal:
 			values[i] = new(sql.NullFloat64)
 		case purchasereturnline.FieldQuantity:
@@ -108,6 +112,13 @@ func (_m *PurchaseReturnLine) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field item_id", values[i])
 			} else if value != nil {
 				_m.ItemID = *value
+			}
+		case purchasereturnline.FieldLotID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field lot_id", values[i])
+			} else if value.Valid {
+				_m.LotID = new(uuid.UUID)
+				*_m.LotID = *value.S.(*uuid.UUID)
 			}
 		case purchasereturnline.FieldQuantity:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -176,6 +187,11 @@ func (_m *PurchaseReturnLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("item_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ItemID))
+	builder.WriteString(", ")
+	if v := _m.LotID; v != nil {
+		builder.WriteString("lot_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("quantity=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Quantity))

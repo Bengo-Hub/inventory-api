@@ -52,6 +52,12 @@ type ConsumptionLine struct {
 	Reason string `json:"reason,omitempty"`
 	// Bucketing key for the trend chart; mirrors Consumption.processed_at
 	ConsumedAt time.Time `json:"consumed_at,omitempty"`
+	// LotID holds the value of the "lot_id" field.
+	LotID *uuid.UUID `json:"lot_id,omitempty"`
+	// LotNumber holds the value of the "lot_number" field.
+	LotNumber string `json:"lot_number,omitempty"`
+	// ExpiryDate holds the value of the "expiry_date" field.
+	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt    time.Time `json:"created_at,omitempty"`
 	selectValues sql.SelectValues
@@ -62,15 +68,15 @@ func (*ConsumptionLine) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID:
+		case consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID, consumptionline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case consumptionline.FieldTheoretical:
 			values[i] = new(sql.NullBool)
 		case consumptionline.FieldQuantity, consumptionline.FieldUnitCost, consumptionline.FieldTotalCost:
 			values[i] = new(sql.NullFloat64)
-		case consumptionline.FieldRecipeSku, consumptionline.FieldFinishedItemSku, consumptionline.FieldIngredientSku, consumptionline.FieldUnit, consumptionline.FieldReason:
+		case consumptionline.FieldRecipeSku, consumptionline.FieldFinishedItemSku, consumptionline.FieldIngredientSku, consumptionline.FieldUnit, consumptionline.FieldReason, consumptionline.FieldLotNumber:
 			values[i] = new(sql.NullString)
-		case consumptionline.FieldConsumedAt, consumptionline.FieldCreatedAt:
+		case consumptionline.FieldConsumedAt, consumptionline.FieldExpiryDate, consumptionline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case consumptionline.FieldID, consumptionline.FieldTenantID, consumptionline.FieldConsumptionID, consumptionline.FieldOrderID, consumptionline.FieldIngredientItemID:
 			values[i] = new(uuid.UUID)
@@ -200,6 +206,26 @@ func (_m *ConsumptionLine) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ConsumedAt = value.Time
 			}
+		case consumptionline.FieldLotID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field lot_id", values[i])
+			} else if value.Valid {
+				_m.LotID = new(uuid.UUID)
+				*_m.LotID = *value.S.(*uuid.UUID)
+			}
+		case consumptionline.FieldLotNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field lot_number", values[i])
+			} else if value.Valid {
+				_m.LotNumber = value.String
+			}
+		case consumptionline.FieldExpiryDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_date", values[i])
+			} else if value.Valid {
+				_m.ExpiryDate = new(time.Time)
+				*_m.ExpiryDate = value.Time
+			}
 		case consumptionline.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -298,6 +324,19 @@ func (_m *ConsumptionLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("consumed_at=")
 	builder.WriteString(_m.ConsumedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.LotID; v != nil {
+		builder.WriteString("lot_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("lot_number=")
+	builder.WriteString(_m.LotNumber)
+	builder.WriteString(", ")
+	if v := _m.ExpiryDate; v != nil {
+		builder.WriteString("expiry_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
