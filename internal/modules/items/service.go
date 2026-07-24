@@ -587,16 +587,20 @@ type BOMAvailabilityResult struct {
 // For non-recipe items, it returns direct stock availability.
 func (s *Service) GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]BOMAvailabilityResult, error) {
 	results := make([]BOMAvailabilityResult, 0, len(skus))
+	// Preload every requested item in ONE query instead of an Item.Query per SKU (N+1 on the
+	// terminal's availability check). The per-recipe BOM computation below is inherently per-item.
+	itemsBySku := make(map[string]*ent.Item, len(skus))
+	if items, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.SkuIn(skus...), item.IsActive(true)).
+		All(ctx); err == nil {
+		for _, it := range items {
+			itemsBySku[it.Sku] = it
+		}
+	}
 	for _, sku := range skus {
-		itm, err := s.client.Item.Query().
-			Where(
-				item.TenantID(tenantID),
-				item.Sku(sku),
-				item.IsActive(true),
-			).
-			Only(ctx)
-		if err != nil {
-			s.log.Warn("bom availability: item not found", zap.String("sku", sku), zap.Error(err))
+		itm := itemsBySku[sku]
+		if itm == nil {
+			s.log.Warn("bom availability: item not found", zap.String("sku", sku))
 			continue
 		}
 
