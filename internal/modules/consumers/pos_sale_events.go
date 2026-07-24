@@ -28,6 +28,10 @@ type posSaleItem struct {
 	SKU      string  `json:"sku"`
 	Quantity float64 `json:"quantity"`
 	UOMCode  string  `json:"uom_code"`
+	// SkipInventory is set by pos-api for a pharmacy-checkout order whose stock was already
+	// committed at Dispense time (ConsumeReservation) — deducting again here would double-count
+	// the same drop. See pos-api's payments/service.go publishSaleFinalized.
+	SkipInventory bool `json:"skip_inventory,omitempty"`
 	// Serials are the specific unit serial numbers sold on this line (serial-tracked items).
 	// Each is flipped from "available" to "sold" in the InventorySerial registry.
 	Serials []string `json:"serials,omitempty"`
@@ -179,7 +183,18 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 		}
 	}
 
-	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, envelope.Payload.Items); err != nil {
+	// Drop skip_inventory items (pharmacy-checkout lines already deducted at Dispense time via
+	// ConsumeReservation) before consumption — see posSaleItem.SkipInventory.
+	saleItems := envelope.Payload.Items
+	consumable := saleItems[:0]
+	for _, it := range saleItems {
+		if it.SkipInventory {
+			continue
+		}
+		consumable = append(consumable, it)
+	}
+
+	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, consumable); err != nil {
 		c.log.Error("pos sale events: handle sale finalized failed",
 			zap.Error(err),
 			zap.String("order_id", orderID.String()),
