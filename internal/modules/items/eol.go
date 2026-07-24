@@ -193,6 +193,43 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 	return nil
 }
 
+// SetCostPriceAndPublish updates an item's cost_price (used by recipes.Service.RecalculateRecipeCosts
+// to write a RECIPE's computed cost_per_portion through onto its owning Item, so the recipe's real
+// ingredient cost reaches every consumer that already trusts Item.CostPrice — the sale-time COGS
+// journal, P&L cost-of-goods, the profitability report, and the reversal tool's cost lookup — none
+// of which need any change of their own. Emits the exact same enriched inventory.item.updated event
+// UpdateItem publishes (via emitItemUpdatedEvent) so the POS/ordering catalog sync picks it up too.
+// A no-op (returns nil) when the price is unchanged, to avoid a pointless event on every unrelated
+// recipe recompute.
+func (s *Service) SetCostPriceAndPublish(ctx context.Context, tenantID, itemID uuid.UUID, costPrice float64) error {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("items: begin cost-price tx: %w", err)
+	}
+	current, err := tx.Item.Query().Where(item.ID(itemID), item.TenantID(tenantID)).Only(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("items: load item for cost-price update: %w", err)
+	}
+	if current.CostPrice != nil && *current.CostPrice == costPrice {
+		_ = tx.Rollback()
+		return nil
+	}
+	updated, err := tx.Item.UpdateOneID(itemID).SetCostPrice(costPrice).Save(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("items: set cost price: %w", err)
+	}
+	if err := s.emitItemUpdatedEvent(ctx, tx, tenantID, updated); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("items: emit cost-price update event: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("items: commit cost-price update: %w", err)
+	}
+	return nil
+}
+
 // PurgeExpiredEOL hard-deletes items whose end_of_life_at is older than retentionDays, across ALL
 // tenants (each item carries its own tenant_id, so this stays tenant-generic). Returns the number
 // of items purged and the number skipped.
