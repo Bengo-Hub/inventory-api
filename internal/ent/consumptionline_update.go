@@ -318,6 +318,66 @@ func (_u *ConsumptionLineUpdate) SetNillableConsumedAt(v *time.Time) *Consumptio
 	return _u
 }
 
+// SetLotID sets the "lot_id" field.
+func (_u *ConsumptionLineUpdate) SetLotID(v uuid.UUID) *ConsumptionLineUpdate {
+	_u.mutation.SetLotID(v)
+	return _u
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableLotID(v *uuid.UUID) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetLotID(*v)
+	}
+	return _u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (_u *ConsumptionLineUpdate) ClearLotID() *ConsumptionLineUpdate {
+	_u.mutation.ClearLotID()
+	return _u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (_u *ConsumptionLineUpdate) SetLotNumber(v string) *ConsumptionLineUpdate {
+	_u.mutation.SetLotNumber(v)
+	return _u
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableLotNumber(v *string) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetLotNumber(*v)
+	}
+	return _u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (_u *ConsumptionLineUpdate) ClearLotNumber() *ConsumptionLineUpdate {
+	_u.mutation.ClearLotNumber()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *ConsumptionLineUpdate) SetExpiryDate(v time.Time) *ConsumptionLineUpdate {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableExpiryDate(v *time.Time) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *ConsumptionLineUpdate) ClearExpiryDate() *ConsumptionLineUpdate {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // Mutation returns the ConsumptionLineMutation object of the builder.
 func (_u *ConsumptionLineUpdate) Mutation() *ConsumptionLineMutation {
 	return _u.mutation
@@ -433,6 +493,24 @@ func (_u *ConsumptionLineUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.ConsumedAt(); ok {
 		_spec.SetField(consumptionline.FieldConsumedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.LotID(); ok {
+		_spec.SetField(consumptionline.FieldLotID, field.TypeUUID, value)
+	}
+	if _u.mutation.LotIDCleared() {
+		_spec.ClearField(consumptionline.FieldLotID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.LotNumber(); ok {
+		_spec.SetField(consumptionline.FieldLotNumber, field.TypeString, value)
+	}
+	if _u.mutation.LotNumberCleared() {
+		_spec.ClearField(consumptionline.FieldLotNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(consumptionline.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(consumptionline.FieldExpiryDate, field.TypeTime)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -743,6 +821,66 @@ func (_u *ConsumptionLineUpdateOne) SetNillableConsumedAt(v *time.Time) *Consump
 	return _u
 }
 
+// SetLotID sets the "lot_id" field.
+func (_u *ConsumptionLineUpdateOne) SetLotID(v uuid.UUID) *ConsumptionLineUpdateOne {
+	_u.mutation.SetLotID(v)
+	return _u
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableLotID(v *uuid.UUID) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetLotID(*v)
+	}
+	return _u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (_u *ConsumptionLineUpdateOne) ClearLotID() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearLotID()
+	return _u
+}
+
+// SetLotNumber sets the "lot_number" field.
+func (_u *ConsumptionLineUpdateOne) SetLotNumber(v string) *ConsumptionLineUpdateOne {
+	_u.mutation.SetLotNumber(v)
+	return _u
+}
+
+// SetNillableLotNumber sets the "lot_number" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableLotNumber(v *string) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetLotNumber(*v)
+	}
+	return _u
+}
+
+// ClearLotNumber clears the value of the "lot_number" field.
+func (_u *ConsumptionLineUpdateOne) ClearLotNumber() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearLotNumber()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *ConsumptionLineUpdateOne) SetExpiryDate(v time.Time) *ConsumptionLineUpdateOne {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableExpiryDate(v *time.Time) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *ConsumptionLineUpdateOne) ClearExpiryDate() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // Mutation returns the ConsumptionLineMutation object of the builder.
 func (_u *ConsumptionLineUpdateOne) Mutation() *ConsumptionLineMutation {
 	return _u.mutation
@@ -888,6 +1026,24 @@ func (_u *ConsumptionLineUpdateOne) sqlSave(ctx context.Context) (_node *Consump
 	}
 	if value, ok := _u.mutation.ConsumedAt(); ok {
 		_spec.SetField(consumptionline.FieldConsumedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.LotID(); ok {
+		_spec.SetField(consumptionline.FieldLotID, field.TypeUUID, value)
+	}
+	if _u.mutation.LotIDCleared() {
+		_spec.ClearField(consumptionline.FieldLotID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.LotNumber(); ok {
+		_spec.SetField(consumptionline.FieldLotNumber, field.TypeString, value)
+	}
+	if _u.mutation.LotNumberCleared() {
+		_spec.ClearField(consumptionline.FieldLotNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(consumptionline.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(consumptionline.FieldExpiryDate, field.TypeTime)
 	}
 	_node = &ConsumptionLine{config: _u.config}
 	_spec.Assign = _node.assignValues

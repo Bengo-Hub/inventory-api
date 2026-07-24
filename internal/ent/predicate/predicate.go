@@ -81,6 +81,12 @@ type CustomFieldValue func(*sql.Selector)
 // DocumentSequence is the predicate function for documentsequence builders.
 type DocumentSequence func(*sql.Selector)
 
+// DrugInteractionRule is the predicate function for druginteractionrule builders.
+type DrugInteractionRule func(*sql.Selector)
+
+// ExpiryAlertLog is the predicate function for expiryalertlog builders.
+type ExpiryAlertLog func(*sql.Selector)
+
 // FoodCostVariance is the predicate function for foodcostvariance builders.
 type FoodCostVariance func(*sql.Selector)
 

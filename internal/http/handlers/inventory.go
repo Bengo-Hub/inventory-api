@@ -42,6 +42,7 @@ type ItemsServicer interface {
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error)
 	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error)
+	StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int) (*items.FastMovingReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
@@ -292,6 +293,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/reports/stock-valuation.pdf", h.StockValuationReportPDF)
 		inv.Get("/reports/deadstock", h.StockDeadstockReport)
 		inv.Get("/reports/deadstock.pdf", h.StockDeadstockReportPDF)
+		inv.Get("/reports/fast-moving", h.StockFastMovingReport)
 
 		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
 		// & manufacturing (bills of materials). HQ/platform users bypass gating.
@@ -896,6 +898,28 @@ func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.R
 	if err != nil {
 		h.log.Error("deadstock report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
+		return
+	}
+	writeJSON(w, http.StatusOK, rep)
+}
+
+// StockFastMovingReport handles GET /v1/{tenant}/inventory/reports/fast-moving?days=90
+func (h *InventoryHandler) StockFastMovingReport(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	days := 90
+	if d := r.URL.Query().Get("days"); d != "" {
+		if n, e := strconv.Atoi(d); e == nil && n > 0 {
+			days = n
+		}
+	}
+	rep, err := h.itemsSvc.StockFastMoving(r.Context(), tenantID, days)
+	if err != nil {
+		h.log.Error("fast-moving report failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute fast-moving report")
 		return
 	}
 	writeJSON(w, http.StatusOK, rep)
@@ -1511,11 +1535,11 @@ func (h *InventoryHandler) gateStockAdjustment(w http.ResponseWriter, r *http.Re
 // AdjustStock at replay time (there is no HTTP outlet context then).
 func adjustmentPayload(req stock.AdjustStockRequest, actor uuid.UUID) map[string]any {
 	p := map[string]any{
-		"sku":        req.SKU,
-		"adjustment": req.Adjustment,
-		"reason":     req.Reason,
-		"reference":  req.Reference,
-		"notes":      req.Notes,
+		"sku":         req.SKU,
+		"adjustment":  req.Adjustment,
+		"reason":      req.Reason,
+		"reference":   req.Reference,
+		"notes":       req.Notes,
 		"adjusted_by": actor.String(),
 	}
 	if req.WarehouseID != uuid.Nil {

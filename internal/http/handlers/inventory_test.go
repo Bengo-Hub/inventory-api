@@ -76,6 +76,10 @@ func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, d
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int) (*items.FastMovingReport, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockItemsSvc) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error) {
 	if m.bulkAvailFn != nil {
 		return m.bulkAvailFn(ctx, tenantID, skus)

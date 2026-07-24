@@ -172,6 +172,28 @@ func (Item) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Default shelf life in days for perishables — seeds lot expiry_date at goods receipt"),
+		// Pharmacy drug master data (DAWA use-case) — clinical fields feeding the drug-interaction
+		// engine and dispensing labels. `is_controlled_substance` above remains a quick filter flag;
+		// `controlled_substance_schedule` is the authoritative regulatory classification.
+		field.String("generic_name").
+			Optional().
+			Comment("Pharmacy: INN/generic drug name, distinct from the tenant's brand `name`"),
+		field.String("active_ingredient").
+			Optional().
+			Comment("Pharmacy: active pharmaceutical ingredient, checked against patient allergy flags"),
+		field.String("dosage_form").
+			Optional().
+			Comment("Pharmacy: tablet, capsule, syrup, injection, etc."),
+		field.String("strength").
+			Optional().
+			Comment("Pharmacy: e.g. '500mg', '5mg/ml'"),
+		field.String("drug_class").
+			Optional().
+			Comment("Pharmacy: therapeutic/interaction class key (e.g. nsaid, ssri, anticoagulant) used by DrugInteractionRule"),
+		field.Enum("controlled_substance_schedule").
+			Values("NONE", "GENERAL_SALE", "PHARMACY_ONLY", "PRESCRIPTION_ONLY", "PART_I_POISON", "PART_II_POISON", "NARCOTIC_SCHEDULE_I", "NARCOTIC_SCHEDULE_II", "NARCOTIC_SCHEDULE_III", "NARCOTIC_SCHEDULE_IV").
+			Default("NONE").
+			Comment("Kenya Pharmacy & Poisons Board classification — authoritative controlled-substance classification (is_controlled_substance stays as a quick bool filter)"),
 		// Physical attributes (Phase 1.4) — shipping/logistics
 		field.Float("weight_kg").
 			Optional().

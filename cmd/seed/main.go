@@ -63,6 +63,9 @@ func main() {
 	if err := seedGlobalCategories(ctx, client); err != nil {
 		log.Fatalf("seed global categories: %v", err)
 	}
+	if err := seedDrugInteractionRules(ctx, client); err != nil {
+		log.Fatalf("seed drug interaction rules: %v", err)
+	}
 	if err := seedPermissions(ctx, client); err != nil {
 		log.Fatalf("seed permissions: %v", err)
 	}

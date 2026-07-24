@@ -100,6 +100,18 @@ const (
 	FieldTrackLots = "track_lots"
 	// FieldShelfLifeDays holds the string denoting the shelf_life_days field in the database.
 	FieldShelfLifeDays = "shelf_life_days"
+	// FieldGenericName holds the string denoting the generic_name field in the database.
+	FieldGenericName = "generic_name"
+	// FieldActiveIngredient holds the string denoting the active_ingredient field in the database.
+	FieldActiveIngredient = "active_ingredient"
+	// FieldDosageForm holds the string denoting the dosage_form field in the database.
+	FieldDosageForm = "dosage_form"
+	// FieldStrength holds the string denoting the strength field in the database.
+	FieldStrength = "strength"
+	// FieldDrugClass holds the string denoting the drug_class field in the database.
+	FieldDrugClass = "drug_class"
+	// FieldControlledSubstanceSchedule holds the string denoting the controlled_substance_schedule field in the database.
+	FieldControlledSubstanceSchedule = "controlled_substance_schedule"
 	// FieldWeightKg holds the string denoting the weight_kg field in the database.
 	FieldWeightKg = "weight_kg"
 	// FieldDimensionsCm holds the string denoting the dimensions_cm field in the database.
@@ -364,6 +376,12 @@ var Columns = []string{
 	FieldTrackSerialNumbers,
 	FieldTrackLots,
 	FieldShelfLifeDays,
+	FieldGenericName,
+	FieldActiveIngredient,
+	FieldDosageForm,
+	FieldStrength,
+	FieldDrugClass,
+	FieldControlledSubstanceSchedule,
 	FieldWeightKg,
 	FieldDimensionsCm,
 	FieldDurationMinutes,
@@ -600,6 +618,40 @@ func OccupancyBasisValidator(ob OccupancyBasis) error {
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for occupancy_basis field: %q", ob)
+	}
+}
+
+// ControlledSubstanceSchedule defines the type for the "controlled_substance_schedule" enum field.
+type ControlledSubstanceSchedule string
+
+// ControlledSubstanceScheduleNONE is the default value of the ControlledSubstanceSchedule enum.
+const DefaultControlledSubstanceSchedule = ControlledSubstanceScheduleNONE
+
+// ControlledSubstanceSchedule values.
+const (
+	ControlledSubstanceScheduleNONE                  ControlledSubstanceSchedule = "NONE"
+	ControlledSubstanceScheduleGENERAL_SALE          ControlledSubstanceSchedule = "GENERAL_SALE"
+	ControlledSubstanceSchedulePHARMACY_ONLY         ControlledSubstanceSchedule = "PHARMACY_ONLY"
+	ControlledSubstanceSchedulePRESCRIPTION_ONLY     ControlledSubstanceSchedule = "PRESCRIPTION_ONLY"
+	ControlledSubstanceSchedulePART_I_POISON         ControlledSubstanceSchedule = "PART_I_POISON"
+	ControlledSubstanceSchedulePART_II_POISON        ControlledSubstanceSchedule = "PART_II_POISON"
+	ControlledSubstanceScheduleNARCOTIC_SCHEDULE_I   ControlledSubstanceSchedule = "NARCOTIC_SCHEDULE_I"
+	ControlledSubstanceScheduleNARCOTIC_SCHEDULE_II  ControlledSubstanceSchedule = "NARCOTIC_SCHEDULE_II"
+	ControlledSubstanceScheduleNARCOTIC_SCHEDULE_III ControlledSubstanceSchedule = "NARCOTIC_SCHEDULE_III"
+	ControlledSubstanceScheduleNARCOTIC_SCHEDULE_IV  ControlledSubstanceSchedule = "NARCOTIC_SCHEDULE_IV"
+)
+
+func (css ControlledSubstanceSchedule) String() string {
+	return string(css)
+}
+
+// ControlledSubstanceScheduleValidator is a validator for the "controlled_substance_schedule" field enum values. It is called by the builders before save.
+func ControlledSubstanceScheduleValidator(css ControlledSubstanceSchedule) error {
+	switch css {
+	case ControlledSubstanceScheduleNONE, ControlledSubstanceScheduleGENERAL_SALE, ControlledSubstanceSchedulePHARMACY_ONLY, ControlledSubstanceSchedulePRESCRIPTION_ONLY, ControlledSubstanceSchedulePART_I_POISON, ControlledSubstanceSchedulePART_II_POISON, ControlledSubstanceScheduleNARCOTIC_SCHEDULE_I, ControlledSubstanceScheduleNARCOTIC_SCHEDULE_II, ControlledSubstanceScheduleNARCOTIC_SCHEDULE_III, ControlledSubstanceScheduleNARCOTIC_SCHEDULE_IV:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for controlled_substance_schedule field: %q", css)
 	}
 }
 
@@ -846,6 +898,36 @@ func ByTrackLots(opts ...sql.OrderTermOption) OrderOption {
 // ByShelfLifeDays orders the results by the shelf_life_days field.
 func ByShelfLifeDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldShelfLifeDays, opts...).ToFunc()
+}
+
+// ByGenericName orders the results by the generic_name field.
+func ByGenericName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGenericName, opts...).ToFunc()
+}
+
+// ByActiveIngredient orders the results by the active_ingredient field.
+func ByActiveIngredient(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActiveIngredient, opts...).ToFunc()
+}
+
+// ByDosageForm orders the results by the dosage_form field.
+func ByDosageForm(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDosageForm, opts...).ToFunc()
+}
+
+// ByStrength orders the results by the strength field.
+func ByStrength(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStrength, opts...).ToFunc()
+}
+
+// ByDrugClass orders the results by the drug_class field.
+func ByDrugClass(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDrugClass, opts...).ToFunc()
+}
+
+// ByControlledSubstanceSchedule orders the results by the controlled_substance_schedule field.
+func ByControlledSubstanceSchedule(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldControlledSubstanceSchedule, opts...).ToFunc()
 }
 
 // ByWeightKg orders the results by the weight_kg field.

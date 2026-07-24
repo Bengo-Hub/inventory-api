@@ -71,6 +71,11 @@ func ItemID(v uuid.UUID) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldItemID, v))
 }
 
+// LotID applies equality check predicate on the "lot_id" field. It's identical to LotIDEQ.
+func LotID(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldLotID, v))
+}
+
 // Quantity applies equality check predicate on the "quantity" field. It's identical to QuantityEQ.
 func Quantity(v int) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldQuantity, v))
@@ -184,6 +189,56 @@ func ItemIDLT(v uuid.UUID) predicate.PurchaseReturnLine {
 // ItemIDLTE applies the LTE predicate on the "item_id" field.
 func ItemIDLTE(v uuid.UUID) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldItemID, v))
+}
+
+// LotIDEQ applies the EQ predicate on the "lot_id" field.
+func LotIDEQ(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldLotID, v))
+}
+
+// LotIDNEQ applies the NEQ predicate on the "lot_id" field.
+func LotIDNEQ(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNEQ(FieldLotID, v))
+}
+
+// LotIDIn applies the In predicate on the "lot_id" field.
+func LotIDIn(vs ...uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldIn(FieldLotID, vs...))
+}
+
+// LotIDNotIn applies the NotIn predicate on the "lot_id" field.
+func LotIDNotIn(vs ...uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNotIn(FieldLotID, vs...))
+}
+
+// LotIDGT applies the GT predicate on the "lot_id" field.
+func LotIDGT(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGT(FieldLotID, v))
+}
+
+// LotIDGTE applies the GTE predicate on the "lot_id" field.
+func LotIDGTE(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGTE(FieldLotID, v))
+}
+
+// LotIDLT applies the LT predicate on the "lot_id" field.
+func LotIDLT(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLT(FieldLotID, v))
+}
+
+// LotIDLTE applies the LTE predicate on the "lot_id" field.
+func LotIDLTE(v uuid.UUID) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldLotID, v))
+}
+
+// LotIDIsNil applies the IsNil predicate on the "lot_id" field.
+func LotIDIsNil() predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldIsNull(FieldLotID))
+}
+
+// LotIDNotNil applies the NotNil predicate on the "lot_id" field.
+func LotIDNotNil() predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNotNull(FieldLotID))
 }
 
 // QuantityEQ applies the EQ predicate on the "quantity" field.

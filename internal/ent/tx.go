@@ -62,6 +62,10 @@ type Tx struct {
 	CustomFieldValue *CustomFieldValueClient
 	// DocumentSequence is the client for interacting with the DocumentSequence builders.
 	DocumentSequence *DocumentSequenceClient
+	// DrugInteractionRule is the client for interacting with the DrugInteractionRule builders.
+	DrugInteractionRule *DrugInteractionRuleClient
+	// ExpiryAlertLog is the client for interacting with the ExpiryAlertLog builders.
+	ExpiryAlertLog *ExpiryAlertLogClient
 	// FoodCostVariance is the client for interacting with the FoodCostVariance builders.
 	FoodCostVariance *FoodCostVarianceClient
 	// GoodsReceipt is the client for interacting with the GoodsReceipt builders.
@@ -344,6 +348,8 @@ func (tx *Tx) init() {
 	tx.CustomFieldDefinition = NewCustomFieldDefinitionClient(tx.config)
 	tx.CustomFieldValue = NewCustomFieldValueClient(tx.config)
 	tx.DocumentSequence = NewDocumentSequenceClient(tx.config)
+	tx.DrugInteractionRule = NewDrugInteractionRuleClient(tx.config)
+	tx.ExpiryAlertLog = NewExpiryAlertLogClient(tx.config)
 	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
 	tx.GoodsReceipt = NewGoodsReceiptClient(tx.config)
 	tx.GoodsReceiptLine = NewGoodsReceiptLineClient(tx.config)

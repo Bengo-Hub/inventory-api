@@ -140,6 +140,21 @@ func ConsumedAt(v time.Time) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldConsumedAt, v))
 }
 
+// LotID applies equality check predicate on the "lot_id" field. It's identical to LotIDEQ.
+func LotID(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldLotID, v))
+}
+
+// LotNumber applies equality check predicate on the "lot_number" field. It's identical to LotNumberEQ.
+func LotNumber(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldLotNumber, v))
+}
+
+// ExpiryDate applies equality check predicate on the "expiry_date" field. It's identical to ExpiryDateEQ.
+func ExpiryDate(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldExpiryDate, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldCreatedAt, v))
@@ -968,6 +983,181 @@ func ConsumedAtLT(v time.Time) predicate.ConsumptionLine {
 // ConsumedAtLTE applies the LTE predicate on the "consumed_at" field.
 func ConsumedAtLTE(v time.Time) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldLTE(FieldConsumedAt, v))
+}
+
+// LotIDEQ applies the EQ predicate on the "lot_id" field.
+func LotIDEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldLotID, v))
+}
+
+// LotIDNEQ applies the NEQ predicate on the "lot_id" field.
+func LotIDNEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldLotID, v))
+}
+
+// LotIDIn applies the In predicate on the "lot_id" field.
+func LotIDIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldLotID, vs...))
+}
+
+// LotIDNotIn applies the NotIn predicate on the "lot_id" field.
+func LotIDNotIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldLotID, vs...))
+}
+
+// LotIDGT applies the GT predicate on the "lot_id" field.
+func LotIDGT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldLotID, v))
+}
+
+// LotIDGTE applies the GTE predicate on the "lot_id" field.
+func LotIDGTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldLotID, v))
+}
+
+// LotIDLT applies the LT predicate on the "lot_id" field.
+func LotIDLT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldLotID, v))
+}
+
+// LotIDLTE applies the LTE predicate on the "lot_id" field.
+func LotIDLTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldLotID, v))
+}
+
+// LotIDIsNil applies the IsNil predicate on the "lot_id" field.
+func LotIDIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldLotID))
+}
+
+// LotIDNotNil applies the NotNil predicate on the "lot_id" field.
+func LotIDNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldLotID))
+}
+
+// LotNumberEQ applies the EQ predicate on the "lot_number" field.
+func LotNumberEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldLotNumber, v))
+}
+
+// LotNumberNEQ applies the NEQ predicate on the "lot_number" field.
+func LotNumberNEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldLotNumber, v))
+}
+
+// LotNumberIn applies the In predicate on the "lot_number" field.
+func LotNumberIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldLotNumber, vs...))
+}
+
+// LotNumberNotIn applies the NotIn predicate on the "lot_number" field.
+func LotNumberNotIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldLotNumber, vs...))
+}
+
+// LotNumberGT applies the GT predicate on the "lot_number" field.
+func LotNumberGT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldLotNumber, v))
+}
+
+// LotNumberGTE applies the GTE predicate on the "lot_number" field.
+func LotNumberGTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldLotNumber, v))
+}
+
+// LotNumberLT applies the LT predicate on the "lot_number" field.
+func LotNumberLT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldLotNumber, v))
+}
+
+// LotNumberLTE applies the LTE predicate on the "lot_number" field.
+func LotNumberLTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldLotNumber, v))
+}
+
+// LotNumberContains applies the Contains predicate on the "lot_number" field.
+func LotNumberContains(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContains(FieldLotNumber, v))
+}
+
+// LotNumberHasPrefix applies the HasPrefix predicate on the "lot_number" field.
+func LotNumberHasPrefix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasPrefix(FieldLotNumber, v))
+}
+
+// LotNumberHasSuffix applies the HasSuffix predicate on the "lot_number" field.
+func LotNumberHasSuffix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasSuffix(FieldLotNumber, v))
+}
+
+// LotNumberIsNil applies the IsNil predicate on the "lot_number" field.
+func LotNumberIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldLotNumber))
+}
+
+// LotNumberNotNil applies the NotNil predicate on the "lot_number" field.
+func LotNumberNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldLotNumber))
+}
+
+// LotNumberEqualFold applies the EqualFold predicate on the "lot_number" field.
+func LotNumberEqualFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEqualFold(FieldLotNumber, v))
+}
+
+// LotNumberContainsFold applies the ContainsFold predicate on the "lot_number" field.
+func LotNumberContainsFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldLotNumber, v))
+}
+
+// ExpiryDateEQ applies the EQ predicate on the "expiry_date" field.
+func ExpiryDateEQ(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateNEQ applies the NEQ predicate on the "expiry_date" field.
+func ExpiryDateNEQ(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateIn applies the In predicate on the "expiry_date" field.
+func ExpiryDateIn(vs ...time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateNotIn applies the NotIn predicate on the "expiry_date" field.
+func ExpiryDateNotIn(vs ...time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateGT applies the GT predicate on the "expiry_date" field.
+func ExpiryDateGT(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldExpiryDate, v))
+}
+
+// ExpiryDateGTE applies the GTE predicate on the "expiry_date" field.
+func ExpiryDateGTE(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateLT applies the LT predicate on the "expiry_date" field.
+func ExpiryDateLT(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldExpiryDate, v))
+}
+
+// ExpiryDateLTE applies the LTE predicate on the "expiry_date" field.
+func ExpiryDateLTE(v time.Time) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateIsNil applies the IsNil predicate on the "expiry_date" field.
+func ExpiryDateIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldExpiryDate))
+}
+
+// ExpiryDateNotNil applies the NotNil predicate on the "expiry_date" field.
+func ExpiryDateNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldExpiryDate))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

@@ -71,6 +71,26 @@ func (_u *PurchaseReturnLineUpdate) SetNillableItemID(v *uuid.UUID) *PurchaseRet
 	return _u
 }
 
+// SetLotID sets the "lot_id" field.
+func (_u *PurchaseReturnLineUpdate) SetLotID(v uuid.UUID) *PurchaseReturnLineUpdate {
+	_u.mutation.SetLotID(v)
+	return _u
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdate) SetNillableLotID(v *uuid.UUID) *PurchaseReturnLineUpdate {
+	if v != nil {
+		_u.SetLotID(*v)
+	}
+	return _u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (_u *PurchaseReturnLineUpdate) ClearLotID() *PurchaseReturnLineUpdate {
+	_u.mutation.ClearLotID()
+	return _u
+}
+
 // SetQuantity sets the "quantity" field.
 func (_u *PurchaseReturnLineUpdate) SetQuantity(v int) *PurchaseReturnLineUpdate {
 	_u.mutation.ResetQuantity()
@@ -182,6 +202,12 @@ func (_u *PurchaseReturnLineUpdate) sqlSave(ctx context.Context) (_node int, err
 	if value, ok := _u.mutation.ItemID(); ok {
 		_spec.SetField(purchasereturnline.FieldItemID, field.TypeUUID, value)
 	}
+	if value, ok := _u.mutation.LotID(); ok {
+		_spec.SetField(purchasereturnline.FieldLotID, field.TypeUUID, value)
+	}
+	if _u.mutation.LotIDCleared() {
+		_spec.ClearField(purchasereturnline.FieldLotID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.Quantity(); ok {
 		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
 	}
@@ -282,6 +308,26 @@ func (_u *PurchaseReturnLineUpdateOne) SetNillableItemID(v *uuid.UUID) *Purchase
 	if v != nil {
 		_u.SetItemID(*v)
 	}
+	return _u
+}
+
+// SetLotID sets the "lot_id" field.
+func (_u *PurchaseReturnLineUpdateOne) SetLotID(v uuid.UUID) *PurchaseReturnLineUpdateOne {
+	_u.mutation.SetLotID(v)
+	return _u
+}
+
+// SetNillableLotID sets the "lot_id" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdateOne) SetNillableLotID(v *uuid.UUID) *PurchaseReturnLineUpdateOne {
+	if v != nil {
+		_u.SetLotID(*v)
+	}
+	return _u
+}
+
+// ClearLotID clears the value of the "lot_id" field.
+func (_u *PurchaseReturnLineUpdateOne) ClearLotID() *PurchaseReturnLineUpdateOne {
+	_u.mutation.ClearLotID()
 	return _u
 }
 
@@ -425,6 +471,12 @@ func (_u *PurchaseReturnLineUpdateOne) sqlSave(ctx context.Context) (_node *Purc
 	}
 	if value, ok := _u.mutation.ItemID(); ok {
 		_spec.SetField(purchasereturnline.FieldItemID, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.LotID(); ok {
+		_spec.SetField(purchasereturnline.FieldLotID, field.TypeUUID, value)
+	}
+	if _u.mutation.LotIDCleared() {
+		_spec.ClearField(purchasereturnline.FieldLotID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
 		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
