@@ -10,18 +10,20 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
-	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/items"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 )
 
 // Service handles recipe (BOM) management.
 type Service struct {
 	client *ent.Client
 	log    *zap.Logger
+	items  *items.Service
 }
 
 // NewService creates a new recipes service.
@@ -30,6 +32,15 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 		client: client,
 		log:    log.Named("recipes.service"),
 	}
+}
+
+// WithItemsService wires the items module so a recomputed recipe cost can be written through onto
+// its owning Item.CostPrice (see RecalculateRecipeCosts) — reused by every existing COGS/profit
+// consumer without any change on their end. Optional; nil = recipe costs are tracked on the Recipe
+// row only, as before (the legacy behaviour, for callers that don't need the write-through yet).
+func (s *Service) WithItemsService(svc *items.Service) *Service {
+	s.items = svc
+	return s
 }
 
 // RecipeDTO represents a recipe with its ingredients.

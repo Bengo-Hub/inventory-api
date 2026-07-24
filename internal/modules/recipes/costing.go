@@ -153,6 +153,19 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		return fmt.Errorf("update recipe costs: %w", err)
 	}
 
+	// Write the recomputed cost through onto the recipe's owning Item.CostPrice — every existing
+	// COGS/profit consumer (treasury's sale-time COGS journal, P&L cost-of-goods, the reversal
+	// tool's cost lookup, the profitability report) reads ONLY Item.CostPrice, never
+	// Recipe.CostPerPortion, so without this a recipe's real ingredient cost never reached any of
+	// them: COGS silently posted 0 for a RECIPE sale, and "profit" was actually gross revenue.
+	// Best-effort — a failure here must never block the recipe cost recompute itself.
+	if s.items != nil && r.ItemID != nil {
+		if perr := s.items.SetCostPriceAndPublish(ctx, tenantID, *r.ItemID, costPerPortion); perr != nil {
+			s.log.Warn("recipe cost write-through to item.cost_price failed (non-fatal)",
+				zap.String("recipe_id", recipeID.String()), zap.String("item_id", r.ItemID.String()), zap.Error(perr))
+		}
+	}
+
 	s.log.Info("recipe costs recalculated",
 		zap.String("recipe_id", recipeID.String()),
 		zap.Float64("total_cost", totalCost),

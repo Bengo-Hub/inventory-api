@@ -182,7 +182,7 @@ func New(ctx context.Context) (*App, error) {
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)
 	itemsSvc.SetTaxResolver(treasuryClient)
 	stockSvc := stock.NewService(ormClient, log)
-	recipeSvc := recipes.NewService(ormClient, log)
+	recipeSvc := recipes.NewService(ormClient, log).WithItemsService(itemsSvc)
 	unitSvc := units.NewService(ormClient, log)
 	modifiersSvc := modifiers.NewService(ormClient, log)
 	transferSvc := transfers.NewService(ormClient, log)
