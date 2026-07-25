@@ -18,6 +18,11 @@ type Branding struct {
 	Website     string
 	// PrimaryColor is an optional hex (e.g. "#1F6FB2"); empty uses the default palette.
 	PrimaryColor string
+	// ProviderFooterEnabled gates the platform-owner ("Developed & maintained by
+	// CodeVertex...") advertisement footer — platform default ON with an optional
+	// per-tenant override (see modules/providerfooter.Resolve). Resolved by
+	// documents.Service.GetBranding, not this package (pure renderer).
+	ProviderFooterEnabled bool
 }
 
 // DocLine is a single line item rendered in a document table.

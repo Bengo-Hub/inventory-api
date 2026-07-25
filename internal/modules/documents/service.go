@@ -9,6 +9,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
+	"github.com/bengobox/inventory-service/internal/modules/providerfooter"
 )
 
 // Service is the facade for inventory-api document generation: tenant-branding
@@ -40,6 +41,9 @@ func (s *Service) Seq() *SequenceService { return s.seq }
 // Always returns a usable Branding (degrades gracefully on cache/auth failure).
 func (s *Service) GetBranding(ctx context.Context, tenantID uuid.UUID) Branding {
 	b := Branding{}
+	// Independent of the tenant-cache lookup below (own local ServiceConfig lookup), so it
+	// must be resolved even when that lookup fails and this degrades to an empty Branding.
+	b.ProviderFooterEnabled = providerfooter.Resolve(ctx, s.ent, tenantID)
 	t, err := s.ent.Tenant.Query().Where(enttenant.ID(tenantID)).Only(ctx)
 	if err != nil {
 		s.log.Warn("documents: tenant lookup failed", zap.String("tenant_id", tenantID.String()), zap.Error(err))
@@ -82,9 +86,10 @@ func metaString(meta map[string]any, key string) string {
 }
 
 // addressLines assembles up to three display lines from tenant metadata:
-//   line 1: street address
-//   line 2: postal · city
-//   line 3: country (prefers a human country_name over the ISO code)
+//
+//	line 1: street address
+//	line 2: postal · city
+//	line 3: country (prefers a human country_name over the ISO code)
 func addressLines(meta map[string]any, country string) []string {
 	get := func(k string) string {
 		if meta == nil {
