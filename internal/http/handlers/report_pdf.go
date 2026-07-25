@@ -44,6 +44,7 @@ func applyBranding(rep *docs.Report, b documents.Branding) {
 	rep.TenantName = b.CompanyName
 	rep.Address = strings.Join(b.Address, "\n")
 	rep.PrimaryColor = b.PrimaryColor
+	rep.ProviderFooterEnabled = b.ProviderFooterEnabled
 	if logo, logoType := documents.FetchLogoBytes(b.LogoURL); len(logo) > 0 {
 		rep.LogoPNG = logo
 		rep.LogoType = logoType

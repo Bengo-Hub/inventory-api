@@ -267,10 +267,126 @@ func (h *ServiceConfigHandler) UpsertTenantSetting(w http.ResponseWriter, r *htt
 	respondJSON(w, http.StatusOK, toInventorySCResponse(cfg, true))
 }
 
+// ListTenantOverridesAdmin returns a SPECIFIC tenant's config overrides (tenant_id=tenantID),
+// chosen by the platform owner — distinct from ListTenantSettings, which reads the CALLING
+// tenant from the request context (self-service).
+func (h *ServiceConfigHandler) ListTenantOverridesAdmin(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(chi.URLParam(r, "tenantID"))
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant_id"})
+		return
+	}
+	configs, err := h.client.ServiceConfig.Query().
+		Where(serviceconfig.TenantID(tenantID)).
+		All(r.Context())
+	if err != nil {
+		h.logger.Error("failed to list tenant overrides", zap.Error(err))
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to list overrides"})
+		return
+	}
+	result := make([]inventoryServiceConfigResponse, 0, len(configs))
+	for _, c := range configs {
+		result = append(result, toInventorySCResponse(c, true))
+	}
+	respondJSON(w, http.StatusOK, map[string]any{"data": result, "total": len(result)})
+}
+
+// UpsertTenantOverrideAdmin creates or updates a config override for a SPECIFIC tenant chosen by
+// the platform owner (e.g. granting one tenant a provider-footer opt-out) — that tenant cannot set
+// this themselves via ListTenantSettings/UpsertTenantSetting (a different, self-service route).
+func (h *ServiceConfigHandler) UpsertTenantOverrideAdmin(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(chi.URLParam(r, "tenantID"))
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant_id"})
+		return
+	}
+	key := chi.URLParam(r, "key")
+	if key == "" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "config key is required"})
+		return
+	}
+	var req struct {
+		ConfigValue string `json:"config_value"`
+		Description string `json:"description,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	if req.ConfigValue == "" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "config_value is required"})
+		return
+	}
+	ctx := r.Context()
+
+	platformDefault, _ := h.client.ServiceConfig.Query().
+		Where(serviceconfig.ConfigKey(key), serviceconfig.TenantIDIsNil()).
+		First(ctx)
+	configType := "string"
+	if platformDefault != nil {
+		configType = platformDefault.ConfigType
+	}
+
+	existing, _ := h.client.ServiceConfig.Query().
+		Where(serviceconfig.ConfigKey(key), serviceconfig.TenantID(tenantID)).
+		First(ctx)
+
+	var cfg *ent.ServiceConfig
+	if existing != nil {
+		cfg, err = existing.Update().SetConfigValue(req.ConfigValue).Save(ctx)
+	} else {
+		create := h.client.ServiceConfig.Create().
+			SetTenantID(tenantID).
+			SetConfigKey(key).
+			SetConfigValue(req.ConfigValue).
+			SetConfigType(configType)
+		if req.Description != "" {
+			create = create.SetDescription(req.Description)
+		} else if platformDefault != nil && platformDefault.Description != "" {
+			create = create.SetDescription(platformDefault.Description)
+		}
+		if platformDefault != nil {
+			create = create.SetIsSecret(platformDefault.IsSecret)
+		}
+		cfg, err = create.Save(ctx)
+	}
+	if err != nil {
+		h.logger.Error("failed to upsert tenant override", zap.Error(err), zap.String("key", key))
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save override"})
+		return
+	}
+	respondJSON(w, http.StatusOK, toInventorySCResponse(cfg, true))
+}
+
+// DeleteTenantOverrideAdmin removes a specific tenant's override for a key (platform-owner action).
+func (h *ServiceConfigHandler) DeleteTenantOverrideAdmin(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(chi.URLParam(r, "tenantID"))
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid tenant_id"})
+		return
+	}
+	key := chi.URLParam(r, "key")
+	if key == "" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "config key is required"})
+		return
+	}
+	if _, err := h.client.ServiceConfig.Delete().
+		Where(serviceconfig.ConfigKey(key), serviceconfig.TenantID(tenantID)).
+		Exec(r.Context()); err != nil {
+		h.logger.Error("failed to delete tenant override", zap.Error(err), zap.String("key", key))
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to delete override"})
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "tenant override deleted", "key": key})
+}
+
 // RegisterPlatformRoutes registers platform admin config routes (platform owner only).
 func (h *ServiceConfigHandler) RegisterPlatformRoutes(r chi.Router) {
 	r.Get("/config", h.ListPlatformSettings)
 	r.Put("/config/{key}", h.UpsertPlatformSetting)
+	r.Get("/tenants/{tenantID}/config", h.ListTenantOverridesAdmin)
+	r.Put("/tenants/{tenantID}/config/{key}", h.UpsertTenantOverrideAdmin)
+	r.Delete("/tenants/{tenantID}/config/{key}", h.DeleteTenantOverrideAdmin)
 }
 
 // RegisterTenantRoutes registers tenant-scoped settings routes.
