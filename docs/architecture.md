@@ -5,7 +5,7 @@
 **ORM:** Ent (entgo.io/ent v0.14.5)
 **HTTP Router:** chi/v5
 **Port:** 4003
-**Production:** `inventoryapi.codevertexitsolutions.com`
+**Production:** `inventoryapi.codevertexafrica.com`
 **Last updated:** 2026-05-21
 **Status:** Sprint 1 + Sprint 2 + ERP Gaps substantially complete. 38 Ent schemas, 12 handler files, 4 RBAC roles, 99 permissions, full outbox event publishing, NATS event consumers wired.
 
@@ -191,7 +191,7 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 
 ## Authentication
 
-- **JWT validation** via `shared-auth-client` v0.3.1 (JWKS from `sso.codevertexitsolutions.com`)
+- **JWT validation** via `shared-auth-client` v0.3.1 (JWKS from `sso.codevertexafrica.com`)
 - **API key auth** for service-to-service calls (ordering-backend -> inventory-api)
 - All `/v1/{tenantID}` routes are protected
 - Tenant ID extracted from URL path (validated against JWT claims)
@@ -225,7 +225,7 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 | PostgreSQL | `POSTGRES_URL`, `POSTGRES_MAX_OPEN_CONNS`, etc. | `localhost:5432/inventory` |
 | Redis | `REDIS_ADDR`, `REDIS_PASSWORD`, etc. | `localhost:6380` |
 | NATS JetStream | `EVENTS_NATS_URL`, `NATS_STREAM`, etc. | `nats://localhost:4222` |
-| Auth/JWKS | `AUTH_SERVICE_URL`, `AUTH_JWKS_URL`, etc. | `sso.codevertexitsolutions.com` |
+| Auth/JWKS | `AUTH_SERVICE_URL`, `AUTH_JWKS_URL`, etc. | `sso.codevertexafrica.com` |
 | HTTP | `HTTP_HOST`, `HTTP_PORT`, etc. | `0.0.0.0:4003` |
 
 ---

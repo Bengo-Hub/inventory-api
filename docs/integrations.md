@@ -111,7 +111,7 @@ This document provides detailed integration information for all external service
 - `inventory.stock.out` — pos-api flags item as out-of-stock in checkout UI (❌ pos-api subscriber not yet wired)
 
 **Auth**: S2S via `X-API-Key: {INTERNAL_SERVICE_KEY}` header  
-**Env vars (pos-api)**: `INVENTORY_SERVICE_URL=https://inventoryapi.codevertexitsolutions.com`, `INTERNAL_SERVICE_KEY`
+**Env vars (pos-api)**: `INVENTORY_SERVICE_URL=https://inventoryapi.codevertexafrica.com`, `INTERNAL_SERVICE_KEY`
 
 ### Logistics Service
 

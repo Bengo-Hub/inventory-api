@@ -48,7 +48,7 @@ func main() {
 
 	authURL := os.Getenv("AUTH_API_URL")
 	if authURL == "" {
-		authURL = "https://sso.codevertexitsolutions.com"
+		authURL = "https://sso.codevertexafrica.com"
 	}
 	syncer := tenant.NewSyncer(client, authURL)
 

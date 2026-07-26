@@ -113,7 +113,7 @@ func (h *InventoryHandler) GetPublicTicketPDF(w http.ResponseWriter, r *http.Req
 	// Encode a check-in deep link in the QR so staff can verify with a phone camera.
 	uiBase := os.Getenv("INVENTORY_UI_URL")
 	if uiBase == "" {
-		uiBase = "https://inventory.codevertexitsolutions.com"
+		uiBase = "https://inventory.codevertexafrica.com"
 	}
 	if slug := chi.URLParam(r, "tenant"); slug != "" {
 		in.VerifyURL = fmt.Sprintf("%s/%s/events/check-in?code=%s", uiBase, slug, t.Code)
