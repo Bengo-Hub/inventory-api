@@ -155,6 +155,10 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Stock levels
 	r.Get("/inventory/stock", h.ListStock)
+	// Branded PDF/CSV export of stock levels — same filters as ListStock plus warehouse/
+	// location drill-down, reuses queryStockLevels + the docs report engine (see
+	// report_pdf_stock.go).
+	r.Get("/inventory/stock/export", h.StockExportPDF)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/stock/{sku}/reorder-config", h.UpdateReorderConfig)
 
 	// Lots & Batches — tier-gated (pharmacy family all tiers; hosp/retail never; see
