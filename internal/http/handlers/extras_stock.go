@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -25,6 +26,8 @@ type stockLevelDTO struct {
 	SKU           string     `json:"sku"`
 	WarehouseName string     `json:"warehouse_name"`
 	WarehouseID   uuid.UUID  `json:"warehouse_id"`
+	LocationID    *uuid.UUID `json:"location_id,omitempty"`
+	LocationName  string     `json:"location_name,omitempty"`
 	Available     float64    `json:"available"`
 	Reserved      float64    `json:"reserved"`
 	ReorderPoint  *int       `json:"reorder_point"`
@@ -40,62 +43,96 @@ type stockLevelDTO struct {
 // items.isStockTracked which governs whether a balance is created at all).
 var stockableTypes = []entitem.Type{entitem.TypeGOODS, entitem.TypeINGREDIENT, entitem.TypeEQUIPMENT}
 
-func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Request) {
-	tenantID, err := parseTenantID(r)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
-		return
-	}
+// stockLevelFilters are the shared query filters for the stock-levels list — used by both
+// the JSON ListStock endpoint and the branded PDF/CSV export (StockExportPDF), so the two
+// surfaces can never drift on what counts as "in scope".
+type stockLevelFilters struct {
+	Search      string
+	LowStock    bool
+	OutOfStock  bool
+	CategoryID  *uuid.UUID
+	TypeFilter  string
+	WarehouseID *uuid.UUID
+	LocationID  *uuid.UUID
+	// OutletID scopes to an outlet's own warehouses (+ shared/HQ warehouses with no outlet
+	// link) when no explicit WarehouseID is given — mirrors the ListItems outlet separation.
+	OutletID *uuid.UUID
+}
 
+// parseStockLevelFilters reads the shared stock-list query params. explicitOutlet lets a
+// caller (the export handler) accept an ?outlet_id= override in addition to the ambient
+// X-Outlet-ID header that ListStock relies on.
+func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLevelFilters {
 	q := r.URL.Query()
-	search := q.Get("search")
-	lowStock := q.Get("low_stock") == "true"
-	outOfStock := q.Get("out_of_stock") == "true"
-	categoryIDStr := q.Get("category_id")
-	typeFilter := strings.ToUpper(strings.TrimSpace(q.Get("type")))
-	warehouseIDStr := q.Get("warehouse_id")
+	f := stockLevelFilters{
+		Search:     q.Get("search"),
+		LowStock:   q.Get("low_stock") == "true",
+		OutOfStock: q.Get("out_of_stock") == "true",
+		TypeFilter: strings.ToUpper(strings.TrimSpace(q.Get("type"))),
+	}
+	if cid, e := uuid.Parse(q.Get("category_id")); e == nil {
+		f.CategoryID = &cid
+	}
+	if wid, e := uuid.Parse(q.Get("warehouse_id")); e == nil {
+		f.WarehouseID = &wid
+	}
+	if lid, e := uuid.Parse(q.Get("location_id")); e == nil {
+		f.LocationID = &lid
+	}
+	if f.WarehouseID == nil {
+		if oid, e := uuid.Parse(q.Get(explicitOutletParam)); explicitOutletParam != "" && e == nil {
+			f.OutletID = &oid
+		} else if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
+			if oid, e := uuid.Parse(outletStr); e == nil {
+				f.OutletID = &oid
+			}
+		}
+	}
+	return f
+}
 
+// queryStockLevels builds and runs the InventoryBalance query for the given filters,
+// returning the enriched DTOs. Single source of truth for "what counts as stock" reused by
+// ListStock (JSON) and StockExportPDF (branded PDF/CSV) — see [[feedback_workflow_rules]].
+func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID uuid.UUID, f stockLevelFilters) ([]stockLevelDTO, error) {
 	// Always constrain to stockable item types so non-stock catalog items
 	// (services, vouchers, recipes) never surface on the stock levels list.
 	itemPreds := []predicate.Item{entitem.TypeIn(stockableTypes...)}
-	if categoryIDStr != "" {
-		if cid, e := uuid.Parse(categoryIDStr); e == nil {
-			itemPreds = append(itemPreds, entitem.CategoryID(cid))
-		}
+	if f.CategoryID != nil {
+		itemPreds = append(itemPreds, entitem.CategoryID(*f.CategoryID))
 	}
-	if typeFilter != "" {
+	if f.TypeFilter != "" {
 		// Narrow to the requested type (still bounded by stockableTypes above).
-		itemPreds = append(itemPreds, entitem.TypeEQ(entitem.Type(typeFilter)))
+		itemPreds = append(itemPreds, entitem.TypeEQ(entitem.Type(f.TypeFilter)))
 	}
 
 	balQuery := h.orm.InventoryBalance.Query().
 		Where(entinventorybalance.TenantID(tenantID)).
 		Where(entinventorybalance.HasItemWith(itemPreds...)).
 		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
-		WithWarehouse()
-	if warehouseIDStr != "" {
-		if wid, e := uuid.Parse(warehouseIDStr); e == nil {
-			balQuery = balQuery.Where(entinventorybalance.WarehouseID(wid))
-		}
-	} else if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
-		// Outlet drill-down (X-Outlet-ID) with no explicit warehouse filter: scope the stock
-		// list to the selected outlet's warehouses (+ shared/HQ warehouses with no outlet link),
-		// mirroring the ListItems outlet separation — selecting a branch anywhere in the app
-		// must show that branch's stock, not the whole tenant's.
-		if outletID, e := uuid.Parse(outletStr); e == nil {
-			balQuery = balQuery.Where(entinventorybalance.HasWarehouseWith(
-				entwarehouse.Or(
-					entwarehouse.OutletIDEQ(outletID),
-					entwarehouse.OutletIDIsNil(),
-				),
-			))
-		}
+		WithWarehouse().
+		WithLocation()
+	if f.LocationID != nil {
+		balQuery = balQuery.Where(entinventorybalance.LocationID(*f.LocationID))
+	}
+	if f.WarehouseID != nil {
+		balQuery = balQuery.Where(entinventorybalance.WarehouseID(*f.WarehouseID))
+	} else if f.OutletID != nil {
+		// Outlet drill-down (X-Outlet-ID or explicit ?outlet_id=) with no explicit warehouse
+		// filter: scope the stock list to the selected outlet's warehouses (+ shared/HQ
+		// warehouses with no outlet link) — selecting a branch anywhere in the app must show
+		// that branch's stock, not the whole tenant's.
+		balQuery = balQuery.Where(entinventorybalance.HasWarehouseWith(
+			entwarehouse.Or(
+				entwarehouse.OutletIDEQ(*f.OutletID),
+				entwarehouse.OutletIDIsNil(),
+			),
+		))
 	}
 
-	balances, err := balQuery.All(r.Context())
+	balances, err := balQuery.All(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list stock")
-		return
+		return nil, err
 	}
 
 	result := make([]stockLevelDTO, 0, len(balances))
@@ -116,8 +153,12 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 		if b.Edges.Warehouse != nil {
 			warehouseName = b.Edges.Warehouse.Name
 		}
-		if search != "" {
-			needle := strings.ToLower(search)
+		locationName := ""
+		if b.Edges.Location != nil {
+			locationName = b.Edges.Location.Name
+		}
+		if f.Search != "" {
+			needle := strings.ToLower(f.Search)
 			if !strings.Contains(strings.ToLower(itemName), needle) &&
 				!strings.Contains(strings.ToLower(sku), needle) &&
 				!strings.Contains(strings.ToLower(warehouseName), needle) {
@@ -133,10 +174,10 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 		// Status filters: out-of-stock = nothing available; low = at/below reorder but > 0.
 		isOut := b.Available <= 0
 		isLow := reorderPoint != nil && b.Available > 0 && b.Available <= float64(*reorderPoint)
-		if outOfStock && !isOut {
+		if f.OutOfStock && !isOut {
 			continue
 		}
-		if lowStock && !isLow {
+		if f.LowStock && !isLow {
 			continue
 		}
 
@@ -146,6 +187,8 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 			SKU:           sku,
 			WarehouseName: warehouseName,
 			WarehouseID:   b.WarehouseID,
+			LocationID:    b.LocationID,
+			LocationName:  locationName,
 			Available:     b.Available,
 			Reserved:      b.Reserved,
 			ReorderPoint:  reorderPoint,
@@ -155,6 +198,21 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 			CategoryName:  categoryName,
 			Type:          typeStr,
 		})
+	}
+	return result, nil
+}
+
+func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	result, err := h.queryStockLevels(r.Context(), tenantID, parseStockLevelFilters(r, ""))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list stock")
+		return
 	}
 	writeJSON(w, http.StatusOK, result)
 }

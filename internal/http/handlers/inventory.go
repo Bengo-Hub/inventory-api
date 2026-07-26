@@ -223,6 +223,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/inventory", func(inv chi.Router) {
 		// Items
 		inv.Get("/items", h.ListItems)
+		// Branded PDF/CSV export of the catalog — same filters as the list, reuses the docs
+		// report engine (see report_pdf_products.go). Static path, so it never collides with
+		// the /items/{sku} wildcard below regardless of registration order.
+		inv.Get("/items/export", h.ProductsExportPDF)
 		inv.With(perm(rbac.PermItemsAdd)).Post("/items", h.CreateItem)
 		inv.Get("/items/{sku}", h.GetStockAvailability)
 		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
