@@ -37,7 +37,7 @@ type WarehouseHandler struct {
 	log        *zap.Logger
 	orm        *ent.Client
 	rbacSvc    *rbac.Service
-	authURL    string // base URL of auth-api, e.g. "https://sso.codevertexitsolutions.com"
+	authURL    string // base URL of auth-api, e.g. "https://sso.codevertexafrica.com"
 	outletSync OutletSyncer
 	auditSvc   *audit.Service
 }

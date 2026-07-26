@@ -6,5 +6,5 @@ package render
 // with no tenant-cache access. Keep identical to the sibling docs engines (treasury-api docs).
 const (
 	providerFooterLead    = "Developed & maintained by Codevertex Africa Limited"
-	providerFooterContact = "www.codevertexitsolutions.com  ·  info@codevertexitsolutions.com  ·  +254 742 201 368"
+	providerFooterContact = "www.codevertexafrica.com  ·  info@codevertexafrica.com  ·  +254 742 201 368"
 )

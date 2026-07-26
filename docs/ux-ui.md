@@ -2,7 +2,7 @@
 
 This document is for developers integrating with inventory-api (ordering-backend, POS, future services).
 
-**Base URL:** `https://inventoryapi.codevertexitsolutions.com/v1/{tenantID}/inventory`
+**Base URL:** `https://inventoryapi.codevertexafrica.com/v1/{tenantID}/inventory`
 **Tenant slug:** `urban-loft`
 
 ---

@@ -6,7 +6,7 @@
 **MVP deadline:** 2026-03-27
 **Tenant:** urban-loft (Urban Loft Cafe)
 **Active outlet:** Busia (main)
-**Production domain:** `inventoryapi.codevertexitsolutions.com`
+**Production domain:** `inventoryapi.codevertexafrica.com`
 
 ---
 
