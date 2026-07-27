@@ -348,6 +348,14 @@ type CategoryDTO struct {
 	ParentName  string     `json:"parent_name,omitempty"`
 	IsActive    bool       `json:"is_active"`
 	IsGlobal    bool       `json:"is_global,omitempty"`
+	// Depth/Path mirror the ent schema's materialized-path hierarchy fields
+	// (0 = root; path = root-id/parent-id/self-id) so clients (e.g. the
+	// ordering-frontend "Shop by Category" flyout) can render trees without a
+	// second round trip. Maintained by CreateCategory/UpdateCategory — see
+	// resolveCategoryPath and cascadeCategoryDescendants below.
+	Depth     int    `json:"depth"`
+	Path      string `json:"path,omitempty"`
+	SortOrder int    `json:"sort_order,omitempty"`
 	// Outlet use_cases this category is relevant to (hospitality, pharmacy,
 	// retail…); empty = universal. Keeps food categories out of a pharmacy
 	// outlet's pickers (and vice versa) on mixed-use tenants.
@@ -1377,17 +1385,101 @@ func (s *Service) checkDuplicateCategory(ctx context.Context, tenantID uuid.UUID
 	return nil
 }
 
+// resolveCategoryParent fetches the parent category for a proposed parentID,
+// scoped the same way ListCategories resolves visibility (the tenant's own
+// rows plus platform-global rows) so a tenant can nest under a global parent.
+// Returns nil, nil when parentID is nil (root category).
+func (s *Service) resolveCategoryParent(ctx context.Context, tenantID uuid.UUID, parentID *uuid.UUID) (*ent.ItemCategory, error) {
+	if parentID == nil {
+		return nil, nil
+	}
+	parent, err := s.client.ItemCategory.Query().
+		Where(
+			itemcategory.ID(*parentID),
+			itemcategory.Or(
+				itemcategory.TenantID(tenantID),
+				itemcategory.And(itemcategory.IsGlobal(true), itemcategory.TenantID(uuid.Nil)),
+			),
+		).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("items: parent category not found")
+		}
+		return nil, fmt.Errorf("items: query parent category: %w", err)
+	}
+	return parent, nil
+}
+
+// resolveCategoryPath computes the depth/materialized-path for selfID given
+// its (already-resolved) parent, per the ent schema's "root-id/parent-id/self-id"
+// convention (schema/itemcategory.go). A nil parent means selfID is a root:
+// depth 0, path = selfID alone. Falls back to parent.ID when an existing
+// parent predates path being populated (parent.Path == "").
+func resolveCategoryPath(parent *ent.ItemCategory, selfID uuid.UUID) (depth int, path string) {
+	if parent == nil {
+		return 0, selfID.String()
+	}
+	parentPath := parent.Path
+	if parentPath == "" {
+		parentPath = parent.ID.String()
+	}
+	return parent.Depth + 1, parentPath + "/" + selfID.String()
+}
+
+// cascadeCategoryDescendants re-materializes depth/path for every existing
+// descendant of a category whose own path just changed (e.g. it was
+// re-parented, or its ancestor was). Without this, moving a parent would
+// leave every child's path pointing at a now-stale prefix — the gap flagged
+// in the category-hierarchy data-fix task. oldPath/newPath are the node's
+// path before/after the update that triggered this cascade.
+func (s *Service) cascadeCategoryDescendants(ctx context.Context, tenantID uuid.UUID, oldPath, newPath string) error {
+	if oldPath == "" || oldPath == newPath {
+		return nil
+	}
+	descendants, err := s.client.ItemCategory.Query().
+		Where(itemcategory.TenantID(tenantID), itemcategory.PathHasPrefix(oldPath+"/")).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("items: query category descendants for cascade: %w", err)
+	}
+	for _, d := range descendants {
+		suffix := strings.TrimPrefix(d.Path, oldPath)
+		newDescPath := newPath + suffix
+		newDescDepth := strings.Count(newDescPath, "/")
+		if _, err := s.client.ItemCategory.UpdateOneID(d.ID).
+			SetDepth(newDescDepth).
+			SetPath(newDescPath).
+			Save(ctx); err != nil {
+			return fmt.Errorf("items: cascade path to descendant %s: %w", d.ID, err)
+		}
+	}
+	return nil
+}
+
 // CreateCategory creates a new item category for the tenant.
 // When dto.IsGlobal is true, the category is visible to all tenants.
 func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
 	if err := s.checkDuplicateCategory(ctx, tenantID, dto.Name, nil); err != nil {
 		return nil, err
 	}
+	parent, err := s.resolveCategoryParent(ctx, tenantID, dto.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	// Pre-generate the ID (rather than letting Save() apply the schema's
+	// client-side default) so depth/path can be materialized in the same
+	// insert instead of a follow-up update.
+	newID := uuid.New()
+	depth, path := resolveCategoryPath(parent, newID)
 	q := s.client.ItemCategory.Create().
+		SetID(newID).
 		SetTenantID(tenantID).
 		SetName(dto.Name).
 		SetIsActive(true).
-		SetIsGlobal(dto.IsGlobal)
+		SetIsGlobal(dto.IsGlobal).
+		SetDepth(depth).
+		SetPath(path)
 	if dto.Code != "" {
 		q = q.SetCode(dto.Code)
 	}
@@ -1406,8 +1498,8 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		}
 		q = q.SetIcon(InferDefaultCategoryIcon(dto.Name, defaultUseCase))
 	}
-	if dto.ParentID != nil {
-		q = q.SetParentID(*dto.ParentID)
+	if parent != nil {
+		q = q.SetParentID(parent.ID)
 	}
 	// Use-case tags: a category created from a hospitality outlet is stamped
 	// hospitality so it never pollutes pharmacy/retail pickers. Untagged = universal.
@@ -1434,6 +1526,9 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
 		IsGlobal:    c.IsGlobal,
+		Depth:       c.Depth,
+		Path:        c.Path,
+		SortOrder:   c.SortOrder,
 	}, nil
 }
 
@@ -1448,12 +1543,32 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		}
 		return nil, fmt.Errorf("items: query category for update: %w", err)
 	}
-	if err := s.checkDuplicateCategory(ctx, tenantID, dto.Name, &id); err != nil {
+	// Only re-check for a name collision when the name is actually changing.
+	// Without this guard, a category that happens to share its name with a
+	// platform-global category (e.g. a tenant's own "Electronics" alongside
+	// the global "Electronics" row) could never be updated at all — even a
+	// no-op resend of its current name, or an unrelated field change like
+	// re-parenting — because checkDuplicateCategory would find the other
+	// tenant's/global row and report a false collision every time.
+	if !strings.EqualFold(existing.Name, dto.Name) {
+		if err := s.checkDuplicateCategory(ctx, tenantID, dto.Name, &id); err != nil {
+			return nil, err
+		}
+	}
+	// Resolve the (possibly new) parent and re-materialize this category's own
+	// depth/path from it — CreateCategory/UpdateCategory previously left these
+	// at their zero values entirely, so any re-parenting silently produced
+	// dangling/incorrect path data. See resolveCategoryPath.
+	parent, err := s.resolveCategoryParent(ctx, tenantID, dto.ParentID)
+	if err != nil {
 		return nil, err
 	}
+	newDepth, newPath := resolveCategoryPath(parent, id)
 	q := s.client.ItemCategory.UpdateOneID(id).
 		SetName(dto.Name).
-		SetIsActive(dto.IsActive)
+		SetIsActive(dto.IsActive).
+		SetDepth(newDepth).
+		SetPath(newPath)
 	if dto.Code != "" {
 		q = q.SetCode(dto.Code)
 	}
@@ -1474,8 +1589,8 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		}
 		q = q.SetIcon(InferDefaultCategoryIcon(dto.Name, defaultUseCase))
 	}
-	if dto.ParentID != nil {
-		q = q.SetParentID(*dto.ParentID)
+	if parent != nil {
+		q = q.SetParentID(parent.ID)
 	} else {
 		q = q.ClearParentID()
 	}
@@ -1485,6 +1600,12 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 			return nil, &DuplicateCategoryError{Name: dto.Name}
 		}
 		return nil, fmt.Errorf("items: update category: %w", err)
+	}
+	// This category's own path just moved (re-parented, or first materialized
+	// from a legacy empty path) — ripple the new prefix onto every existing
+	// descendant so their depth/path don't dangle pointing at the stale path.
+	if err := s.cascadeCategoryDescendants(ctx, tenantID, existing.Path, newPath); err != nil {
+		return nil, err
 	}
 	if s.cache != nil {
 		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
@@ -1497,6 +1618,9 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		Icon:        c.Icon,
 		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
+		Depth:       c.Depth,
+		Path:        c.Path,
+		SortOrder:   c.SortOrder,
 	}, nil
 }
 
@@ -1597,6 +1721,9 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 				ParentID:    c.ParentID,
 				IsActive:    c.IsActive,
 				IsGlobal:    c.IsGlobal,
+				Depth:       c.Depth,
+				Path:        c.Path,
+				SortOrder:   c.SortOrder,
 				UseCases:    c.UseCases,
 			}
 			if c.ParentID != nil {
