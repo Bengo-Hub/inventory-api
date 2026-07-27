@@ -55,7 +55,10 @@ var categoryIconKeywords = []categoryIconKeywordGroup{
 	{"/media/icons/retail-colored.svg", []string{"retail", "fashion goods", "shopping"}},
 	{"/media/icons/fashion-colored.svg", []string{"fashion", "clothing", "apparel"}},
 	{"/media/icons/electronics-colored.svg", []string{"electronic", "device", "gadget"}},
-	{"/media/icons/beauty-colored.svg", []string{"beauty", "spa", "salon", "wellness"}},
+	// Deliberately no bare "spa" keyword here: it's a literal substring of unrelated
+	// words like "Spare" (e.g. "Spare Parts" was mis-tagged with this icon before this
+	// fix), and "beauty" alone already catches the seeded "Beauty & Spa" category.
+	{"/media/icons/beauty-colored.svg", []string{"beauty", "salon", "wellness", "day spa", "med spa"}},
 }
 
 // categoryIconUseCaseFallback maps an outlet use_case to a sensible generic icon when
