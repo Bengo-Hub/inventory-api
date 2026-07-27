@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_camera" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_camera)"/>
+  <g transform="translate(200,210)">
+    <rect x="-40" y="-90" width="80" height="24" rx="6" fill="#1e293b"/>
+    <rect x="-110" y="-70" width="220" height="150" rx="16" fill="#1e293b"/>
+    <circle cx="0" cy="10" r="55" fill="#475569"/>
+    <circle cx="0" cy="10" r="38" fill="#fff" opacity="0.9"/>
+    <circle cx="0" cy="10" r="20" fill="#3b82f6" opacity="0.85"/>
+    <circle cx="75" cy="-40" r="8" fill="#fbbf24"/>
+  </g>
+</svg>

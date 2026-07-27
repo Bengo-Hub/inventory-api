@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_extension_cord" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_extension_cord)"/>
+  <g transform="translate(200,200)">
+    <rect x="-100" y="-30" width="200" height="60" rx="20" fill="#1e293b"/>
+    <circle cx="-55" cy="0" r="12" fill="#fff" opacity="0.85"/>
+    <circle cx="0" cy="0" r="12" fill="#fff" opacity="0.85"/>
+    <circle cx="55" cy="0" r="12" fill="#fff" opacity="0.85"/>
+    <path d="M-100,0 Q-140,0 -140,-40" fill="none" stroke="#fbbf24" stroke-width="14" stroke-linecap="round"/>
+    <path d="M100,0 Q140,0 140,40" fill="none" stroke="#fbbf24" stroke-width="14" stroke-linecap="round"/>
+  </g>
+</svg>

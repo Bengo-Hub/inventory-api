@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_light_bulb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fde68a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_light_bulb)"/>
+  <g transform="translate(200,210)">
+    <path d="M0,-100 Q60,-100 60,-40 Q60,-5 30,20 L30,55 L-30,55 L-30,20 Q-60,-5 -60,-40 Q-60,-100 0,-100 Z" fill="#fff" opacity="0.95"/>
+    <rect x="-24" y="55" width="48" height="18" rx="4" fill="#1e293b"/>
+    <rect x="-24" y="78" width="48" height="14" rx="6" fill="#1e293b"/>
+    <path d="M-15,-55 L15,-55 L0,-10 Z" fill="#f59e0b" opacity="0.7"/>
+  </g>
+</svg>

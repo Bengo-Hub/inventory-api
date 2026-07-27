@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_usb_drive" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_usb_drive)"/>
+  <g transform="translate(200,200)">
+    <rect x="-30" y="-100" width="60" height="55" rx="6" fill="#cbd5e1"/>
+    <rect x="-18" y="-100" width="12" height="20" fill="#475569"/>
+    <rect x="6" y="-100" width="12" height="20" fill="#475569"/>
+    <rect x="-60" y="-45" width="120" height="145" rx="16" fill="#1e293b"/>
+    <rect x="-40" y="-15" width="80" height="30" rx="6" fill="#3b82f6" opacity="0.8"/>
+  </g>
+</svg>
