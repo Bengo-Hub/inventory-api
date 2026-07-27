@@ -1396,6 +1396,15 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 	}
 	if dto.Icon != "" {
 		q = q.SetIcon(dto.Icon)
+	} else {
+		// No icon supplied: infer a sensible default from the name (falling back to
+		// the first use_case tag) rather than leaving it blank — see
+		// category_icon_defaults.go. Never overwrites a caller-supplied icon.
+		defaultUseCase := ""
+		if len(dto.UseCases) > 0 {
+			defaultUseCase = dto.UseCases[0]
+		}
+		q = q.SetIcon(InferDefaultCategoryIcon(dto.Name, defaultUseCase))
 	}
 	if dto.ParentID != nil {
 		q = q.SetParentID(*dto.ParentID)
@@ -1430,7 +1439,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 
 // UpdateCategory updates an existing item category.
 func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto CategoryDTO) (*CategoryDTO, error) {
-	_, err := s.client.ItemCategory.Query().
+	existing, err := s.client.ItemCategory.Query().
 		Where(itemcategory.TenantID(tenantID), itemcategory.ID(id)).
 		Only(ctx)
 	if err != nil {
@@ -1453,6 +1462,17 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 	}
 	if dto.Icon != "" {
 		q = q.SetIcon(dto.Icon)
+	} else if existing.Icon == "" {
+		// Icon left empty on both the request and the existing row: auto-assign a
+		// default rather than leaving it blank. Never overwrites a non-empty existing
+		// icon just because the caller didn't resend it.
+		defaultUseCase := ""
+		if len(dto.UseCases) > 0 {
+			defaultUseCase = dto.UseCases[0]
+		} else if len(existing.UseCases) > 0 {
+			defaultUseCase = existing.UseCases[0]
+		}
+		q = q.SetIcon(InferDefaultCategoryIcon(dto.Name, defaultUseCase))
 	}
 	if dto.ParentID != nil {
 		q = q.SetParentID(*dto.ParentID)

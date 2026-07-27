@@ -299,6 +299,7 @@ func (h *InventoryHandler) ensureCategory(r *http.Request, tenantID uuid.UUID, n
 	dto := items.CategoryDTO{
 		Name:     name,
 		IsActive: true,
+		Icon:     items.InferDefaultCategoryIcon(name, useCase),
 	}
 	if useCase != "" {
 		dto.UseCases = []string{useCase}

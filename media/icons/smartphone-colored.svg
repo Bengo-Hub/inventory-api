@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_smartphone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_smartphone)"/>
+  <g transform="translate(200,200)">
+    <rect x="-55" y="-110" width="110" height="220" rx="18" fill="#1e293b"/>
+    <rect x="-45" y="-95" width="90" height="165" rx="4" fill="#3b82f6" opacity="0.8"/>
+    <circle cx="0" cy="90" r="9" fill="#fff" opacity="0.6"/>
+    <rect x="-15" y="-102" width="30" height="6" rx="3" fill="#0f172a"/>
+  </g>
+</svg>

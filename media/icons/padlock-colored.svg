@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg_padlock" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg_padlock)"/>
+  <g transform="translate(200,210)">
+    <path d="M-45,-30 L-45,-60 Q-45,-100 0,-100 Q45,-100 45,-60 L45,-30" fill="none" stroke="#fff" stroke-width="15" opacity="0.85"/>
+    <rect x="-65" y="-30" width="130" height="110" rx="14" fill="#1e293b"/>
+    <circle cx="0" cy="15" r="14" fill="#fbbf24"/>
+    <rect x="-6" y="15" width="12" height="30" rx="4" fill="#fbbf24"/>
+  </g>
+</svg>

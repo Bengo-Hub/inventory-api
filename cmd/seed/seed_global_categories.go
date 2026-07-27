@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 )
 
 // globalCategoryDef is a platform-wide default item category, visible to every tenant
@@ -66,7 +67,8 @@ func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
 	}
 	for _, cat := range globalCategoryDefs {
 		id := globalCategoryUUID(cat.Slug)
-		_, err := client.ItemCategory.Get(ctx, id)
+		icon := items.InferDefaultCategoryIcon(cat.Name, "")
+		existing, err := client.ItemCategory.Get(ctx, id)
 		switch {
 		case ent.IsNotFound(err):
 			if _, createErr := client.ItemCategory.Create().
@@ -76,6 +78,7 @@ func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
 				SetSlug(cat.Slug).
 				SetCode(cat.Code).
 				SetDescription(cat.Description).
+				SetIcon(icon).
 				SetIsGlobal(true).
 				SetIsActive(true).
 				Save(ctx); createErr != nil {
@@ -85,14 +88,18 @@ func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
 		case err != nil:
 			return fmt.Errorf("check global category %s: %w", cat.Slug, err)
 		default:
-			if _, updateErr := client.ItemCategory.UpdateOneID(id).
+			upd := client.ItemCategory.UpdateOneID(id).
 				SetName(cat.Name).
 				SetSlug(cat.Slug).
 				SetCode(cat.Code).
 				SetDescription(cat.Description).
 				SetIsGlobal(true).
-				SetIsActive(true).
-				Save(ctx); updateErr != nil {
+				SetIsActive(true)
+			// Never clobber an icon that's already set (e.g. a manual override).
+			if existing.Icon == "" {
+				upd = upd.SetIcon(icon)
+			}
+			if _, updateErr := upd.Save(ctx); updateErr != nil {
 				return fmt.Errorf("update global category %s: %w", cat.Slug, updateErr)
 			}
 		}
