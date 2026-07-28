@@ -208,7 +208,16 @@ func New(
 			// group with NO auth middleware; TenantV2 resolves the tenant from the URL.
 			if pinAuthHandler != nil {
 				tenant.Group(func(pub chi.Router) {
-					pinAuthHandler.RegisterRoutes(pub)
+					pub.Get("/inventory/auth/pin/outlets", pinAuthHandler.PINOutlets)
+					// Dedicated, much stricter per-IP limit on the actual PIN-guess surface (bcrypt
+					// compare against a candidate set), stacked on top of the general limiter above —
+					// see PINRateLimit's doc comment for why (PIN uniqueness is per-tenant only, so a
+					// common/guessed PIN can collide across unrelated tenants' admin accounts).
+					pub.Group(func(pinGroup chi.Router) {
+						pinGroup.Use(ratelimitmw.PINRateLimit(redisClient, ratelimitmw.DefaultPINRateLimitConfig()))
+						pinGroup.Post("/inventory/auth/pin/identify", pinAuthHandler.IdentifyByPIN)
+						pinGroup.Post("/inventory/auth/pin", pinAuthHandler.Login)
+					})
 				})
 			}
 
