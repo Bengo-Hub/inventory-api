@@ -46,13 +46,6 @@ const (
 	pinLockoutDuration   = 15 * time.Minute
 )
 
-// RegisterRoutes wires the public PIN endpoints onto the given router group.
-func (h *PINAuthHandler) RegisterRoutes(r chi.Router) {
-	r.Get("/inventory/auth/pin/outlets", h.PINOutlets)
-	r.Post("/inventory/auth/pin/identify", h.IdentifyByPIN)
-	r.Post("/inventory/auth/pin", h.Login)
-}
-
 func (h *PINAuthHandler) tenantBySlug(r *http.Request) (*ent.Tenant, bool) {
 	slug := chi.URLParam(r, "tenant")
 	if slug == "" {
