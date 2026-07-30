@@ -14,19 +14,24 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	events "github.com/Bengo-Hub/shared-events"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entip "github.com/bengobox/inventory-service/internal/ent/itempricing"
 	entpt "github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 )
 
 type PricingTierHandler struct {
-	log     *zap.Logger
-	orm     *ent.Client
-	rbacSvc *rbac.Service
+	log      *zap.Logger
+	orm      *ent.Client
+	rbacSvc  *rbac.Service
+	auditSvc *audit.Service
+	itemsSvc *items.Service
 }
 
 func NewPricingTierHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service) *PricingTierHandler {
@@ -35,6 +40,25 @@ func NewPricingTierHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Servi
 		orm:     orm,
 		rbacSvc: rbacSvc,
 	}
+}
+
+// SetAuditService wires the centralized audit trail for selling-price changes.
+func (h *PricingTierHandler) SetAuditService(a *audit.Service) { h.auditSvc = a }
+
+// SetItemsService injects the items service so price resolution can lazily promote a queued
+// "new_stock_only" price change once its trigger has fired (see items.Service.
+// PromotePendingPriceChanges).
+func (h *PricingTierHandler) SetItemsService(svc *items.Service) { h.itemsSvc = svc }
+
+// actorFromRequest resolves the acting user from the request's auth claims, falling back to
+// uuid.Nil for S2S calls where there is no human actor.
+func actorFromRequest(r *http.Request) uuid.UUID {
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		if id, err := claims.UserID(); err == nil {
+			return id
+		}
+	}
+	return uuid.Nil
 }
 
 func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
@@ -58,7 +82,8 @@ func (h *PricingTierHandler) RegisterRoutes(r chi.Router) {
 
 	r.Route("/inventory/items/{itemID}/pricing", func(ip chi.Router) {
 		ip.Get("/", h.GetItemPricing)
-		ip.With(perm(rbac.PermItemsChange)).Put("/", h.UpsertItemPricing)
+		// Idempotency-Key guarded: a retried request must not double-apply a price change.
+		ip.With(perm(rbac.PermItemsChange), invmiddleware.Idempotency(h.orm)).Put("/", h.UpsertItemPricing)
 	})
 
 	// Quantity-aware price resolution: returns unit price + total for N units using default tier.
@@ -370,16 +395,40 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 		}
 	}
 
+	ctx := r.Context()
+	tx, err := h.orm.Tx(ctx)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "TX_FAILED", "Failed to start transaction")
+		return
+	}
+
+	// Audit rows are recorded outside the transaction (audit.Service.Record is deliberately
+	// best-effort/fire-and-forget, per its own package contract) — collected here and written
+	// only after a successful commit, so a rolled-back price change never leaves a misleading
+	// audit trail behind.
+	type auditPending struct {
+		outletID  *uuid.UUID
+		tierID    uuid.UUID
+		prevPrice *float64
+		newPrice  float64
+	}
+	var pendingAudits []auditPending
+
 	results := make([]itemPricingDTO, 0, len(entries))
 	for _, entry := range entries {
-		q := h.orm.ItemPricing.Query().
-			Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(entry.PricingTierID))
+		q := tx.ItemPricing.Query().
+			Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(entry.PricingTierID), entip.IsActive(true))
 		if entry.OutletID != nil {
 			q = q.Where(entip.OutletID(*entry.OutletID))
 		} else {
 			q = q.Where(entip.OutletIDIsNil())
 		}
-		existing, err := q.First(r.Context())
+		existing, qErr := q.First(ctx)
+		var prevPrice *float64
+		if qErr == nil {
+			p := existing.Price
+			prevPrice = &p
+		}
 
 		effectiveFrom := time.Now()
 		if entry.EffectiveFrom != nil {
@@ -390,52 +439,84 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 			currency = "KES"
 		}
 
-		var saved *ent.ItemPricing
-		if err == nil {
-			// update existing
-			upd := h.orm.ItemPricing.UpdateOneID(existing.ID).
-				SetPrice(entry.Price).
-				SetCurrency(currency).
-				SetEffectiveFrom(effectiveFrom).
-				SetIsActive(true)
-			if entry.TierBasis != "" {
-				upd = upd.SetTierBasis(entip.TierBasis(entry.TierBasis))
-			}
-			if entry.EffectiveTo != nil {
-				upd = upd.SetEffectiveTo(*entry.EffectiveTo)
-			} else {
-				upd = upd.ClearEffectiveTo()
-			}
-			saved, err = upd.Save(r.Context())
-		} else {
-			// create new
-			creator := h.orm.ItemPricing.Create().
-				SetTenantID(tenantID).
-				SetItemID(itemID).
-				SetPricingTierID(entry.PricingTierID).
-				SetPrice(entry.Price).
-				SetCurrency(currency).
-				SetEffectiveFrom(effectiveFrom)
-			if entry.OutletID != nil {
-				creator = creator.SetOutletID(*entry.OutletID)
-			}
-			if entry.TierBasis != "" {
-				creator = creator.SetTierBasis(entip.TierBasis(entry.TierBasis))
-			}
-			if entry.EffectiveTo != nil {
-				creator = creator.SetEffectiveTo(*entry.EffectiveTo)
-			}
-			saved, err = creator.Save(r.Context())
+		// Supersede, never overwrite: close out the current active row (if any) at this
+		// effective_from, then insert the new price as its own row. This is what makes a real
+		// price HISTORY exist — GetItemPrice always resolves the single is_active=true row, so
+		// nothing downstream needs to change to keep working.
+		if qErr == nil && existing.Price == entry.Price && entry.TierBasis == string(existing.TierBasis) {
+			// No real change — skip the churn of closing + reopening an identical row.
+			saved := existing
+			results = append(results, toItemPricingDTO(saved))
+			continue
 		}
+		if qErr == nil {
+			if _, cErr := existing.Update().SetIsActive(false).SetEffectiveTo(effectiveFrom).Save(ctx); cErr != nil {
+				_ = tx.Rollback()
+				h.log.Error("close out prior item pricing failed", zap.Error(cErr))
+				writeError(w, http.StatusInternalServerError, "UPSERT_FAILED", "Failed to upsert item pricing")
+				return
+			}
+		}
+		creator := tx.ItemPricing.Create().
+			SetTenantID(tenantID).
+			SetItemID(itemID).
+			SetPricingTierID(entry.PricingTierID).
+			SetPrice(entry.Price).
+			SetCurrency(currency).
+			SetEffectiveFrom(effectiveFrom).
+			SetIsActive(true)
+		if entry.OutletID != nil {
+			creator = creator.SetOutletID(*entry.OutletID)
+		}
+		if entry.TierBasis != "" {
+			creator = creator.SetTierBasis(entip.TierBasis(entry.TierBasis))
+		} else if qErr == nil {
+			creator = creator.SetTierBasis(existing.TierBasis)
+		}
+		if entry.EffectiveTo != nil {
+			creator = creator.SetEffectiveTo(*entry.EffectiveTo)
+		}
+		saved, err := creator.Save(ctx)
 		if err != nil {
+			_ = tx.Rollback()
 			h.log.Error("upsert item pricing failed", zap.Error(err))
 			writeError(w, http.StatusInternalServerError, "UPSERT_FAILED", "Failed to upsert item pricing")
 			return
 		}
 		results = append(results, toItemPricingDTO(saved))
 
-		// Publish pricing_updated event to outbox (best-effort, non-blocking).
-		go h.publishPricingUpdatedEvent(r.Context(), tenantID, itemID, saved)
+		if prevPrice == nil || *prevPrice != saved.Price {
+			pendingAudits = append(pendingAudits, auditPending{
+				outletID: saved.OutletID, tierID: entry.PricingTierID, prevPrice: prevPrice, newPrice: saved.Price,
+			})
+		}
+
+		// Publish inside the SAME transaction as the price write — a crash between "price
+		// saved" and "event published" must not silently drop the event (the previous
+		// fire-and-forget goroutine + post-commit outbox write could lose it).
+		h.publishPricingUpdatedEventTx(ctx, tx, tenantID, itemID, saved, prevPrice)
+	}
+
+	if err := tx.Commit(); err != nil {
+		h.log.Error("upsert item pricing: commit failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to save item pricing")
+		return
+	}
+
+	if h.auditSvc != nil {
+		actor := actorFromRequest(r)
+		for _, pa := range pendingAudits {
+			h.auditSvc.Record(ctx, audit.Entry{
+				TenantID:    tenantID,
+				OutletID:    pa.outletID,
+				ActorUserID: actor,
+				Action:      "item.selling_price_changed",
+				EntityType:  "item_pricing",
+				EntityID:    itemID.String(),
+				Before:      map[string]any{"pricing_tier_id": pa.tierID, "price": pa.prevPrice},
+				After:       map[string]any{"pricing_tier_id": pa.tierID, "price": pa.newPrice},
+			})
+		}
 	}
 
 	writeJSON(w, http.StatusOK, results)
@@ -514,7 +595,7 @@ func (h *PricingTierHandler) GenerateTierPricing(w http.ResponseWriter, r *http.
 	existing := map[uuid.UUID]bool{}
 	{
 		eps, _ := h.orm.ItemPricing.Query().
-			Where(entip.TenantID(tenantID), entip.PricingTierID(tierID), entip.OutletIDIsNil()).
+			Where(entip.TenantID(tenantID), entip.PricingTierID(tierID), entip.OutletIDIsNil(), entip.IsActive(true)).
 			All(r.Context())
 		for _, p := range eps {
 			existing[p.ItemID] = true
@@ -565,68 +646,80 @@ func (h *PricingTierHandler) GenerateTierPricing(w http.ResponseWriter, r *http.
 			price = *it.MaxSellingPrice
 			resp.Clamped++
 		}
-		saved, uerr := h.upsertTierPrice(r.Context(), tenantID, it.ID, tierID, price)
-		if uerr != nil {
+		itemTx, txErr := h.orm.Tx(r.Context())
+		if txErr != nil {
+			resp.Warnings = append(resp.Warnings, fmt.Sprintf("item %s: %v", it.ID, txErr))
+			continue
+		}
+		if _, uerr := h.upsertTierPrice(r.Context(), itemTx, tenantID, it.ID, tierID, price); uerr != nil {
+			_ = itemTx.Rollback()
 			resp.Warnings = append(resp.Warnings, fmt.Sprintf("item %s: %v", it.ID, uerr))
 			continue
 		}
+		if cErr := itemTx.Commit(); cErr != nil {
+			resp.Warnings = append(resp.Warnings, fmt.Sprintf("item %s: %v", it.ID, cErr))
+			continue
+		}
 		resp.Generated++
-		go h.publishPricingUpdatedEvent(context.Background(), tenantID, it.ID, saved)
 	}
 	h.log.Info("generated tier pricing", zap.String("tier", tier.Code), zap.Int("generated", resp.Generated), zap.Int("skipped", resp.Skipped))
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// upsertTierPrice creates or updates the (tenant,item,tier) all-outlets pricing row at the given price.
-func (h *PricingTierHandler) upsertTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) (*ent.ItemPricing, error) {
-	existing, err := h.orm.ItemPricing.Query().
-		Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(tierID), entip.OutletIDIsNil()).
+// upsertTierPrice creates or updates the (tenant,item,tier) all-outlets pricing row at the given
+// price AND publishes item.pricing_updated in the SAME transaction, so the write and its event
+// are atomic — either both land or neither does.
+func (h *PricingTierHandler) upsertTierPrice(ctx context.Context, tx *ent.Tx, tenantID, itemID, tierID uuid.UUID, price float64) (*ent.ItemPricing, error) {
+	existing, err := tx.ItemPricing.Query().
+		Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.PricingTierID(tierID), entip.OutletIDIsNil(), entip.IsActive(true)).
 		First(ctx)
-	if err == nil {
-		return h.orm.ItemPricing.UpdateOneID(existing.ID).SetPrice(price).SetIsActive(true).SetEffectiveFrom(time.Now()).Save(ctx)
+	var prevPrice *float64
+	var saved *ent.ItemPricing
+	now := time.Now()
+	switch {
+	case err == nil && existing.Price == price:
+		// No real change — skip the churn of closing + reopening an identical row.
+		return existing, nil
+	case err == nil:
+		p := existing.Price
+		prevPrice = &p
+		// Supersede, never overwrite: close out the current row, insert the new price as its
+		// own row, so a real price history accumulates from bulk tier-regenerate too.
+		if _, cErr := existing.Update().SetIsActive(false).SetEffectiveTo(now).Save(ctx); cErr != nil {
+			return nil, cErr
+		}
+		saved, err = tx.ItemPricing.Create().
+			SetTenantID(tenantID).SetItemID(itemID).SetPricingTierID(tierID).
+			SetPrice(price).SetCurrency(existing.Currency).SetTierBasis(existing.TierBasis).
+			SetEffectiveFrom(now).SetIsActive(true).Save(ctx)
+	default:
+		saved, err = tx.ItemPricing.Create().
+			SetTenantID(tenantID).SetItemID(itemID).SetPricingTierID(tierID).
+			SetPrice(price).SetCurrency("KES").SetEffectiveFrom(now).Save(ctx)
 	}
-	return h.orm.ItemPricing.Create().
-		SetTenantID(tenantID).SetItemID(itemID).SetPricingTierID(tierID).
-		SetPrice(price).SetCurrency("KES").SetEffectiveFrom(time.Now()).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	h.publishPricingUpdatedEventTx(ctx, tx, tenantID, itemID, saved, prevPrice)
+	return saved, nil
 }
 
-// publishPricingUpdatedEvent writes an inventory.item.pricing_updated outbox event.
-func (h *PricingTierHandler) publishPricingUpdatedEvent(ctx context.Context, tenantID, itemID uuid.UUID, p *ent.ItemPricing) {
-	evt := &events.Event{
-		ID:            uuid.New(),
-		TenantID:      tenantID,
-		AggregateType: "inventory",
-		AggregateID:   itemID,
-		EventType:     "item.pricing_updated",
-		Payload: map[string]any{
-			"item_id":         itemID,
-			"pricing_tier_id": p.PricingTierID,
-			"price":           p.Price,
-			"currency":        p.Currency,
-			"effective_from":  p.EffectiveFrom,
-			"is_active":       p.IsActive,
-			"updated_at":      p.UpdatedAt,
-		},
-		Timestamp: time.Now().UTC(),
-	}
-	payload, err := evt.ToJSON()
-	if err != nil {
-		h.log.Warn("pricing_updated event: marshal failed", zap.Error(err))
-		return
-	}
-	_, err = h.orm.OutboxEvent.Create().
-		SetID(evt.ID).
-		SetTenantID(tenantID).
-		SetAggregateType(evt.AggregateType).
-		SetAggregateID(evt.AggregateID.String()).
-		SetEventType(evt.EventType).
-		SetPayload(json.RawMessage(payload)).
-		SetStatus("PENDING").
-		SetCreatedAt(evt.Timestamp).
-		Save(ctx)
-	if err != nil {
-		h.log.Warn("pricing_updated event: outbox write failed", zap.Error(err))
-	}
+// publishPricingUpdatedEventTx writes an inventory.item.pricing_updated outbox event inside the
+// caller's transaction (via platformevents.WriteOutboxTx — the same "single home" transactional
+// outbox helper used by stock/transfers/recipes) so it can never be silently lost by a crash
+// between the price write and a separate, post-commit event write. previousPrice is nil for a
+// brand-new pricing row.
+func (h *PricingTierHandler) publishPricingUpdatedEventTx(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID, p *ent.ItemPricing, previousPrice *float64) {
+	platformevents.WriteOutboxTx(ctx, tx, h.log, tenantID, itemID, "inventory", "item.pricing_updated", map[string]any{
+		"item_id":         itemID,
+		"pricing_tier_id": p.PricingTierID,
+		"price":           p.Price,
+		"previous_price":  previousPrice,
+		"currency":        p.Currency,
+		"effective_from":  p.EffectiveFrom,
+		"is_active":       p.IsActive,
+		"updated_at":      p.UpdatedAt,
+	})
 }
 
 // bulkItemPriceDTO is a flattened price entry used by downstream services (e.g. pos-api).
@@ -680,6 +773,28 @@ func (h *PricingTierHandler) ListAllItemPricing(w http.ResponseWriter, r *http.R
 		h.log.Error("list all item pricing failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "LIST_FAILED", "Failed to list item pricing")
 		return
+	}
+
+	// Lazily promote any queued "new_stock_only" price changes whose trigger has fired — a
+	// single query scoped to these items, cheap no-op when none of them have a pending row.
+	// This is the bulk price-sync path pos-api polls, so it's also where a promotion becomes
+	// visible platform-wide. A promotion rewrites ItemPricing rows, so re-load `pricings`
+	// afterward rather than building the response from the now-stale snapshot above.
+	if h.itemsSvc != nil {
+		seen := make(map[uuid.UUID]bool, len(pricings))
+		itemIDs := make([]uuid.UUID, 0, len(pricings))
+		for _, p := range pricings {
+			if !seen[p.ItemID] {
+				seen[p.ItemID] = true
+				itemIDs = append(itemIDs, p.ItemID)
+			}
+		}
+		h.itemsSvc.PromotePendingPriceChanges(r.Context(), tenantID, itemIDs)
+		if pricings2, rerr := h.orm.ItemPricing.Query().
+			Where(entip.TenantID(tenantID), entip.IsActive(true)).
+			All(r.Context()); rerr == nil {
+			pricings = pricings2
+		}
 	}
 
 	// For each item keep the default-tier entry (fall back to first found) AND accumulate every
@@ -764,6 +879,13 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 
+	// Lazily promote a queued "new_stock_only" price change if its trigger has fired (every
+	// pre-change cost layer for this item is now depleted). Cheap no-op when there's no pending
+	// row for this item.
+	if h.itemsSvc != nil {
+		h.itemsSvc.PromotePendingPriceChanges(ctx, tenantID, []uuid.UUID{itemID})
+	}
+
 	// Load active pricing tiers to identify the default.
 	tiers, err := h.orm.PricingTier.Query().
 		Where(entpt.TenantID(tenantID), entpt.IsActive(true)).
@@ -780,7 +902,7 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 	}
 
 	// Load all active pricing entries for this item.
-	pricings, err := h.orm.ItemPricing.Query().
+	allPricings, err := h.orm.ItemPricing.Query().
 		Where(entip.TenantID(tenantID), entip.ItemID(itemID), entip.IsActive(true)).
 		All(ctx)
 	if err != nil {
@@ -789,31 +911,81 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Defensive effective-window check: is_active=true rows created via UpsertItemPricing with
+	// an explicit future effective_from (scheduled) or a past effective_to shouldn't resolve as
+	// the current price yet/anymore, even though the supersede write path keeps exactly one
+	// is_active row per (tier, outlet) — a caller-supplied window is still honored here.
+	now := time.Now()
+	pricings := make([]*ent.ItemPricing, 0, len(allPricings))
+	for _, p := range allPricings {
+		if p.EffectiveFrom.After(now) {
+			continue
+		}
+		if p.EffectiveTo != nil && !p.EffectiveTo.After(now) {
+			continue
+		}
+		pricings = append(pricings, p)
+	}
+
 	if len(pricings) == 0 {
 		writeError(w, http.StatusNotFound, "NO_PRICING", "No active pricing found for this item")
 		return
 	}
 
+	// Prefer a row scoped to the operating outlet (X-Outlet-ID) over an all-outlets row for the
+	// SAME tier — previously outlet_id was ignored entirely, so an outlet-specific override could
+	// silently lose to whichever row the DB happened to return first.
+	var operatingOutlet *uuid.UUID
+	if outletStr := invmiddleware.GetOutletID(ctx); outletStr != "" {
+		if oid, perr := uuid.Parse(outletStr); perr == nil {
+			operatingOutlet = &oid
+		}
+	}
+	outletRank := func(p *ent.ItemPricing) int {
+		switch {
+		case operatingOutlet != nil && p.OutletID != nil && *p.OutletID == *operatingOutlet:
+			return 2 // exact outlet match — best
+		case p.OutletID == nil:
+			return 1 // all-outlets fallback
+		default:
+			return 0 // scoped to a DIFFERENT outlet — worst, never preferred over the above
+		}
+	}
+	betterCandidate := func(candidate, current *ent.ItemPricing) bool {
+		if current == nil {
+			return true
+		}
+		if cr, curr := outletRank(candidate), outletRank(current); cr != curr {
+			return cr > curr
+		}
+		return candidate.EffectiveFrom.After(current.EffectiveFrom)
+	}
+
 	var chosen *ent.ItemPricing
 	var chosenTier *ent.PricingTier
-	// Explicit tier requested → exact (case-insensitive) code match.
+	// Explicit tier requested → exact (case-insensitive) code match, best outlet candidate.
 	if tierCode != "" {
 		for _, p := range pricings {
-			if t := tierMeta[p.PricingTierID]; t != nil && strings.EqualFold(t.Code, tierCode) {
+			t := tierMeta[p.PricingTierID]
+			if t == nil || !strings.EqualFold(t.Code, tierCode) {
+				continue
+			}
+			if betterCandidate(p, chosen) {
 				chosen, chosenTier = p, t
-				break
 			}
 		}
 	}
-	// Otherwise (or no match) prefer the default tier, then the first active entry.
+	// Otherwise (or no match) prefer the default tier, then the first active entry — still
+	// outlet-ranked within each tier.
 	if chosen == nil {
 		for _, p := range pricings {
 			t := tierMeta[p.PricingTierID]
-			if chosen == nil {
+			switch {
+			case chosen == nil:
 				chosen, chosenTier = p, t
-				continue
-			}
-			if t != nil && t.IsDefault && (chosenTier == nil || !chosenTier.IsDefault) {
+			case t != nil && t.IsDefault && (chosenTier == nil || !chosenTier.IsDefault):
+				chosen, chosenTier = p, t
+			case (chosenTier == nil || t == chosenTier) && betterCandidate(p, chosen):
 				chosen, chosenTier = p, t
 			}
 		}

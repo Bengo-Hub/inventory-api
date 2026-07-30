@@ -46,6 +46,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
+	"github.com/bengobox/inventory-service/internal/ent/idempotencykey"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -64,6 +65,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pendingpricechange"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -173,6 +175,8 @@ type Client struct {
 	GoodsReceipt *GoodsReceiptClient
 	// GoodsReceiptLine is the client for interacting with the GoodsReceiptLine builders.
 	GoodsReceiptLine *GoodsReceiptLineClient
+	// IdempotencyKey is the client for interacting with the IdempotencyKey builders.
+	IdempotencyKey *IdempotencyKeyClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -209,6 +213,8 @@ type Client struct {
 	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PendingPriceChange is the client for interacting with the PendingPriceChange builders.
+	PendingPriceChange *PendingPriceChangeClient
 	// PricingTier is the client for interacting with the PricingTier builders.
 	PricingTier *PricingTierClient
 	// ProductionBatch is the client for interacting with the ProductionBatch builders.
@@ -334,6 +340,7 @@ func (c *Client) init() {
 	c.FoodCostVariance = NewFoodCostVarianceClient(c.config)
 	c.GoodsReceipt = NewGoodsReceiptClient(c.config)
 	c.GoodsReceiptLine = NewGoodsReceiptLineClient(c.config)
+	c.IdempotencyKey = NewIdempotencyKeyClient(c.config)
 	c.InventoryBalance = NewInventoryBalanceClient(c.config)
 	c.InventoryLot = NewInventoryLotClient(c.config)
 	c.InventoryPermission = NewInventoryPermissionClient(c.config)
@@ -352,6 +359,7 @@ func (c *Client) init() {
 	c.ModifierGroup = NewModifierGroupClient(c.config)
 	c.ModifierOption = NewModifierOptionClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
+	c.PendingPriceChange = NewPendingPriceChangeClient(c.config)
 	c.PricingTier = NewPricingTierClient(c.config)
 	c.ProductionBatch = NewProductionBatchClient(c.config)
 	c.PurchaseOrder = NewPurchaseOrderClient(c.config)
@@ -516,6 +524,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
 		GoodsReceipt:           NewGoodsReceiptClient(cfg),
 		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
+		IdempotencyKey:         NewIdempotencyKeyClient(cfg),
 		InventoryBalance:       NewInventoryBalanceClient(cfg),
 		InventoryLot:           NewInventoryLotClient(cfg),
 		InventoryPermission:    NewInventoryPermissionClient(cfg),
@@ -534,6 +543,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ModifierGroup:          NewModifierGroupClient(cfg),
 		ModifierOption:         NewModifierOptionClient(cfg),
 		OutboxEvent:            NewOutboxEventClient(cfg),
+		PendingPriceChange:     NewPendingPriceChangeClient(cfg),
 		PricingTier:            NewPricingTierClient(cfg),
 		ProductionBatch:        NewProductionBatchClient(cfg),
 		PurchaseOrder:          NewPurchaseOrderClient(cfg),
@@ -625,6 +635,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		FoodCostVariance:       NewFoodCostVarianceClient(cfg),
 		GoodsReceipt:           NewGoodsReceiptClient(cfg),
 		GoodsReceiptLine:       NewGoodsReceiptLineClient(cfg),
+		IdempotencyKey:         NewIdempotencyKeyClient(cfg),
 		InventoryBalance:       NewInventoryBalanceClient(cfg),
 		InventoryLot:           NewInventoryLotClient(cfg),
 		InventoryPermission:    NewInventoryPermissionClient(cfg),
@@ -643,6 +654,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ModifierGroup:          NewModifierGroupClient(cfg),
 		ModifierOption:         NewModifierOptionClient(cfg),
 		OutboxEvent:            NewOutboxEventClient(cfg),
+		PendingPriceChange:     NewPendingPriceChangeClient(cfg),
 		PricingTier:            NewPricingTierClient(cfg),
 		ProductionBatch:        NewProductionBatchClient(cfg),
 		PurchaseOrder:          NewPurchaseOrderClient(cfg),
@@ -721,21 +733,21 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
-		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
-		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockCount,
-		c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent, c.StockTransfer,
-		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
-		c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.GoodsReceiptLine, c.IdempotencyKey, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventorySerial, c.InventoryUser,
+		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PendingPriceChange,
+		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
+		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
+		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
+		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
+		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
+		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
+		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
+		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -752,21 +764,21 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
-		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
-		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
-		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
-		c.ModifierOption, c.OutboxEvent, c.PricingTier, c.ProductionBatch,
-		c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn, c.PurchaseReturnLine,
-		c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine, c.RateLimitConfig,
-		c.RawMaterialUsage, c.Recipe, c.RecipeIngredient, c.Requisition,
-		c.RequisitionLine, c.Reservation, c.RolePermission, c.ServiceConfig,
-		c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown, c.StockCount,
-		c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent, c.StockTransfer,
-		c.StockTransferLine, c.Supplier, c.SupplierPerformance, c.SupplierResponse,
-		c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit, c.UserOutlet,
-		c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache, c.Warehouse,
-		c.WarehouseLocation, c.Warranty,
+		c.GoodsReceiptLine, c.IdempotencyKey, c.InventoryBalance, c.InventoryLot,
+		c.InventoryPermission, c.InventoryRole, c.InventorySerial, c.InventoryUser,
+		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily,
+		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics,
+		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PendingPriceChange,
+		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
+		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
+		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
+		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
+		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
+		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
+		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
+		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
+		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
+		c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -835,6 +847,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.GoodsReceipt.mutate(ctx, m)
 	case *GoodsReceiptLineMutation:
 		return c.GoodsReceiptLine.mutate(ctx, m)
+	case *IdempotencyKeyMutation:
+		return c.IdempotencyKey.mutate(ctx, m)
 	case *InventoryBalanceMutation:
 		return c.InventoryBalance.mutate(ctx, m)
 	case *InventoryLotMutation:
@@ -871,6 +885,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ModifierOption.mutate(ctx, m)
 	case *OutboxEventMutation:
 		return c.OutboxEvent.mutate(ctx, m)
+	case *PendingPriceChangeMutation:
+		return c.PendingPriceChange.mutate(ctx, m)
 	case *PricingTierMutation:
 		return c.PricingTier.mutate(ctx, m)
 	case *ProductionBatchMutation:
@@ -5222,6 +5238,139 @@ func (c *GoodsReceiptLineClient) mutate(ctx context.Context, m *GoodsReceiptLine
 	}
 }
 
+// IdempotencyKeyClient is a client for the IdempotencyKey schema.
+type IdempotencyKeyClient struct {
+	config
+}
+
+// NewIdempotencyKeyClient returns a client for the IdempotencyKey from the given config.
+func NewIdempotencyKeyClient(c config) *IdempotencyKeyClient {
+	return &IdempotencyKeyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `idempotencykey.Hooks(f(g(h())))`.
+func (c *IdempotencyKeyClient) Use(hooks ...Hook) {
+	c.hooks.IdempotencyKey = append(c.hooks.IdempotencyKey, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `idempotencykey.Intercept(f(g(h())))`.
+func (c *IdempotencyKeyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdempotencyKey = append(c.inters.IdempotencyKey, interceptors...)
+}
+
+// Create returns a builder for creating a IdempotencyKey entity.
+func (c *IdempotencyKeyClient) Create() *IdempotencyKeyCreate {
+	mutation := newIdempotencyKeyMutation(c.config, OpCreate)
+	return &IdempotencyKeyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdempotencyKey entities.
+func (c *IdempotencyKeyClient) CreateBulk(builders ...*IdempotencyKeyCreate) *IdempotencyKeyCreateBulk {
+	return &IdempotencyKeyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdempotencyKeyClient) MapCreateBulk(slice any, setFunc func(*IdempotencyKeyCreate, int)) *IdempotencyKeyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdempotencyKeyCreateBulk{err: fmt.Errorf("calling to IdempotencyKeyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdempotencyKeyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdempotencyKeyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdempotencyKey.
+func (c *IdempotencyKeyClient) Update() *IdempotencyKeyUpdate {
+	mutation := newIdempotencyKeyMutation(c.config, OpUpdate)
+	return &IdempotencyKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdempotencyKeyClient) UpdateOne(_m *IdempotencyKey) *IdempotencyKeyUpdateOne {
+	mutation := newIdempotencyKeyMutation(c.config, OpUpdateOne, withIdempotencyKey(_m))
+	return &IdempotencyKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdempotencyKeyClient) UpdateOneID(id uuid.UUID) *IdempotencyKeyUpdateOne {
+	mutation := newIdempotencyKeyMutation(c.config, OpUpdateOne, withIdempotencyKeyID(id))
+	return &IdempotencyKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdempotencyKey.
+func (c *IdempotencyKeyClient) Delete() *IdempotencyKeyDelete {
+	mutation := newIdempotencyKeyMutation(c.config, OpDelete)
+	return &IdempotencyKeyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdempotencyKeyClient) DeleteOne(_m *IdempotencyKey) *IdempotencyKeyDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdempotencyKeyClient) DeleteOneID(id uuid.UUID) *IdempotencyKeyDeleteOne {
+	builder := c.Delete().Where(idempotencykey.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdempotencyKeyDeleteOne{builder}
+}
+
+// Query returns a query builder for IdempotencyKey.
+func (c *IdempotencyKeyClient) Query() *IdempotencyKeyQuery {
+	return &IdempotencyKeyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdempotencyKey},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdempotencyKey entity by its id.
+func (c *IdempotencyKeyClient) Get(ctx context.Context, id uuid.UUID) (*IdempotencyKey, error) {
+	return c.Query().Where(idempotencykey.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdempotencyKeyClient) GetX(ctx context.Context, id uuid.UUID) *IdempotencyKey {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *IdempotencyKeyClient) Hooks() []Hook {
+	return c.hooks.IdempotencyKey
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdempotencyKeyClient) Interceptors() []Interceptor {
+	return c.inters.IdempotencyKey
+}
+
+func (c *IdempotencyKeyClient) mutate(ctx context.Context, m *IdempotencyKeyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdempotencyKeyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdempotencyKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdempotencyKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdempotencyKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdempotencyKey mutation op: %q", m.Op())
+	}
+}
+
 // InventoryBalanceClient is a client for the InventoryBalance schema.
 type InventoryBalanceClient struct {
 	config
@@ -8237,6 +8386,139 @@ func (c *OutboxEventClient) mutate(ctx context.Context, m *OutboxEventMutation) 
 		return (&OutboxEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OutboxEvent mutation op: %q", m.Op())
+	}
+}
+
+// PendingPriceChangeClient is a client for the PendingPriceChange schema.
+type PendingPriceChangeClient struct {
+	config
+}
+
+// NewPendingPriceChangeClient returns a client for the PendingPriceChange from the given config.
+func NewPendingPriceChangeClient(c config) *PendingPriceChangeClient {
+	return &PendingPriceChangeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pendingpricechange.Hooks(f(g(h())))`.
+func (c *PendingPriceChangeClient) Use(hooks ...Hook) {
+	c.hooks.PendingPriceChange = append(c.hooks.PendingPriceChange, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pendingpricechange.Intercept(f(g(h())))`.
+func (c *PendingPriceChangeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PendingPriceChange = append(c.inters.PendingPriceChange, interceptors...)
+}
+
+// Create returns a builder for creating a PendingPriceChange entity.
+func (c *PendingPriceChangeClient) Create() *PendingPriceChangeCreate {
+	mutation := newPendingPriceChangeMutation(c.config, OpCreate)
+	return &PendingPriceChangeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PendingPriceChange entities.
+func (c *PendingPriceChangeClient) CreateBulk(builders ...*PendingPriceChangeCreate) *PendingPriceChangeCreateBulk {
+	return &PendingPriceChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PendingPriceChangeClient) MapCreateBulk(slice any, setFunc func(*PendingPriceChangeCreate, int)) *PendingPriceChangeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PendingPriceChangeCreateBulk{err: fmt.Errorf("calling to PendingPriceChangeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PendingPriceChangeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PendingPriceChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PendingPriceChange.
+func (c *PendingPriceChangeClient) Update() *PendingPriceChangeUpdate {
+	mutation := newPendingPriceChangeMutation(c.config, OpUpdate)
+	return &PendingPriceChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PendingPriceChangeClient) UpdateOne(_m *PendingPriceChange) *PendingPriceChangeUpdateOne {
+	mutation := newPendingPriceChangeMutation(c.config, OpUpdateOne, withPendingPriceChange(_m))
+	return &PendingPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PendingPriceChangeClient) UpdateOneID(id uuid.UUID) *PendingPriceChangeUpdateOne {
+	mutation := newPendingPriceChangeMutation(c.config, OpUpdateOne, withPendingPriceChangeID(id))
+	return &PendingPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PendingPriceChange.
+func (c *PendingPriceChangeClient) Delete() *PendingPriceChangeDelete {
+	mutation := newPendingPriceChangeMutation(c.config, OpDelete)
+	return &PendingPriceChangeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PendingPriceChangeClient) DeleteOne(_m *PendingPriceChange) *PendingPriceChangeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PendingPriceChangeClient) DeleteOneID(id uuid.UUID) *PendingPriceChangeDeleteOne {
+	builder := c.Delete().Where(pendingpricechange.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PendingPriceChangeDeleteOne{builder}
+}
+
+// Query returns a query builder for PendingPriceChange.
+func (c *PendingPriceChangeClient) Query() *PendingPriceChangeQuery {
+	return &PendingPriceChangeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePendingPriceChange},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PendingPriceChange entity by its id.
+func (c *PendingPriceChangeClient) Get(ctx context.Context, id uuid.UUID) (*PendingPriceChange, error) {
+	return c.Query().Where(pendingpricechange.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PendingPriceChangeClient) GetX(ctx context.Context, id uuid.UUID) *PendingPriceChange {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PendingPriceChangeClient) Hooks() []Hook {
+	return c.hooks.PendingPriceChange
+}
+
+// Interceptors returns the client interceptors.
+func (c *PendingPriceChangeClient) Interceptors() []Interceptor {
+	return c.inters.PendingPriceChange
+}
+
+func (c *PendingPriceChangeClient) mutate(ctx context.Context, m *PendingPriceChangeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PendingPriceChangeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PendingPriceChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PendingPriceChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PendingPriceChangeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PendingPriceChange mutation op: %q", m.Op())
 	}
 }
 
@@ -14539,19 +14821,20 @@ type (
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
 		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
 		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		GoodsReceipt, GoodsReceiptLine, IdempotencyKey, InventoryBalance, InventoryLot,
 		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
 		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
 		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
-		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Hook
+		ModifierOption, OutboxEvent, PendingPriceChange, PricingTier, ProductionBatch,
+		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
+		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
+		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
+		Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -14560,18 +14843,19 @@ type (
 		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
 		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
 		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, InventoryBalance, InventoryLot,
+		GoodsReceipt, GoodsReceiptLine, IdempotencyKey, InventoryBalance, InventoryLot,
 		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
 		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
 		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PricingTier, ProductionBatch, PurchaseOrder,
-		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
-		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
-		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
-		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		ModifierOption, OutboxEvent, PendingPriceChange, PricingTier, ProductionBatch,
+		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
+		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
+		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
+		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
+		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
+		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
+		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
+		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
+		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )

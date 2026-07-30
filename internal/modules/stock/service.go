@@ -339,15 +339,32 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		"available":       newAvailable,
 	})
 
+	// Any downward adjustment draws down cost layers too (same mechanism a sale uses), so a
+	// write-off/shrinkage/damage removes the SPECIFIC stock's own cost from the books instead of
+	// the item's current flat cost, and the layer totals don't drift away from the balance
+	// they're supposed to mirror.
+	var adjLots []LotConsumption
+	if qtyChange < 0 {
+		adjLots = s.consumeLots(ctx, tx, tenantID, itm.ID, whID, -qtyChange, s.costingMethod(ctx, tenantID))
+	}
+
 	// Expense-bearing downward adjustments (floor-stock issue of consumables, damage,
 	// expiry, shrinkage) additionally publish a VALUED inventory.stock.adjusted event so
 	// treasury posts the operating-expense/wastage journal entry — without this, issued
 	// serviettes/tissues and written-off stock never reach the books.
 	if qtyChange < 0 && expenseBearingReason(adjReason) {
-		costValue := 0.0
-		if itm.CostPrice != nil {
-			costValue = round4(-qtyChange * *itm.CostPrice)
+		var layeredValue, layeredQty float64
+		for _, lot := range adjLots {
+			if lot.UnitCost != nil {
+				layeredValue += lot.QtyTaken * *lot.UnitCost
+				layeredQty += lot.QtyTaken
+			}
 		}
+		remainder := -qtyChange - layeredQty
+		if remainder > 0 && itm.CostPrice != nil {
+			layeredValue += remainder * *itm.CostPrice
+		}
+		costValue := round4(layeredValue)
 		uom := ""
 		if itm.UnitID != nil {
 			if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
@@ -533,13 +550,27 @@ type LotConsumption struct {
 	LotNumber  string
 	ExpiryDate *time.Time
 	QtyTaken   float64
+	// UnitCost is this specific layer's own cost_price — the actual price paid for the stock
+	// drawn, never the flat Item.cost_price. Nil when the layer carries no recorded cost (e.g.
+	// a legacy lot created before cost capture), in which case the caller must fall back.
+	UnitCost *float64
+	// IsCostLayer marks a layer auto-created for a non-lot-tracked item purely to preserve cost
+	// (see InventoryLot.is_cost_layer). Callers must never surface LotNumber/ExpiryDate from
+	// these on anything customer- or label-facing — they carry no lot identity a shopper or
+	// regulator should see.
+	IsCostLayer bool
 }
 
-// consumeLots draws down a quantity across a warehouse's active InventoryLot rows for an item in
-// the order dictated by the costing method — fifo=oldest received first, lifo=newest first,
-// fefo=earliest expiry first. Decrements lot quantity and marks a lot depleted at zero. Best-effort:
-// errors are logged, not propagated (the balance is already the authoritative on-hand figure).
-// Returns the lot(s) actually drawn from, in draw order.
+// consumeLots draws down a quantity across a warehouse's active InventoryLot rows (real lots AND
+// internal cost layers — same table) for an item, in the order dictated by the costing method:
+// fifo=oldest received first, lifo=newest first, fefo=earliest expiry first. wavg tenants also
+// draw in received order, but every open layer already carries the SAME blended cost (see
+// RecomputeStandardCost), so which one is drawn first doesn't change the cost charged — a single
+// draw-at-layer-cost naturally IS weighted-average costing, with no separate branch needed.
+// Decrements lot quantity and marks a lot depleted at zero. Best-effort: errors are logged, not
+// propagated (the balance is already the authoritative on-hand figure). Returns the lot(s)
+// actually drawn from, in draw order, each carrying its OWN cost — this is what lets a purchase
+// at a new price change the cost of new stock without touching stock bought at the old price.
 func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qty float64, method string) []LotConsumption {
 	if qty <= 0 {
 		return nil
@@ -553,12 +584,12 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 	)
 	switch method {
 	case "lifo":
-		q = q.Order(ent.Desc(entlot.FieldCreatedAt))
+		q = q.Order(ent.Desc(entlot.FieldReceivedAt), ent.Desc(entlot.FieldCreatedAt))
 	case "fefo":
 		// Earliest expiry first; lots without an expiry sort last (treated as far-future).
-		q = q.Order(ent.Asc(entlot.FieldExpiryDate), ent.Asc(entlot.FieldCreatedAt))
-	default: // fifo
-		q = q.Order(ent.Asc(entlot.FieldCreatedAt))
+		q = q.Order(ent.Asc(entlot.FieldExpiryDate), ent.Asc(entlot.FieldReceivedAt), ent.Asc(entlot.FieldCreatedAt))
+	default: // fifo, wavg
+		q = q.Order(ent.Asc(entlot.FieldReceivedAt), ent.Asc(entlot.FieldCreatedAt))
 	}
 	lots, err := q.All(ctx)
 	if err != nil {
@@ -585,14 +616,117 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 			return drawn
 		}
 		drawn = append(drawn, LotConsumption{
-			LotID:      lot.ID,
-			LotNumber:  lot.LotNumber,
-			ExpiryDate: lot.ExpiryDate,
-			QtyTaken:   take,
+			LotID:       lot.ID,
+			LotNumber:   lot.LotNumber,
+			ExpiryDate:  lot.ExpiryDate,
+			QtyTaken:    take,
+			UnitCost:    lot.CostPrice,
+			IsCostLayer: lot.IsCostLayer,
 		})
 		remaining -= take
 	}
 	return drawn
+}
+
+// CostChange describes the outcome of RecomputeStandardCost.
+type CostChange struct {
+	ItemID       uuid.UUID
+	SKU          string
+	PreviousCost *float64
+	NewCost      *float64
+	Changed      bool
+}
+
+// RecomputeStandardCost recalculates Item.cost_price — the default/STANDARD cost used only to
+// pre-fill new purchase orders and estimate margin — from the item's active InventoryLot cost
+// layers (both real lots and the internal is_cost_layer rows auto-created for non-lot-tracked
+// items at goods receipt). It is safe to change on every purchase: nothing downstream reads
+// Item.cost_price for the VALUE of stock already on hand — COGS and stock valuation read each
+// lot's own cost_price directly, so stock bought at the old price keeps costing at the old price
+// no matter how often the standard cost changes. Publishes inventory.item.cost_changed on a real
+// change, inside the caller's transaction (best-effort: a publish failure never fails the
+// receipt/edit that triggered it).
+//
+// wavg tenants get the quantity-weighted average across every active layer; fifo/lifo/fefo
+// tenants get the most-recently-received layer's cost, matching "the next purchase order should
+// pre-fill at what I most recently paid."
+func (s *Service) RecomputeStandardCost(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID, source string) (*CostChange, error) {
+	itm, err := tx.Item.Query().Where(item.TenantID(tenantID), item.ID(itemID)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: recompute standard cost: load item: %w", err)
+	}
+	unchanged := &CostChange{ItemID: itemID, SKU: itm.Sku, PreviousCost: itm.CostPrice, NewCost: itm.CostPrice, Changed: false}
+
+	layers, err := tx.InventoryLot.Query().
+		Where(entlot.TenantID(tenantID), entlot.ItemID(itemID), entlot.StatusEQ(entlot.StatusActive), entlot.CostPriceNotNil()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock: recompute standard cost: query layers: %w", err)
+	}
+	if len(layers) == 0 {
+		return unchanged, nil
+	}
+
+	var newCost float64
+	if s.costingMethod(ctx, tenantID) == "wavg" {
+		var totalQty, totalValue float64
+		for _, l := range layers {
+			totalQty += l.Quantity
+			totalValue += l.Quantity * *l.CostPrice
+		}
+		if totalQty <= 0 {
+			return unchanged, nil
+		}
+		newCost = round4(totalValue / totalQty)
+		// wavg blends into ONE cost shared by every open layer, so consumeLots' per-layer draw
+		// (which always charges the layer's own cost_price) naturally IS weighted-average costing
+		// — no separate branch needed anywhere downstream. Only active/open layers are touched;
+		// a depleted layer's historical cost is left alone (nothing reads it again).
+		for _, l := range layers {
+			if l.CostPrice != nil && *l.CostPrice == newCost {
+				continue
+			}
+			if _, e := tx.InventoryLot.UpdateOne(l).SetCostPrice(newCost).Save(ctx); e != nil {
+				s.log.Warn("recompute standard cost: blend layer cost failed",
+					zap.String("lot_id", l.ID.String()), zap.Error(e))
+			}
+		}
+	} else {
+		// fifo/lifo/fefo: pre-fill from the most recently received layer.
+		newest := layers[0]
+		newestAt := newest.CreatedAt
+		if newest.ReceivedAt != nil {
+			newestAt = *newest.ReceivedAt
+		}
+		for _, l := range layers[1:] {
+			at := l.CreatedAt
+			if l.ReceivedAt != nil {
+				at = *l.ReceivedAt
+			}
+			if at.After(newestAt) {
+				newest, newestAt = l, at
+			}
+		}
+		newCost = *newest.CostPrice
+	}
+
+	if itm.CostPrice != nil && *itm.CostPrice == newCost {
+		return unchanged, nil
+	}
+
+	if _, err := tx.Item.UpdateOneID(itemID).SetCostPrice(newCost).Save(ctx); err != nil {
+		return nil, fmt.Errorf("stock: recompute standard cost: update item: %w", err)
+	}
+
+	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, itemID, "inventory", "item.cost_changed", map[string]any{
+		"item_id":       itemID,
+		"sku":           itm.Sku,
+		"previous_cost": itm.CostPrice,
+		"new_cost":      newCost,
+		"source":        source,
+	})
+
+	return &CostChange{ItemID: itemID, SKU: itm.Sku, PreviousCost: itm.CostPrice, NewCost: &newCost, Changed: true}, nil
 }
 
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {
@@ -1524,45 +1658,30 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
 
-			// Lot-ordered consumption: when a costing method other than weighted-average is
-			// configured, draw down InventoryLot rows in FIFO/LIFO/FEFO order BEFORE persisting
-			// the ConsumptionLine(s), so we can record which lot(s) this sale actually drew
-			// from (recall traceability) — one ConsumptionLine row per lot spanned, rather than
-			// one row for the whole quantity with no batch attribution.
-			var lots []LotConsumption
-			if method != "wavg" {
-				lots = s.consumeLots(ctx, tx, tenantID, itm.ID, whID, deduct, method)
+			// Lot-ordered consumption: draw down InventoryLot cost layers (real lots AND the
+			// internal is_cost_layer rows created for non-lot-tracked items — same table) in
+			// FIFO/LIFO/FEFO/wavg order BEFORE persisting the ConsumptionLine(s), so each line
+			// records the SPECIFIC layer's own cost — what this stock actually cost when it was
+			// bought — rather than the item's current flat cost_price. This is what stops a
+			// later purchase at a new price from retroactively changing the recorded cost of
+			// stock already sold or still on hand.
+			lots := s.consumeLots(ctx, tx, tenantID, itm.ID, whID, deduct, method)
+			var drawnQty float64
+			for _, lot := range lots {
+				drawnQty += lot.QtyTaken
 			}
-			if len(lots) > 0 {
-				for _, lot := range lots {
-					lid := lot.LotID
-					s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
-						consumptionID:    consumptionID,
-						orderID:          req.OrderID,
-						warehouseID:      whID,
-						outletID:         outletID,
-						recipeID:         cl.RecipeID,
-						recipeSKU:        cl.RecipeSKU,
-						finishedItemSKU:  cl.FinishedItemSKU,
-						ingredientItemID: itm.ID,
-						ingredientSKU:    cl.SKU,
-						quantity:         lot.QtyTaken,
-						unitCost:         itemCostPrice(itm),
-						reason:           reason,
-						consumedAt:       now,
-						lotID:            &lid,
-						lotNumber:        lot.LotNumber,
-						expiryDate:       lot.ExpiryDate,
-					})
-					lotDraws = append(lotDraws, ConsumedLot{
-						SKU:        cl.SKU,
-						LotID:      lot.LotID,
-						LotNumber:  lot.LotNumber,
-						ExpiryDate: lot.ExpiryDate,
-						Quantity:   lot.QtyTaken,
-					})
+			for _, lot := range lots {
+				lid := lot.LotID
+				unitCost := itemCostPrice(itm)
+				if lot.UnitCost != nil {
+					unitCost = *lot.UnitCost
 				}
-			} else {
+				// A cost-layer row carries no lot identity a customer/regulator should ever see —
+				// only real lot-tracked/perishable batches surface their lot number/expiry.
+				lotNumber, expiryDate := lot.LotNumber, lot.ExpiryDate
+				if lot.IsCostLayer {
+					lotNumber, expiryDate = "", nil
+				}
 				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 					consumptionID:    consumptionID,
 					orderID:          req.OrderID,
@@ -1573,7 +1692,41 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					finishedItemSKU:  cl.FinishedItemSKU,
 					ingredientItemID: itm.ID,
 					ingredientSKU:    cl.SKU,
-					quantity:         cl.Quantity,
+					quantity:         lot.QtyTaken,
+					unitCost:         unitCost,
+					reason:           reason,
+					consumedAt:       now,
+					lotID:            &lid,
+					lotNumber:        lotNumber,
+					expiryDate:       expiryDate,
+				})
+				if !lot.IsCostLayer {
+					lotDraws = append(lotDraws, ConsumedLot{
+						SKU:        cl.SKU,
+						LotID:      lot.LotID,
+						LotNumber:  lot.LotNumber,
+						ExpiryDate: lot.ExpiryDate,
+						Quantity:   lot.QtyTaken,
+					})
+				}
+			}
+			// Shortfall: layers didn't cover the full quantity (e.g. a legacy item with no
+			// opening-balance layer yet, or genuine drift between InventoryBalance and layer
+			// totals). Never leave it uncosted or cost it at zero — that silently inflates
+			// margin, which is worse than the flat-cost bug this replaces. Fall back to the
+			// item's standard cost for exactly the uncovered remainder.
+			if shortfall := round4(deduct - drawnQty); shortfall > 0 {
+				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
+					consumptionID:    consumptionID,
+					orderID:          req.OrderID,
+					warehouseID:      whID,
+					outletID:         outletID,
+					recipeID:         cl.RecipeID,
+					recipeSKU:        cl.RecipeSKU,
+					finishedItemSKU:  cl.FinishedItemSKU,
+					ingredientItemID: itm.ID,
+					ingredientSKU:    cl.SKU,
+					quantity:         shortfall,
 					unitCost:         itemCostPrice(itm),
 					reason:           reason,
 					consumedAt:       now,

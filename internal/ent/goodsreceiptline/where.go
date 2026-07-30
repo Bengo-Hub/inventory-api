@@ -111,6 +111,16 @@ func ExpiryDate(v time.Time) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldExpiryDate, v))
 }
 
+// NewSellingPrice applies equality check predicate on the "new_selling_price" field. It's identical to NewSellingPriceEQ.
+func NewSellingPrice(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldNewSellingPrice, v))
+}
+
+// PriceScope applies equality check predicate on the "price_scope" field. It's identical to PriceScopeEQ.
+func PriceScope(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldPriceScope, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldCreatedAt, v))
@@ -634,6 +644,131 @@ func ExpiryDateIsNil() predicate.GoodsReceiptLine {
 // ExpiryDateNotNil applies the NotNil predicate on the "expiry_date" field.
 func ExpiryDateNotNil() predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldExpiryDate))
+}
+
+// NewSellingPriceEQ applies the EQ predicate on the "new_selling_price" field.
+func NewSellingPriceEQ(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceNEQ applies the NEQ predicate on the "new_selling_price" field.
+func NewSellingPriceNEQ(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceIn applies the In predicate on the "new_selling_price" field.
+func NewSellingPriceIn(vs ...float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIn(FieldNewSellingPrice, vs...))
+}
+
+// NewSellingPriceNotIn applies the NotIn predicate on the "new_selling_price" field.
+func NewSellingPriceNotIn(vs ...float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldNewSellingPrice, vs...))
+}
+
+// NewSellingPriceGT applies the GT predicate on the "new_selling_price" field.
+func NewSellingPriceGT(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGT(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceGTE applies the GTE predicate on the "new_selling_price" field.
+func NewSellingPriceGTE(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceLT applies the LT predicate on the "new_selling_price" field.
+func NewSellingPriceLT(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLT(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceLTE applies the LTE predicate on the "new_selling_price" field.
+func NewSellingPriceLTE(v float64) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldNewSellingPrice, v))
+}
+
+// NewSellingPriceIsNil applies the IsNil predicate on the "new_selling_price" field.
+func NewSellingPriceIsNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIsNull(FieldNewSellingPrice))
+}
+
+// NewSellingPriceNotNil applies the NotNil predicate on the "new_selling_price" field.
+func NewSellingPriceNotNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldNewSellingPrice))
+}
+
+// PriceScopeEQ applies the EQ predicate on the "price_scope" field.
+func PriceScopeEQ(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldPriceScope, v))
+}
+
+// PriceScopeNEQ applies the NEQ predicate on the "price_scope" field.
+func PriceScopeNEQ(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldPriceScope, v))
+}
+
+// PriceScopeIn applies the In predicate on the "price_scope" field.
+func PriceScopeIn(vs ...string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIn(FieldPriceScope, vs...))
+}
+
+// PriceScopeNotIn applies the NotIn predicate on the "price_scope" field.
+func PriceScopeNotIn(vs ...string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotIn(FieldPriceScope, vs...))
+}
+
+// PriceScopeGT applies the GT predicate on the "price_scope" field.
+func PriceScopeGT(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGT(FieldPriceScope, v))
+}
+
+// PriceScopeGTE applies the GTE predicate on the "price_scope" field.
+func PriceScopeGTE(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldGTE(FieldPriceScope, v))
+}
+
+// PriceScopeLT applies the LT predicate on the "price_scope" field.
+func PriceScopeLT(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLT(FieldPriceScope, v))
+}
+
+// PriceScopeLTE applies the LTE predicate on the "price_scope" field.
+func PriceScopeLTE(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldLTE(FieldPriceScope, v))
+}
+
+// PriceScopeContains applies the Contains predicate on the "price_scope" field.
+func PriceScopeContains(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldContains(FieldPriceScope, v))
+}
+
+// PriceScopeHasPrefix applies the HasPrefix predicate on the "price_scope" field.
+func PriceScopeHasPrefix(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldHasPrefix(FieldPriceScope, v))
+}
+
+// PriceScopeHasSuffix applies the HasSuffix predicate on the "price_scope" field.
+func PriceScopeHasSuffix(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldHasSuffix(FieldPriceScope, v))
+}
+
+// PriceScopeIsNil applies the IsNil predicate on the "price_scope" field.
+func PriceScopeIsNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldIsNull(FieldPriceScope))
+}
+
+// PriceScopeNotNil applies the NotNil predicate on the "price_scope" field.
+func PriceScopeNotNil() predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNotNull(FieldPriceScope))
+}
+
+// PriceScopeEqualFold applies the EqualFold predicate on the "price_scope" field.
+func PriceScopeEqualFold(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEqualFold(FieldPriceScope, v))
+}
+
+// PriceScopeContainsFold applies the ContainsFold predicate on the "price_scope" field.
+func PriceScopeContainsFold(v string) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldContainsFold(FieldPriceScope, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

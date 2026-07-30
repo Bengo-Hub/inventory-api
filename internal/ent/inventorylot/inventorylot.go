@@ -36,6 +36,12 @@ const (
 	FieldCostPrice = "cost_price"
 	// FieldSupplierReference holds the string denoting the supplier_reference field in the database.
 	FieldSupplierReference = "supplier_reference"
+	// FieldIsCostLayer holds the string denoting the is_cost_layer field in the database.
+	FieldIsCostLayer = "is_cost_layer"
+	// FieldReceivedAt holds the string denoting the received_at field in the database.
+	FieldReceivedAt = "received_at"
+	// FieldGoodsReceiptLineID holds the string denoting the goods_receipt_line_id field in the database.
+	FieldGoodsReceiptLineID = "goods_receipt_line_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -75,6 +81,9 @@ var Columns = []string{
 	FieldStatus,
 	FieldCostPrice,
 	FieldSupplierReference,
+	FieldIsCostLayer,
+	FieldReceivedAt,
+	FieldGoodsReceiptLineID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -94,6 +103,8 @@ var (
 	LotNumberValidator func(string) error
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity float64
+	// DefaultIsCostLayer holds the default value on creation for the "is_cost_layer" field.
+	DefaultIsCostLayer bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -188,6 +199,21 @@ func ByCostPrice(opts ...sql.OrderTermOption) OrderOption {
 // BySupplierReference orders the results by the supplier_reference field.
 func BySupplierReference(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSupplierReference, opts...).ToFunc()
+}
+
+// ByIsCostLayer orders the results by the is_cost_layer field.
+func ByIsCostLayer(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsCostLayer, opts...).ToFunc()
+}
+
+// ByReceivedAt orders the results by the received_at field.
+func ByReceivedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReceivedAt, opts...).ToFunc()
+}
+
+// ByGoodsReceiptLineID orders the results by the goods_receipt_line_id field.
+func ByGoodsReceiptLineID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoodsReceiptLineID, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

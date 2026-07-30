@@ -72,6 +72,8 @@ type Tx struct {
 	GoodsReceipt *GoodsReceiptClient
 	// GoodsReceiptLine is the client for interacting with the GoodsReceiptLine builders.
 	GoodsReceiptLine *GoodsReceiptLineClient
+	// IdempotencyKey is the client for interacting with the IdempotencyKey builders.
+	IdempotencyKey *IdempotencyKeyClient
 	// InventoryBalance is the client for interacting with the InventoryBalance builders.
 	InventoryBalance *InventoryBalanceClient
 	// InventoryLot is the client for interacting with the InventoryLot builders.
@@ -108,6 +110,8 @@ type Tx struct {
 	ModifierOption *ModifierOptionClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PendingPriceChange is the client for interacting with the PendingPriceChange builders.
+	PendingPriceChange *PendingPriceChangeClient
 	// PricingTier is the client for interacting with the PricingTier builders.
 	PricingTier *PricingTierClient
 	// ProductionBatch is the client for interacting with the ProductionBatch builders.
@@ -353,6 +357,7 @@ func (tx *Tx) init() {
 	tx.FoodCostVariance = NewFoodCostVarianceClient(tx.config)
 	tx.GoodsReceipt = NewGoodsReceiptClient(tx.config)
 	tx.GoodsReceiptLine = NewGoodsReceiptLineClient(tx.config)
+	tx.IdempotencyKey = NewIdempotencyKeyClient(tx.config)
 	tx.InventoryBalance = NewInventoryBalanceClient(tx.config)
 	tx.InventoryLot = NewInventoryLotClient(tx.config)
 	tx.InventoryPermission = NewInventoryPermissionClient(tx.config)
@@ -371,6 +376,7 @@ func (tx *Tx) init() {
 	tx.ModifierGroup = NewModifierGroupClient(tx.config)
 	tx.ModifierOption = NewModifierOptionClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
+	tx.PendingPriceChange = NewPendingPriceChangeClient(tx.config)
 	tx.PricingTier = NewPricingTierClient(tx.config)
 	tx.ProductionBatch = NewProductionBatchClient(tx.config)
 	tx.PurchaseOrder = NewPurchaseOrderClient(tx.config)

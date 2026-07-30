@@ -101,6 +101,21 @@ func SupplierReference(v string) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldEQ(FieldSupplierReference, v))
 }
 
+// IsCostLayer applies equality check predicate on the "is_cost_layer" field. It's identical to IsCostLayerEQ.
+func IsCostLayer(v bool) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldIsCostLayer, v))
+}
+
+// ReceivedAt applies equality check predicate on the "received_at" field. It's identical to ReceivedAtEQ.
+func ReceivedAt(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldReceivedAt, v))
+}
+
+// GoodsReceiptLineID applies equality check predicate on the "goods_receipt_line_id" field. It's identical to GoodsReceiptLineIDEQ.
+func GoodsReceiptLineID(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldGoodsReceiptLineID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldEQ(FieldCreatedAt, v))
@@ -539,6 +554,116 @@ func SupplierReferenceEqualFold(v string) predicate.InventoryLot {
 // SupplierReferenceContainsFold applies the ContainsFold predicate on the "supplier_reference" field.
 func SupplierReferenceContainsFold(v string) predicate.InventoryLot {
 	return predicate.InventoryLot(sql.FieldContainsFold(FieldSupplierReference, v))
+}
+
+// IsCostLayerEQ applies the EQ predicate on the "is_cost_layer" field.
+func IsCostLayerEQ(v bool) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldIsCostLayer, v))
+}
+
+// IsCostLayerNEQ applies the NEQ predicate on the "is_cost_layer" field.
+func IsCostLayerNEQ(v bool) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNEQ(FieldIsCostLayer, v))
+}
+
+// ReceivedAtEQ applies the EQ predicate on the "received_at" field.
+func ReceivedAtEQ(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldReceivedAt, v))
+}
+
+// ReceivedAtNEQ applies the NEQ predicate on the "received_at" field.
+func ReceivedAtNEQ(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNEQ(FieldReceivedAt, v))
+}
+
+// ReceivedAtIn applies the In predicate on the "received_at" field.
+func ReceivedAtIn(vs ...time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldIn(FieldReceivedAt, vs...))
+}
+
+// ReceivedAtNotIn applies the NotIn predicate on the "received_at" field.
+func ReceivedAtNotIn(vs ...time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNotIn(FieldReceivedAt, vs...))
+}
+
+// ReceivedAtGT applies the GT predicate on the "received_at" field.
+func ReceivedAtGT(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldGT(FieldReceivedAt, v))
+}
+
+// ReceivedAtGTE applies the GTE predicate on the "received_at" field.
+func ReceivedAtGTE(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldGTE(FieldReceivedAt, v))
+}
+
+// ReceivedAtLT applies the LT predicate on the "received_at" field.
+func ReceivedAtLT(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldLT(FieldReceivedAt, v))
+}
+
+// ReceivedAtLTE applies the LTE predicate on the "received_at" field.
+func ReceivedAtLTE(v time.Time) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldLTE(FieldReceivedAt, v))
+}
+
+// ReceivedAtIsNil applies the IsNil predicate on the "received_at" field.
+func ReceivedAtIsNil() predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldIsNull(FieldReceivedAt))
+}
+
+// ReceivedAtNotNil applies the NotNil predicate on the "received_at" field.
+func ReceivedAtNotNil() predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNotNull(FieldReceivedAt))
+}
+
+// GoodsReceiptLineIDEQ applies the EQ predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDEQ(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldEQ(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDNEQ applies the NEQ predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDNEQ(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNEQ(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDIn applies the In predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDIn(vs ...uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldIn(FieldGoodsReceiptLineID, vs...))
+}
+
+// GoodsReceiptLineIDNotIn applies the NotIn predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDNotIn(vs ...uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNotIn(FieldGoodsReceiptLineID, vs...))
+}
+
+// GoodsReceiptLineIDGT applies the GT predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDGT(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldGT(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDGTE applies the GTE predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDGTE(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldGTE(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDLT applies the LT predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDLT(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldLT(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDLTE applies the LTE predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDLTE(v uuid.UUID) predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldLTE(FieldGoodsReceiptLineID, v))
+}
+
+// GoodsReceiptLineIDIsNil applies the IsNil predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDIsNil() predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldIsNull(FieldGoodsReceiptLineID))
+}
+
+// GoodsReceiptLineIDNotNil applies the NotNil predicate on the "goods_receipt_line_id" field.
+func GoodsReceiptLineIDNotNil() predicate.InventoryLot {
+	return predicate.InventoryLot(sql.FieldNotNull(FieldGoodsReceiptLineID))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

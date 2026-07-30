@@ -209,6 +209,60 @@ func (_u *InventoryLotUpdate) ClearSupplierReference() *InventoryLotUpdate {
 	return _u
 }
 
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (_u *InventoryLotUpdate) SetIsCostLayer(v bool) *InventoryLotUpdate {
+	_u.mutation.SetIsCostLayer(v)
+	return _u
+}
+
+// SetNillableIsCostLayer sets the "is_cost_layer" field if the given value is not nil.
+func (_u *InventoryLotUpdate) SetNillableIsCostLayer(v *bool) *InventoryLotUpdate {
+	if v != nil {
+		_u.SetIsCostLayer(*v)
+	}
+	return _u
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (_u *InventoryLotUpdate) SetReceivedAt(v time.Time) *InventoryLotUpdate {
+	_u.mutation.SetReceivedAt(v)
+	return _u
+}
+
+// SetNillableReceivedAt sets the "received_at" field if the given value is not nil.
+func (_u *InventoryLotUpdate) SetNillableReceivedAt(v *time.Time) *InventoryLotUpdate {
+	if v != nil {
+		_u.SetReceivedAt(*v)
+	}
+	return _u
+}
+
+// ClearReceivedAt clears the value of the "received_at" field.
+func (_u *InventoryLotUpdate) ClearReceivedAt() *InventoryLotUpdate {
+	_u.mutation.ClearReceivedAt()
+	return _u
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (_u *InventoryLotUpdate) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotUpdate {
+	_u.mutation.SetGoodsReceiptLineID(v)
+	return _u
+}
+
+// SetNillableGoodsReceiptLineID sets the "goods_receipt_line_id" field if the given value is not nil.
+func (_u *InventoryLotUpdate) SetNillableGoodsReceiptLineID(v *uuid.UUID) *InventoryLotUpdate {
+	if v != nil {
+		_u.SetGoodsReceiptLineID(*v)
+	}
+	return _u
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (_u *InventoryLotUpdate) ClearGoodsReceiptLineID() *InventoryLotUpdate {
+	_u.mutation.ClearGoodsReceiptLineID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryLotUpdate) SetUpdatedAt(v time.Time) *InventoryLotUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -352,6 +406,21 @@ func (_u *InventoryLotUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.SupplierReferenceCleared() {
 		_spec.ClearField(inventorylot.FieldSupplierReference, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsCostLayer(); ok {
+		_spec.SetField(inventorylot.FieldIsCostLayer, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ReceivedAt(); ok {
+		_spec.SetField(inventorylot.FieldReceivedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ReceivedAtCleared() {
+		_spec.ClearField(inventorylot.FieldReceivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.GoodsReceiptLineID(); ok {
+		_spec.SetField(inventorylot.FieldGoodsReceiptLineID, field.TypeUUID, value)
+	}
+	if _u.mutation.GoodsReceiptLineIDCleared() {
+		_spec.ClearField(inventorylot.FieldGoodsReceiptLineID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorylot.FieldUpdatedAt, field.TypeTime, value)
@@ -612,6 +681,60 @@ func (_u *InventoryLotUpdateOne) ClearSupplierReference() *InventoryLotUpdateOne
 	return _u
 }
 
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (_u *InventoryLotUpdateOne) SetIsCostLayer(v bool) *InventoryLotUpdateOne {
+	_u.mutation.SetIsCostLayer(v)
+	return _u
+}
+
+// SetNillableIsCostLayer sets the "is_cost_layer" field if the given value is not nil.
+func (_u *InventoryLotUpdateOne) SetNillableIsCostLayer(v *bool) *InventoryLotUpdateOne {
+	if v != nil {
+		_u.SetIsCostLayer(*v)
+	}
+	return _u
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (_u *InventoryLotUpdateOne) SetReceivedAt(v time.Time) *InventoryLotUpdateOne {
+	_u.mutation.SetReceivedAt(v)
+	return _u
+}
+
+// SetNillableReceivedAt sets the "received_at" field if the given value is not nil.
+func (_u *InventoryLotUpdateOne) SetNillableReceivedAt(v *time.Time) *InventoryLotUpdateOne {
+	if v != nil {
+		_u.SetReceivedAt(*v)
+	}
+	return _u
+}
+
+// ClearReceivedAt clears the value of the "received_at" field.
+func (_u *InventoryLotUpdateOne) ClearReceivedAt() *InventoryLotUpdateOne {
+	_u.mutation.ClearReceivedAt()
+	return _u
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (_u *InventoryLotUpdateOne) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotUpdateOne {
+	_u.mutation.SetGoodsReceiptLineID(v)
+	return _u
+}
+
+// SetNillableGoodsReceiptLineID sets the "goods_receipt_line_id" field if the given value is not nil.
+func (_u *InventoryLotUpdateOne) SetNillableGoodsReceiptLineID(v *uuid.UUID) *InventoryLotUpdateOne {
+	if v != nil {
+		_u.SetGoodsReceiptLineID(*v)
+	}
+	return _u
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (_u *InventoryLotUpdateOne) ClearGoodsReceiptLineID() *InventoryLotUpdateOne {
+	_u.mutation.ClearGoodsReceiptLineID()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryLotUpdateOne) SetUpdatedAt(v time.Time) *InventoryLotUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -785,6 +908,21 @@ func (_u *InventoryLotUpdateOne) sqlSave(ctx context.Context) (_node *InventoryL
 	}
 	if _u.mutation.SupplierReferenceCleared() {
 		_spec.ClearField(inventorylot.FieldSupplierReference, field.TypeString)
+	}
+	if value, ok := _u.mutation.IsCostLayer(); ok {
+		_spec.SetField(inventorylot.FieldIsCostLayer, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ReceivedAt(); ok {
+		_spec.SetField(inventorylot.FieldReceivedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ReceivedAtCleared() {
+		_spec.ClearField(inventorylot.FieldReceivedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.GoodsReceiptLineID(); ok {
+		_spec.SetField(inventorylot.FieldGoodsReceiptLineID, field.TypeUUID, value)
+	}
+	if _u.mutation.GoodsReceiptLineIDCleared() {
+		_spec.ClearField(inventorylot.FieldGoodsReceiptLineID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorylot.FieldUpdatedAt, field.TypeTime, value)

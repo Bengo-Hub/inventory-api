@@ -8,10 +8,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
 )
 
-// StockValuationItem is a single line in the stock valuation (value = on_hand × unit cost).
+// StockValuationItem is a single line in the stock valuation. Value is computed from the item's
+// own InventoryLot cost layers (what each unit actually cost when bought) whenever any exist;
+// CostBasis reports which basis was actually used, so a gap in layer coverage is visible on the
+// report rather than silently defaulting.
 type StockValuationItem struct {
 	ItemID       uuid.UUID `json:"item_id"`
 	SKU          string    `json:"sku"`
@@ -20,6 +24,10 @@ type StockValuationItem struct {
 	OnHand       float64   `json:"on_hand"`
 	UnitCost     float64   `json:"unit_cost"`
 	Value        float64   `json:"value"`
+	// CostBasis is "layers" (valued from InventoryLot cost layers) or "item_cost_fallback"
+	// (the item has no active cost layer yet — e.g. pre-cutover stock awaiting the opening-
+	// balance backfill — so on_hand × the item's standard cost is used instead).
+	CostBasis string `json:"cost_basis"`
 }
 
 // StockValuationCategory aggregates value by item category.
@@ -41,9 +49,13 @@ type StockValuation struct {
 	TopItems   []StockValuationItem     `json:"top_items"`
 }
 
-// StockValuation computes on-hand × cost_price across all warehouses for a tenant, returning the
-// grand total, a per-category breakdown, and the top-20 items by value. Items without a cost price
-// contribute zero value.
+// StockValuation computes each item's inventory value from its own InventoryLot cost layers
+// (Σ layer.quantity × layer.cost_price) — what was actually paid for the stock on hand, never a
+// single mutable Item.cost_price retroactively applied to everything. Items with no active cost
+// layer yet (pre-cutover stock awaiting the opening-balance backfill) fall back to
+// on_hand × the item's standard cost, and are flagged via CostBasis so the gap is visible on the
+// report rather than silently blended in. Returns the grand total, a per-category breakdown, and
+// the top-20 items by value.
 func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*StockValuation, error) {
 	balances, err := s.client.InventoryBalance.Query().
 		Where(inventorybalance.TenantID(tenantID)).
@@ -57,6 +69,27 @@ func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*Stoc
 	catName := make(map[uuid.UUID]string, len(cats))
 	for _, c := range cats {
 		catName[c.ID] = c.Name
+	}
+
+	// Per-item layer totals: quantity + value across every active, cost-recorded lot (real lots
+	// AND internal cost layers — same table), regardless of warehouse, matching the balance
+	// aggregation below (this report is tenant-wide, not per-warehouse).
+	layers, err := s.client.InventoryLot.Query().
+		Where(entlot.TenantID(tenantID), entlot.StatusEQ(entlot.StatusActive), entlot.CostPriceNotNil()).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("stock valuation: query cost layers: %w", err)
+	}
+	type layerAgg struct{ qty, value float64 }
+	layerTotals := make(map[uuid.UUID]*layerAgg, len(layers))
+	for _, l := range layers {
+		la := layerTotals[l.ItemID]
+		if la == nil {
+			la = &layerAgg{}
+			layerTotals[l.ItemID] = la
+		}
+		la.qty += l.Quantity
+		la.value += l.Quantity * *l.CostPrice
 	}
 
 	type agg struct {
@@ -92,6 +125,13 @@ func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*Stoc
 	items := make([]StockValuationItem, 0, len(perItem))
 	for id, a := range perItem {
 		value := a.onHand * a.cost
+		unitCost := a.cost
+		costBasis := "item_cost_fallback"
+		if la := layerTotals[id]; la != nil && la.qty > 0 {
+			value = la.value
+			unitCost = round2(la.value / la.qty)
+			costBasis = "layers"
+		}
 		val.TotalValue += value
 		val.TotalUnits += a.onHand
 		val.ItemCount++
@@ -111,7 +151,7 @@ func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*Stoc
 
 		items = append(items, StockValuationItem{
 			ItemID: id, SKU: a.sku, Name: a.name, CategoryName: cn,
-			OnHand: a.onHand, UnitCost: a.cost, Value: value,
+			OnHand: a.onHand, UnitCost: unitCost, Value: value, CostBasis: costBasis,
 		})
 	}
 

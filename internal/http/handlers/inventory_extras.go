@@ -13,10 +13,12 @@ import (
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/reports"
@@ -34,6 +36,8 @@ type InventoryExtrasHandler struct {
 	reportsSvc  *reports.Service
 	docSvc      *documents.Service
 	stockSvc    *stock.Service
+	itemsSvc    *items.Service
+	auditSvc    *audit.Service
 	// authForFeatureGet authenticates feature-gated GET routes. The tenant router group
 	// only authenticates non-GET requests, so a GET behind RequireFeatureCode must parse
 	// claims itself or every caller 401s (same gotcha inventory.go solves with
@@ -65,6 +69,17 @@ func (h *InventoryExtrasHandler) SetDocService(svc *documents.Service) {
 // flows can apply real stock movements in-process.
 func (h *InventoryExtrasHandler) SetStockService(svc *stock.Service) {
 	h.stockSvc = svc
+}
+
+// SetAuditService wires the centralized audit trail for goods-receipt cost capture.
+func (h *InventoryExtrasHandler) SetAuditService(a *audit.Service) {
+	h.auditSvc = a
+}
+
+// SetItemsService injects the items service so goods-receipt posting can apply (or schedule) a
+// selling-price change captured alongside the receipt's cost.
+func (h *InventoryExtrasHandler) SetItemsService(svc *items.Service) {
+	h.itemsSvc = svc
 }
 
 // skuForItem resolves an item's SKU from its ID (stock ops are SKU-based). Empty on miss.
@@ -155,6 +170,10 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 
 	// Stock levels
 	r.Get("/inventory/stock", h.ListStock)
+	// One-shot, idempotent, tenant-scoped admin action: seeds an opening cost layer for any
+	// on-hand stock that predates the cost-layer feature, so valuation/COGS never silently read
+	// zero for it. Settings-manage gated — this is an admin/finance action, not routine ops.
+	r.With(perm(rbac.PermSettingsManage)).Post("/inventory/cost-layers/backfill", h.BackfillCostLayers)
 	// Branded PDF/CSV export of stock levels — same filters as ListStock plus warehouse/
 	// location drill-down, reuses queryStockLevels + the docs report engine (see
 	// report_pdf_stock.go).

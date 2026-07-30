@@ -39,6 +39,10 @@ const (
 	FieldLotNumber = "lot_number"
 	// FieldExpiryDate holds the string denoting the expiry_date field in the database.
 	FieldExpiryDate = "expiry_date"
+	// FieldNewSellingPrice holds the string denoting the new_selling_price field in the database.
+	FieldNewSellingPrice = "new_selling_price"
+	// FieldPriceScope holds the string denoting the price_scope field in the database.
+	FieldPriceScope = "price_scope"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeGoodsReceipt holds the string denoting the goods_receipt edge name in mutations.
@@ -69,6 +73,8 @@ var Columns = []string{
 	FieldSerials,
 	FieldLotNumber,
 	FieldExpiryDate,
+	FieldNewSellingPrice,
+	FieldPriceScope,
 	FieldCreatedAt,
 }
 
@@ -91,6 +97,8 @@ var (
 	DefaultQuantityRejected float64
 	// DefaultUnitCost holds the default value on creation for the "unit_cost" field.
 	DefaultUnitCost float64
+	// DefaultPriceScope holds the default value on creation for the "price_scope" field.
+	DefaultPriceScope string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -158,6 +166,16 @@ func ByLotNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiryDate orders the results by the expiry_date field.
 func ByExpiryDate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiryDate, opts...).ToFunc()
+}
+
+// ByNewSellingPrice orders the results by the new_selling_price field.
+func ByNewSellingPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNewSellingPrice, opts...).ToFunc()
+}
+
+// ByPriceScope orders the results by the price_scope field.
+func ByPriceScope(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceScope, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

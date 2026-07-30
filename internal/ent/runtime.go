@@ -35,6 +35,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
+	"github.com/bengobox/inventory-service/internal/ent/idempotencykey"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -53,6 +54,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pendingpricechange"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -774,14 +776,44 @@ func init() {
 	goodsreceiptlineDescUnitCost := goodsreceiptlineFields[8].Descriptor()
 	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
 	goodsreceiptline.DefaultUnitCost = goodsreceiptlineDescUnitCost.Default.(float64)
+	// goodsreceiptlineDescPriceScope is the schema descriptor for price_scope field.
+	goodsreceiptlineDescPriceScope := goodsreceiptlineFields[14].Descriptor()
+	// goodsreceiptline.DefaultPriceScope holds the default value on creation for the price_scope field.
+	goodsreceiptline.DefaultPriceScope = goodsreceiptlineDescPriceScope.Default.(string)
 	// goodsreceiptlineDescCreatedAt is the schema descriptor for created_at field.
-	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[13].Descriptor()
+	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[15].Descriptor()
 	// goodsreceiptline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goodsreceiptline.DefaultCreatedAt = goodsreceiptlineDescCreatedAt.Default.(func() time.Time)
 	// goodsreceiptlineDescID is the schema descriptor for id field.
 	goodsreceiptlineDescID := goodsreceiptlineFields[0].Descriptor()
 	// goodsreceiptline.DefaultID holds the default value on creation for the id field.
 	goodsreceiptline.DefaultID = goodsreceiptlineDescID.Default.(func() uuid.UUID)
+	idempotencykeyFields := schema.IdempotencyKey{}.Fields()
+	_ = idempotencykeyFields
+	// idempotencykeyDescKey is the schema descriptor for key field.
+	idempotencykeyDescKey := idempotencykeyFields[2].Descriptor()
+	// idempotencykey.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	idempotencykey.KeyValidator = idempotencykeyDescKey.Validators[0].(func(string) error)
+	// idempotencykeyDescEndpoint is the schema descriptor for endpoint field.
+	idempotencykeyDescEndpoint := idempotencykeyFields[3].Descriptor()
+	// idempotencykey.DefaultEndpoint holds the default value on creation for the endpoint field.
+	idempotencykey.DefaultEndpoint = idempotencykeyDescEndpoint.Default.(string)
+	// idempotencykeyDescStatus is the schema descriptor for status field.
+	idempotencykeyDescStatus := idempotencykeyFields[4].Descriptor()
+	// idempotencykey.DefaultStatus holds the default value on creation for the status field.
+	idempotencykey.DefaultStatus = idempotencykeyDescStatus.Default.(string)
+	// idempotencykeyDescResponseCode is the schema descriptor for response_code field.
+	idempotencykeyDescResponseCode := idempotencykeyFields[5].Descriptor()
+	// idempotencykey.DefaultResponseCode holds the default value on creation for the response_code field.
+	idempotencykey.DefaultResponseCode = idempotencykeyDescResponseCode.Default.(int)
+	// idempotencykeyDescCreatedAt is the schema descriptor for created_at field.
+	idempotencykeyDescCreatedAt := idempotencykeyFields[7].Descriptor()
+	// idempotencykey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	idempotencykey.DefaultCreatedAt = idempotencykeyDescCreatedAt.Default.(func() time.Time)
+	// idempotencykeyDescID is the schema descriptor for id field.
+	idempotencykeyDescID := idempotencykeyFields[0].Descriptor()
+	// idempotencykey.DefaultID holds the default value on creation for the id field.
+	idempotencykey.DefaultID = idempotencykeyDescID.Default.(func() uuid.UUID)
 	inventorybalanceFields := schema.InventoryBalance{}.Fields()
 	_ = inventorybalanceFields
 	// inventorybalanceDescOnHand is the schema descriptor for on_hand field.
@@ -832,12 +864,16 @@ func init() {
 	inventorylotDescQuantity := inventorylotFields[7].Descriptor()
 	// inventorylot.DefaultQuantity holds the default value on creation for the quantity field.
 	inventorylot.DefaultQuantity = inventorylotDescQuantity.Default.(float64)
+	// inventorylotDescIsCostLayer is the schema descriptor for is_cost_layer field.
+	inventorylotDescIsCostLayer := inventorylotFields[11].Descriptor()
+	// inventorylot.DefaultIsCostLayer holds the default value on creation for the is_cost_layer field.
+	inventorylot.DefaultIsCostLayer = inventorylotDescIsCostLayer.Default.(bool)
 	// inventorylotDescCreatedAt is the schema descriptor for created_at field.
-	inventorylotDescCreatedAt := inventorylotFields[11].Descriptor()
+	inventorylotDescCreatedAt := inventorylotFields[14].Descriptor()
 	// inventorylot.DefaultCreatedAt holds the default value on creation for the created_at field.
 	inventorylot.DefaultCreatedAt = inventorylotDescCreatedAt.Default.(func() time.Time)
 	// inventorylotDescUpdatedAt is the schema descriptor for updated_at field.
-	inventorylotDescUpdatedAt := inventorylotFields[12].Descriptor()
+	inventorylotDescUpdatedAt := inventorylotFields[15].Descriptor()
 	// inventorylot.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventorylot.DefaultUpdatedAt = inventorylotDescUpdatedAt.Default.(func() time.Time)
 	// inventorylot.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1418,6 +1454,20 @@ func init() {
 	outboxeventDescID := outboxeventFields[0].Descriptor()
 	// outboxevent.DefaultID holds the default value on creation for the id field.
 	outboxevent.DefaultID = outboxeventDescID.Default.(func() uuid.UUID)
+	pendingpricechangeFields := schema.PendingPriceChange{}.Fields()
+	_ = pendingpricechangeFields
+	// pendingpricechangeDescCurrency is the schema descriptor for currency field.
+	pendingpricechangeDescCurrency := pendingpricechangeFields[4].Descriptor()
+	// pendingpricechange.DefaultCurrency holds the default value on creation for the currency field.
+	pendingpricechange.DefaultCurrency = pendingpricechangeDescCurrency.Default.(string)
+	// pendingpricechangeDescCreatedAt is the schema descriptor for created_at field.
+	pendingpricechangeDescCreatedAt := pendingpricechangeFields[10].Descriptor()
+	// pendingpricechange.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pendingpricechange.DefaultCreatedAt = pendingpricechangeDescCreatedAt.Default.(func() time.Time)
+	// pendingpricechangeDescID is the schema descriptor for id field.
+	pendingpricechangeDescID := pendingpricechangeFields[0].Descriptor()
+	// pendingpricechange.DefaultID holds the default value on creation for the id field.
+	pendingpricechange.DefaultID = pendingpricechangeDescID.Default.(func() uuid.UUID)
 	pricingtierFields := schema.PricingTier{}.Fields()
 	_ = pricingtierFields
 	// pricingtierDescName is the schema descriptor for name field.

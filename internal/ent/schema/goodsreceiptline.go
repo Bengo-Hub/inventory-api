@@ -29,6 +29,8 @@ func (GoodsReceiptLine) Fields() []ent.Field {
 		field.JSON("serials", []string{}).Optional().Comment("Serial numbers received on this line (serial-tracked items): one per unit accepted"),
 		field.String("lot_number").Optional().Comment("Batch/lot number for lot-tracked items received on this line"),
 		field.Time("expiry_date").Optional().Nillable().Comment("Lot expiry; seeded from item.shelf_life_days when blank for perishables"),
+		field.Float("new_selling_price").Optional().Nillable().Comment("Selling price captured alongside this receipt's cost, if the merchant chose to adjust it here. Applied at GRN-post time per price_scope."),
+		field.String("price_scope").Optional().Default("all_stock").Comment("all_stock: apply new_selling_price immediately, everywhere. new_stock_only: queue it — old stock keeps selling at its current price until every pre-receipt cost layer is depleted."),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }

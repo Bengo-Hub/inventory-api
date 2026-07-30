@@ -161,6 +161,34 @@ func (_c *GoodsReceiptLineCreate) SetNillableExpiryDate(v *time.Time) *GoodsRece
 	return _c
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_c *GoodsReceiptLineCreate) SetNewSellingPrice(v float64) *GoodsReceiptLineCreate {
+	_c.mutation.SetNewSellingPrice(v)
+	return _c
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_c *GoodsReceiptLineCreate) SetNillableNewSellingPrice(v *float64) *GoodsReceiptLineCreate {
+	if v != nil {
+		_c.SetNewSellingPrice(*v)
+	}
+	return _c
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_c *GoodsReceiptLineCreate) SetPriceScope(v string) *GoodsReceiptLineCreate {
+	_c.mutation.SetPriceScope(v)
+	return _c
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_c *GoodsReceiptLineCreate) SetNillablePriceScope(v *string) *GoodsReceiptLineCreate {
+	if v != nil {
+		_c.SetPriceScope(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *GoodsReceiptLineCreate) SetCreatedAt(v time.Time) *GoodsReceiptLineCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -244,6 +272,10 @@ func (_c *GoodsReceiptLineCreate) defaults() {
 	if _, ok := _c.mutation.UnitCost(); !ok {
 		v := goodsreceiptline.DefaultUnitCost
 		_c.mutation.SetUnitCost(v)
+	}
+	if _, ok := _c.mutation.PriceScope(); !ok {
+		v := goodsreceiptline.DefaultPriceScope
+		_c.mutation.SetPriceScope(v)
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := goodsreceiptline.DefaultCreatedAt()
@@ -363,6 +395,14 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 	if value, ok := _c.mutation.ExpiryDate(); ok {
 		_spec.SetField(goodsreceiptline.FieldExpiryDate, field.TypeTime, value)
 		_node.ExpiryDate = &value
+	}
+	if value, ok := _c.mutation.NewSellingPrice(); ok {
+		_spec.SetField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64, value)
+		_node.NewSellingPrice = &value
+	}
+	if value, ok := _c.mutation.PriceScope(); ok {
+		_spec.SetField(goodsreceiptline.FieldPriceScope, field.TypeString, value)
+		_node.PriceScope = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(goodsreceiptline.FieldCreatedAt, field.TypeTime, value)
@@ -632,6 +672,48 @@ func (u *GoodsReceiptLineUpsert) UpdateExpiryDate() *GoodsReceiptLineUpsert {
 // ClearExpiryDate clears the value of the "expiry_date" field.
 func (u *GoodsReceiptLineUpsert) ClearExpiryDate() *GoodsReceiptLineUpsert {
 	u.SetNull(goodsreceiptline.FieldExpiryDate)
+	return u
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsert) SetNewSellingPrice(v float64) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldNewSellingPrice, v)
+	return u
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateNewSellingPrice() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldNewSellingPrice)
+	return u
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsert) AddNewSellingPrice(v float64) *GoodsReceiptLineUpsert {
+	u.Add(goodsreceiptline.FieldNewSellingPrice, v)
+	return u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsert) ClearNewSellingPrice() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldNewSellingPrice)
+	return u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *GoodsReceiptLineUpsert) SetPriceScope(v string) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldPriceScope, v)
+	return u
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdatePriceScope() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldPriceScope)
+	return u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *GoodsReceiptLineUpsert) ClearPriceScope() *GoodsReceiptLineUpsert {
+	u.SetNull(goodsreceiptline.FieldPriceScope)
 	return u
 }
 
@@ -914,6 +996,55 @@ func (u *GoodsReceiptLineUpsertOne) UpdateExpiryDate() *GoodsReceiptLineUpsertOn
 func (u *GoodsReceiptLineUpsertOne) ClearExpiryDate() *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearExpiryDate()
+	})
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertOne) SetNewSellingPrice(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetNewSellingPrice(v)
+	})
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertOne) AddNewSellingPrice(v float64) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddNewSellingPrice(v)
+	})
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateNewSellingPrice() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateNewSellingPrice()
+	})
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertOne) ClearNewSellingPrice() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearNewSellingPrice()
+	})
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *GoodsReceiptLineUpsertOne) SetPriceScope(v string) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetPriceScope(v)
+	})
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdatePriceScope() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdatePriceScope()
+	})
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *GoodsReceiptLineUpsertOne) ClearPriceScope() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearPriceScope()
 	})
 }
 
@@ -1363,6 +1494,55 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateExpiryDate() *GoodsReceiptLineUpsertB
 func (u *GoodsReceiptLineUpsertBulk) ClearExpiryDate() *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearExpiryDate()
+	})
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertBulk) SetNewSellingPrice(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetNewSellingPrice(v)
+	})
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertBulk) AddNewSellingPrice(v float64) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.AddNewSellingPrice(v)
+	})
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateNewSellingPrice() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateNewSellingPrice()
+	})
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearNewSellingPrice() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearNewSellingPrice()
+	})
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *GoodsReceiptLineUpsertBulk) SetPriceScope(v string) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetPriceScope(v)
+	})
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdatePriceScope() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdatePriceScope()
+	})
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *GoodsReceiptLineUpsertBulk) ClearPriceScope() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.ClearPriceScope()
 	})
 }
 

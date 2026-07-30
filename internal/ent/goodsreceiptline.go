@@ -44,6 +44,10 @@ type GoodsReceiptLine struct {
 	LotNumber string `json:"lot_number,omitempty"`
 	// Lot expiry; seeded from item.shelf_life_days when blank for perishables
 	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
+	// Selling price captured alongside this receipt's cost, if the merchant chose to adjust it here. Applied at GRN-post time per price_scope.
+	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
+	// all_stock: apply new_selling_price immediately, everywhere. new_stock_only: queue it — old stock keeps selling at its current price until every pre-receipt cost layer is depleted.
+	PriceScope string `json:"price_scope,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -81,9 +85,9 @@ func (*GoodsReceiptLine) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case goodsreceiptline.FieldSerials:
 			values[i] = new([]byte)
-		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost:
+		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost, goodsreceiptline.FieldNewSellingPrice:
 			values[i] = new(sql.NullFloat64)
-		case goodsreceiptline.FieldRejectionReason, goodsreceiptline.FieldLotNumber:
+		case goodsreceiptline.FieldRejectionReason, goodsreceiptline.FieldLotNumber, goodsreceiptline.FieldPriceScope:
 			values[i] = new(sql.NullString)
 		case goodsreceiptline.FieldExpiryDate, goodsreceiptline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -186,6 +190,19 @@ func (_m *GoodsReceiptLine) assignValues(columns []string, values []any) error {
 				_m.ExpiryDate = new(time.Time)
 				*_m.ExpiryDate = value.Time
 			}
+		case goodsreceiptline.FieldNewSellingPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field new_selling_price", values[i])
+			} else if value.Valid {
+				_m.NewSellingPrice = new(float64)
+				*_m.NewSellingPrice = value.Float64
+			}
+		case goodsreceiptline.FieldPriceScope:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field price_scope", values[i])
+			} else if value.Valid {
+				_m.PriceScope = value.String
+			}
 		case goodsreceiptline.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -272,6 +289,14 @@ func (_m *GoodsReceiptLine) String() string {
 		builder.WriteString("expiry_date=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	if v := _m.NewSellingPrice; v != nil {
+		builder.WriteString("new_selling_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("price_scope=")
+	builder.WriteString(_m.PriceScope)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
