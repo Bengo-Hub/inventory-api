@@ -134,6 +134,48 @@ func (_c *InventoryLotCreate) SetNillableSupplierReference(v *string) *Inventory
 	return _c
 }
 
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (_c *InventoryLotCreate) SetIsCostLayer(v bool) *InventoryLotCreate {
+	_c.mutation.SetIsCostLayer(v)
+	return _c
+}
+
+// SetNillableIsCostLayer sets the "is_cost_layer" field if the given value is not nil.
+func (_c *InventoryLotCreate) SetNillableIsCostLayer(v *bool) *InventoryLotCreate {
+	if v != nil {
+		_c.SetIsCostLayer(*v)
+	}
+	return _c
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (_c *InventoryLotCreate) SetReceivedAt(v time.Time) *InventoryLotCreate {
+	_c.mutation.SetReceivedAt(v)
+	return _c
+}
+
+// SetNillableReceivedAt sets the "received_at" field if the given value is not nil.
+func (_c *InventoryLotCreate) SetNillableReceivedAt(v *time.Time) *InventoryLotCreate {
+	if v != nil {
+		_c.SetReceivedAt(*v)
+	}
+	return _c
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (_c *InventoryLotCreate) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotCreate {
+	_c.mutation.SetGoodsReceiptLineID(v)
+	return _c
+}
+
+// SetNillableGoodsReceiptLineID sets the "goods_receipt_line_id" field if the given value is not nil.
+func (_c *InventoryLotCreate) SetNillableGoodsReceiptLineID(v *uuid.UUID) *InventoryLotCreate {
+	if v != nil {
+		_c.SetGoodsReceiptLineID(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *InventoryLotCreate) SetCreatedAt(v time.Time) *InventoryLotCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -229,6 +271,10 @@ func (_c *InventoryLotCreate) defaults() {
 		v := inventorylot.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.IsCostLayer(); !ok {
+		v := inventorylot.DefaultIsCostLayer
+		_c.mutation.SetIsCostLayer(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := inventorylot.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -272,6 +318,9 @@ func (_c *InventoryLotCreate) check() error {
 		if err := inventorylot.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "InventoryLot.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.IsCostLayer(); !ok {
+		return &ValidationError{Name: "is_cost_layer", err: errors.New(`ent: missing required field "InventoryLot.is_cost_layer"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "InventoryLot.created_at"`)}
@@ -352,6 +401,18 @@ func (_c *InventoryLotCreate) createSpec() (*InventoryLot, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.SupplierReference(); ok {
 		_spec.SetField(inventorylot.FieldSupplierReference, field.TypeString, value)
 		_node.SupplierReference = value
+	}
+	if value, ok := _c.mutation.IsCostLayer(); ok {
+		_spec.SetField(inventorylot.FieldIsCostLayer, field.TypeBool, value)
+		_node.IsCostLayer = value
+	}
+	if value, ok := _c.mutation.ReceivedAt(); ok {
+		_spec.SetField(inventorylot.FieldReceivedAt, field.TypeTime, value)
+		_node.ReceivedAt = &value
+	}
+	if value, ok := _c.mutation.GoodsReceiptLineID(); ok {
+		_spec.SetField(inventorylot.FieldGoodsReceiptLineID, field.TypeUUID, value)
+		_node.GoodsReceiptLineID = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(inventorylot.FieldCreatedAt, field.TypeTime, value)
@@ -603,6 +664,54 @@ func (u *InventoryLotUpsert) ClearSupplierReference() *InventoryLotUpsert {
 	return u
 }
 
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (u *InventoryLotUpsert) SetIsCostLayer(v bool) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldIsCostLayer, v)
+	return u
+}
+
+// UpdateIsCostLayer sets the "is_cost_layer" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateIsCostLayer() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldIsCostLayer)
+	return u
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventoryLotUpsert) SetReceivedAt(v time.Time) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldReceivedAt, v)
+	return u
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateReceivedAt() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldReceivedAt)
+	return u
+}
+
+// ClearReceivedAt clears the value of the "received_at" field.
+func (u *InventoryLotUpsert) ClearReceivedAt() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldReceivedAt)
+	return u
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsert) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotUpsert {
+	u.Set(inventorylot.FieldGoodsReceiptLineID, v)
+	return u
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventoryLotUpsert) UpdateGoodsReceiptLineID() *InventoryLotUpsert {
+	u.SetExcluded(inventorylot.FieldGoodsReceiptLineID)
+	return u
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsert) ClearGoodsReceiptLineID() *InventoryLotUpsert {
+	u.SetNull(inventorylot.FieldGoodsReceiptLineID)
+	return u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (u *InventoryLotUpsert) SetUpdatedAt(v time.Time) *InventoryLotUpsert {
 	u.Set(inventorylot.FieldUpdatedAt, v)
@@ -845,6 +954,62 @@ func (u *InventoryLotUpsertOne) UpdateSupplierReference() *InventoryLotUpsertOne
 func (u *InventoryLotUpsertOne) ClearSupplierReference() *InventoryLotUpsertOne {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.ClearSupplierReference()
+	})
+}
+
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (u *InventoryLotUpsertOne) SetIsCostLayer(v bool) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetIsCostLayer(v)
+	})
+}
+
+// UpdateIsCostLayer sets the "is_cost_layer" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateIsCostLayer() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateIsCostLayer()
+	})
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventoryLotUpsertOne) SetReceivedAt(v time.Time) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetReceivedAt(v)
+	})
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateReceivedAt() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateReceivedAt()
+	})
+}
+
+// ClearReceivedAt clears the value of the "received_at" field.
+func (u *InventoryLotUpsertOne) ClearReceivedAt() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearReceivedAt()
+	})
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsertOne) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetGoodsReceiptLineID(v)
+	})
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertOne) UpdateGoodsReceiptLineID() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateGoodsReceiptLineID()
+	})
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsertOne) ClearGoodsReceiptLineID() *InventoryLotUpsertOne {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearGoodsReceiptLineID()
 	})
 }
 
@@ -1259,6 +1424,62 @@ func (u *InventoryLotUpsertBulk) UpdateSupplierReference() *InventoryLotUpsertBu
 func (u *InventoryLotUpsertBulk) ClearSupplierReference() *InventoryLotUpsertBulk {
 	return u.Update(func(s *InventoryLotUpsert) {
 		s.ClearSupplierReference()
+	})
+}
+
+// SetIsCostLayer sets the "is_cost_layer" field.
+func (u *InventoryLotUpsertBulk) SetIsCostLayer(v bool) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetIsCostLayer(v)
+	})
+}
+
+// UpdateIsCostLayer sets the "is_cost_layer" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateIsCostLayer() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateIsCostLayer()
+	})
+}
+
+// SetReceivedAt sets the "received_at" field.
+func (u *InventoryLotUpsertBulk) SetReceivedAt(v time.Time) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetReceivedAt(v)
+	})
+}
+
+// UpdateReceivedAt sets the "received_at" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateReceivedAt() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateReceivedAt()
+	})
+}
+
+// ClearReceivedAt clears the value of the "received_at" field.
+func (u *InventoryLotUpsertBulk) ClearReceivedAt() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearReceivedAt()
+	})
+}
+
+// SetGoodsReceiptLineID sets the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsertBulk) SetGoodsReceiptLineID(v uuid.UUID) *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.SetGoodsReceiptLineID(v)
+	})
+}
+
+// UpdateGoodsReceiptLineID sets the "goods_receipt_line_id" field to the value that was provided on create.
+func (u *InventoryLotUpsertBulk) UpdateGoodsReceiptLineID() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.UpdateGoodsReceiptLineID()
+	})
+}
+
+// ClearGoodsReceiptLineID clears the value of the "goods_receipt_line_id" field.
+func (u *InventoryLotUpsertBulk) ClearGoodsReceiptLineID() *InventoryLotUpsertBulk {
+	return u.Update(func(s *InventoryLotUpsert) {
+		s.ClearGoodsReceiptLineID()
 	})
 }
 

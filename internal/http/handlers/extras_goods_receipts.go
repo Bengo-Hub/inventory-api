@@ -14,7 +14,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/Bengo-Hub/pagination"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entgrl "github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
@@ -25,7 +27,20 @@ import (
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
+
+// actorFromContext resolves the acting user from the request's auth claims for audit entries
+// written from a plain context.Context (no *http.Request in scope), falling back to uuid.Nil
+// for S2S/system-initiated calls.
+func actorFromContext(ctx context.Context) uuid.UUID {
+	if claims, ok := authclient.ClaimsFromContext(ctx); ok {
+		if id, err := claims.UserID(); err == nil {
+			return id
+		}
+	}
+	return uuid.Nil
+}
 
 // ─── Goods Receipt Notes (GRN) + 3-way match (procurement) ──────────────────
 // A GRN records the physical receipt of goods against a PO. Posting a GRN moves
@@ -48,6 +63,13 @@ type grnLinePayload struct {
 	// InventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.
 	LotNumber  string     `json:"lot_number,omitempty"`
 	ExpiryDate *time.Time `json:"expiry_date,omitempty"`
+	// NewSellingPrice + PriceScope let the merchant adjust the customer-facing price for this
+	// item alongside the receipt's cost. Applied at post time (see postGoodsReceiptCore):
+	// "all_stock" (default) applies immediately and everywhere; "new_stock_only" queues it via
+	// PendingPriceChange so stock already on hand keeps selling at its current price until it's
+	// sold through.
+	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
+	PriceScope      string   `json:"price_scope,omitempty"`
 }
 
 type grnPayload struct {
@@ -72,6 +94,8 @@ type grnLineDTO struct {
 	RejectionReason  string   `json:"rejection_reason"`
 	Serials          []string `json:"serials,omitempty"`
 	LotNumber        string   `json:"lot_number,omitempty"`
+	NewSellingPrice  *float64 `json:"new_selling_price,omitempty"`
+	PriceScope       string   `json:"price_scope,omitempty"`
 }
 
 type grnDTO struct {
@@ -98,6 +122,7 @@ func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 			QuantityReceived: l.QuantityReceived, QuantityAccepted: l.QuantityAccepted,
 			QuantityRejected: l.QuantityRejected, UnitCost: l.UnitCost, RejectionReason: l.RejectionReason,
 			Serials: l.Serials, LotNumber: l.LotNumber,
+			NewSellingPrice: l.NewSellingPrice, PriceScope: l.PriceScope,
 		})
 	}
 	return dto
@@ -141,7 +166,9 @@ func (h *InventoryExtrasHandler) registerGoodsReceiptRoutes(r chi.Router, perm f
 	r.Get("/inventory/goods-receipts", h.ListGoodsReceipts)
 	r.Get("/inventory/goods-receipts/{grnID}", h.GetGoodsReceipt)
 	r.With(perm(add)).Post("/inventory/purchase-orders/{poID}/goods-receipts", h.CreateGoodsReceipt)
-	r.With(perm(change)).Post("/inventory/goods-receipts/{grnID}/post", h.PostGoodsReceipt)
+	// Idempotency-Key guarded: a retried post (flaky connection, terminal replay) must not
+	// double-create cost layers or double-advance the PO.
+	r.With(perm(change), invmiddleware.Idempotency(h.orm)).Post("/inventory/goods-receipts/{grnID}/post", h.PostGoodsReceipt)
 	r.Get("/inventory/purchase-orders/{poID}/match", h.MatchPurchaseOrder)
 }
 
@@ -344,6 +371,12 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 			SetQuantityReceived(l.QuantityReceived).SetQuantityAccepted(accepted).
 			SetQuantityRejected(l.QuantityRejected).SetUnitCost(l.UnitCost).SetRejectionReason(l.RejectionReason).
 			SetSerials(serials).SetLotNumber(strings.TrimSpace(l.LotNumber)).SetNillableExpiryDate(l.ExpiryDate)
+		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
+			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
+		}
+		if scope := strings.TrimSpace(l.PriceScope); scope != "" {
+			lc = lc.SetPriceScope(scope)
+		}
 		if l.PurchaseOrderLineID != nil {
 			lc = lc.SetPurchaseOrderLineID(*l.PurchaseOrderLineID)
 		}
@@ -472,23 +505,40 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	if err != nil {
 		return false, err
 	}
+	// Items that received real cost this GRN — recompute their standard cost once each, after
+	// every line's layer is in place, rather than per-line (a GRN can carry several lines for
+	// the same item).
+	costRecomputeItems := make(map[uuid.UUID]struct{})
+	// Selling-price changes captured on a line with price_scope=all_stock — applied after
+	// commit (SetSellingPriceByItemID does its own writes, outside this transaction).
+	immediatePriceChanges := make(map[uuid.UUID]float64)
+	actor := actorFromContext(ctx)
 	for _, l := range grnLines {
 		if err = h.applyStockIn(ctx, tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
 			_ = tx.Rollback()
 			return false, err
 		}
-		// Create a FIFO/FEFO lot layer for lot-tracked / perishable items (or when a lot number
-		// was captured), so consumeLots has procurement layers + costing. Expiry seeds from the
-		// line, else from the item's shelf_life_days.
-		if info := lotInfo[l.ItemID]; (info.track || strings.TrimSpace(l.LotNumber) != "") && l.QuantityAccepted > 0 {
+		// Create a cost layer for EVERY accepted line, not just lot-tracked/perishable items —
+		// this is what lets a purchase at a new price adjust the cost of the NEW stock without
+		// retroactively touching stock already on hand: consumeLots/valuation read each layer's
+		// own cost_price, never a single mutable Item.cost_price. Real lot-tracked/perishable
+		// items (or an explicit lot number) get a consumer-visible lot; everything else gets an
+		// internal is_cost_layer row — same table, hidden from the Lots UI/labels/expiry alerts.
+		if l.QuantityAccepted > 0 {
+			info := lotInfo[l.ItemID]
+			isRealLot := info.track || strings.TrimSpace(l.LotNumber) != ""
 			lotNo := strings.TrimSpace(l.LotNumber)
 			if lotNo == "" {
 				lotNo = g.GrnNumber + "-" + l.ItemID.String()[:8]
 			}
+			lineID := l.ID
 			lc := tx.InventoryLot.Create().
 				SetTenantID(tenantID).SetItemID(l.ItemID).SetWarehouseID(warehouseID).
 				SetLotNumber(lotNo).SetQuantity(l.QuantityAccepted).SetStatus("active").
-				SetSupplierReference(g.GrnNumber)
+				SetSupplierReference(g.GrnNumber).
+				SetIsCostLayer(!isRealLot).
+				SetReceivedAt(g.ReceivedDate).
+				SetGoodsReceiptLineID(lineID)
 			if l.UnitCost > 0 {
 				lc = lc.SetCostPrice(l.UnitCost)
 			}
@@ -498,7 +548,38 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 				lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *info.shelf))
 			}
 			if _, e := lc.Save(ctx); e != nil {
-				h.log.Warn("create inventory lot on GRN failed", zap.String("lot", lotNo), zap.Error(e))
+				if ent.IsConstraintError(e) {
+					// Idempotent re-post: a layer for this GRN line (or this lot number) already
+					// exists — not a new accounting fact, safe to skip.
+					h.log.Info("cost layer already recorded for this receipt line, skipping",
+						zap.String("lot", lotNo), zap.String("goods_receipt_line_id", lineID.String()))
+				} else {
+					// Anything else means the actual cost paid for this stock was NOT recorded —
+					// that's an accounting hole, not a warning to log and move past.
+					_ = tx.Rollback()
+					return false, fmt.Errorf("goods receipt: create cost layer for line %s: %w", lineID, e)
+				}
+			} else if l.UnitCost > 0 {
+				costRecomputeItems[l.ItemID] = struct{}{}
+			}
+			// Selling-price change captured alongside this line's cost. "new_stock_only" is
+			// queued right here, in the same transaction as the layer that defines what "old
+			// stock" means (trigger_before = this receipt's received_date) — old stock keeps
+			// selling at its current price until every layer older than this receipt is gone.
+			// "all_stock" (default) is collected and applied once the receipt itself is safely
+			// committed.
+			if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
+				reason := "goods receipt " + g.GrnNumber
+				if l.PriceScope == "new_stock_only" {
+					if h.itemsSvc != nil {
+						if e := h.itemsSvc.SchedulePendingPriceChange(ctx, tx, tenantID, l.ItemID, *l.NewSellingPrice, g.ReceivedDate, reason, actor, &lineID); e != nil {
+							h.log.Warn("schedule pending price change failed",
+								zap.String("item_id", l.ItemID.String()), zap.Error(e))
+						}
+					}
+				} else {
+					immediatePriceChanges[l.ItemID] = *l.NewSellingPrice
+				}
 			}
 		}
 		// Register each captured serial as an available unit. Idempotent on re-post via the
@@ -523,8 +604,57 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		_ = tx.Rollback()
 		return false, err
 	}
+
+	// Recompute each received item's STANDARD cost (the pre-fill/estimate default) from its
+	// active cost layers — safe to do unconditionally now, since nothing downstream reads
+	// Item.cost_price for the value of stock already on hand. Best-effort per item: a failure
+	// here must not roll back the stock-in that already happened.
+	costChanges := make(map[uuid.UUID]*stock.CostChange, len(costRecomputeItems))
+	if h.stockSvc != nil {
+		for itemID := range costRecomputeItems {
+			cc, ccErr := h.stockSvc.RecomputeStandardCost(ctx, tx, tenantID, itemID, "goods_receipt")
+			if ccErr != nil {
+				h.log.Warn("recompute standard cost failed", zap.String("item_id", itemID.String()), zap.Error(ccErr))
+				continue
+			}
+			costChanges[itemID] = cc
+		}
+	}
+
 	if err = tx.Commit(); err != nil {
 		return false, err
+	}
+
+	if h.auditSvc != nil {
+		for _, l := range grnLines {
+			cc, ok := costChanges[l.ItemID]
+			if !ok || !cc.Changed {
+				continue
+			}
+			h.auditSvc.Record(ctx, audit.Entry{
+				TenantID:    tenantID,
+				OutletID:    &warehouseID,
+				ActorUserID: actorFromContext(ctx),
+				Action:      "goods_receipt.cost_captured",
+				EntityType:  "goods_receipt_line",
+				EntityID:    l.ID.String(),
+				Reason:      "goods receipt " + g.GrnNumber,
+				Before:      map[string]any{"sku": cc.SKU, "standard_cost": cc.PreviousCost},
+				After:       map[string]any{"sku": cc.SKU, "standard_cost": cc.NewCost, "received_unit_cost": l.UnitCost},
+			})
+		}
+	}
+
+	// Apply "all_stock"-scoped selling-price changes now that the receipt itself is safely
+	// committed — this is the default behavior: a price adjusted on a new purchase applies to
+	// everything, immediately, exactly like changing the price from the item screen.
+	if h.itemsSvc != nil {
+		for itemID, price := range immediatePriceChanges {
+			if _, e := h.itemsSvc.SetSellingPriceByItemID(ctx, tenantID, itemID, price, "all_stock"); e != nil {
+				h.log.Warn("apply all-stock price change from goods receipt failed",
+					zap.String("item_id", itemID.String()), zap.Error(e))
+			}
+		}
 	}
 
 	// Recompute PO status from line receipts (fully vs partially received).

@@ -181,16 +181,28 @@ func (h *InventoryExtrasHandler) CheckDrugInteractions(w http.ResponseWriter, r 
 			flags[strings.ToLower(strings.TrimSpace(f))] = f
 		}
 		for _, it := range items {
-			if it.DrugClass == "" {
+			// Match against drug_class, active_ingredient, AND generic_name — a patient's
+			// declared allergy is rarely the drug class (e.g. "penicillin" is an active
+			// ingredient/generic name, not the class "antibiotic"), so checking drug_class
+			// alone under-detects real allergy conflicts.
+			var matchedFlag string
+			for _, candidate := range [...]string{it.DrugClass, it.ActiveIngredient, it.GenericName} {
+				if candidate == "" {
+					continue
+				}
+				if orig, ok := flags[strings.ToLower(candidate)]; ok {
+					matchedFlag = orig
+					break
+				}
+			}
+			if matchedFlag == "" {
 				continue
 			}
-			if orig, ok := flags[strings.ToLower(it.DrugClass)]; ok {
-				allergyMatches = append(allergyMatches, allergyMatch{
-					SKU:              it.Sku,
-					ActiveIngredient: it.ActiveIngredient,
-					AllergyFlag:      orig,
-				})
-			}
+			allergyMatches = append(allergyMatches, allergyMatch{
+				SKU:              it.Sku,
+				ActiveIngredient: it.ActiveIngredient,
+				AllergyFlag:      matchedFlag,
+			})
 		}
 	}
 

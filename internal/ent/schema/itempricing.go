@@ -40,10 +40,17 @@ func (ItemPricing) Fields() []ent.Field {
 // Indexes of the ItemPricing.
 func (ItemPricing) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("tenant_id", "item_id", "pricing_tier_id", "outlet_id").Unique(),
+		// Includes effective_from (not just tenant/item/tier/outlet) so a real price HISTORY can
+		// accumulate: closing out the old row (is_active=false, effective_to=now) and inserting a
+		// new one at a fresh effective_from is how a selling-price change is recorded from here on,
+		// rather than overwriting the row in place and losing what it used to be. A superset of the
+		// previous (tenant_id,item_id,pricing_tier_id,outlet_id) index, so it can only be a weaker
+		// constraint than before — safe against any data that already satisfied it.
+		index.Fields("tenant_id", "item_id", "pricing_tier_id", "outlet_id", "effective_from").Unique(),
 		index.Fields("item_id"),
 		index.Fields("outlet_id"),
 		index.Fields("pricing_tier_id"),
 		index.Fields("is_active"),
+		index.Fields("tenant_id", "item_id", "pricing_tier_id", "outlet_id", "is_active"),
 	}
 }

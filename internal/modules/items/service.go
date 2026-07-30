@@ -15,7 +15,9 @@ import (
 
 	entdialect "entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -194,6 +196,14 @@ type ItemDTO struct {
 	// Item-attribute fields (retail / pharmacy)
 	Manufacturer string `json:"manufacturer,omitempty"` // retail/pharmacy
 	Model        string `json:"model,omitempty"`        // retail only
+	// Drug-master fields (pharmacy) — surfaced so the POS prescription drug picker can
+	// auto-fill dosage/form from the catalog instead of requiring manual re-entry.
+	GenericName                 string `json:"generic_name,omitempty"`
+	ActiveIngredient            string `json:"active_ingredient,omitempty"`
+	DosageForm                  string `json:"dosage_form,omitempty"` // e.g. Tablet, Capsule, Syrup
+	Strength                    string `json:"strength,omitempty"`    // e.g. 500mg
+	DrugClass                   string `json:"drug_class,omitempty"`
+	ControlledSubstanceSchedule string `json:"controlled_substance_schedule,omitempty"`
 	// E-commerce / online-store attributes
 	GTIN             string `json:"gtin,omitempty"`              // GTIN-8/12/13/14 for marketplace feeds
 	MPN              string `json:"mpn,omitempty"`               // manufacturer part number
@@ -399,6 +409,7 @@ type Service struct {
 	mediaURLBase string      // public base URL for resolving relative /media/ paths
 	mediaRoot    string      // filesystem root for persisting uploaded item images (MEDIA_ROOT)
 	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
+	auditSvc     *audit.Service
 }
 
 // NewService creates a new items service.
@@ -432,6 +443,24 @@ func (s *Service) SetCache(c *sharedcache.Aside) {
 // SetTaxResolver injects the treasury-api tax-rate resolver (optional).
 func (s *Service) SetTaxResolver(r TaxResolver) {
 	s.taxResolver = r
+}
+
+// SetAuditService injects the centralized audit trail (optional) for standard-cost and
+// selling-price changes made through this service.
+func (s *Service) SetAuditService(a *audit.Service) {
+	s.auditSvc = a
+}
+
+// actorFromContext resolves the acting user from the request's auth claims, falling back to
+// uuid.Nil for S2S/system-initiated calls (bulk import, event-driven upserts) where there is no
+// human actor — the audit row is still written, just without an attributable user.
+func actorFromContext(ctx context.Context) uuid.UUID {
+	if claims, ok := authclient.ClaimsFromContext(ctx); ok {
+		if id, err := claims.UserID(); err == nil {
+			return id
+		}
+	}
+	return uuid.Nil
 }
 
 // GetStockAvailability returns stock availability for a single item by SKU.
@@ -781,79 +810,85 @@ func boolPtr(b bool) *bool { return &b }
 
 func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 	dto := &ItemDTO{
-		ID:                      i.ID,
-		SKU:                     i.Sku,
-		Name:                    i.Name,
-		Description:             i.Description,
-		CategoryID:              i.CategoryID,
-		PreferredSupplierID:     i.PreferredSupplierID,
-		BrandID:                 i.BrandID,
-		UnitID:                  i.UnitID,
-		Type:                    string(i.Type),
-		IsActive:                i.IsActive,
-		Manufacturer:            i.Manufacturer,
-		Model:                   i.Model,
-		GTIN:                    i.Gtin,
-		MPN:                     i.Mpn,
-		Condition:               string(i.Condition),
-		Slug:                    i.Slug,
-		ShortDescription:        i.ShortDescription,
-		MetaTitle:               i.MetaTitle,
-		MetaDescription:         i.MetaDescription,
-		CountryOfOrigin:         i.CountryOfOrigin,
-		HSCode:                  i.HsCode,
-		IsReturnable:            boolPtr(i.IsReturnable),
-		NonBillable:             boolPtr(i.NonBillable),
-		NotForSale:              boolPtr(i.NotForSale),
-		UsableInRecipes:         boolPtr(i.UsableInRecipes),
-		ReturnWindowDays:        i.ReturnWindowDays,
-		AllowBackorder:          boolPtr(i.AllowBackorder),
-		IsDiscontinued:          boolPtr(i.IsDiscontinued),
-		EndOfLifeAt:             i.EndOfLifeAt,
-		ImageURL:                s.resolveMediaURL(i.ImageURL),
-		Tags:                    i.Tags,
-		Metadata:                i.Metadata,
-		Barcode:                 i.Barcode,
-		BarcodeType:             i.BarcodeType,
-		RequiresAgeVerification: i.RequiresAgeVerification,
-		IsControlledSubstance:   i.IsControlledSubstance,
-		IsPerishable:            i.IsPerishable,
-		TrackLots:               i.TrackLots,
-		TrackSerialNumbers:      i.TrackSerialNumbers,
-		ShelfLifeDays:           i.ShelfLifeDays,
-		WeightKg:                i.WeightKg,
-		DimensionsCm:            i.DimensionsCm,
-		DurationMinutes:         i.DurationMinutes,
-		CostPrice:               i.CostPrice,
-		PurchasePrice:           i.PurchasePrice,
-		PurchasePackSize:        i.PurchasePackSize,
-		PurchaseUnit:            i.PurchaseUnit,
-		YieldPct:                i.YieldPct,
-		UnitContentQty:          i.UnitContentQty,
-		UnitContentUOM:          i.UnitContentUom,
-		StockTrackingMode:       string(i.StockTrackingMode),
-		MinSellingPrice:         i.MinSellingPrice,
-		MaxSellingPrice:         i.MaxSellingPrice,
-		TargetMarginPercent:     i.TargetMarginPercent,
-		TaxCodeID:               i.TaxCodeID,
-		TaxInclusive:            i.TaxInclusive,
-		EtimsItemClsCd:          derefStr(i.EtimsItemClsCd),
-		EtimsPkgUnitCd:          derefStr(i.EtimsPkgUnitCd),
-		EtimsQtyUnitCd:          derefStr(i.EtimsQtyUnitCd),
-		TotalCapacity:           i.TotalCapacity,
-		BookedCapacity:          i.BookedCapacity,
-		EventStartAt:            i.EventStartAt,
-		EventEndAt:              i.EventEndAt,
-		EventVenue:              i.EventVenue,
-		UseCase:                 string(i.UseCase),
-		MealPlan:                enumPtrToStr(i.MealPlan),
-		OccupancyBasis:          enumPtrToStr(i.OccupancyBasis),
-		MaxAdults:               i.MaxAdults,
-		MaxChildren:             i.MaxChildren,
-		ExtraBedAllowed:         i.ExtraBedAllowed,
-		SingleSupplement:        i.SingleSupplement,
-		CreatedAt:               i.CreatedAt,
-		UpdatedAt:               i.UpdatedAt,
+		ID:                          i.ID,
+		SKU:                         i.Sku,
+		Name:                        i.Name,
+		Description:                 i.Description,
+		CategoryID:                  i.CategoryID,
+		PreferredSupplierID:         i.PreferredSupplierID,
+		BrandID:                     i.BrandID,
+		UnitID:                      i.UnitID,
+		Type:                        string(i.Type),
+		IsActive:                    i.IsActive,
+		Manufacturer:                i.Manufacturer,
+		Model:                       i.Model,
+		GenericName:                 i.GenericName,
+		ActiveIngredient:            i.ActiveIngredient,
+		DosageForm:                  i.DosageForm,
+		Strength:                    i.Strength,
+		DrugClass:                   i.DrugClass,
+		ControlledSubstanceSchedule: string(i.ControlledSubstanceSchedule),
+		GTIN:                        i.Gtin,
+		MPN:                         i.Mpn,
+		Condition:                   string(i.Condition),
+		Slug:                        i.Slug,
+		ShortDescription:            i.ShortDescription,
+		MetaTitle:                   i.MetaTitle,
+		MetaDescription:             i.MetaDescription,
+		CountryOfOrigin:             i.CountryOfOrigin,
+		HSCode:                      i.HsCode,
+		IsReturnable:                boolPtr(i.IsReturnable),
+		NonBillable:                 boolPtr(i.NonBillable),
+		NotForSale:                  boolPtr(i.NotForSale),
+		UsableInRecipes:             boolPtr(i.UsableInRecipes),
+		ReturnWindowDays:            i.ReturnWindowDays,
+		AllowBackorder:              boolPtr(i.AllowBackorder),
+		IsDiscontinued:              boolPtr(i.IsDiscontinued),
+		EndOfLifeAt:                 i.EndOfLifeAt,
+		ImageURL:                    s.resolveMediaURL(i.ImageURL),
+		Tags:                        i.Tags,
+		Metadata:                    i.Metadata,
+		Barcode:                     i.Barcode,
+		BarcodeType:                 i.BarcodeType,
+		RequiresAgeVerification:     i.RequiresAgeVerification,
+		IsControlledSubstance:       i.IsControlledSubstance,
+		IsPerishable:                i.IsPerishable,
+		TrackLots:                   i.TrackLots,
+		TrackSerialNumbers:          i.TrackSerialNumbers,
+		ShelfLifeDays:               i.ShelfLifeDays,
+		WeightKg:                    i.WeightKg,
+		DimensionsCm:                i.DimensionsCm,
+		DurationMinutes:             i.DurationMinutes,
+		CostPrice:                   i.CostPrice,
+		PurchasePrice:               i.PurchasePrice,
+		PurchasePackSize:            i.PurchasePackSize,
+		PurchaseUnit:                i.PurchaseUnit,
+		YieldPct:                    i.YieldPct,
+		UnitContentQty:              i.UnitContentQty,
+		UnitContentUOM:              i.UnitContentUom,
+		StockTrackingMode:           string(i.StockTrackingMode),
+		MinSellingPrice:             i.MinSellingPrice,
+		MaxSellingPrice:             i.MaxSellingPrice,
+		TargetMarginPercent:         i.TargetMarginPercent,
+		TaxCodeID:                   i.TaxCodeID,
+		TaxInclusive:                i.TaxInclusive,
+		EtimsItemClsCd:              derefStr(i.EtimsItemClsCd),
+		EtimsPkgUnitCd:              derefStr(i.EtimsPkgUnitCd),
+		EtimsQtyUnitCd:              derefStr(i.EtimsQtyUnitCd),
+		TotalCapacity:               i.TotalCapacity,
+		BookedCapacity:              i.BookedCapacity,
+		EventStartAt:                i.EventStartAt,
+		EventEndAt:                  i.EventEndAt,
+		EventVenue:                  i.EventVenue,
+		UseCase:                     string(i.UseCase),
+		MealPlan:                    enumPtrToStr(i.MealPlan),
+		OccupancyBasis:              enumPtrToStr(i.OccupancyBasis),
+		MaxAdults:                   i.MaxAdults,
+		MaxChildren:                 i.MaxChildren,
+		ExtraBedAllowed:             i.ExtraBedAllowed,
+		SingleSupplement:            i.SingleSupplement,
+		CreatedAt:                   i.CreatedAt,
+		UpdatedAt:                   i.UpdatedAt,
 	}
 	// Surface the preferred supplier's display name when the edge has been eager-loaded.
 	if sup, err := i.Edges.PreferredSupplierOrErr(); err == nil && sup != nil {
@@ -2012,6 +2047,24 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	if dto.Model != "" {
 		createBuilder = createBuilder.SetModel(dto.Model)
 	}
+	if dto.GenericName != "" {
+		createBuilder = createBuilder.SetGenericName(dto.GenericName)
+	}
+	if dto.ActiveIngredient != "" {
+		createBuilder = createBuilder.SetActiveIngredient(dto.ActiveIngredient)
+	}
+	if dto.DosageForm != "" {
+		createBuilder = createBuilder.SetDosageForm(dto.DosageForm)
+	}
+	if dto.Strength != "" {
+		createBuilder = createBuilder.SetStrength(dto.Strength)
+	}
+	if dto.DrugClass != "" {
+		createBuilder = createBuilder.SetDrugClass(dto.DrugClass)
+	}
+	if dto.ControlledSubstanceSchedule != "" {
+		createBuilder = createBuilder.SetControlledSubstanceSchedule(item.ControlledSubstanceSchedule(dto.ControlledSubstanceSchedule))
+	}
 	// E-commerce attributes (optional). is_returnable/allow_backorder/is_discontinued and
 	// non_billable are all pointers: set only when the client sent them, so an omitted flag
 	// falls through to the ent schema default (e.g. is_returnable defaults true) instead of
@@ -2348,6 +2401,16 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	// Auto-compute EP cost from purchase fields if not explicitly provided.
 	resolveEPCost(&dto)
 
+	// Capture the pre-update standard cost so a real change can be audited below. Best-effort:
+	// a lookup failure just means no before/after audit row, never a blocked update.
+	var prevCostPrice *float64
+	if prevItm, pErr := tx.Item.Query().
+		Where(item.TenantID(tenantID), item.ID(id)).
+		Select(item.FieldCostPrice).
+		Only(ctx); pErr == nil {
+		prevCostPrice = prevItm.CostPrice
+	}
+
 	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).
 		SetName(dto.Name).
@@ -2378,6 +2441,24 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		SetManufacturer(dto.Manufacturer).
 		SetModel(dto.Model).
 		SetTaxInclusive(dto.TaxInclusive)
+	if dto.GenericName != "" {
+		updateBuilder = updateBuilder.SetGenericName(dto.GenericName)
+	}
+	if dto.ActiveIngredient != "" {
+		updateBuilder = updateBuilder.SetActiveIngredient(dto.ActiveIngredient)
+	}
+	if dto.DosageForm != "" {
+		updateBuilder = updateBuilder.SetDosageForm(dto.DosageForm)
+	}
+	if dto.Strength != "" {
+		updateBuilder = updateBuilder.SetStrength(dto.Strength)
+	}
+	if dto.DrugClass != "" {
+		updateBuilder = updateBuilder.SetDrugClass(dto.DrugClass)
+	}
+	if dto.ControlledSubstanceSchedule != "" {
+		updateBuilder = updateBuilder.SetControlledSubstanceSchedule(item.ControlledSubstanceSchedule(dto.ControlledSubstanceSchedule))
+	}
 	// Preferred supplier: a non-nil, non-zero UUID assigns it; the zero UUID explicitly
 	// unassigns (clears) it. nil leaves the existing value untouched (partial update).
 	if dto.PreferredSupplierID != nil {
@@ -2644,11 +2725,35 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: commit transaction: %w", err)
 	}
 
+	// Audit a real standard-cost change. This is the "default/pre-fill" cost only — it never
+	// touches the value of stock already on hand (see InventoryLot cost layers) — but every
+	// change to it should still be attributable and reviewable.
+	if s.auditSvc != nil && !floatPtrEqual(prevCostPrice, i.CostPrice) {
+		s.auditSvc.Record(ctx, audit.Entry{
+			TenantID:    tenantID,
+			ActorUserID: actorFromContext(ctx),
+			Action:      "item.standard_cost_changed",
+			EntityType:  "item",
+			EntityID:    i.ID.String(),
+			Before:      map[string]any{"sku": i.Sku, "cost_price": prevCostPrice},
+			After:       map[string]any{"sku": i.Sku, "cost_price": i.CostPrice},
+		})
+	}
+
 	// Keep the Retail/Wholesale tier prices in step with edited guardrails (Retail=max,
 	// Wholesale=min) so an edit that sets/raises the selling price is reflected on the POS.
 	s.applyGuardrailTierPrices(ctx, tenantID, i.ID, dto)
 
 	return s.mapToDTO(i), nil
+}
+
+// floatPtrEqual reports whether two optional float values are equal, treating nil as distinct
+// from any concrete value (including 0).
+func floatPtrEqual(a, b *float64) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 // EtimsRegistration carries the KRA-assigned eTIMS codes minted by treasury-api when an item is

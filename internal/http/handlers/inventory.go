@@ -231,8 +231,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/items/{sku}", h.GetStockAvailability)
 		inv.With(perm(rbac.PermItemsChange)).Put("/items/{sku}", h.UpdateItem)
 		// Targeted price correction (guardrails + tier rows + recipe selling price) —
-		// called S2S by pos-api's "also update the catalog price" order-line edit.
-		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/price", h.SetItemPrice)
+		// called S2S by pos-api's "also update the catalog price" order-line edit. Idempotency-
+		// Key guarded: a retried request must not double-apply a price change.
+		inv.With(perm(rbac.PermItemsChange), invmiddleware.Idempotency(h.orm)).Patch("/items/{sku}/price", h.SetItemPrice)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		// Bulk multi-select actions (DataTable): delete keeps the delete permission,
 		// status changes (activate/deactivate/not-for-sale) need items.change.

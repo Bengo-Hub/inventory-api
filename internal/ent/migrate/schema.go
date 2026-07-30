@@ -1067,6 +1067,8 @@ var (
 		{Name: "serials", Type: field.TypeJSON, Nullable: true},
 		{Name: "lot_number", Type: field.TypeString, Nullable: true},
 		{Name: "expiry_date", Type: field.TypeTime, Nullable: true},
+		{Name: "new_selling_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "price_scope", Type: field.TypeString, Nullable: true, Default: "all_stock"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "goods_receipt_id", Type: field.TypeUUID},
 	}
@@ -1078,7 +1080,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goods_receipt_lines_goods_receipts_lines",
-				Columns:    []*schema.Column{GoodsReceiptLinesColumns[13]},
+				Columns:    []*schema.Column{GoodsReceiptLinesColumns[15]},
 				RefColumns: []*schema.Column{GoodsReceiptsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1087,12 +1089,42 @@ var (
 			{
 				Name:    "goodsreceiptline_tenant_id_goods_receipt_id",
 				Unique:  false,
-				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[13]},
+				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[15]},
 			},
 			{
 				Name:    "goodsreceiptline_item_id",
 				Unique:  false,
 				Columns: []*schema.Column{GoodsReceiptLinesColumns[3]},
+			},
+		},
+	}
+	// IdempotencyKeysColumns holds the columns for the "idempotency_keys" table.
+	IdempotencyKeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "key", Type: field.TypeString},
+		{Name: "endpoint", Type: field.TypeString, Default: ""},
+		{Name: "status", Type: field.TypeString, Default: "in_flight"},
+		{Name: "response_code", Type: field.TypeInt, Default: 0},
+		{Name: "response_body", Type: field.TypeBytes, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "expires_at", Type: field.TypeTime},
+	}
+	// IdempotencyKeysTable holds the schema information for the "idempotency_keys" table.
+	IdempotencyKeysTable = &schema.Table{
+		Name:       "idempotency_keys",
+		Columns:    IdempotencyKeysColumns,
+		PrimaryKey: []*schema.Column{IdempotencyKeysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idempotencykey_tenant_id_key",
+				Unique:  true,
+				Columns: []*schema.Column{IdempotencyKeysColumns[1], IdempotencyKeysColumns[2]},
+			},
+			{
+				Name:    "idempotencykey_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{IdempotencyKeysColumns[8]},
 			},
 		},
 	}
@@ -1162,6 +1194,9 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "expired", "recalled", "depleted"}, Default: "active"},
 		{Name: "cost_price", Type: field.TypeFloat64, Nullable: true},
 		{Name: "supplier_reference", Type: field.TypeString, Nullable: true},
+		{Name: "is_cost_layer", Type: field.TypeBool, Default: false},
+		{Name: "received_at", Type: field.TypeTime, Nullable: true},
+		{Name: "goods_receipt_line_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "item_id", Type: field.TypeUUID},
@@ -1175,13 +1210,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "inventory_lots_items_lots",
-				Columns:    []*schema.Column{InventoryLotsColumns[11]},
+				Columns:    []*schema.Column{InventoryLotsColumns[14]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "inventory_lots_warehouses_lots",
-				Columns:    []*schema.Column{InventoryLotsColumns[12]},
+				Columns:    []*schema.Column{InventoryLotsColumns[15]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1190,7 +1225,7 @@ var (
 			{
 				Name:    "inventorylot_tenant_id_item_id_lot_number",
 				Unique:  true,
-				Columns: []*schema.Column{InventoryLotsColumns[1], InventoryLotsColumns[11], InventoryLotsColumns[2]},
+				Columns: []*schema.Column{InventoryLotsColumns[1], InventoryLotsColumns[14], InventoryLotsColumns[2]},
 			},
 			{
 				Name:    "inventorylot_tenant_id_expiry_date",
@@ -1205,7 +1240,17 @@ var (
 			{
 				Name:    "inventorylot_tenant_id_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{InventoryLotsColumns[1], InventoryLotsColumns[11]},
+				Columns: []*schema.Column{InventoryLotsColumns[1], InventoryLotsColumns[14]},
+			},
+			{
+				Name:    "inventorylot_tenant_id_item_id_warehouse_id_status_is_cost_layer",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryLotsColumns[1], InventoryLotsColumns[14], InventoryLotsColumns[15], InventoryLotsColumns[6], InventoryLotsColumns[9]},
+			},
+			{
+				Name:    "inventorylot_goods_receipt_line_id",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryLotsColumns[11]},
 			},
 		},
 	}
@@ -1743,9 +1788,9 @@ var (
 		PrimaryKey: []*schema.Column{ItemPricingsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "itempricing_tenant_id_item_id_pricing_tier_id_outlet_id",
+				Name:    "itempricing_tenant_id_item_id_pricing_tier_id_outlet_id_effective_from",
 				Unique:  true,
-				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4]},
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4], ItemPricingsColumns[8]},
 			},
 			{
 				Name:    "itempricing_item_id",
@@ -1766,6 +1811,11 @@ var (
 				Name:    "itempricing_is_active",
 				Unique:  false,
 				Columns: []*schema.Column{ItemPricingsColumns[10]},
+			},
+			{
+				Name:    "itempricing_tenant_id_item_id_pricing_tier_id_outlet_id_is_active",
+				Unique:  false,
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4], ItemPricingsColumns[10]},
 			},
 		},
 	}
@@ -1990,6 +2040,39 @@ var (
 				Name:    "outboxevent_tenant_id_status",
 				Unique:  false,
 				Columns: []*schema.Column{OutboxEventsColumns[1], OutboxEventsColumns[6]},
+			},
+		},
+	}
+	// PendingPriceChangesColumns holds the columns for the "pending_price_changes" table.
+	PendingPriceChangesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "new_price", Type: field.TypeFloat64},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "trigger_before", Type: field.TypeTime},
+		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "goods_receipt_line_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "applied", "cancelled"}, Default: "pending"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "applied_at", Type: field.TypeTime, Nullable: true},
+	}
+	// PendingPriceChangesTable holds the schema information for the "pending_price_changes" table.
+	PendingPriceChangesTable = &schema.Table{
+		Name:       "pending_price_changes",
+		Columns:    PendingPriceChangesColumns,
+		PrimaryKey: []*schema.Column{PendingPriceChangesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pendingpricechange_tenant_id_item_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{PendingPriceChangesColumns[1], PendingPriceChangesColumns[2], PendingPriceChangesColumns[9]},
+			},
+			{
+				Name:    "pendingpricechange_goods_receipt_line_id",
+				Unique:  false,
+				Columns: []*schema.Column{PendingPriceChangesColumns[8]},
 			},
 		},
 	}
@@ -3731,6 +3814,7 @@ var (
 		FoodCostVariancesTable,
 		GoodsReceiptsTable,
 		GoodsReceiptLinesTable,
+		IdempotencyKeysTable,
 		InventoryBalancesTable,
 		InventoryLotsTable,
 		InventoryPermissionsTable,
@@ -3749,6 +3833,7 @@ var (
 		ModifierGroupsTable,
 		ModifierOptionsTable,
 		OutboxEventsTable,
+		PendingPriceChangesTable,
 		PricingTiersTable,
 		ProductionBatchesTable,
 		PurchaseOrdersTable,

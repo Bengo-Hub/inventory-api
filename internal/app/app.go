@@ -168,7 +168,7 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize RBAC module (DB-backed, replaces in-memory stub)
 	rbacRepo := rbac.NewEntRepository(ormClient)
-	tenantSyncer := tenant.NewSyncer(ormClient, cfg.Auth.ServiceURL)
+	tenantSyncer := tenant.NewSyncer(ormClient, cfg.Auth.ServiceURL).WithDB(sqlDB)
 	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService, rbacRepo)
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
@@ -199,10 +199,13 @@ func New(ctx context.Context) (*App, error) {
 	auditSvc := audit.NewService(ormClient, log)
 	warehouseHandler.SetAuditService(auditSvc)
 	inventoryHandler.SetAuditService(auditSvc)
+	itemsSvc.SetAuditService(auditSvc) // standard-cost / selling-price change audit trail
 	stockCountHandler := handlers.NewStockCountHandler(log, ormClient, stockSvc, rbacService, auditSvc)
 	stockCountHandler.SetApprovalService(approvals.NewService(ormClient))
 	warehouseLocationHandler := handlers.NewWarehouseLocationHandler(log, ormClient, rbacService)
 	pricingTierHandler := handlers.NewPricingTierHandler(log, ormClient, rbacService)
+	pricingTierHandler.SetAuditService(auditSvc)
+	pricingTierHandler.SetItemsService(itemsSvc)
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
@@ -219,6 +222,8 @@ func New(ctx context.Context) (*App, error) {
 	inventoryExtrasHandler.SetDocService(docSvc)
 	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
 	inventoryExtrasHandler.SetStockService(stockSvc)
+	inventoryExtrasHandler.SetAuditService(auditSvc) // goods-receipt cost-capture audit trail
+	inventoryExtrasHandler.SetItemsService(itemsSvc)
 	// Optional automated month-end depreciation (opt-in; depreciation_rate must be a
 	// per-month fraction when enabled — see StartDepreciationScheduler). Off by default;
 	// most tenants run depreciation manually at period close.

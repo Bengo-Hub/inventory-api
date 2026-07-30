@@ -40,6 +40,12 @@ type InventoryLot struct {
 	CostPrice *float64 `json:"cost_price,omitempty"`
 	// Supplier PO or invoice reference
 	SupplierReference string `json:"supplier_reference,omitempty"`
+	// True for a layer auto-created at goods receipt for a non-lot-tracked item purely to preserve the cost actually paid. Hidden from the Lots admin UI, barcode labels, and expiry alerts — it carries no lot number a customer or regulator should ever see.
+	IsCostLayer bool `json:"is_cost_layer,omitempty"`
+	// Actual receipt date, for FIFO/LIFO ordering. Distinct from created_at so a late-entered but earlier-dated receipt still orders correctly.
+	ReceivedAt *time.Time `json:"received_at,omitempty"`
+	// The goods-receipt line that created this layer — provenance, and the idempotency key that prevents a retried GRN post from double-creating a layer.
+	GoodsReceiptLineID *uuid.UUID `json:"goods_receipt_line_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -88,11 +94,15 @@ func (*InventoryLot) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case inventorylot.FieldGoodsReceiptLineID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case inventorylot.FieldIsCostLayer:
+			values[i] = new(sql.NullBool)
 		case inventorylot.FieldQuantity, inventorylot.FieldCostPrice:
 			values[i] = new(sql.NullFloat64)
 		case inventorylot.FieldLotNumber, inventorylot.FieldStatus, inventorylot.FieldSupplierReference:
 			values[i] = new(sql.NullString)
-		case inventorylot.FieldExpiryDate, inventorylot.FieldManufacturedDate, inventorylot.FieldCreatedAt, inventorylot.FieldUpdatedAt:
+		case inventorylot.FieldExpiryDate, inventorylot.FieldManufacturedDate, inventorylot.FieldReceivedAt, inventorylot.FieldCreatedAt, inventorylot.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case inventorylot.FieldID, inventorylot.FieldTenantID, inventorylot.FieldItemID, inventorylot.FieldWarehouseID:
 			values[i] = new(uuid.UUID)
@@ -179,6 +189,26 @@ func (_m *InventoryLot) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field supplier_reference", values[i])
 			} else if value.Valid {
 				_m.SupplierReference = value.String
+			}
+		case inventorylot.FieldIsCostLayer:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_cost_layer", values[i])
+			} else if value.Valid {
+				_m.IsCostLayer = value.Bool
+			}
+		case inventorylot.FieldReceivedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field received_at", values[i])
+			} else if value.Valid {
+				_m.ReceivedAt = new(time.Time)
+				*_m.ReceivedAt = value.Time
+			}
+		case inventorylot.FieldGoodsReceiptLineID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field goods_receipt_line_id", values[i])
+			} else if value.Valid {
+				_m.GoodsReceiptLineID = new(uuid.UUID)
+				*_m.GoodsReceiptLineID = *value.S.(*uuid.UUID)
 			}
 		case inventorylot.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -273,6 +303,19 @@ func (_m *InventoryLot) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("supplier_reference=")
 	builder.WriteString(_m.SupplierReference)
+	builder.WriteString(", ")
+	builder.WriteString("is_cost_layer=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsCostLayer))
+	builder.WriteString(", ")
+	if v := _m.ReceivedAt; v != nil {
+		builder.WriteString("received_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.GoodsReceiptLineID; v != nil {
+		builder.WriteString("goods_receipt_line_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

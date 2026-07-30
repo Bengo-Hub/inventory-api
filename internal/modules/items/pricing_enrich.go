@@ -3,12 +3,17 @@ package items
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
+	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
+	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itempricing"
+	"github.com/bengobox/inventory-service/internal/ent/pendingpricechange"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 )
@@ -190,18 +195,45 @@ func (s *Service) SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, 
 	if err != nil {
 		return nil, fmt.Errorf("items: item %q: %w", sku, err)
 	}
+	return s.setSellingPrice(ctx, tenantID, itm, price, "all_stock")
+}
 
+// SetSellingPriceByItemID is SetSellingPriceBySKU keyed by item ID instead of SKU — for callers
+// (goods-receipt posting, pending-price promotion) that already have the item ID and would
+// otherwise need an extra SKU round-trip. scope is carried onto the audit entry only.
+func (s *Service) SetSellingPriceByItemID(ctx context.Context, tenantID, itemID uuid.UUID, price float64, scope string) (*ItemDTO, error) {
+	if price < 0 {
+		return nil, fmt.Errorf("items: price cannot be negative")
+	}
+	itm, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.ID(itemID)).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("items: item %s: %w", itemID, err)
+	}
+	return s.setSellingPrice(ctx, tenantID, itm, price, scope)
+}
+
+// setSellingPrice is the shared body of SetSellingPriceBySKU/SetSellingPriceByItemID: repoints
+// the item's guardrails + materialized RETAIL/WHOLESALE tier rows to `price`, audits a real
+// change, and returns the updated DTO. scope is carried onto the audit entry only (e.g.
+// "new_stock_only" when called from PromotePendingPriceChanges) — the write itself is always an
+// immediate, everywhere-effective change; scoping the effect to only NEW stock is what
+// PendingPriceChange + PromotePendingPriceChanges exists to defer until it's safe to do this.
+func (s *Service) setSellingPrice(ctx context.Context, tenantID uuid.UUID, itm *ent.Item, price float64, scope string) (*ItemDTO, error) {
 	collapseMin := itm.MinSellingPrice != nil &&
 		(*itm.MinSellingPrice > price ||
 			(itm.MaxSellingPrice != nil && *itm.MinSellingPrice == *itm.MaxSellingPrice))
+
+	prevMaxPrice := itm.MaxSellingPrice
 
 	upd := s.client.Item.UpdateOneID(itm.ID).SetMaxSellingPrice(price)
 	if collapseMin {
 		upd = upd.SetMinSellingPrice(price)
 	}
-	itm, err = upd.Save(ctx)
+	itm, err := upd.Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("items: set selling price for %q: %w", sku, err)
+		return nil, fmt.Errorf("items: set selling price for %q: %w", itm.Sku, err)
 	}
 
 	minP := 0.0
@@ -209,24 +241,146 @@ func (s *Service) SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, 
 		minP = price
 	}
 	if err := s.EnsureGuardrailTierPrices(ctx, tenantID, itm.ID, price, minP); err != nil {
-		return nil, fmt.Errorf("items: upsert tier prices for %q: %w", sku, err)
+		return nil, fmt.Errorf("items: upsert tier prices for %q: %w", itm.Sku, err)
 	}
-	dto := s.mapToDTO(itm)
-	return dto, nil
+
+	if s.auditSvc != nil && !floatPtrEqual(prevMaxPrice, &price) {
+		s.auditSvc.Record(ctx, audit.Entry{
+			TenantID:    tenantID,
+			ActorUserID: actorFromContext(ctx),
+			Action:      "item.selling_price_changed",
+			EntityType:  "item",
+			EntityID:    itm.ID.String(),
+			Before:      map[string]any{"sku": itm.Sku, "price": prevMaxPrice},
+			After:       map[string]any{"sku": itm.Sku, "price": price, "scope": scope},
+		})
+	}
+
+	return s.mapToDTO(itm), nil
+}
+
+// SchedulePendingPriceChange queues a selling-price change that must apply only to stock
+// received from now on — old stock (any active cost layer with received_at before
+// triggerBefore) keeps selling at its current price until it's gone. No batch-priced checkout
+// is needed: promotion is lazy, see PromotePendingPriceChanges. Idempotent per
+// goodsReceiptLineID: re-posting the same GRN line never queues a duplicate row.
+func (s *Service) SchedulePendingPriceChange(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID, newPrice float64, triggerBefore time.Time, reason string, actorID uuid.UUID, goodsReceiptLineID *uuid.UUID) error {
+	if goodsReceiptLineID != nil {
+		exists, err := tx.PendingPriceChange.Query().
+			Where(pendingpricechange.GoodsReceiptLineID(*goodsReceiptLineID)).
+			Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("items: check existing pending price change: %w", err)
+		}
+		if exists {
+			return nil // idempotent re-post — already queued
+		}
+	}
+	create := tx.PendingPriceChange.Create().
+		SetTenantID(tenantID).
+		SetItemID(itemID).
+		SetNewPrice(newPrice).
+		SetTriggerBefore(triggerBefore).
+		SetReason(reason)
+	if actorID != uuid.Nil {
+		create = create.SetCreatedBy(actorID)
+	}
+	if goodsReceiptLineID != nil {
+		create = create.SetGoodsReceiptLineID(*goodsReceiptLineID)
+	}
+	if _, err := create.Save(ctx); err != nil {
+		return fmt.Errorf("items: schedule pending price change: %w", err)
+	}
+
+	if s.auditSvc != nil {
+		sku := ""
+		if itm, iErr := tx.Item.Get(ctx, itemID); iErr == nil {
+			sku = itm.Sku
+		}
+		s.auditSvc.Record(ctx, audit.Entry{
+			TenantID:    tenantID,
+			ActorUserID: actorID,
+			Action:      "item.selling_price_changed",
+			EntityType:  "item",
+			EntityID:    itemID.String(),
+			Reason:      reason,
+			After:       map[string]any{"sku": sku, "pending_price": newPrice, "scope": "new_stock_only", "trigger_before": triggerBefore},
+		})
+	}
+	return nil
+}
+
+// PromotePendingPriceChanges applies any queued "new_stock_only" price changes for the given
+// items whose trigger has fired — every cost layer that existed before the change was requested
+// has depleted, tenant-wide (a single shelf price is shared across every outlet/warehouse, so
+// leftover old stock anywhere means it's not time yet). Cheap no-op when none of the items have
+// a pending row. Best-effort: called from the price-resolution paths (GetItemPrice,
+// ListAllItemPricing) so promotion happens lazily, exactly when it matters, with no scheduler
+// needed; a failure here never blocks price resolution.
+func (s *Service) PromotePendingPriceChanges(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) {
+	if len(itemIDs) == 0 {
+		return
+	}
+	pending, err := s.client.PendingPriceChange.Query().
+		Where(pendingpricechange.TenantID(tenantID), pendingpricechange.ItemIDIn(itemIDs...), pendingpricechange.StatusEQ(pendingpricechange.StatusPending)).
+		All(ctx)
+	if err != nil || len(pending) == 0 {
+		return
+	}
+	for _, pc := range pending {
+		stillOldStock, sErr := s.client.InventoryLot.Query().
+			Where(entlot.TenantID(tenantID), entlot.ItemID(pc.ItemID), entlot.StatusEQ(entlot.StatusActive), entlot.QuantityGT(0), entlot.ReceivedAtLT(pc.TriggerBefore)).
+			Exist(ctx)
+		if sErr != nil || stillOldStock {
+			continue // old stock remains (or the check failed) — not yet time to promote
+		}
+		// Compare-and-swap on (id, status=pending): only the caller that wins this flip
+		// actually applies the price, so a concurrent promotion attempt can't double-apply.
+		n, uErr := s.client.PendingPriceChange.Update().
+			Where(pendingpricechange.ID(pc.ID), pendingpricechange.StatusEQ(pendingpricechange.StatusPending)).
+			SetStatus(pendingpricechange.StatusApplied).
+			SetAppliedAt(time.Now()).
+			Save(ctx)
+		if uErr != nil || n == 0 {
+			continue
+		}
+		if _, err := s.SetSellingPriceByItemID(ctx, tenantID, pc.ItemID, pc.NewPrice, "new_stock_only_applied"); err != nil {
+			s.log.Warn("promote pending price change: apply failed",
+				zap.String("item_id", pc.ItemID.String()), zap.Error(err))
+		}
+	}
 }
 
 // upsertItemTierPrice upserts the all-outlets (outlet_id IS NULL) ItemPricing row for the given
 // item + tier at `price`, reactivating it if it was soft-deleted.
 func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) error {
-	if existing, qErr := s.client.ItemPricing.Query().
+	existing, qErr := s.client.ItemPricing.Query().
 		Where(
 			itempricing.TenantID(tenantID),
 			itempricing.ItemID(itemID),
 			itempricing.PricingTierID(tierID),
 			itempricing.OutletIDIsNil(),
+			itempricing.IsActive(true),
 		).
-		First(ctx); qErr == nil && existing != nil {
-		_, err := existing.Update().SetPrice(price).SetIsActive(true).Save(ctx)
+		First(ctx)
+	if qErr == nil && existing != nil {
+		if existing.Price == price {
+			return nil // no real change — don't spam a history row
+		}
+		now := time.Now()
+		if _, err := existing.Update().SetIsActive(false).SetEffectiveTo(now).Save(ctx); err != nil {
+			return fmt.Errorf("items: close out prior tier price: %w", err)
+		}
+		_, err := s.client.ItemPricing.Create().
+			SetTenantID(tenantID).
+			SetItemID(itemID).
+			SetPricingTierID(tierID).
+			SetPrice(price).
+			SetCurrency(existing.Currency).
+			SetTierBasis(existing.TierBasis).
+			SetEffectiveFrom(now).
+			SetIsActive(true).
+			Save(ctx)
 		return err
 	}
 	_, err := s.client.ItemPricing.Create().

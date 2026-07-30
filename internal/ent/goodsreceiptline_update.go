@@ -255,6 +255,53 @@ func (_u *GoodsReceiptLineUpdate) ClearExpiryDate() *GoodsReceiptLineUpdate {
 	return _u
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdate) SetNewSellingPrice(v float64) *GoodsReceiptLineUpdate {
+	_u.mutation.ResetNewSellingPrice()
+	_u.mutation.SetNewSellingPrice(v)
+	return _u
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdate) SetNillableNewSellingPrice(v *float64) *GoodsReceiptLineUpdate {
+	if v != nil {
+		_u.SetNewSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddNewSellingPrice adds value to the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdate) AddNewSellingPrice(v float64) *GoodsReceiptLineUpdate {
+	_u.mutation.AddNewSellingPrice(v)
+	return _u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdate) ClearNewSellingPrice() *GoodsReceiptLineUpdate {
+	_u.mutation.ClearNewSellingPrice()
+	return _u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_u *GoodsReceiptLineUpdate) SetPriceScope(v string) *GoodsReceiptLineUpdate {
+	_u.mutation.SetPriceScope(v)
+	return _u
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdate) SetNillablePriceScope(v *string) *GoodsReceiptLineUpdate {
+	if v != nil {
+		_u.SetPriceScope(*v)
+	}
+	return _u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (_u *GoodsReceiptLineUpdate) ClearPriceScope() *GoodsReceiptLineUpdate {
+	_u.mutation.ClearPriceScope()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdate) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdate {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -382,6 +429,21 @@ func (_u *GoodsReceiptLineUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.ExpiryDateCleared() {
 		_spec.ClearField(goodsreceiptline.FieldExpiryDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.NewSellingPrice(); ok {
+		_spec.SetField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedNewSellingPrice(); ok {
+		_spec.AddField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.NewSellingPriceCleared() {
+		_spec.ClearField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PriceScope(); ok {
+		_spec.SetField(goodsreceiptline.FieldPriceScope, field.TypeString, value)
+	}
+	if _u.mutation.PriceScopeCleared() {
+		_spec.ClearField(goodsreceiptline.FieldPriceScope, field.TypeString)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -656,6 +718,53 @@ func (_u *GoodsReceiptLineUpdateOne) ClearExpiryDate() *GoodsReceiptLineUpdateOn
 	return _u
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdateOne) SetNewSellingPrice(v float64) *GoodsReceiptLineUpdateOne {
+	_u.mutation.ResetNewSellingPrice()
+	_u.mutation.SetNewSellingPrice(v)
+	return _u
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdateOne) SetNillableNewSellingPrice(v *float64) *GoodsReceiptLineUpdateOne {
+	if v != nil {
+		_u.SetNewSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddNewSellingPrice adds value to the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdateOne) AddNewSellingPrice(v float64) *GoodsReceiptLineUpdateOne {
+	_u.mutation.AddNewSellingPrice(v)
+	return _u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (_u *GoodsReceiptLineUpdateOne) ClearNewSellingPrice() *GoodsReceiptLineUpdateOne {
+	_u.mutation.ClearNewSellingPrice()
+	return _u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_u *GoodsReceiptLineUpdateOne) SetPriceScope(v string) *GoodsReceiptLineUpdateOne {
+	_u.mutation.SetPriceScope(v)
+	return _u
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdateOne) SetNillablePriceScope(v *string) *GoodsReceiptLineUpdateOne {
+	if v != nil {
+		_u.SetPriceScope(*v)
+	}
+	return _u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (_u *GoodsReceiptLineUpdateOne) ClearPriceScope() *GoodsReceiptLineUpdateOne {
+	_u.mutation.ClearPriceScope()
+	return _u
+}
+
 // SetGoodsReceipt sets the "goods_receipt" edge to the GoodsReceipt entity.
 func (_u *GoodsReceiptLineUpdateOne) SetGoodsReceipt(v *GoodsReceipt) *GoodsReceiptLineUpdateOne {
 	return _u.SetGoodsReceiptID(v.ID)
@@ -813,6 +922,21 @@ func (_u *GoodsReceiptLineUpdateOne) sqlSave(ctx context.Context) (_node *GoodsR
 	}
 	if _u.mutation.ExpiryDateCleared() {
 		_spec.ClearField(goodsreceiptline.FieldExpiryDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.NewSellingPrice(); ok {
+		_spec.SetField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedNewSellingPrice(); ok {
+		_spec.AddField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.NewSellingPriceCleared() {
+		_spec.ClearField(goodsreceiptline.FieldNewSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PriceScope(); ok {
+		_spec.SetField(goodsreceiptline.FieldPriceScope, field.TypeString, value)
+	}
+	if _u.mutation.PriceScopeCleared() {
+		_spec.ClearField(goodsreceiptline.FieldPriceScope, field.TypeString)
 	}
 	if _u.mutation.GoodsReceiptCleared() {
 		edge := &sqlgraph.EdgeSpec{

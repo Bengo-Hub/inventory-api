@@ -96,6 +96,9 @@ type GoodsReceipt func(*sql.Selector)
 // GoodsReceiptLine is the predicate function for goodsreceiptline builders.
 type GoodsReceiptLine func(*sql.Selector)
 
+// IdempotencyKey is the predicate function for idempotencykey builders.
+type IdempotencyKey func(*sql.Selector)
+
 // InventoryBalance is the predicate function for inventorybalance builders.
 type InventoryBalance func(*sql.Selector)
 
@@ -149,6 +152,9 @@ type ModifierOption func(*sql.Selector)
 
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
+
+// PendingPriceChange is the predicate function for pendingpricechange builders.
+type PendingPriceChange func(*sql.Selector)
 
 // PricingTier is the predicate function for pricingtier builders.
 type PricingTier func(*sql.Selector)

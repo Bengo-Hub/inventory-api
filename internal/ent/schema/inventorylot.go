@@ -52,6 +52,17 @@ func (InventoryLot) Fields() []ent.Field {
 		field.String("supplier_reference").
 			Optional().
 			Comment("Supplier PO or invoice reference"),
+		field.Bool("is_cost_layer").
+			Default(false).
+			Comment("True for a layer auto-created at goods receipt for a non-lot-tracked item purely to preserve the cost actually paid. Hidden from the Lots admin UI, barcode labels, and expiry alerts — it carries no lot number a customer or regulator should ever see."),
+		field.Time("received_at").
+			Optional().
+			Nillable().
+			Comment("Actual receipt date, for FIFO/LIFO ordering. Distinct from created_at so a late-entered but earlier-dated receipt still orders correctly."),
+		field.UUID("goods_receipt_line_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("The goods-receipt line that created this layer — provenance, and the idempotency key that prevents a retried GRN post from double-creating a layer."),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),
@@ -84,5 +95,7 @@ func (InventoryLot) Indexes() []ent.Index {
 		index.Fields("tenant_id", "expiry_date"),
 		index.Fields("status"),
 		index.Fields("tenant_id", "item_id"),
+		index.Fields("tenant_id", "item_id", "warehouse_id", "status", "is_cost_layer"),
+		index.Fields("goods_receipt_line_id"),
 	}
 }

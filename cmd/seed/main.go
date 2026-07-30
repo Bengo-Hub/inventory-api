@@ -50,7 +50,7 @@ func main() {
 	if authURL == "" {
 		authURL = "https://sso.codevertexafrica.com"
 	}
-	syncer := tenant.NewSyncer(client, authURL)
+	syncer := tenant.NewSyncer(client, authURL).WithDB(sqlDB)
 
 	if _, err := syncer.SyncTenant(ctx, "codevertex"); err != nil {
 		log.Printf("[SKIP] sync codevertex (platform org): %v", err)
@@ -60,8 +60,12 @@ func main() {
 	if err := seedUnits(ctx, client); err != nil {
 		log.Fatalf("seed units: %v", err)
 	}
+	// Non-fatal: the platform-global category set is convenience reference data. A single
+	// clash here (e.g. a name already taken by a bulk import) must not abort the run and
+	// strand every tenant below it without a catalog — which is exactly what happened to
+	// codevertex-demo, whose items/recipes/balances were never seeded as a result.
 	if err := seedGlobalCategories(ctx, client); err != nil {
-		log.Fatalf("seed global categories: %v", err)
+		log.Printf("[WARN] seed global categories: %v", err)
 	}
 	if err := seedDrugInteractionRules(ctx, client); err != nil {
 		log.Fatalf("seed drug interaction rules: %v", err)

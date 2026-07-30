@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	entitemcategory "github.com/bengobox/inventory-service/internal/ent/itemcategory"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 )
 
@@ -69,6 +70,28 @@ func seedGlobalCategories(ctx context.Context, client *ent.Client) error {
 		id := globalCategoryUUID(cat.Slug)
 		icon := items.InferDefaultCategoryIcon(cat.Name, "")
 		existing, err := client.ItemCategory.Get(ctx, id)
+
+		// A global category with this NAME may already exist under a different ID — the
+		// bulk-import and older seed paths created globals with random UUIDs. Reconciling
+		// on the deterministic ID alone would then try to INSERT a second row with the same
+		// name and trip the unique (tenant_id, name) index, which aborted the whole seed
+		// before any per-tenant data was written. Adopt the existing row instead.
+		if ent.IsNotFound(err) {
+			byName, nameErr := client.ItemCategory.Query().
+				Where(
+					entitemcategory.TenantID(uuid.Nil),
+					entitemcategory.NameEQ(cat.Name),
+				).
+				Only(ctx)
+			if nameErr == nil {
+				id = byName.ID
+				existing, err = byName, nil
+				log.Printf("global category adopted by name: %s (existing id %s)", cat.Name, byName.ID)
+			} else if !ent.IsNotFound(nameErr) {
+				return fmt.Errorf("check global category by name %s: %w", cat.Name, nameErr)
+			}
+		}
+
 		switch {
 		case ent.IsNotFound(err):
 			if _, createErr := client.ItemCategory.Create().

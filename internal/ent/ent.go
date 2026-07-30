@@ -42,6 +42,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/foodcostvariance"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	"github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
+	"github.com/bengobox/inventory-service/internal/ent/idempotencykey"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/inventorypermission"
@@ -60,6 +61,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/modifiergroup"
 	"github.com/bengobox/inventory-service/internal/ent/modifieroption"
 	"github.com/bengobox/inventory-service/internal/ent/outboxevent"
+	"github.com/bengobox/inventory-service/internal/ent/pendingpricechange"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/productionbatch"
 	"github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -192,6 +194,7 @@ func checkColumn(t, c string) error {
 			foodcostvariance.Table:       foodcostvariance.ValidColumn,
 			goodsreceipt.Table:           goodsreceipt.ValidColumn,
 			goodsreceiptline.Table:       goodsreceiptline.ValidColumn,
+			idempotencykey.Table:         idempotencykey.ValidColumn,
 			inventorybalance.Table:       inventorybalance.ValidColumn,
 			inventorylot.Table:           inventorylot.ValidColumn,
 			inventorypermission.Table:    inventorypermission.ValidColumn,
@@ -210,6 +213,7 @@ func checkColumn(t, c string) error {
 			modifiergroup.Table:          modifiergroup.ValidColumn,
 			modifieroption.Table:         modifieroption.ValidColumn,
 			outboxevent.Table:            outboxevent.ValidColumn,
+			pendingpricechange.Table:     pendingpricechange.ValidColumn,
 			pricingtier.Table:            pricingtier.ValidColumn,
 			productionbatch.Table:        productionbatch.ValidColumn,
 			purchaseorder.Table:          purchaseorder.ValidColumn,
