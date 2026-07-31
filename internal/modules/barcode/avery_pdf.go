@@ -52,6 +52,28 @@ func renderAveryPDF(labels []Label, spec AverySpec, company string) ([]byte, err
 	return out.Bytes(), nil
 }
 
+// RenderSingleLabelPDF renders ONE label as a standalone one-page PDF sized to the standard
+// 2"x1" barcode/SKU label (50.8mm x 25.4mm — see docs/barcode-labels.md), reusing the exact
+// same drawLabelCell the bulk Avery sheet uses so a quick single-item print (e.g. inventory-ui's
+// item-detail "Barcode" action) never diverges into its own bare-barcode-image-only rendering
+// with no title/SKU/price — every barcode print in this service goes through one card layout.
+// No cut-guide is drawn (there is nothing to cut around on a single label).
+func RenderSingleLabelPDF(lbl Label, company string) ([]byte, error) {
+	const w, h = 50.8, 25.4 // mm
+	pdf := fpdf.NewCustom(&fpdf.InitType{UnitStr: "mm", Size: fpdf.SizeType{Wd: w, Ht: h}})
+	pdf.SetAutoPageBreak(false, 0)
+	pdf.AddPage()
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	imgSeq := 0
+	drawLabelCell(pdf, tr, lbl, company, 0, 0, w, h, &imgSeq)
+
+	var out bytes.Buffer
+	if err := pdf.Output(&out); err != nil {
+		return nil, fmt.Errorf("barcode: render single label pdf: %w", err)
+	}
+	return out.Bytes(), nil
+}
+
 // drawCutGuide draws a dashed rectangle around a label cell as a cutting guide, then
 // restores a solid draw style so it never bleeds into the label content drawn after it.
 func drawCutGuide(pdf *fpdf.Fpdf, x, y, w, h float64) {
