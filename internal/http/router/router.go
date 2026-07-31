@@ -256,6 +256,15 @@ func New(
 				if backupDestHandler != nil {
 					backupDestHandler.RegisterRoutes(private)
 				}
+				// Self-service "Set PIN" (Team page) — unlike PINOutlets/IdentifyByPIN/Login
+				// above (the public, pre-auth PIN *login* surface), this is a manager action
+				// that requires an authenticated SSO session, so it lives in the private
+				// group and is gated by the same permission as the other Team-page
+				// user-management routes (see user_outlet.go's RegisterPrivateRoutes).
+				if pinAuthHandler != nil && rbacService != nil {
+					private.With(ratelimitmw.RequirePermission(rbacService, log, rbac.PermUsersManage)).
+						Post("/inventory/auth/pin/set", pinAuthHandler.SetPIN)
+				}
 			})
 
 			// Inventory Routes (Granular auth)

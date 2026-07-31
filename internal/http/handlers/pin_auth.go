@@ -330,6 +330,58 @@ func (h *PINAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+type setPINInput struct {
+	UserID string `json:"user_id"`
+	PIN    string `json:"pin"`
+}
+
+// SetPIN lets an inventory admin/manager set or replace a staff member's terminal PIN
+// from inventory-ui's Team page — a self-service alternative to the centralized auth-ui
+// admin screens (mirrors library-api's PINAuthHandler.SetPIN). Body: { user_id, pin }.
+// user_id here is the local InventoryUser ID (as returned by GET /users and used by the
+// other Team-page endpoints like the outlet-assignment routes above), NOT the
+// auth-service user id that Login/IdentifyByPIN match against — inventory-ui's Team page
+// only ever has the local ID on hand. Registered in the authenticated route group and
+// gated by rbac.PermUsersManage (see router.go).
+func (h *PINAuthHandler) SetPIN(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "invalid tenant")
+		return
+	}
+	var body setPINInput
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.UserID == "" || len(body.PIN) < 4 {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "user_id and a 4+ digit pin are required")
+		return
+	}
+	userID, err := uuid.Parse(body.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_USER", "invalid user_id")
+		return
+	}
+	u, err := h.orm.InventoryUser.Query().
+		Where(entinvuser.TenantID(tenantID), entinvuser.ID(userID)).
+		Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "user not found")
+		return
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(body.PIN), bcrypt.DefaultCost)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "HASH_FAILED", err.Error())
+		return
+	}
+	if _, err := u.Update().
+		SetPinHash(string(hash)).
+		SetPinFailedAttempts(0).
+		ClearPinLockedUntil().
+		Save(r.Context()); err != nil {
+		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "failed to save pin")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"updated": true})
+}
+
 func (h *PINAuthHandler) registerPINFailure(ctx context.Context, u *ent.InventoryUser) {
 	attempts := u.PinFailedAttempts + 1
 	upd := u.Update().SetPinFailedAttempts(attempts)
