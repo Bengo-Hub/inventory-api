@@ -27,6 +27,10 @@ func (h *InventoryHandler) registerBarcodeRoutes(inv chi.Router, perm func(strin
 	// Single-item barcode PNG (read). Lazily generates + stores an internal code if the item
 	// has none, then renders. GET is exempt from group auth (consistent with other item reads).
 	inv.Get("/items/{itemID}/barcode.png", h.GetItemBarcodePNG)
+	// Single-item printable label (title/SKU/barcode/human-readable), same card layout the bulk
+	// Avery sheet uses — the item detail page's "Barcode" action prints this instead of a bare
+	// barcode-image-only preview with no item details.
+	inv.Get("/items/{itemID}/label.pdf", h.GetItemLabelPDF)
 	// Bulk label-print job: returns a PDF (Avery) or printer text (ZPL/Dymo). Gated on the
 	// items "manage" permission (printing stock labels is a privileged item operation, and it
 	// may persist generated internal barcodes).
@@ -116,6 +120,48 @@ func (h *InventoryHandler) GetItemBarcodePNG(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.png"`, it.Sku))
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write(png)
+}
+
+// GetItemLabelPDF handles GET /inventory/items/{itemID}/label.pdf — a single-item printable
+// label (title, SKU, barcode, human-readable text) using the same card layout as the bulk
+// Avery sheet, so a quick single-item print always shows full item details next to the
+// barcode rather than a bare barcode image.
+func (h *InventoryHandler) GetItemLabelPDF(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	itemID, err := uuid.Parse(chi.URLParam(r, "itemID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid item id")
+		return
+	}
+	it, err := h.orm.Item.Query().
+		Where(entitem.TenantID(tenantID), entitem.ID(itemID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		return
+	}
+	content, sym, _, err := h.resolveItemBarcode(r.Context(), it)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "BARCODE_FAILED", err.Error())
+		return
+	}
+	lbl := barcode.Label{Title: it.Name, Sku: it.Sku, Symbology: sym, Content: content}
+	var companyName string
+	if h.docSvc != nil {
+		companyName = h.docSvc.GetBranding(r.Context(), tenantID).CompanyName
+	}
+	pdf, err := barcode.RenderSingleLabelPDF(lbl, companyName)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "BARCODE_FAILED", err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s-label.pdf"`, it.Sku))
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = w.Write(pdf)
 }
 
 // ─── Bulk label printing ─────────────────────────────────────────────────────
