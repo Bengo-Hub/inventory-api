@@ -31,6 +31,12 @@ type lotDTO struct {
 	Status           string     `json:"status"`
 	SupplierRef      string     `json:"supplier_reference"`
 	CreatedAt        time.Time  `json:"created_at"`
+	// IsCostLayer marks an internal layer auto-created at goods receipt to preserve the cost of
+	// a non-lot-tracked item — not a real batch/lot a merchant manages. Excluded from ListLots by
+	// default (see ?include_cost_layers=true); surfaced here only so a caller that opts in can
+	// tell the two apart.
+	IsCostLayer bool       `json:"is_cost_layer"`
+	ReceivedAt  *time.Time `json:"received_at,omitempty"`
 }
 
 func lotToDTO(l *ent.InventoryLot) lotDTO {
@@ -43,6 +49,8 @@ func lotToDTO(l *ent.InventoryLot) lotDTO {
 		Status:      l.Status.String(),
 		SupplierRef: l.SupplierReference,
 		CreatedAt:   l.CreatedAt,
+		IsCostLayer: l.IsCostLayer,
+		ReceivedAt:  l.ReceivedAt,
 	}
 	if l.ExpiryDate != nil {
 		dto.ExpiryDate = l.ExpiryDate
@@ -70,12 +78,20 @@ func (h *InventoryExtrasHandler) ListLots(w http.ResponseWriter, r *http.Request
 		return
 	}
 	search := r.URL.Query().Get("search")
+	// Cost layers (internal, auto-created for non-lot-tracked items — see is_cost_layer) are
+	// excluded by default: a merchant managing "Lots & Batches" shouldn't see synthetic rows for
+	// items they never opted into lot tracking. Pass ?include_cost_layers=true to see everything
+	// (e.g. an accountant reconciling stock valuation against layers).
+	includeCostLayers := r.URL.Query().Get("include_cost_layers") == "true"
 
-	lots, err := h.orm.InventoryLot.Query().
+	query := h.orm.InventoryLot.Query().
 		Where(entinventorylot.TenantID(tenantID)).
 		WithItem().
-		WithWarehouse().
-		All(r.Context())
+		WithWarehouse()
+	if !includeCostLayers {
+		query = query.Where(entinventorylot.IsCostLayer(false))
+	}
+	lots, err := query.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list lots")
 		return
