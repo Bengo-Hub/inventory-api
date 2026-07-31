@@ -118,21 +118,31 @@ func (s *Service) itemNonDepletingLazy(ctx context.Context, itm *ent.Item) bool 
 
 // ConvertToStockUnit converts a quantity expressed in a recipe-line/sale unit into the
 // item's stock (base) unit. Resolution order:
-//  1. same-dimension unit conversion (ml→l, g→kg, …) via the built-in units table;
-//  2. content-per-unit bridge for count-stocked packaged goods: a 30 ml line against a
+//  1. the line's unit IS the item's own stock unit — by abbreviation ("btl") OR by its
+//     human-readable Name ("BOTTLE"), since recipe/sale lines are written with either
+//     spelling depending on which picker wrote them — no conversion needed;
+//  2. same-dimension unit conversion (ml→l, g→kg, …) via the built-in units table;
+//  3. content-per-unit bridge for count-stocked packaged goods: a 30 ml line against a
 //     750 ml-per-piece bottle deducts 30/750 = 0.04 pieces (cumulative tots deplete
 //     whole bottles exactly);
-//  3. unknown/absent units pass through unchanged (legacy rows written pre-normalised);
-//  4. cross-dimension with no bridge → ok=false: the caller must NOT deduct raw.
+//  4. unknown/absent units pass through unchanged (legacy rows written pre-normalised);
+//  5. cross-dimension with no bridge → ok=false: the caller must NOT deduct raw.
 func ConvertToStockUnit(itm *ent.Item, qty float64, fromUOM string) (float64, bool) {
 	from := units.NormalizeUnit(fromUOM)
 	stockUnit := ""
+	stockUnitName := ""
 	if itm != nil && itm.Edges.Units != nil {
 		stockUnit = units.NormalizeUnit(itm.Edges.Units.Abbreviation)
+		stockUnitName = units.NormalizeUnit(itm.Edges.Units.Name)
 	}
 	// Without both units we cannot judge — preserve the historical raw-passthrough so
 	// pre-normalised rows (written by the composite flow in base units) keep working.
-	if from == "" || stockUnit == "" || from == stockUnit {
+	// A line written with the unit's display Name (e.g. a "BOTTLE" recipe/sale line
+	// against an item stocked in "btl") is the SAME unit, not a cross-dimension mismatch —
+	// the built-in conversion table only knows standard mass/volume/count spellings, never
+	// a tenant's custom unit names (btl/gls/can/box/ptn/…), so it must never be asked to
+	// judge a unit against itself under a different spelling.
+	if from == "" || stockUnit == "" || from == stockUnit || (stockUnitName != "" && from == stockUnitName) {
 		return qty, true
 	}
 	if converted, ok := units.Convert(qty, from, stockUnit); ok {
