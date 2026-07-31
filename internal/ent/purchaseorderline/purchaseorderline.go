@@ -31,6 +31,10 @@ const (
 	FieldTotalPrice = "total_price"
 	// FieldRebatePercent holds the string denoting the rebate_percent field in the database.
 	FieldRebatePercent = "rebate_percent"
+	// FieldNewSellingPrice holds the string denoting the new_selling_price field in the database.
+	FieldNewSellingPrice = "new_selling_price"
+	// FieldPriceScope holds the string denoting the price_scope field in the database.
+	FieldPriceScope = "price_scope"
 	// EdgePurchaseOrder holds the string denoting the purchase_order edge name in mutations.
 	EdgePurchaseOrder = "purchase_order"
 	// Table holds the table name of the purchaseorderline in the database.
@@ -56,6 +60,8 @@ var Columns = []string{
 	FieldUnitPrice,
 	FieldTotalPrice,
 	FieldRebatePercent,
+	FieldNewSellingPrice,
+	FieldPriceScope,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -79,6 +85,8 @@ var (
 	DefaultTotalPrice float64
 	// DefaultRebatePercent holds the default value on creation for the "rebate_percent" field.
 	DefaultRebatePercent float64
+	// DefaultPriceScope holds the default value on creation for the "price_scope" field.
+	DefaultPriceScope string
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -134,6 +142,16 @@ func ByTotalPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByRebatePercent orders the results by the rebate_percent field.
 func ByRebatePercent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRebatePercent, opts...).ToFunc()
+}
+
+// ByNewSellingPrice orders the results by the new_selling_price field.
+func ByNewSellingPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNewSellingPrice, opts...).ToFunc()
+}
+
+// ByPriceScope orders the results by the price_scope field.
+func ByPriceScope(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceScope, opts...).ToFunc()
 }
 
 // ByPurchaseOrderField orders the results by purchase_order field.

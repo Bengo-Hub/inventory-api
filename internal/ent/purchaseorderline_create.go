@@ -134,6 +134,34 @@ func (_c *PurchaseOrderLineCreate) SetNillableRebatePercent(v *float64) *Purchas
 	return _c
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_c *PurchaseOrderLineCreate) SetNewSellingPrice(v float64) *PurchaseOrderLineCreate {
+	_c.mutation.SetNewSellingPrice(v)
+	return _c
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableNewSellingPrice(v *float64) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetNewSellingPrice(*v)
+	}
+	return _c
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_c *PurchaseOrderLineCreate) SetPriceScope(v string) *PurchaseOrderLineCreate {
+	_c.mutation.SetPriceScope(v)
+	return _c
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillablePriceScope(v *string) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetPriceScope(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PurchaseOrderLineCreate) SetID(v uuid.UUID) *PurchaseOrderLineCreate {
 	_c.mutation.SetID(v)
@@ -213,6 +241,10 @@ func (_c *PurchaseOrderLineCreate) defaults() {
 	if _, ok := _c.mutation.RebatePercent(); !ok {
 		v := purchaseorderline.DefaultRebatePercent
 		_c.mutation.SetRebatePercent(v)
+	}
+	if _, ok := _c.mutation.PriceScope(); !ok {
+		v := purchaseorderline.DefaultPriceScope
+		_c.mutation.SetPriceScope(v)
 	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := purchaseorderline.DefaultID()
@@ -313,6 +345,14 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 	if value, ok := _c.mutation.RebatePercent(); ok {
 		_spec.SetField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
 		_node.RebatePercent = value
+	}
+	if value, ok := _c.mutation.NewSellingPrice(); ok {
+		_spec.SetField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64, value)
+		_node.NewSellingPrice = &value
+	}
+	if value, ok := _c.mutation.PriceScope(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceScope, field.TypeString, value)
+		_node.PriceScope = value
 	}
 	if nodes := _c.mutation.PurchaseOrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -530,6 +570,48 @@ func (u *PurchaseOrderLineUpsert) UpdateRebatePercent() *PurchaseOrderLineUpsert
 // AddRebatePercent adds v to the "rebate_percent" field.
 func (u *PurchaseOrderLineUpsert) AddRebatePercent(v float64) *PurchaseOrderLineUpsert {
 	u.Add(purchaseorderline.FieldRebatePercent, v)
+	return u
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsert) SetNewSellingPrice(v float64) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldNewSellingPrice, v)
+	return u
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateNewSellingPrice() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldNewSellingPrice)
+	return u
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsert) AddNewSellingPrice(v float64) *PurchaseOrderLineUpsert {
+	u.Add(purchaseorderline.FieldNewSellingPrice, v)
+	return u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsert) ClearNewSellingPrice() *PurchaseOrderLineUpsert {
+	u.SetNull(purchaseorderline.FieldNewSellingPrice)
+	return u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *PurchaseOrderLineUpsert) SetPriceScope(v string) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldPriceScope, v)
+	return u
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdatePriceScope() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldPriceScope)
+	return u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *PurchaseOrderLineUpsert) ClearPriceScope() *PurchaseOrderLineUpsert {
+	u.SetNull(purchaseorderline.FieldPriceScope)
 	return u
 }
 
@@ -753,6 +835,55 @@ func (u *PurchaseOrderLineUpsertOne) AddRebatePercent(v float64) *PurchaseOrderL
 func (u *PurchaseOrderLineUpsertOne) UpdateRebatePercent() *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateRebatePercent()
+	})
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertOne) SetNewSellingPrice(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetNewSellingPrice(v)
+	})
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertOne) AddNewSellingPrice(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddNewSellingPrice(v)
+	})
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateNewSellingPrice() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateNewSellingPrice()
+	})
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertOne) ClearNewSellingPrice() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearNewSellingPrice()
+	})
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *PurchaseOrderLineUpsertOne) SetPriceScope(v string) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetPriceScope(v)
+	})
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdatePriceScope() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdatePriceScope()
+	})
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *PurchaseOrderLineUpsertOne) ClearPriceScope() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearPriceScope()
 	})
 }
 
@@ -1143,6 +1274,55 @@ func (u *PurchaseOrderLineUpsertBulk) AddRebatePercent(v float64) *PurchaseOrder
 func (u *PurchaseOrderLineUpsertBulk) UpdateRebatePercent() *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateRebatePercent()
+	})
+}
+
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertBulk) SetNewSellingPrice(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetNewSellingPrice(v)
+	})
+}
+
+// AddNewSellingPrice adds v to the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertBulk) AddNewSellingPrice(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddNewSellingPrice(v)
+	})
+}
+
+// UpdateNewSellingPrice sets the "new_selling_price" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateNewSellingPrice() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateNewSellingPrice()
+	})
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (u *PurchaseOrderLineUpsertBulk) ClearNewSellingPrice() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearNewSellingPrice()
+	})
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (u *PurchaseOrderLineUpsertBulk) SetPriceScope(v string) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetPriceScope(v)
+	})
+}
+
+// UpdatePriceScope sets the "price_scope" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdatePriceScope() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdatePriceScope()
+	})
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (u *PurchaseOrderLineUpsertBulk) ClearPriceScope() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearPriceScope()
 	})
 }
 
