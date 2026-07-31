@@ -135,6 +135,12 @@ type PrintLabelsRequest struct {
 
 	// Output format: avery_a4 | thermal_zpl | dymo.
 	Format string `json:"format"`
+	// Sheet selects the Avery grid preset when Format == avery_a4 (e.g. "l7160" | "5160");
+	// empty defaults to Avery L7160 (A4). ThermalSize selects the physical label size when
+	// Format == thermal_zpl (e.g. "2x1" | "3x2" | "4x2" | "4x6" @203dpi); empty defaults to
+	// 4x2in. See docs/barcode-labels.md for what real printer/paper stock each maps to.
+	Sheet       string `json:"sheet,omitempty"`
+	ThermalSize string `json:"thermal_size,omitempty"`
 
 	// Lot/serial label mode. When IncludeLot is set, the engine renders one GS1-128 label per
 	// active lot of each selected item (embedding (10) batch + (17) expiry). When IncludeSerial
@@ -200,7 +206,8 @@ func (h *InventoryHandler) PrintLabels(w http.ResponseWriter, r *http.Request) {
 	batch := barcode.Batch{
 		Labels:      labels,
 		Format:      format,
-		Avery:       barcode.DefaultAvery(),
+		Avery:       barcode.AverySpecByName(req.Sheet),
+		Thermal:     barcode.ThermalSpecByName(req.ThermalSize),
 		GeneratedAt: time.Now(),
 	}
 	if h.docSvc != nil {
@@ -350,7 +357,7 @@ func (h *InventoryHandler) buildLabels(r *http.Request, tenantID uuid.UUID, item
 		default:
 			lbl := barcode.Label{
 				Title:     it.Name,
-				SubTitle:  it.Sku,
+				Sku:       it.Sku,
 				Symbology: sym,
 				Content:   content,
 			}
@@ -363,31 +370,35 @@ func (h *InventoryHandler) buildLabels(r *http.Request, tenantID uuid.UUID, item
 	return labels, nil
 }
 
-// serialLabel builds a GS1-128 serial label.
+// serialLabel builds a GS1-128 serial label. SKU and serial render as distinct rows on the
+// card (see drawLabelCell) rather than one crammed string.
 func serialLabel(it *ent.Item, serial string, g *barcode.GS1Builder, price string) barcode.Label {
 	return barcode.Label{
-		Title:     it.Name,
-		SubTitle:  it.Sku + "  S/N " + serial,
-		Symbology: barcode.SymGS1128,
-		Content:   g.Barcode(),
-		HumanText: g.HumanReadable(),
-		Price:     price,
+		Title:      it.Name,
+		Sku:        it.Sku,
+		DetailLine: "S/N " + serial,
+		Symbology:  barcode.SymGS1128,
+		Content:    g.Barcode(),
+		HumanText:  g.HumanReadable(),
+		Price:      price,
 	}
 }
 
-// lotLabel builds a GS1-128 lot/batch label.
+// lotLabel builds a GS1-128 lot/batch label. SKU and lot/expiry render as distinct rows on
+// the card rather than one crammed string.
 func lotLabel(it *ent.Item, lot *ent.InventoryLot, g *barcode.GS1Builder, price string) barcode.Label {
-	sub := it.Sku + "  LOT " + lot.LotNumber
+	detail := "LOT " + lot.LotNumber
 	if lot.ExpiryDate != nil {
-		sub += "  EXP " + lot.ExpiryDate.Format("2006-01-02")
+		detail += "  EXP " + lot.ExpiryDate.Format("2006-01-02")
 	}
 	return barcode.Label{
-		Title:     it.Name,
-		SubTitle:  sub,
-		Symbology: barcode.SymGS1128,
-		Content:   g.Barcode(),
-		HumanText: g.HumanReadable(),
-		Price:     price,
+		Title:      it.Name,
+		Sku:        it.Sku,
+		DetailLine: detail,
+		Symbology:  barcode.SymGS1128,
+		Content:    g.Barcode(),
+		HumanText:  g.HumanReadable(),
+		Price:      price,
 	}
 }
 

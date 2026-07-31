@@ -3,13 +3,22 @@ package barcode
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/go-pdf/fpdf"
 )
 
+// cutDash is the dash pattern (mm) used for the "cut here" guide around each label cell —
+// short dashes with a wider gap, matching the perforation-style lines printers/scissors
+// guides conventionally use so it doesn't read as a solid border users might mistake for
+// part of the label's own design.
+var cutDash = []float64{0.8, 0.8}
+
 // renderAveryPDF lays out labels onto A4 sheets per the given Avery grid, embedding a
-// barcode PNG in each cell. It mirrors the fpdf + boombuler PNG-embed pattern used by the
-// ticket PDF renderer (RegisterImageOptionsReader → ImageOptions).
+// barcode PNG in each cell plus a dashed cut-guide border so users know exactly where to
+// cut once the sheet is printed (real label stock is either pre-perforated or, when printed
+// on plain paper, needs a visible guide — see docs/barcode-labels.md). Mirrors the fpdf +
+// boombuler PNG-embed pattern used by the ticket PDF renderer.
 func renderAveryPDF(labels []Label, spec AverySpec, company string) ([]byte, error) {
 	if len(labels) == 0 {
 		return nil, fmt.Errorf("barcode: no labels to render")
@@ -32,7 +41,8 @@ func renderAveryPDF(labels []Label, spec AverySpec, company string) ([]byte, err
 		x := spec.MarginX + float64(col)*(spec.LabelW+spec.GutterX)
 		y := spec.MarginY + float64(row)*(spec.LabelH+spec.GutterY)
 
-		drawLabelCell(pdf, tr, lbl, x, y, spec.LabelW, spec.LabelH, &imgSeq)
+		drawCutGuide(pdf, x, y, spec.LabelW, spec.LabelH)
+		drawLabelCell(pdf, tr, lbl, company, x, y, spec.LabelW, spec.LabelH, &imgSeq)
 	}
 
 	var out bytes.Buffer
@@ -42,12 +52,37 @@ func renderAveryPDF(labels []Label, spec AverySpec, company string) ([]byte, err
 	return out.Bytes(), nil
 }
 
-// drawLabelCell renders a single label inside the rectangle (x,y,w,h).
-// Layout (top→bottom): title, sub-title (SKU), barcode image, human-readable text, optional price.
-func drawLabelCell(pdf *fpdf.Fpdf, tr func(string) string, lbl Label, x, y, w, h float64, imgSeq *int) {
+// drawCutGuide draws a dashed rectangle around a label cell as a cutting guide, then
+// restores a solid draw style so it never bleeds into the label content drawn after it.
+func drawCutGuide(pdf *fpdf.Fpdf, x, y, w, h float64) {
+	pdf.SetDrawColor(150, 150, 150)
+	pdf.SetLineWidth(0.15)
+	pdf.SetDashPattern(cutDash, 0)
+	pdf.Rect(x, y, w, h, "D")
+	pdf.SetDashPattern([]float64{}, 0) // back to solid for everything drawn after
+	pdf.SetDrawColor(0, 0, 0)
+}
+
+// drawLabelCell renders a single label as ONE unified card inside the rectangle (x,y,w,h) —
+// every identifying detail (tenant, title, SKU, lot/serial+expiry, barcode, human-readable
+// code, price) stacks in one column of rows rather than separate disconnected blocks.
+// Layout (top→bottom): tenant name (compact), title, SKU, lot/serial detail line, barcode
+// image, human-readable text, optional price.
+func drawLabelCell(pdf *fpdf.Fpdf, tr func(string) string, lbl Label, company string, x, y, w, h float64, imgSeq *int) {
 	const pad = 2.0
 	innerW := w - 2*pad
 	cursorY := y + pad
+
+	// Tenant/company name — one compact line, not a graphic banner: at label sizes this small
+	// (down to 2"x1"), a colored header band would eat the space needed for the barcode's
+	// quiet zone and force everything else to shrink below legibility.
+	if company != "" {
+		pdf.SetXY(x+pad, cursorY)
+		pdf.SetFont("Helvetica", "B", 6)
+		pdf.SetTextColor(90, 98, 110)
+		pdf.CellFormat(innerW, 2.6, tr(fitText(pdf, strings.ToUpper(company), innerW)), "", 0, "L", false, 0, "")
+		cursorY += 2.9
+	}
 
 	pdf.SetTextColor(20, 28, 38)
 
@@ -59,7 +94,29 @@ func drawLabelCell(pdf *fpdf.Fpdf, tr func(string) string, lbl Label, x, y, w, h
 		cursorY += 3.8
 	}
 
-	// Sub-title (SKU) — small muted.
+	// SKU — its own row (was previously crammed onto the same line as lot/expiry).
+	if lbl.Sku != "" {
+		pdf.SetXY(x+pad, cursorY)
+		pdf.SetFont("Helvetica", "", 6.5)
+		pdf.SetTextColor(110, 120, 130)
+		pdf.CellFormat(innerW, 3.0, tr(fitText(pdf, lbl.Sku, innerW)), "", 0, "L", false, 0, "")
+		pdf.SetTextColor(20, 28, 38)
+		cursorY += 3.2
+	}
+
+	// Lot/serial + expiry detail line — its own row, right-aligned so it reads as metadata
+	// distinct from the SKU line above it (mirrors a lot#/expiry line on a retail label).
+	if lbl.DetailLine != "" {
+		pdf.SetXY(x+pad, cursorY)
+		pdf.SetFont("Helvetica", "", 6.5)
+		pdf.SetTextColor(110, 120, 130)
+		pdf.CellFormat(innerW, 3.0, tr(fitText(pdf, lbl.DetailLine, innerW)), "", 0, "R", false, 0, "")
+		pdf.SetTextColor(20, 28, 38)
+		cursorY += 3.2
+	}
+
+	// Backward-compat: a caller-supplied pre-joined SubTitle (if any code still sets it
+	// directly instead of Sku/DetailLine) still renders as its own row.
 	if lbl.SubTitle != "" {
 		pdf.SetXY(x+pad, cursorY)
 		pdf.SetFont("Helvetica", "", 6.5)
