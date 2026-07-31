@@ -3,6 +3,7 @@ package recipes
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,6 +16,12 @@ import (
 
 // defaultFoodCostTarget is the maximum healthy food-cost percentage (35%).
 const defaultFoodCostTarget = 0.35
+
+// round2 rounds a money value to 2dp (cents) — recipe cost fields are currency and must
+// never carry more precision than the shilling allows a raw multiply/divide chain
+// (e.g. waste-factor × unit-conversion) otherwise accumulates float noise like
+// 635.9200000000001.
+func round2(v float64) float64 { return math.Round(v*100) / 100 }
 
 // foodCostStatus returns a human-readable status for the computed food-cost %.
 func foodCostStatus(fcPct, target float64) string {
@@ -121,7 +128,8 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	if outputQty <= 0 {
 		outputQty = 1
 	}
-	costPerPortion := totalCost / outputQty
+	totalCost = round2(totalCost)
+	costPerPortion := round2(totalCost / outputQty)
 
 	// Determine margin: per-recipe takes priority over tenant config default.
 	marginPct := r.TargetMarginPercent
@@ -139,7 +147,7 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		SetCostPerPortion(costPerPortion)
 
 	if marginPct != nil && *marginPct > 0 && *marginPct < 100 {
-		suggestedPrice := costPerPortion / (1 - *marginPct/100)
+		suggestedPrice := round2(costPerPortion / (1 - *marginPct/100))
 		update = update.SetSuggestedPrice(suggestedPrice)
 	}
 
