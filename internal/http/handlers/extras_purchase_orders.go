@@ -167,6 +167,7 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 	}
 	itemNames := make(map[uuid.UUID]string)
 	itemSKUs := make(map[uuid.UUID]string)
+	itemCurrentPrice := make(map[uuid.UUID]*float64)
 	if len(itemIDs) > 0 {
 		items, _ := h.orm.Item.Query().
 			Where(entitem.IDIn(itemIDs...)).
@@ -174,6 +175,7 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		for _, it := range items {
 			itemNames[it.ID] = it.Name
 			itemSKUs[it.ID] = it.Sku
+			itemCurrentPrice[it.ID] = it.MaxSellingPrice
 		}
 	}
 
@@ -206,6 +208,13 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		TotalCost   float64    `json:"total_cost"`
 		UnitID      *uuid.UUID `json:"unit_id,omitempty"`
 		Unit        string     `json:"unit,omitempty"`
+		// Selling-price adjustment decided at order time — carried through and applied when this
+		// line is actually received (see postGoodsReceiptCore). CurrentSellingPrice is context
+		// only (the item's price as of now), so the PO form can show "currently X" next to the
+		// input; it is never itself written anywhere.
+		NewSellingPrice     *float64 `json:"new_selling_price,omitempty"`
+		PriceScope          string   `json:"price_scope,omitempty"`
+		CurrentSellingPrice *float64 `json:"current_selling_price,omitempty"`
 	}
 
 	lines := make([]lineDTO, 0, len(po.Edges.Lines))
@@ -215,16 +224,19 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 			unitAbbr = unitAbbrs[*l.UnitID]
 		}
 		lines = append(lines, lineDTO{
-			ID:          l.ID,
-			ItemID:      l.ItemID,
-			ItemName:    itemNames[l.ItemID],
-			ItemSKU:     itemSKUs[l.ItemID],
-			Quantity:    l.QuantityOrdered,
-			ReceivedQty: l.QuantityReceived,
-			UnitCost:    l.UnitPrice,
-			TotalCost:   l.TotalPrice,
-			UnitID:      l.UnitID,
-			Unit:        unitAbbr,
+			ID:                  l.ID,
+			ItemID:              l.ItemID,
+			ItemName:            itemNames[l.ItemID],
+			ItemSKU:             itemSKUs[l.ItemID],
+			Quantity:            l.QuantityOrdered,
+			ReceivedQty:         l.QuantityReceived,
+			UnitCost:            l.UnitPrice,
+			TotalCost:           l.TotalPrice,
+			UnitID:              l.UnitID,
+			Unit:                unitAbbr,
+			NewSellingPrice:     l.NewSellingPrice,
+			PriceScope:          l.PriceScope,
+			CurrentSellingPrice: itemCurrentPrice[l.ItemID],
 		})
 	}
 
@@ -261,6 +273,10 @@ type createPOLineInput struct {
 	Quantity float64    `json:"quantity"`
 	UnitCost float64    `json:"unit_cost"`
 	UnitID   *uuid.UUID `json:"unit_id"` // FK to Unit — unit of measure ordered in (e.g. kg, box); optional
+	// Selling-price adjustment decided at order time. Applied only when this line is actually
+	// received (see postGoodsReceiptCore) — nothing changes at PO creation/amend time.
+	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
+	PriceScope      string   `json:"price_scope,omitempty"`
 }
 
 type createPOInput struct {
@@ -372,14 +388,20 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 	}
 
 	for _, l := range req.LineItems {
-		_, err = tx.PurchaseOrderLine.Create().
+		lc := tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).
 			SetItemID(l.ItemID).
 			SetQuantityOrdered(l.Quantity).
 			SetUnitPrice(l.UnitCost).
 			SetTotalPrice(roundDecimal(l.Quantity * l.UnitCost)).
-			SetNillableUnitID(l.UnitID).
-			Save(r.Context())
+			SetNillableUnitID(l.UnitID)
+		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
+			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
+		}
+		if scope := strings.TrimSpace(l.PriceScope); scope != "" {
+			lc = lc.SetPriceScope(scope)
+		}
+		_, err = lc.Save(r.Context())
 		if err != nil {
 			h.log.Error("create PO line failed", zap.Error(err))
 			writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create purchase order line")
@@ -461,10 +483,16 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 	for _, l := range req.LineItems {
 		lineTotal := roundDecimal(l.Quantity * l.UnitCost)
 		total += lineTotal
-		if _, err = tx.PurchaseOrderLine.Create().
+		lc := tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).SetItemID(l.ItemID).SetQuantityOrdered(l.Quantity).
-			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).SetNillableUnitID(l.UnitID).
-			Save(r.Context()); err != nil {
+			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).SetNillableUnitID(l.UnitID)
+		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
+			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
+		}
+		if scope := strings.TrimSpace(l.PriceScope); scope != "" {
+			lc = lc.SetPriceScope(scope)
+		}
+		if _, err = lc.Save(r.Context()); err != nil {
 			_ = tx.Rollback()
 			writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to write amended line")
 			return

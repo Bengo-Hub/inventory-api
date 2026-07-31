@@ -63391,6 +63391,9 @@ type PurchaseOrderLineMutation struct {
 	addtotal_price        *float64
 	rebate_percent        *float64
 	addrebate_percent     *float64
+	new_selling_price     *float64
+	addnew_selling_price  *float64
+	price_scope           *string
 	clearedFields         map[string]struct{}
 	purchase_order        *uuid.UUID
 	clearedpurchase_order bool
@@ -63953,6 +63956,125 @@ func (m *PurchaseOrderLineMutation) ResetRebatePercent() {
 	m.addrebate_percent = nil
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (m *PurchaseOrderLineMutation) SetNewSellingPrice(f float64) {
+	m.new_selling_price = &f
+	m.addnew_selling_price = nil
+}
+
+// NewSellingPrice returns the value of the "new_selling_price" field in the mutation.
+func (m *PurchaseOrderLineMutation) NewSellingPrice() (r float64, exists bool) {
+	v := m.new_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNewSellingPrice returns the old "new_selling_price" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldNewSellingPrice(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNewSellingPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNewSellingPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNewSellingPrice: %w", err)
+	}
+	return oldValue.NewSellingPrice, nil
+}
+
+// AddNewSellingPrice adds f to the "new_selling_price" field.
+func (m *PurchaseOrderLineMutation) AddNewSellingPrice(f float64) {
+	if m.addnew_selling_price != nil {
+		*m.addnew_selling_price += f
+	} else {
+		m.addnew_selling_price = &f
+	}
+}
+
+// AddedNewSellingPrice returns the value that was added to the "new_selling_price" field in this mutation.
+func (m *PurchaseOrderLineMutation) AddedNewSellingPrice() (r float64, exists bool) {
+	v := m.addnew_selling_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (m *PurchaseOrderLineMutation) ClearNewSellingPrice() {
+	m.new_selling_price = nil
+	m.addnew_selling_price = nil
+	m.clearedFields[purchaseorderline.FieldNewSellingPrice] = struct{}{}
+}
+
+// NewSellingPriceCleared returns if the "new_selling_price" field was cleared in this mutation.
+func (m *PurchaseOrderLineMutation) NewSellingPriceCleared() bool {
+	_, ok := m.clearedFields[purchaseorderline.FieldNewSellingPrice]
+	return ok
+}
+
+// ResetNewSellingPrice resets all changes to the "new_selling_price" field.
+func (m *PurchaseOrderLineMutation) ResetNewSellingPrice() {
+	m.new_selling_price = nil
+	m.addnew_selling_price = nil
+	delete(m.clearedFields, purchaseorderline.FieldNewSellingPrice)
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (m *PurchaseOrderLineMutation) SetPriceScope(s string) {
+	m.price_scope = &s
+}
+
+// PriceScope returns the value of the "price_scope" field in the mutation.
+func (m *PurchaseOrderLineMutation) PriceScope() (r string, exists bool) {
+	v := m.price_scope
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriceScope returns the old "price_scope" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldPriceScope(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriceScope is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriceScope requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriceScope: %w", err)
+	}
+	return oldValue.PriceScope, nil
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (m *PurchaseOrderLineMutation) ClearPriceScope() {
+	m.price_scope = nil
+	m.clearedFields[purchaseorderline.FieldPriceScope] = struct{}{}
+}
+
+// PriceScopeCleared returns if the "price_scope" field was cleared in this mutation.
+func (m *PurchaseOrderLineMutation) PriceScopeCleared() bool {
+	_, ok := m.clearedFields[purchaseorderline.FieldPriceScope]
+	return ok
+}
+
+// ResetPriceScope resets all changes to the "price_scope" field.
+func (m *PurchaseOrderLineMutation) ResetPriceScope() {
+	m.price_scope = nil
+	delete(m.clearedFields, purchaseorderline.FieldPriceScope)
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by id.
 func (m *PurchaseOrderLineMutation) SetPurchaseOrderID(id uuid.UUID) {
 	m.purchase_order = &id
@@ -64027,7 +64149,7 @@ func (m *PurchaseOrderLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderLineMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.purchase_order != nil {
 		fields = append(fields, purchaseorderline.FieldPoID)
 	}
@@ -64055,6 +64177,12 @@ func (m *PurchaseOrderLineMutation) Fields() []string {
 	if m.rebate_percent != nil {
 		fields = append(fields, purchaseorderline.FieldRebatePercent)
 	}
+	if m.new_selling_price != nil {
+		fields = append(fields, purchaseorderline.FieldNewSellingPrice)
+	}
+	if m.price_scope != nil {
+		fields = append(fields, purchaseorderline.FieldPriceScope)
+	}
 	return fields
 }
 
@@ -64081,6 +64209,10 @@ func (m *PurchaseOrderLineMutation) Field(name string) (ent.Value, bool) {
 		return m.TotalPrice()
 	case purchaseorderline.FieldRebatePercent:
 		return m.RebatePercent()
+	case purchaseorderline.FieldNewSellingPrice:
+		return m.NewSellingPrice()
+	case purchaseorderline.FieldPriceScope:
+		return m.PriceScope()
 	}
 	return nil, false
 }
@@ -64108,6 +64240,10 @@ func (m *PurchaseOrderLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldTotalPrice(ctx)
 	case purchaseorderline.FieldRebatePercent:
 		return m.OldRebatePercent(ctx)
+	case purchaseorderline.FieldNewSellingPrice:
+		return m.OldNewSellingPrice(ctx)
+	case purchaseorderline.FieldPriceScope:
+		return m.OldPriceScope(ctx)
 	}
 	return nil, fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -64180,6 +64316,20 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetRebatePercent(v)
 		return nil
+	case purchaseorderline.FieldNewSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNewSellingPrice(v)
+		return nil
+	case purchaseorderline.FieldPriceScope:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriceScope(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -64203,6 +64353,9 @@ func (m *PurchaseOrderLineMutation) AddedFields() []string {
 	if m.addrebate_percent != nil {
 		fields = append(fields, purchaseorderline.FieldRebatePercent)
 	}
+	if m.addnew_selling_price != nil {
+		fields = append(fields, purchaseorderline.FieldNewSellingPrice)
+	}
 	return fields
 }
 
@@ -64221,6 +64374,8 @@ func (m *PurchaseOrderLineMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedTotalPrice()
 	case purchaseorderline.FieldRebatePercent:
 		return m.AddedRebatePercent()
+	case purchaseorderline.FieldNewSellingPrice:
+		return m.AddedNewSellingPrice()
 	}
 	return nil, false
 }
@@ -64265,6 +64420,13 @@ func (m *PurchaseOrderLineMutation) AddField(name string, value ent.Value) error
 		}
 		m.AddRebatePercent(v)
 		return nil
+	case purchaseorderline.FieldNewSellingPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNewSellingPrice(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine numeric field %s", name)
 }
@@ -64278,6 +64440,12 @@ func (m *PurchaseOrderLineMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(purchaseorderline.FieldUnitID) {
 		fields = append(fields, purchaseorderline.FieldUnitID)
+	}
+	if m.FieldCleared(purchaseorderline.FieldNewSellingPrice) {
+		fields = append(fields, purchaseorderline.FieldNewSellingPrice)
+	}
+	if m.FieldCleared(purchaseorderline.FieldPriceScope) {
+		fields = append(fields, purchaseorderline.FieldPriceScope)
 	}
 	return fields
 }
@@ -64298,6 +64466,12 @@ func (m *PurchaseOrderLineMutation) ClearField(name string) error {
 		return nil
 	case purchaseorderline.FieldUnitID:
 		m.ClearUnitID()
+		return nil
+	case purchaseorderline.FieldNewSellingPrice:
+		m.ClearNewSellingPrice()
+		return nil
+	case purchaseorderline.FieldPriceScope:
+		m.ClearPriceScope()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine nullable field %s", name)
@@ -64333,6 +64507,12 @@ func (m *PurchaseOrderLineMutation) ResetField(name string) error {
 		return nil
 	case purchaseorderline.FieldRebatePercent:
 		m.ResetRebatePercent()
+		return nil
+	case purchaseorderline.FieldNewSellingPrice:
+		m.ResetNewSellingPrice()
+		return nil
+	case purchaseorderline.FieldPriceScope:
+		m.ResetPriceScope()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)

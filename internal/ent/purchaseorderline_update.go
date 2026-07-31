@@ -202,6 +202,53 @@ func (_u *PurchaseOrderLineUpdate) AddRebatePercent(v float64) *PurchaseOrderLin
 	return _u
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdate) SetNewSellingPrice(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.ResetNewSellingPrice()
+	_u.mutation.SetNewSellingPrice(v)
+	return _u
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableNewSellingPrice(v *float64) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetNewSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddNewSellingPrice adds value to the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdate) AddNewSellingPrice(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.AddNewSellingPrice(v)
+	return _u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdate) ClearNewSellingPrice() *PurchaseOrderLineUpdate {
+	_u.mutation.ClearNewSellingPrice()
+	return _u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_u *PurchaseOrderLineUpdate) SetPriceScope(v string) *PurchaseOrderLineUpdate {
+	_u.mutation.SetPriceScope(v)
+	return _u
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillablePriceScope(v *string) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetPriceScope(*v)
+	}
+	return _u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (_u *PurchaseOrderLineUpdate) ClearPriceScope() *PurchaseOrderLineUpdate {
+	_u.mutation.ClearPriceScope()
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdate) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdate {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -315,6 +362,21 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.AddedRebatePercent(); ok {
 		_spec.AddField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.NewSellingPrice(); ok {
+		_spec.SetField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedNewSellingPrice(); ok {
+		_spec.AddField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.NewSellingPriceCleared() {
+		_spec.ClearField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PriceScope(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceScope, field.TypeString, value)
+	}
+	if _u.mutation.PriceScopeCleared() {
+		_spec.ClearField(purchaseorderline.FieldPriceScope, field.TypeString)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -538,6 +600,53 @@ func (_u *PurchaseOrderLineUpdateOne) AddRebatePercent(v float64) *PurchaseOrder
 	return _u
 }
 
+// SetNewSellingPrice sets the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdateOne) SetNewSellingPrice(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.ResetNewSellingPrice()
+	_u.mutation.SetNewSellingPrice(v)
+	return _u
+}
+
+// SetNillableNewSellingPrice sets the "new_selling_price" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableNewSellingPrice(v *float64) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetNewSellingPrice(*v)
+	}
+	return _u
+}
+
+// AddNewSellingPrice adds value to the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdateOne) AddNewSellingPrice(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.AddNewSellingPrice(v)
+	return _u
+}
+
+// ClearNewSellingPrice clears the value of the "new_selling_price" field.
+func (_u *PurchaseOrderLineUpdateOne) ClearNewSellingPrice() *PurchaseOrderLineUpdateOne {
+	_u.mutation.ClearNewSellingPrice()
+	return _u
+}
+
+// SetPriceScope sets the "price_scope" field.
+func (_u *PurchaseOrderLineUpdateOne) SetPriceScope(v string) *PurchaseOrderLineUpdateOne {
+	_u.mutation.SetPriceScope(v)
+	return _u
+}
+
+// SetNillablePriceScope sets the "price_scope" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillablePriceScope(v *string) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetPriceScope(*v)
+	}
+	return _u
+}
+
+// ClearPriceScope clears the value of the "price_scope" field.
+func (_u *PurchaseOrderLineUpdateOne) ClearPriceScope() *PurchaseOrderLineUpdateOne {
+	_u.mutation.ClearPriceScope()
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdateOne) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdateOne {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -681,6 +790,21 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 	}
 	if value, ok := _u.mutation.AddedRebatePercent(); ok {
 		_spec.AddField(purchaseorderline.FieldRebatePercent, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.NewSellingPrice(); ok {
+		_spec.SetField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedNewSellingPrice(); ok {
+		_spec.AddField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64, value)
+	}
+	if _u.mutation.NewSellingPriceCleared() {
+		_spec.ClearField(purchaseorderline.FieldNewSellingPrice, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.PriceScope(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceScope, field.TypeString, value)
+	}
+	if _u.mutation.PriceScopeCleared() {
+		_spec.ClearField(purchaseorderline.FieldPriceScope, field.TypeString)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{

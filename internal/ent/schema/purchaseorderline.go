@@ -43,6 +43,15 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 		field.Float("rebate_percent").
 			Default(0).
 			Comment("supplier rebate %% accrued on the value received for this line"),
+		// Selling-price adjustment decided at ORDER time and carried through to the goods
+		// receipt as a default (still editable there) — so a buyer who already knows a price
+		// change is coming doesn't have to re-decide it when the goods are actually received.
+		// The decision is only APPLIED at goods-receipt-post time (see postGoodsReceiptCore /
+		// SchedulePendingPriceChange), never here — nothing has been received yet at PO time.
+		field.Float("new_selling_price").Optional().Nillable().
+			Comment("Selling price to apply once this line is received, if the buyer chose to adjust it at order time."),
+		field.String("price_scope").Optional().Default("all_stock").
+			Comment("all_stock: apply new_selling_price immediately on receipt, everywhere. new_stock_only: queue it — old stock keeps its current price until every pre-receipt cost layer is depleted."),
 	}
 }
 

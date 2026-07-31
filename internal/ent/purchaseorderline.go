@@ -36,6 +36,10 @@ type PurchaseOrderLine struct {
 	TotalPrice float64 `json:"total_price,omitempty"`
 	// supplier rebate %% accrued on the value received for this line
 	RebatePercent float64 `json:"rebate_percent,omitempty"`
+	// Selling price to apply once this line is received, if the buyer chose to adjust it at order time.
+	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
+	// all_stock: apply new_selling_price immediately on receipt, everywhere. new_stock_only: queue it — old stock keeps its current price until every pre-receipt cost layer is depleted.
+	PriceScope string `json:"price_scope,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PurchaseOrderLineQuery when eager-loading is set.
 	Edges        PurchaseOrderLineEdges `json:"edges"`
@@ -69,8 +73,10 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchaseorderline.FieldVariantID, purchaseorderline.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent:
+		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent, purchaseorderline.FieldNewSellingPrice:
 			values[i] = new(sql.NullFloat64)
+		case purchaseorderline.FieldPriceScope:
+			values[i] = new(sql.NullString)
 		case purchaseorderline.FieldID, purchaseorderline.FieldPoID, purchaseorderline.FieldItemID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -150,6 +156,19 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.RebatePercent = value.Float64
 			}
+		case purchaseorderline.FieldNewSellingPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field new_selling_price", values[i])
+			} else if value.Valid {
+				_m.NewSellingPrice = new(float64)
+				*_m.NewSellingPrice = value.Float64
+			}
+		case purchaseorderline.FieldPriceScope:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field price_scope", values[i])
+			} else if value.Valid {
+				_m.PriceScope = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -221,6 +240,14 @@ func (_m *PurchaseOrderLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("rebate_percent=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RebatePercent))
+	builder.WriteString(", ")
+	if v := _m.NewSellingPrice; v != nil {
+		builder.WriteString("new_selling_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("price_scope=")
+	builder.WriteString(_m.PriceScope)
 	builder.WriteByte(')')
 	return builder.String()
 }
