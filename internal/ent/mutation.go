@@ -95367,6 +95367,7 @@ type TenantInventoryConfigMutation struct {
 	adddefault_target_margin_percent   *float64
 	prices_inclusive_of_tax            *bool
 	default_tax_code                   *string
+	label_print_defaults               *schema.LabelPrintDefaults
 	created_at                         *time.Time
 	updated_at                         *time.Time
 	clearedFields                      map[string]struct{}
@@ -96617,6 +96618,55 @@ func (m *TenantInventoryConfigMutation) ResetDefaultTaxCode() {
 	delete(m.clearedFields, tenantinventoryconfig.FieldDefaultTaxCode)
 }
 
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (m *TenantInventoryConfigMutation) SetLabelPrintDefaults(spd schema.LabelPrintDefaults) {
+	m.label_print_defaults = &spd
+}
+
+// LabelPrintDefaults returns the value of the "label_print_defaults" field in the mutation.
+func (m *TenantInventoryConfigMutation) LabelPrintDefaults() (r schema.LabelPrintDefaults, exists bool) {
+	v := m.label_print_defaults
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLabelPrintDefaults returns the old "label_print_defaults" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldLabelPrintDefaults(ctx context.Context) (v schema.LabelPrintDefaults, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLabelPrintDefaults is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLabelPrintDefaults requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLabelPrintDefaults: %w", err)
+	}
+	return oldValue.LabelPrintDefaults, nil
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (m *TenantInventoryConfigMutation) ClearLabelPrintDefaults() {
+	m.label_print_defaults = nil
+	m.clearedFields[tenantinventoryconfig.FieldLabelPrintDefaults] = struct{}{}
+}
+
+// LabelPrintDefaultsCleared returns if the "label_print_defaults" field was cleared in this mutation.
+func (m *TenantInventoryConfigMutation) LabelPrintDefaultsCleared() bool {
+	_, ok := m.clearedFields[tenantinventoryconfig.FieldLabelPrintDefaults]
+	return ok
+}
+
+// ResetLabelPrintDefaults resets all changes to the "label_print_defaults" field.
+func (m *TenantInventoryConfigMutation) ResetLabelPrintDefaults() {
+	m.label_print_defaults = nil
+	delete(m.clearedFields, tenantinventoryconfig.FieldLabelPrintDefaults)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *TenantInventoryConfigMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -96723,7 +96773,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 29)
+	fields := make([]string, 0, 30)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -96805,6 +96855,9 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	if m.default_tax_code != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTaxCode)
 	}
+	if m.label_print_defaults != nil {
+		fields = append(fields, tenantinventoryconfig.FieldLabelPrintDefaults)
+	}
 	if m.created_at != nil {
 		fields = append(fields, tenantinventoryconfig.FieldCreatedAt)
 	}
@@ -96873,6 +96926,8 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.PricesInclusiveOfTax()
 	case tenantinventoryconfig.FieldDefaultTaxCode:
 		return m.DefaultTaxCode()
+	case tenantinventoryconfig.FieldLabelPrintDefaults:
+		return m.LabelPrintDefaults()
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.CreatedAt()
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -96940,6 +96995,8 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldPricesInclusiveOfTax(ctx)
 	case tenantinventoryconfig.FieldDefaultTaxCode:
 		return m.OldDefaultTaxCode(ctx)
+	case tenantinventoryconfig.FieldLabelPrintDefaults:
+		return m.OldLabelPrintDefaults(ctx)
 	case tenantinventoryconfig.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case tenantinventoryconfig.FieldUpdatedAt:
@@ -97142,6 +97199,13 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 		}
 		m.SetDefaultTaxCode(v)
 		return nil
+	case tenantinventoryconfig.FieldLabelPrintDefaults:
+		v, ok := value.(schema.LabelPrintDefaults)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLabelPrintDefaults(v)
+		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -97264,6 +97328,9 @@ func (m *TenantInventoryConfigMutation) ClearedFields() []string {
 	if m.FieldCleared(tenantinventoryconfig.FieldDefaultTaxCode) {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTaxCode)
 	}
+	if m.FieldCleared(tenantinventoryconfig.FieldLabelPrintDefaults) {
+		fields = append(fields, tenantinventoryconfig.FieldLabelPrintDefaults)
+	}
 	return fields
 }
 
@@ -97292,6 +97359,9 @@ func (m *TenantInventoryConfigMutation) ClearField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultTaxCode:
 		m.ClearDefaultTaxCode()
+		return nil
+	case tenantinventoryconfig.FieldLabelPrintDefaults:
+		m.ClearLabelPrintDefaults()
 		return nil
 	}
 	return fmt.Errorf("unknown TenantInventoryConfig nullable field %s", name)
@@ -97381,6 +97451,9 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldDefaultTaxCode:
 		m.ResetDefaultTaxCode()
+		return nil
+	case tenantinventoryconfig.FieldLabelPrintDefaults:
+		m.ResetLabelPrintDefaults()
 		return nil
 	case tenantinventoryconfig.FieldCreatedAt:
 		m.ResetCreatedAt()

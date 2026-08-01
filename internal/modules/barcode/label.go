@@ -12,8 +12,12 @@ type LabelFormat string
 const (
 	// FormatAveryA4 renders an A4 PDF sheet of labels (multiple labels per page).
 	FormatAveryA4 LabelFormat = "avery_a4"
-	// FormatThermalZPL emits Zebra ZPL II text (one ^XA..^XZ block per label).
+	// FormatThermalZPL emits Zebra ZPL II text (one ^XA..^XZ block per feed-row).
 	FormatThermalZPL LabelFormat = "thermal_zpl"
+	// FormatThermalTSPL emits TSC/TSPL2 text (one SIZE/GAP/CLS.../PRINT block per feed-row) — the
+	// command language spoken by TSC-compatible desktop thermal printers, including the Xprinter
+	// XP-330B this module targets (see tspl.go).
+	FormatThermalTSPL LabelFormat = "thermal_tspl"
 	// FormatDymo emits DYMO label text (a simple line-based command stream per label).
 	FormatDymo LabelFormat = "dymo"
 )
@@ -25,6 +29,8 @@ func ParseLabelFormat(s string) (LabelFormat, error) {
 		return FormatAveryA4, nil
 	case FormatThermalZPL:
 		return FormatThermalZPL, nil
+	case FormatThermalTSPL:
+		return FormatThermalTSPL, nil
 	case FormatDymo:
 		return FormatDymo, nil
 	default:
@@ -141,12 +147,12 @@ type Batch struct {
 	Labels      []Label
 	CompanyName string
 	Format      LabelFormat
-	Avery       AverySpec   // used when Format == FormatAveryA4; zero-value falls back to AveryL7160
-	Thermal     ThermalSpec // used when Format == FormatThermalZPL; zero-value falls back to 4x2in@203dpi
+	Avery       AverySpec     // used when Format == FormatAveryA4; zero-value falls back to AveryL7160
+	Template    LabelTemplate // used when Format == FormatThermalZPL/FormatThermalTSPL; zero-value falls back to 4x2in@203dpi single-lane
 	GeneratedAt time.Time
 }
 
-// Render produces the output bytes for the batch's format: an Avery sheet PDF, or ZPL/Dymo text.
+// Render produces the output bytes for the batch's format: an Avery sheet PDF, or ZPL/TSPL/Dymo text.
 func (b Batch) Render() ([]byte, error) {
 	switch b.Format {
 	case FormatAveryA4:
@@ -156,11 +162,17 @@ func (b Batch) Render() ([]byte, error) {
 		}
 		return renderAveryPDF(b.Labels, spec, b.CompanyName)
 	case FormatThermalZPL:
-		spec := b.Thermal
-		if spec.WdIn == 0 || spec.HtIn == 0 {
-			spec = ThermalSpecByName("")
+		tmpl := b.Template
+		if tmpl.LabelWIn == 0 || tmpl.LabelHIn == 0 {
+			tmpl = LabelTemplateByName("")
 		}
-		return []byte(renderZPL(b.Labels, spec)), nil
+		return []byte(renderZPL(b.Labels, tmpl)), nil
+	case FormatThermalTSPL:
+		tmpl := b.Template
+		if tmpl.LabelWIn == 0 || tmpl.LabelHIn == 0 {
+			tmpl = LabelTemplateByName("")
+		}
+		return []byte(renderTSPL(b.Labels, tmpl)), nil
 	case FormatDymo:
 		return []byte(renderDymo(b.Labels)), nil
 	default:

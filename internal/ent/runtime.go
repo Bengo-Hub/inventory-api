@@ -2359,11 +2359,11 @@ func init() {
 	// tenantinventoryconfig.DefaultPricesInclusiveOfTax holds the default value on creation for the prices_inclusive_of_tax field.
 	tenantinventoryconfig.DefaultPricesInclusiveOfTax = tenantinventoryconfigDescPricesInclusiveOfTax.Default.(bool)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[28].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[29].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[29].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[30].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

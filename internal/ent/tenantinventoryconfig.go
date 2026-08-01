@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/google/uuid"
 )
@@ -73,6 +74,8 @@ type TenantInventoryConfig struct {
 	PricesInclusiveOfTax bool `json:"prices_inclusive_of_tax,omitempty"`
 	// Default KRA/eTIMS tax code (e.g. VAT-16) applied to items missing one; resolved against treasury-api tax codes
 	DefaultTaxCode string `json:"default_tax_code,omitempty"`
+	// Tenant's preferred label template/format for barcode printing (format, template, rotate) — see barcode.LabelTemplateByName
+	LabelPrintDefaults schema.LabelPrintDefaults `json:"label_print_defaults,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -85,7 +88,7 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tenantinventoryconfig.FieldUnitReorderDefaults:
+		case tenantinventoryconfig.FieldUnitReorderDefaults, tenantinventoryconfig.FieldLabelPrintDefaults:
 			values[i] = new([]byte)
 		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, tenantinventoryconfig.FieldRecordTheoreticalUsage, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
 			values[i] = new(sql.NullBool)
@@ -287,6 +290,14 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				_m.DefaultTaxCode = value.String
 			}
+		case tenantinventoryconfig.FieldLabelPrintDefaults:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field label_print_defaults", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.LabelPrintDefaults); err != nil {
+					return fmt.Errorf("unmarshal field label_print_defaults: %w", err)
+				}
+			}
 		case tenantinventoryconfig.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -421,6 +432,9 @@ func (_m *TenantInventoryConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("default_tax_code=")
 	builder.WriteString(_m.DefaultTaxCode)
+	builder.WriteString(", ")
+	builder.WriteString("label_print_defaults=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LabelPrintDefaults))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

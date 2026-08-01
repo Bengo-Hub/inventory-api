@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/google/uuid"
 )
@@ -464,6 +465,26 @@ func (_u *TenantInventoryConfigUpdate) ClearDefaultTaxCode() *TenantInventoryCon
 	return _u
 }
 
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (_u *TenantInventoryConfigUpdate) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigUpdate {
+	_u.mutation.SetLabelPrintDefaults(v)
+	return _u
+}
+
+// SetNillableLabelPrintDefaults sets the "label_print_defaults" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableLabelPrintDefaults(v *schema.LabelPrintDefaults) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetLabelPrintDefaults(*v)
+	}
+	return _u
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (_u *TenantInventoryConfigUpdate) ClearLabelPrintDefaults() *TenantInventoryConfigUpdate {
+	_u.mutation.ClearLabelPrintDefaults()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdate) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -643,6 +664,12 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if _u.mutation.DefaultTaxCodeCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.LabelPrintDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldLabelPrintDefaults, field.TypeJSON, value)
+	}
+	if _u.mutation.LabelPrintDefaultsCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldLabelPrintDefaults, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)
@@ -1102,6 +1129,26 @@ func (_u *TenantInventoryConfigUpdateOne) ClearDefaultTaxCode() *TenantInventory
 	return _u
 }
 
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (_u *TenantInventoryConfigUpdateOne) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetLabelPrintDefaults(v)
+	return _u
+}
+
+// SetNillableLabelPrintDefaults sets the "label_print_defaults" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableLabelPrintDefaults(v *schema.LabelPrintDefaults) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetLabelPrintDefaults(*v)
+	}
+	return _u
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (_u *TenantInventoryConfigUpdateOne) ClearLabelPrintDefaults() *TenantInventoryConfigUpdateOne {
+	_u.mutation.ClearLabelPrintDefaults()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *TenantInventoryConfigUpdateOne) SetUpdatedAt(v time.Time) *TenantInventoryConfigUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -1311,6 +1358,12 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if _u.mutation.DefaultTaxCodeCleared() {
 		_spec.ClearField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.LabelPrintDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldLabelPrintDefaults, field.TypeJSON, value)
+	}
+	if _u.mutation.LabelPrintDefaultsCleared() {
+		_spec.ClearField(tenantinventoryconfig.FieldLabelPrintDefaults, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldUpdatedAt, field.TypeTime, value)

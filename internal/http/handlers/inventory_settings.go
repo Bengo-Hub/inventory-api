@@ -12,6 +12,7 @@ import (
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/ent/schema"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
@@ -98,7 +99,10 @@ type inventorySettingsResponse struct {
 	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent"`
 	PricesInclusiveOfTax       bool     `json:"prices_inclusive_of_tax"`
 	DefaultTaxCode             string   `json:"default_tax_code"`
-	UpdatedAt                  string   `json:"updated_at"`
+	// Label printing — tenant's saved default template/format for barcode label printing (see
+	// inventory-api/internal/modules/barcode.LabelTemplateByName for valid template names).
+	LabelPrintDefaults schema.LabelPrintDefaults `json:"label_print_defaults"`
+	UpdatedAt          string                    `json:"updated_at"`
 }
 
 func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettingsResponse {
@@ -107,34 +111,35 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		unitDefaults = DefaultUnitReorderLevels()
 	}
 	return inventorySettingsResponse{
-		TenantID:                      c.TenantID.String(),
-		LowStockThresholdPct:          c.LowStockThresholdPct,
-		CriticalStockThresholdPct:     c.CriticalStockThresholdPct,
-		DefaultReorderLevel:           c.DefaultReorderLevel,
-		UnitReorderDefaults:           unitDefaults,
-		ExpiryWarningDays:             c.ExpiryWarningDays,
-		EnableLowStockNotifications:   c.EnableLowStockNotifications,
-		EnableExpiryNotifications:     c.EnableExpiryNotifications,
-		NotificationEmail:             c.NotificationEmail,
-		DefaultWarehouseID:            c.DefaultWarehouseID,
-		EnableLotTracking:             c.EnableLotTracking,
-		EnableExpiryTracking:          c.EnableExpiryTracking,
-		PurchaseOrderApprovalRequired: c.PurchaseOrderApprovalRequired,
-		AutoAdjustOnTransfer:          c.AutoAdjustOnTransfer,
+		TenantID:                       c.TenantID.String(),
+		LowStockThresholdPct:           c.LowStockThresholdPct,
+		CriticalStockThresholdPct:      c.CriticalStockThresholdPct,
+		DefaultReorderLevel:            c.DefaultReorderLevel,
+		UnitReorderDefaults:            unitDefaults,
+		ExpiryWarningDays:              c.ExpiryWarningDays,
+		EnableLowStockNotifications:    c.EnableLowStockNotifications,
+		EnableExpiryNotifications:      c.EnableExpiryNotifications,
+		NotificationEmail:              c.NotificationEmail,
+		DefaultWarehouseID:             c.DefaultWarehouseID,
+		EnableLotTracking:              c.EnableLotTracking,
+		EnableExpiryTracking:           c.EnableExpiryTracking,
+		PurchaseOrderApprovalRequired:  c.PurchaseOrderApprovalRequired,
+		AutoAdjustOnTransfer:           c.AutoAdjustOnTransfer,
 		RecipeItemsNonDepletingDefault: c.RecipeItemsNonDepletingDefault,
 		RecordTheoreticalUsage:         c.RecordTheoreticalUsage,
-		LotsModuleEnabled:             c.LotsModuleEnabled,
-		RecipesModuleEnabled:          c.RecipesModuleEnabled,
-		PurchaseOrdersEnabled:         c.PurchaseOrdersEnabled,
-		SupplierManagementEnabled:     c.SupplierManagementEnabled,
-		EnableRoomPricing:             c.EnableRoomPricing,
-		EnableFacilityBooking:         c.EnableFacilityBooking,
-		EnableConferencePackages:      c.EnableConferencePackages,
-		CostingMethod:                 c.CostingMethod.String(),
-		DefaultTargetMarginPercent:    c.DefaultTargetMarginPercent,
-		PricesInclusiveOfTax:          c.PricesInclusiveOfTax,
-		DefaultTaxCode:                c.DefaultTaxCode,
-		UpdatedAt:                     c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		LotsModuleEnabled:              c.LotsModuleEnabled,
+		RecipesModuleEnabled:           c.RecipesModuleEnabled,
+		PurchaseOrdersEnabled:          c.PurchaseOrdersEnabled,
+		SupplierManagementEnabled:      c.SupplierManagementEnabled,
+		EnableRoomPricing:              c.EnableRoomPricing,
+		EnableFacilityBooking:          c.EnableFacilityBooking,
+		EnableConferencePackages:       c.EnableConferencePackages,
+		CostingMethod:                  c.CostingMethod.String(),
+		DefaultTargetMarginPercent:     c.DefaultTargetMarginPercent,
+		PricesInclusiveOfTax:           c.PricesInclusiveOfTax,
+		DefaultTaxCode:                 c.DefaultTaxCode,
+		LabelPrintDefaults:             c.LabelPrintDefaults,
+		UpdatedAt:                      c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
@@ -171,28 +176,29 @@ func (h *InventorySettingsHandler) GetSettings(w http.ResponseWriter, r *http.Re
 }
 
 type updateInventorySettingsInput struct {
-	LowStockThresholdPct          *float64       `json:"low_stock_threshold_pct"`
-	CriticalStockThresholdPct     *float64       `json:"critical_stock_threshold_pct"`
-	DefaultReorderLevel           *int           `json:"default_reorder_level"`
-	UnitReorderDefaults           map[string]int `json:"unit_reorder_defaults"`
-	ExpiryWarningDays             *int           `json:"expiry_warning_days"`
-	EnableLowStockNotifications   *bool          `json:"enable_low_stock_notifications"`
-	EnableExpiryNotifications     *bool          `json:"enable_expiry_notifications"`
-	NotificationEmail             *string        `json:"notification_email"`
-	DefaultWarehouseID            *string        `json:"default_warehouse_id"`
-	EnableLotTracking             *bool          `json:"enable_lot_tracking"`
-	EnableExpiryTracking          *bool          `json:"enable_expiry_tracking"`
-	PurchaseOrderApprovalRequired *bool          `json:"purchase_order_approval_required"`
-	AutoAdjustOnTransfer          *bool          `json:"auto_adjust_on_transfer"`
-	RecipeItemsNonDepletingDefault *bool         `json:"recipe_items_non_depleting_default"`
-	RecordTheoreticalUsage         *bool         `json:"record_theoretical_usage"`
-	EnableRoomPricing             *bool          `json:"enable_room_pricing"`
-	EnableFacilityBooking         *bool          `json:"enable_facility_booking"`
-	EnableConferencePackages      *bool          `json:"enable_conference_packages"`
-	DefaultTargetMarginPercent    *float64       `json:"default_target_margin_percent"`
-	PricesInclusiveOfTax          *bool          `json:"prices_inclusive_of_tax"`
-	DefaultTaxCode                *string        `json:"default_tax_code"`
-	CostingMethod                 *string        `json:"costing_method"`
+	LowStockThresholdPct           *float64                   `json:"low_stock_threshold_pct"`
+	CriticalStockThresholdPct      *float64                   `json:"critical_stock_threshold_pct"`
+	DefaultReorderLevel            *int                       `json:"default_reorder_level"`
+	UnitReorderDefaults            map[string]int             `json:"unit_reorder_defaults"`
+	ExpiryWarningDays              *int                       `json:"expiry_warning_days"`
+	EnableLowStockNotifications    *bool                      `json:"enable_low_stock_notifications"`
+	EnableExpiryNotifications      *bool                      `json:"enable_expiry_notifications"`
+	NotificationEmail              *string                    `json:"notification_email"`
+	DefaultWarehouseID             *string                    `json:"default_warehouse_id"`
+	EnableLotTracking              *bool                      `json:"enable_lot_tracking"`
+	EnableExpiryTracking           *bool                      `json:"enable_expiry_tracking"`
+	PurchaseOrderApprovalRequired  *bool                      `json:"purchase_order_approval_required"`
+	AutoAdjustOnTransfer           *bool                      `json:"auto_adjust_on_transfer"`
+	RecipeItemsNonDepletingDefault *bool                      `json:"recipe_items_non_depleting_default"`
+	RecordTheoreticalUsage         *bool                      `json:"record_theoretical_usage"`
+	EnableRoomPricing              *bool                      `json:"enable_room_pricing"`
+	EnableFacilityBooking          *bool                      `json:"enable_facility_booking"`
+	EnableConferencePackages       *bool                      `json:"enable_conference_packages"`
+	DefaultTargetMarginPercent     *float64                   `json:"default_target_margin_percent"`
+	PricesInclusiveOfTax           *bool                      `json:"prices_inclusive_of_tax"`
+	DefaultTaxCode                 *string                    `json:"default_tax_code"`
+	CostingMethod                  *string                    `json:"costing_method"`
+	LabelPrintDefaults             *schema.LabelPrintDefaults `json:"label_print_defaults"`
 }
 
 // PutSettings handles PUT /{tenant}/inventory/settings
@@ -306,6 +312,9 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.DefaultTaxCode != nil {
 		upd = upd.SetDefaultTaxCode(*input.DefaultTaxCode)
+	}
+	if input.LabelPrintDefaults != nil {
+		upd = upd.SetLabelPrintDefaults(*input.LabelPrintDefaults)
 	}
 
 	updated, err := upd.Save(r.Context())
