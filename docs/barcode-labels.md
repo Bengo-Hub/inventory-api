@@ -1,9 +1,11 @@
 # Inventory API - Barcode & Label Printing
 
-**Last updated**: 2026-07-31
-**Module**: `internal/modules/barcode/` (`encode.go`, `gs1.go`, `label.go`, `avery_pdf.go`, `thermal.go`)
+**Last updated**: 2026-08-01
+**Module**: `internal/modules/barcode/` (`encode.go`, `gs1.go`, `label.go`, `avery_pdf.go`,
+`thermal.go`, `tspl.go`, `template.go`)
 **Handler**: `internal/http/handlers/barcode.go`
-**Endpoints**: `GET /inventory/items/{itemID}/barcode.png`, `POST /inventory/labels/print`
+**Endpoints**: `GET /inventory/items/{itemID}/barcode.png`, `GET /inventory/items/{itemID}/label.pdf`,
+`POST /inventory/labels/print`
 
 This is a reference doc for whoever next extends label printing: what real-world printer/label
 conventions this module is built against, what it actually supports today, and why the label
@@ -15,12 +17,16 @@ struct (`PrintLabelsRequest`) for wire-format details.
 ## Table of Contents
 
 1. [Printer types](#printer-types)
-2. [Label sizes and DPI](#label-sizes-and-dpi)
-3. [Symbologies supported](#symbologies-supported)
-4. [GS1-128 sizing rules](#gs1-128-sizing-rules)
-5. [What this codebase supports today](#what-this-codebase-supports-today)
-6. [Design decision: one card, not sections](#design-decision-one-card-not-sections)
-7. [Design decision: dashed cut guide](#design-decision-dashed-cut-guide)
+2. [Label templates: physical size, rows/lanes, DPI](#label-templates-physical-size-rowslanes-dpi)
+3. [The rotation bug and how Rotate fixes it](#the-rotation-bug-and-how-rotate-fixes-it)
+4. [TSPL support (Xprinter/TSC-compatible printers)](#tspl-support-xprintertsc-compatible-printers)
+5. [Direct USB printing via the local print-agent](#direct-usb-printing-via-the-local-print-agent)
+6. [Symbologies supported](#symbologies-supported)
+7. [GS1-128 sizing rules](#gs1-128-sizing-rules)
+8. [What this codebase supports today](#what-this-codebase-supports-today)
+9. [Design decision: one card, not sections](#design-decision-one-card-not-sections)
+10. [Design decision: dashed cut guide](#design-decision-dashed-cut-guide)
+11. [Scope decision: no shared Go module (yet)](#scope-decision-no-shared-go-module-yet)
 
 ---
 
@@ -36,10 +42,18 @@ Two fundamentally different physical setups produce "a label," and the `format` 
   **thermal-transfer** (a wax/resin ribbon melted onto plain label stock; more durable, needed
   for asset/serial labels that must survive months in a warehouse). The roll auto-cuts or
   tears off along a perforation after each label — there's no "sheet," so no cut guide is
-  needed. `format: "thermal_zpl"` targets this category, emitting Zebra ZPL II
-  (`^XA...^XZ` per label). `format: "dymo"` targets DYMO's own family, which is usually driven
-  through a host-side SDK/bridge rather than raw ZPL, so the module emits a simple deterministic
-  text stream instead (see `renderDymo` in `thermal.go`) for a bridge process to translate.
+  needed. Two command languages are supported, because they are NOT interchangeable — sending
+  the wrong one to a printer either does nothing or prints garbage:
+  - `format: "thermal_zpl"` — Zebra ZPL II (`^XA...^XZ` per feed-row). Targets genuine Zebra
+    printers (and any printer explicitly running in a ZPL-emulation mode).
+  - `format: "thermal_tspl"` — TSC/TSPL2 (`SIZE`/`GAP`/`CLS`/…/`PRINT` per feed-row). Targets
+    TSC-compatible desktop printers — **including the Xprinter XP-330B**, confirmed via
+    Xprinter's own TSPL-emulation spec. Xprinter printers do **not** speak ZPL natively; if
+    your printer is an Xprinter (or another TSC-clone) model, use `thermal_tspl`, not
+    `thermal_zpl`. See [§4](#tspl-support-xprintertsc-compatible-printers).
+  - `format: "dymo"` targets DYMO's own family, which is usually driven through a host-side
+    SDK/bridge rather than raw ZPL/TSPL, so the module emits a simple deterministic text stream
+    instead (see `renderDymo` in `thermal.go`) for a bridge process to translate.
 - **Pre-cut adhesive label sheets on a regular inkjet/laser printer** (the Avery convention).
   A full A4/Letter page feeds through an ordinary office printer; the labels are arranged in a
   grid on the page. Genuine Avery-branded stock is die-cut so each label peels off cleanly, but
@@ -48,30 +62,125 @@ Two fundamentally different physical setups produce "a label," and the `format` 
   "cut here" guide (see [below](#design-decision-dashed-cut-guide)). `format: "avery_a4"`
   targets this category and produces a PDF sheet.
 
-## Label sizes and DPI
+## Label templates: physical size, rows/lanes, DPI
 
-**Thermal** (`thermal_size` field, resolved by `ThermalSpecByName` in `thermal.go`), all at
-203dpi:
+**Thermal** (`template` field, resolved by `LabelTemplateByName` in `template.go` — replaces the
+old `ThermalSpec`/`thermal_size`, still accepted for back-compat), all at 203dpi:
 
-| Preset | Size | When to use |
-|---|---|---|
-| `2x1` | 2"×1" | Simple SKU/barcode label — the standard small thermal label size (matches common DYMO/Zebra small-label stock). No room for a dense GS1-128 payload. |
-| `3x2` | 3"×2" | Recommended once `include_lot`/`include_serial` is set — GS1-128 payloads are longer and denser, and read more reliably with the extra width/height. |
-| `4x2` (default) | 4"×2" | General-purpose item label; the pre-existing default kept so old callers with no opinion on size keep working. |
-| `4x6` | 4"×6" | Shipping-label format — matches the de-facto standard size used by carrier label printers (FedEx/UPS/USPS thermal shipping labels are all 4"×6"). |
+| Preset | Rows (lanes) | One label's size | When to use |
+|---|---|---|---|
+| `2x1` | 1 | 2"×1" | Simple SKU/barcode label — the standard small thermal label size. No room for a dense GS1-128 payload. |
+| `3x2` | 1 | 3"×2" | Recommended once `include_lot`/`include_serial` is set — GS1-128 payloads are longer and denser, and read more reliably with the extra width/height. |
+| `4x2` (default) | 1 | 4"×2" | General-purpose item label; the pre-existing default kept so old callers with no opinion on size keep working. |
+| `4x6` | 1 | 4"×6" | Shipping-label format — matches the de-facto standard size used by carrier label printers (FedEx/UPS/USPS thermal shipping labels are all 4"×6"). |
+| `1row_40x30` | 1 | 40×30mm | A single narrow lane feeding one label at a time down its length — the exact roll layout confirmed against the user's own Xprinter XP-330B stock. |
+| `2row_38x30` | 2 | 38×30mm each | A wider roll die-cut into 2 parallel lanes side-by-side. |
+| `3row_25x40` | 3 | 25×40mm each | 3 parallel lanes. |
+| `4row_18x30` | 4 | 18×30mm each | 4 parallel lanes. |
+| `custom` | 1-4 (`custom_lanes`) | `custom_label_w_in`/`custom_label_h_in` | Explicit W/H/lanes/gaps/rotate for a real roll that doesn't match any preset above. |
+
+**"Rows" = lanes across the roll's width, not the Avery sheet's grid rows.** The multi-row
+presets above are **engineering estimates** sized to fit the Xprinter XP-330B's confirmed
+≤80mm media width — they are **not vendor-confirmed exact Xprinter SKUs**. If your real label
+stock doesn't match one of these exactly, measure it and use `template: "custom"` with
+`custom_label_w_in`/`custom_label_h_in`/`custom_lanes`/`custom_gap_x_in`/`custom_gap_y_in`
+instead of assuming a preset is close enough — a mismatched `GAP`/`SIZE` height is exactly what
+causes one barcode's content to bleed across several physical labels (see below).
+
+**Why GapYIn matters**: every preset carries a `GapYIn` — the physical gap/perforation between
+labels along the feed. `SIZE`/`GAP` (TSPL) and `^LL`/label-length (ZPL) are always computed from
+**one label's real height plus that gap**, never guessed or left at a printer's stale default —
+this is what stops a single barcode/label's content from printing across several physical label
+boundaries (the failure mode where one image spans 2-3 labels on the roll because the printer
+thinks each "label" is taller than it physically is).
 
 **DPI**: 203dpi is the common/standard resolution for desktop thermal printers and is sufficient
 for standard 1D barcodes (EAN-13, Code128, GS1-128) and normal label text. 300dpi thermal
-printers exist and are preferable when a label carries small text or very dense codes (e.g. a
-2D code at high data density), but this module hard-codes 203dpi in every `ThermalSpec` — there
-is no 300dpi preset today.
+printers exist and are preferable when a label carries small text or very dense codes, but this
+module hard-codes 203dpi in every `LabelTemplate` — there is no 300dpi preset today.
 
-**Avery sheet** (`sheet` field, resolved by `AverySpecByName` in `label.go`):
+**Avery sheet** (`sheet` field, resolved by `AverySpecByName` in `label.go`) — unrelated to the
+thermal templates above; this is a full A4/Letter page fed through an ordinary office printer:
 
 | Preset | Paper | Grid | Label size | Region fit |
 |---|---|---|---|---|
 | `l7160` (default) | A4 | 3 cols × 7 rows = 21/sheet | 63.5×38.1mm | Most of the world outside North America (A4 is the standard office paper size there). |
 | `5160` | US Letter | 3 cols × 10 rows = 30/sheet | 66.7×25.4mm (2-⅝"×1") | US/Canada (Letter is the standard office paper size there). Same physical grid shared by Avery 5160/8160/5260/8460 — those SKUs differ in adhesive/finish, not layout, which is why one `AverySpec` covers all four. |
+
+## The rotation bug and how Rotate fixes it
+
+Labels were printing **rotated 90°** on a real Xprinter XP-330B: the barcode bars printed, but
+the human-readable text and overall layout ran sideways relative to the feed direction. Root
+cause: `RenderSingleLabelPDF` used to hardcode every single-item label PDF to a fixed
+50.8mm×25.4mm **landscape** page regardless of what roll/paper was actually loaded — the user's
+physical roll turned out to be a single narrow lane feeding **long-edge-first** (portrait media),
+the opposite of what the code assumed, so the PDF viewer/Windows driver rotated content to fit.
+There was no stray `rotate()` call to remove; it was a page-dimension/orientation **mismatch**.
+
+Every `LabelTemplate` now carries an explicit `Rotate bool`: "the physical media is mounted so
+content must print turned 90° to read correctly along the feed direction." Each renderer
+implements this the same concept differently, because each format's rotation primitive differs:
+
+| Renderer | Physical media dims | Rotation mechanism |
+|---|---|---|
+| PDF (`RenderSingleLabelPDF`) | `Rotate=false`: page = template W×H. `Rotate=true`: page dims **swapped** to H×W (physically portrait). | `drawLabelCell` runs inside an `fpdf.TransformBegin/TransformRotate(90,…)/TransformEnd` block, centered on the page, so the same card layout fills the swapped page. |
+| ZPL (`renderZPL`) | `^PW`/`^LL` = the roll **as mounted**, never swapped. | `Rotate=true` emits `^FWR` right after `^XA`/`^CI28` (previously never emitted anywhere in this module — the literal gap that let this bug through). |
+| TSPL (`renderTSPL`) | `SIZE`/`GAP` = the roll **as mounted**, never swapped. | Each `TEXT`/`BARCODE` command's own rotation parameter is `90` instead of `0`. |
+
+**Known limitation**: this fix can't stop an operator from picking a mismatched Windows-driver
+paper-preset name in a print dialog. If you're printing via a PDF and the OS print dialog, pick
+the driver's paper-preset that actually measures the same as your chosen `LabelTemplate` — or
+better, skip the print dialog entirely and use [direct USB printing](#direct-usb-printing-via-the-local-print-agent),
+which sends raw command bytes straight to the printer with no OS page/orientation negotiation at all.
+
+## TSPL support (Xprinter/TSC-compatible printers)
+
+`renderTSPL` (`tspl.go`) emits real TSC/TSPL2 commands, confirmed against TSC's public
+programming manual:
+
+```
+SIZE <w> mm,<h> mm     -- physical label size (one lane's width × height, or the full roll width for multi-lane)
+GAP <gap> mm,0 mm      -- gap-fed (die-cut) stock: distance between labels along the feed
+DIRECTION 0
+REFERENCE 0,0
+CLS                     -- clear the image buffer, once per feed-row
+TEXT x,y,"3",rotation,x-mult,y-mult,"content"
+BARCODE x,y,"128"|"EAN13",height,1,rotation,narrow,wide,"content"
+PRINT 1,1
+```
+
+Symbology: `SymEAN13`/`SymUPCA` → `BARCODE ...,"EAN13",...` (12-digit body; the printer computes
+the check digit, same convention `renderZPL` already uses for `^BE`). `SymCode128` → `"128"`.
+
+**GS1-128 is explicitly unsupported for `thermal_tspl`.** The exact FNC1 escape convention inside
+a TSPL `BARCODE` command's content string is a firmware detail that could not be confirmed
+against Xprinter's specific TSPL clone from public sources — shipping it unverified risks
+silently printing a barcode that scans as plain Code128 instead of GS1-128. `POST
+/inventory/labels/print` rejects `format=thermal_tspl` combined with `include_lot`/
+`include_serial` with `422 UNSUPPORTED_TSPL_GS1`. Use `thermal_zpl` or `avery_a4` for lot/serial
+GS1-128 labels until this is bench-verified and implemented.
+
+## Direct USB printing via the local print-agent
+
+Printing today (download a file → open in a viewer → manually pick a Windows paper preset) is
+exactly the fragile path that produced the rotation bug above. `inventory-ui` can instead print
+**directly via USB**, bypassing the OS print dialog entirely, by reusing `pos-service`'s existing
+local "print-agent" — a small Windows-service companion the operator already runs on the till/
+terminal (`pos-service/pos-api/cmd/print-agent`), listening on loopback `127.0.0.1:9330`:
+
+- `GET /printers` — lists the printers installed in Windows (once the Xprinter's driver is
+  installed, "Xprinter XP-330B" appears here by name).
+- `POST /print` — `{"name": "<printer name>", "format": "rawhex", "data": "<hex-encoded bytes>"}`
+  writes the bytes straight through the Windows spooler in **RAW datatype**
+  (`alexbrainman/printer`'s `StartRawDocument`/`Write`), which bypasses GDI page-size/orientation
+  negotiation entirely — the printer receives exactly the TSPL/ZPL bytes this module generated,
+  with no OS-level transform in between.
+
+**No changes were needed to the print-agent itself** — both routes already exist and are already
+generic/CORS-open, not POS-specific. `inventory-ui`'s `lib/inventory/print-agent.ts` calls the
+same already-running agent process; see `PrintLabelsDialog.tsx`'s "Print via Local Agent" action.
+Operator prerequisite: the Xprinter's Windows driver must be installed (so the printer has a
+name in `/printers`) and the print-agent service must be running.
 
 ## Symbologies supported
 
@@ -133,15 +242,21 @@ presets have more incidental margin) rather than on anything computed from the G
 
 | Field | Values | Effect |
 |---|---|---|
-| `format` | `avery_a4` \| `thermal_zpl` \| `dymo` | Output format (PDF vs. printer command text). |
+| `format` | `avery_a4` \| `thermal_zpl` \| `thermal_tspl` \| `dymo` | Output format (PDF vs. printer command text). |
 | `sheet` | `l7160` (default) \| `5160` | Avery grid preset, only used when `format: "avery_a4"`. |
-| `thermal_size` | `2x1` \| `3x2` \| `4x2` (default) \| `4x6` | Physical label size, only used when `format: "thermal_zpl"`. |
-| `include_lot` | bool | One GS1-128 label per active lot of each selected item, embedding `(10)`/`(17)`. |
-| `include_serial` | bool | One GS1-128 label per available serial, embedding `(21)`. |
+| `template` | preset name (see the templates table above) \| `custom` | Physical label-roll template, used when `format` is `thermal_zpl` or `thermal_tspl`. `thermal_size` (old single-lane-only name) still works for back-compat. |
+| `custom_label_w_in`/`custom_label_h_in`/`custom_lanes`/`custom_gap_x_in`/`custom_gap_y_in` | | Only used when `template: "custom"`. |
+| `rotate` | bool | Overrides the resolved template's own `Rotate` default — see [§3](#the-rotation-bug-and-how-rotate-fixes-it). |
+| `include_lot` | bool | One GS1-128 label per active lot of each selected item, embedding `(10)`/`(17)`. Not supported with `thermal_tspl` (see [§4](#tspl-support-xprintertsc-compatible-printers)). |
+| `include_serial` | bool | One GS1-128 label per available serial, embedding `(21)`. Not supported with `thermal_tspl`. |
 | `include_price` | bool | Adds `(392n)` to the GS1 payload and a printed price line. |
 | `price_decimals`, `currency` | | Formatting for the printed price line and the `(392n)` implied-decimals value. |
 | `category_id` / `supplier_id` / `purchase_order_id` / `item_ids` | | Selection — exactly one drives which items get labelled. |
 | `qty_per_item`, `quantities` | | How many copies of each item's label to emit. |
+
+A tenant can save a default template/format/rotate combination (`TenantInventoryConfig
+.LabelPrintDefaults`, via `PUT /inventory/settings`) so callers that don't specify `template`
+default to it instead of the hardcoded 4x2 fallback.
 
 `GET /inventory/items/{itemID}/barcode.png` renders a single item's barcode as a PNG, lazily
 generating and persisting an internal EAN-13 if the item has none.
@@ -179,3 +294,24 @@ on the Avery sheet. Two reasons:
   slightly misaligned) and looks unfinished if left on a label someone doesn't intend to trim.
   A dashed line follows the same visual convention as tear-lines/perforation-marks elsewhere
   (ticket stubs, coupons) — it reads unambiguously as "cut along here," not as label content.
+
+## Scope decision: no shared Go module (yet)
+
+`library-service/library-api`'s barcode module (`card.go`/`label.go`/`sheet.go`) mirrors this
+one's approach (boombuler/barcode + go-pdf/fpdf) but was, until this pass, Code128/PDF-only —
+its own header comment recorded a deliberate choice to stay lean rather than share this module.
+When direct-USB printing was extended to library-service too, library-api gained its **own
+local** `template.go`/`tspl.go` (a smaller mirror of this module's — no GS1-128, no lot/serial,
+since library's `CopyLabel` never needed them), not a shared `shared/*` Go package. Reasoning:
+
+1. Extracting a shared package now would mean onboarding two already-deployed services to a
+   brand-new pinned-tag dependency (see `shared/httpware`'s tag workflow) for what's still a
+   small amount of genuinely-common code (Code128/EAN13 PNG rendering into an fpdf cell).
+2. The two modules' actual needs still diverge — GS1-128, ZPL, avery multi-sheet lot/serial
+   logic exist only here; library only ever needed Code128 + a fixed single-lane thermal size.
+3. Both modules are written so a **future** extraction (if the divergence narrows) is a
+   mechanical lift: `LabelTemplate`/`renderTSPL`/`renderZPL` only ever touch this module's own
+   `Label`/`Symbology` types, nothing inventory-specific leaks into the rendering logic itself.
+
+If a future change makes the two modules' needs converge further, revisit this decision —
+don't silently re-litigate it without recording why.

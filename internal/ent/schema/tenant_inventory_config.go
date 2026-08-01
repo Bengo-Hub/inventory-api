@@ -9,6 +9,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// LabelPrintDefaults is the tenant's preferred label template/format for barcode printing, so
+// PrintLabelsDialog (bulk print) and GetItemLabelPDF (single-item print) default to it without
+// the caller specifying one every time. Rotate is a pointer so "unset" (use the named template's
+// own default) is distinguishable from an explicit false.
+type LabelPrintDefaults struct {
+	Format   string `json:"format,omitempty"`   // avery_a4 | thermal_zpl | thermal_tspl | dymo
+	Template string `json:"template,omitempty"` // preset name (see barcode.LabelTemplateByName) or "custom"
+	Rotate   *bool  `json:"rotate,omitempty"`
+}
+
 // TenantInventoryConfig holds typed inventory settings per tenant.
 // One row per tenant (upserted on save). Replaces scattered ServiceConfig key-value pairs
 // for inventory-specific settings that the UI needs to read/write atomically.
@@ -121,6 +131,9 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.String("default_tax_code").
 			Optional().
 			Comment("Default KRA/eTIMS tax code (e.g. VAT-16) applied to items missing one; resolved against treasury-api tax codes"),
+		field.JSON("label_print_defaults", LabelPrintDefaults{}).
+			Optional().
+			Comment("Tenant's preferred label template/format for barcode printing (format, template, rotate) — see barcode.LabelTemplateByName"),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),

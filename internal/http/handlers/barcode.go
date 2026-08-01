@@ -18,6 +18,7 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
+	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/modules/barcode"
 )
 
@@ -76,6 +77,44 @@ func (h *InventoryHandler) resolveItemBarcode(ctx context.Context, it *ent.Item)
 		h.log.Warn("barcode: failed to persist internal code", zap.Error(uerr), zap.String("item_id", it.ID.String()))
 	}
 	return code, barcode.SymEAN13, "EAN13", nil
+}
+
+// resolveTemplate resolves the LabelTemplate to render a thermal (ZPL/TSPL) job against.
+// Precedence: explicit request template name → legacy thermal_size (back-compat) → the tenant's
+// saved default (TenantInventoryConfig.LabelPrintDefaults) → the hardcoded 4x2 single-lane
+// fallback. rotateOverride, when non-nil, wins over whatever the resolved template/tenant default
+// says. Callers with a "custom" template build it themselves via barcode.CustomLabelTemplate
+// (custom needs lane/gap params this helper doesn't take) and never call this for that case.
+func (h *InventoryHandler) resolveTemplate(ctx context.Context, tenantID uuid.UUID, templateName, legacyThermalSize string, rotateOverride *bool) barcode.LabelTemplate {
+	name := strings.TrimSpace(templateName)
+	if name == "" || name == "custom" {
+		name = strings.TrimSpace(legacyThermalSize)
+	}
+
+	var tenantDefault *ent.TenantInventoryConfig
+	if name == "" {
+		if cfg, err := h.orm.TenantInventoryConfig.Query().
+			Where(entconfig.TenantID(tenantID)).Only(ctx); err == nil {
+			tenantDefault = cfg
+			name = cfg.LabelPrintDefaults.Template
+		}
+	}
+
+	tmpl := barcode.LabelTemplateByName(name) // empty/unknown falls back to 4x2 inside LabelTemplateByName
+	if rotateOverride != nil {
+		tmpl.Rotate = *rotateOverride
+	} else if tenantDefault != nil && tenantDefault.LabelPrintDefaults.Rotate != nil {
+		tmpl.Rotate = *tenantDefault.LabelPrintDefaults.Rotate
+	}
+	return tmpl
+}
+
+// resolveRotate applies an explicit override when present, else the fallback.
+func resolveRotate(override *bool, fallback bool) bool {
+	if override != nil {
+		return *override
+	}
+	return fallback
 }
 
 // seedFromUUID derives a stable 10-digit-range seed from a UUID (low 8 bytes).
@@ -153,7 +192,8 @@ func (h *InventoryHandler) GetItemLabelPDF(w http.ResponseWriter, r *http.Reques
 	if h.docSvc != nil {
 		companyName = h.docSvc.GetBranding(r.Context(), tenantID).CompanyName
 	}
-	pdf, err := barcode.RenderSingleLabelPDF(lbl, companyName)
+	tmpl := h.resolveTemplate(r.Context(), tenantID, r.URL.Query().Get("template"), "", nil)
+	pdf, err := barcode.RenderSingleLabelPDF(lbl, companyName, tmpl)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "BARCODE_FAILED", err.Error())
 		return
@@ -179,14 +219,28 @@ type PrintLabelsRequest struct {
 	// Optional per-item overrides keyed by item-id string (wins over QtyPerItem).
 	Quantities map[string]int `json:"quantities,omitempty"`
 
-	// Output format: avery_a4 | thermal_zpl | dymo.
+	// Output format: avery_a4 | thermal_zpl | thermal_tspl | dymo.
 	Format string `json:"format"`
 	// Sheet selects the Avery grid preset when Format == avery_a4 (e.g. "l7160" | "5160");
-	// empty defaults to Avery L7160 (A4). ThermalSize selects the physical label size when
-	// Format == thermal_zpl (e.g. "2x1" | "3x2" | "4x2" | "4x6" @203dpi); empty defaults to
-	// 4x2in. See docs/barcode-labels.md for what real printer/paper stock each maps to.
-	Sheet       string `json:"sheet,omitempty"`
+	// empty defaults to Avery L7160 (A4).
+	Sheet string `json:"sheet,omitempty"`
+	// ThermalSize is DEPRECATED in favor of Template (kept for back-compat with existing
+	// callers) — a single-lane thermal size name ("2x1" | "3x2" | "4x2" | "4x6" @203dpi).
 	ThermalSize string `json:"thermal_size,omitempty"`
+	// Template selects the physical label-roll template when Format == thermal_zpl or
+	// thermal_tspl: a named preset (see barcode.LabelTemplateByName — single-lane "2x1"/"3x2"/
+	// "4x2"/"4x6", or multi-row "1row_40x30"/"2row_38x30"/"3row_25x40"/"4row_18x30") or "custom"
+	// (paired with CustomLabelW/H/Lanes/GapX/GapY below). Empty falls back to ThermalSize, then
+	// the tenant's saved default, then 4x2in. See docs/barcode-labels.md.
+	Template     string  `json:"template,omitempty"`
+	CustomLabelW float64 `json:"custom_label_w_in,omitempty"` // custom template: one label's width, inches
+	CustomLabelH float64 `json:"custom_label_h_in,omitempty"` // custom template: one label's height, inches
+	CustomLanes  int     `json:"custom_lanes,omitempty"`      // custom template: 1-4 labels side by side
+	CustomGapX   float64 `json:"custom_gap_x_in,omitempty"`   // custom template: gutter between lanes, inches
+	CustomGapY   float64 `json:"custom_gap_y_in,omitempty"`   // custom template: gap between labels along the feed, inches
+	// Rotate overrides the resolved template's own Rotate default when non-nil — true rotates
+	// content 90° to match a roll mounted with the label's long edge along the feed direction.
+	Rotate *bool `json:"rotate,omitempty"`
 
 	// Lot/serial label mode. When IncludeLot is set, the engine renders one GS1-128 label per
 	// active lot of each selected item (embedding (10) batch + (17) expiry). When IncludeSerial
@@ -216,6 +270,15 @@ func (h *InventoryHandler) PrintLabels(w http.ResponseWriter, r *http.Request) {
 	format, err := barcode.ParseLabelFormat(req.Format)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_FORMAT", err.Error())
+		return
+	}
+	// TSPL doesn't support GS1-128 in this module yet — the FNC1 escape convention for
+	// Xprinter's TSPL-clone firmware isn't confirmed, and guessing risks silently printing a
+	// barcode that scans as plain Code128 instead of GS1-128. Reject up front rather than
+	// emitting a wrong barcode. See docs/barcode-labels.md.
+	if format == barcode.FormatThermalTSPL && (req.IncludeLot || req.IncludeSerial) {
+		writeError(w, http.StatusUnprocessableEntity, "UNSUPPORTED_TSPL_GS1",
+			"thermal_tspl does not support include_lot/include_serial (GS1-128) yet — use thermal_zpl or avery_a4 for lot/serial labels")
 		return
 	}
 	if req.QtyPerItem <= 0 {
@@ -253,8 +316,11 @@ func (h *InventoryHandler) PrintLabels(w http.ResponseWriter, r *http.Request) {
 		Labels:      labels,
 		Format:      format,
 		Avery:       barcode.AverySpecByName(req.Sheet),
-		Thermal:     barcode.ThermalSpecByName(req.ThermalSize),
+		Template:    h.resolveTemplate(r.Context(), tenantID, req.Template, req.ThermalSize, req.Rotate),
 		GeneratedAt: time.Now(),
+	}
+	if req.Template == "custom" {
+		batch.Template = barcode.CustomLabelTemplate(req.CustomLabelW, req.CustomLabelH, req.CustomLanes, req.CustomGapX, req.CustomGapY, resolveRotate(req.Rotate, false))
 	}
 	if h.docSvc != nil {
 		batch.CompanyName = h.docSvc.GetBranding(r.Context(), tenantID).CompanyName

@@ -69,6 +69,8 @@ const (
 	FieldPricesInclusiveOfTax = "prices_inclusive_of_tax"
 	// FieldDefaultTaxCode holds the string denoting the default_tax_code field in the database.
 	FieldDefaultTaxCode = "default_tax_code"
+	// FieldLabelPrintDefaults holds the string denoting the label_print_defaults field in the database.
+	FieldLabelPrintDefaults = "label_print_defaults"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -107,6 +109,7 @@ var Columns = []string{
 	FieldDefaultTargetMarginPercent,
 	FieldPricesInclusiveOfTax,
 	FieldDefaultTaxCode,
+	FieldLabelPrintDefaults,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }

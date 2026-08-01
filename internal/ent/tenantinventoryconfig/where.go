@@ -855,6 +855,16 @@ func DefaultTaxCodeContainsFold(v string) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldContainsFold(FieldDefaultTaxCode, v))
 }
 
+// LabelPrintDefaultsIsNil applies the IsNil predicate on the "label_print_defaults" field.
+func LabelPrintDefaultsIsNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIsNull(FieldLabelPrintDefaults))
+}
+
+// LabelPrintDefaultsNotNil applies the NotNil predicate on the "label_print_defaults" field.
+func LabelPrintDefaultsNotNil() predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotNull(FieldLabelPrintDefaults))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldCreatedAt, v))

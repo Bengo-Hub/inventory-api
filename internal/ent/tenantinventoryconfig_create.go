@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/google/uuid"
 )
@@ -382,6 +383,20 @@ func (_c *TenantInventoryConfigCreate) SetDefaultTaxCode(v string) *TenantInvent
 func (_c *TenantInventoryConfigCreate) SetNillableDefaultTaxCode(v *string) *TenantInventoryConfigCreate {
 	if v != nil {
 		_c.SetDefaultTaxCode(*v)
+	}
+	return _c
+}
+
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (_c *TenantInventoryConfigCreate) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigCreate {
+	_c.mutation.SetLabelPrintDefaults(v)
+	return _c
+}
+
+// SetNillableLabelPrintDefaults sets the "label_print_defaults" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableLabelPrintDefaults(v *schema.LabelPrintDefaults) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetLabelPrintDefaults(*v)
 	}
 	return _c
 }
@@ -787,6 +802,10 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.DefaultTaxCode(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldDefaultTaxCode, field.TypeString, value)
 		_node.DefaultTaxCode = value
+	}
+	if value, ok := _c.mutation.LabelPrintDefaults(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldLabelPrintDefaults, field.TypeJSON, value)
+		_node.LabelPrintDefaults = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldCreatedAt, field.TypeTime, value)
@@ -1229,6 +1248,24 @@ func (u *TenantInventoryConfigUpsert) UpdateDefaultTaxCode() *TenantInventoryCon
 // ClearDefaultTaxCode clears the value of the "default_tax_code" field.
 func (u *TenantInventoryConfigUpsert) ClearDefaultTaxCode() *TenantInventoryConfigUpsert {
 	u.SetNull(tenantinventoryconfig.FieldDefaultTaxCode)
+	return u
+}
+
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsert) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldLabelPrintDefaults, v)
+	return u
+}
+
+// UpdateLabelPrintDefaults sets the "label_print_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateLabelPrintDefaults() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldLabelPrintDefaults)
+	return u
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsert) ClearLabelPrintDefaults() *TenantInventoryConfigUpsert {
+	u.SetNull(tenantinventoryconfig.FieldLabelPrintDefaults)
 	return u
 }
 
@@ -1740,6 +1777,27 @@ func (u *TenantInventoryConfigUpsertOne) UpdateDefaultTaxCode() *TenantInventory
 func (u *TenantInventoryConfigUpsertOne) ClearDefaultTaxCode() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultTaxCode()
+	})
+}
+
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsertOne) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetLabelPrintDefaults(v)
+	})
+}
+
+// UpdateLabelPrintDefaults sets the "label_print_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateLabelPrintDefaults() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateLabelPrintDefaults()
+	})
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsertOne) ClearLabelPrintDefaults() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearLabelPrintDefaults()
 	})
 }
 
@@ -2420,6 +2478,27 @@ func (u *TenantInventoryConfigUpsertBulk) UpdateDefaultTaxCode() *TenantInventor
 func (u *TenantInventoryConfigUpsertBulk) ClearDefaultTaxCode() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.ClearDefaultTaxCode()
+	})
+}
+
+// SetLabelPrintDefaults sets the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsertBulk) SetLabelPrintDefaults(v schema.LabelPrintDefaults) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetLabelPrintDefaults(v)
+	})
+}
+
+// UpdateLabelPrintDefaults sets the "label_print_defaults" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateLabelPrintDefaults() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateLabelPrintDefaults()
+	})
+}
+
+// ClearLabelPrintDefaults clears the value of the "label_print_defaults" field.
+func (u *TenantInventoryConfigUpsertBulk) ClearLabelPrintDefaults() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.ClearLabelPrintDefaults()
 	})
 }
 

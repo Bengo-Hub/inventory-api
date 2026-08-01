@@ -5,131 +5,124 @@ import (
 	"strings"
 )
 
-// ThermalSpec describes a thermal label's physical size + print resolution. Real desktop
-// thermal printers (Zebra, TSC, Brother, Xprinter, etc.) are loaded with one of a small set
-// of standard roll widths — see docs/barcode-labels.md for how these were sourced. 203dpi is
-// the standard resolution for barcode/SKU labels; denser codes (GS1-128/DataMatrix) read
-// better on the larger 3x2 preset.
-type ThermalSpec struct {
-	Name string
-	WdIn float64 // width, inches
-	HtIn float64 // height, inches
-	DPI  int
-}
-
-// ThermalSpecByName resolves a request-supplied thermal size name; unknown/empty falls back
-// to the pre-existing 4x2 default so old callers with no opinion keep working.
-func ThermalSpecByName(name string) ThermalSpec {
-	switch strings.ToLower(strings.TrimSpace(name)) {
-	case "2x1":
-		return ThermalSpec{Name: "2x1 in @203dpi", WdIn: 2, HtIn: 1, DPI: 203}
-	case "3x2":
-		return ThermalSpec{Name: "3x2 in @203dpi", WdIn: 3, HtIn: 2, DPI: 203}
-	case "4x6":
-		return ThermalSpec{Name: "4x6 in @203dpi", WdIn: 4, HtIn: 6, DPI: 203}
-	case "4x2", "":
-		return ThermalSpec{Name: "4x2 in @203dpi", WdIn: 4, HtIn: 2, DPI: 203}
-	default:
-		return ThermalSpec{Name: "4x2 in @203dpi", WdIn: 4, HtIn: 2, DPI: 203}
-	}
-}
-
-// WidthDots / HeightDots convert the physical size to printer dots at the spec's DPI.
-func (t ThermalSpec) WidthDots() int  { return int(t.WdIn * float64(t.DPI)) }
-func (t ThermalSpec) HeightDots() int { return int(t.HtIn * float64(t.DPI)) }
-
 // zplEscape removes characters that would break a ZPL field (^ and ~ are command introducers).
 func zplEscape(s string) string {
 	r := strings.NewReplacer("^", " ", "~", " ", "\n", " ", "\r", " ")
 	return r.Replace(s)
 }
 
-// renderZPL emits Zebra ZPL II — one ^XA…^XZ block per Label, sized to the given ThermalSpec
-// so the print width/length actually matches whatever roll is loaded (previously this was a
-// fixed 4x2in regardless of the caller's physical label stock, a real risk of clipped/
-// misaligned prints — see docs/barcode-labels.md). Every offset below is a fraction of the
-// label's own height in dots, so smaller presets (2x1) scale down instead of overflowing.
+// renderZPL emits Zebra ZPL II — one ^XA…^XZ block per feed-row, sized to the given
+// LabelTemplate so the print width/length actually matches whatever roll is loaded and however
+// many lanes it carries side-by-side (see docs/barcode-labels.md).
+//
+// Orientation: ^PW/^LL always describe the roll AS MOUNTED (never swapped to "fix" rotation —
+// see template.go's Rotate doc). When tmpl.Rotate is set, ^FWR rotates every field in the block
+// 90° so content reads correctly along the feed direction on rolls mounted that way; this was
+// previously impossible to express (no ^FWR anywhere in this module), which was the root cause
+// of labels printing sideways on rolls not mounted the way the code implicitly assumed.
+//
+// Multi-lane: when tmpl.Lanes > 1, each feed-row draws up to `lanes` consecutive labels from the
+// batch side-by-side (at x-offsets from tmpl.LaneXOffsetDots), then advances to the next row —
+// the same left-to-right tiling idea renderAveryPDF already uses for its sheet grid, applied to
+// a continuous roll instead of a fixed page.
 //
 // Barcode commands by symbology:
-//   - EAN13   → ^BE (EAN-13)
-//   - CODE128 → ^BC (Code 128, auto subset)
-//   - GS1-128 → ^BC with ^FD>;… GS1 data via ^FH and the FNC1 (>8) escape
-func renderZPL(labels []Label, spec ThermalSpec) string {
-	w, h := spec.WidthDots(), spec.HeightDots()
-	marginX := w / 20
-	titleSize := maxInt(h/10, 18)
-	subSize := maxInt(h/14, 14)
-	lineGap := h / 40
+//
+//	EAN13   → ^BE (EAN-13)
+//	CODE128 → ^BC (Code 128, auto subset)
+//	GS1-128 → ^BC with ^FD>;… GS1 data via ^FH and the FNC1 (>8) escape
+func renderZPL(labels []Label, tmpl LabelTemplate) string {
+	lanes := tmpl.laneCount()
+	rollW := tmpl.RollWidthDots()
+	h := tmpl.HeightDots()
 
 	var sb strings.Builder
-	for _, l := range labels {
+	for i := 0; i < len(labels); i += lanes {
 		sb.WriteString("^XA\n")
 		sb.WriteString("^CI28\n") // UTF-8 input
-		sb.WriteString(fmt.Sprintf("^PW%d\n", w))
+		sb.WriteString(fmt.Sprintf("^PW%d\n", rollW))
 		sb.WriteString(fmt.Sprintf("^LL%d\n", h))
 		sb.WriteString("^LH0,0\n")
-
-		y := h / 20
-
-		// Title.
-		if l.Title != "" {
-			sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, titleSize, titleSize))
-			sb.WriteString(zplEscape(truncate(l.Title, 38)))
-			sb.WriteString("^FS\n")
-			y += titleSize + lineGap
-		}
-		// SKU (own line — was previously the only "sub-title" slot).
-		if sku := l.Sku; sku != "" || l.SubTitle != "" {
-			if sku == "" {
-				sku = l.SubTitle
-			}
-			sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, subSize, subSize))
-			sb.WriteString(zplEscape(truncate(sku, 42)))
-			sb.WriteString("^FS\n")
-			y += subSize + lineGap
-		}
-		// Lot/serial + expiry detail line.
-		if l.DetailLine != "" {
-			sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, subSize, subSize))
-			sb.WriteString(zplEscape(truncate(l.DetailLine, 42)))
-			sb.WriteString("^FS\n")
-			y += subSize + lineGap
+		if tmpl.Rotate {
+			sb.WriteString("^FWR\n") // rotate every field in this block 90°: see template.go Rotate doc
 		}
 
-		// Barcode — fills roughly a third of the remaining height.
-		barY := y
-		barH := maxInt((h-y)/2, 60)
-		switch l.Symbology {
-		case SymEAN13, SymUPCA:
-			code, err := NormalizeEAN13(l.Content)
-			if err == nil {
-				sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BEN,%d,Y,N\n^FD", marginX*2, barY, barH))
-				sb.WriteString(code[:12]) // ^BE takes 12 digits; printer adds check digit
-				sb.WriteString("^FS\n")
-			}
-		case SymGS1128:
-			// GS1-128: ^BC with field-hex on; >8 is the FNC1 escape inside ^FD.
-			sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BCN,%d,Y,N,N\n^FH^FD", marginX*2, barY, barH))
-			sb.WriteString(zplGS1Data(l.Content))
-			sb.WriteString("^FS\n")
-		default: // CODE128
-			sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BCN,%d,Y,N,N\n^FD", marginX*2, barY, barH))
-			sb.WriteString(zplEscape(l.Content))
-			sb.WriteString("^FS\n")
-		}
-		y = barY + barH + lineGap*2
-
-		// Price.
-		if l.Price != "" {
-			priceSize := maxInt(h/10, 18)
-			sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, priceSize, priceSize))
-			sb.WriteString(zplEscape(l.Price))
-			sb.WriteString("^FS\n")
+		for lane := 0; lane < lanes && i+lane < len(labels); lane++ {
+			writeZPLLabel(&sb, labels[i+lane], tmpl, tmpl.LaneXOffsetDots(lane))
 		}
 
 		sb.WriteString("^XZ\n")
 	}
 	return sb.String()
+}
+
+// writeZPLLabel draws one label's fields at the given x-offset (dots) within the current ^XA
+// block. Every offset below is a fraction of the label's own height in dots, so smaller presets
+// scale down instead of overflowing.
+func writeZPLLabel(sb *strings.Builder, l Label, tmpl LabelTemplate, xOffset int) {
+	w, h := tmpl.WidthDots(), tmpl.HeightDots()
+	marginX := xOffset + w/20
+	titleSize := maxInt(h/10, 18)
+	subSize := maxInt(h/14, 14)
+	lineGap := h / 40
+
+	y := h / 20
+
+	// Title.
+	if l.Title != "" {
+		sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, titleSize, titleSize))
+		sb.WriteString(zplEscape(truncate(l.Title, 38)))
+		sb.WriteString("^FS\n")
+		y += titleSize + lineGap
+	}
+	// SKU (own line — was previously the only "sub-title" slot).
+	if sku := l.Sku; sku != "" || l.SubTitle != "" {
+		if sku == "" {
+			sku = l.SubTitle
+		}
+		sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, subSize, subSize))
+		sb.WriteString(zplEscape(truncate(sku, 42)))
+		sb.WriteString("^FS\n")
+		y += subSize + lineGap
+	}
+	// Lot/serial + expiry detail line.
+	if l.DetailLine != "" {
+		sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, subSize, subSize))
+		sb.WriteString(zplEscape(truncate(l.DetailLine, 42)))
+		sb.WriteString("^FS\n")
+		y += subSize + lineGap
+	}
+
+	// Barcode — fills roughly a third of the remaining height.
+	barY := y
+	barH := maxInt((h-y)/2, 60)
+	switch l.Symbology {
+	case SymEAN13, SymUPCA:
+		code, err := NormalizeEAN13(l.Content)
+		if err == nil {
+			sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BEN,%d,Y,N\n^FD", marginX+w/40, barY, barH))
+			sb.WriteString(code[:12]) // ^BE takes 12 digits; printer adds check digit
+			sb.WriteString("^FS\n")
+		}
+	case SymGS1128:
+		// GS1-128: ^BC with field-hex on; >8 is the FNC1 escape inside ^FD.
+		sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BCN,%d,Y,N,N\n^FH^FD", marginX+w/40, barY, barH))
+		sb.WriteString(zplGS1Data(l.Content))
+		sb.WriteString("^FS\n")
+	default: // CODE128
+		sb.WriteString(fmt.Sprintf("^BY3\n^FO%d,%d^BCN,%d,Y,N,N\n^FD", marginX+w/40, barY, barH))
+		sb.WriteString(zplEscape(l.Content))
+		sb.WriteString("^FS\n")
+	}
+	y = barY + barH + lineGap*2
+
+	// Price.
+	if l.Price != "" {
+		priceSize := maxInt(h/10, 18)
+		sb.WriteString(fmt.Sprintf("^FO%d,%d^A0N,%d,%d^FD", marginX, y, priceSize, priceSize))
+		sb.WriteString(zplEscape(l.Price))
+		sb.WriteString("^FS\n")
+	}
 }
 
 func maxInt(a, b int) int {

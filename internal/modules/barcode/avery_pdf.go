@@ -52,20 +52,45 @@ func renderAveryPDF(labels []Label, spec AverySpec, company string) ([]byte, err
 	return out.Bytes(), nil
 }
 
-// RenderSingleLabelPDF renders ONE label as a standalone one-page PDF sized to the standard
-// 2"x1" barcode/SKU label (50.8mm x 25.4mm — see docs/barcode-labels.md), reusing the exact
-// same drawLabelCell the bulk Avery sheet uses so a quick single-item print (e.g. inventory-ui's
-// item-detail "Barcode" action) never diverges into its own bare-barcode-image-only rendering
-// with no title/SKU/price — every barcode print in this service goes through one card layout.
-// No cut-guide is drawn (there is nothing to cut around on a single label).
-func RenderSingleLabelPDF(lbl Label, company string) ([]byte, error) {
-	const w, h = 50.8, 25.4 // mm
-	pdf := fpdf.NewCustom(&fpdf.InitType{UnitStr: "mm", Size: fpdf.SizeType{Wd: w, Ht: h}})
+// RenderSingleLabelPDF renders ONE label as a standalone one-page PDF sized to the given
+// template's real physical label dimensions, reusing the exact same drawLabelCell the bulk Avery
+// sheet uses so a quick single-item print (e.g. inventory-ui's item-detail "Barcode" action)
+// never diverges into its own bare-barcode-image-only rendering with no title/SKU/price — every
+// barcode print in this service goes through one card layout. No cut-guide is drawn (there is
+// nothing to cut around on a single label).
+//
+// The page is ALWAYS sized to match tmpl's real physical W×H — this used to be hardcoded to a
+// fixed 50.8mm×25.4mm landscape page regardless of what paper/roll was actually loaded, which was
+// the root cause of labels printing rotated: a downstream PDF viewer/driver would rotate a
+// landscape-shaped page to fit a portrait-mounted roll. When tmpl.Rotate is set (the roll is
+// mounted so content must read along the feed direction), the page dimensions are swapped
+// (H×W instead of W×H) and drawLabelCell is invoked inside a 90° PDF transform so the card layout
+// still renders correctly inside the now-portrait page — the page itself never needs manual
+// Landscape/Portrait selection or scaling in the OS print dialog. See docs/barcode-labels.md.
+func RenderSingleLabelPDF(lbl Label, company string, tmpl LabelTemplate) ([]byte, error) {
+	w, h := tmpl.LabelWIn*25.4, tmpl.LabelHIn*25.4 // mm
+	pageW, pageH := w, h
+	if tmpl.Rotate {
+		pageW, pageH = h, w
+	}
+	pdf := fpdf.NewCustom(&fpdf.InitType{UnitStr: "mm", Size: fpdf.SizeType{Wd: pageW, Ht: pageH}})
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	imgSeq := 0
-	drawLabelCell(pdf, tr, lbl, company, 0, 0, w, h, &imgSeq)
+
+	if tmpl.Rotate {
+		// Center the unrotated w×h card rect on the page's center point, then rotate 90° about
+		// that same point: a rectangle centered on its rotation center stays centered after any
+		// 90°-multiple rotation (only its bounding box's W/H swap), so this exactly fills the
+		// swapped pageW×pageH page regardless of rotation direction.
+		pdf.TransformBegin()
+		pdf.TransformRotate(90, pageW/2, pageH/2)
+		drawLabelCell(pdf, tr, lbl, company, (pageW-w)/2, (pageH-h)/2, w, h, &imgSeq)
+		pdf.TransformEnd()
+	} else {
+		drawLabelCell(pdf, tr, lbl, company, 0, 0, w, h, &imgSeq)
+	}
 
 	var out bytes.Buffer
 	if err := pdf.Output(&out); err != nil {
