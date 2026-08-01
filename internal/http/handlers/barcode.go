@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,6 +119,29 @@ func resolveRotate(override *bool, fallback bool) bool {
 	return fallback
 }
 
+// parseRotateQuery reads a "rotate" query param into a *bool: nil when absent (so resolveTemplate
+// falls back to the tenant default / template's own Rotate), true/false when explicitly set.
+func parseRotateQuery(q url.Values) *bool {
+	v := strings.TrimSpace(q.Get("rotate"))
+	if v == "" {
+		return nil
+	}
+	b := strings.EqualFold(v, "true") || v == "1"
+	return &b
+}
+
+// parseFloatQuery reads a float query param, returning fallback when absent/unparseable.
+func parseFloatQuery(q url.Values, key string, fallback float64) float64 {
+	v := strings.TrimSpace(q.Get(key))
+	if v == "" {
+		return fallback
+	}
+	if f, err := strconv.ParseFloat(v, 64); err == nil {
+		return f
+	}
+	return fallback
+}
+
 // seedFromUUID derives a stable 10-digit-range seed from a UUID (low 8 bytes).
 func seedFromUUID(id uuid.UUID) uint64 {
 	var v uint64
@@ -192,7 +217,39 @@ func (h *InventoryHandler) GetItemLabelPDF(w http.ResponseWriter, r *http.Reques
 	if h.docSvc != nil {
 		companyName = h.docSvc.GetBranding(r.Context(), tenantID).CompanyName
 	}
-	tmpl := h.resolveTemplate(r.Context(), tenantID, r.URL.Query().Get("template"), "", nil)
+
+	q := r.URL.Query()
+	templateName := strings.TrimSpace(q.Get("template"))
+	tmpl := h.resolveTemplate(r.Context(), tenantID, templateName, "", parseRotateQuery(q))
+	if templateName == "custom" {
+		tmpl = barcode.CustomLabelTemplate(
+			parseFloatQuery(q, "custom_label_w_in", 4),
+			parseFloatQuery(q, "custom_label_h_in", 2),
+			int(parseFloatQuery(q, "custom_lanes", 1)),
+			parseFloatQuery(q, "custom_gap_x_in", 0),
+			parseFloatQuery(q, "custom_gap_y_in", 0),
+			resolveRotate(parseRotateQuery(q), false),
+		)
+	}
+
+	// format=thermal_tspl prints directly to a thermal roll printer (e.g. Xprinter XP-330B) via
+	// TSPL, matching the bulk endpoint's format option — the single-item "quick print" action
+	// must go through the SAME template/rotate resolution as the bulk print job, not its own
+	// hardcoded PDF-only path (that mismatch was the root cause of the single-item quick-print
+	// action still printing rotated/misaligned labels after the bulk path was already fixed).
+	if strings.EqualFold(strings.TrimSpace(q.Get("format")), "thermal_tspl") {
+		out, rerr := barcode.Batch{Labels: []barcode.Label{lbl}, Format: barcode.FormatThermalTSPL, Template: tmpl}.Render()
+		if rerr != nil {
+			writeError(w, http.StatusUnprocessableEntity, "BARCODE_FAILED", rerr.Error())
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s-label.tspl"`, it.Sku))
+		w.Header().Set("Cache-Control", "no-store")
+		_, _ = w.Write(out)
+		return
+	}
+
 	pdf, err := barcode.RenderSingleLabelPDF(lbl, companyName, tmpl)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "BARCODE_FAILED", err.Error())
