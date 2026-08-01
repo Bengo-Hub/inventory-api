@@ -73,10 +73,11 @@ old `ThermalSpec`/`thermal_size`, still accepted for back-compat), all at 203dpi
 | `3x2` | 1 | 3"×2" | Recommended once `include_lot`/`include_serial` is set — GS1-128 payloads are longer and denser, and read more reliably with the extra width/height. |
 | `4x2` (default) | 1 | 4"×2" | General-purpose item label; the pre-existing default kept so old callers with no opinion on size keep working. |
 | `4x6` | 1 | 4"×6" | Shipping-label format — matches the de-facto standard size used by carrier label printers (FedEx/UPS/USPS thermal shipping labels are all 4"×6"). |
-| `1row_40x30` | 1 | 40×30mm | A single narrow lane feeding one label at a time down its length — the exact roll layout confirmed against the user's own Xprinter XP-330B stock. |
+| `1row_40x30` | 1 | 40×30mm | A single narrow lane feeding one label at a time down its length — engineering estimate, **not** bench-confirmed (see `1row_29x62` below for the one preset that actually is). |
 | `2row_38x30` | 2 | 38×30mm each | A wider roll die-cut into 2 parallel lanes side-by-side. |
 | `3row_25x40` | 3 | 25×40mm each | 3 parallel lanes. |
 | `4row_18x30` | 4 | 18×30mm each | 4 parallel lanes. |
+| `1row_29x62` | 1 | 29×62mm | **Bench-verified** 2026-08-02 by printing directly to an Xprinter XP-330B via the local print-agent — the actual physical roll size on the desk this was tested against (a single narrow ~29mm lane, ~62mm per label). Not made the default (inventory tenants' real stock varies far more than this one bench setup) — pick it explicitly, or set it as your tenant's saved default in Settings, if your roll matches. |
 | `custom` | 1-4 (`custom_lanes`) | `custom_label_w_in`/`custom_label_h_in` | Explicit W/H/lanes/gaps/rotate for a real roll that doesn't match any preset above. |
 
 **"Rows" = lanes across the roll's width, not the Avery sheet's grid rows.** The multi-row
@@ -133,6 +134,20 @@ the driver's paper-preset that actually measures the same as your chosen `LabelT
 better, skip the print dialog entirely and use [direct USB printing](#direct-usb-printing-via-the-local-print-agent),
 which sends raw command bytes straight to the printer with no OS page/orientation negotiation at all.
 
+**Bench-verified addendum (2026-08-02)**: printing a real label directly to an Xprinter XP-330B
+(bypassing the OS print dialog entirely, via the local print-agent — see below) surfaced that the
+"never swap SIZE/W×H, only toggle Rotate" rule above wasn't the whole story: the actual root cause
+on the real roll tested was that a preset's declared W×H were simply **transposed relative to the
+physical roll** (see library-api's `1row_29x62` / this file's `1row_29x62` preset — a genuinely
+narrow-then-long roll had been modeled as wide-then-short). Getting the template's own W×H right
+for the roll actually loaded is the first thing to check before reaching for `Rotate` — `Rotate`
+solves "this template's proportions are right but the roll is mounted turned 90°," not "this
+template's declared proportions are wrong for the roll." A second, separate issue also surfaced
+on the bench-verified narrow/tall preset: content prints upside-down even with `Rotate=false`;
+see `1row_29x62`'s "Known follow-up" note in library-api's `docs/barcode-labels.md` — two attempted
+software fixes for that (`DIRECTION 1`, per-field `rotation=180`) both made physical alignment
+worse, so it was left unfixed rather than risk a regression.
+
 ## TSPL support (Xprinter/TSC-compatible printers)
 
 `renderTSPL` (`tspl.go`) emits real TSC/TSPL2 commands, confirmed against TSC's public
@@ -159,6 +174,27 @@ silently printing a barcode that scans as plain Code128 instead of GS1-128. `POS
 /inventory/labels/print` rejects `format=thermal_tspl` combined with `include_lot`/
 `include_serial` with `422 UNSUPPORTED_TSPL_GS1`. Use `thermal_zpl` or `avery_a4` for lot/serial
 GS1-128 labels until this is bench-verified and implemented.
+
+**Layout fitting (fixed 2026-08-02 via the same bench session)**: `writeTSPLLabel` used to size
+title/SKU/detail text purely off the label's HEIGHT (`h/10/24`) and let the barcode fill roughly
+half the remaining vertical space — fine for wide-but-short presets, but on a tall-but-narrow one
+(`1row_29x62`) this let text overflow the printable width (10 characters at multiplier 2 is
+~480 dots, double a 232-dot-wide label) and produced a barcode taller than it was wide (a dense
+vertical column, not the normal short-and-wide look a Code128/EAN13 symbol should have). Fixed by:
+sizing the font multiplier off `min(w,h)` instead of height alone (a tall-but-narrow label has
+height to spare but almost no width to spare), switching from TSPL's larger built-in font "3"
+(16×24 dots/char) to the smallest built-in font "1" (8×12 dots/char) — after fixing the width
+overflow, text at font "3" still visually dominated a narrow label even once it technically fit,
+per a follow-up bench print — then still clamping the multiplier down further until a
+~12-character string would fit the label's width (truncating text to whatever actually fits at
+the chosen multiplier); capping barcode height relative to width (scaled so wide presets like
+`4x6` still get a taller, legible barcode); and centering both text and the barcode horizontally
+using an estimated printed width (`estimateCode128WidthDots`/`estimateEAN13WidthDots` —
+over-estimates for Code128 since Set-C digit-pairing can render narrower than the estimate, so
+centering never pushes the real symbol past the label's edge). Also increased the top margin
+(`h/10` instead of `h/20`) after a first-line title was observed getting clipped by the
+operator's tear-off cut. Confirmed well-balanced (text size, centering, no clipping) against the
+`1row_29x62` preset via a live bench print of this module's own renderer output.
 
 ## Direct USB printing via the local print-agent
 

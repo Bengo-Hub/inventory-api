@@ -111,6 +111,18 @@ func namedLabelTemplates() map[string]LabelTemplate {
 			Name: "4 rows — 18x30mm each @203dpi", LabelWIn: 18.0 / 25.4, LabelHIn: 30.0 / 25.4,
 			DPI: 203, Lanes: 4, GapXIn: 1.0 / 25.4, GapYIn: 2.0 / 25.4,
 		},
+		// Bench-verified 2026-08-02 by printing a live item label directly to an Xprinter XP-330B
+		// via the local print-agent: SIZE 29mm×62mm with DIRECTION 0 and no per-field rotation was
+		// the combination that both kept content inside one physical die-cut cell and read
+		// horizontally — see library-api's identical "1row_29x62" preset and
+		// docs/barcode-labels.md's "Known orientation follow-up" section (content still prints
+		// upside-down; that fix was attempted and reverted after making alignment worse). Not made
+		// the default here since inventory tenants' real stock varies far more than library
+		// spine-label stock does — offered as a selectable preset instead.
+		"1row_29x62": {
+			Name: "1 row — 29x62mm @203dpi (bench-verified Xprinter XP-330B)", LabelWIn: 29.0 / 25.4, LabelHIn: 62.0 / 25.4,
+			DPI: 203, Lanes: 1, GapYIn: 2.0 / 25.4,
+		},
 	}
 }
 
