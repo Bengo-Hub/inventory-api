@@ -25,6 +25,14 @@ func NewEntRepository(client *ent.Client) *EntRepository {
 }
 
 // CreateUser persists a new inventory user reference.
+//
+// auth.user.created and auth.user.pin_set are independent NATS subjects/durable
+// consumers that can be processed concurrently (e.g. different inventory-api
+// replicas, back-to-back events for a tenant's owner/admin account during
+// registration) — both calling SyncUser for the same auth_service_user_id at
+// nearly the same time. Since InventoryUser.ID is deterministically set to
+// authServiceUserID, upsert on that conflict target so the loser of the race
+// no-ops instead of failing on the primary-key/unique constraint.
 func (r *EntRepository) CreateUser(ctx context.Context, tenantID uuid.UUID, user *InventoryUser) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
@@ -43,7 +51,10 @@ func (r *EntRepository) CreateUser(ctx context.Context, tenantID uuid.UUID, user
 		builder.SetLastSyncAt(*user.LastSyncAt)
 	}
 
-	_, err := builder.Save(ctx)
+	err := builder.
+		OnConflictColumns(inventoryuser.FieldID).
+		DoNothing().
+		Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}
