@@ -99,6 +99,47 @@ func RenderSingleLabelPDF(lbl Label, company string, tmpl LabelTemplate) ([]byte
 	return out.Bytes(), nil
 }
 
+// RenderThermalPreviewPDF renders a multi-page PDF preview matching EXACTLY what
+// Batch.Render() with FormatThermalTSPL/FormatThermalZPL would print for the same labels/
+// template — one page per label, each page sized (and rotated, if tmpl.Rotate) to the SAME
+// physical LabelTemplate dimensions used for the real thermal job, so an operator can visually
+// confirm placement/orientation BEFORE dispatching to the printer. Deliberately NOT the Avery
+// grid (renderAveryPDF) — that's a different physical format (cut-sheet office paper laid out in
+// columns), and silently substituting it as a "preview" for a thermal-roll job showed the
+// operator a misleadingly different layout (a multi-column grid) than what would actually print.
+func RenderThermalPreviewPDF(labels []Label, company string, tmpl LabelTemplate) ([]byte, error) {
+	if len(labels) == 0 {
+		return nil, fmt.Errorf("barcode: no labels to render")
+	}
+	w, h := tmpl.LabelWIn*25.4, tmpl.LabelHIn*25.4 // mm
+	pageW, pageH := w, h
+	if tmpl.Rotate {
+		pageW, pageH = h, w
+	}
+	pdf := fpdf.NewCustom(&fpdf.InitType{UnitStr: "mm", Size: fpdf.SizeType{Wd: pageW, Ht: pageH}})
+	pdf.SetAutoPageBreak(false, 0)
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	imgSeq := 0
+
+	for _, lbl := range labels {
+		pdf.AddPage()
+		if tmpl.Rotate {
+			pdf.TransformBegin()
+			pdf.TransformRotate(90, pageW/2, pageH/2)
+			drawLabelCell(pdf, tr, lbl, company, (pageW-w)/2, (pageH-h)/2, w, h, &imgSeq)
+			pdf.TransformEnd()
+		} else {
+			drawLabelCell(pdf, tr, lbl, company, 0, 0, w, h, &imgSeq)
+		}
+	}
+
+	var out bytes.Buffer
+	if err := pdf.Output(&out); err != nil {
+		return nil, fmt.Errorf("barcode: render thermal preview pdf: %w", err)
+	}
+	return out.Bytes(), nil
+}
+
 // drawCutGuide draws a dashed rectangle around a label cell as a cutting guide, then
 // restores a solid draw style so it never bleeds into the label content drawn after it.
 func drawCutGuide(pdf *fpdf.Fpdf, x, y, w, h float64) {
