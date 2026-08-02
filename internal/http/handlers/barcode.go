@@ -324,6 +324,19 @@ func (h *InventoryHandler) PrintLabels(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
+
+	// format=thermal_preview is a pseudo-format handled entirely here, not by barcode.Batch: it
+	// renders a PDF matching EXACTLY what thermal_zpl/thermal_tspl would print (same template,
+	// same per-label pages, same rotation) — NOT the Avery grid, which is a different physical
+	// format (cut-sheet office paper laid out in columns). Silently substituting that grid as a
+	// "preview" for a thermal-roll job was misleading the operator into printing labels in
+	// columns on a single-lane roll; this lets the UI always preview the actual thermal layout
+	// before sending anything to the printer.
+	if strings.EqualFold(strings.TrimSpace(req.Format), "thermal_preview") {
+		h.printLabelsPreview(w, r, req)
+		return
+	}
+
 	format, err := barcode.ParseLabelFormat(req.Format)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_FORMAT", err.Error())
@@ -400,6 +413,66 @@ func (h *InventoryHandler) PrintLabels(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", format.ContentType())
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="labels-%s.%s"`, time.Now().Format("20060102-150405"), ext))
 	_, _ = w.Write(out)
+}
+
+// printLabelsPreview handles the format=thermal_preview branch of PrintLabels: same selection/
+// template resolution as a real thermal_zpl/thermal_tspl job, but always renders a PDF (via
+// RenderThermalPreviewPDF) instead of printer command bytes, so the UI can show an operator
+// exactly what the thermal job will look like before dispatching it.
+func (h *InventoryHandler) printLabelsPreview(w http.ResponseWriter, r *http.Request, req PrintLabelsRequest) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if req.QtyPerItem <= 0 {
+		req.QtyPerItem = 1
+	}
+	if req.PriceDecimals <= 0 {
+		req.PriceDecimals = 2
+	}
+	currency := req.Currency
+	if currency == "" {
+		currency = "KES"
+	}
+
+	items, err := h.resolveLabelItems(r, tenantID, req)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "SELECTION_FAILED", err.Error())
+		return
+	}
+	if len(items) == 0 {
+		writeError(w, http.StatusBadRequest, "EMPTY_SELECTION", "No items matched the selection")
+		return
+	}
+	labels, err := h.buildLabels(r, tenantID, items, req, currency)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "LABEL_BUILD_FAILED", err.Error())
+		return
+	}
+	if len(labels) == 0 {
+		writeError(w, http.StatusBadRequest, "NO_LABELS", "Selection produced no labels (no lots/serials?)")
+		return
+	}
+
+	tmpl := h.resolveTemplate(r.Context(), tenantID, req.Template, req.ThermalSize, req.Rotate)
+	if req.Template == "custom" {
+		tmpl = barcode.CustomLabelTemplate(req.CustomLabelW, req.CustomLabelH, req.CustomLanes, req.CustomGapX, req.CustomGapY, resolveRotate(req.Rotate, false))
+	}
+	var companyName string
+	if h.docSvc != nil {
+		companyName = h.docSvc.GetBranding(r.Context(), tenantID).CompanyName
+	}
+
+	pdf, err := barcode.RenderThermalPreviewPDF(labels, companyName, tmpl)
+	if err != nil {
+		h.log.Error("thermal preview render failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "RENDER_FAILED", "Failed to render preview")
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="labels-preview-%s.pdf"`, time.Now().Format("20060102-150405")))
+	_, _ = w.Write(pdf)
 }
 
 // resolveLabelItems expands the request selection into a concrete item list.
