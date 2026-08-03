@@ -20,8 +20,10 @@ func (rc *reportCtx) drawChart(s Section) {
 		return
 	}
 	const chartH = 62.0 // plot area height (mm)
-	const labelH = 14.0  // room for rotated/short category labels + axis value
-	rc.ensure(chartH + labelH + 8)
+	const labelH = 14.0 // room for rotated/short category labels + axis value
+	// No ensure() here: drawSection's combined heading+body check (sectionMinBodyH) already reserved
+	// chartH+labelH+8 together with the heading, so this is guaranteed to fit. Re-checking here would
+	// only ever pass a no-op or, worse, page the chart away from a heading already drawn above it.
 
 	// Max value → axis scale (rounded up to a "nice" number).
 	var maxV float64
