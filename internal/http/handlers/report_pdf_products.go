@@ -109,6 +109,7 @@ func (h *InventoryHandler) ProductsExportPDF(w http.ResponseWriter, r *http.Requ
 	rep := &docs.Report{
 		Title:       "Products Export",
 		Subtitle:    "Catalog Listing",
+		Currency:    currencyOr(""),
 		GeneratedAt: time.Now().UTC(),
 		Landscape:   true,
 		Cards: []docs.Card{

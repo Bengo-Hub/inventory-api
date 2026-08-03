@@ -92,6 +92,7 @@ func (h *InventoryExtrasHandler) IngredientUtilizationReportPDF(w http.ResponseW
 	rep := &docs.Report{
 		Title:       "Ingredient Utilization Report",
 		Subtitle:    fmt.Sprintf("%s (%s)", summary.ItemName, summary.ItemSKU),
+		Currency:    currencyOr(""),
 		PeriodFrom:  from,
 		PeriodTo:    to,
 		GeneratedAt: time.Now().UTC(),

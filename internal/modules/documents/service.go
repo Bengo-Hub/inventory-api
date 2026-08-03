@@ -65,6 +65,7 @@ func (s *Service) GetBranding(ctx context.Context, tenantID uuid.UUID) Branding 
 	b.Email = td.ContactEmail
 	b.Phone = td.ContactPhone
 	b.Website = td.Website
+	b.PrimaryColor = sharedcache.GetTenantBranding(td).PrimaryColor
 	// Build a human address block from tenant metadata (street, city, postal, country),
 	// falling back to the country code so the document always shows a location.
 	b.Address = addressLines(td.Metadata, td.Country)

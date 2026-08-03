@@ -355,6 +355,7 @@ func (h *InventoryExtrasHandler) FoodCostVarianceReportPDF(w http.ResponseWriter
 	rep := &docs.Report{
 		Title:       "Food-Cost Variance Report",
 		Subtitle:    "Theoretical vs Actual Recipe Cost",
+		Currency:    currencyOr(""),
 		PeriodFrom:  from,
 		PeriodTo:    to,
 		GeneratedAt: time.Now().UTC(),
@@ -441,6 +442,7 @@ func (h *InventoryExtrasHandler) MenuEngineeringReportPDF(w http.ResponseWriter,
 	rep := &docs.Report{
 		Title:       "Menu Engineering Report",
 		Subtitle:    "Popularity vs Contribution Margin",
+		Currency:    currencyOr(""),
 		PeriodFrom:  from,
 		PeriodTo:    to,
 		GeneratedAt: time.Now().UTC(),
