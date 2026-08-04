@@ -574,12 +574,31 @@ func (h *InventoryExtrasHandler) CompleteProductionBatch(w http.ResponseWriter, 
 	if body.ActualQuantity > 0 {
 		unitCost = totalCost / body.ActualQuantity
 	}
-	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).
+	// Atomic conditional transition (WHERE status=in_progress), not a bare UpdateOneID: the earlier
+	// `b.Status != InProgress` check above reads the status once, well before this write, with
+	// nothing locking the row in between. Two concurrent/retried .../complete calls (client
+	// double-submit, or a request retried after a slow response) would both pass that read-only
+	// check, both flip status to completed, and both reach the RestockItems call below --
+	// double-crediting the finished-goods stock and double-charging the batch's material/labor/
+	// overhead cost into the books for output actually produced once. The affected-row count IS
+	// the single-winner claim: only the request that actually flips in_progress->completed
+	// proceeds; every other concurrent caller gets a 409 and never restocks.
+	n, err := h.orm.ProductionBatch.Update().
+		Where(entpb.ID(b.ID), entpb.StatusEQ(entpb.StatusInProgress)).
 		SetStatus(entpb.StatusCompleted).SetActualQuantity(body.ActualQuantity).
 		SetScrapQuantity(body.ScrapQuantity).SetUnitCost(unitCost).SetEndDate(time.Now().UTC()).
 		Save(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete batch")
+		return
+	}
+	if n == 0 {
+		writeError(w, http.StatusConflict, "ALREADY_COMPLETED", "This batch was already completed (or cancelled) by another request")
+		return
+	}
+	updated, err := h.orm.ProductionBatch.Get(r.Context(), b.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to load completed batch")
 		return
 	}
 	payload := map[string]any{
@@ -638,10 +657,34 @@ func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r 
 		notes = strings.TrimSpace(notes + "\nCancelled: " + body.Reason)
 	}
 
-	// Rollback: if the batch was already started, return the consumed raw materials
-	// to stock and record the reversal in the usage audit trail.
+	// Atomic conditional claim BEFORE any side-effecting write: only proceed (and only restock
+	// consumed materials below) if the batch's status is still exactly what loadBatch just read.
+	// The old code did the restock decision on that same unlocked read, then a bare UpdateOneID at
+	// the very end with no status guard -- two concurrent/retried cancel calls for an in-progress
+	// batch would both see StatusInProgress, both restock the SAME consumed raw materials back
+	// (double-crediting them), and both flip status to cancelled. Constraining the WHERE to the
+	// exact status just observed (not just "still cancellable") means a genuine race on ANY status
+	// transition -- another request completing or cancelling the batch first -- is caught, not
+	// just the in-progress case.
+	wasInProgress := b.Status == entpb.StatusInProgress
+	n, err := h.orm.ProductionBatch.Update().
+		Where(entpb.ID(b.ID), entpb.StatusEQ(b.Status)).
+		SetStatus(entpb.StatusCancelled).SetNotes(notes).
+		Save(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to cancel batch")
+		return
+	}
+	if n == 0 {
+		writeError(w, http.StatusConflict, "ALREADY_MODIFIED", "This batch was already updated by another request")
+		return
+	}
+
+	// Rollback: if the batch was in progress, return the consumed raw materials to stock and
+	// record the reversal in the usage audit trail. Safe to do now — we've already atomically
+	// claimed the cancel, so no other request can also be doing this for the same batch.
 	returned := make([]map[string]any, 0)
-	if b.Status == entpb.StatusInProgress {
+	if wasInProgress {
 		var finishedItemID *uuid.UUID
 		if recipe, e := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID)).Only(r.Context()); e == nil {
 			finishedItemID = recipe.ItemID
@@ -663,9 +706,9 @@ func (h *InventoryExtrasHandler) CancelProductionBatch(w http.ResponseWriter, r 
 		}
 	}
 
-	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusCancelled).SetNotes(notes).Save(r.Context())
+	updated, err := h.orm.ProductionBatch.Get(r.Context(), b.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to cancel batch")
+		writeError(w, http.StatusInternalServerError, "FETCH_FAILED", "Failed to load cancelled batch")
 		return
 	}
 	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.cancelled", map[string]any{"id": updated.ID, "reason": body.Reason, "returned_materials": returned})
