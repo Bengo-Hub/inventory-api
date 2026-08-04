@@ -49,6 +49,19 @@ func applyBranding(rep *docs.Report, b documents.Branding) {
 		rep.LogoPNG = logo
 		rep.LogoType = logoType
 	}
+	// GetBranding already fetches Phone/Email/KRAPIN (used by the invoice/PO document engine), but
+	// docs.Report has no dedicated fields for them — without this they'd be silently dropped even
+	// though the data is right there. The meta box already renders arbitrary [][2]string rows, so
+	// surface them there instead of leaving reports with less contact identity than an invoice.
+	if b.Phone != "" {
+		rep.Meta = append(rep.Meta, [2]string{"Phone", b.Phone})
+	}
+	if b.Email != "" {
+		rep.Meta = append(rep.Meta, [2]string{"Email", b.Email})
+	}
+	if b.KRAPIN != "" {
+		rep.Meta = append(rep.Meta, [2]string{"KRA PIN", b.KRAPIN})
+	}
 }
 
 // streamReportDoc generates the report in the requested format and streams it inline. The filename is
