@@ -39,6 +39,10 @@ func (PurchaseReturn) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "purchase_order_id"),
 		index.Fields("tenant_id", "payment_status"),
-		index.Fields("tenant_id", "goods_receipt_id"),
+		// Unique (not just indexed): enforces "one auto return per GRN" at the DB level, closing
+		// the race in autoCreateReturnForRejected's Exist()-then-Create() check. Postgres unique
+		// indexes treat every NULL as distinct, so manual returns (goods_receipt_id unset) are
+		// unaffected — only two rows both pointing at the same non-null GRN collide.
+		index.Fields("tenant_id", "goods_receipt_id").Unique(),
 	}
 }

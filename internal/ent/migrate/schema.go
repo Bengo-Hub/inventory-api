@@ -2286,7 +2286,7 @@ var (
 			},
 			{
 				Name:    "purchasereturn_tenant_id_goods_receipt_id",
-				Unique:  false,
+				Unique:  true,
 				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[4]},
 			},
 		},

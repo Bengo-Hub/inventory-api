@@ -155,6 +155,21 @@ func (c *TreasuryVendorBalanceEventsConsumer) handleMessage(msg *nats.Msg) {
 		_, err = create.Save(ctx)
 	}
 	if err != nil {
+		// This is a read-then-write TOCTOU: two redeliveries of the same balance-updated event
+		// (AckWait=30s/MaxDeliver=3) racing the First() lookup above could both miss the existing
+		// row and both attempt Create(). For the vendor_id-keyed path that's caught by the
+		// unique(tenant_id, vendor_id) index -- treat that as idempotent success (the other
+		// racer's write already landed the same data) rather than Nak-ing into a pointless retry
+		// storm. There is no equivalent constraint for the vendor_identifier-only fallback path
+		// (used when treasury hasn't resolved an inventory vendor UUID yet), so a duplicate row is
+		// still possible there -- accepted as a low-severity residual risk since this cache is a
+		// pure best-effort read-side mirror, never a source of financial truth.
+		if ent.IsConstraintError(err) {
+			c.log.Info("vendor balance cache: row already written by a concurrent redelivery, skipping (idempotent)",
+				zap.String("tenant_id", tenantID.String()))
+			_ = msg.Ack()
+			return
+		}
 		c.log.Error("treasury vendor balance events: upsert cache row", zap.Error(err))
 		_ = msg.Nak()
 		return

@@ -505,6 +505,26 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	if err != nil {
 		return false, err
 	}
+	// Atomically claim this GRN for posting: WHERE status = draft means only one caller can win
+	// this transition even if two posts race (idempotency-key middleware bypassed by a different
+	// key, webhook redelivery, doubled client submit). This MUST happen before any stock-mutating
+	// write below — the status update used to run at the end of this function, which let a second,
+	// racing poster get all the way through applyStockIn (double-crediting on_hand) before the only
+	// thing stopping it, the cost layer's unique constraint, silently no-op'd deep in the loop.
+	claimed, err := tx.GoodsReceipt.Update().
+		Where(entgr.ID(g.ID), entgr.StatusEQ(entgr.StatusDraft)).
+		SetStatus(entgr.StatusPosted).
+		Save(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	if claimed == 0 {
+		// Another request already posted this GRN — idempotent no-op, not an error.
+		_ = tx.Rollback()
+		h.log.Info("goods receipt already posted, skipping duplicate post", zap.String("grn_id", g.ID.String()))
+		return false, nil
+	}
 	// Items that received real cost this GRN — recompute their standard cost once each, after
 	// every line's layer is in place, rather than per-line (a GRN can carry several lines for
 	// the same item).
@@ -600,11 +620,6 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 			}
 		}
 	}
-	if _, err = tx.GoodsReceipt.UpdateOneID(g.ID).SetStatus(entgr.StatusPosted).Save(ctx); err != nil {
-		_ = tx.Rollback()
-		return false, err
-	}
-
 	// Recompute each received item's STANDARD cost (the pre-fill/estimate default) from its
 	// active cost layers — safe to do unconditionally now, since nothing downstream reads
 	// Item.cost_price for the value of stock already on hand. Best-effort per item: a failure
