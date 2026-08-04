@@ -848,8 +848,24 @@ type itemPriceDTO struct {
 	TierCode   string    `json:"tier_code"`
 	UnitPrice  float64   `json:"unit_price"`
 	Currency   string    `json:"currency"`
-	Quantity   int       `json:"quantity"`
+	Quantity   float64   `json:"quantity"`
 	TotalPrice float64   `json:"total_price"`
+}
+
+// parseQuantityParam parses a ?quantity= query value into a positive float64, defaulting to 1
+// for an empty, invalid, or non-positive input. float64 (not int) because a fractional
+// quantity is the normal case for continuous-unit items sold by the ml/kg (e.g. a perfume
+// refill) — strconv.Atoi would error on "1.5" and silently fall back to 1, resolving tier
+// pricing against the wrong quantity.
+func parseQuantityParam(qStr string) float64 {
+	if qStr == "" {
+		return 1
+	}
+	q, err := strconv.ParseFloat(qStr, 64)
+	if err != nil || q <= 0 {
+		return 1
+	}
+	return q
 }
 
 // GetItemPrice resolves the effective price for an item at a given quantity.
@@ -868,12 +884,7 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	quantity := 1
-	if qStr := r.URL.Query().Get("quantity"); qStr != "" {
-		if q, parseErr := strconv.Atoi(qStr); parseErr == nil && q > 0 {
-			quantity = q
-		}
-	}
+	quantity := parseQuantityParam(r.URL.Query().Get("quantity"))
 	// Optional explicit pricing tier (e.g. RETAIL, WHOLESALE); empty = default tier.
 	tierCode := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("tier")))
 
@@ -996,7 +1007,7 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 		UnitPrice:  chosen.Price,
 		Currency:   chosen.Currency,
 		Quantity:   quantity,
-		TotalPrice: chosen.Price * float64(quantity),
+		TotalPrice: chosen.Price * quantity,
 	}
 	if chosenTier != nil {
 		dto.TierID = chosenTier.ID

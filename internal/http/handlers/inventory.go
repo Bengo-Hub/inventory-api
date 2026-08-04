@@ -1116,6 +1116,24 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ?fields=sku,name,cost_price,selling_price — opt-in response projection for callers
+	// whose UI only displays a subset of columns (e.g. inventory-ui's DataTable
+	// column-visibility picker). Reduces payload/serialization cost; the full item is still
+	// computed/enriched above regardless, so no business logic is affected. Omitting the
+	// param (every existing caller today) returns the full DTO, unchanged.
+	if fieldsParam := r.URL.Query().Get("fields"); fieldsParam != "" {
+		fields := strings.Split(fieldsParam, ",")
+		for i := range fields {
+			fields[i] = strings.TrimSpace(fields[i])
+		}
+		if projected, perr := projectFields(results, fields, "id", "sku"); perr == nil {
+			writeJSON(w, http.StatusOK, pagination.NewResponse(projected, total, p))
+			return
+		} else {
+			h.log.Warn("field projection failed, returning full payload", zap.Error(perr))
+		}
+	}
+
 	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
 }
 
