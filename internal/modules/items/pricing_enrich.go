@@ -281,6 +281,23 @@ func (s *Service) setSellingPrice(ctx context.Context, tenantID uuid.UUID, itm *
 		})
 	}
 
+	// Publish inventory.item.updated so POS/ordering catalog sync picks up the new price —
+	// this was the root cause of "I changed the price but POS/treasury never reflects it":
+	// a price-only change previously wrote no event at all, so the catalog-version fingerprint
+	// POS polls never moved. A short-lived tx is used only for the outbox row (the price write
+	// above already committed); a publish failure here is logged, never rolled back into the
+	// price change itself — the item is correctly priced either way.
+	if !floatPtrEqual(prevMaxPrice, &price) {
+		if tx, txErr := s.client.Tx(ctx); txErr == nil {
+			if err := s.emitItemUpdatedEvent(ctx, tx, tenantID, itm); err != nil {
+				_ = tx.Rollback()
+				s.log.Warn("setSellingPrice: emit item.updated failed", zap.String("sku", itm.Sku), zap.Error(err))
+			} else if err := tx.Commit(); err != nil {
+				s.log.Warn("setSellingPrice: commit item.updated event failed", zap.String("sku", itm.Sku), zap.Error(err))
+			}
+		}
+	}
+
 	return s.mapToDTO(itm), nil
 }
 

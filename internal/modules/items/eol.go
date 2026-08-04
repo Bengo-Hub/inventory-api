@@ -165,6 +165,14 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 			"tax_code_id":               i.TaxCodeID,
 			"tax_inclusive":             i.TaxInclusive,
 			"cost_price":                i.CostPrice,
+			// Selling-price guardrails — the ceiling (max_selling_price) also doubles as an
+			// item's effective default price when it has no dedicated pricing-tier row (see
+			// pricing_enrich.go effectivePrice). Consumers that want the real customer-facing
+			// price (treasury's eTIMS item mirror, any future price-aware subscriber) need these
+			// on every item.updated event, not just cost_price.
+			"min_selling_price":         i.MinSellingPrice,
+			"max_selling_price":         i.MaxSellingPrice,
+			"selling_price":             i.MaxSellingPrice,
 			"unit_content_qty":          i.UnitContentQty,
 			"unit_content_uom":          i.UnitContentUom,
 			"stock_tracking_mode":       i.StockTrackingMode,
@@ -228,6 +236,27 @@ func (s *Service) SetCostPriceAndPublish(ctx context.Context, tenantID, itemID u
 		return fmt.Errorf("items: commit cost-price update: %w", err)
 	}
 	return nil
+}
+
+// PublishItemUpdatedEvent re-emits the enriched inventory.item.updated event for an item as it
+// currently stands in the DB — the exported entry point other modules (recipes.Service, wired via
+// WithItemsService) use to notify POS/ordering catalog sync of a change they made directly (e.g. a
+// RECIPE's price correction, which lives on the Recipe row, not Item) without duplicating the
+// event-construction logic in emitItemUpdatedEvent.
+func (s *Service) PublishItemUpdatedEvent(ctx context.Context, tenantID, itemID uuid.UUID) error {
+	itm, err := s.client.Item.Query().Where(item.TenantID(tenantID), item.ID(itemID)).Only(ctx)
+	if err != nil {
+		return fmt.Errorf("items: load item %s for event publish: %w", itemID, err)
+	}
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("items: begin tx for event publish: %w", err)
+	}
+	if err := s.emitItemUpdatedEvent(ctx, tx, tenantID, itm); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 // PurgeExpiredEOL hard-deletes items whose end_of_life_at is older than retentionDays, across ALL

@@ -57,6 +57,16 @@ func (s *Service) SetSellingPriceByItem(ctx context.Context, tenantID, itemID uu
 	if _, err := upd.Save(ctx); err != nil {
 		return false, fmt.Errorf("recipes: set selling price for recipe %s: %w", r.ID, err)
 	}
+	// Notify POS/ordering catalog sync — a RECIPE item's price lives on the Recipe row (it
+	// outranks Item's own guardrails at resolution), so without this the item.updated event
+	// items.Service.setSellingPrice publishes for GOODS/EQUIPMENT never fires for a recipe price
+	// correction and the catalog stays stale exactly like the GOODS case did before that fix.
+	if s.items != nil {
+		if err := s.items.PublishItemUpdatedEvent(ctx, tenantID, itemID); err != nil {
+			s.log.Warn("recipes: publish item.updated after price change failed",
+				zap.String("item_id", itemID.String()), zap.Error(err))
+		}
+	}
 	return true, nil
 }
 
