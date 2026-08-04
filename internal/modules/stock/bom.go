@@ -70,6 +70,22 @@ func expenseBearingReason(r stockadjustment.Reason) bool {
 	return false
 }
 
+// glPostableReason reports whether a stock adjustment (either direction) should reach treasury's
+// GL at all via inventory.stock.adjusted. Excludes transfer_in/transfer_out (a balanced move
+// between this tenant's own warehouses -- no value enters or leaves the business, so nothing to
+// post) and return (overlaps an existing sales/purchase-return treasury flow; not disentangled
+// yet, deliberately left alone rather than risk a double-post). Everything else -- including
+// opening_balance/initial_count (routed to Opening Balance Equity, not P&L, by the treasury
+// subscriber's account-mapping logic) and correction/count_variance/found/other (routed to
+// Wastage & Shrinkage, credited instead of debited when the adjustment is upward) -- posts.
+func glPostableReason(r stockadjustment.Reason) bool {
+	switch r {
+	case stockadjustment.ReasonTransferIn, stockadjustment.ReasonTransferOut, stockadjustment.ReasonReturn:
+		return false
+	}
+	return true
+}
+
 // tenantConfig loads the tenant's inventory config row (nil when none exists).
 func (s *Service) tenantConfig(ctx context.Context, tenantID uuid.UUID) *ent.TenantInventoryConfig {
 	cfg, err := s.client.TenantInventoryConfig.Query().
