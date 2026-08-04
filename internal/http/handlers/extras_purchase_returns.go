@@ -301,6 +301,9 @@ func (h *InventoryExtrasHandler) autoCreateReturnForRejected(
 	if len(rejected) == 0 {
 		return nil
 	}
+	// Fast-path check to skip building the return in the common case; the real guard is the
+	// unique(tenant_id, goods_receipt_id) DB index below, since this Exist() + later Create() is
+	// itself a TOCTOU if two posts for the same GRN ever raced this far.
 	if exists, _ := h.orm.PurchaseReturn.Query().
 		Where(entpr.TenantID(tenantID), entpr.GoodsReceiptID(g.ID)).
 		Exist(ctx); exists {
@@ -330,6 +333,10 @@ func (h *InventoryExtrasHandler) autoCreateReturnForRejected(
 	}
 	pr, err := create.Save(ctx)
 	if err != nil {
+		if ent.IsConstraintError(err) {
+			h.log.Info("auto purchase return already exists for this GRN, skipping (idempotent)", zap.String("grn", g.GrnNumber))
+			return nil
+		}
 		h.log.Warn("auto purchase return: create failed", zap.String("grn", g.GrnNumber), zap.Error(err))
 		return nil
 	}

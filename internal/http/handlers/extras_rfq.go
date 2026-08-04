@@ -809,11 +809,24 @@ func (h *InventoryExtrasHandler) ConvertRFQToPOs(w http.ResponseWriter, r *http.
 			continue
 		}
 		var total float64
+		anyClaimed := false
 		for _, a := range group {
 			line, lerr := h.orm.RFQLine.Get(r.Context(), a.RfqLineID)
 			if lerr != nil || line.ItemID == nil {
 				continue // PO lines require an item_id; free-text lines are skipped
 			}
+			// Atomically claim this award: only proceed if it's still unconverted. A concurrent
+			// or retried call to this same endpoint (double-click, client retry on a timeout) can
+			// race in between our read above and this write; the WHERE PoIDIsNil() makes only one
+			// caller's claim win per award, so the loser skips it instead of creating a duplicate
+			// PO line for stock/spend that's already been ordered.
+			n, cerr := h.orm.RFQAward.Update().
+				Where(entrfqaward.ID(a.ID), entrfqaward.PoIDIsNil()).
+				SetPoID(po.ID).Save(r.Context())
+			if cerr != nil || n == 0 {
+				continue
+			}
+			anyClaimed = true
 			lineTotal := a.UnitPrice * float64(a.Quantity)
 			total += lineTotal
 			if _, err := h.orm.PurchaseOrderLine.Create().
@@ -822,13 +835,23 @@ func (h *InventoryExtrasHandler) ConvertRFQToPOs(w http.ResponseWriter, r *http.
 				h.log.Warn("convert RFQ: create PO line failed", zap.Error(err))
 				continue
 			}
-			_, _ = h.orm.RFQAward.UpdateOneID(a.ID).SetPoID(po.ID).Save(r.Context())
+		}
+		if !anyClaimed {
+			// Every award in this supplier group was already claimed by a concurrent/earlier
+			// call — this PO carries no lines and no spend; drop it rather than leaving an empty
+			// duplicate PO behind.
+			_ = h.orm.PurchaseOrder.DeleteOneID(po.ID).Exec(r.Context())
+			continue
 		}
 		po, _ = h.orm.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(total).Save(r.Context())
 		h.publishOutbox(r.Context(), tenantID, "purchase_order", po.ID, "inventory.purchase_order.created", map[string]any{
 			"id": po.ID, "po_number": po.PoNumber, "supplier_id": sid, "total_amount": total, "from_rfq_id": rfqID,
 		})
 		createdPOs = append(createdPOs, map[string]any{"purchase_order_id": po.ID, "po_number": po.PoNumber, "supplier_id": sid, "total_amount": total})
+	}
+	if len(createdPOs) == 0 {
+		writeError(w, http.StatusConflict, "ALREADY_CONVERTED", "All awards were already converted by a concurrent request")
+		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"purchase_orders": createdPOs, "count": len(createdPOs)})
 }

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
-	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entreq "github.com/bengobox/inventory-service/internal/ent/requisition"
 	entreqline "github.com/bengobox/inventory-service/internal/ent/requisitionline"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -33,13 +33,6 @@ import (
 // created; otherwise it stays "approved" and the manual convert-to-po path remains
 // available.
 func (h *InventoryExtrasHandler) autoCreatePOsFromRequisition(ctx context.Context, tenantID uuid.UUID, rq *ent.Requisition) {
-	// Idempotency — never double-order a requisition.
-	if exists, _ := h.orm.PurchaseOrder.Query().
-		Where(entpo.TenantID(tenantID), entpo.RequisitionID(rq.ID)).
-		Exist(ctx); exists {
-		return
-	}
-
 	warehouseID := h.resolveDeliveryWarehouse(ctx, tenantID, rq.OutletID)
 	if warehouseID == uuid.Nil {
 		h.log.Warn("auto-PO: no delivery warehouse; requisition left approved for manual conversion",
@@ -79,6 +72,35 @@ func (h *InventoryExtrasHandler) autoCreatePOsFromRequisition(ctx context.Contex
 	if len(bySupplier) == 0 {
 		h.log.Info("auto-PO: no orderable lines (missing item or supplier); requisition left approved",
 			zap.String("requisition", rq.ID.String()), zap.Int("skipped_lines", skipped))
+		return
+	}
+
+	// Idempotency — never double-order a requisition. A requisition legitimately fans out into
+	// MULTIPLE POs (one per supplier group, below), so requisition_id can't carry a plain unique
+	// DB constraint the way a 1:1 relationship could. The previous guard (Query().Exist() at the
+	// top of this function, then Create() in a loop many lines later) was a classic check-then-act
+	// race: this function is called from two different approval call sites, and a double-submitted
+	// "approve" click (or both call sites firing for the same requisition) could both pass the
+	// Exist() check and both create a full duplicate batch of POs, doubling the buying-cost
+	// commitment. Fixed by claiming a single atomic key via the same (tenant_id, key)
+	// unique-constrained idempotency_keys table used elsewhere (see quotation_accepted_events.go).
+	// Claimed here, right before the mutating work, rather than at function entry — an earlier
+	// return above (no warehouse, no orderable lines) must NOT burn the claim, or fixing the
+	// underlying data (adding a supplier, configuring a warehouse) could never trigger a retry.
+	idemKey := "requisition-auto-po:" + rq.ID.String()
+	if _, err := h.orm.IdempotencyKey.Create().
+		SetTenantID(tenantID).
+		SetKey(idemKey).
+		SetEndpoint("auto:requisition.approved").
+		SetStatus("completed").
+		SetExpiresAt(time.Now().Add(30 * 24 * time.Hour)).
+		Save(ctx); err != nil {
+		if ent.IsConstraintError(err) {
+			h.log.Info("auto-PO: requisition already processed, skipping (idempotent)",
+				zap.String("requisition", rq.ID.String()))
+			return
+		}
+		h.log.Warn("auto-PO: claim idempotency key failed", zap.Error(err), zap.String("requisition", rq.ID.String()))
 		return
 	}
 
