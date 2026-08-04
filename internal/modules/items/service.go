@@ -2763,6 +2763,10 @@ type EtimsRegistration struct {
 	ItemClsCd string // classification (UNSPSC)
 	PkgUnitCd string
 	QtyUnitCd string
+	// TaxCode is the tenant's treasury TaxCode.code resolved from the registered KRA tax band
+	// (e.g. "VAT-16") — NOT the raw band letter. Only fills Item.tax_code_id when the item
+	// currently has none; never overwrites a tenant/manually-set tax code.
+	TaxCode string
 }
 
 // SetEtimsRegistration mirrors the KRA-registered eTIMS codes back onto the inventory item — a
@@ -2802,6 +2806,13 @@ func (s *Service) SetEtimsRegistration(ctx context.Context, tenantID uuid.UUID, 
 	}
 	if reg.QtyUnitCd != "" {
 		upd = upd.SetEtimsQtyUnitCd(reg.QtyUnitCd)
+		changed = true
+	}
+	// Only fill tax_code_id when the item doesn't already have one — this is a "resolve when
+	// missing" write-back, never an override of a tenant/manually-set tax code (see Workstream 1
+	// fix in pricing_enrich.go, which already prefers an item's own tax_code_id over any default).
+	if reg.TaxCode != "" && target.TaxCodeID == "" {
+		upd = upd.SetTaxCodeID(reg.TaxCode)
 		changed = true
 	}
 	if !changed {
