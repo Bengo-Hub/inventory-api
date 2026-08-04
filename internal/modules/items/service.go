@@ -2599,6 +2599,28 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: update item: %w", err)
 	}
 
+	// Sync the pricing-tier rows to the item's own guardrail fields — the SAME choke point
+	// setSellingPrice uses. Without this, editing price via the general item-edit form updated
+	// Item.MaxSellingPrice/MinSellingPrice directly but left item_pricings (what POS/ordering
+	// price-resolution actually reads first) untouched, so a price typed into the edit form
+	// silently never showed up anywhere downstream — a second, independent instance of the exact
+	// "I changed the price and it never updated" bug, distinct from the dedicated price-only
+	// endpoint's copy of the same class of bug. Best-effort here (a broad item-edit save covering
+	// dozens of unrelated fields must not fail wholesale over a tier-price hiccup); the dedicated
+	// SetSellingPrice endpoint remains the hard-failing path when price is the ONLY thing being set.
+	maxP, minP := 0.0, 0.0
+	if i.MaxSellingPrice != nil {
+		maxP = *i.MaxSellingPrice
+	}
+	if i.MinSellingPrice != nil {
+		minP = *i.MinSellingPrice
+	}
+	if maxP > 0 || minP > 0 {
+		if terr := s.EnsureGuardrailTierPrices(ctx, tenantID, i.ID, maxP, minP); terr != nil {
+			s.log.Warn("update item: tier price sync failed", zap.String("sku", i.Sku), zap.Error(terr))
+		}
+	}
+
 	// Update reorder level/quantity on all InventoryBalance records for this item if provided.
 	// Reorder policy LIVES on the balance (per warehouse) — the item DTO only mirrors it —
 	// so an edit on a never-stocked item must CREATE the default-warehouse balance row or
@@ -2634,91 +2656,12 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		}
 	}
 
-	// Resolve category name for enriched event payload
-	categoryName := ""
-	if i.CategoryID != nil {
-		cat, catErr := s.client.ItemCategory.Get(ctx, *i.CategoryID)
-		if catErr == nil {
-			categoryName = cat.Name
-		}
-	}
-
-	// Resolve unit name + KRA quantity-unit mapping for the enriched event payload
-	unitName, unitAbbrev, unitKraQty := "", "", ""
-	if i.UnitID != nil {
-		u, uErr := s.client.Unit.Get(ctx, *i.UnitID)
-		if uErr == nil {
-			unitName = u.Name
-			unitAbbrev = u.Abbreviation
-			unitKraQty = u.KraQtyUnitCd
-		}
-	}
-
-	// Publish enriched event to outbox
-	event := &events.Event{
-		ID:            uuid.New(),
-		TenantID:      tenantID,
-		AggregateType: "inventory",
-		AggregateID:   i.ID,
-		EventType:     "item.updated",
-		Payload: map[string]any{
-			"id":                        i.ID,
-			"sku":                       i.Sku,
-			"name":                      i.Name,
-			"description":               i.Description,
-			"type":                      i.Type,
-			"category_id":               i.CategoryID,
-			"category_name":             categoryName,
-			"manufacturer":              i.Manufacturer,
-			"model":                     i.Model,
-			"unit_id":                   i.UnitID,
-			"unit_name":                 unitName,
-			"is_active":                 i.IsActive,
-			"image_url":                 i.ImageURL,
-			"tags":                      i.Tags,
-			"barcode":                   i.Barcode,
-			"barcode_type":              i.BarcodeType,
-			"requires_age_verification": i.RequiresAgeVerification,
-			"is_controlled_substance":   i.IsControlledSubstance,
-			"is_perishable":             i.IsPerishable,
-			"track_serial_numbers":      i.TrackSerialNumbers,
-			"track_lots":                i.TrackLots,
-			"weight_kg":                 i.WeightKg,
-			"dimensions_cm":             i.DimensionsCm,
-			"duration_minutes":          i.DurationMinutes,
-			"use_case":                  i.UseCase,
-			"meal_plan":                 i.MealPlan,
-			"occupancy_basis":           i.OccupancyBasis,
-			"max_adults":                i.MaxAdults,
-			"max_children":              i.MaxChildren,
-			"tax_code_id":               i.TaxCodeID,
-			"tax_inclusive":             i.TaxInclusive,
-			"cost_price":                i.CostPrice,
-			"unit_content_qty":          i.UnitContentQty,
-			"unit_content_uom":          i.UnitContentUom,
-			"stock_tracking_mode":       i.StockTrackingMode,
-		},
-		Timestamp: time.Now().UTC(),
-	}
-	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty)
-
-	payload, err := event.ToJSON()
-	if err != nil {
-		return nil, fmt.Errorf("items: marshal event: %w", err)
-	}
-
-	_, err = tx.OutboxEvent.Create().
-		SetID(event.ID).
-		SetTenantID(tenantID).
-		SetAggregateType(event.AggregateType).
-		SetAggregateID(event.AggregateID.String()).
-		SetEventType(event.EventType).
-		SetPayload(json.RawMessage(payload)).
-		SetStatus("PENDING").
-		SetCreatedAt(event.Timestamp).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: create outbox record: %w", err)
+	// The single choke point for the item.updated payload shape (category/unit resolution,
+	// eTIMS fields, price fields — see eol.go) — was previously duplicated inline here with its
+	// own copy that had silently drifted to omit min/max_selling_price entirely. One function now
+	// serves UpdateItem, the EOL mutations, and SetCostPriceAndPublish.
+	if err = s.emitItemUpdatedEvent(ctx, tx, tenantID, i); err != nil {
+		return nil, fmt.Errorf("items: emit update event: %w", err)
 	}
 
 	if err = tx.Commit(); err != nil {
