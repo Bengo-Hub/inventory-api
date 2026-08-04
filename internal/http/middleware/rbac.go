@@ -20,7 +20,25 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 			ctx := r.Context()
 
 			claims, ok := authclient.ClaimsFromContext(ctx)
-			if !ok || claims.Subject == "" {
+			if !ok {
+				respondForbidden(w, "unauthorized")
+				return
+			}
+
+			// Trusted internal service callers (pos-api, ordering-backend, etc. via
+			// requireInternalKeyOrAuth's constant-time X-API-Key compare) carry IsService
+			// and deliberately have NO Subject — there is no "user" behind an S2S call, so
+			// the claims.Subject=="" check below must never reject them. Before this fix,
+			// EVERY S2S caller hitting a perm()-gated /v1/{tenant} route 403'd unconditionally
+			// (Subject=="" was rejected before IsPlatformOwner/IsService were even inspected),
+			// silently breaking e.g. pos-api's ReverseConsumption call on Delete Sale/reversal
+			// — inventory was never actually restored, only the caller never surfaced it loudly
+			// since saledelete/reversals treat it as a failed step, not a crash.
+			if claims.IsService {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if claims.Subject == "" {
 				respondForbidden(w, "unauthorized")
 				return
 			}

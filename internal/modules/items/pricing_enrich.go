@@ -395,6 +395,16 @@ func (s *Service) PromotePendingPriceChanges(ctx context.Context, tenantID uuid.
 
 // upsertItemTierPrice upserts the all-outlets (outlet_id IS NULL) ItemPricing row for the given
 // item + tier at `price`, reactivating it if it was soft-deleted.
+//
+// NOTE (2026-08): production carried two STALE unique constraints
+// (tenant_id,item_id,pricing_tier_id) and (...,outlet_id) left over from an earlier schema
+// iteration, predating effective_from being added to the real composite unique index. Ent's
+// online auto-migrate never drops old indexes/constraints by default, so they silently survived
+// every schema change since and made the second price change ever made to an item fail with
+// SQLSTATE 23505 — the true root cause of "I changed the price and POS never reflects it": this
+// insert errored out BEFORE setSellingPrice ever reached the item.updated event publish. Fixed by
+// dropping the two stale constraints directly (see the accompanying Atlas migration) — this
+// function's logic was always correct for the schema as actually declared in ent/schema/*.go.
 func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) error {
 	existing, qErr := s.client.ItemPricing.Query().
 		Where(
