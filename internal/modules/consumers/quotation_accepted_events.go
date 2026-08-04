@@ -15,7 +15,6 @@ import (
 	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
-	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entwh "github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
@@ -247,18 +246,35 @@ func groupBySupplier(resolved []resolvedLine) (map[uuid.UUID][]poLine, []uuid.UU
 // receiving warehouse (outlet_id match, else tenant default). Idempotent: if ANY PO already
 // exists for (tenant_id, quotation_id) the whole handler is skipped (redelivery-safe).
 func (c *QuotationAcceptedConsumer) handleQuotationAccepted(ctx context.Context, tenantID, quotationID uuid.UUID, p quotationAcceptedPayload) error {
-	// Idempotency: skip if a PO already exists for this quotation (handles JetStream redelivery).
-	exists, err := c.orm.PurchaseOrder.Query().
-		Where(entpo.TenantID(tenantID), entpo.QuotationID(quotationID)).
-		Exist(ctx)
-	if err != nil {
-		return fmt.Errorf("check existing procure-to-order PO: %w", err)
-	}
-	if exists {
-		c.log.Info("quotation accepted: PO already exists for quotation — skipping (idempotent)",
-			zap.String("quotation_id", quotationID.String()),
-			zap.String("quotation_number", p.QuotationNumber))
-		return nil
+	// Idempotency: a quotation legitimately fans out into MULTIPLE POs (one per supplier group,
+	// per this handler's own doc comment), so quotation_id can't carry a plain unique DB
+	// constraint the way a 1:1 relationship could -- purchaseorder's index on quotation_id is
+	// deliberately non-unique. The previous guard (Query().Exist() then, many lines later,
+	// Create() in a loop) was a classic check-then-act race with nothing closing the window: two
+	// JetStream redeliveries of the same quotation.accepted event (AckWait=30s/MaxDeliver=3, and
+	// this handler does real work -- item resolution, supplier grouping, warehouse lookup -- well
+	// within that window) could both pass the Exist() check and both create a full set of draft
+	// POs, duplicating the buying-cost commitment.
+	//
+	// Fixed by claiming a single atomic key for "this quotation-accepted event has been processed
+	// at all" via the SAME (tenant_id, key) unique-constrained idempotency_keys table the HTTP
+	// idempotency middleware uses -- one claim covers however many POs this quotation fans out
+	// into, so it doesn't need to know about the per-supplier cardinality at all.
+	idemKey := "quotation-accepted:" + quotationID.String()
+	if _, err := c.orm.IdempotencyKey.Create().
+		SetTenantID(tenantID).
+		SetKey(idemKey).
+		SetEndpoint("consumer:quotation.accepted").
+		SetStatus("completed").
+		SetExpiresAt(time.Now().Add(30 * 24 * time.Hour)).
+		Save(ctx); err != nil {
+		if ent.IsConstraintError(err) {
+			c.log.Info("quotation accepted: already processed for this quotation — skipping (idempotent)",
+				zap.String("quotation_id", quotationID.String()),
+				zap.String("quotation_number", p.QuotationNumber))
+			return nil
+		}
+		return fmt.Errorf("claim quotation-accepted idempotency key: %w", err)
 	}
 
 	// Resolve each quoted line to an inventory item, then GROUP by the item's
