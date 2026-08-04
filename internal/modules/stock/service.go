@@ -3,6 +3,7 @@ package stock
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -348,44 +349,66 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		adjLots = s.consumeLots(ctx, tx, tenantID, itm.ID, whID, -qtyChange, s.costingMethod(ctx, tenantID))
 	}
 
-	// Expense-bearing downward adjustments (floor-stock issue of consumables, damage,
-	// expiry, shrinkage) additionally publish a VALUED inventory.stock.adjusted event so
-	// treasury posts the operating-expense/wastage journal entry — without this, issued
-	// serviettes/tissues and written-off stock never reach the books.
-	if qtyChange < 0 && expenseBearingReason(adjReason) {
-		var layeredValue, layeredQty float64
-		for _, lot := range adjLots {
-			if lot.UnitCost != nil {
-				layeredValue += lot.QtyTaken * *lot.UnitCost
-				layeredQty += lot.QtyTaken
+	// GL-postable adjustments additionally publish a VALUED inventory.stock.adjusted event so
+	// treasury records the corresponding journal entry:
+	//  - Expense-bearing downward reasons (floor-stock issue of consumables, damage, expiry,
+	//    shrinkage) -> operating-expense/wastage entry, as before.
+	//  - Everything else GL-postable (opening_balance, initial_count, correction, count_variance,
+	//    found, other) -> a value-movement entry (Opening Balance Equity for the two onboarding
+	//    reasons, Wastage & Shrinkage credited/debited by direction for the rest) -- without this,
+	//    corrections and opening balances change on-hand quantity but never reach the books, so
+	//    the Inventory (1500) GL balance permanently drifts from what's physically on the shelf.
+	// Downward adjustments draw their value from the SAME cost layers just consumed above (matches
+	// the sale-time costing method); upward adjustments have no lot to draw from (stock is being
+	// added, not removed) so they value at the item's current cost price.
+	if qtyChange != 0 && glPostableReason(adjReason) {
+		var costValue float64
+		if qtyChange < 0 {
+			var layeredValue, layeredQty float64
+			for _, lot := range adjLots {
+				if lot.UnitCost != nil {
+					layeredValue += lot.QtyTaken * *lot.UnitCost
+					layeredQty += lot.QtyTaken
+				}
 			}
-		}
-		remainder := -qtyChange - layeredQty
-		if remainder > 0 && itm.CostPrice != nil {
-			layeredValue += remainder * *itm.CostPrice
-		}
-		costValue := round4(layeredValue)
-		uom := ""
-		if itm.UnitID != nil {
-			if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
-				uom = u.Abbreviation
+			remainder := -qtyChange - layeredQty
+			if remainder > 0 && itm.CostPrice != nil {
+				layeredValue += remainder * *itm.CostPrice
 			}
+			costValue = round4(layeredValue)
+		} else if itm.CostPrice != nil {
+			costValue = round4(qtyChange * *itm.CostPrice)
 		}
-		s.writeOutboxEvent(ctx, tx, tenantID, adj.ID, "inventory", "stock.adjusted", map[string]any{
-			"tenant_id":     tenantID.String(),
-			"adjustment_id": adj.ID.String(),
-			"item_id":       itm.ID.String(),
-			"sku":           itm.Sku,
-			"item_name":     itm.Name,
-			"warehouse_id":  whID.String(),
-			"reason":        string(adjReason),
-			"quantity":      -qtyChange,
-			"uom":           uom,
-			"cost_value":    costValue,
-			"reference":     req.Reference,
-			"notes":         req.Notes,
-			"adjusted_at":   now.UTC().Format(time.RFC3339),
-		})
+		// Nothing valued to post (item has no cost basis at all) -- skip rather than post a
+		// meaningless zero-amount journal entry.
+		if costValue > 0.009 {
+			uom := ""
+			if itm.UnitID != nil {
+				if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
+					uom = u.Abbreviation
+				}
+			}
+			direction := "increase"
+			if qtyChange < 0 {
+				direction = "decrease"
+			}
+			s.writeOutboxEvent(ctx, tx, tenantID, adj.ID, "inventory", "stock.adjusted", map[string]any{
+				"tenant_id":     tenantID.String(),
+				"adjustment_id": adj.ID.String(),
+				"item_id":       itm.ID.String(),
+				"sku":           itm.Sku,
+				"item_name":     itm.Name,
+				"warehouse_id":  whID.String(),
+				"reason":        string(adjReason),
+				"direction":     direction,
+				"quantity":      math.Abs(qtyChange),
+				"uom":           uom,
+				"cost_value":    costValue,
+				"reference":     req.Reference,
+				"notes":         req.Notes,
+				"adjusted_at":   now.UTC().Format(time.RFC3339),
+			})
+		}
 	}
 
 	// Check for low stock and publish event
