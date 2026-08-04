@@ -29,7 +29,8 @@ type etimsItemRegisteredPayload struct {
 	ItemClsCd    string `json:"item_cls_cd"`
 	PkgUnitCd    string `json:"pkg_unit_cd"`
 	QtyUnitCd    string `json:"qty_unit_cd"`
-	TaxTyCd      string `json:"tax_ty_cd"`
+	TaxTyCd      string `json:"tax_ty_cd"` // raw KRA band letter (e.g. "B") — informational only
+	TaxCode      string `json:"tax_code"`  // resolved treasury TaxCode.code (e.g. "VAT-16") — usable directly
 }
 
 // EtimsItemRegisteredConsumer mirrors the KRA-assigned eTIMS codes (classification, package/
@@ -126,6 +127,7 @@ func (c *EtimsItemRegisteredConsumer) handleMessage(msg *nats.Msg) {
 		ItemClsCd: p.ItemClsCd,
 		PkgUnitCd: p.PkgUnitCd,
 		QtyUnitCd: p.QtyUnitCd,
+		TaxCode:   p.TaxCode,
 	}); err != nil {
 		c.log.Warn("etims item registered: write-back failed — will retry",
 			zap.String("tenant_id", tenantID.String()),
