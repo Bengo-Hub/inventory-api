@@ -42,7 +42,6 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 	if cfg != nil {
 		defaultTaxCode = cfg.DefaultTaxCode
 	}
-	rate, rateCode := s.resolveVATRate(ctx, tenantID, defaultTaxCode)
 	// A business that isn't VAT-registered must not charge VAT — suppress the rate entirely
 	// (including the inclusive-price DefaultVATRate fallback) so no tax is split out.
 	suppressVAT := s.vatSuppressed(ctx, tenantID)
@@ -77,28 +76,54 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		sp := price
 		d.SellingPrice = &sp
 
-		inclusive := inclusiveDefault || d.TaxInclusive
-		effRate := rate
-		if suppressVAT {
-			effRate = 0
-		} else if effRate <= 0 && inclusive {
-			effRate = DefaultVATRate // must still back-compute when treasury is unreachable
-		}
-		if effRate <= 0 {
-			continue // no VAT (exclusive w/ no rate, or suppressed) → leave tax fields unset
-		}
-		split := ComputeTaxSplit(price, effRate, inclusive)
-		net, tax, r := split.Net, split.Tax, split.Rate
-		d.NetPrice = &net
-		d.TaxAmount = &tax
-		d.TaxRate = &r
-		d.TaxInclusive = inclusive
-		if d.TaxCodeID == "" {
-			if rateCode != "" {
-				d.TaxCodeID = rateCode
-			} else if defaultTaxCode != "" {
-				d.TaxCodeID = defaultTaxCode
-			}
+		// Resolve the VAT rate per-item, preferring the item's OWN tax code (already
+		// populated from Item.tax_code_id in mapToDTO) over the tenant default — a
+		// zero-rated/exempt item must never be silently taxed at the tenant's default rate
+		// just because it shares the page with standard-rated items. resolveVATRate is
+		// Redis-cached per tenant, so this is a cache hit after the first item in the loop.
+		rate, rateCode := s.resolveVATRate(ctx, tenantID, preferredTaxCode(d, defaultTaxCode))
+		applyItemTax(d, price, rate, rateCode, defaultTaxCode, inclusiveDefault, suppressVAT)
+	}
+}
+
+// preferredTaxCode picks the tax code to resolve an item's VAT rate against: the item's own
+// tax_code_id when it has one, else the tenant's configured default. Pure/DB-free so it's
+// unit-testable directly (enrichPrices itself needs a live ent client for its sibling
+// recipe/tier-price lookups, so the DB-free logic is split out here per this package's existing
+// test pattern — see bulk_test.go's bulkTargetState).
+func preferredTaxCode(d *ItemDTO, defaultTaxCode string) string {
+	if d.TaxCodeID != "" {
+		return d.TaxCodeID
+	}
+	return defaultTaxCode
+}
+
+// applyItemTax stamps the resolved VAT rate/code onto an item DTO's tax fields (NetPrice/
+// TaxAmount/TaxRate/TaxInclusive, and TaxCodeID when it was previously unset). rate/rateCode are
+// the already-resolved output of resolveVATRate for this item's preferred code (see
+// preferredTaxCode) — this function itself does no I/O, so it's unit-testable without a DB.
+func applyItemTax(d *ItemDTO, price, rate float64, rateCode, defaultTaxCode string, inclusiveDefault, suppressVAT bool) {
+	inclusive := inclusiveDefault || d.TaxInclusive
+	effRate := rate
+	if suppressVAT {
+		effRate = 0
+	} else if effRate <= 0 && inclusive {
+		effRate = DefaultVATRate // must still back-compute when treasury is unreachable
+	}
+	if effRate <= 0 {
+		return // no VAT (exclusive w/ no rate, or suppressed) → leave tax fields unset
+	}
+	split := ComputeTaxSplit(price, effRate, inclusive)
+	net, tax, r := split.Net, split.Tax, split.Rate
+	d.NetPrice = &net
+	d.TaxAmount = &tax
+	d.TaxRate = &r
+	d.TaxInclusive = inclusive
+	if d.TaxCodeID == "" {
+		if rateCode != "" {
+			d.TaxCodeID = rateCode
+		} else if defaultTaxCode != "" {
+			d.TaxCodeID = defaultTaxCode
 		}
 	}
 }
