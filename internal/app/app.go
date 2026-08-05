@@ -483,6 +483,11 @@ func (a *App) Run(ctx context.Context) error {
 						a.log.Error("ordering return events consumer stopped", zap.Error(err))
 					}
 				}()
+				go func() {
+					if err := a.returnConsumer.StartExchangeReturns(ctx, js); err != nil {
+						a.log.Error("pos exchange events consumer stopped", zap.Error(err))
+					}
+				}()
 				a.log.Info("return events consumers started")
 			}
 
