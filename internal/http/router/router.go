@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -21,6 +22,26 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 	"github.com/google/uuid"
 )
+
+// skipCompressForWebsocket wraps a middleware (chi's Compress) so it never runs on a WebSocket
+// upgrade request. chi's compressResponseWriter.Hijack() type-asserts its wrapped writer directly
+// instead of walking an http.ResponseController Unwrap() chain, so wrapping ANY hijack-based
+// handler (nhooyr.io/websocket's Accept, used by the notifications stream) in it breaks the hijack
+// with "http.Hijacker is unavailable on the writer" -- confirmed live via kubectl logs during E2E
+// verification. RFC 6455 upgrade requests always carry Connection: Upgrade and Upgrade: websocket,
+// so detecting them here is exact, not a heuristic.
+func skipCompressForWebsocket(compress func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		compressed := compress(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			compressed.ServeHTTP(w, r)
+		})
+	}
+}
 
 func New(
 	log *zap.Logger,
@@ -82,7 +103,7 @@ func New(
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	// gzip JSON responses (item/stock lists) — no compression existed at any layer for this API.
-	r.Use(middleware.Compress(5))
+	r.Use(skipCompressForWebsocket(middleware.Compress(5)))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
 	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
