@@ -126,8 +126,20 @@ func (h *PINAuthHandler) terminalClaimsFor(ctx context.Context, t *ent.Tenant, u
 		if e := h.subs.GetEntitlements(ctx, t.ID.String()); e != nil {
 			tc.SubscriptionStatus = e.Status
 			tc.SubscriptionFeatures = e.Features
+			tc.SubscriptionLimits = e.Limits
 			tc.BillingMode = e.BillingMode
 			tc.IsDemo = tc.IsDemo || e.IsDemoBypass
+			tc.SubscriptionTier = e.TierOrder
+			tc.SubscriptionExempt = e.Exempt
+			tc.AllowOverage = e.AllowOverage
+			// One-time perpetual licences never expire: omit sub_expires so the gate treats
+			// them as permanently active, matching auth-api's EnrichTokenWithSubscription.
+			if !e.IsPerpetual && e.CurrentPeriodEnd != "" {
+				if pt, perr := time.Parse(time.RFC3339, e.CurrentPeriodEnd); perr == nil {
+					unix := pt.Unix()
+					tc.SubscriptionExpires = &unix
+				}
+			}
 		}
 	}
 	return tc

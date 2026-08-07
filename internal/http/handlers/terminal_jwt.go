@@ -34,6 +34,14 @@ type terminalClaims struct {
 	SubscriptionStatus   string         `json:"sub_status,omitempty"`
 	SubscriptionFeatures []string       `json:"subscription_features,omitempty"`
 	SubscriptionLimits   map[string]int `json:"sub_limits,omitempty"`
+	// SubscriptionTier/SubscriptionExempt/AllowOverage/SubscriptionExpires mirror the fields the
+	// SSO path (auth-api EnrichTokenWithSubscription) has minted since auth-client v0.11.0.
+	// Without them a PIN session can't be told apart from a lower-tier or non-exempt one for
+	// tier-rank gates, overage soft-cap, grace-period, or an explicit platform exemption.
+	SubscriptionTier    int    `json:"sub_tier,omitempty"`
+	SubscriptionExempt  bool   `json:"sub_exempt,omitempty"`
+	AllowOverage        bool   `json:"sub_allow_overage,omitempty"`
+	SubscriptionExpires *int64 `json:"sub_expires,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -84,6 +92,10 @@ func terminalToAuthClaims(tc *terminalClaims) *authclient.Claims {
 		SubscriptionStatus:   tc.SubscriptionStatus,
 		SubscriptionFeatures: tc.SubscriptionFeatures,
 		SubscriptionLimits:   tc.SubscriptionLimits,
+		SubscriptionTier:     tc.SubscriptionTier,
+		SubscriptionExempt:   tc.SubscriptionExempt,
+		AllowOverage:         tc.AllowOverage,
+		SubscriptionExpires:  tc.SubscriptionExpires,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: tc.UserID,
 			Issuer:  tc.Issuer,

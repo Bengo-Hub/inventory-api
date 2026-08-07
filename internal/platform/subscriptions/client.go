@@ -30,6 +30,18 @@ type Entitlements struct {
 	Status       string   `json:"status"`
 	BillingMode  string   `json:"billing_mode"`
 	IsDemoBypass bool     `json:"is_demo_bypass"`
+	// Limits/TierOrder/AllowOverage/CurrentPeriodEnd/IsPerpetual/Exempt were previously dropped by
+	// this DTO even though the S2S response carries them — every inventory PIN-terminal session
+	// therefore had claims.SubscriptionLimits permanently nil (CheckLimit/AssertLimit silently
+	// fail-open on EVERY structural cap: warehouses, SKUs, suppliers, images-per-item) and no way
+	// to tell a real tier/overage/exempt/grace state from a terminal login. Mirrors the fields
+	// auth-api's EnrichTokenWithSubscription maps onto an SSO JWT.
+	Limits           map[string]int `json:"limits"`
+	TierOrder        int            `json:"tier_order"`
+	AllowOverage     bool           `json:"allow_overage"`
+	CurrentPeriodEnd string         `json:"current_period_end"`
+	IsPerpetual      bool           `json:"is_perpetual"`
+	Exempt           bool           `json:"exempt"`
 }
 
 // Client interacts with the subscriptions service over S2S (X-API-Key, no user JWT).
