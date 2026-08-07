@@ -23,22 +23,28 @@ import (
 	"github.com/google/uuid"
 )
 
-// skipCompressForWebsocket wraps a middleware (chi's Compress) so it never runs on a WebSocket
-// upgrade request. chi's compressResponseWriter.Hijack() type-asserts its wrapped writer directly
-// instead of walking an http.ResponseController Unwrap() chain, so wrapping ANY hijack-based
-// handler (nhooyr.io/websocket's Accept, used by the notifications stream) in it breaks the hijack
-// with "http.Hijacker is unavailable on the writer" -- confirmed live via kubectl logs during E2E
-// verification. RFC 6455 upgrade requests always carry Connection: Upgrade and Upgrade: websocket,
-// so detecting them here is exact, not a heuristic.
-func skipCompressForWebsocket(compress func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+// bypassForWebsocket wraps a middleware so it never runs on a WebSocket upgrade request — used
+// for TWO independent hijack-breaking middlewares found live during E2E verification of this
+// session's new WS route:
+//  1. chi's middleware.Compress: compressResponseWriter.Hijack() type-asserts its wrapped writer
+//     directly instead of walking an http.ResponseController Unwrap() chain.
+//  2. httpware.Logging (github.com/Bengo-Hub/httpware, shared fleet-wide): its status-capturing
+//     responseWriter embeds the http.ResponseWriter INTERFACE (not a concrete type), so Go only
+//     promotes that interface's own three methods (Header/Write/WriteHeader) — Hijack is never
+//     promoted regardless of what the underlying writer supports. This is a PRE-EXISTING bug in
+//     the shared httpware module, unrelated to this session's changes. Proper fix belongs in
+//     httpware itself (a shared module, out of scope here); this local bypass is the safe, scoped
+//     workaround. RFC 6455 upgrade requests always carry Connection: Upgrade and
+//     Upgrade: websocket, so detecting them here is exact, not a heuristic.
+func bypassForWebsocket(mw func(http.Handler) http.Handler) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		compressed := compress(next)
+		wrapped := mw(next)
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
 				next.ServeHTTP(w, r)
 				return
 			}
-			compressed.ServeHTTP(w, r)
+			wrapped.ServeHTTP(w, r)
 		})
 	}
 }
@@ -100,10 +106,12 @@ func New(
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(httpware.RequestID)
-	r.Use(httpware.Logging(log))
+	// bypassForWebsocket: see its doc comment — httpware.Logging's wrapper structurally cannot
+	// support Hijack (a pre-existing fleet-wide bug), which breaks every WS upgrade in this API.
+	r.Use(bypassForWebsocket(httpware.Logging(log)))
 	r.Use(httpware.Recover(log))
 	// gzip JSON responses (item/stock lists) — no compression existed at any layer for this API.
-	r.Use(skipCompressForWebsocket(middleware.Compress(5)))
+	r.Use(bypassForWebsocket(middleware.Compress(5)))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
 	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
