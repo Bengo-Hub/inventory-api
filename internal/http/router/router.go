@@ -112,7 +112,12 @@ func New(
 	r.Use(httpware.Recover(log))
 	// gzip JSON responses (item/stock lists) — no compression existed at any layer for this API.
 	r.Use(bypassForWebsocket(middleware.Compress(5)))
-	r.Use(middleware.Timeout(30 * time.Second))
+	// bypassForWebsocket here too: chi's Timeout fires its own abort/WriteHeader on ITS timer
+	// regardless of whether the connection was since hijacked for a long-lived WS stream, forcibly
+	// disconnecting every open WS connection roughly every 30s ("http: response.WriteHeader on
+	// hijacked connection" — confirmed live via kubectl logs during E2E verification). A 30s
+	// request timeout is meaningless for a stream that's SUPPOSED to stay open indefinitely.
+	r.Use(bypassForWebsocket(middleware.Timeout(30 * time.Second)))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
 	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
 	r.Use(cors.Handler(cors.Options{
