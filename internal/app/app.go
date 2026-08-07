@@ -245,7 +245,7 @@ func New(ctx context.Context) (*App, error) {
 		ServiceURL:     cfg.Subscriptions.ServiceURL,
 		APIKey:         cfg.Subscriptions.APIKey,
 		RequestTimeout: cfg.Subscriptions.RequestTimeout,
-	})
+	}, log.Named("subscriptions.client"))
 	consumerFeatureGate := func(ctx context.Context, tenantID, feature string) bool {
 		return subsClient.ConsumerHasFeature(ctx, tenantID, feature)
 	}

@@ -2,11 +2,13 @@ package subscriptions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"strings"
 	"sync"
 	"time"
+
+	serviceclient "github.com/Bengo-Hub/shared-service-client"
+	"go.uber.org/zap"
 )
 
 // entitlementCacheTTL bounds how long a tenant's entitlement snapshot is reused by
@@ -22,21 +24,28 @@ type Config struct {
 	RequestTimeout time.Duration
 }
 
-// Entitlements is the tenant's subscription snapshot fetched from subscriptions-api.
-// Demo bypass and service-charge (PAYG) are surfaced so consumer gating can exempt them,
-// mirroring the HTTP-layer IsGatingExempt contract.
+// Entitlements is the canonical tenant subscription snapshot returned by subscriptions-api's
+// GET /api/v1/tenants/{id}/subscription — the same full field set treasury-api's/pos-api's/
+// erp-api's platform/subscriptions clients decode, so all fleet subscriptions clients converge
+// on one shape instead of each reading a different partial subset (the "drifting shape" bug
+// class behind the 2026-08-07 boi-enterprises subscription-gating audit).
 type Entitlements struct {
 	Features     []string `json:"features"`
 	Status       string   `json:"status"`
 	BillingMode  string   `json:"billing_mode"`
 	IsDemoBypass bool     `json:"is_demo_bypass"`
-	// Limits/TierOrder/AllowOverage/CurrentPeriodEnd/IsPerpetual/Exempt were previously dropped by
-	// this DTO even though the S2S response carries them — every inventory PIN-terminal session
-	// therefore had claims.SubscriptionLimits permanently nil (CheckLimit/AssertLimit silently
-	// fail-open on EVERY structural cap: warehouses, SKUs, suppliers, images-per-item) and no way
-	// to tell a real tier/overage/exempt/grace state from a terminal login. Mirrors the fields
-	// auth-api's EnrichTokenWithSubscription maps onto an SSO JWT.
+	// ActiveProducts mirrors treasury-api's Entitlements field of the same name — the
+	// per-product self-activation list. Not currently gated on here, decoded for shape parity.
+	ActiveProducts []string `json:"active_products"`
+	// Limits/PlanCode/TierOrder/AllowOverage/CurrentPeriodEnd/IsPerpetual/Exempt were previously
+	// dropped by this DTO even though the S2S response carries them — every inventory PIN-
+	// terminal session therefore had claims.SubscriptionLimits permanently nil
+	// (CheckLimit/AssertLimit silently fail-open on EVERY structural cap: warehouses, SKUs,
+	// suppliers, images-per-item) and no way to tell a real tier/overage/exempt/grace state from
+	// a terminal login. Mirrors the fields auth-api's EnrichTokenWithSubscription maps onto an
+	// SSO JWT.
 	Limits           map[string]int `json:"limits"`
+	PlanCode         string         `json:"plan_code"`
 	TierOrder        int            `json:"tier_order"`
 	AllowOverage     bool           `json:"allow_overage"`
 	CurrentPeriodEnd string         `json:"current_period_end"`
@@ -44,20 +53,30 @@ type Entitlements struct {
 	Exempt           bool           `json:"exempt"`
 }
 
-// Client interacts with the subscriptions service over S2S (X-API-Key, no user JWT).
+// Client interacts with the subscriptions service over S2S (X-API-Key, no user JWT), built on
+// the shared github.com/Bengo-Hub/shared-service-client transport (circuit breaker + bounded
+// retry) instead of a bare http.Client.
 type Client struct {
-	cfg  Config
-	http *http.Client
+	cfg Config
+	sc  *serviceclient.Client
 }
 
 // NewClient creates a new subscriptions S2S client. May be nil-safe: a nil *Client
-// fails open in ConsumerHasFeature so unwired environments never drop data sync.
-func NewClient(cfg Config) *Client {
+// fails open in ConsumerHasFeature so unwired environments never drop data sync. The retry
+// budget is kept close to RequestTimeout (not shared-service-client's default 30s budget) since
+// this client sits on the cross-service stock-sync gate, which must fail open fast on a
+// subscriptions-api outage rather than after a multi-second retry storm.
+func NewClient(cfg Config, log *zap.Logger) *Client {
 	timeout := cfg.RequestTimeout
 	if timeout <= 0 {
 		timeout = 10 * time.Second
 	}
-	return &Client{cfg: cfg, http: &http.Client{Timeout: timeout}}
+	scCfg := serviceclient.DefaultConfig(strings.TrimRight(cfg.ServiceURL, "/"), "subscriptions-api", log)
+	scCfg.Timeout = timeout
+	scCfg.InitialInterval = 100 * time.Millisecond
+	scCfg.MaxInterval = timeout
+	scCfg.MaxElapsedTime = timeout
+	return &Client{cfg: cfg, sc: serviceclient.New(scCfg)}
 }
 
 // GetEntitlements fetches the tenant's subscription snapshot from the S2S tenant-scoped
@@ -67,24 +86,16 @@ func (c *Client) GetEntitlements(ctx context.Context, tenantID string) *Entitlem
 	if c == nil || c.cfg.ServiceURL == "" || tenantID == "" {
 		return nil
 	}
-	url := fmt.Sprintf("%s/api/v1/tenants/%s/subscription", c.cfg.ServiceURL, tenantID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil
-	}
+	headers := map[string]string{"X-Tenant-ID": tenantID}
 	if c.cfg.APIKey != "" {
-		req.Header.Set("X-API-Key", c.cfg.APIKey)
+		headers["X-API-Key"] = c.cfg.APIKey
 	}
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	resp, err := c.sc.Get(ctx, fmt.Sprintf("/api/v1/tenants/%s/subscription", tenantID), headers)
+	if err != nil || resp.StatusCode != 200 {
 		return nil
 	}
 	var e Entitlements
-	if err := json.NewDecoder(resp.Body).Decode(&e); err != nil {
+	if err := resp.DecodeJSON(&e); err != nil {
 		return nil
 	}
 	return &e

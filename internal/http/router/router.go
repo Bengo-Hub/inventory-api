@@ -119,7 +119,7 @@ func New(
 	// request timeout is meaningless for a stream that's SUPPOSED to stay open indefinitely.
 	r.Use(bypassForWebsocket(middleware.Timeout(30 * time.Second)))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
-	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
+	r.Use(ratelimitmw.IPRateLimit(redisClient, log, ratelimitmw.DefaultRateLimitConfig()))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -251,7 +251,7 @@ func New(
 					// see PINRateLimit's doc comment for why (PIN uniqueness is per-tenant only, so a
 					// common/guessed PIN can collide across unrelated tenants' admin accounts).
 					pub.Group(func(pinGroup chi.Router) {
-						pinGroup.Use(ratelimitmw.PINRateLimit(redisClient, ratelimitmw.DefaultPINRateLimitConfig()))
+						pinGroup.Use(ratelimitmw.PINRateLimit(redisClient, log, ratelimitmw.DefaultPINRateLimitConfig()))
 						pinGroup.Post("/inventory/auth/pin/identify", pinAuthHandler.IdentifyByPIN)
 						pinGroup.Post("/inventory/auth/pin", pinAuthHandler.Login)
 					})
