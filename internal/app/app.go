@@ -38,6 +38,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/expiry"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
+	notifmod "github.com/bengobox/inventory-service/internal/modules/notifications"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/reports"
@@ -86,6 +87,8 @@ type App struct {
 	tenantPurgeConsumer           *consumers.TenantPurgeConsumer
 	quotationConsumer             *consumers.QuotationAcceptedConsumer
 	deliveryNoteConsumer          *consumers.DeliveryNoteDispatchedConsumer
+	notifHub                      *notifmod.Hub
+	stockNotifyConsumer           *consumers.StockNotifyEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -262,6 +265,13 @@ func New(ctx context.Context) (*App, error) {
 	// Stock low events consumer — auto-creates draft POs when auto_reorder_enabled
 	stockConsumer := consumers.NewStockEventsConsumer(log, ormClient)
 
+	// Real-time push hub + bridge consumer: inventory-ui connects to notifHub's WebSocket to learn
+	// about stock changes live (POS sale consumption, manual adjustment, stock-take) instead of on
+	// a manual refresh. Redis relay makes broadcasts reach clients on any replica.
+	notifHub := notifmod.NewHub(log)
+	notifHub.SetRedis(redisClient)
+	stockNotifyConsumer := consumers.NewStockNotifyEventsConsumer(log, notifHub)
+
 	// Procure-to-order consumer — on an ACCEPTED treasury sales quotation, auto-creates a draft
 	// PurchaseOrder to buy the quoted items at their buying (cost) price. Gated by entitlement (fail-open).
 	quotationConsumer := consumers.NewQuotationAcceptedConsumer(log, ormClient)
@@ -386,7 +396,9 @@ func New(ctx context.Context) (*App, error) {
 	// Terminal/PIN login: issues + validates HMAC terminal JWTs for warehouse desk sessions.
 	pinAuthHandler := handlers.NewPINAuthHandler(ormClient, rbacService, subsClient, terminalJWTSecret(cfg), log)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey)
+	notificationsStreamHandler := handlers.NewNotificationsStreamHandler(log, notifHub)
+
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -418,6 +430,8 @@ func New(ctx context.Context) (*App, error) {
 		tenantPurgeConsumer:           tenantPurgeConsumer,
 		quotationConsumer:             quotationConsumer,
 		deliveryNoteConsumer:          deliveryNoteConsumer,
+		notifHub:                      notifHub,
+		stockNotifyConsumer:           stockNotifyConsumer,
 	}, nil
 }
 
@@ -501,6 +515,18 @@ func (a *App) Run(ctx context.Context) error {
 				a.log.Info("stock events consumer started")
 			}
 
+			// Start stock-notify consumer — bridges stock.updated/low/out to the real-time
+			// WebSocket push for inventory-ui (separate concern/durable from the auto-PO consumer
+			// above).
+			if a.stockNotifyConsumer != nil {
+				go func() {
+					if err := a.stockNotifyConsumer.Start(ctx, js); err != nil {
+						a.log.Error("stock notify events consumer stopped", zap.Error(err))
+					}
+				}()
+				a.log.Info("stock notify events consumer started")
+			}
+
 			// Start treasury tax-code change consumer — invalidates cached treasury tax data
 			if a.treasuryTaxConsumer != nil {
 				go func() {
@@ -564,6 +590,12 @@ func (a *App) Run(ctx context.Context) error {
 				a.log.Info("delivery note dispatched (goods-issue) consumer started")
 			}
 		}
+	}
+
+	// Start the real-time notification hub's Redis cross-pod relay — no-op (single-pod only) if
+	// Redis is unavailable.
+	if a.notifHub != nil {
+		go a.notifHub.Start(ctx)
 	}
 
 	errCh := make(chan error, 1)

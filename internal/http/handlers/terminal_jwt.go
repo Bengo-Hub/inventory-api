@@ -109,6 +109,15 @@ func terminalToAuthClaims(tc *terminalClaims) *authclient.Claims {
 func RequireAnyAuth(jwtSecret []byte, ssoAuth *authclient.AuthMiddleware) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Browser WebSocket clients cannot set the Authorization header, so the notifications
+			// stream passes the token as ?access_token= — promote it into the header so both auth
+			// paths below work unchanged (mirrors pos-api's identical PINAuthHandler.RequireAnyAuth
+			// promotion). No-op for every existing caller, which always sends a real header.
+			if r.Header.Get("Authorization") == "" {
+				if qt := r.URL.Query().Get("access_token"); qt != "" {
+					r.Header.Set("Authorization", "Bearer "+qt)
+				}
+			}
 			authHeader := r.Header.Get("Authorization")
 			if strings.HasPrefix(authHeader, "Bearer ") && len(jwtSecret) > 0 {
 				tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
