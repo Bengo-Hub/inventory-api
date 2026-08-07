@@ -51,6 +51,7 @@ func New(
 	backupDestHandler *handlers.BackupDestinationHandler,
 	pinAuthHandler *handlers.PINAuthHandler,
 	internalServiceKey string,
+	notificationsStreamHandler *handlers.NotificationsStreamHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -80,6 +81,8 @@ func New(
 	r.Use(httpware.RequestID)
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
+	// gzip JSON responses (item/stock lists) — no compression existed at any layer for this API.
+	r.Use(middleware.Compress(5))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
 	r.Use(ratelimitmw.IPRateLimit(redisClient, ratelimitmw.DefaultRateLimitConfig()))
@@ -264,6 +267,13 @@ func New(
 				if pinAuthHandler != nil && rbacService != nil {
 					private.With(ratelimitmw.RequirePermission(rbacService, log, rbac.PermUsersManage)).
 						Post("/inventory/auth/pin/set", pinAuthHandler.SetPIN)
+				}
+				// Real-time push (stock changes) — inventory-ui connects here so a stock change
+				// shows up live instead of on a manual refresh. Same group as everything else
+				// above, so RequireAnyAuth's ?access_token= promotion (added alongside this) covers
+				// the WebSocket handshake exactly like pos-api's equivalent notifications stream.
+				if notificationsStreamHandler != nil {
+					private.Get("/inventory/notifications/stream", notificationsStreamHandler.StreamNotifications)
 				}
 			})
 
