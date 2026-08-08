@@ -103,6 +103,24 @@ func includeVariants(ctx context.Context) bool {
 	return v
 }
 
+// leanFetchKey is a context flag set by the HTTP layer (?lean=1) to skip the image-gallery and
+// preferred-supplier eager loads below. S2S sync callers (pos-api, ordering-backend) never read
+// ItemDTO.Images/PreferredSupplierName — those joins exist for inventory-ui's own item grid/edit
+// form. mapToDTO's Edges.AssetsOrErr()/PreferredSupplierOrErr() calls already tolerate an
+// unloaded edge (return an error, leave the field empty) instead of firing a fallback query, so
+// this is a pure opt-in cost reduction with no behavior change for existing (non-lean) callers.
+type leanFetchKey struct{}
+
+// WithLeanFetch returns a context that skips ListItems' Assets/PreferredSupplier eager loads.
+func WithLeanFetch(ctx context.Context) context.Context {
+	return context.WithValue(ctx, leanFetchKey{}, true)
+}
+
+func leanFetch(ctx context.Context) bool {
+	v, _ := ctx.Value(leanFetchKey{}).(bool)
+	return v
+}
+
 // notForSaleFilterKey is a context flag set by the HTTP layer (?not_for_sale=only|exclude).
 // "only" scopes the list to flagged items (the back-office "Not for selling" filter checkbox);
 // "exclude" removes them — sales-surface fetches (POS catalog proxy, ordering storefront)
@@ -1243,14 +1261,16 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		return []ItemDTO{}, 0, nil
 	}
 	listQuery := buildQuery().Order(listOrder(ctx)).Limit(limit).Offset(offset)
-	// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
-	listQuery = listQuery.WithAssets(func(aq *ent.ItemAssetQuery) {
-		aq.Where(itemasset.AssetType(AssetTypeImage)).
-			Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
-	})
-	// Eager-load the preferred supplier so each row surfaces preferred_supplier_name (used by
-	// the item edit form's preferred-supplier combobox to show the current selection).
-	listQuery = listQuery.WithPreferredSupplier()
+	if !leanFetch(ctx) {
+		// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
+		listQuery = listQuery.WithAssets(func(aq *ent.ItemAssetQuery) {
+			aq.Where(itemasset.AssetType(AssetTypeImage)).
+				Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
+		})
+		// Eager-load the preferred supplier so each row surfaces preferred_supplier_name (used by
+		// the item edit form's preferred-supplier combobox to show the current selection).
+		listQuery = listQuery.WithPreferredSupplier()
+	}
 	if includeVariants(ctx) {
 		// Eager-load active variants so mapToDTO can surface them inline.
 		listQuery = listQuery.WithVariants(func(vq *ent.ItemVariantQuery) {

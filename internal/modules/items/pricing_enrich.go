@@ -46,6 +46,18 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 	// (including the inclusive-price DefaultVATRate fallback) so no tax is split out.
 	suppressVAT := s.vatSuppressed(ctx, tenantID)
 
+	// Per-call memoization, keyed by tax code: resolveVATRate's own cache is Redis-backed and
+	// tenant-scoped, but GetOrSet still does a live Redis round trip on EVERY call regardless of
+	// hit/miss — a page of a few hundred items sharing a handful of distinct tax codes (usually
+	// just the tenant default) was issuing one Redis GET per item. A page's items rarely carry
+	// more than a few distinct codes, so this local map turns that into one round trip per
+	// distinct code instead of one per item.
+	type rateResult struct {
+		rate float64
+		code string
+	}
+	rateCache := make(map[string]rateResult, 4)
+
 	for i := range dtos {
 		d := &dtos[i]
 		// INGREDIENT items are never sold to customers — they are consumed to produce
@@ -79,10 +91,16 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		// Resolve the VAT rate per-item, preferring the item's OWN tax code (already
 		// populated from Item.tax_code_id in mapToDTO) over the tenant default — a
 		// zero-rated/exempt item must never be silently taxed at the tenant's default rate
-		// just because it shares the page with standard-rated items. resolveVATRate is
-		// Redis-cached per tenant, so this is a cache hit after the first item in the loop.
-		rate, rateCode := s.resolveVATRate(ctx, tenantID, preferredTaxCode(d, defaultTaxCode))
-		applyItemTax(d, price, rate, rateCode, defaultTaxCode, inclusiveDefault, suppressVAT)
+		// just because it shares the page with standard-rated items. Memoized in rateCache
+		// above so repeated codes on the same page don't each pay a Redis round trip.
+		code := preferredTaxCode(d, defaultTaxCode)
+		res, ok := rateCache[code]
+		if !ok {
+			rate, rateCode := s.resolveVATRate(ctx, tenantID, code)
+			res = rateResult{rate: rate, code: rateCode}
+			rateCache[code] = res
+		}
+		applyItemTax(d, price, res.rate, res.code, defaultTaxCode, inclusiveDefault, suppressVAT)
 	}
 }
 

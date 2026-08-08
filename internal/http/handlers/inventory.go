@@ -1085,6 +1085,12 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("include_non_billable"); v == "1" || strings.EqualFold(v, "true") {
 		ctx = items.WithIncludeNonBillable(ctx)
 	}
+	// ?lean=1 skips the image-gallery/preferred-supplier eager loads — for S2S sync callers
+	// (pos-api, ordering-backend) that never read Images/preferred_supplier_name, saving two
+	// joins per page. Opt-in: omitting it (every UI caller today) keeps the full load.
+	if v := r.URL.Query().Get("lean"); v == "1" || strings.EqualFold(v, "true") {
+		ctx = items.WithLeanFetch(ctx)
+	}
 	// ?for_recipe=1 scopes the list to recipe-ingredient candidates: GOODS + INGREDIENT
 	// plus RECIPE items flagged usable_in_recipes (reusable menu components like Black
 	// Tea inside an Iced Passion Tea). Used by the recipe-builder ingredient picker;
