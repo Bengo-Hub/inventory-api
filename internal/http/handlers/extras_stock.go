@@ -28,6 +28,7 @@ type stockLevelDTO struct {
 	WarehouseID   uuid.UUID  `json:"warehouse_id"`
 	LocationID    *uuid.UUID `json:"location_id,omitempty"`
 	LocationName  string     `json:"location_name,omitempty"`
+	OnHand        float64    `json:"on_hand"`
 	Available     float64    `json:"available"`
 	Reserved      float64    `json:"reserved"`
 	ReorderPoint  *int       `json:"reorder_point"`
@@ -198,6 +199,7 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 			WarehouseID:   b.WarehouseID,
 			LocationID:    b.LocationID,
 			LocationName:  locationName,
+			OnHand:        b.OnHand,
 			Available:     b.Available,
 			Reserved:      b.Reserved,
 			ReorderPoint:  reorderPoint,
