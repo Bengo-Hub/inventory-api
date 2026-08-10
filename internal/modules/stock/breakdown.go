@@ -127,13 +127,19 @@ func (s *Service) Breakdown(ctx context.Context, tenantID uuid.UUID, req Breakdo
 	if _, err = tx.InventoryBalance.UpdateOne(parentBal).SetOnHand(parentAfter).SetAvailable(parentAvail).Save(ctx); err != nil {
 		return nil, fmt.Errorf("stock: update parent balance: %w", err)
 	}
+	// Real-time sync (POS/ordering catalog overrides, low-stock alerts, recipe cascades) for the
+	// parent's decrement — same as every other stock-mutating path, closing a gap found live: a
+	// breakdown never told downstream consumers the parent SKU's availability changed.
+	s.EmitStockChangeCascade(ctx, tx, tenantID, parentItem.ID, whID, parentBal.Available, parentAvail, "breakdown")
 
 	childBefore := childBal.OnHand
+	childBeforeAvail := childBal.Available
 	childAfter := childBal.OnHand + childQty
 	childAvail := childBal.Available + childQty
 	if _, err = tx.InventoryBalance.UpdateOne(childBal).SetOnHand(childAfter).SetAvailable(childAvail).Save(ctx); err != nil {
 		return nil, fmt.Errorf("stock: update child balance: %w", err)
 	}
+	s.EmitStockChangeCascade(ctx, tx, tenantID, childItem.ID, whID, childBeforeAvail, childAvail, "breakdown")
 
 	bdID := uuid.New()
 	ref := req.Reference
