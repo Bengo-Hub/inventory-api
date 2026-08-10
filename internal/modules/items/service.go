@@ -154,14 +154,30 @@ var ListSortFields = map[string]string{
 	"updated_at":        item.FieldUpdatedAt,
 }
 
-// WithListSort orders ListItems by a whitelisted column; dir "desc" descends, else ascends.
+// ListBalanceSortFields whitelists computed (aggregated-balance) sort keys — these aren't real
+// Item columns (on_hand/available are summed from InventoryBalance rows, per the same
+// outlet-scoping rules as the rest of ListItems), so they can't use the SQL-level ORDER BY
+// ListSortFields/listOrder does. ListItems detects a request for one of these via
+// balanceSortField and sorts the built DTOs in Go instead.
+var ListBalanceSortFields = map[string]bool{
+	"on_hand":   true,
+	"available": true,
+}
+
+type listBalanceSortKey struct{}
+
+// WithListSort orders ListItems by a whitelisted column (SQL-level, ListSortFields) or a
+// computed balance field (in-Go, ListBalanceSortFields); dir "desc" descends, else ascends.
 // Unknown fields are ignored (default SKU order) so a stale client can't 500 the list.
 func WithListSort(ctx context.Context, field, dir string) context.Context {
-	if _, ok := ListSortFields[field]; !ok {
-		return ctx
-	}
 	if dir != "desc" {
 		dir = "asc"
+	}
+	if ListBalanceSortFields[field] {
+		return context.WithValue(ctx, listBalanceSortKey{}, [2]string{field, dir})
+	}
+	if _, ok := ListSortFields[field]; !ok {
+		return ctx
 	}
 	return context.WithValue(ctx, listSortKey{}, [2]string{field, dir})
 }
@@ -177,6 +193,30 @@ func listOrder(ctx context.Context) item.OrderOption {
 		}
 	}
 	return item.OrderOption(ent.Asc(item.FieldSku))
+}
+
+// balanceSortField resolves a ctx-carried computed-balance-field sort request, if any.
+func balanceSortField(ctx context.Context) (field, dir string, ok bool) {
+	if v, has := ctx.Value(listBalanceSortKey{}).([2]string); has {
+		return v[0], v[1], true
+	}
+	return "", "", false
+}
+
+// balanceSortValue reads the requested computed field off a built DTO, treating an unstocked
+// item (nil pointer — no InventoryBalance row) as 0 so it sorts to the low-stock end either way.
+func balanceSortValue(dto ItemDTO, field string) float64 {
+	switch field {
+	case "on_hand":
+		if dto.OnHand != nil {
+			return *dto.OnHand
+		}
+	case "available":
+		if dto.Available != nil {
+			return *dto.Available
+		}
+	}
+	return 0
 }
 
 // StandardTags defines well-known dietary and allergen tag values.
@@ -1260,23 +1300,62 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	if total == 0 {
 		return []ItemDTO{}, 0, nil
 	}
-	listQuery := buildQuery().Order(listOrder(ctx)).Limit(limit).Offset(offset)
-	if !leanFetch(ctx) {
-		// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
-		listQuery = listQuery.WithAssets(func(aq *ent.ItemAssetQuery) {
-			aq.Where(itemasset.AssetType(AssetTypeImage)).
-				Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
-		})
-		// Eager-load the preferred supplier so each row surfaces preferred_supplier_name (used by
-		// the item edit form's preferred-supplier combobox to show the current selection).
-		listQuery = listQuery.WithPreferredSupplier()
+
+	applyEagerLoads := func(q *ent.ItemQuery) *ent.ItemQuery {
+		if !leanFetch(ctx) {
+			// Eager-load IMAGE assets so each list row carries its multi-image gallery (primary first).
+			q = q.WithAssets(func(aq *ent.ItemAssetQuery) {
+				aq.Where(itemasset.AssetType(AssetTypeImage)).
+					Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt))
+			})
+			// Eager-load the preferred supplier so each row surfaces preferred_supplier_name (used by
+			// the item edit form's preferred-supplier combobox to show the current selection).
+			q = q.WithPreferredSupplier()
+		}
+		if includeVariants(ctx) {
+			// Eager-load active variants so mapToDTO can surface them inline.
+			q = q.WithVariants(func(vq *ent.ItemVariantQuery) {
+				vq.Where(itemvariant.IsActive(true)).Order(ent.Asc(itemvariant.FieldName))
+			})
+		}
+		return q
 	}
-	if includeVariants(ctx) {
-		// Eager-load active variants so mapToDTO can surface them inline.
-		listQuery = listQuery.WithVariants(func(vq *ent.ItemVariantQuery) {
-			vq.Where(itemvariant.IsActive(true)).Order(ent.Asc(itemvariant.FieldName))
+
+	if field, dir, ok := balanceSortField(ctx); ok {
+		// Computed-field sort (on_hand/available): these are aggregated per item from
+		// InventoryBalance in buildDTOs, not a real Item column, so they can't use the SQL-level
+		// ORDER BY + LIMIT/OFFSET path below. Build DTOs for every item matching the existing
+		// WHERE filters (category/type/search/status/etc. still apply — only the final
+		// pagination moves into Go), sort by the requested field, then slice the page. Fine for
+		// the catalog sizes this list serves; a true DB-side aggregate ORDER BY would need a
+		// materially larger rewrite of the outlet-scoping query above for marginal gain here.
+		allItems, err := applyEagerLoads(buildQuery().Order(ent.Asc(item.FieldSku))).All(ctx)
+		if err != nil {
+			return nil, 0, fmt.Errorf("items: list (balance sort): %w", err)
+		}
+		allDTOs, err := buildDTOs(ctx, allItems)
+		if err != nil {
+			return nil, 0, err
+		}
+		sort.SliceStable(allDTOs, func(i, j int) bool {
+			vi, vj := balanceSortValue(allDTOs[i], field), balanceSortValue(allDTOs[j], field)
+			if dir == "desc" {
+				return vi > vj
+			}
+			return vi < vj
 		})
+		start := offset
+		if start > len(allDTOs) {
+			start = len(allDTOs)
+		}
+		end := start + limit
+		if limit <= 0 || end > len(allDTOs) {
+			end = len(allDTOs)
+		}
+		return allDTOs[start:end], total, nil
 	}
+
+	listQuery := applyEagerLoads(buildQuery().Order(listOrder(ctx)).Limit(limit).Offset(offset))
 	itms, err := listQuery.All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: list: %w", err)
