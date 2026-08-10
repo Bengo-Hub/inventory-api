@@ -251,16 +251,21 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 					First(ctx)
 				switch {
 				case berr == nil:
+					beforeAvail := bal.Available
+					afterAvail := bal.Available + stockReturn
 					if _, uerr := tx.InventoryBalance.UpdateOne(bal).
 						SetOnHand(bal.OnHand + stockReturn).
-						SetAvailable(bal.Available + stockReturn).
+						SetAvailable(afterAvail).
 						Save(ctx); uerr != nil {
 						err = fmt.Errorf("stock: reverse consumption: restore balance sku=%s: %w", l.IngredientSku, uerr)
 						return nil, err
 					}
 					// Sold-out menu items whose missing ingredient just came back must
-					// resurface — same cascade the restock/adjustment paths run.
-					s.cascadeIngredientRestocked(ctx, tx, tenantID, itm.ID, lineWarehouseID)
+					// resurface — same cascade the restock/adjustment paths run. Routed through
+					// EmitStockChangeCascade (not a standalone cascadeIngredientRestocked call)
+					// so this ALSO publishes stock.updated, keeping ordering's quantity-aware
+					// catalog projection in sync — a gap found auditing this exact class of bug.
+					s.EmitStockChangeCascade(ctx, tx, tenantID, itm.ID, lineWarehouseID, beforeAvail, afterAvail, "consumption_reversal")
 				case ent.IsNotFound(berr):
 					s.log.Warn("consumption reversal: no balance row — utilization compensated, no stock returned",
 						zap.String("sku", l.IngredientSku))
