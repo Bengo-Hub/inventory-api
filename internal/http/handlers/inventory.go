@@ -49,6 +49,7 @@ type ItemsServicer interface {
 	BulkItemAction(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID, action string) (*items.BulkActionResult, error)
 	MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
 	RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
+	HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
@@ -360,6 +361,43 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermVariantsChange)).Put("/modifier-options/{id}", h.UpdateModifierOption)
 		inv.With(perm(rbac.PermVariantsDelete)).Delete("/modifier-options/{id}", h.DeleteModifierOption)
 	})
+}
+
+// RegisterAdminRoutes wires platform-owner-only item admin routes (mirrors WarehouseHandler's
+// and ServiceConfigHandler's RegisterAdminRoutes/RegisterPlatformRoutes pattern). The parent
+// /admin tree has no {tenant} path segment, so the tenant is an explicit {tenantID} URL param.
+func (h *InventoryHandler) RegisterAdminRoutes(r chi.Router) {
+	r.Delete("/inventory/tenants/{tenantID}/items/{sku}", h.HardDeleteItemAdmin)
+}
+
+// HardDeleteItemAdmin handles DELETE /admin/inventory/tenants/{tenantID}/items/{sku} — a
+// platform-owner-only permanent deletion, bypassing the EOL retention window entirely. Refuses
+// with 409 when the item carries transactional/usage history that must be preserved for the
+// audit trail — the caller should mark it End-of-Life instead and let the retention purge run.
+func (h *InventoryHandler) HardDeleteItemAdmin(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(chi.URLParam(r, "tenantID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	if err := h.itemsSvc.HardDeleteItemBySKU(r.Context(), tenantID, sku); err != nil {
+		switch {
+		case strings.Contains(err.Error(), "not found"):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		case strings.Contains(err.Error(), "cannot hard-delete"):
+			writeError(w, http.StatusConflict, "HAS_HISTORY", err.Error())
+		default:
+			h.log.Error("hard delete item failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "DELETE_FAILED", err.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
 // GetStockAvailability handles GET /v1/{tenant}/inventory/items/{sku}

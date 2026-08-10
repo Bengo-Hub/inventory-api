@@ -213,6 +213,9 @@ func New(
 			if warehouseHandler != nil {
 				warehouseHandler.RegisterAdminRoutes(admin)
 			}
+			if inventoryHandler != nil {
+				inventoryHandler.RegisterAdminRoutes(admin)
+			}
 			// Platform-default backup destination (OneDrive/GDrive/S3/WebDAV/SFTP/SMB).
 			if backupDestHandler != nil {
 				backupDestHandler.RegisterPlatformRoutes(admin)

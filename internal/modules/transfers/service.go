@@ -16,6 +16,16 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
+// StockCascader is implemented by stock.Service (wired via WithStockCascade). Defined narrowly
+// here rather than importing the stock package's own type, so a transfer's ship/receive/cancel
+// balance mutations trigger the exact same real-time downstream sync as every other stock
+// mutation path (AdjustStock, goods receipts, consumption) — POS/ordering catalog cache
+// invalidation, inventory-ui's live WebSocket push, low-stock alerts, and recipe-ingredient
+// depletion/restock cascades — instead of writing InventoryBalance silently.
+type StockCascader interface {
+	EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string)
+}
+
 // Service handles stock transfer business logic.
 type Service struct {
 	client *ent.Client
@@ -23,6 +33,8 @@ type Service struct {
 	// seq, when wired, mints transfer numbers through the tenant-configurable document sequence
 	// (numeric by default) instead of the legacy ad-hoc TRF-YYYYMMDD-NNNN count.
 	seq *documents.SequenceService
+	// stockCascade, when wired, is notified of every balance mutation this service makes.
+	stockCascade StockCascader
 }
 
 // NewService creates a new transfers service.
@@ -37,6 +49,13 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 // the tenant's stock_transfer sequence (numeric by default), falling back to the legacy count.
 func (s *Service) WithSequence(seq *documents.SequenceService) *Service {
 	s.seq = seq
+	return s
+}
+
+// WithStockCascade wires the real-time downstream sync (see StockCascader) into every
+// ship/receive/cancel balance mutation this service makes.
+func (s *Service) WithStockCascade(sc StockCascader) *Service {
+	s.stockCascade = sc
 	return s
 }
 
@@ -333,7 +352,10 @@ func (s *Service) ShipTransfer(ctx context.Context, tenantID, transferID uuid.UU
 
 // adjustBalance applies delta to an item's on_hand+available at a warehouse within tx.
 // A negative delta requires sufficient available stock; a positive delta creates the
-// balance row when the destination warehouse has none yet.
+// balance row when the destination warehouse has none yet. Notifies the wired StockCascader
+// (if any) of the before/after available quantity so POS/ordering catalog overrides,
+// inventory-ui's live push, low-stock alerts and recipe cascades stay in sync in real time —
+// see StockCascader's doc comment.
 func (s *Service) adjustBalance(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, delta float64) error {
 	bal, err := tx.InventoryBalance.Query().
 		Where(
@@ -346,14 +368,17 @@ func (s *Service) adjustBalance(ctx context.Context, tx *ent.Tx, tenantID, itemI
 		if delta < 0 {
 			return fmt.Errorf("transfers: no stock for item %s at source warehouse", itemID)
 		}
-		_, cErr := tx.InventoryBalance.Create().
+		if _, cErr := tx.InventoryBalance.Create().
 			SetTenantID(tenantID).
 			SetItemID(itemID).
 			SetWarehouseID(warehouseID).
 			SetOnHand(delta).
 			SetAvailable(delta).
-			Save(ctx)
-		return cErr
+			Save(ctx); cErr != nil {
+			return cErr
+		}
+		s.emitCascade(ctx, tx, tenantID, itemID, warehouseID, 0, delta)
+		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("transfers: query balance: %w", err)
@@ -361,11 +386,25 @@ func (s *Service) adjustBalance(ctx context.Context, tx *ent.Tx, tenantID, itemI
 	if delta < 0 && bal.Available < -delta {
 		return fmt.Errorf("transfers: insufficient stock for item %s at source (available %g, need %g)", itemID, bal.Available, -delta)
 	}
-	_, err = tx.InventoryBalance.UpdateOne(bal).
+	before := bal.Available
+	after := before + delta
+	if _, err = tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(bal.OnHand + delta).
-		SetAvailable(bal.Available + delta).
-		Save(ctx)
-	return err
+		SetAvailable(after).
+		Save(ctx); err != nil {
+		return err
+	}
+	s.emitCascade(ctx, tx, tenantID, itemID, warehouseID, before, after)
+	return nil
+}
+
+// emitCascade notifies the wired StockCascader of a balance mutation, when one is wired.
+// Best-effort — a nil stockCascade (e.g. in a test double) is a silent no-op, never a failure.
+func (s *Service) emitCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, before, after float64) {
+	if s.stockCascade == nil {
+		return
+	}
+	s.stockCascade.EmitStockChangeCascade(ctx, tx, tenantID, itemID, warehouseID, before, after, "stock_transfer")
 }
 
 // ReceiveTransfer transitions a transfer from in_transit to received.

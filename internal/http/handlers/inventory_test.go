@@ -68,6 +68,10 @@ func (m *mockItemsSvc) RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, s
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error {
+	return nil
+}
+
 func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error) {
 	return nil, fmt.Errorf("not implemented")
 }

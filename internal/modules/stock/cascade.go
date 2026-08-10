@@ -61,9 +61,25 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 // stock-in that was applied OUTSIDE the stock service (e.g. a goods-receipt line that wrote the
 // InventoryBalance directly): it publishes stock.updated, rechecks low-stock, and — when the item
 // crossed back above zero — re-enables any recipes its depletion had gated. Without this, received
-// stock never re-enabled sold-out recipes or cleared low-stock alerts. Best-effort: errors are
-// logged inside the helpers; the caller's transaction is never aborted.
+// stock never re-enabled sold-out recipes or cleared low-stock alerts. Kept as a thin, direction-
+// pinned wrapper around EmitStockChangeCascade for its existing (goods-receipt) call site.
 func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64) {
+	s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, warehouseID, qtyBefore, qtyAfter, "goods_receipt")
+}
+
+// EmitStockChangeCascade fires the same real-time downstream sync any direct InventoryBalance
+// mutation made OUTSIDE the stock service needs — currently used by stock transfers (ship/
+// receive/cancel move balances directly via their own adjustBalance) — so those moves get the
+// exact same treatment as AdjustStock/RecordConsumption: publishes stock.updated (keeps
+// ordering's quantity-aware catalog projection AND inventory-ui's live WebSocket push fresh —
+// see StockNotifyEventsConsumer), rechecks the low-stock alert band, and — when the item crossed
+// the zero boundary in EITHER direction — fires the matching ingredient-depletion/restock recipe
+// cascade (stock.out/stock.in) so POS/ordering 86 or restore any recipe this item gates at that
+// specific outlet. Without this, a transfer's destination never showed newly-arrived stock as
+// available to POS/ordering in real time, and a transfer's source kept showing depleted stock as
+// available after shipping. Best-effort: errors are logged inside the helpers; the caller's
+// transaction is never aborted.
+func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string) {
 	itm, err := tx.Item.Get(ctx, itemID)
 	if err != nil {
 		return
@@ -83,13 +99,19 @@ func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, 
 		"quantity_before": qtyBefore,
 		"quantity_change": qtyAfter - qtyBefore,
 		"quantity_after":  qtyAfter,
-		"reason":          "goods_receipt",
+		"reason":          reason,
 		"on_hand":         onHand,
 		"available":       available,
 	})
 	if bal != nil {
+		// checkAndPublishLowStock is the authoritative down-direction dispatcher: on a
+		// transition into the out/low band it already publishes stock.out/stock.low AND
+		// calls cascadeIngredientStockOut itself (band-transition-gated, idempotent). Calling
+		// cascadeIngredientStockOut again here would double-publish for every affected recipe.
 		s.checkAndPublishLowStock(ctx, tx, tenantID, itm, bal, warehouseID)
 	}
+	// The up-direction has no equivalent transition dispatcher — every other caller
+	// (AdjustStock's restock branch, consumption reversal) fires this explicitly too.
 	if qtyBefore <= 0 && qtyAfter > 0 {
 		s.cascadeIngredientRestocked(ctx, tx, tenantID, itemID, warehouseID)
 	}

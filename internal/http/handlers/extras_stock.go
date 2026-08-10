@@ -54,6 +54,9 @@ type stockLevelFilters struct {
 	TypeFilter  string
 	WarehouseID *uuid.UUID
 	LocationID  *uuid.UUID
+	// ItemID scopes to a single item's balances across every warehouse — used by the item
+	// drawer's "Locations" panel and the stock-move dialog's "available at source" lookup.
+	ItemID *uuid.UUID
 	// OutletID scopes to an outlet's own warehouses (+ shared/HQ warehouses with no outlet
 	// link) when no explicit WarehouseID is given — mirrors the ListItems outlet separation.
 	OutletID *uuid.UUID
@@ -78,6 +81,9 @@ func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLe
 	}
 	if lid, e := uuid.Parse(q.Get("location_id")); e == nil {
 		f.LocationID = &lid
+	}
+	if iid, e := uuid.Parse(q.Get("item_id")); e == nil {
+		f.ItemID = &iid
 	}
 	if f.WarehouseID == nil {
 		if oid, e := uuid.Parse(q.Get(explicitOutletParam)); explicitOutletParam != "" && e == nil {
@@ -114,6 +120,9 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 		WithLocation()
 	if f.LocationID != nil {
 		balQuery = balQuery.Where(entinventorybalance.LocationID(*f.LocationID))
+	}
+	if f.ItemID != nil {
+		balQuery = balQuery.Where(entinventorybalance.ItemID(*f.ItemID))
 	}
 	if f.WarehouseID != nil {
 		balQuery = balQuery.Where(entinventorybalance.WarehouseID(*f.WarehouseID))
