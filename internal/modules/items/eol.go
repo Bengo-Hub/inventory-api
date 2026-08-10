@@ -317,6 +317,29 @@ func (s *Service) PurgeExpiredEOL(ctx context.Context, retentionDays int) (purge
 	return purged, skipped, nil
 }
 
+// HardDeleteItemBySKU permanently deletes an item on demand — the platform-owner "hard delete"
+// action, as opposed to the tenant-facing EOL flow above. Reuses the exact same audit-trail
+// safety check and owned-children cleanup the scheduled retention purge (PurgeExpiredEOL) uses,
+// so an item is never permanently removed here if it wouldn't also survive the automatic purge's
+// history check. Returns a not-found error when the SKU doesn't exist for the tenant, or an error
+// naming the blocking record type when the item carries transactional/usage history that must be
+// preserved for the finance/eTIMS audit trail.
+func (s *Service) HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error {
+	existing, err := s.client.Item.Query().
+		Where(item.TenantID(tenantID), item.Sku(sku)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("items: item not found")
+		}
+		return fmt.Errorf("items: query item: %w", err)
+	}
+	if blocked, reason := s.eolHasBlockingHistory(ctx, existing.ID); blocked {
+		return fmt.Errorf("items: cannot hard-delete — item has %s; mark it End-of-Life instead", reason)
+	}
+	return s.hardDeleteItem(ctx, existing.ID)
+}
+
 // eolHasBlockingHistory reports whether the item is referenced by any transactional / usage record
 // that must be preserved for the finance/eTIMS audit trail (or that would corrupt another item's
 // recipe/bundle). Returns a short reason for logging.

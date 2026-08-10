@@ -189,7 +189,11 @@ func New(ctx context.Context) (*App, error) {
 	recipeSvc := recipes.NewService(ormClient, log).WithItemsService(itemsSvc)
 	unitSvc := units.NewService(ormClient, log)
 	modifiersSvc := modifiers.NewService(ormClient, log)
-	transferSvc := transfers.NewService(ormClient, log)
+	// WithStockCascade: transfer ship/receive/cancel moves stock directly via their own
+	// adjustBalance, bypassing AdjustStock — wiring stockSvc here makes those moves trigger the
+	// exact same real-time downstream sync (POS/ordering catalog overrides, inventory-ui's live
+	// push, low-stock alerts, recipe cascades) as every other stock mutation path.
+	transferSvc := transfers.NewService(ormClient, log).WithStockCascade(stockSvc)
 	ticketsSvc := tickets.NewService(ormClient, log)
 	inventoryHandler := handlers.NewInventoryHandler(log, itemsSvc, stockSvc, recipeSvc, unitSvc)
 	inventoryHandler.SetModifiersService(modifiersSvc)
