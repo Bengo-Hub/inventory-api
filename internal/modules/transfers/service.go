@@ -11,9 +11,11 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // StockCascader is implemented by stock.Service (wired via WithStockCascade). Defined narrowly
@@ -91,6 +93,43 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: destination warehouse not found: %w", err)
+	}
+
+	// Reject a fractional quantity for any discrete/count-based item (e.g. "2.5 phones") before
+	// creating anything — covers this endpoint's manual "New Transfer" form AND MoveStockDialog's
+	// quick-move flow, both of which post through here. Unit lookup failures fail open (no unit
+	// info to judge against) rather than blocking a transfer over unrelated data gaps.
+	itemIDs := make([]uuid.UUID, len(req.Items))
+	for i, ln := range req.Items {
+		itemIDs[i] = ln.ItemID
+	}
+	lineItems, err := tx.Item.Query().Where(item.IDIn(itemIDs...)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: load items for validation: %w", err)
+	}
+	unitIDByItem := make(map[uuid.UUID]*uuid.UUID, len(lineItems))
+	for _, it := range lineItems {
+		unitIDByItem[it.ID] = it.UnitID
+	}
+	unitCache := make(map[uuid.UUID]*ent.Unit)
+	for _, ln := range req.Items {
+		unitID := unitIDByItem[ln.ItemID]
+		if unitID == nil {
+			continue
+		}
+		u, ok := unitCache[*unitID]
+		if !ok {
+			var uErr error
+			u, uErr = tx.Unit.Get(ctx, *unitID)
+			if uErr != nil {
+				continue
+			}
+			unitCache[*unitID] = u
+		}
+		if vErr := units.ValidateQuantityForUnit(ln.Quantity, u.Type, u.Name); vErr != nil {
+			err = fmt.Errorf("transfers: %w", vErr)
+			return nil, err
+		}
 	}
 
 	// Generate transfer number: TRF-{YYYYMMDD}-{seq}
