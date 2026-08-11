@@ -2929,7 +2929,7 @@ var (
 		{Name: "quantity_before", Type: field.TypeFloat64},
 		{Name: "quantity_change", Type: field.TypeFloat64},
 		{Name: "quantity_after", Type: field.TypeFloat64},
-		{Name: "reason", Type: field.TypeEnum, Enums: []string{"damaged", "expired", "shrinkage", "found", "correction", "transfer_in", "transfer_out", "return", "initial_count", "opening_balance", "count_variance", "internal_consumption", "other"}},
+		{Name: "reason", Type: field.TypeEnum, Enums: []string{"damaged", "expired", "shrinkage", "found", "correction", "transfer_in", "transfer_out", "return", "initial_count", "opening_balance", "count_variance", "internal_consumption", "location_move", "other"}},
 		{Name: "reference", Type: field.TypeString, Nullable: true},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "adjusted_by", Type: field.TypeUUID},

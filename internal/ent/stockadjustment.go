@@ -30,7 +30,7 @@ type StockAdjustment struct {
 	QuantityChange float64 `json:"quantity_change,omitempty"`
 	// Stock level after adjustment
 	QuantityAfter float64 `json:"quantity_after,omitempty"`
-	// Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury
+	// Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury. location_move = the item's location was relocated wholesale (RelocateItemLocation), not a stock transfer between two co-existing balances.
 	Reason stockadjustment.Reason `json:"reason,omitempty"`
 	// External reference (e.g. PO number, transfer ID)
 	Reference string `json:"reference,omitempty"`
