@@ -31,10 +31,13 @@ type Message struct {
 	Payload any    `json:"payload,omitempty"`
 }
 
-// client is a single connected WebSocket session, scoped to a tenant.
+// client is a single connected WebSocket session, scoped to a tenant and (optionally) an outlet.
+// outletID == nil means an HQ/admin session with no outlet restriction (e.g. "All Outlets" view)
+// — it receives every message for the tenant, targeted or not, same as before this field existed.
 type client struct {
 	conn     *websocket.Conn
 	tenantID uuid.UUID
+	outletID *uuid.UUID
 	send     chan Message
 }
 
@@ -83,13 +86,21 @@ func (h *Hub) Start(ctx context.Context) {
 			if !ok {
 				continue
 			}
-			var msg Message
-			if err := json.Unmarshal([]byte(rmsg.Payload), &msg); err != nil {
+			var env relayEnvelope
+			if err := json.Unmarshal([]byte(rmsg.Payload), &env); err != nil {
 				continue
 			}
-			h.broadcastLocal(tenantID, msg)
+			h.broadcastLocal(tenantID, env.OutletID, env.Msg)
 		}
 	}
+}
+
+// relayEnvelope wraps a Message with its target outlet (nil = tenant-wide) for the cross-pod
+// Redis relay — the channel name only carries tenantID, so the outlet target has to travel in
+// the payload instead.
+type relayEnvelope struct {
+	OutletID *uuid.UUID `json:"outlet_id,omitempty"`
+	Msg      Message    `json:"msg"`
 }
 
 func parseRelayChannel(channel string) (uuid.UUID, bool) {
@@ -104,14 +115,28 @@ func parseRelayChannel(channel string) (uuid.UUID, bool) {
 	return tenantID, true
 }
 
-// BroadcastToTenant delivers a message to every active session for the tenant — locally, and (via
-// Redis) on every other replica too. Never blocks the caller (typically a NATS consumer handler).
+// BroadcastToTenant delivers a message to every active session for the tenant, regardless of
+// outlet — locally, and (via Redis) on every other replica too. Never blocks the caller (typically
+// a NATS consumer handler). Use this only for genuinely tenant-wide events; anything scoped to one
+// outlet's operation (a bulk job run against a specific branch, a stock move) should use
+// BroadcastToOutlet instead so staff at other branches don't get irrelevant pushes.
 func (h *Hub) BroadcastToTenant(tenantID uuid.UUID, msg Message) {
-	h.broadcastLocal(tenantID, msg)
+	h.broadcast(tenantID, nil, msg)
+}
+
+// BroadcastToOutlet delivers a message to sessions connected under the given outlet, plus any
+// unrestricted (HQ/admin, outletID==nil) session for the tenant — never to a DIFFERENT outlet's
+// session. outletID == nil behaves exactly like BroadcastToTenant (no outlet to scope to).
+func (h *Hub) BroadcastToOutlet(tenantID uuid.UUID, outletID *uuid.UUID, msg Message) {
+	h.broadcast(tenantID, outletID, msg)
+}
+
+func (h *Hub) broadcast(tenantID uuid.UUID, outletID *uuid.UUID, msg Message) {
+	h.broadcastLocal(tenantID, outletID, msg)
 	if h.redis == nil {
 		return
 	}
-	payload, err := json.Marshal(msg)
+	payload, err := json.Marshal(relayEnvelope{OutletID: outletID, Msg: msg})
 	if err != nil {
 		return
 	}
@@ -121,11 +146,18 @@ func (h *Hub) BroadcastToTenant(tenantID uuid.UUID, msg Message) {
 	}
 }
 
-func (h *Hub) broadcastLocal(tenantID uuid.UUID, msg Message) {
+// broadcastLocal delivers to locally-connected clients only. A client with no outlet restriction
+// (outletID nil, e.g. an HQ "All Outlets" session) always receives the message. A message with no
+// target outlet (outletID nil) reaches every client regardless of their own outlet. Otherwise the
+// client's outlet must match the message's target outlet exactly.
+func (h *Hub) broadcastLocal(tenantID uuid.UUID, outletID *uuid.UUID, msg Message) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for c := range h.clients {
 		if c.tenantID != tenantID {
+			continue
+		}
+		if outletID != nil && c.outletID != nil && *c.outletID != *outletID {
 			continue
 		}
 		select {
@@ -136,9 +168,11 @@ func (h *Hub) broadcastLocal(tenantID uuid.UUID, msg Message) {
 	}
 }
 
-// ServeWS upgrades the HTTP connection and blocks until the client disconnects.
-func (h *Hub) ServeWS(ctx context.Context, conn *websocket.Conn, tenantID uuid.UUID) {
-	c := &client{conn: conn, tenantID: tenantID, send: make(chan Message, 16)}
+// ServeWS upgrades the HTTP connection and blocks until the client disconnects. outletID scopes
+// this session to one outlet's messages (plus tenant-wide ones); nil means unrestricted (HQ/admin
+// "All Outlets" view) — sees everything for the tenant, matching the pre-outlet-scoping behavior.
+func (h *Hub) ServeWS(ctx context.Context, conn *websocket.Conn, tenantID uuid.UUID, outletID *uuid.UUID) {
+	c := &client{conn: conn, tenantID: tenantID, outletID: outletID, send: make(chan Message, 16)}
 
 	h.mu.Lock()
 	h.clients[c] = struct{}{}

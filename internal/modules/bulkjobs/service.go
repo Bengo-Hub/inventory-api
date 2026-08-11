@@ -52,8 +52,11 @@ func NewService(client *ent.Client, log *zap.Logger, hub *notifications.Hub) *Se
 
 // CreateAndRun persists a queued job row, launches `run` in a detached goroutine, and returns the
 // freshly-created (still-queued) job immediately — callers should respond 202 Accepted with the
-// job id rather than waiting for it to finish.
-func (s *Service) CreateAndRun(ctx context.Context, tenantID uuid.UUID, jobType string, total int, payload map[string]any, createdBy uuid.UUID, run Runner) (*ent.BulkJob, error) {
+// job id rather than waiting for it to finish. outletID scopes the completion notification to the
+// outlet this batch was run against (nil for a tenant-wide/cross-outlet batch) — NOT persisted on
+// the job row, it only needs to live long enough for the in-memory completion broadcast, and every
+// poller (GetJob) is already tenant-scoped regardless.
+func (s *Service) CreateAndRun(ctx context.Context, tenantID uuid.UUID, outletID *uuid.UUID, jobType string, total int, payload map[string]any, createdBy uuid.UUID, run Runner) (*ent.BulkJob, error) {
 	create := s.client.BulkJob.Create().
 		SetTenantID(tenantID).
 		SetJobType(jobType).
@@ -69,12 +72,12 @@ func (s *Service) CreateAndRun(ctx context.Context, tenantID uuid.UUID, jobType 
 
 	// Detached from the request context on purpose: the HTTP handler returns as soon as this
 	// function returns, and the job must keep running after that.
-	go s.execute(context.Background(), job, run)
+	go s.execute(context.Background(), job, outletID, run)
 
 	return job, nil
 }
 
-func (s *Service) execute(ctx context.Context, job *ent.BulkJob, run Runner) {
+func (s *Service) execute(ctx context.Context, job *ent.BulkJob, outletID *uuid.UUID, run Runner) {
 	now := time.Now()
 	if _, err := s.client.BulkJob.UpdateOneID(job.ID).
 		SetStatus(bulkjob.StatusRunning).
@@ -126,7 +129,7 @@ func (s *Service) execute(ctx context.Context, job *ent.BulkJob, run Runner) {
 	if updated.CreatedBy != nil {
 		payload["created_by"] = updated.CreatedBy.String()
 	}
-	s.hub.BroadcastToTenant(job.TenantID, notifications.Message{Type: "bulk_job.completed", Payload: payload})
+	s.hub.BroadcastToOutlet(job.TenantID, outletID, notifications.Message{Type: "bulk_job.completed", Payload: payload})
 }
 
 // GetJob fetches a job by id, scoped to the tenant — the polling fallback for a client that
