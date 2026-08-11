@@ -32,6 +32,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // includeVariantsKey is a context flag set by the HTTP layer (?include=variants)
@@ -2069,6 +2070,17 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	}
 	// Auto-compute EP cost from purchase fields when not explicitly set.
 	resolveEPCost(&dto)
+
+	// Reject a fractional opening quantity for a discrete/count-based item (e.g. a phone stocked
+	// in PIECE) before creating anything — covers manual item creation AND the bulk-import Items
+	// sheet's initial_quantity column, both of which flow through here.
+	if dto.UnitID != nil && dto.InitialQuantity != 0 {
+		if u, uErr := s.client.Unit.Get(ctx, *dto.UnitID); uErr == nil {
+			if vErr := units.ValidateQuantityForUnit(dto.InitialQuantity, u.Type, u.Name); vErr != nil {
+				return nil, fmt.Errorf("items: %w", vErr)
+			}
+		}
+	}
 
 	// Default the tax code from the tenant compliance config when unset — treasury/eTIMS reads
 	// this off the item on POS/ordering sales. The inclusive-vs-exclusive behaviour itself is

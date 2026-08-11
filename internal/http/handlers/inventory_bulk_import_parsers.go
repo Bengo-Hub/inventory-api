@@ -496,7 +496,11 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		}
 
 		// Current on-hand AT THIS WAREHOUSE ONLY (0 if no balance row exists there yet).
+		// balanceExisted distinguishes a true first-time seed from a later re-import that
+		// changes an already-established balance — the two need different audit-trail reasons
+		// (see below) so the ledger doesn't show the same item "opening stock"-ing repeatedly.
 		currentOnHand := 0.0
+		balanceExisted := false
 		if bal, balErr := h.orm.InventoryBalance.Query().
 			Where(
 				entinventorybalance.TenantID(tenantID),
@@ -505,15 +509,26 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 			).
 			First(r.Context()); balErr == nil {
 			currentOnHand = bal.OnHand
+			balanceExisted = true
 		}
 
 		delta := qty - currentOnHand
+		// Only the very first balance-establishing import for this (item, warehouse) is a real
+		// "opening balance" — a later re-import of the same sheet (a correction, a duplicate
+		// upload, a fixed spreadsheet) is adjusting an existing figure, not seeding a new one.
+		// Previously this was hardcoded to "opening_balance" on every call, so re-importing the
+		// same item repeatedly kept stacking multiple "Opening Stock" rows in the movement
+		// history instead of showing as a correction.
+		reason := "opening_balance"
+		if balanceExisted {
+			reason = "correction"
+		}
 		if delta == 0 {
 			res.Updated++ // already at target
 		} else if _, adjErr := h.stockSvc.AdjustStock(r.Context(), tenantID, stock.AdjustStockRequest{
 			SKU:         itemSKU,
 			Adjustment:  delta,
-			Reason:      "opening_balance",
+			Reason:      reason,
 			Notes:       "Bulk import opening stock",
 			WarehouseID: whID,
 		}); adjErr != nil {

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
@@ -274,6 +275,21 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	}
 
 	qtyAfter := float64(newOnHand)
+
+	// Reject a result that leaves a discrete/count-based item (e.g. a phone stocked in PIECE)
+	// with a fractional balance — checked on the RESULT, not the raw delta, so a corrective
+	// adjustment that fixes an already-fractional balance back to a whole number (e.g. -0.67 to
+	// bring 4427.67 down to 4427) is allowed, while a delta that would newly introduce or worsen
+	// a fraction is rejected. Covers this endpoint's manual "Record Adjustment" callers AND the
+	// bulk-import InitialStock sheet, which posts opening quantities through here too.
+	if itm.UnitID != nil {
+		if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
+			if vErr := units.ValidateQuantityForUnit(qtyAfter, u.Type, u.Name); vErr != nil {
+				err = fmt.Errorf("stock: %w (sku=%s)", vErr, req.SKU)
+				return nil, err
+			}
+		}
+	}
 
 	balUpdate := tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(newOnHand).
