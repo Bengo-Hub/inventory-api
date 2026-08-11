@@ -24,6 +24,19 @@ type SetItemOutletMembershipRequest struct {
 	TargetWarehouseIDs []uuid.UUID
 	AdjustedBy         uuid.UUID
 	Notes              string
+	// ZeroStockMode changes the redistribution rule for a general many-to-many toggle (2+
+	// warehouses dropped and/or added at once, so there's no single pair to move a chosen
+	// quantity between): dropped warehouses' stock is discarded outright (not pooled) and
+	// newly-added warehouses start at zero (not a pooled share) — an explicit "move with zero
+	// stock" the caller opts into (the UI gates this behind a confirmation warning, since it
+	// discards real on-hand rather than carrying it anywhere). Ignored when MoveQuantity applies.
+	ZeroStockMode bool
+	// MoveQuantity, when set, only takes effect for a clean 1-dropped+1-added pair: instead of
+	// carrying the source's ENTIRE balance to the destination and removing it from the source
+	// (today's default, and what still happens if MoveQuantity is nil or >= the source's on-hand),
+	// it moves exactly this amount and leaves the remainder active at the source — a real
+	// two-sided transfer instead of a relocation, so the item keeps showing at both outlets.
+	MoveQuantity *float64
 }
 
 // MembershipSkipped explains why one item's membership wasn't changed.
@@ -118,6 +131,37 @@ func (s *Service) SetItemOutletMembership(ctx context.Context, tenantID uuid.UUI
 			continue
 		}
 
+		// Partial transfer: a clean 1-dropped+1-added pair with an explicit MoveQuantity less
+		// than the source's on-hand. Leaves the remainder active at the source instead of
+		// carrying everything to the destination — see the type doc on MoveQuantity.
+		if req.MoveQuantity != nil && *req.MoveQuantity > 0 && len(toRemove) == 1 && len(toAdd) == 1 {
+			srcBal := toRemove[0]
+			qty := *req.MoveQuantity
+			if qty < srcBal.OnHand {
+				remainOnHand := srcBal.OnHand - qty
+				remainAvail := srcBal.Available - qty
+				if remainAvail < 0 {
+					remainAvail = 0
+				}
+				if _, uErr := tx.InventoryBalance.UpdateOne(srcBal).
+					SetOnHand(remainOnHand).
+					SetAvailable(remainAvail).
+					Save(ctx); uErr != nil {
+					err = fmt.Errorf("stock: partial-move source for item %s at warehouse %s: %w", itemID, srcBal.WarehouseID, uErr)
+					return nil, err
+				}
+				s.recordMembershipAdjustment(ctx, tx, tenantID, itemID, srcBal.WarehouseID, srcBal.OnHand, remainOnHand, req, now)
+				s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, srcBal.WarehouseID, srcBal.Available, remainAvail, "location_move")
+				if _, aErr := s.addOrReactivateMembershipTarget(ctx, tx, tenantID, itemID, toAdd[0], qty, qty, srcBal, req, now); aErr != nil {
+					err = aErr
+					return nil, err
+				}
+				res.Processed++
+				continue
+			}
+			// qty >= source on-hand: identical to a full move, fall through to the normal path.
+		}
+
 		var pooledOnHand, pooledAvailable float64
 		var template *ent.InventoryBalance
 		for _, bal := range toRemove {
@@ -138,6 +182,12 @@ func (s *Service) SetItemOutletMembership(ctx context.Context, tenantID uuid.UUI
 			s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, bal.WarehouseID, bal.Available, 0, "location_move")
 		}
 
+		// ZeroStockMode discards the pooled total instead of redistributing it — every newly-added
+		// outlet starts at zero.
+		if req.ZeroStockMode {
+			pooledOnHand, pooledAvailable = 0, 0
+		}
+
 		if len(toAdd) > 0 {
 			share := pooledOnHand / float64(len(toAdd))
 			availShare := pooledAvailable / float64(len(toAdd))
@@ -149,49 +199,9 @@ func (s *Service) SetItemOutletMembership(ctx context.Context, tenantID uuid.UUI
 					onHandHere = pooledOnHand - share*float64(len(toAdd)-1)
 					availHere = pooledAvailable - availShare*float64(len(toAdd)-1)
 				}
-				existing, gErr := tx.InventoryBalance.Query().
-					Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(whID)).
-					Only(ctx)
-				switch {
-				case ent.IsNotFound(gErr):
-					create := tx.InventoryBalance.Create().
-						SetTenantID(tenantID).
-						SetItemID(itemID).
-						SetWarehouseID(whID).
-						SetOnHand(onHandHere).
-						SetAvailable(availHere)
-					if template != nil {
-						create = create.
-							SetUnitOfMeasure(template.UnitOfMeasure).
-							SetReorderLevel(template.ReorderLevel).
-							SetReorderQuantity(template.ReorderQuantity).
-							SetNillablePreferredSupplierID(template.PreferredSupplierID).
-							SetAutoReorderEnabled(template.AutoReorderEnabled)
-					}
-					if _, cErr := create.Save(ctx); cErr != nil {
-						err = fmt.Errorf("stock: add item %s to warehouse %s: %w", itemID, whID, cErr)
-						return nil, err
-					}
-					s.recordMembershipAdjustment(ctx, tx, tenantID, itemID, whID, 0, onHandHere, req, now)
-					s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, whID, 0, availHere, "location_move")
-				case gErr != nil:
-					err = fmt.Errorf("stock: query existing balance for item %s at warehouse %s: %w", itemID, whID, gErr)
+				if _, aErr := s.addOrReactivateMembershipTarget(ctx, tx, tenantID, itemID, whID, onHandHere, availHere, template, req, now); aErr != nil {
+					err = aErr
 					return nil, err
-				default:
-					// A removed balance already exists here (the item was here before, then
-					// removed, and is being re-added) — reactivate it and add the pooled share.
-					before := existing.OnHand
-					beforeAvail := existing.Available
-					if _, uErr := tx.InventoryBalance.UpdateOne(existing).
-						SetOnHand(before + onHandHere).
-						SetAvailable(beforeAvail + availHere).
-						SetRemovedFromLocation(false).
-						Save(ctx); uErr != nil {
-						err = fmt.Errorf("stock: reactivate item %s at warehouse %s: %w", itemID, whID, uErr)
-						return nil, err
-					}
-					s.recordMembershipAdjustment(ctx, tx, tenantID, itemID, whID, before, before+onHandHere, req, now)
-					s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, whID, beforeAvail, beforeAvail+availHere, "location_move")
 				}
 			}
 		}
@@ -203,6 +213,59 @@ func (s *Service) SetItemOutletMembership(ctx context.Context, tenantID uuid.UUI
 		return nil, fmt.Errorf("stock: commit membership change: %w", err)
 	}
 	return res, nil
+}
+
+// addOrReactivateMembershipTarget gives item itemID a balance of exactly (onHand, available) at
+// warehouseID: creates one (copying template's unit/reorder/supplier metadata if given) if none
+// exists yet, or adds to an existing removed-from-location balance and reactivates it. Shared by
+// the normal pooled-share path and the 1-drop+1-add partial-transfer path — both ultimately need
+// to land a specific amount at one destination warehouse, they just compute that amount
+// differently.
+func (s *Service) addOrReactivateMembershipTarget(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, onHand, available float64, template *ent.InventoryBalance, req SetItemOutletMembershipRequest, now time.Time) (*ent.InventoryBalance, error) {
+	existing, gErr := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
+		Only(ctx)
+	switch {
+	case ent.IsNotFound(gErr):
+		create := tx.InventoryBalance.Create().
+			SetTenantID(tenantID).
+			SetItemID(itemID).
+			SetWarehouseID(warehouseID).
+			SetOnHand(onHand).
+			SetAvailable(available)
+		if template != nil {
+			create = create.
+				SetUnitOfMeasure(template.UnitOfMeasure).
+				SetReorderLevel(template.ReorderLevel).
+				SetReorderQuantity(template.ReorderQuantity).
+				SetNillablePreferredSupplierID(template.PreferredSupplierID).
+				SetAutoReorderEnabled(template.AutoReorderEnabled)
+		}
+		created, cErr := create.Save(ctx)
+		if cErr != nil {
+			return nil, fmt.Errorf("stock: add item %s to warehouse %s: %w", itemID, warehouseID, cErr)
+		}
+		s.recordMembershipAdjustment(ctx, tx, tenantID, itemID, warehouseID, 0, onHand, req, now)
+		s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, warehouseID, 0, available, "location_move")
+		return created, nil
+	case gErr != nil:
+		return nil, fmt.Errorf("stock: query existing balance for item %s at warehouse %s: %w", itemID, warehouseID, gErr)
+	default:
+		// A removed balance already exists here (the item was here before, then removed, and is
+		// being re-added) — reactivate it and add the incoming amount.
+		before, beforeAvail := existing.OnHand, existing.Available
+		updated, uErr := tx.InventoryBalance.UpdateOne(existing).
+			SetOnHand(before + onHand).
+			SetAvailable(beforeAvail + available).
+			SetRemovedFromLocation(false).
+			Save(ctx)
+		if uErr != nil {
+			return nil, fmt.Errorf("stock: reactivate item %s at warehouse %s: %w", itemID, warehouseID, uErr)
+		}
+		s.recordMembershipAdjustment(ctx, tx, tenantID, itemID, warehouseID, before, before+onHand, req, now)
+		s.EmitStockChangeCascade(ctx, tx, tenantID, itemID, warehouseID, beforeAvail, beforeAvail+available, "location_move")
+		return updated, nil
+	}
 }
 
 // recordMembershipAdjustment writes the audit trail row for one warehouse's side of a membership
