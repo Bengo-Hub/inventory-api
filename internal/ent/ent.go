@@ -28,6 +28,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/backup"
 	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
+	"github.com/bengobox/inventory-service/internal/ent/bulkjob"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
@@ -180,6 +181,7 @@ func checkColumn(t, c string) error {
 			backup.Table:                 backup.ValidColumn,
 			backupsetting.Table:          backupsetting.ValidColumn,
 			batchrawmaterial.Table:       batchrawmaterial.ValidColumn,
+			bulkjob.Table:                bulkjob.ValidColumn,
 			bundle.Table:                 bundle.ValidColumn,
 			bundlecomponent.Table:        bundlecomponent.ValidColumn,
 			consumption.Table:            consumption.ValidColumn,

@@ -263,6 +263,10 @@ func (m *mockStockSvc) RelocateItemLocation(ctx context.Context, tenantID uuid.U
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockStockSvc) SetItemOutletMembership(ctx context.Context, tenantID uuid.UUID, req stock.SetItemOutletMembershipRequest) (*stock.SetItemOutletMembershipResult, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockStockSvc) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.BulkAdjustStockRequest) (*stock.BulkAdjustStockResult, error) {
 	return nil, fmt.Errorf("not implemented")
 }

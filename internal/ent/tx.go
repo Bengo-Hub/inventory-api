@@ -44,6 +44,8 @@ type Tx struct {
 	BackupSetting *BackupSettingClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
+	// BulkJob is the client for interacting with the BulkJob builders.
+	BulkJob *BulkJobClient
 	// Bundle is the client for interacting with the Bundle builders.
 	Bundle *BundleClient
 	// BundleComponent is the client for interacting with the BundleComponent builders.
@@ -343,6 +345,7 @@ func (tx *Tx) init() {
 	tx.Backup = NewBackupClient(tx.config)
 	tx.BackupSetting = NewBackupSettingClient(tx.config)
 	tx.BatchRawMaterial = NewBatchRawMaterialClient(tx.config)
+	tx.BulkJob = NewBulkJobClient(tx.config)
 	tx.Bundle = NewBundleClient(tx.config)
 	tx.BundleComponent = NewBundleComponentClient(tx.config)
 	tx.Consumption = NewConsumptionClient(tx.config)

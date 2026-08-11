@@ -32,6 +32,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/backup"
 	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
+	"github.com/bengobox/inventory-service/internal/ent/bulkjob"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
@@ -147,6 +148,8 @@ type Client struct {
 	BackupSetting *BackupSettingClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
+	// BulkJob is the client for interacting with the BulkJob builders.
+	BulkJob *BulkJobClient
 	// Bundle is the client for interacting with the Bundle builders.
 	Bundle *BundleClient
 	// BundleComponent is the client for interacting with the BundleComponent builders.
@@ -326,6 +329,7 @@ func (c *Client) init() {
 	c.Backup = NewBackupClient(c.config)
 	c.BackupSetting = NewBackupSettingClient(c.config)
 	c.BatchRawMaterial = NewBatchRawMaterialClient(c.config)
+	c.BulkJob = NewBulkJobClient(c.config)
 	c.Bundle = NewBundleClient(c.config)
 	c.BundleComponent = NewBundleComponentClient(c.config)
 	c.Consumption = NewConsumptionClient(c.config)
@@ -510,6 +514,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Backup:                 NewBackupClient(cfg),
 		BackupSetting:          NewBackupSettingClient(cfg),
 		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
+		BulkJob:                NewBulkJobClient(cfg),
 		Bundle:                 NewBundleClient(cfg),
 		BundleComponent:        NewBundleComponentClient(cfg),
 		Consumption:            NewConsumptionClient(cfg),
@@ -621,6 +626,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Backup:                 NewBackupClient(cfg),
 		BackupSetting:          NewBackupSettingClient(cfg),
 		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
+		BulkJob:                NewBulkJobClient(cfg),
 		Bundle:                 NewBundleClient(cfg),
 		BundleComponent:        NewBundleComponentClient(cfg),
 		Consumption:            NewConsumptionClient(cfg),
@@ -729,7 +735,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
-		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
+		c.BackupSetting, c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent,
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
@@ -760,7 +766,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
 		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
-		c.BackupSetting, c.BatchRawMaterial, c.Bundle, c.BundleComponent,
+		c.BackupSetting, c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent,
 		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
 		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
 		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
@@ -819,6 +825,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BackupSetting.mutate(ctx, m)
 	case *BatchRawMaterialMutation:
 		return c.BatchRawMaterial.mutate(ctx, m)
+	case *BulkJobMutation:
+		return c.BulkJob.mutate(ctx, m)
 	case *BundleMutation:
 		return c.Bundle.mutate(ctx, m)
 	case *BundleComponentMutation:
@@ -3181,6 +3189,139 @@ func (c *BatchRawMaterialClient) mutate(ctx context.Context, m *BatchRawMaterial
 		return (&BatchRawMaterialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown BatchRawMaterial mutation op: %q", m.Op())
+	}
+}
+
+// BulkJobClient is a client for the BulkJob schema.
+type BulkJobClient struct {
+	config
+}
+
+// NewBulkJobClient returns a client for the BulkJob from the given config.
+func NewBulkJobClient(c config) *BulkJobClient {
+	return &BulkJobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `bulkjob.Hooks(f(g(h())))`.
+func (c *BulkJobClient) Use(hooks ...Hook) {
+	c.hooks.BulkJob = append(c.hooks.BulkJob, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `bulkjob.Intercept(f(g(h())))`.
+func (c *BulkJobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BulkJob = append(c.inters.BulkJob, interceptors...)
+}
+
+// Create returns a builder for creating a BulkJob entity.
+func (c *BulkJobClient) Create() *BulkJobCreate {
+	mutation := newBulkJobMutation(c.config, OpCreate)
+	return &BulkJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BulkJob entities.
+func (c *BulkJobClient) CreateBulk(builders ...*BulkJobCreate) *BulkJobCreateBulk {
+	return &BulkJobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BulkJobClient) MapCreateBulk(slice any, setFunc func(*BulkJobCreate, int)) *BulkJobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BulkJobCreateBulk{err: fmt.Errorf("calling to BulkJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BulkJobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BulkJobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BulkJob.
+func (c *BulkJobClient) Update() *BulkJobUpdate {
+	mutation := newBulkJobMutation(c.config, OpUpdate)
+	return &BulkJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BulkJobClient) UpdateOne(_m *BulkJob) *BulkJobUpdateOne {
+	mutation := newBulkJobMutation(c.config, OpUpdateOne, withBulkJob(_m))
+	return &BulkJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BulkJobClient) UpdateOneID(id uuid.UUID) *BulkJobUpdateOne {
+	mutation := newBulkJobMutation(c.config, OpUpdateOne, withBulkJobID(id))
+	return &BulkJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BulkJob.
+func (c *BulkJobClient) Delete() *BulkJobDelete {
+	mutation := newBulkJobMutation(c.config, OpDelete)
+	return &BulkJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BulkJobClient) DeleteOne(_m *BulkJob) *BulkJobDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BulkJobClient) DeleteOneID(id uuid.UUID) *BulkJobDeleteOne {
+	builder := c.Delete().Where(bulkjob.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BulkJobDeleteOne{builder}
+}
+
+// Query returns a query builder for BulkJob.
+func (c *BulkJobClient) Query() *BulkJobQuery {
+	return &BulkJobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBulkJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BulkJob entity by its id.
+func (c *BulkJobClient) Get(ctx context.Context, id uuid.UUID) (*BulkJob, error) {
+	return c.Query().Where(bulkjob.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BulkJobClient) GetX(ctx context.Context, id uuid.UUID) *BulkJob {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *BulkJobClient) Hooks() []Hook {
+	return c.hooks.BulkJob
+}
+
+// Interceptors returns the client interceptors.
+func (c *BulkJobClient) Interceptors() []Interceptor {
+	return c.inters.BulkJob
+}
+
+func (c *BulkJobClient) mutate(ctx context.Context, m *BulkJobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BulkJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BulkJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BulkJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BulkJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BulkJob mutation op: %q", m.Op())
 	}
 }
 
@@ -14818,44 +14959,44 @@ type (
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
-		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
-		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, IdempotencyKey, InventoryBalance, InventoryLot,
-		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
-		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PendingPriceChange, PricingTier, ProductionBatch,
-		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
-		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
-		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
-		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
-		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
-		Warehouse, WarehouseLocation, Warranty []ent.Hook
+		BatchRawMaterial, BulkJob, Bundle, BundleComponent, Consumption,
+		ConsumptionLine, Contract, ContractOrderLink, CustomFieldDefinition,
+		CustomFieldValue, DocumentSequence, DrugInteractionRule, ExpiryAlertLog,
+		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, IdempotencyKey,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
+		PendingPriceChange, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
+		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
+		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
+		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
 		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, Bundle, BundleComponent, Consumption, ConsumptionLine,
-		Contract, ContractOrderLink, CustomFieldDefinition, CustomFieldValue,
-		DocumentSequence, DrugInteractionRule, ExpiryAlertLog, FoodCostVariance,
-		GoodsReceipt, GoodsReceiptLine, IdempotencyKey, InventoryBalance, InventoryLot,
-		InventoryPermission, InventoryRole, InventorySerial, InventoryUser, Item,
-		ItemAsset, ItemBrand, ItemCategory, ItemConsumptionDaily, ItemPricing,
-		ItemTranslation, ItemVariant, ManufacturingAnalytics, ModifierGroup,
-		ModifierOption, OutboxEvent, PendingPriceChange, PricingTier, ProductionBatch,
-		PurchaseOrder, PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine,
-		QualityCheck, RFQ, RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage,
-		Recipe, RecipeIngredient, Requisition, RequisitionLine, Reservation,
-		RolePermission, ServiceConfig, ServiceDelivery, StockAdjustment,
-		StockBreakdown, StockCount, StockCountLine, StockCountTemplate,
-		StockLevelEvent, StockTransfer, StockTransferLine, Supplier,
-		SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig, Ticket,
-		Unit, UserOutlet, UserRoleAssignment, VariantAttribute, VendorBalanceCache,
-		Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		BatchRawMaterial, BulkJob, Bundle, BundleComponent, Consumption,
+		ConsumptionLine, Contract, ContractOrderLink, CustomFieldDefinition,
+		CustomFieldValue, DocumentSequence, DrugInteractionRule, ExpiryAlertLog,
+		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, IdempotencyKey,
+		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
+		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
+		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
+		PendingPriceChange, PricingTier, ProductionBatch, PurchaseOrder,
+		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
+		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
+		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
+		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
+		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
+		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
+		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
 	}
 )

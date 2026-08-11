@@ -576,6 +576,41 @@ var (
 			},
 		},
 	}
+	// BulkJobsColumns holds the columns for the "bulk_jobs" table.
+	BulkJobsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "job_type", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"queued", "running", "completed", "failed"}, Default: "queued"},
+		{Name: "total", Type: field.TypeInt, Default: 0},
+		{Name: "processed", Type: field.TypeInt, Default: 0},
+		{Name: "failed_count", Type: field.TypeInt, Default: 0},
+		{Name: "payload", Type: field.TypeJSON, Nullable: true},
+		{Name: "result", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+	}
+	// BulkJobsTable holds the schema information for the "bulk_jobs" table.
+	BulkJobsTable = &schema.Table{
+		Name:       "bulk_jobs",
+		Columns:    BulkJobsColumns,
+		PrimaryKey: []*schema.Column{BulkJobsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "bulkjob_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{BulkJobsColumns[1], BulkJobsColumns[11]},
+			},
+			{
+				Name:    "bulkjob_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{BulkJobsColumns[1], BulkJobsColumns[3]},
+			},
+		},
+	}
 	// BundlesColumns holds the columns for the "bundles" table.
 	BundlesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3804,6 +3839,7 @@ var (
 		BackupsTable,
 		BackupSettingsTable,
 		BatchRawMaterialsTable,
+		BulkJobsTable,
 		BundlesTable,
 		BundleComponentsTable,
 		ConsumptionsTable,
