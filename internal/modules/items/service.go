@@ -1018,6 +1018,98 @@ func enumPtrToStr[T ~string](v *T) *string {
 	return &s
 }
 
+// OutletScope computes an outlet's catalog-visibility scope: which items to exclude, whether
+// the outlet has operational history, and the warehouse set it sells from. This is the single
+// source of truth behind ListItems' outlet filtering (see the long rule comment there) — any
+// other consumer that reports per-outlet item/stock counts (e.g. dashboard analytics) MUST
+// reuse this instead of re-deriving the rule, or its numbers will silently drift from the
+// Products list the moment either copy changes.
+// outletID == nil returns zero values (no scoping).
+func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID *uuid.UUID) (excludeIDs []uuid.UUID, hasOperationalHistory bool, warehouseIDs map[uuid.UUID]struct{}, err error) {
+	if outletID == nil {
+		return nil, false, nil, nil
+	}
+	wIDs, err := s.client.Warehouse.Query().
+		Where(
+			warehouse.TenantID(tenantID),
+			warehouse.Or(
+				warehouse.OutletIDEQ(*outletID),
+				warehouse.OutletIDIsNil(),
+			),
+		).IDs(ctx)
+	if err != nil {
+		return nil, false, nil, err
+	}
+	warehouseIDs = make(map[uuid.UUID]struct{}, len(wIDs))
+	for _, id := range wIDs {
+		warehouseIDs[id] = struct{}{}
+	}
+	bals, err := s.client.InventoryBalance.Query().
+		Where(inventorybalance.TenantIDEQ(tenantID)).
+		All(ctx)
+	if err != nil {
+		return nil, false, warehouseIDs, err
+	}
+	stockedHere := make(map[uuid.UUID]struct{})
+	// removedHere: this item has a balance at one of THIS outlet's own warehouses that was
+	// explicitly moved/removed away (InventoryBalance.removed_from_location) — see the Move
+	// Stock feature. Tracked separately from stockedHere so an item removed from warehouse A
+	// but still actively stocked at this outlet's warehouse B isn't wrongly hidden.
+	removedHere := make(map[uuid.UUID]struct{})
+	stockedElsewhere := make(map[uuid.UUID]struct{})
+	// anyBalanceHere: ANY balance row at this outlet's own warehouse(s), regardless of status —
+	// used only to decide whether the outlet has EVER interacted with the stock system at all
+	// (hasOperationalHistory below), not to decide any individual item's visibility.
+	anyBalanceHere := false
+	for _, b := range bals {
+		if _, ok := warehouseIDs[b.WarehouseID]; ok {
+			anyBalanceHere = true
+			if b.RemovedFromLocation {
+				removedHere[b.ItemID] = struct{}{}
+			} else {
+				stockedHere[b.ItemID] = struct{}{}
+			}
+		} else {
+			stockedElsewhere[b.ItemID] = struct{}{}
+		}
+	}
+	hasOperationalHistory = anyBalanceHere
+	var candidates []uuid.UUID
+	// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central store) is
+	// not location-separated — it sells the tenant catalog and receives stock later. Only
+	// outlets with their own stock hide other outlets' goods.
+	if len(stockedHere) > 0 {
+		candidates = make([]uuid.UUID, 0, len(stockedElsewhere))
+		for id := range stockedElsewhere {
+			if _, ok := stockedHere[id]; !ok {
+				candidates = append(candidates, id)
+			}
+		}
+	}
+	// Explicitly removed from this outlet's own warehouse(s) — hide unconditionally (even for an
+	// otherwise "fresh" outlet), unless an active balance exists at another of this outlet's own
+	// warehouses.
+	for id := range removedHere {
+		if _, ok := stockedHere[id]; !ok {
+			candidates = append(candidates, id)
+		}
+	}
+	if len(candidates) > 0 {
+		// Only stock-tracked, billable types are location-bound; recipes/services/vouchers and
+		// free accompaniments are menu entries, not stock, and must never be hidden.
+		excludeIDs, err = s.client.Item.Query().
+			Where(
+				item.IDIn(candidates...),
+				item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
+				item.NonBillable(false),
+			).IDs(ctx)
+		if err != nil {
+			return nil, hasOperationalHistory, warehouseIDs, err
+		}
+	}
+	return excludeIDs, hasOperationalHistory, warehouseIDs, nil
+}
+
 // ListItems returns a paginated list of items for a tenant with DB-level filtering.
 // statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
 // outletID: when set, restricts items to those with a balance in the outlet's warehouses or shared warehouses (outlet_id IS NULL).
@@ -1052,86 +1144,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	// every balance is now zero or removed) is a real, distinct location, not a blank slate —
 	// it only shows items it has actually touched (positive, zero-but-not-removed for
 	// reordering, or explicitly present), never the tenant's unreceived backlog.
-	var outletExcludeIDs []uuid.UUID
-	var hasOperationalHistory bool
 	// outletWarehouseIDs is the set of warehouses this outlet may sell from: its OWN warehouse(s)
 	// plus tenant-wide shared warehouses (outlet_id nil, e.g. a central store). Hoisted to function
 	// scope (not just this exclusion block) because buildDTOs' on-hand aggregation below MUST also
 	// scope to it — summing balances across every warehouse in the tenant let a Malaba-HQ terminal
 	// see (and oversell) stock that was physically sitting at Eldoret/Busia/Home/Nelly/Guest.
-	var outletWarehouseIDs map[uuid.UUID]struct{}
-	if outletID != nil {
-		wIDs, _ := s.client.Warehouse.Query().
-			Where(
-				warehouse.TenantID(tenantID),
-				warehouse.Or(
-					warehouse.OutletIDEQ(*outletID),
-					warehouse.OutletIDIsNil(),
-				),
-			).IDs(ctx)
-		outletWarehouseIDs = make(map[uuid.UUID]struct{}, len(wIDs))
-		for _, id := range wIDs {
-			outletWarehouseIDs[id] = struct{}{}
-		}
-		bals, _ := s.client.InventoryBalance.Query().
-			Where(inventorybalance.TenantIDEQ(tenantID)).
-			All(ctx)
-		stockedHere := make(map[uuid.UUID]struct{})
-		// removedHere: this item has a balance at one of THIS outlet's own warehouses that was
-		// explicitly moved/removed away (InventoryBalance.removed_from_location) — see the Move
-		// Stock feature. Tracked separately from stockedHere so an item removed from warehouse A
-		// but still actively stocked at this outlet's warehouse B isn't wrongly hidden.
-		removedHere := make(map[uuid.UUID]struct{})
-		stockedElsewhere := make(map[uuid.UUID]struct{})
-		// anyBalanceHere: ANY balance row at this outlet's own warehouse(s), regardless of
-		// status — used only to decide whether the outlet has EVER interacted with the stock
-		// system at all (hasOperationalHistory below), not to decide any individual item's
-		// visibility.
-		anyBalanceHere := false
-		for _, b := range bals {
-			if _, ok := outletWarehouseIDs[b.WarehouseID]; ok {
-				anyBalanceHere = true
-				if b.RemovedFromLocation {
-					removedHere[b.ItemID] = struct{}{}
-				} else {
-					stockedHere[b.ItemID] = struct{}{}
-				}
-			} else {
-				stockedElsewhere[b.ItemID] = struct{}{}
-			}
-		}
-		hasOperationalHistory = anyBalanceHere
-		var candidates []uuid.UUID
-		// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central
-		// store) is not location-separated — it sells the tenant catalog and receives stock
-		// later. Only outlets with their own stock hide other outlets' goods.
-		if len(stockedHere) > 0 {
-			candidates = make([]uuid.UUID, 0, len(stockedElsewhere))
-			for id := range stockedElsewhere {
-				if _, ok := stockedHere[id]; !ok {
-					candidates = append(candidates, id)
-				}
-			}
-		}
-		// Explicitly removed from this outlet's own warehouse(s) — hide unconditionally (even
-		// for an otherwise "fresh" outlet), unless an active balance exists at another of this
-		// outlet's own warehouses.
-		for id := range removedHere {
-			if _, ok := stockedHere[id]; !ok {
-				candidates = append(candidates, id)
-			}
-		}
-		if len(candidates) > 0 {
-			// Only stock-tracked, billable types are location-bound; recipes/services/vouchers
-			// and free accompaniments are menu entries, not stock, and must never be hidden.
-			outletExcludeIDs, _ = s.client.Item.Query().
-				Where(
-					item.IDIn(candidates...),
-					item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
-					item.NonBillable(false),
-				).IDs(ctx)
-		}
-	}
+	outletExcludeIDs, hasOperationalHistory, outletWarehouseIDs, _ := s.OutletScope(ctx, tenantID, outletID)
 
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().Where(item.TenantID(tenantID))

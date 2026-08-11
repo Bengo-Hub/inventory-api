@@ -523,8 +523,16 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		if balanceExisted {
 			reason = "correction"
 		}
-		if delta == 0 {
-			res.Updated++ // already at target
+		if delta == 0 && balanceExisted {
+			// Already at target AND a balance row already exists — a true no-op re-import.
+			// When !balanceExisted, delta==0 means "opening stock of zero", which still needs a
+			// zero InventoryBalance row created (via AdjustStock below) so the item isn't left
+			// with NO balance row anywhere — indistinguishable, to every outlet-scoped stock
+			// query, from an item that was never imported at all (see the ListItems outlet-scope
+			// rule in items.OutletScope: an item with no balance row anywhere gets dropped from
+			// any outlet with real operational history, hiding it from the very outlet this row
+			// was supposed to seed).
+			res.Updated++
 		} else if _, adjErr := h.stockSvc.AdjustStock(r.Context(), tenantID, stock.AdjustStockRequest{
 			SKU:         itemSKU,
 			Adjustment:  delta,
