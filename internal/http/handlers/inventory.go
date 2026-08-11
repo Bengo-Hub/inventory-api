@@ -80,6 +80,7 @@ type StockServicer interface {
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	ReverseConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ReverseConsumptionRequest) (*stock.ReverseConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
+	BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.BulkAdjustStockRequest) (*stock.BulkAdjustStockResult, error)
 	RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, req stock.RelocateItemLocationRequest) (*stock.RelocateItemLocationResult, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
@@ -265,6 +266,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 
 		// Stock adjustments — requires stock_tracking feature
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/stock/bulk-adjust", h.BulkAdjustStock)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
 		// Item location relocation — NOT a stock transfer (see RelocateItemLocation doc comment):
@@ -1437,6 +1439,90 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.log.Error("adjust stock failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// bulkAdjustStockRequest is the wire shape for POST /inventory/stock/bulk-adjust.
+type bulkAdjustStockRequest struct {
+	Lines []struct {
+		SKU        string  `json:"sku"`
+		Adjustment float64 `json:"adjustment"`
+	} `json:"lines"`
+	Reason      string `json:"reason"`
+	Reference   string `json:"reference,omitempty"`
+	Notes       string `json:"notes,omitempty"`
+	WarehouseID string `json:"warehouse_id,omitempty"`
+}
+
+// BulkAdjustStock handles POST /v1/{tenant}/inventory/stock/bulk-adjust — applies a per-item
+// stock adjustment to many items in one submit, sharing a warehouse/reason/notes. See
+// stock.BulkAdjustStock's doc comment for exactly what it reuses from the single /adjust path
+// (and its one documented gap: no per-line approval-workflow gate).
+//
+//	@Summary      Bulk stock adjustment
+//	@Description  Applies a per-item adjustment (sku + delta) to many items against one shared warehouse/reason. Each line is independently reported processed or skipped — a failure on one line never blocks the rest.
+//	@Tags         stock
+//	@Accept       json
+//	@Produce      json
+//	@Param        tenant  path      string                  true  "Tenant ID"
+//	@Param        body    body      bulkAdjustStockRequest  true  "Lines + shared warehouse/reason"
+//	@Success      200     {object}  stock.BulkAdjustStockResult
+//	@Failure      400     {object}  map[string]string
+//	@Router       /{tenant}/inventory/stock/bulk-adjust [post]
+func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req bulkAdjustStockRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.Lines) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_LINES", "lines is required")
+		return
+	}
+	if req.Reason == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_REASON", "reason is required")
+		return
+	}
+	var whID uuid.UUID
+	if req.WarehouseID != "" {
+		whID, err = uuid.Parse(req.WarehouseID)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE", "warehouse_id must be a valid UUID")
+			return
+		}
+	}
+
+	var adjustedBy uuid.UUID
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		adjustedBy, _ = claims.UserID()
+	}
+
+	lines := make([]stock.BulkAdjustLine, 0, len(req.Lines))
+	for _, l := range req.Lines {
+		lines = append(lines, stock.BulkAdjustLine{SKU: l.SKU, Adjustment: l.Adjustment})
+	}
+
+	result, err := h.stockSvc.BulkAdjustStock(r.Context(), tenantID, stock.BulkAdjustStockRequest{
+		Lines:       lines,
+		Reason:      req.Reason,
+		Reference:   req.Reference,
+		Notes:       req.Notes,
+		AdjustedBy:  adjustedBy,
+		WarehouseID: whID,
+		OutletID:    operatingOutletID(r),
+	})
+	if err != nil {
+		h.log.Error("bulk adjust stock failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "BULK_ADJUST_FAILED", err.Error())
 		return
 	}
 
