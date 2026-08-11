@@ -51,9 +51,15 @@ type TransferResponse struct {
 type TransferLineResponse struct {
 	ID        uuid.UUID  `json:"id"`
 	ItemID    uuid.UUID  `json:"item_id"`
+	ItemName  string     `json:"item_name,omitempty"`
+	ItemSKU   string     `json:"item_sku,omitempty"`
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	LotID     *uuid.UUID `json:"lot_id,omitempty"`
 	Quantity  float64    `json:"quantity"`
+	// ReceivedQty is set once the transfer has been received — this flow always credits the
+	// full line Quantity to the destination (no partial-receive support), so it mirrors
+	// Quantity, but is surfaced explicitly rather than left for the caller to assume.
+	ReceivedQty *float64 `json:"received_qty,omitempty"`
 }
 
 // WarehouseInfo is a lightweight warehouse representation for transfer responses.

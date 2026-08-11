@@ -210,7 +210,14 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		zap.String("transfer_number", transferNumber),
 	)
 
-	return s.buildTransferResponse(transfer, lines, srcWH, destWH), nil
+	// Reuses lineItems (already fetched above for the whole-unit-quantity validation) instead
+	// of querying items again just to build the display map.
+	itemInfo := make(map[uuid.UUID]itemDisplay, len(lineItems))
+	for _, it := range lineItems {
+		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+	}
+
+	return s.buildTransferResponse(transfer, lines, srcWH, destWH, itemInfo), nil
 }
 
 // ListTransfers returns transfers for a tenant with optional filters.
@@ -330,7 +337,13 @@ func (s *Service) GetTransfer(ctx context.Context, tenantID, transferID uuid.UUI
 		return nil, fmt.Errorf("transfers: destination warehouse lookup: %w", err)
 	}
 
-	return s.buildTransferResponse(transfer, transfer.Edges.Lines, srcWH, destWH), nil
+	itemIDs := make([]uuid.UUID, len(transfer.Edges.Lines))
+	for i, l := range transfer.Edges.Lines {
+		itemIDs[i] = l.ItemID
+	}
+	itemInfo := s.itemDisplayMap(ctx, s.client, itemIDs)
+
+	return s.buildTransferResponse(transfer, transfer.Edges.Lines, srcWH, destWH, itemInfo), nil
 }
 
 // ShipTransfer transitions a transfer from draft to in_transit and moves the stock OUT
@@ -598,8 +611,35 @@ func (s *Service) generateTransferNumber(ctx context.Context, tx *ent.Tx, tenant
 	return fmt.Sprintf("%s%04d", prefix, count+1), nil
 }
 
+// itemDisplay carries the display fields (name, sku) a transfer line response needs — looked
+// up once per Item ID by the caller (batch, not a query per line) and handed to
+// buildTransferResponse.
+type itemDisplay struct {
+	name, sku string
+}
+
+// itemDisplayMap batch-loads name/sku for a set of item IDs. Missing/unresolvable items are
+// simply absent from the map (buildTransferResponse leaves their line's name/sku blank rather
+// than failing the whole response — an item transferred and later hard-deleted must never break
+// the historical transfer record).
+func (s *Service) itemDisplayMap(ctx context.Context, client *ent.Client, ids []uuid.UUID) map[uuid.UUID]itemDisplay {
+	out := make(map[uuid.UUID]itemDisplay, len(ids))
+	if len(ids) == 0 {
+		return out
+	}
+	items, err := client.Item.Query().Where(item.IDIn(ids...)).All(ctx)
+	if err != nil {
+		s.log.Warn("transfers: load item display info failed", zap.Error(err))
+		return out
+	}
+	for _, it := range items {
+		out[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+	}
+	return out
+}
+
 // buildTransferResponse maps ent entities to a TransferResponse.
-func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*ent.StockTransferLine, srcWH, destWH *ent.Warehouse) *TransferResponse {
+func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*ent.StockTransferLine, srcWH, destWH *ent.Warehouse, itemInfo map[uuid.UUID]itemDisplay) *TransferResponse {
 	resp := &TransferResponse{
 		ID:             transfer.ID,
 		TenantID:       transfer.TenantID,
@@ -633,15 +673,24 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 		UpdatedAt:       transfer.UpdatedAt,
 	}
 
+	received := transfer.Status == stocktransfer.StatusReceived
 	resp.Lines = make([]TransferLineResponse, len(lines))
 	for i, l := range lines {
-		resp.Lines[i] = TransferLineResponse{
+		info := itemInfo[l.ItemID]
+		line := TransferLineResponse{
 			ID:        l.ID,
 			ItemID:    l.ItemID,
+			ItemName:  info.name,
+			ItemSKU:   info.sku,
 			VariantID: l.VariantID,
 			LotID:     l.LotID,
 			Quantity:  l.Quantity,
 		}
+		if received {
+			qty := l.Quantity
+			line.ReceivedQty = &qty
+		}
+		resp.Lines[i] = line
 	}
 
 	return resp
