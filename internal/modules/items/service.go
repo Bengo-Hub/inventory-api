@@ -1077,8 +1077,18 @@ func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID 
 	var candidates []uuid.UUID
 	// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central store) is
 	// not location-separated — it sells the tenant catalog and receives stock later. Only
-	// outlets with their own stock hide other outlets' goods.
-	if len(stockedHere) > 0 {
+	// outlets with real operational history hide other outlets' goods.
+	//
+	// Live-reported regression: an outlet that ONCE had its own active balance(s) but had every
+	// last one explicitly moved away since (Move Stock removing the final unit — sets
+	// removed_from_location, so it lands in removedHere, not stockedHere) has real history
+	// (hasOperationalHistory/anyBalanceHere is true) yet `len(stockedHere) > 0` is false — this
+	// used to skip the stockedElsewhere exclusion entirely, so a genuinely-cleared-but-not-fresh
+	// outlet (e.g. Junior Wholesalers, Eldoret Enterprises after their remaining stock was moved
+	// out) fell back to the "fresh outlet" leniency and showed every item stocked anywhere else
+	// in the tenant. Gate on hasOperationalHistory (stockedHere OR removedHere), not stockedHere
+	// alone, so a cleared-but-experienced outlet is still treated as location-separated.
+	if hasOperationalHistory {
 		candidates = make([]uuid.UUID, 0, len(stockedElsewhere))
 		for id := range stockedElsewhere {
 			if _, ok := stockedHere[id]; !ok {
