@@ -1656,6 +1656,15 @@ type setItemOutletMembershipRequest struct {
 	ItemIDs            []string `json:"item_ids"`
 	TargetWarehouseIDs []string `json:"target_warehouse_ids"`
 	Notes              string   `json:"notes,omitempty"`
+	// MoveQuantity: only applies to a clean 1-dropped+1-added pair — moves exactly this amount,
+	// leaving the remainder active at the source, instead of carrying everything. Omit (or a
+	// value >= the source's on-hand) for today's default full-move behavior.
+	MoveQuantity *float64 `json:"move_quantity,omitempty"`
+	// ZeroStockMode: opt-in for the general many-to-many case — dropped outlets' stock is
+	// discarded rather than pooled, and newly-added outlets start at zero. The UI must confirm
+	// this with the user before sending it, since it's the one mode that can make real on-hand
+	// quantity vanish rather than relocate.
+	ZeroStockMode bool `json:"zero_stock_mode,omitempty"`
 }
 
 // SetItemOutletMembership handles POST /v1/{tenant}/inventory/stock/set-membership — the
@@ -1725,6 +1734,8 @@ func (h *InventoryHandler) SetItemOutletMembership(w http.ResponseWriter, r *htt
 		TargetWarehouseIDs: targetWHs,
 		AdjustedBy:         adjustedBy,
 		Notes:              req.Notes,
+		MoveQuantity:       req.MoveQuantity,
+		ZeroStockMode:      req.ZeroStockMode,
 	}
 	// nil: this batch can span several target warehouses/outlets at once (that's the point of
 	// outlet-membership editing), so there is no single outlet to scope the completion push to —
