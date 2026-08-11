@@ -45,6 +45,8 @@ type InventoryBalance struct {
 	AutoReorderEnabled bool `json:"auto_reorder_enabled,omitempty"`
 	// Optional sub-location within the warehouse (zone/aisle/rack/shelf/bin)
 	LocationID *uuid.UUID `json:"location_id,omitempty"`
+	// True when this item was explicitly moved/removed away from this warehouse (a transfer shipped its last unit out) rather than merely sold to zero — distinct from an organic stock-out, which must keep the item visible for reordering. Cleared the moment any stock-in (transfer receive, purchase, stock take, adjustment) leaves a positive balance here again.
+	RemovedFromLocation bool `json:"removed_from_location,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -106,7 +108,7 @@ func (*InventoryBalance) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case inventorybalance.FieldPreferredSupplierID, inventorybalance.FieldLocationID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case inventorybalance.FieldAutoReorderEnabled:
+		case inventorybalance.FieldAutoReorderEnabled, inventorybalance.FieldRemovedFromLocation:
 			values[i] = new(sql.NullBool)
 		case inventorybalance.FieldOnHand, inventorybalance.FieldAvailable, inventorybalance.FieldReserved:
 			values[i] = new(sql.NullFloat64)
@@ -213,6 +215,12 @@ func (_m *InventoryBalance) assignValues(columns []string, values []any) error {
 				_m.LocationID = new(uuid.UUID)
 				*_m.LocationID = *value.S.(*uuid.UUID)
 			}
+		case inventorybalance.FieldRemovedFromLocation:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field removed_from_location", values[i])
+			} else if value.Valid {
+				_m.RemovedFromLocation = value.Bool
+			}
 		case inventorybalance.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
@@ -309,6 +317,9 @@ func (_m *InventoryBalance) String() string {
 		builder.WriteString("location_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("removed_from_location=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RemovedFromLocation))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))

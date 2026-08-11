@@ -1140,6 +1140,7 @@ var (
 		{Name: "reorder_quantity", Type: field.TypeInt, Default: 0},
 		{Name: "preferred_supplier_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "auto_reorder_enabled", Type: field.TypeBool, Default: false},
+		{Name: "removed_from_location", Type: field.TypeBool, Default: false},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "location_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "item_id", Type: field.TypeUUID},
@@ -1153,19 +1154,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "inventory_balances_warehouse_locations_location",
-				Columns:    []*schema.Column{InventoryBalancesColumns[11]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[12]},
 				RefColumns: []*schema.Column{WarehouseLocationsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "inventory_balances_items_balances",
-				Columns:    []*schema.Column{InventoryBalancesColumns[12]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[13]},
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "inventory_balances_warehouses_balances",
-				Columns:    []*schema.Column{InventoryBalancesColumns[13]},
+				Columns:    []*schema.Column{InventoryBalancesColumns[14]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1174,12 +1175,12 @@ var (
 			{
 				Name:    "inventorybalance_tenant_id_item_id_warehouse_id",
 				Unique:  true,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[12], InventoryBalancesColumns[13]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[13], InventoryBalancesColumns[14]},
 			},
 			{
 				Name:    "inventorybalance_tenant_id_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[12]},
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[13]},
 			},
 		},
 	}

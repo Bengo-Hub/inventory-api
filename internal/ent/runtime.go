@@ -844,8 +844,12 @@ func init() {
 	inventorybalanceDescAutoReorderEnabled := inventorybalanceFields[11].Descriptor()
 	// inventorybalance.DefaultAutoReorderEnabled holds the default value on creation for the auto_reorder_enabled field.
 	inventorybalance.DefaultAutoReorderEnabled = inventorybalanceDescAutoReorderEnabled.Default.(bool)
+	// inventorybalanceDescRemovedFromLocation is the schema descriptor for removed_from_location field.
+	inventorybalanceDescRemovedFromLocation := inventorybalanceFields[13].Descriptor()
+	// inventorybalance.DefaultRemovedFromLocation holds the default value on creation for the removed_from_location field.
+	inventorybalance.DefaultRemovedFromLocation = inventorybalanceDescRemovedFromLocation.Default.(bool)
 	// inventorybalanceDescUpdatedAt is the schema descriptor for updated_at field.
-	inventorybalanceDescUpdatedAt := inventorybalanceFields[13].Descriptor()
+	inventorybalanceDescUpdatedAt := inventorybalanceFields[14].Descriptor()
 	// inventorybalance.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	inventorybalance.DefaultUpdatedAt = inventorybalanceDescUpdatedAt.Default.(func() time.Time)
 	// inventorybalance.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

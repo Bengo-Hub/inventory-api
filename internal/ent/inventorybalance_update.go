@@ -247,6 +247,20 @@ func (_u *InventoryBalanceUpdate) ClearLocationID() *InventoryBalanceUpdate {
 	return _u
 }
 
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (_u *InventoryBalanceUpdate) SetRemovedFromLocation(v bool) *InventoryBalanceUpdate {
+	_u.mutation.SetRemovedFromLocation(v)
+	return _u
+}
+
+// SetNillableRemovedFromLocation sets the "removed_from_location" field if the given value is not nil.
+func (_u *InventoryBalanceUpdate) SetNillableRemovedFromLocation(v *bool) *InventoryBalanceUpdate {
+	if v != nil {
+		_u.SetRemovedFromLocation(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdate) SetUpdatedAt(v time.Time) *InventoryBalanceUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -394,6 +408,9 @@ func (_u *InventoryBalanceUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AutoReorderEnabled(); ok {
 		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RemovedFromLocation(); ok {
+		_spec.SetField(inventorybalance.FieldRemovedFromLocation, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -720,6 +737,20 @@ func (_u *InventoryBalanceUpdateOne) ClearLocationID() *InventoryBalanceUpdateOn
 	return _u
 }
 
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (_u *InventoryBalanceUpdateOne) SetRemovedFromLocation(v bool) *InventoryBalanceUpdateOne {
+	_u.mutation.SetRemovedFromLocation(v)
+	return _u
+}
+
+// SetNillableRemovedFromLocation sets the "removed_from_location" field if the given value is not nil.
+func (_u *InventoryBalanceUpdateOne) SetNillableRemovedFromLocation(v *bool) *InventoryBalanceUpdateOne {
+	if v != nil {
+		_u.SetRemovedFromLocation(*v)
+	}
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *InventoryBalanceUpdateOne) SetUpdatedAt(v time.Time) *InventoryBalanceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -897,6 +928,9 @@ func (_u *InventoryBalanceUpdateOne) sqlSave(ctx context.Context) (_node *Invent
 	}
 	if value, ok := _u.mutation.AutoReorderEnabled(); ok {
 		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RemovedFromLocation(); ok {
+		_spec.SetField(inventorybalance.FieldRemovedFromLocation, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)

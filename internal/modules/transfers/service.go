@@ -440,10 +440,21 @@ func (s *Service) adjustBalance(ctx context.Context, tx *ent.Tx, tenantID, itemI
 	}
 	before := bal.Available
 	after := before + delta
-	if _, err = tx.InventoryBalance.UpdateOne(bal).
+	update := tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(bal.OnHand + delta).
-		SetAvailable(after).
-		Save(ctx); err != nil {
+		SetAvailable(after)
+	// A shipment that fully depletes a warehouse's balance is a deliberate "moved/removed from
+	// this location" event, distinct from an organic sale down to zero (sales never call this
+	// function) — mark it so the item stops appearing in this outlet's catalog. Any increment
+	// (receive at the destination, or a cancel restoring the source) means stock is present
+	// again, so it always clears the flag.
+	switch {
+	case delta < 0 && after <= 0:
+		update = update.SetRemovedFromLocation(true)
+	case delta > 0:
+		update = update.SetRemovedFromLocation(false)
+	}
+	if _, err = update.Save(ctx); err != nil {
 		return err
 	}
 	s.emitCascade(ctx, tx, tenantID, itemID, warehouseID, before, after)

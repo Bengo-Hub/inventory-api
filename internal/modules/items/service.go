@@ -1026,8 +1026,11 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	//
 	// Rule: an outlet hides only STOCK-TRACKED items (GOODS/INGREDIENT) that are stocked
 	// EXCLUSIVELY in some OTHER outlet's warehouses — that stock belongs to a different
-	// location. Everything else always passes the outlet scope:
-	//   - items with a balance in this outlet's (or a shared, outlet-less) warehouse;
+	// location — OR that were explicitly moved/removed away from every one of THIS outlet's own
+	// warehouses (InventoryBalance.removed_from_location, set when a transfer ships the last
+	// unit out — see Move Stock). Everything else always passes the outlet scope:
+	//   - items with an active (non-removed) balance in this outlet's (or a shared,
+	//     outlet-less) warehouse;
 	//   - items with NO balance row anywhere (a new GOODS item not yet received — its stock
 	//     simply surfaces as 0);
 	//   - made-to-order types (RECIPE/SERVICE/VOUCHER) and non-billable accompaniments,
@@ -1060,10 +1063,19 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			Where(inventorybalance.TenantIDEQ(tenantID)).
 			All(ctx)
 		stockedHere := make(map[uuid.UUID]struct{})
+		// removedHere: this item has a balance at one of THIS outlet's own warehouses that was
+		// explicitly moved/removed away (InventoryBalance.removed_from_location) — see the Move
+		// Stock feature. Tracked separately from stockedHere so an item removed from warehouse A
+		// but still actively stocked at this outlet's warehouse B isn't wrongly hidden.
+		removedHere := make(map[uuid.UUID]struct{})
 		stockedElsewhere := make(map[uuid.UUID]struct{})
 		for _, b := range bals {
 			if _, ok := outletWarehouseIDs[b.WarehouseID]; ok {
-				stockedHere[b.ItemID] = struct{}{}
+				if b.RemovedFromLocation {
+					removedHere[b.ItemID] = struct{}{}
+				} else {
+					stockedHere[b.ItemID] = struct{}{}
+				}
 			} else {
 				stockedElsewhere[b.ItemID] = struct{}{}
 			}
@@ -1078,6 +1090,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				if _, ok := stockedHere[id]; !ok {
 					candidates = append(candidates, id)
 				}
+			}
+		}
+		// Explicitly removed from this outlet's own warehouse(s) — hide unconditionally (even
+		// for an otherwise "fresh" outlet), unless an active balance exists at another of this
+		// outlet's own warehouses.
+		for id := range removedHere {
+			if _, ok := stockedHere[id]; !ok {
+				candidates = append(candidates, id)
 			}
 		}
 		if len(candidates) > 0 {

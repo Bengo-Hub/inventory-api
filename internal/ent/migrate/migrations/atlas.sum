@@ -1,4 +1,4 @@
-h1:hd4p91FXoIXG6ufcbeq356of12q3TMDbM5Zg50XP63E=
+h1:B2encpfWkJM71m+LhUIUZtYFx+O4dCfvrmLlS9E73Lw=
 20260324205723_initial_schema.sql h1:8Pvg7X68XanRIwgOCsYPJ2pb0ikpHw4VY9c2ERtd1P8=
 20260401110914_add_warehouse_coords.sql h1:nqre8kFNhGyTiQbImuUMhuuI3UW4ksP4psanM3qCOys=
 20260520185123_add_warehouse_outlet_id.sql h1:PgVig1rgNivzYHNVL1s7squcI8YXraKaICq84WSO2Jo=
@@ -78,3 +78,4 @@ h1:hd4p91FXoIXG6ufcbeq356of12q3TMDbM5Zg50XP63E=
 20260801174003_add_label_print_defaults.sql h1:6KaooxUGsb/Od5HILIRGSDn2XwIup0Yq9onZzL37E1g=
 20260804220000_drop_stale_item_pricing_unique.sql h1:Iqi86D2VM+E67kvCh5PFosyNgm/BKd5kvh+J1IjE39Y=
 20260805120000_purchase_return_grn_unique.sql h1:hytI8kz4qQExBdeP3Eu7P2SCyR9wpwLTZpvrEH67WgU=
+20260811050000_add_inventory_balance_removed_from_location.sql h1:/cVdifSt+R5ZDUJyTi8hzBYjLbLXji+kwa9dvHQucvc=
