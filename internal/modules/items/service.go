@@ -1032,14 +1032,28 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	//   - items with an active (non-removed) balance in this outlet's (or a shared,
 	//     outlet-less) warehouse;
 	//   - items with NO balance row anywhere (a new GOODS item not yet received — its stock
-	//     simply surfaces as 0);
+	//     simply surfaces as 0) — UNLESS this outlet has operational history (see below);
 	//   - made-to-order types (RECIPE/SERVICE/VOUCHER) and non-billable accompaniments,
 	//     which never carry own stock (a recipe's BOM ingredients do).
 	// The previous rule ("keep only items with a balance in this outlet's warehouses")
 	// collapsed whole catalogs the moment an outlet had ANY stock: urban-loft's POS lost 135
 	// of its 269 sellable items (94 recipes + 41 unreceived goods), and the demo QSR outlet
 	// shrank to 2 items once its prep stock was mirrored in.
+	//
+	// Live-reported follow-up bug: two outlets deliberately cleared of all stock (every balance
+	// zeroed/removed) showed almost the tenant's ENTIRE catalog — ~1,666 of 3,714 items in the
+	// reporting tenant have NEVER been received at ANY warehouse (a large bulk-import backlog
+	// with no InitialStock row yet), and the "no balance row anywhere, show it anyway" rule
+	// above meant literally all of them surfaced at every near-empty outlet, drowning the 1-2
+	// items the outlet actually has real history with. Fix: that "never received anywhere"
+	// leniency is only for a genuinely FRESH/untouched outlet (zero balance rows of ANY kind,
+	// ANY status — the exact urban-loft scenario, still fully preserved below). An outlet with
+	// real operational history (has interacted with the tenant's stock system before, even if
+	// every balance is now zero or removed) is a real, distinct location, not a blank slate —
+	// it only shows items it has actually touched (positive, zero-but-not-removed for
+	// reordering, or explicitly present), never the tenant's unreceived backlog.
 	var outletExcludeIDs []uuid.UUID
+	var hasOperationalHistory bool
 	// outletWarehouseIDs is the set of warehouses this outlet may sell from: its OWN warehouse(s)
 	// plus tenant-wide shared warehouses (outlet_id nil, e.g. a central store). Hoisted to function
 	// scope (not just this exclusion block) because buildDTOs' on-hand aggregation below MUST also
@@ -1069,8 +1083,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// but still actively stocked at this outlet's warehouse B isn't wrongly hidden.
 		removedHere := make(map[uuid.UUID]struct{})
 		stockedElsewhere := make(map[uuid.UUID]struct{})
+		// anyBalanceHere: ANY balance row at this outlet's own warehouse(s), regardless of
+		// status — used only to decide whether the outlet has EVER interacted with the stock
+		// system at all (hasOperationalHistory below), not to decide any individual item's
+		// visibility.
+		anyBalanceHere := false
 		for _, b := range bals {
 			if _, ok := outletWarehouseIDs[b.WarehouseID]; ok {
+				anyBalanceHere = true
 				if b.RemovedFromLocation {
 					removedHere[b.ItemID] = struct{}{}
 				} else {
@@ -1080,6 +1100,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				stockedElsewhere[b.ItemID] = struct{}{}
 			}
 		}
+		hasOperationalHistory = anyBalanceHere
 		var candidates []uuid.UUID
 		// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central
 		// store) is not location-separated — it sells the tenant catalog and receives stock
@@ -1201,6 +1222,17 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// stocked in another outlet.
 		if len(outletExcludeIDs) > 0 && itemIDFilter(ctx) == nil {
 			q = q.Where(item.IDNotIn(outletExcludeIDs...))
+		}
+		// An outlet with real operational history must not show the tenant's entire "never
+		// received anywhere" backlog (see the long comment above `hasOperationalHistory`) —
+		// only stockable+billable items with NO balance row anywhere are affected; recipes/
+		// services/vouchers and non-billable accompaniments are never touched by this.
+		if hasOperationalHistory && itemIDFilter(ctx) == nil {
+			q = q.Where(item.Or(
+				item.Not(item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT)),
+				item.NonBillable(true),
+				item.HasBalances(),
+			))
 		}
 		return q
 	}
