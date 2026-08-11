@@ -32,6 +32,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	backupmod "github.com/bengobox/inventory-service/internal/modules/backup"
 	"github.com/bengobox/inventory-service/internal/modules/backup/destination"
+	"github.com/bengobox/inventory-service/internal/modules/bulkjobs"
 	"github.com/bengobox/inventory-service/internal/modules/bundles"
 	"github.com/bengobox/inventory-service/internal/modules/consumers"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -275,6 +276,11 @@ func New(ctx context.Context) (*App, error) {
 	notifHub := notifmod.NewHub(log)
 	notifHub.SetRedis(redisClient)
 	stockNotifyConsumer := consumers.NewStockNotifyEventsConsumer(log, notifHub)
+
+	// Background bulk-job runner (item relocation/membership, bulk stock adjustment) — reuses
+	// notifHub to push bulk_job.completed the moment a queued job finishes.
+	bulkJobsSvc := bulkjobs.NewService(ormClient, log, notifHub)
+	inventoryHandler.SetBulkJobsService(bulkJobsSvc)
 
 	// Procure-to-order consumer — on an ACCEPTED treasury sales quotation, auto-creates a draft
 	// PurchaseOrder to buy the quoted items at their buying (cost) price. Gated by entitlement (fail-open).

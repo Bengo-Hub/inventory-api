@@ -21,6 +21,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/backup"
 	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
+	"github.com/bengobox/inventory-service/internal/ent/bulkjob"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
 	"github.com/bengobox/inventory-service/internal/ent/bundlecomponent"
 	"github.com/bengobox/inventory-service/internal/ent/consumption"
@@ -454,6 +455,32 @@ func init() {
 	batchrawmaterialDescID := batchrawmaterialFields[0].Descriptor()
 	// batchrawmaterial.DefaultID holds the default value on creation for the id field.
 	batchrawmaterial.DefaultID = batchrawmaterialDescID.Default.(func() uuid.UUID)
+	bulkjobFields := schema.BulkJob{}.Fields()
+	_ = bulkjobFields
+	// bulkjobDescJobType is the schema descriptor for job_type field.
+	bulkjobDescJobType := bulkjobFields[2].Descriptor()
+	// bulkjob.JobTypeValidator is a validator for the "job_type" field. It is called by the builders before save.
+	bulkjob.JobTypeValidator = bulkjobDescJobType.Validators[0].(func(string) error)
+	// bulkjobDescTotal is the schema descriptor for total field.
+	bulkjobDescTotal := bulkjobFields[4].Descriptor()
+	// bulkjob.DefaultTotal holds the default value on creation for the total field.
+	bulkjob.DefaultTotal = bulkjobDescTotal.Default.(int)
+	// bulkjobDescProcessed is the schema descriptor for processed field.
+	bulkjobDescProcessed := bulkjobFields[5].Descriptor()
+	// bulkjob.DefaultProcessed holds the default value on creation for the processed field.
+	bulkjob.DefaultProcessed = bulkjobDescProcessed.Default.(int)
+	// bulkjobDescFailedCount is the schema descriptor for failed_count field.
+	bulkjobDescFailedCount := bulkjobFields[6].Descriptor()
+	// bulkjob.DefaultFailedCount holds the default value on creation for the failed_count field.
+	bulkjob.DefaultFailedCount = bulkjobDescFailedCount.Default.(int)
+	// bulkjobDescCreatedAt is the schema descriptor for created_at field.
+	bulkjobDescCreatedAt := bulkjobFields[11].Descriptor()
+	// bulkjob.DefaultCreatedAt holds the default value on creation for the created_at field.
+	bulkjob.DefaultCreatedAt = bulkjobDescCreatedAt.Default.(func() time.Time)
+	// bulkjobDescID is the schema descriptor for id field.
+	bulkjobDescID := bulkjobFields[0].Descriptor()
+	// bulkjob.DefaultID holds the default value on creation for the id field.
+	bulkjob.DefaultID = bulkjobDescID.Default.(func() uuid.UUID)
 	bundleFields := schema.Bundle{}.Fields()
 	_ = bundleFields
 	// bundleDescName is the schema descriptor for name field.

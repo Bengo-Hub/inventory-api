@@ -54,6 +54,9 @@ type BackupSetting func(*sql.Selector)
 // BatchRawMaterial is the predicate function for batchrawmaterial builders.
 type BatchRawMaterial func(*sql.Selector)
 
+// BulkJob is the predicate function for bulkjob builders.
+type BulkJob func(*sql.Selector)
+
 // Bundle is the predicate function for bundle builders.
 type Bundle func(*sql.Selector)
 

@@ -23,6 +23,7 @@ import (
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
+	"github.com/bengobox/inventory-service/internal/modules/bulkjobs"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/modifiers"
@@ -82,6 +83,7 @@ type StockServicer interface {
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 	BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.BulkAdjustStockRequest) (*stock.BulkAdjustStockResult, error)
 	RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, req stock.RelocateItemLocationRequest) (*stock.RelocateItemLocationResult, error)
+	SetItemOutletMembership(ctx context.Context, tenantID uuid.UUID, req stock.SetItemOutletMembershipRequest) (*stock.SetItemOutletMembershipResult, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
 	ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error)
@@ -141,9 +143,14 @@ type InventoryHandler struct {
 	authMW       *authclient.AuthMiddleware
 	auditSvc     *audit.Service
 	approvalSvc  *approvals.Service
+	bulkJobsSvc  *bulkjobs.Service
 	orm          *ent.Client
 	pinSecret    []byte // terminal/PIN JWT secret; feature-gated GETs accept PIN sessions too
 }
+
+// SetBulkJobsService wires the background bulk-job runner (item relocation/membership, bulk
+// stock adjustment) — see internal/modules/bulkjobs.
+func (h *InventoryHandler) SetBulkJobsService(b *bulkjobs.Service) { h.bulkJobsSvc = b }
 
 // SetEntClient wires the Ent client used by route-level middleware (e.g. resolving an
 // outlet's use_case from its warehouse mirror for RequireOutletUseCase gating).
@@ -267,6 +274,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Stock adjustments — requires stock_tracking feature
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/stock/bulk-adjust", h.BulkAdjustStock)
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/stock/set-membership", h.SetItemOutletMembership)
+		inv.With(authclient.RequireFeatureCode("stock_tracking")).Get("/bulk-jobs/{id}", h.GetBulkJob)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
 		// Item location relocation — NOT a stock transfer (see RelocateItemLocation doc comment):
@@ -1457,25 +1466,31 @@ type bulkAdjustStockRequest struct {
 	WarehouseID string `json:"warehouse_id,omitempty"`
 }
 
-// BulkAdjustStock handles POST /v1/{tenant}/inventory/stock/bulk-adjust — applies a per-item
-// stock adjustment to many items in one submit, sharing a warehouse/reason/notes. See
-// stock.BulkAdjustStock's doc comment for exactly what it reuses from the single /adjust path
-// (and its one documented gap: no per-line approval-workflow gate).
+// BulkAdjustStock handles POST /v1/{tenant}/inventory/stock/bulk-adjust — queues a per-item
+// stock adjustment across many items (sharing a warehouse/reason/notes) as a background
+// bulk job and returns immediately; the job notifies the tenant over the notification
+// WebSocket (bulk_job.completed) when it finishes, with GET /inventory/bulk-jobs/{id} as a
+// polling fallback. See stock.BulkAdjustStock's doc comment for exactly what it reuses from
+// the single /adjust path (and its one documented gap: no per-line approval-workflow gate).
 //
 //	@Summary      Bulk stock adjustment
-//	@Description  Applies a per-item adjustment (sku + delta) to many items against one shared warehouse/reason. Each line is independently reported processed or skipped — a failure on one line never blocks the rest.
+//	@Description  Queues a per-item adjustment (sku + delta) across many items against one shared warehouse/reason as a background job. Returns 202 with a job id; poll GET /inventory/bulk-jobs/{id} or listen for the bulk_job.completed WebSocket notification.
 //	@Tags         stock
 //	@Accept       json
 //	@Produce      json
 //	@Param        tenant  path      string                  true  "Tenant ID"
 //	@Param        body    body      bulkAdjustStockRequest  true  "Lines + shared warehouse/reason"
-//	@Success      200     {object}  stock.BulkAdjustStockResult
+//	@Success      202     {object}  bulkJobAccepted
 //	@Failure      400     {object}  map[string]string
 //	@Router       /{tenant}/inventory/stock/bulk-adjust [post]
 func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.bulkJobsSvc == nil {
+		writeError(w, http.StatusServiceUnavailable, "BULK_JOBS_UNAVAILABLE", "Background job runner is not configured")
 		return
 	}
 
@@ -1505,28 +1520,43 @@ func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Reques
 	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
 		adjustedBy, _ = claims.UserID()
 	}
+	outletID := operatingOutletID(r)
 
 	lines := make([]stock.BulkAdjustLine, 0, len(req.Lines))
 	for _, l := range req.Lines {
 		lines = append(lines, stock.BulkAdjustLine{SKU: l.SKU, Adjustment: l.Adjustment})
 	}
 
-	result, err := h.stockSvc.BulkAdjustStock(r.Context(), tenantID, stock.BulkAdjustStockRequest{
+	bulkReq := stock.BulkAdjustStockRequest{
 		Lines:       lines,
 		Reason:      req.Reason,
 		Reference:   req.Reference,
 		Notes:       req.Notes,
 		AdjustedBy:  adjustedBy,
 		WarehouseID: whID,
-		OutletID:    operatingOutletID(r),
-	})
+		OutletID:    outletID,
+	}
+	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, "bulk_stock_adjust", len(lines),
+		map[string]any{"reason": req.Reason, "warehouse_id": req.WarehouseID, "line_count": len(lines)},
+		adjustedBy,
+		func(ctx context.Context, _ *ent.BulkJob) (bulkjobs.RunResult, error) {
+			result, rErr := h.stockSvc.BulkAdjustStock(ctx, tenantID, bulkReq)
+			if rErr != nil {
+				return bulkjobs.RunResult{}, rErr
+			}
+			return bulkjobs.RunResult{
+				Processed: result.Processed,
+				Failed:    len(result.Skipped),
+				Detail:    map[string]any{"skipped": result.Skipped},
+			}, nil
+		})
 	if err != nil {
-		h.log.Error("bulk adjust stock failed", zap.Error(err))
+		h.log.Error("queue bulk adjust stock failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "BULK_ADJUST_FAILED", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusAccepted, bulkJobAccepted{JobID: job.ID.String(), Status: string(job.Status), Total: job.Total})
 }
 
 // relocateItemLocationRequest is the wire shape for POST /inventory/stock/relocate.
@@ -1608,6 +1638,146 @@ func (h *InventoryHandler) RelocateItemLocation(w http.ResponseWriter, r *http.R
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+// bulkJobAccepted is the 202 response body for any endpoint that queues a background bulk job.
+type bulkJobAccepted struct {
+	JobID  string `json:"job_id"`
+	Status string `json:"status"`
+	Total  int    `json:"total"`
+}
+
+// setItemOutletMembershipRequest is the wire shape for POST /inventory/stock/set-membership.
+type setItemOutletMembershipRequest struct {
+	ItemIDs            []string `json:"item_ids"`
+	TargetWarehouseIDs []string `json:"target_warehouse_ids"`
+	Notes              string   `json:"notes,omitempty"`
+}
+
+// SetItemOutletMembership handles POST /v1/{tenant}/inventory/stock/set-membership — the
+// checkbox catalog-movement UX: for each item, check the outlets it should be stocked in and
+// uncheck the rest; the diff against its current active warehouses is queued as a background
+// bulk job (see stock.SetItemOutletMembership's doc comment for exactly how quantity is carried
+// over) and this returns immediately with a job id — never blocks on however many items/outlets
+// are involved. Same completion path as BulkAdjustStock: poll GET /inventory/bulk-jobs/{id} or
+// listen for bulk_job.completed.
+//
+//	@Summary      Set which outlets an item is stocked in
+//	@Description  Queues a background job that reconciles each item's current warehouse footprint against the given target set — check an outlet to add it, uncheck to remove. Returns 202 with a job id.
+//	@Tags         stock
+//	@Accept       json
+//	@Produce      json
+//	@Param        tenant  path      string                          true  "Tenant ID"
+//	@Param        body    body      setItemOutletMembershipRequest  true  "Item ids + target warehouse set"
+//	@Success      202     {object}  bulkJobAccepted
+//	@Failure      400     {object}  map[string]string
+//	@Router       /{tenant}/inventory/stock/set-membership [post]
+func (h *InventoryHandler) SetItemOutletMembership(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.bulkJobsSvc == nil {
+		writeError(w, http.StatusServiceUnavailable, "BULK_JOBS_UNAVAILABLE", "Background job runner is not configured")
+		return
+	}
+
+	var req setItemOutletMembershipRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.ItemIDs) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_ITEMS", "item_ids is required")
+		return
+	}
+	itemIDs := make([]uuid.UUID, 0, len(req.ItemIDs))
+	for _, s := range req.ItemIDs {
+		id, pErr := uuid.Parse(s)
+		if pErr != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_ITEM_ID", "invalid item id: "+s)
+			return
+		}
+		itemIDs = append(itemIDs, id)
+	}
+	targetWHs := make([]uuid.UUID, 0, len(req.TargetWarehouseIDs))
+	for _, s := range req.TargetWarehouseIDs {
+		id, pErr := uuid.Parse(s)
+		if pErr != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE_ID", "invalid warehouse id: "+s)
+			return
+		}
+		targetWHs = append(targetWHs, id)
+	}
+
+	var adjustedBy uuid.UUID
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		adjustedBy, _ = claims.UserID()
+	}
+
+	membershipReq := stock.SetItemOutletMembershipRequest{
+		ItemIDs:            itemIDs,
+		TargetWarehouseIDs: targetWHs,
+		AdjustedBy:         adjustedBy,
+		Notes:              req.Notes,
+	}
+	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, "item_relocation", len(itemIDs),
+		map[string]any{"item_count": len(itemIDs), "target_warehouse_ids": req.TargetWarehouseIDs},
+		adjustedBy,
+		func(ctx context.Context, _ *ent.BulkJob) (bulkjobs.RunResult, error) {
+			result, rErr := h.stockSvc.SetItemOutletMembership(ctx, tenantID, membershipReq)
+			if rErr != nil {
+				return bulkjobs.RunResult{}, rErr
+			}
+			return bulkjobs.RunResult{
+				Processed: result.Processed,
+				Failed:    len(result.Skipped),
+				Detail:    map[string]any{"skipped": result.Skipped},
+			}, nil
+		})
+	if err != nil {
+		h.log.Error("queue item outlet membership change failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "MEMBERSHIP_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusAccepted, bulkJobAccepted{JobID: job.ID.String(), Status: string(job.Status), Total: job.Total})
+}
+
+// GetBulkJob handles GET /v1/{tenant}/inventory/bulk-jobs/{id} — the polling fallback for a
+// client that isn't (or can't stay) connected to the notification WebSocket's bulk_job.completed
+// push.
+//
+//	@Summary      Get a bulk job's status
+//	@Tags         stock
+//	@Produce      json
+//	@Param        tenant  path      string  true  "Tenant ID"
+//	@Param        id      path      string  true  "Job ID"
+//	@Success      200     {object}  ent.BulkJob
+//	@Failure      404     {object}  map[string]string
+//	@Router       /{tenant}/inventory/bulk-jobs/{id} [get]
+func (h *InventoryHandler) GetBulkJob(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	if h.bulkJobsSvc == nil {
+		writeError(w, http.StatusServiceUnavailable, "BULK_JOBS_UNAVAILABLE", "Background job runner is not configured")
+		return
+	}
+	jobID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_JOB_ID", "id must be a valid UUID")
+		return
+	}
+	job, err := h.bulkJobsSvc.GetJob(r.Context(), tenantID, jobID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Job not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, job)
 }
 
 // DeleteItem handles DELETE /v1/{tenant}/inventory/items/{sku} — soft-deletes an item by SKU.
