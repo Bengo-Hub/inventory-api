@@ -80,6 +80,7 @@ type StockServicer interface {
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	ReverseConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ReverseConsumptionRequest) (*stock.ReverseConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
+	RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, req stock.RelocateItemLocationRequest) (*stock.RelocateItemLocationResult, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
 	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
 	ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error)
@@ -266,6 +267,10 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjust", h.AdjustStock)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockAdd)).Post("/adjustments", h.CreateAdjustment)
 		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/breakdowns", h.CreateBreakdown)
+		// Item location relocation — NOT a stock transfer (see RelocateItemLocation doc comment):
+		// moves an item's whole balance between warehouses, no quantity chosen, so PermStockChange
+		// (the same two-sided-mutation permission /breakdowns uses) rather than PermStockAdd.
+		inv.With(authclient.RequireFeatureCode("stock_tracking"), perm(rbac.PermStockChange)).Post("/stock/relocate", h.RelocateItemLocation)
 		// GET is exempt from the group-level auth (public/S2S reads), so opt back into
 		// auth here to populate claims before the feature check — otherwise logged-in
 		// users hit a spurious 401 "missing claims".
@@ -1432,6 +1437,87 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.log.Error("adjust stock failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
+// relocateItemLocationRequest is the wire shape for POST /inventory/stock/relocate.
+type relocateItemLocationRequest struct {
+	ItemIDs                []string `json:"item_ids"`
+	SourceWarehouseID      string   `json:"source_warehouse_id"`
+	DestinationWarehouseID string   `json:"destination_warehouse_id"`
+	Notes                  string   `json:"notes,omitempty"`
+}
+
+// RelocateItemLocation handles POST /v1/{tenant}/inventory/stock/relocate — moves one or many
+// items' ENTIRE current balance (including zero) from one warehouse to another. Distinct from a
+// stock transfer: there is no quantity to choose and no "insufficient stock" gate — see
+// stock.RelocateItemLocation's doc comment. Reuses the same PermStockChange gate as a stock
+// adjustment (this mutates balances directly, same trust level).
+//
+//	@Summary      Relocate item(s) to another warehouse
+//	@Description  Moves each item's entire balance (on_hand/available, whatever it currently is, including zero) from the source warehouse to the destination, marking the source removed_from_location. Not a stock transfer — no quantity is chosen, nothing can be "insufficient".
+//	@Tags         stock
+//	@Accept       json
+//	@Produce      json
+//	@Param        tenant  path      string                        true  "Tenant ID"
+//	@Param        body    body      relocateItemLocationRequest  true  "Item ids + source/destination warehouse"
+//	@Success      200     {object}  stock.RelocateItemLocationResult
+//	@Failure      400     {object}  map[string]string
+//	@Router       /{tenant}/inventory/stock/relocate [post]
+func (h *InventoryHandler) RelocateItemLocation(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	var req relocateItemLocationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.ItemIDs) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_ITEMS", "item_ids is required")
+		return
+	}
+	srcWH, err := uuid.Parse(req.SourceWarehouseID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_SOURCE", "source_warehouse_id must be a valid UUID")
+		return
+	}
+	destWH, err := uuid.Parse(req.DestinationWarehouseID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_DESTINATION", "destination_warehouse_id must be a valid UUID")
+		return
+	}
+	itemIDs := make([]uuid.UUID, 0, len(req.ItemIDs))
+	for _, s := range req.ItemIDs {
+		id, pErr := uuid.Parse(s)
+		if pErr != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_ITEM_ID", "invalid item id: "+s)
+			return
+		}
+		itemIDs = append(itemIDs, id)
+	}
+
+	var adjustedBy uuid.UUID
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		adjustedBy, _ = claims.UserID()
+	}
+
+	result, err := h.stockSvc.RelocateItemLocation(r.Context(), tenantID, stock.RelocateItemLocationRequest{
+		ItemIDs:                itemIDs,
+		SourceWarehouseID:      srcWH,
+		DestinationWarehouseID: destWH,
+		AdjustedBy:             adjustedBy,
+		Notes:                  req.Notes,
+	})
+	if err != nil {
+		h.log.Error("relocate item location failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "RELOCATE_FAILED", err.Error())
 		return
 	}
 

@@ -259,6 +259,10 @@ func (m *mockStockSvc) AdjustStock(ctx context.Context, tenantID uuid.UUID, req 
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockStockSvc) RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, req stock.RelocateItemLocationRequest) (*stock.RelocateItemLocationResult, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockStockSvc) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error) {
 	return &stock.StockHistoryResult{Movements: []stock.MovementRow{}}, nil
 }
