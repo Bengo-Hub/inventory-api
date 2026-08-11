@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"nhooyr.io/websocket"
 
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	notifmod "github.com/bengobox/inventory-service/internal/modules/notifications"
 )
 
@@ -44,5 +45,22 @@ func (h *NotificationsStreamHandler) StreamNotifications(w http.ResponseWriter, 
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
-	h.hub.ServeWS(r.Context(), conn, tenantID)
+	// nil (unrestricted) unless an outlet is resolved for this session — an HQ user with no outlet
+	// drill-down keeps seeing every outlet's pushes, matching the pre-outlet-scoping behavior; a
+	// branch-restricted or drilled-down session only sees its own. A browser WebSocket handshake
+	// can't carry the usual X-Outlet-ID header, so ?outlet_id= is the primary source here; the
+	// header (set by OutletContext from a non-HQ user's JWT claim, no override needed) still wins
+	// when present since it reflects a hard restriction rather than a UI choice.
+	var outletID *uuid.UUID
+	if v := invmiddleware.GetOutletID(r.Context()); v != "" {
+		if id, err := uuid.Parse(v); err == nil {
+			outletID = &id
+		}
+	} else if v := r.URL.Query().Get("outlet_id"); v != "" {
+		if id, err := uuid.Parse(v); err == nil {
+			outletID = &id
+		}
+	}
+
+	h.hub.ServeWS(r.Context(), conn, tenantID, outletID)
 }

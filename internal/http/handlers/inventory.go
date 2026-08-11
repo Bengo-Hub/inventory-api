@@ -1536,7 +1536,11 @@ func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Reques
 		WarehouseID: whID,
 		OutletID:    outletID,
 	}
-	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, "bulk_stock_adjust", len(lines),
+	var notifyOutletID *uuid.UUID
+	if outletID != uuid.Nil {
+		notifyOutletID = &outletID
+	}
+	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, notifyOutletID, "bulk_stock_adjust", len(lines),
 		map[string]any{"reason": req.Reason, "warehouse_id": req.WarehouseID, "line_count": len(lines)},
 		adjustedBy,
 		func(ctx context.Context, _ *ent.BulkJob) (bulkjobs.RunResult, error) {
@@ -1722,7 +1726,10 @@ func (h *InventoryHandler) SetItemOutletMembership(w http.ResponseWriter, r *htt
 		AdjustedBy:         adjustedBy,
 		Notes:              req.Notes,
 	}
-	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, "item_relocation", len(itemIDs),
+	// nil: this batch can span several target warehouses/outlets at once (that's the point of
+	// outlet-membership editing), so there is no single outlet to scope the completion push to —
+	// notifying the whole tenant is correct here, unlike a single-warehouse bulk adjustment.
+	job, err := h.bulkJobsSvc.CreateAndRun(r.Context(), tenantID, nil, "item_relocation", len(itemIDs),
 		map[string]any{"item_count": len(itemIDs), "target_warehouse_ids": req.TargetWarehouseIDs},
 		adjustedBy,
 		func(ctx context.Context, _ *ent.BulkJob) (bulkjobs.RunResult, error) {
