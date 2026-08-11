@@ -171,6 +171,20 @@ func (_c *InventoryBalanceCreate) SetNillableLocationID(v *uuid.UUID) *Inventory
 	return _c
 }
 
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (_c *InventoryBalanceCreate) SetRemovedFromLocation(v bool) *InventoryBalanceCreate {
+	_c.mutation.SetRemovedFromLocation(v)
+	return _c
+}
+
+// SetNillableRemovedFromLocation sets the "removed_from_location" field if the given value is not nil.
+func (_c *InventoryBalanceCreate) SetNillableRemovedFromLocation(v *bool) *InventoryBalanceCreate {
+	if v != nil {
+		_c.SetRemovedFromLocation(*v)
+	}
+	return _c
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_c *InventoryBalanceCreate) SetUpdatedAt(v time.Time) *InventoryBalanceCreate {
 	_c.mutation.SetUpdatedAt(v)
@@ -277,6 +291,10 @@ func (_c *InventoryBalanceCreate) defaults() {
 		v := inventorybalance.DefaultAutoReorderEnabled
 		_c.mutation.SetAutoReorderEnabled(v)
 	}
+	if _, ok := _c.mutation.RemovedFromLocation(); !ok {
+		v := inventorybalance.DefaultRemovedFromLocation
+		_c.mutation.SetRemovedFromLocation(v)
+	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := inventorybalance.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
@@ -318,6 +336,9 @@ func (_c *InventoryBalanceCreate) check() error {
 	}
 	if _, ok := _c.mutation.AutoReorderEnabled(); !ok {
 		return &ValidationError{Name: "auto_reorder_enabled", err: errors.New(`ent: missing required field "InventoryBalance.auto_reorder_enabled"`)}
+	}
+	if _, ok := _c.mutation.RemovedFromLocation(); !ok {
+		return &ValidationError{Name: "removed_from_location", err: errors.New(`ent: missing required field "InventoryBalance.removed_from_location"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "InventoryBalance.updated_at"`)}
@@ -399,6 +420,10 @@ func (_c *InventoryBalanceCreate) createSpec() (*InventoryBalance, *sqlgraph.Cre
 	if value, ok := _c.mutation.AutoReorderEnabled(); ok {
 		_spec.SetField(inventorybalance.FieldAutoReorderEnabled, field.TypeBool, value)
 		_node.AutoReorderEnabled = value
+	}
+	if value, ok := _c.mutation.RemovedFromLocation(); ok {
+		_spec.SetField(inventorybalance.FieldRemovedFromLocation, field.TypeBool, value)
+		_node.RemovedFromLocation = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(inventorybalance.FieldUpdatedAt, field.TypeTime, value)
@@ -693,6 +718,18 @@ func (u *InventoryBalanceUpsert) ClearLocationID() *InventoryBalanceUpsert {
 	return u
 }
 
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (u *InventoryBalanceUpsert) SetRemovedFromLocation(v bool) *InventoryBalanceUpsert {
+	u.Set(inventorybalance.FieldRemovedFromLocation, v)
+	return u
+}
+
+// UpdateRemovedFromLocation sets the "removed_from_location" field to the value that was provided on create.
+func (u *InventoryBalanceUpsert) UpdateRemovedFromLocation() *InventoryBalanceUpsert {
+	u.SetExcluded(inventorybalance.FieldRemovedFromLocation)
+	return u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (u *InventoryBalanceUpsert) SetUpdatedAt(v time.Time) *InventoryBalanceUpsert {
 	u.Set(inventorybalance.FieldUpdatedAt, v)
@@ -967,6 +1004,20 @@ func (u *InventoryBalanceUpsertOne) UpdateLocationID() *InventoryBalanceUpsertOn
 func (u *InventoryBalanceUpsertOne) ClearLocationID() *InventoryBalanceUpsertOne {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.ClearLocationID()
+	})
+}
+
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (u *InventoryBalanceUpsertOne) SetRemovedFromLocation(v bool) *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetRemovedFromLocation(v)
+	})
+}
+
+// UpdateRemovedFromLocation sets the "removed_from_location" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertOne) UpdateRemovedFromLocation() *InventoryBalanceUpsertOne {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateRemovedFromLocation()
 	})
 }
 
@@ -1413,6 +1464,20 @@ func (u *InventoryBalanceUpsertBulk) UpdateLocationID() *InventoryBalanceUpsertB
 func (u *InventoryBalanceUpsertBulk) ClearLocationID() *InventoryBalanceUpsertBulk {
 	return u.Update(func(s *InventoryBalanceUpsert) {
 		s.ClearLocationID()
+	})
+}
+
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (u *InventoryBalanceUpsertBulk) SetRemovedFromLocation(v bool) *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.SetRemovedFromLocation(v)
+	})
+}
+
+// UpdateRemovedFromLocation sets the "removed_from_location" field to the value that was provided on create.
+func (u *InventoryBalanceUpsertBulk) UpdateRemovedFromLocation() *InventoryBalanceUpsertBulk {
+	return u.Update(func(s *InventoryBalanceUpsert) {
+		s.UpdateRemovedFromLocation()
 	})
 }
 

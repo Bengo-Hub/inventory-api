@@ -116,6 +116,11 @@ func LocationID(v uuid.UUID) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldLocationID, v))
 }
 
+// RemovedFromLocation applies equality check predicate on the "removed_from_location" field. It's identical to RemovedFromLocationEQ.
+func RemovedFromLocation(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldRemovedFromLocation, v))
+}
+
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldEQ(FieldUpdatedAt, v))
@@ -554,6 +559,16 @@ func LocationIDIsNil() predicate.InventoryBalance {
 // LocationIDNotNil applies the NotNil predicate on the "location_id" field.
 func LocationIDNotNil() predicate.InventoryBalance {
 	return predicate.InventoryBalance(sql.FieldNotNull(FieldLocationID))
+}
+
+// RemovedFromLocationEQ applies the EQ predicate on the "removed_from_location" field.
+func RemovedFromLocationEQ(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldEQ(FieldRemovedFromLocation, v))
+}
+
+// RemovedFromLocationNEQ applies the NEQ predicate on the "removed_from_location" field.
+func RemovedFromLocationNEQ(v bool) predicate.InventoryBalance {
+	return predicate.InventoryBalance(sql.FieldNEQ(FieldRemovedFromLocation, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.

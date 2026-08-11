@@ -54,6 +54,13 @@ func (InventoryBalance) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Optional sub-location within the warehouse (zone/aisle/rack/shelf/bin)"),
+		field.Bool("removed_from_location").
+			Default(false).
+			Comment("True when this item was explicitly moved/removed away from this warehouse " +
+				"(a transfer shipped its last unit out) rather than merely sold to zero — distinct " +
+				"from an organic stock-out, which must keep the item visible for reordering. Cleared " +
+				"the moment any stock-in (transfer receive, purchase, stock take, adjustment) leaves " +
+				"a positive balance here again."),
 		field.Time("updated_at").
 			Default(time.Now).
 			UpdateDefault(time.Now),

@@ -294,6 +294,14 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	balUpdate := tx.InventoryBalance.UpdateOne(bal).
 		SetOnHand(newOnHand).
 		SetAvailable(newAvailable)
+	// A positive result means the item is genuinely present here again — clear any prior
+	// "removed from this location" marker (set by a transfer shipping the last unit out)
+	// regardless of how the restock happened (manual correction, purchase, stock take, opening
+	// balance all route through here). Never SET the flag from this function on a decrement to
+	// zero — that's an organic stock-out/correction, which must keep showing for reordering.
+	if newOnHand > 0 && bal.RemovedFromLocation {
+		balUpdate = balUpdate.SetRemovedFromLocation(false)
+	}
 	// Record the unit of measure when the caller specifies one (defaults to the
 	// existing balance UoM / item base unit when omitted).
 	if req.UnitID != nil {

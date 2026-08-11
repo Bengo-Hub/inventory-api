@@ -116,6 +116,10 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 	balQuery := h.orm.InventoryBalance.Query().
 		Where(entinventorybalance.TenantID(tenantID)).
 		Where(entinventorybalance.HasItemWith(itemPreds...)).
+		// A balance explicitly moved/removed from this warehouse (Move Stock shipping the last
+		// unit out) is not a location the item is "in" any more — unlike an organic stock-out,
+		// which keeps its row here so it still surfaces for reordering.
+		Where(entinventorybalance.RemovedFromLocation(false)).
 		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
 		WithWarehouse().
 		WithLocation()

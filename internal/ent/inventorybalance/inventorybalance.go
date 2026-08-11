@@ -39,6 +39,8 @@ const (
 	FieldAutoReorderEnabled = "auto_reorder_enabled"
 	// FieldLocationID holds the string denoting the location_id field in the database.
 	FieldLocationID = "location_id"
+	// FieldRemovedFromLocation holds the string denoting the removed_from_location field in the database.
+	FieldRemovedFromLocation = "removed_from_location"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// EdgeItem holds the string denoting the item edge name in mutations.
@@ -87,6 +89,7 @@ var Columns = []string{
 	FieldPreferredSupplierID,
 	FieldAutoReorderEnabled,
 	FieldLocationID,
+	FieldRemovedFromLocation,
 	FieldUpdatedAt,
 }
 
@@ -115,6 +118,8 @@ var (
 	DefaultReorderQuantity int
 	// DefaultAutoReorderEnabled holds the default value on creation for the "auto_reorder_enabled" field.
 	DefaultAutoReorderEnabled bool
+	// DefaultRemovedFromLocation holds the default value on creation for the "removed_from_location" field.
+	DefaultRemovedFromLocation bool
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
@@ -189,6 +194,11 @@ func ByAutoReorderEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByLocationID orders the results by the location_id field.
 func ByLocationID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLocationID, opts...).ToFunc()
+}
+
+// ByRemovedFromLocation orders the results by the removed_from_location field.
+func ByRemovedFromLocation(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemovedFromLocation, opts...).ToFunc()
 }
 
 // ByUpdatedAt orders the results by the updated_at field.

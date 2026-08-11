@@ -32330,6 +32330,7 @@ type InventoryBalanceMutation struct {
 	addreorder_quantity   *int
 	preferred_supplier_id *uuid.UUID
 	auto_reorder_enabled  *bool
+	removed_from_location *bool
 	updated_at            *time.Time
 	clearedFields         map[string]struct{}
 	item                  *uuid.UUID
@@ -33005,6 +33006,42 @@ func (m *InventoryBalanceMutation) ResetLocationID() {
 	delete(m.clearedFields, inventorybalance.FieldLocationID)
 }
 
+// SetRemovedFromLocation sets the "removed_from_location" field.
+func (m *InventoryBalanceMutation) SetRemovedFromLocation(b bool) {
+	m.removed_from_location = &b
+}
+
+// RemovedFromLocation returns the value of the "removed_from_location" field in the mutation.
+func (m *InventoryBalanceMutation) RemovedFromLocation() (r bool, exists bool) {
+	v := m.removed_from_location
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemovedFromLocation returns the old "removed_from_location" field's value of the InventoryBalance entity.
+// If the InventoryBalance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InventoryBalanceMutation) OldRemovedFromLocation(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemovedFromLocation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemovedFromLocation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemovedFromLocation: %w", err)
+	}
+	return oldValue.RemovedFromLocation, nil
+}
+
+// ResetRemovedFromLocation resets all changes to the "removed_from_location" field.
+func (m *InventoryBalanceMutation) ResetRemovedFromLocation() {
+	m.removed_from_location = nil
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (m *InventoryBalanceMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
@@ -33156,7 +33193,7 @@ func (m *InventoryBalanceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InventoryBalanceMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.tenant_id != nil {
 		fields = append(fields, inventorybalance.FieldTenantID)
 	}
@@ -33193,6 +33230,9 @@ func (m *InventoryBalanceMutation) Fields() []string {
 	if m.location != nil {
 		fields = append(fields, inventorybalance.FieldLocationID)
 	}
+	if m.removed_from_location != nil {
+		fields = append(fields, inventorybalance.FieldRemovedFromLocation)
+	}
 	if m.updated_at != nil {
 		fields = append(fields, inventorybalance.FieldUpdatedAt)
 	}
@@ -33228,6 +33268,8 @@ func (m *InventoryBalanceMutation) Field(name string) (ent.Value, bool) {
 		return m.AutoReorderEnabled()
 	case inventorybalance.FieldLocationID:
 		return m.LocationID()
+	case inventorybalance.FieldRemovedFromLocation:
+		return m.RemovedFromLocation()
 	case inventorybalance.FieldUpdatedAt:
 		return m.UpdatedAt()
 	}
@@ -33263,6 +33305,8 @@ func (m *InventoryBalanceMutation) OldField(ctx context.Context, name string) (e
 		return m.OldAutoReorderEnabled(ctx)
 	case inventorybalance.FieldLocationID:
 		return m.OldLocationID(ctx)
+	case inventorybalance.FieldRemovedFromLocation:
+		return m.OldRemovedFromLocation(ctx)
 	case inventorybalance.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	}
@@ -33357,6 +33401,13 @@ func (m *InventoryBalanceMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLocationID(v)
+		return nil
+	case inventorybalance.FieldRemovedFromLocation:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemovedFromLocation(v)
 		return nil
 	case inventorybalance.FieldUpdatedAt:
 		v, ok := value.(time.Time)
@@ -33527,6 +33578,9 @@ func (m *InventoryBalanceMutation) ResetField(name string) error {
 		return nil
 	case inventorybalance.FieldLocationID:
 		m.ResetLocationID()
+		return nil
+	case inventorybalance.FieldRemovedFromLocation:
+		m.ResetRemovedFromLocation()
 		return nil
 	case inventorybalance.FieldUpdatedAt:
 		m.ResetUpdatedAt()
