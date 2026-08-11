@@ -240,6 +240,7 @@ func New(ctx context.Context) (*App, error) {
 		log.Info("asset depreciation scheduler enabled")
 	}
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
+	analyticsHandler.SetItemsService(itemsSvc) // outlet-scoped dashboard figures must match the Products list
 	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
 	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"strconv"
@@ -18,12 +19,15 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entstockadjustment "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 )
 
 // AnalyticsHandler serves read-only dashboard analytics endpoints.
 type AnalyticsHandler struct {
-	log *zap.Logger
-	orm *ent.Client
+	log      *zap.Logger
+	orm      *ent.Client
+	itemsSvc *items.Service
 }
 
 func NewAnalyticsHandler(log *zap.Logger, orm *ent.Client) *AnalyticsHandler {
@@ -31,6 +35,48 @@ func NewAnalyticsHandler(log *zap.Logger, orm *ent.Client) *AnalyticsHandler {
 		log: log.Named("analytics.handler"),
 		orm: orm,
 	}
+}
+
+// SetItemsService wires items.Service so analytics can reuse items.OutletScope — the same
+// outlet-visibility rule the Products list uses — instead of re-deriving it and silently
+// drifting from what the catalog page shows for the same outlet.
+func (h *AnalyticsHandler) SetItemsService(svc *items.Service) {
+	h.itemsSvc = svc
+}
+
+// outletFilter resolves the active outlet for this request: an explicit ?outlet_id= override
+// takes precedence, falling back to the ambient X-Outlet-ID header (set tenant-wide by
+// OutletContext middleware for HQ users drilling into a branch, or forced for branch staff).
+// Returns nil when no outlet is selected (tenant-wide view).
+func outletFilter(r *http.Request) *uuid.UUID {
+	if v := r.URL.Query().Get("outlet_id"); v != "" {
+		if id, err := uuid.Parse(v); err == nil {
+			return &id
+		}
+	}
+	if v := invmiddleware.GetOutletID(r.Context()); v != "" {
+		if id, err := uuid.Parse(v); err == nil {
+			return &id
+		}
+	}
+	return nil
+}
+
+// outletWarehouseIDSlice flattens items.OutletScope's warehouse set into a slice for use in
+// WarehouseIDIn predicates. Returns nil (no filter) when outletID is nil.
+func (h *AnalyticsHandler) outletWarehouseIDSlice(ctx context.Context, tenantID uuid.UUID, outletID *uuid.UUID) ([]uuid.UUID, error) {
+	if outletID == nil || h.itemsSvc == nil {
+		return nil, nil
+	}
+	_, _, warehouseIDs, err := h.itemsSvc.OutletScope(ctx, tenantID, outletID)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uuid.UUID, 0, len(warehouseIDs))
+	for id := range warehouseIDs {
+		ids = append(ids, id)
+	}
+	return ids, nil
 }
 
 func (h *AnalyticsHandler) RegisterRoutes(r chi.Router) {
@@ -115,12 +161,23 @@ func (h *AnalyticsHandler) TopItems(w http.ResponseWriter, r *http.Request) {
 
 	since := time.Now().UTC().AddDate(0, 0, -days)
 
-	adjs, err := h.orm.StockAdjustment.Query().
+	outletID := outletFilter(r)
+	warehouseIDs, err := h.outletWarehouseIDSlice(r.Context(), tenantID, outletID)
+	if err != nil {
+		h.log.Error("analytics: top items outlet scope failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to resolve outlet scope")
+		return
+	}
+
+	adjQuery := h.orm.StockAdjustment.Query().
 		Where(
 			entstockadjustment.TenantID(tenantID),
 			entstockadjustment.AdjustedAtGTE(since),
-		).
-		All(r.Context())
+		)
+	if warehouseIDs != nil {
+		adjQuery = adjQuery.Where(entstockadjustment.WarehouseIDIn(warehouseIDs...))
+	}
+	adjs, err := adjQuery.All(r.Context())
 	if err != nil {
 		h.log.Error("analytics: top items query failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to fetch adjustments")
@@ -204,11 +261,23 @@ func (h *AnalyticsHandler) StockTrends(w http.ResponseWriter, r *http.Request) {
 
 	since := time.Now().UTC().AddDate(0, 0, -days)
 
-	adjs, err := h.orm.StockAdjustment.Query().
+	outletID := outletFilter(r)
+	warehouseIDs, err := h.outletWarehouseIDSlice(r.Context(), tenantID, outletID)
+	if err != nil {
+		h.log.Error("analytics: stock trends outlet scope failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to resolve outlet scope")
+		return
+	}
+
+	trendQuery := h.orm.StockAdjustment.Query().
 		Where(
 			entstockadjustment.TenantID(tenantID),
 			entstockadjustment.AdjustedAtGTE(since),
-		).
+		)
+	if warehouseIDs != nil {
+		trendQuery = trendQuery.Where(entstockadjustment.WarehouseIDIn(warehouseIDs...))
+	}
+	adjs, err := trendQuery.
 		Order(ent.Asc(entstockadjustment.FieldAdjustedAt)).
 		All(r.Context())
 	if err != nil {
@@ -256,8 +325,20 @@ func (h *AnalyticsHandler) Distribution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	balances, err := h.orm.InventoryBalance.Query().
-		Where(entinventorybalance.TenantID(tenantID)).
+	outletID := outletFilter(r)
+	warehouseIDs, err := h.outletWarehouseIDSlice(r.Context(), tenantID, outletID)
+	if err != nil {
+		h.log.Error("analytics: distribution outlet scope failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to resolve outlet scope")
+		return
+	}
+
+	distQuery := h.orm.InventoryBalance.Query().
+		Where(entinventorybalance.TenantID(tenantID))
+	if warehouseIDs != nil {
+		distQuery = distQuery.Where(entinventorybalance.WarehouseIDIn(warehouseIDs...))
+	}
+	balances, err := distQuery.
 		WithItem(func(q *ent.ItemQuery) { q.WithItemCategory() }).
 		All(r.Context())
 	if err != nil {
@@ -328,8 +409,20 @@ func (h *AnalyticsHandler) ReorderAlerts(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	balances, err := h.orm.InventoryBalance.Query().
-		Where(entinventorybalance.TenantID(tenantID)).
+	outletID := outletFilter(r)
+	warehouseIDs, err := h.outletWarehouseIDSlice(r.Context(), tenantID, outletID)
+	if err != nil {
+		h.log.Error("analytics: reorder alerts outlet scope failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to resolve outlet scope")
+		return
+	}
+
+	alertQuery := h.orm.InventoryBalance.Query().
+		Where(entinventorybalance.TenantID(tenantID))
+	if warehouseIDs != nil {
+		alertQuery = alertQuery.Where(entinventorybalance.WarehouseIDIn(warehouseIDs...))
+	}
+	balances, err := alertQuery.
 		WithItem().
 		WithWarehouse().
 		All(r.Context())
@@ -375,9 +468,40 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	totalItems, _ := h.orm.Item.Query().
-		Where(entitem.TenantID(tenantID), entitem.IsActive(true)).
-		Count(ctx)
+	outletID := outletFilter(r)
+
+	// TotalItems must agree with the Products list for the same outlet, or the dashboard and
+	// the catalog page tell the tenant two different stories about the same branch — reuse the
+	// exact same visibility rule (items.OutletScope) rather than re-deriving it here.
+	itemQuery := h.orm.Item.Query().Where(entitem.TenantID(tenantID), entitem.IsActive(true))
+	var outletExcludeIDs []uuid.UUID
+	var hasOperationalHistory bool
+	var warehouseIDs []uuid.UUID
+	if outletID != nil && h.itemsSvc != nil {
+		var whSet map[uuid.UUID]struct{}
+		var scopeErr error
+		outletExcludeIDs, hasOperationalHistory, whSet, scopeErr = h.itemsSvc.OutletScope(ctx, tenantID, outletID)
+		if scopeErr != nil {
+			h.log.Error("analytics: summary outlet scope failed", zap.Error(scopeErr))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to resolve outlet scope")
+			return
+		}
+		warehouseIDs = make([]uuid.UUID, 0, len(whSet))
+		for id := range whSet {
+			warehouseIDs = append(warehouseIDs, id)
+		}
+		if len(outletExcludeIDs) > 0 {
+			itemQuery = itemQuery.Where(entitem.IDNotIn(outletExcludeIDs...))
+		}
+		if hasOperationalHistory {
+			itemQuery = itemQuery.Where(entitem.Or(
+				entitem.Not(entitem.TypeIn(entitem.TypeGOODS, entitem.TypeINGREDIENT)),
+				entitem.NonBillable(true),
+				entitem.HasBalances(),
+			))
+		}
+	}
+	totalItems, _ := itemQuery.Count(ctx)
 
 	// Low/out-of-stock tallies must only consider PHYSICAL, stock-bearing item types. SERVICE,
 	// RECIPE and VOUCHER items hold no tracked stock (a facial/massage/event ticket is never
@@ -393,9 +517,7 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 
 	var lowStock, outOfStock int
 	if len(activeItemIDs) > 0 {
-		// Low stock: available > 0 AND available <= reorder_level AND reorder_level > 0
-		// Uses a column-to-column comparison via raw predicate.
-		lowStock, _ = h.orm.InventoryBalance.Query().
+		lowStockQuery := h.orm.InventoryBalance.Query().
 			Where(
 				entinventorybalance.TenantID(tenantID),
 				entinventorybalance.ItemIDIn(activeItemIDs...),
@@ -405,20 +527,25 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 				func(s *entsql.Selector) {
 					s.Where(entsql.ColumnsLTE(s.C(entinventorybalance.FieldAvailable), s.C(entinventorybalance.FieldReorderLevel)))
 				},
-			).
-			Count(ctx)
-
-		outOfStock, _ = h.orm.InventoryBalance.Query().
+			)
+		outOfStockQuery := h.orm.InventoryBalance.Query().
 			Where(
 				entinventorybalance.TenantID(tenantID),
 				entinventorybalance.ItemIDIn(activeItemIDs...),
 				entinventorybalance.AvailableLTE(0),
-			).
-			Count(ctx)
+			)
+		if outletID != nil {
+			lowStockQuery = lowStockQuery.Where(entinventorybalance.WarehouseIDIn(warehouseIDs...))
+			outOfStockQuery = outOfStockQuery.Where(entinventorybalance.WarehouseIDIn(warehouseIDs...))
+		}
+		lowStock, _ = lowStockQuery.Count(ctx)
+		outOfStock, _ = outOfStockQuery.Count(ctx)
 	}
 
-	// Pending POs: draft + sent + partially_received
-	pendingPOs, _ := h.orm.PurchaseOrder.Query().
+	// Pending POs: draft + sent + partially_received, scoped to the outlet's receiving
+	// warehouse(s) when an outlet is selected. A draft PO with no warehouse resolved yet
+	// (destination undecided) never counts toward any single outlet's figure.
+	poQuery := h.orm.PurchaseOrder.Query().
 		Where(
 			entpurchaseorder.TenantID(tenantID),
 			entpurchaseorder.StatusIn(
@@ -426,8 +553,11 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 				entpurchaseorder.StatusSent,
 				entpurchaseorder.StatusPartiallyReceived,
 			),
-		).
-		Count(ctx)
+		)
+	if outletID != nil {
+		poQuery = poQuery.Where(entpurchaseorder.WarehouseIDIn(warehouseIDs...))
+	}
+	pendingPOs, _ := poQuery.Count(ctx)
 
 	writeJSON(w, http.StatusOK, enhancedSummaryDTO{
 		TotalItems:      totalItems,
