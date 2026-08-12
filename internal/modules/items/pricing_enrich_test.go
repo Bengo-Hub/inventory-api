@@ -1,6 +1,10 @@
 package items
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/uuid"
+)
 
 // preferredTaxCode: an item's own tax code must win over the tenant default — a zero-rated/
 // exempt item must never resolve against the tenant's default (usually standard VAT) code.
@@ -83,4 +87,66 @@ func TestApplyItemTax(t *testing.T) {
 			t.Errorf("TaxRate = %v, want DefaultVATRate (%v)", d.TaxRate, DefaultVATRate)
 		}
 	})
+}
+
+// effectivePrice: recipe price > default-tier price > merchant's max_selling_price ceiling >
+// cost+margin SuggestedPrice (last resort). Regression coverage for the live incident this session
+// diagnosed (boi-enterprises SKU 17606, "2160 Itel Copy" not reflecting a price change) — the item
+// is a GOODS item (no recipe), so its correct source is the default-tier price, which is exactly
+// what a duplicate/stale tierPrice entry would corrupt.
+func TestEffectivePrice(t *testing.T) {
+	id := uuid.New()
+	maxPrice := 1000.0
+	suggested := 500.0
+
+	tests := []struct {
+		name   string
+		item   *ItemDTO
+		recipe map[uuid.UUID]float64
+		tier   map[uuid.UUID]float64
+		want   float64
+	}{
+		{
+			name:   "recipe price wins over everything",
+			item:   &ItemDTO{ID: id, MaxSellingPrice: &maxPrice, SuggestedPrice: &suggested},
+			recipe: map[uuid.UUID]float64{id: 1200},
+			tier:   map[uuid.UUID]float64{id: 700},
+			want:   1200,
+		},
+		{
+			name: "default-tier price wins over the max_selling_price guardrail and cooked suggestion",
+			item: &ItemDTO{ID: id, MaxSellingPrice: &maxPrice, SuggestedPrice: &suggested},
+			tier: map[uuid.UUID]float64{id: 700},
+			want: 700,
+		},
+		{
+			name: "falls back to max_selling_price when no tier price resolved",
+			item: &ItemDTO{ID: id, MaxSellingPrice: &maxPrice, SuggestedPrice: &suggested},
+			want: 1000,
+		},
+		{
+			name: "cost+margin SuggestedPrice is the last resort only",
+			item: &ItemDTO{ID: id, SuggestedPrice: &suggested},
+			want: 500,
+		},
+		{
+			name: "zero when nothing prices the item",
+			item: &ItemDTO{ID: id},
+			want: 0,
+		},
+		{
+			name:   "a zero/negative recipe or tier price is ignored, not treated as authoritative",
+			item:   &ItemDTO{ID: id, MaxSellingPrice: &maxPrice},
+			recipe: map[uuid.UUID]float64{id: 0},
+			tier:   map[uuid.UUID]float64{id: -5},
+			want:   1000,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := effectivePrice(tt.item, tt.recipe, tt.tier); got != tt.want {
+				t.Errorf("effectivePrice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

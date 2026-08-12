@@ -1,0 +1,27 @@
+-- Prevent two simultaneously-ACTIVE ItemPricing rows for the same (tenant, item, tier[, outlet]).
+--
+-- The 2026-08-04 migration (drop_stale_item_pricing_unique) correctly removed the old
+-- (tenant_id, item_id, pricing_tier_id, outlet_id) unique index because it rejected the SECOND
+-- price change ever made to an item with SQLSTATE 23505 -- upsertItemTierPrice's
+-- deactivate-then-insert history pattern needs more than one row per tuple over time. But nothing
+-- replaced it, so upsertItemTierPrice's "query active row, deactivate it, insert a new active row"
+-- sequence (internal/modules/items/pricing_enrich.go) is a plain check-then-act race with no DB
+-- guard at all: two overlapping price-change requests for the same item (a double-click on Save, a
+-- rapid manual retry, concurrent staff edits) can both read the same "current" active row and both
+-- insert a new active row, leaving TWO rows with is_active=true for one tuple. defaultTierPrices'
+-- resolution query has no ORDER BY, so which of the two duplicates a given request sees becomes
+-- arbitrary/plan-dependent from that point on -- a price edit that appears to "not stick" or
+-- silently reverts, worsening the more an item is edited (busy multi-outlet retail catalogs, the
+-- ones already large enough to need EnsureGuardrailTierPrices in the first place).
+--
+-- Two partial unique indexes -- scoped to is_active = true only -- close this without reopening the
+-- 2026-08-04 bug: a deactivated (is_active=false) historical row is excluded from the index, so it
+-- never conflicts with the new active row, but at most one row per tuple can be active at once.
+-- Split on outlet_id IS NULL/NOT NULL because a plain unique index never treats two NULLs as equal
+-- (same reasoning as pos-api's poscatalogoverride_tenant_sku_no_outlet/..._outlet pair).
+--
+-- Verified against production data before writing this migration: zero existing (tenant_id,
+-- item_id, pricing_tier_id, outlet_id) groups currently have more than one active row, so this
+-- applies cleanly with no backfill.
+CREATE UNIQUE INDEX "itempricing_active_no_outlet" ON "item_pricings" ("tenant_id", "item_id", "pricing_tier_id") WHERE "is_active" AND "outlet_id" IS NULL;
+CREATE UNIQUE INDEX "itempricing_active_outlet" ON "item_pricings" ("tenant_id", "item_id", "pricing_tier_id", "outlet_id") WHERE "is_active" AND "outlet_id" IS NOT NULL;

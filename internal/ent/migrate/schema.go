@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -1852,6 +1853,22 @@ var (
 				Name:    "itempricing_tenant_id_item_id_pricing_tier_id_outlet_id_is_active",
 				Unique:  false,
 				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4], ItemPricingsColumns[10]},
+			},
+			{
+				Name:    "itempricing_active_no_outlet",
+				Unique:  true,
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "is_active AND outlet_id IS NULL",
+				},
+			},
+			{
+				Name:    "itempricing_active_outlet",
+				Unique:  true,
+				Columns: []*schema.Column{ItemPricingsColumns[1], ItemPricingsColumns[2], ItemPricingsColumns[3], ItemPricingsColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "is_active AND outlet_id IS NOT NULL",
+				},
 			},
 		},
 	}
