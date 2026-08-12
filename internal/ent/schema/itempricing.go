@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
@@ -52,5 +53,23 @@ func (ItemPricing) Indexes() []ent.Index {
 		index.Fields("pricing_tier_id"),
 		index.Fields("is_active"),
 		index.Fields("tenant_id", "item_id", "pricing_tier_id", "outlet_id", "is_active"),
+		// At most one ACTIVE row per (tenant, item, tier[, outlet]) — upsertItemTierPrice's
+		// deactivate-old/insert-new sequence (pricing_enrich.go) is a check-then-act race with no DB
+		// guard otherwise: two overlapping price-change requests for the same item can both insert a
+		// new active row, and defaultTierPrices' resolution query (no ORDER BY) then picks between
+		// the duplicates arbitrarily — a price edit that silently "doesn't stick". A deactivated
+		// (is_active=false) historical row is excluded from these indexes, so history keeps
+		// accumulating exactly as the effective_from index above intends; split on outlet_id IS
+		// NULL/NOT NULL the same way POSCatalogOverride's dedupe guard is, since a plain unique index
+		// never treats two NULLs as equal. See migration
+		// 20260812063000_item_pricing_active_unique_guard.sql.
+		index.Fields("tenant_id", "item_id", "pricing_tier_id").
+			Unique().
+			StorageKey("itempricing_active_no_outlet").
+			Annotations(entsql.IndexWhere("is_active AND outlet_id IS NULL")),
+		index.Fields("tenant_id", "item_id", "pricing_tier_id", "outlet_id").
+			Unique().
+			StorageKey("itempricing_active_outlet").
+			Annotations(entsql.IndexWhere("is_active AND outlet_id IS NOT NULL")),
 	}
 }

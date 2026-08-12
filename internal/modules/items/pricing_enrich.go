@@ -414,17 +414,59 @@ func (s *Service) PromotePendingPriceChanges(ctx context.Context, tenantID uuid.
 // upsertItemTierPrice upserts the all-outlets (outlet_id IS NULL) ItemPricing row for the given
 // item + tier at `price`, reactivating it if it was soft-deleted.
 //
-// NOTE (2026-08): production carried two STALE unique constraints
+// NOTE (2026-08-04): production carried two STALE unique constraints
 // (tenant_id,item_id,pricing_tier_id) and (...,outlet_id) left over from an earlier schema
 // iteration, predating effective_from being added to the real composite unique index. Ent's
 // online auto-migrate never drops old indexes/constraints by default, so they silently survived
 // every schema change since and made the second price change ever made to an item fail with
 // SQLSTATE 23505 — the true root cause of "I changed the price and POS never reflects it": this
 // insert errored out BEFORE setSellingPrice ever reached the item.updated event publish. Fixed by
-// dropping the two stale constraints directly (see the accompanying Atlas migration) — this
-// function's logic was always correct for the schema as actually declared in ent/schema/*.go.
+// dropping the two stale constraints directly (see the accompanying Atlas migration).
+//
+// NOTE (2026-08-12): dropping those constraints outright left the read-existing/deactivate/insert
+// sequence below with NO database guard at all — a plain check-then-act race. Two overlapping
+// price-change requests for the same item (a double-click on Save, a rapid manual retry, two staff
+// editing at once) could both read the same "current" row and both insert a new active row, leaving
+// two rows simultaneously active for one (tenant,item,tier,outlet) — defaultTierPrices' resolution
+// query has no ORDER BY, so which duplicate a given request then sees is arbitrary, surfacing as a
+// price edit that silently "doesn't stick" or flips back on its own. Root-caused live against
+// boi-enterprises SKU 17606 ("2160 Itel Copy"). Fixed at the DB level by
+// itempricing_active_no_outlet/itempricing_active_outlet — partial unique indexes scoped to
+// is_active=true only, so history keeps accumulating but at most one row per tuple can be active.
+// The retry loop below turns the loser's constraint-violation error into a fresh read-modify-write
+// attempt instead of a hard failure, so a genuine race still converges on one correct outcome rather
+// than erroring out (which would repeat the 2026-08-04 symptom for the losing request).
 func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) error {
-	existing, qErr := s.client.ItemPricing.Query().
+	const maxAttempts = 3
+	var lastErr error
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		done, err := s.tryUpsertItemTierPrice(ctx, tenantID, itemID, tierID, price)
+		if done {
+			return err
+		}
+		lastErr = err
+	}
+	return fmt.Errorf("items: upsert tier price for item %s tier %s: exhausted %d retries on concurrent write: %w",
+		itemID, tierID, maxAttempts, lastErr)
+}
+
+// tryUpsertItemTierPrice makes one attempt at the read-modify-write. Returns done=true when the
+// attempt reached a final outcome (success or a non-retryable error); done=false means the active
+// row changed out from under this attempt (a concurrent writer won) and the caller should retry —
+// the retry's fresh read will see the winner's row and resolve correctly (no-op if prices now
+// match, or a proper supersede otherwise).
+func (s *Service) tryUpsertItemTierPrice(ctx context.Context, tenantID, itemID, tierID uuid.UUID, price float64) (done bool, err error) {
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return true, fmt.Errorf("items: begin tx: %w", err)
+	}
+	defer func() {
+		if !done {
+			_ = tx.Rollback()
+		}
+	}()
+
+	existing, qErr := tx.ItemPricing.Query().
 		Where(
 			itempricing.TenantID(tenantID),
 			itempricing.ItemID(itemID),
@@ -433,15 +475,20 @@ func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tie
 			itempricing.IsActive(true),
 		).
 		First(ctx)
-	if qErr == nil && existing != nil {
+
+	switch {
+	case qErr == nil && existing != nil:
 		if existing.Price == price {
-			return nil // no real change — don't spam a history row
+			return true, tx.Commit() // no real change — don't spam a history row
 		}
 		now := time.Now()
 		if _, err := existing.Update().SetIsActive(false).SetEffectiveTo(now).Save(ctx); err != nil {
-			return fmt.Errorf("items: close out prior tier price: %w", err)
+			if ent.IsConstraintError(err) {
+				return false, err // lost the race closing out the prior row — retry fresh
+			}
+			return true, fmt.Errorf("items: close out prior tier price: %w", err)
 		}
-		_, err := s.client.ItemPricing.Create().
+		if _, err := tx.ItemPricing.Create().
 			SetTenantID(tenantID).
 			SetItemID(itemID).
 			SetPricingTierID(tierID).
@@ -450,18 +497,31 @@ func (s *Service) upsertItemTierPrice(ctx context.Context, tenantID, itemID, tie
 			SetTierBasis(existing.TierBasis).
 			SetEffectiveFrom(now).
 			SetIsActive(true).
-			Save(ctx)
-		return err
+			Save(ctx); err != nil {
+			if ent.IsConstraintError(err) {
+				return false, err // a concurrent writer's row is now active — retry fresh
+			}
+			return true, fmt.Errorf("items: insert new tier price: %w", err)
+		}
+		return true, tx.Commit()
+	case ent.IsNotFound(qErr):
+		if _, err := tx.ItemPricing.Create().
+			SetTenantID(tenantID).
+			SetItemID(itemID).
+			SetPricingTierID(tierID).
+			SetPrice(price).
+			SetCurrency("KES").
+			SetIsActive(true).
+			Save(ctx); err != nil {
+			if ent.IsConstraintError(err) {
+				return false, err // a concurrent writer created the row first — retry fresh
+			}
+			return true, fmt.Errorf("items: insert tier price: %w", err)
+		}
+		return true, tx.Commit()
+	default:
+		return true, fmt.Errorf("items: query existing tier price: %w", qErr)
 	}
-	_, err := s.client.ItemPricing.Create().
-		SetTenantID(tenantID).
-		SetItemID(itemID).
-		SetPricingTierID(tierID).
-		SetPrice(price).
-		SetCurrency("KES").
-		SetIsActive(true).
-		Save(ctx)
-	return err
 }
 
 // recipeSellingPrices maps RECIPE item_id → selling price. Resolution order:
@@ -545,25 +605,33 @@ func (s *Service) defaultTierPrices(ctx context.Context, tenantID uuid.UUID, ite
 		First(ctx); err == nil {
 		defaultTierID = t.ID
 	}
+	// Ordered by effective_from ascending so that IF more than one row is ever active at once for
+	// the same item+tier (the DB now guards against this via itempricing_active_no_outlet/
+	// itempricing_active_outlet, but this loop is cheap insurance against any row that predates
+	// that guard or a future regression), the LAST write below wins deterministically — the most
+	// recently effective price — instead of whatever order Postgres happened to return.
 	prices, err := s.client.ItemPricing.Query().
 		Where(itempricing.TenantID(tenantID), itempricing.IsActive(true), itempricing.ItemIDIn(itemIDs...)).
+		Order(ent.Asc(itempricing.FieldEffectiveFrom)).
 		All(ctx)
 	if err != nil {
 		return out
 	}
-	firstSeen := map[uuid.UUID]float64{}
+	// latestNonDefault tracks the most recent active price on ANY tier, for items with no
+	// default-tier row at all — unconditional overwrite (not "first wins") so, combined with the
+	// ascending effective_from order above, the last one processed is the most recent, matching the
+	// default-tier branch's own "latest wins" behavior below.
+	latestNonDefault := map[uuid.UUID]float64{}
 	for _, p := range prices {
 		if p.Price <= 0 {
 			continue
 		}
-		if _, ok := firstSeen[p.ItemID]; !ok {
-			firstSeen[p.ItemID] = p.Price
-		}
+		latestNonDefault[p.ItemID] = p.Price
 		if defaultTierID != uuid.Nil && p.PricingTierID == defaultTierID {
 			out[p.ItemID] = p.Price // default tier wins
 		}
 	}
-	for id, p := range firstSeen {
+	for id, p := range latestNonDefault {
 		if _, ok := out[id]; !ok {
 			out[id] = p
 		}
