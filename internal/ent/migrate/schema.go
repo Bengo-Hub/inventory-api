@@ -2139,6 +2139,7 @@ var (
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
 	}
 	// PricingTiersTable holds the schema information for the "pricing_tiers" table.
 	PricingTiersTable = &schema.Table{

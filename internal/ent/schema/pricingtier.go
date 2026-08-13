@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -22,6 +24,7 @@ func (PricingTier) Fields() []ent.Field {
 		field.Bool("is_default").Default(false).Comment("Default tier for unlisted customers"),
 		field.Bool("is_active").Default(true),
 		field.Int("sort_order").Default(0),
+		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
 

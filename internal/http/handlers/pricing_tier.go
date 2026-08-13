@@ -105,6 +105,7 @@ type pricingTierDTO struct {
 	IsDefault   bool      `json:"is_default"`
 	IsActive    bool      `json:"is_active"`
 	SortOrder   int       `json:"sort_order"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type createTierReq struct {
@@ -1030,6 +1031,7 @@ func toPricingTierDTO(t *ent.PricingTier) pricingTierDTO {
 		IsDefault:   t.IsDefault,
 		IsActive:    t.IsActive,
 		SortOrder:   t.SortOrder,
+		CreatedAt:   t.CreatedAt,
 	}
 }
 
