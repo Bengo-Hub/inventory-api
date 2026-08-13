@@ -46,6 +46,7 @@ type approvalRuleDTO struct {
 	MaxAmount *float64          `json:"max_amount"`
 	IsActive  bool              `json:"is_active"`
 	Steps     []approvalStepDTO `json:"steps"`
+	CreatedAt time.Time         `json:"created_at"`
 }
 
 type approvalActionDTO struct {
@@ -81,6 +82,7 @@ func approvalRuleToDTO(ru *ent.ApprovalRule) approvalRuleDTO {
 		MinAmount: ru.MinAmount,
 		MaxAmount: ru.MaxAmount,
 		IsActive:  ru.IsActive,
+		CreatedAt: ru.CreatedAt,
 	}
 	steps := append([]*ent.ApprovalStep(nil), ru.Edges.Steps...)
 	sort.Slice(steps, func(i, j int) bool { return steps[i].Sequence < steps[j].Sequence })

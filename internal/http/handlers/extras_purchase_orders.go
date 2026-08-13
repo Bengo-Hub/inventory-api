@@ -73,6 +73,9 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 			entpurchaseorder.HasSupplierWith(entsupplier.NameContainsFold(search)),
 		))
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entpurchaseorder.CreatedAtGTE(from), entpurchaseorder.CreatedAtLTE(to))
+	}
 
 	total, _ := q.Clone().Count(r.Context())
 	orders, err := q.
@@ -620,6 +623,7 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 //	@Failure      500   {object}  map[string]string
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/purchase-orders/{poID}/receive [put]
+//
 // ReceivePurchaseOrder is the quick-action equivalent of receiving everything still
 // outstanding on the PO right now: it auto-generates a goods receipt covering every line's
 // remaining quantity (fully accepted, unit cost from the PO line), then posts it through

@@ -117,6 +117,9 @@ func (h *TransferHandler) ListTransfers(w http.ResponseWriter, r *http.Request) 
 		Status: r.URL.Query().Get("status"),
 		Search: r.URL.Query().Get("search"),
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		filter.From, filter.To = from, to
+	}
 	if l := r.URL.Query().Get("limit"); l != "" {
 		filter.Limit, _ = strconv.Atoi(l)
 	}

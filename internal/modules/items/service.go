@@ -428,7 +428,8 @@ type CategoryDTO struct {
 	// Outlet use_cases this category is relevant to (hospitality, pharmacy,
 	// retail…); empty = universal. Keeps food categories out of a pharmacy
 	// outlet's pickers (and vice versa) on mixed-use tenants.
-	UseCases []string `json:"use_cases,omitempty"`
+	UseCases  []string  `json:"use_cases,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // RelevantToUseCase reports whether the category applies to an outlet use_case:
@@ -1759,6 +1760,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		Depth:       c.Depth,
 		Path:        c.Path,
 		SortOrder:   c.SortOrder,
+		CreatedAt:   c.CreatedAt,
 	}, nil
 }
 
@@ -1851,6 +1853,7 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		Depth:       c.Depth,
 		Path:        c.Path,
 		SortOrder:   c.SortOrder,
+		CreatedAt:   c.CreatedAt,
 	}, nil
 }
 
@@ -1955,6 +1958,7 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 				Path:        c.Path,
 				SortOrder:   c.SortOrder,
 				UseCases:    c.UseCases,
+				CreatedAt:   c.CreatedAt,
 			}
 			if c.ParentID != nil {
 				if pName, ok := nameMap[*c.ParentID]; ok {

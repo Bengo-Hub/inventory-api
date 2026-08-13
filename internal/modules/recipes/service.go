@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
-	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -45,56 +46,57 @@ func (s *Service) WithItemsService(svc *items.Service) *Service {
 
 // RecipeDTO represents a recipe with its ingredients.
 type RecipeDTO struct {
-	ID                  uuid.UUID             `json:"id"`
-	TenantID            uuid.UUID             `json:"tenant_id"`
-	SKU                 string                `json:"sku"`
-	Name                string                `json:"name"`
-	ItemName            string                `json:"item_name"`
-	ItemID              *uuid.UUID            `json:"item_id,omitempty"`
-	OutputQty           float64               `json:"output_qty"`
-	Servings            float64               `json:"servings"`
-	UnitOfMeasure       string                `json:"unit_of_measure"`
-	IsActive            bool                  `json:"is_active"`
-	Kind                string                `json:"kind"` // menu | bom
-	RequiresQC          bool                  `json:"requires_qc"`
-	TotalCost           *float64              `json:"total_cost"`
-	CostPerPortion      *float64              `json:"cost_per_portion"`
-	TargetMarginPercent *float64              `json:"target_margin_percent"`
-	SuggestedPrice      *float64              `json:"suggested_price"`
+	ID                  uuid.UUID  `json:"id"`
+	TenantID            uuid.UUID  `json:"tenant_id"`
+	SKU                 string     `json:"sku"`
+	Name                string     `json:"name"`
+	ItemName            string     `json:"item_name"`
+	ItemID              *uuid.UUID `json:"item_id,omitempty"`
+	OutputQty           float64    `json:"output_qty"`
+	Servings            float64    `json:"servings"`
+	UnitOfMeasure       string     `json:"unit_of_measure"`
+	IsActive            bool       `json:"is_active"`
+	Kind                string     `json:"kind"` // menu | bom
+	RequiresQC          bool       `json:"requires_qc"`
+	TotalCost           *float64   `json:"total_cost"`
+	CostPerPortion      *float64   `json:"cost_per_portion"`
+	TargetMarginPercent *float64   `json:"target_margin_percent"`
+	SuggestedPrice      *float64   `json:"suggested_price"`
 	// Selling-price based costing (user-provided; never overwritten by system)
-	SellingPrice    *float64 `json:"selling_price,omitempty"`
-	FoodCostPct     *float64 `json:"food_cost_pct,omitempty"`
-	Status          string   `json:"status,omitempty"` // OK - healthy | OK - above target FC% | LOSS - cost >= price
-	PrepTimeMinutes *int     `json:"prep_time_minutes,omitempty"`
-	Allergens       []string `json:"allergens"`
+	SellingPrice    *float64              `json:"selling_price,omitempty"`
+	FoodCostPct     *float64              `json:"food_cost_pct,omitempty"`
+	Status          string                `json:"status,omitempty"` // OK - healthy | OK - above target FC% | LOSS - cost >= price
+	PrepTimeMinutes *int                  `json:"prep_time_minutes,omitempty"`
+	Allergens       []string              `json:"allergens"`
 	Ingredients     []RecipeIngredientDTO `json:"ingredients"`
+	CreatedAt       time.Time             `json:"created_at"`
 }
 
 // RecipeIngredientDTO represents a single ingredient in a recipe.
 type RecipeIngredientDTO struct {
-	ID             uuid.UUID  `json:"id"`
-	ItemID         uuid.UUID  `json:"item_id"`
-	ItemSKU        string     `json:"item_sku"`
-	ItemName       string     `json:"item_name"`
-	ItemCostPrice  *float64   `json:"item_cost_price,omitempty"`
+	ID            uuid.UUID `json:"id"`
+	ItemID        uuid.UUID `json:"item_id"`
+	ItemSKU       string    `json:"item_sku"`
+	ItemName      string    `json:"item_name"`
+	ItemCostPrice *float64  `json:"item_cost_price,omitempty"`
 	// The ingredient item's own base/stock unit. ItemCostPrice is per this unit,
 	// so a line written in another unit (e.g. ml against a per-L item) must be
 	// converted before multiplying — clients need this to preview line costs.
-	ItemUnitID     *uuid.UUID `json:"item_unit_id,omitempty"`
+	ItemUnitID *uuid.UUID `json:"item_unit_id,omitempty"`
 	// Content-per-unit bridge from the ingredient item (a 700 ml bottle stocked in
 	// btl → 700 + "ml"). Clients need this to know a cross-dimension line (30 ml of
 	// a btl-stocked bottle) deducts fractional stock units instead of flagging it
 	// as un-deductible — mirrors stock.ConvertToStockUnit.
-	ItemUnitContentQty *float64 `json:"item_unit_content_qty,omitempty"`
-	ItemUnitContentUom string   `json:"item_unit_content_uom,omitempty"`
-	Quantity       float64    `json:"quantity"`
-	UnitOfMeasure  string     `json:"unit_of_measure"`
-	UnitID         *uuid.UUID `json:"unit_id,omitempty"`
-	WastePercent   float64    `json:"waste_percent"`
-	Notes          string     `json:"notes"`
-	DisplayOrder   int        `json:"display_order"`
-	SubRecipeID    *uuid.UUID `json:"sub_recipe_id,omitempty"`
-	SubRecipeName  string     `json:"sub_recipe_name,omitempty"`
+	ItemUnitContentQty *float64   `json:"item_unit_content_qty,omitempty"`
+	ItemUnitContentUom string     `json:"item_unit_content_uom,omitempty"`
+	Quantity           float64    `json:"quantity"`
+	UnitOfMeasure      string     `json:"unit_of_measure"`
+	UnitID             *uuid.UUID `json:"unit_id,omitempty"`
+	WastePercent       float64    `json:"waste_percent"`
+	Notes              string     `json:"notes"`
+	DisplayOrder       int        `json:"display_order"`
+	SubRecipeID        *uuid.UUID `json:"sub_recipe_id,omitempty"`
+	SubRecipeName      string     `json:"sub_recipe_name,omitempty"`
 }
 
 // resolveItemSKUs fetches SKU strings for ingredient item IDs in one query.
@@ -472,18 +474,18 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 		itemName = r.Name
 	}
 	dto := RecipeDTO{
-		ID:            r.ID,
-		TenantID:      r.TenantID,
-		SKU:           r.Sku,
-		Name:          r.Name,
-		ItemName:      itemName,
-		ItemID:        r.ItemID,
-		OutputQty:     r.OutputQty,
-		Servings:      r.OutputQty,
-		UnitOfMeasure: r.UnitOfMeasure,
-		IsActive:      r.IsActive,
-		Kind:          string(r.Kind),
-		RequiresQC:    r.RequiresQc,
+		ID:                  r.ID,
+		TenantID:            r.TenantID,
+		SKU:                 r.Sku,
+		Name:                r.Name,
+		ItemName:            itemName,
+		ItemID:              r.ItemID,
+		OutputQty:           r.OutputQty,
+		Servings:            r.OutputQty,
+		UnitOfMeasure:       r.UnitOfMeasure,
+		IsActive:            r.IsActive,
+		Kind:                string(r.Kind),
+		RequiresQC:          r.RequiresQc,
 		TotalCost:           r.TotalCost,
 		CostPerPortion:      r.CostPerPortion,
 		TargetMarginPercent: r.TargetMarginPercent,
@@ -492,8 +494,9 @@ func (s *Service) toDTOWithItemName(r *ent.Recipe, linkedItemName string) Recipe
 		FoodCostPct:         r.FoodCostPct,
 		Status:              r.Status,
 		PrepTimeMinutes:     r.PrepTimeMinutes,
-		Allergens:     []string{},
-		Ingredients:   make([]RecipeIngredientDTO, len(r.Edges.Ingredients)),
+		Allergens:           []string{},
+		Ingredients:         make([]RecipeIngredientDTO, len(r.Edges.Ingredients)),
+		CreatedAt:           r.CreatedAt,
 	}
 
 	allergenSet := map[string]struct{}{}

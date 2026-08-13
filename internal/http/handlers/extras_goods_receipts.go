@@ -255,6 +255,9 @@ func (h *InventoryExtrasHandler) ListGoodsReceipts(w http.ResponseWriter, r *htt
 			q = q.Where(entgr.PurchaseOrderID(id))
 		}
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entgr.ReceivedDateGTE(from), entgr.ReceivedDateLTE(to))
+	}
 	total, _ := q.Clone().Count(r.Context())
 	rows, err := q.Order(ent.Desc(entgr.FieldReceivedDate)).Limit(p.Limit).Offset(p.Offset).All(r.Context())
 	if err != nil {

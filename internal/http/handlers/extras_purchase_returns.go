@@ -85,6 +85,9 @@ func (h *InventoryExtrasHandler) ListPurchaseReturns(w http.ResponseWriter, r *h
 	if s := r.URL.Query().Get("payment_status"); s != "" {
 		q = q.Where(entpr.PaymentStatusEQ(entpr.PaymentStatus(s)))
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entpr.DateReturnedGTE(from), entpr.DateReturnedLTE(to))
+	}
 	total, _ := q.Clone().Count(r.Context())
 	rows, err := q.Order(ent.Desc(entpr.FieldDateReturned)).Limit(p.Limit).Offset(p.Offset).All(r.Context())
 	if err != nil {
@@ -129,6 +132,7 @@ func (h *InventoryExtrasHandler) GetPurchaseReturn(w http.ResponseWriter, r *htt
 //	@Failure      500   {object}  map[string]string
 //	@Security     bearerAuth
 //	@Router       /{tenant}/inventory/purchase-returns [post]
+//
 // nextReturnNumber mints a purchase-return number through the tenant-configurable document
 // sequence (numeric by default), falling back to a random PRET- token if the sequence is
 // unavailable.

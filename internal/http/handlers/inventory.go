@@ -2127,8 +2127,12 @@ func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Reques
 	if dateFrom := r.URL.Query().Get("date_from"); dateFrom != "" {
 		t, err := time.Parse(time.RFC3339, dateFrom)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_DATE_FROM", "date_from must be RFC3339 format")
-			return
+			// Also accept a plain YYYY-MM-DD (what the shared DateRangePicker sends).
+			t, err = time.Parse("2006-01-02", dateFrom)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "INVALID_DATE_FROM", "date_from must be RFC3339 or YYYY-MM-DD")
+				return
+			}
 		}
 		req.DateFrom = t
 	}
@@ -2136,8 +2140,13 @@ func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Reques
 	if dateTo := r.URL.Query().Get("date_to"); dateTo != "" {
 		t, err := time.Parse(time.RFC3339, dateTo)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_DATE_TO", "date_to must be RFC3339 format")
-			return
+			// Also accept a plain YYYY-MM-DD (what the shared DateRangePicker sends) — end-of-day inclusive.
+			t, err = time.Parse("2006-01-02", dateTo)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "INVALID_DATE_TO", "date_to must be RFC3339 or YYYY-MM-DD")
+				return
+			}
+			t = t.Add(24*time.Hour - time.Second)
 		}
 		req.DateTo = t
 	}
