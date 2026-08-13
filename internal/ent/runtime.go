@@ -1521,6 +1521,10 @@ func init() {
 	pricingtierDescSortOrder := pricingtierFields[7].Descriptor()
 	// pricingtier.DefaultSortOrder holds the default value on creation for the sort_order field.
 	pricingtier.DefaultSortOrder = pricingtierDescSortOrder.Default.(int)
+	// pricingtierDescCreatedAt is the schema descriptor for created_at field.
+	pricingtierDescCreatedAt := pricingtierFields[8].Descriptor()
+	// pricingtier.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pricingtier.DefaultCreatedAt = pricingtierDescCreatedAt.Default.(func() time.Time)
 	// pricingtierDescID is the schema descriptor for id field.
 	pricingtierDescID := pricingtierFields[0].Descriptor()
 	// pricingtier.DefaultID holds the default value on creation for the id field.

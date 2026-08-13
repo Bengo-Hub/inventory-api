@@ -60285,6 +60285,7 @@ type PricingTierMutation struct {
 	is_active     *bool
 	sort_order    *int
 	addsort_order *int
+	created_at    *time.Time
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*PricingTier, error)
@@ -60680,6 +60681,42 @@ func (m *PricingTierMutation) ResetSortOrder() {
 	m.addsort_order = nil
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (m *PricingTierMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PricingTierMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PricingTier entity.
+// If the PricingTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PricingTierMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PricingTierMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
 // Where appends a list predicates to the PricingTierMutation builder.
 func (m *PricingTierMutation) Where(ps ...predicate.PricingTier) {
 	m.predicates = append(m.predicates, ps...)
@@ -60714,7 +60751,7 @@ func (m *PricingTierMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PricingTierMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.tenant_id != nil {
 		fields = append(fields, pricingtier.FieldTenantID)
 	}
@@ -60735,6 +60772,9 @@ func (m *PricingTierMutation) Fields() []string {
 	}
 	if m.sort_order != nil {
 		fields = append(fields, pricingtier.FieldSortOrder)
+	}
+	if m.created_at != nil {
+		fields = append(fields, pricingtier.FieldCreatedAt)
 	}
 	return fields
 }
@@ -60758,6 +60798,8 @@ func (m *PricingTierMutation) Field(name string) (ent.Value, bool) {
 		return m.IsActive()
 	case pricingtier.FieldSortOrder:
 		return m.SortOrder()
+	case pricingtier.FieldCreatedAt:
+		return m.CreatedAt()
 	}
 	return nil, false
 }
@@ -60781,6 +60823,8 @@ func (m *PricingTierMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldIsActive(ctx)
 	case pricingtier.FieldSortOrder:
 		return m.OldSortOrder(ctx)
+	case pricingtier.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown PricingTier field %s", name)
 }
@@ -60838,6 +60882,13 @@ func (m *PricingTierMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSortOrder(v)
+		return nil
+	case pricingtier.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PricingTier field %s", name)
@@ -60932,6 +60983,9 @@ func (m *PricingTierMutation) ResetField(name string) error {
 		return nil
 	case pricingtier.FieldSortOrder:
 		m.ResetSortOrder()
+		return nil
+	case pricingtier.FieldCreatedAt:
+		m.ResetCreatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown PricingTier field %s", name)

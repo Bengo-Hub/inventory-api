@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -97,6 +98,20 @@ func (_c *PricingTierCreate) SetNillableSortOrder(v *int) *PricingTierCreate {
 	return _c
 }
 
+// SetCreatedAt sets the "created_at" field.
+func (_c *PricingTierCreate) SetCreatedAt(v time.Time) *PricingTierCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *PricingTierCreate) SetNillableCreatedAt(v *time.Time) *PricingTierCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PricingTierCreate) SetID(v uuid.UUID) *PricingTierCreate {
 	_c.mutation.SetID(v)
@@ -158,6 +173,10 @@ func (_c *PricingTierCreate) defaults() {
 		v := pricingtier.DefaultSortOrder
 		_c.mutation.SetSortOrder(v)
 	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := pricingtier.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := pricingtier.DefaultID()
 		_c.mutation.SetID(v)
@@ -193,6 +212,9 @@ func (_c *PricingTierCreate) check() error {
 	}
 	if _, ok := _c.mutation.SortOrder(); !ok {
 		return &ValidationError{Name: "sort_order", err: errors.New(`ent: missing required field "PricingTier.sort_order"`)}
+	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "PricingTier.created_at"`)}
 	}
 	return nil
 }
@@ -257,6 +279,10 @@ func (_c *PricingTierCreate) createSpec() (*PricingTier, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SortOrder(); ok {
 		_spec.SetField(pricingtier.FieldSortOrder, field.TypeInt, value)
 		_node.SortOrder = value
+	}
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(pricingtier.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
 	}
 	return _node, _spec
 }
@@ -422,6 +448,9 @@ func (u *PricingTierUpsertOne) UpdateNewValues() *PricingTierUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(pricingtier.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(pricingtier.FieldCreatedAt)
 		}
 	}))
 	return u
@@ -748,6 +777,9 @@ func (u *PricingTierUpsertBulk) UpdateNewValues() *PricingTierUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(pricingtier.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(pricingtier.FieldCreatedAt)
 			}
 		}
 	}))

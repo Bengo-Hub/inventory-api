@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -30,7 +31,9 @@ type PricingTier struct {
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// SortOrder holds the value of the "sort_order" field.
-	SortOrder    int `json:"sort_order,omitempty"`
+	SortOrder int `json:"sort_order,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt    time.Time `json:"created_at,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -45,6 +48,8 @@ func (*PricingTier) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case pricingtier.FieldName, pricingtier.FieldCode, pricingtier.FieldDescription:
 			values[i] = new(sql.NullString)
+		case pricingtier.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
 		case pricingtier.FieldID, pricingtier.FieldTenantID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -110,6 +115,12 @@ func (_m *PricingTier) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SortOrder = int(value.Int64)
 			}
+		case pricingtier.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -166,6 +177,9 @@ func (_m *PricingTier) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort_order=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SortOrder))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
