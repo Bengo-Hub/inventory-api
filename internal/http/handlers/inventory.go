@@ -53,7 +53,7 @@ type ItemsServicer interface {
 	HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
-	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
@@ -1117,6 +1117,16 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	if oid := operatingOutletID(r); oid != uuid.Nil {
 		outletID = &oid
 	}
+	// ?warehouse_id= narrows the returned available/on_hand to ONE specific warehouse instead of
+	// the outlet-wide sum above — Stock Transfer's "From Warehouse" picker needs this so the
+	// figure it shows the user is what's actually shippable FROM that warehouse, not the whole
+	// outlet's aggregate across every warehouse it spans (see items.Service.ListItems doc comment).
+	var warehouseID *uuid.UUID
+	if wid := r.URL.Query().Get("warehouse_id"); wid != "" {
+		if parsed, werr := uuid.Parse(wid); werr == nil {
+			warehouseID = &parsed
+		}
+	}
 
 	// ?id=<uuid> restricts the list to a single item by primary key while reusing the full
 	// list enrichment — the item-detail page fetches this way so it renders the same enriched
@@ -1169,7 +1179,7 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := pagination.Parse(r)
-	results, total, err := h.itemsSvc.ListItems(ctx, tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, useCaseFilter, tagsFilter...)
+	results, total, err := h.itemsSvc.ListItems(ctx, tenantID, typeFilter, statusFilter, p.Limit, p.Offset, categoryID, unitID, searchFilter, outletID, warehouseID, useCaseFilter, tagsFilter...)
 	if err != nil {
 		h.log.Error("list items failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list items")
@@ -1270,7 +1280,7 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce the plan's inventory_max_sku structural cap (hard-block, no overage).
-	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 1, 0, nil, nil, "", nil, ""); cerr == nil {
+	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 1, 0, nil, nil, "", nil, nil, ""); cerr == nil {
 		if subscriptions.AssertLimit(w, r, "products", subscriptions.LimitSKU, total) {
 			return
 		}
@@ -1459,6 +1469,10 @@ type bulkAdjustStockRequest struct {
 	Lines []struct {
 		SKU        string  `json:"sku"`
 		Adjustment float64 `json:"adjustment"`
+		// DestinationWarehouseID, when set, moves this line's quantity from WarehouseID to this
+		// warehouse (transfer_out + transfer_in) instead of an in-place add/remove — see
+		// stock.BulkAdjustLine's doc comment.
+		DestinationWarehouseID string `json:"destination_warehouse_id,omitempty"`
 	} `json:"lines"`
 	Reason      string `json:"reason"`
 	Reference   string `json:"reference,omitempty"`
@@ -1524,7 +1538,13 @@ func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Reques
 
 	lines := make([]stock.BulkAdjustLine, 0, len(req.Lines))
 	for _, l := range req.Lines {
-		lines = append(lines, stock.BulkAdjustLine{SKU: l.SKU, Adjustment: l.Adjustment})
+		line := stock.BulkAdjustLine{SKU: l.SKU, Adjustment: l.Adjustment}
+		if l.DestinationWarehouseID != "" {
+			if destID, derr := uuid.Parse(l.DestinationWarehouseID); derr == nil {
+				line.DestinationWarehouseID = &destID
+			}
+		}
+		lines = append(lines, line)
 	}
 
 	bulkReq := stock.BulkAdjustStockRequest{
@@ -2365,7 +2385,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all existing items once for SKU→ID lookup (avoids N+1 queries).
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID

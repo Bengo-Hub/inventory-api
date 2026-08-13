@@ -1123,7 +1123,13 @@ func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID 
 // ListItems returns a paginated list of items for a tenant with DB-level filtering.
 // statusFilter: "" or "active" = active only (default), "inactive" = inactive only, "all" = both.
 // outletID: when set, restricts items to those with a balance in the outlet's warehouses or shared warehouses (outlet_id IS NULL).
-func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]ItemDTO, int, error) {
+// warehouseID: when set, narrows the returned Available/OnHand to ONLY that single warehouse
+// (overriding the outlet-wide sum below) — added for Stock Transfer's "From Warehouse" picker,
+// which was reading the outlet-wide aggregate across every warehouse in the outlet instead of the
+// one warehouse actually being transferred FROM, silently overstating what was really shippable
+// (confirmed live: boi-enterprises' MAIN outlet spans multiple warehouses). Independent of the
+// outlet-visibility exclusion logic above, which still applies unchanged.
+func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]ItemDTO, int, error) {
 	// Pre-compute outlet-scoped EXCLUSIONS when outlet context is active.
 	//
 	// Rule: an outlet hides only STOCK-TRACKED items (GOODS/INGREDIENT) that are stocked
@@ -1160,6 +1166,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	// scope to it — summing balances across every warehouse in the tenant let a Malaba-HQ terminal
 	// see (and oversell) stock that was physically sitting at Eldoret/Busia/Home/Nelly/Guest.
 	outletExcludeIDs, hasOperationalHistory, outletWarehouseIDs, _ := s.OutletScope(ctx, tenantID, outletID)
+	// balanceScopeWarehouseIDs is what the Available/OnHand summation below actually filters
+	// against. A specific warehouseID (Stock Transfer's "From Warehouse") always narrows to just
+	// that one warehouse, regardless of how many warehouses the outlet itself spans — the visibility
+	// exclusion logic above is unaffected (an item still shows/hides per the outlet's normal rules;
+	// only the reported quantity narrows).
+	balanceScopeWarehouseIDs := outletWarehouseIDs
+	if warehouseID != nil {
+		balanceScopeWarehouseIDs = map[uuid.UUID]struct{}{*warehouseID: {}}
+	}
 
 	buildQuery := func() *ent.ItemQuery {
 		q := s.client.Item.Query().Where(item.TenantID(tenantID))
@@ -1311,8 +1326,8 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				// tenant (e.g. 7 warehouses) must never let a Malaba-HQ terminal display or oversell
 				// stock that physically lives at a different outlet. No outlet context (HQ/all-
 				// outlets view) keeps the tenant-wide total, matching the existing all-outlets UX.
-				if outletWarehouseIDs != nil {
-					if _, ok := outletWarehouseIDs[b.WarehouseID]; !ok {
+				if balanceScopeWarehouseIDs != nil {
+					if _, ok := balanceScopeWarehouseIDs[b.WarehouseID]; !ok {
 						continue
 					}
 				}
@@ -2460,6 +2475,16 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 		}
 	}
 
+	// Resolve brand name (Item.BrandID -> ItemBrand.Name) for the enriched event payload —
+	// distinct from the free-text Manufacturer field just below.
+	brandName := ""
+	if dto.BrandID != nil {
+		brand, brandErr := s.client.ItemBrand.Get(ctx, *dto.BrandID)
+		if brandErr == nil {
+			brandName = brand.Name
+		}
+	}
+
 	// Resolve unit name + KRA quantity-unit mapping for the enriched event payload
 	unitName, unitAbbrev, unitKraQty := "", "", ""
 	if dto.UnitID != nil {
@@ -2487,6 +2512,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 			"category_id":               i.CategoryID,
 			"category_name":             categoryName,
 			"manufacturer":              i.Manufacturer,
+			"brand_name":                brandName,
 			"model":                     i.Model,
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,

@@ -204,7 +204,7 @@ func fetchAllItems(
 	var all []items.ItemDTO
 	offset, total := 0, 0
 	for {
-		page, t, err := svc.ListItems(ctx, tenantID, typeFilter, statusFilter, exportPageSize, offset, categoryID, unitID, search, outletID, useCase, tags...)
+		page, t, err := svc.ListItems(ctx, tenantID, typeFilter, statusFilter, exportPageSize, offset, categoryID, unitID, search, outletID, nil, useCase, tags...)
 		if err != nil {
 			return nil, 0, err
 		}
