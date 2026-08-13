@@ -132,6 +132,33 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		}
 	}
 
+	// Hard-block over-quantity at CREATION time, not just at Ship. The real over-transfer guard
+	// previously only lived in adjustBalance (called from ShipTransfer), so a draft transfer for
+	// more than what's actually on hand at the source warehouse could be created and would only
+	// fail much later when someone tried to ship it — reusing the same InventoryBalance.Available
+	// check here closes that gap.
+	srcBalances, err := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.WarehouseID(req.SourceWarehouseID), inventorybalance.ItemIDIn(itemIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: query source balances: %w", err)
+	}
+	availableByItem := make(map[uuid.UUID]float64, len(srcBalances))
+	for _, b := range srcBalances {
+		availableByItem[b.ItemID] = b.Available
+	}
+	itemNameByID := make(map[uuid.UUID]string, len(lineItems))
+	for _, it := range lineItems {
+		itemNameByID[it.ID] = it.Name
+	}
+	for _, ln := range req.Items {
+		if available := availableByItem[ln.ItemID]; ln.Quantity > available {
+			err = fmt.Errorf("transfers: insufficient stock for %q at source warehouse (available %g, requested %g)",
+				itemNameByID[ln.ItemID], available, ln.Quantity)
+			return nil, err
+		}
+	}
+
 	// Generate transfer number: TRF-{YYYYMMDD}-{seq}
 	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID)
 	if err != nil {

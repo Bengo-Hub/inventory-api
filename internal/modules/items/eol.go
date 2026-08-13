@@ -116,6 +116,12 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 			categoryName = cat.Name
 		}
 	}
+	brandName := ""
+	if i.BrandID != nil {
+		if brand, brandErr := s.client.ItemBrand.Get(ctx, *i.BrandID); brandErr == nil {
+			brandName = brand.Name
+		}
+	}
 	unitName, unitAbbrev, unitKraQty := "", "", ""
 	if i.UnitID != nil {
 		if u, uErr := s.client.Unit.Get(ctx, *i.UnitID); uErr == nil {
@@ -140,6 +146,7 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 			"category_id":               i.CategoryID,
 			"category_name":             categoryName,
 			"manufacturer":              i.Manufacturer,
+			"brand_name":                brandName,
 			"model":                     i.Model,
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,

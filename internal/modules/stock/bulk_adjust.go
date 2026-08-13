@@ -6,10 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// BulkAdjustLine is one item's adjustment within a bulk request.
+// BulkAdjustLine is one item's adjustment within a bulk request. When DestinationWarehouseID is
+// set, Adjustment is treated as the quantity to MOVE from the request's shared WarehouseID to that
+// destination (posted as a transfer_out at the source + transfer_in at the destination) instead of
+// an in-place add/remove — its magnitude is used regardless of the sign the caller sent.
 type BulkAdjustLine struct {
-	SKU        string  `json:"sku"`
-	Adjustment float64 `json:"adjustment"`
+	SKU                    string     `json:"sku"`
+	Adjustment             float64    `json:"adjustment"`
+	DestinationWarehouseID *uuid.UUID `json:"destination_warehouse_id,omitempty"`
 }
 
 // BulkAdjustStockRequest applies many per-item adjustments against ONE shared warehouse/reason —
@@ -58,6 +62,43 @@ func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req B
 	for _, line := range req.Lines {
 		if line.Adjustment == 0 {
 			res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: "adjustment is zero"})
+			continue
+		}
+		if line.DestinationWarehouseID != nil {
+			qty := line.Adjustment
+			if qty < 0 {
+				qty = -qty
+			}
+			if _, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{
+				SKU:         line.SKU,
+				Adjustment:  -qty,
+				Reason:      "transfer_out",
+				Reference:   req.Reference,
+				Notes:       req.Notes,
+				AdjustedBy:  req.AdjustedBy,
+				WarehouseID: req.WarehouseID,
+				OutletID:    req.OutletID,
+			}); err != nil {
+				res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: err.Error()})
+				continue
+			}
+			if _, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{
+				SKU:         line.SKU,
+				Adjustment:  qty,
+				Reason:      "transfer_in",
+				Reference:   req.Reference,
+				Notes:       req.Notes,
+				AdjustedBy:  req.AdjustedBy,
+				WarehouseID: *line.DestinationWarehouseID,
+				OutletID:    req.OutletID,
+			}); err != nil {
+				// The source leg already moved stock out — flag this distinctly rather than as a
+				// plain skip, since the item is now unaccounted for at neither warehouse and needs
+				// a human to reconcile it, not just retry the whole line.
+				res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: "moved out of source but destination leg failed: " + err.Error()})
+				continue
+			}
+			res.Processed++
 			continue
 		}
 		_, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{

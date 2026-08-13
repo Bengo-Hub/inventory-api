@@ -471,7 +471,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 
 	// Try by SKU first (exact match; the list search is a contains-match).
 	if dto.SKU != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.SKU, nil, "")
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.SKU, nil, nil, "")
 		for _, it := range existingList {
 			if strings.EqualFold(it.SKU, dto.SKU) {
 				return resolve(it), nil
@@ -481,7 +481,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 
 	// Try by name (case-insensitive search).
 	if dto.Name != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.Name, nil, "")
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.Name, nil, nil, "")
 		for _, it := range existingList {
 			if strings.EqualFold(it.Name, dto.Name) {
 				return resolve(it), nil

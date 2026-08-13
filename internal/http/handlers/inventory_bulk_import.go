@@ -101,7 +101,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 	unitMap := h.loadUnitMap(r, tenantID)
 	brandMap := h.loadBrandMap(r, tenantID)
 
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
@@ -165,7 +165,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 	// so they only surface in that vertical's pickers on mixed-use tenants.
 	importUseCase := h.resolveImportUseCase(r, tenantID, defaultWarehouse)
 
-	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, "")
+	existingItems, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 10000, 0, nil, nil, "", nil, nil, "")
 	skuToID := make(map[string]uuid.UUID, len(existingItems))
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID

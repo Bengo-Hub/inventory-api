@@ -31,7 +31,7 @@ type mockItemsSvc struct {
 	summaryFn        func(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	createItemFn     func(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	updateItemFn     func(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
-	listItemsFn      func(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
+	listItemsFn      func(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	listCategoriesFn func(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	createCategoryFn func(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	updateCategoryFn func(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
@@ -119,9 +119,9 @@ func (m *mockItemsSvc) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uu
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error) {
+func (m *mockItemsSvc) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error) {
 	if m.listItemsFn != nil {
-		return m.listItemsFn(ctx, tenantID, typeFilter, statusFilter, limit, offset, categoryID, unitID, search, outletID, useCase, tagsFilter...)
+		return m.listItemsFn(ctx, tenantID, typeFilter, statusFilter, limit, offset, categoryID, unitID, search, outletID, warehouseID, useCase, tagsFilter...)
 	}
 	return nil, 0, fmt.Errorf("not implemented")
 }
