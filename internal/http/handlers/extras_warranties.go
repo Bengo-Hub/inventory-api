@@ -108,6 +108,9 @@ func (h *InventoryExtrasHandler) ListWarranties(w http.ResponseWriter, r *http.R
 	if itemID, perr := uuid.Parse(r.URL.Query().Get("item_id")); perr == nil {
 		q = q.Where(entwarranty.ItemID(itemID))
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entwarranty.CreatedAtGTE(from), entwarranty.CreatedAtLTE(to))
+	}
 	rows, err := q.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list warranties")

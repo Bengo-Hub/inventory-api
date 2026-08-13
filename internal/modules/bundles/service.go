@@ -54,12 +54,13 @@ type BundleDTO struct {
 	IsActive   bool                 `json:"is_active"`
 	Components []BundleComponentDTO `json:"components"`
 	// Hospitality package attributes
-	PackageType           string `json:"package_type,omitempty"` // RETAIL_KIT | ROOM_RATE_PLAN | DDR | RDR | HALF_BOARD | FULL_BOARD | HALL_HIRE_ONLY | SERVICE_SESSIONS
-	PriceBasis            string `json:"price_basis,omitempty"`  // flat | per_delegate_per_day | per_person_sharing | per_session
-	MinDelegates          *int   `json:"min_delegates,omitempty"`
-	AccommodationIncluded bool   `json:"accommodation_included"`
-	SessionsTotal         *int   `json:"sessions_total,omitempty"`
-	ValidityDays          *int   `json:"validity_days,omitempty"`
+	PackageType           string    `json:"package_type,omitempty"` // RETAIL_KIT | ROOM_RATE_PLAN | DDR | RDR | HALF_BOARD | FULL_BOARD | HALL_HIRE_ONLY | SERVICE_SESSIONS
+	PriceBasis            string    `json:"price_basis,omitempty"`  // flat | per_delegate_per_day | per_person_sharing | per_session
+	MinDelegates          *int      `json:"min_delegates,omitempty"`
+	AccommodationIncluded bool      `json:"accommodation_included"`
+	SessionsTotal         *int      `json:"sessions_total,omitempty"`
+	ValidityDays          *int      `json:"validity_days,omitempty"`
+	CreatedAt             time.Time `json:"created_at"`
 }
 
 // ListBundles returns paginated bundles for a tenant.
@@ -310,6 +311,7 @@ func toDTO(b *ent.Bundle) BundleDTO {
 		AccommodationIncluded: b.AccommodationIncluded,
 		SessionsTotal:         b.SessionsTotal,
 		ValidityDays:          b.ValidityDays,
+		CreatedAt:             b.CreatedAt,
 		Components:            make([]BundleComponentDTO, len(b.Edges.Components)),
 	}
 	if b.Edges.Item != nil {

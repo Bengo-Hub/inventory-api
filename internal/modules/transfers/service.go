@@ -9,13 +9,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
-	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/units"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 )
 
 // StockCascader is implemented by stock.Service (wired via WithStockCascade). Defined narrowly
@@ -201,14 +201,14 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 
 	// Publish transfer.created event via outbox
 	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "transfer.created", map[string]any{
-		"transfer_id":     transfer.ID.String(),
-		"transfer_number": transferNumber,
-		"tenant_id":       tenantID.String(),
-		"status":          "draft",
-		"reference_no":    req.ReferenceNo,
+		"transfer_id":      transfer.ID.String(),
+		"transfer_number":  transferNumber,
+		"tenant_id":        tenantID.String(),
+		"status":           "draft",
+		"reference_no":     req.ReferenceNo,
 		"shipping_charges": req.ShippingCharges,
-		"carrier":         req.Carrier,
-		"freight_notes":   req.FreightNotes,
+		"carrier":          req.Carrier,
+		"freight_notes":    req.FreightNotes,
 		"from_warehouse": map[string]any{
 			"id":        srcWH.ID.String(),
 			"name":      srcWH.Name,
@@ -260,6 +260,12 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 	}
 	if filter.Search != "" {
 		q = q.Where(stocktransfer.TransferNumberContainsFold(filter.Search))
+	}
+	if !filter.From.IsZero() {
+		q = q.Where(stocktransfer.CreatedAtGTE(filter.From))
+	}
+	if !filter.To.IsZero() {
+		q = q.Where(stocktransfer.CreatedAtLTE(filter.To))
 	}
 
 	// Get total count before pagination

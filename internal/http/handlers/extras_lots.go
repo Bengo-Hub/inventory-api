@@ -91,6 +91,9 @@ func (h *InventoryExtrasHandler) ListLots(w http.ResponseWriter, r *http.Request
 	if !includeCostLayers {
 		query = query.Where(entinventorylot.IsCostLayer(false))
 	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		query = query.Where(entinventorylot.ReceivedAtGTE(from), entinventorylot.ReceivedAtLTE(to))
+	}
 	lots, err := query.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list lots")

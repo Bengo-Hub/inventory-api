@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"net/http"
 	"strconv"
 	"strings"
@@ -187,9 +187,9 @@ type productionBatchDTO struct {
 	QualityChecks   []qualityCheckDTO     `json:"quality_checks,omitempty"`
 	// Variance (populated on the detail view only).
 	YieldVariance    *float64              `json:"yield_variance,omitempty"`     // actual - planned output
-	YieldVariancePct *float64             `json:"yield_variance_pct,omitempty"` // (actual-planned)/planned * 100
+	YieldVariancePct *float64              `json:"yield_variance_pct,omitempty"` // (actual-planned)/planned * 100
 	MaterialVariance []materialVarianceDTO `json:"material_variance,omitempty"`
-	CreatedAt       time.Time             `json:"created_at"`
+	CreatedAt        time.Time             `json:"created_at"`
 }
 
 // materialVarianceDTO compares the BOM-implied planned quantity for a line against
@@ -301,6 +301,9 @@ func (h *InventoryExtrasHandler) ListProductionBatches(w http.ResponseWriter, r 
 		if id, e := uuid.Parse(rc); e == nil {
 			q = q.Where(entpb.RecipeID(id))
 		}
+	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entpb.CreatedAtGTE(from), entpb.CreatedAtLTE(to))
 	}
 	total, _ := q.Clone().Count(r.Context())
 	rows, err := q.Order(ent.Desc(entpb.FieldCreatedAt)).Limit(p.Limit).Offset(p.Offset).All(r.Context())

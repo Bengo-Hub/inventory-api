@@ -28,23 +28,23 @@ type TransferLineRequest struct {
 
 // TransferResponse is the full representation of a stock transfer with lines.
 type TransferResponse struct {
-	ID                     uuid.UUID              `json:"id"`
-	TenantID               uuid.UUID              `json:"tenant_id"`
-	TransferNumber         string                 `json:"transfer_number"`
-	Status                 string                 `json:"status"`
-	SourceWarehouse        WarehouseInfo          `json:"source_warehouse"`
-	DestinationWarehouse   WarehouseInfo          `json:"destination_warehouse"`
-	InitiatedBy            *uuid.UUID             `json:"initiated_by,omitempty"`
-	Notes                  string                 `json:"notes,omitempty"`
-	ReferenceNo            string                 `json:"reference_no,omitempty"`
-	ShippingCharges        float64                `json:"shipping_charges"`
-	Carrier                string                 `json:"carrier,omitempty"`
-	FreightNotes           string                 `json:"freight_notes,omitempty"`
-	ShippedAt              *time.Time             `json:"shipped_at,omitempty"`
-	ReceivedAt             *time.Time             `json:"received_at,omitempty"`
-	CreatedAt              time.Time              `json:"created_at"`
-	UpdatedAt              time.Time              `json:"updated_at"`
-	Lines                  []TransferLineResponse `json:"lines"`
+	ID                   uuid.UUID              `json:"id"`
+	TenantID             uuid.UUID              `json:"tenant_id"`
+	TransferNumber       string                 `json:"transfer_number"`
+	Status               string                 `json:"status"`
+	SourceWarehouse      WarehouseInfo          `json:"source_warehouse"`
+	DestinationWarehouse WarehouseInfo          `json:"destination_warehouse"`
+	InitiatedBy          *uuid.UUID             `json:"initiated_by,omitempty"`
+	Notes                string                 `json:"notes,omitempty"`
+	ReferenceNo          string                 `json:"reference_no,omitempty"`
+	ShippingCharges      float64                `json:"shipping_charges"`
+	Carrier              string                 `json:"carrier,omitempty"`
+	FreightNotes         string                 `json:"freight_notes,omitempty"`
+	ShippedAt            *time.Time             `json:"shipped_at,omitempty"`
+	ReceivedAt           *time.Time             `json:"received_at,omitempty"`
+	CreatedAt            time.Time              `json:"created_at"`
+	UpdatedAt            time.Time              `json:"updated_at"`
+	Lines                []TransferLineResponse `json:"lines"`
 }
 
 // TransferLineResponse represents a single line in a transfer response.
@@ -74,21 +74,24 @@ type WarehouseInfo struct {
 
 // TransferSummary is a lightweight list representation.
 type TransferSummary struct {
-	ID                     uuid.UUID  `json:"id"`
-	TransferNumber         string     `json:"transfer_number"`
-	Status                 string     `json:"status"`
-	SourceWarehouseName    string     `json:"source_warehouse_name"`
-	DestWarehouseName      string     `json:"destination_warehouse_name"`
-	LineCount              int        `json:"line_count"`
-	ShippedAt              *time.Time `json:"shipped_at,omitempty"`
-	ReceivedAt             *time.Time `json:"received_at,omitempty"`
-	CreatedAt              time.Time  `json:"created_at"`
+	ID                  uuid.UUID  `json:"id"`
+	TransferNumber      string     `json:"transfer_number"`
+	Status              string     `json:"status"`
+	SourceWarehouseName string     `json:"source_warehouse_name"`
+	DestWarehouseName   string     `json:"destination_warehouse_name"`
+	LineCount           int        `json:"line_count"`
+	ShippedAt           *time.Time `json:"shipped_at,omitempty"`
+	ReceivedAt          *time.Time `json:"received_at,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
 }
 
 // TransferListFilter contains filters for listing transfers.
 type TransferListFilter struct {
 	Status string
 	Search string
+	// From/To (zero value = no bound) optionally narrow the list to a created_at range.
+	From   time.Time
+	To     time.Time
 	Limit  int
 	Offset int
 }

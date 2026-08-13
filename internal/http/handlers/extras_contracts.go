@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"encoding/json"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"net/http"
 	"time"
 
@@ -89,6 +89,9 @@ func (h *InventoryExtrasHandler) ListContracts(w http.ResponseWriter, r *http.Re
 		if id, e := uuid.Parse(sup); e == nil {
 			q = q.Where(entcontract.SupplierID(id))
 		}
+	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entcontract.CreatedAtGTE(from), entcontract.CreatedAtLTE(to))
 	}
 	total, _ := q.Clone().Count(r.Context())
 	rows, err := q.Order(ent.Desc(entcontract.FieldCreatedAt)).Limit(p.Limit).Offset(p.Offset).All(r.Context())

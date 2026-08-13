@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
 	"fmt"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"net/http"
 	"strings"
 	"time"
@@ -189,6 +189,9 @@ func (h *InventoryExtrasHandler) ListRequisitions(w http.ResponseWriter, r *http
 	}
 	if rt := r.URL.Query().Get("request_type"); rt != "" {
 		q = q.Where(entreq.RequestTypeEQ(entreq.RequestType(rt)))
+	}
+	if from, to, ok := parseCreatedAtRange(r); ok {
+		q = q.Where(entreq.CreatedAtGTE(from), entreq.CreatedAtLTE(to))
 	}
 	total, _ := q.Clone().Count(r.Context())
 	rows, err := q.Order(ent.Desc(entreq.FieldCreatedAt)).Limit(p.Limit).Offset(p.Offset).All(r.Context())
