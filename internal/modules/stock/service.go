@@ -139,6 +139,9 @@ type ConsumedLot struct {
 type Service struct {
 	client *ent.Client
 	log    *zap.Logger
+	// transferRecorder, when wired, lets BulkAdjustStock's destination-warehouse move give the
+	// result a transfer_number/audit record via transfers.Service — see transfer_recorder.go.
+	transferRecorder TransferRecorder
 }
 
 // NewService creates a new stock service.

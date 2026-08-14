@@ -120,6 +120,20 @@ func (_u *StockTransferUpdate) ClearInitiatedBy() *StockTransferUpdate {
 	return _u
 }
 
+// SetOrigin sets the "origin" field.
+func (_u *StockTransferUpdate) SetOrigin(v string) *StockTransferUpdate {
+	_u.mutation.SetOrigin(v)
+	return _u
+}
+
+// SetNillableOrigin sets the "origin" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableOrigin(v *string) *StockTransferUpdate {
+	if v != nil {
+		_u.SetOrigin(*v)
+	}
+	return _u
+}
+
 // SetReferenceNo sets the "reference_no" field.
 func (_u *StockTransferUpdate) SetReferenceNo(v string) *StockTransferUpdate {
 	_u.mutation.SetReferenceNo(v)
@@ -392,6 +406,9 @@ func (_u *StockTransferUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.InitiatedByCleared() {
 		_spec.ClearField(stocktransfer.FieldInitiatedBy, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.Origin(); ok {
+		_spec.SetField(stocktransfer.FieldOrigin, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.ReferenceNo(); ok {
 		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)
 	}
@@ -589,6 +606,20 @@ func (_u *StockTransferUpdateOne) SetNillableInitiatedBy(v *uuid.UUID) *StockTra
 // ClearInitiatedBy clears the value of the "initiated_by" field.
 func (_u *StockTransferUpdateOne) ClearInitiatedBy() *StockTransferUpdateOne {
 	_u.mutation.ClearInitiatedBy()
+	return _u
+}
+
+// SetOrigin sets the "origin" field.
+func (_u *StockTransferUpdateOne) SetOrigin(v string) *StockTransferUpdateOne {
+	_u.mutation.SetOrigin(v)
+	return _u
+}
+
+// SetNillableOrigin sets the "origin" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableOrigin(v *string) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetOrigin(*v)
+	}
 	return _u
 }
 
@@ -893,6 +924,9 @@ func (_u *StockTransferUpdateOne) sqlSave(ctx context.Context) (_node *StockTran
 	}
 	if _u.mutation.InitiatedByCleared() {
 		_spec.ClearField(stocktransfer.FieldInitiatedBy, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.Origin(); ok {
+		_spec.SetField(stocktransfer.FieldOrigin, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ReferenceNo(); ok {
 		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)

@@ -235,6 +235,7 @@ func New(ctx context.Context) (*App, error) {
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
 	transferSvc.WithSequence(docSvc.Seq()) // numeric-by-default transfer numbers via document sequence
 	transferHandler.SetDocService(docSvc)  // Dispatch/Transit Note + Goods-Received Note PDFs
+	stockSvc.WithTransferRecorder(transferSvc)
 	inventoryExtrasHandler.SetDocService(docSvc)
 	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
 	inventoryExtrasHandler.SetStockService(stockSvc)

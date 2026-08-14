@@ -77,6 +77,20 @@ func (_c *StockTransferCreate) SetNillableInitiatedBy(v *uuid.UUID) *StockTransf
 	return _c
 }
 
+// SetOrigin sets the "origin" field.
+func (_c *StockTransferCreate) SetOrigin(v string) *StockTransferCreate {
+	_c.mutation.SetOrigin(v)
+	return _c
+}
+
+// SetNillableOrigin sets the "origin" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableOrigin(v *string) *StockTransferCreate {
+	if v != nil {
+		_c.SetOrigin(*v)
+	}
+	return _c
+}
+
 // SetReferenceNo sets the "reference_no" field.
 func (_c *StockTransferCreate) SetReferenceNo(v string) *StockTransferCreate {
 	_c.mutation.SetReferenceNo(v)
@@ -271,6 +285,10 @@ func (_c *StockTransferCreate) defaults() {
 		v := stocktransfer.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.Origin(); !ok {
+		v := stocktransfer.DefaultOrigin
+		_c.mutation.SetOrigin(v)
+	}
 	if _, ok := _c.mutation.ShippingCharges(); !ok {
 		v := stocktransfer.DefaultShippingCharges
 		_c.mutation.SetShippingCharges(v)
@@ -315,6 +333,9 @@ func (_c *StockTransferCreate) check() error {
 		if err := stocktransfer.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "StockTransfer.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Origin(); !ok {
+		return &ValidationError{Name: "origin", err: errors.New(`ent: missing required field "StockTransfer.origin"`)}
 	}
 	if _, ok := _c.mutation.ShippingCharges(); !ok {
 		return &ValidationError{Name: "shipping_charges", err: errors.New(`ent: missing required field "StockTransfer.shipping_charges"`)}
@@ -384,6 +405,10 @@ func (_c *StockTransferCreate) createSpec() (*StockTransfer, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.InitiatedBy(); ok {
 		_spec.SetField(stocktransfer.FieldInitiatedBy, field.TypeUUID, value)
 		_node.InitiatedBy = &value
+	}
+	if value, ok := _c.mutation.Origin(); ok {
+		_spec.SetField(stocktransfer.FieldOrigin, field.TypeString, value)
+		_node.Origin = value
 	}
 	if value, ok := _c.mutation.ReferenceNo(); ok {
 		_spec.SetField(stocktransfer.FieldReferenceNo, field.TypeString, value)
@@ -564,6 +589,18 @@ func (u *StockTransferUpsert) UpdateInitiatedBy() *StockTransferUpsert {
 // ClearInitiatedBy clears the value of the "initiated_by" field.
 func (u *StockTransferUpsert) ClearInitiatedBy() *StockTransferUpsert {
 	u.SetNull(stocktransfer.FieldInitiatedBy)
+	return u
+}
+
+// SetOrigin sets the "origin" field.
+func (u *StockTransferUpsert) SetOrigin(v string) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldOrigin, v)
+	return u
+}
+
+// UpdateOrigin sets the "origin" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateOrigin() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldOrigin)
 	return u
 }
 
@@ -844,6 +881,20 @@ func (u *StockTransferUpsertOne) UpdateInitiatedBy() *StockTransferUpsertOne {
 func (u *StockTransferUpsertOne) ClearInitiatedBy() *StockTransferUpsertOne {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearInitiatedBy()
+	})
+}
+
+// SetOrigin sets the "origin" field.
+func (u *StockTransferUpsertOne) SetOrigin(v string) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetOrigin(v)
+	})
+}
+
+// UpdateOrigin sets the "origin" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateOrigin() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateOrigin()
 	})
 }
 
@@ -1314,6 +1365,20 @@ func (u *StockTransferUpsertBulk) UpdateInitiatedBy() *StockTransferUpsertBulk {
 func (u *StockTransferUpsertBulk) ClearInitiatedBy() *StockTransferUpsertBulk {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearInitiatedBy()
+	})
+}
+
+// SetOrigin sets the "origin" field.
+func (u *StockTransferUpsertBulk) SetOrigin(v string) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetOrigin(v)
+	})
+}
+
+// UpdateOrigin sets the "origin" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateOrigin() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateOrigin()
 	})
 }
 

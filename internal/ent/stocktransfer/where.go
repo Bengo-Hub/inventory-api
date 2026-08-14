@@ -81,6 +81,11 @@ func InitiatedBy(v uuid.UUID) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldInitiatedBy, v))
 }
 
+// Origin applies equality check predicate on the "origin" field. It's identical to OriginEQ.
+func Origin(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldOrigin, v))
+}
+
 // ReferenceNo applies equality check predicate on the "reference_no" field. It's identical to ReferenceNoEQ.
 func ReferenceNo(v string) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldReferenceNo, v))
@@ -379,6 +384,71 @@ func InitiatedByIsNil() predicate.StockTransfer {
 // InitiatedByNotNil applies the NotNil predicate on the "initiated_by" field.
 func InitiatedByNotNil() predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldNotNull(FieldInitiatedBy))
+}
+
+// OriginEQ applies the EQ predicate on the "origin" field.
+func OriginEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldOrigin, v))
+}
+
+// OriginNEQ applies the NEQ predicate on the "origin" field.
+func OriginNEQ(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldOrigin, v))
+}
+
+// OriginIn applies the In predicate on the "origin" field.
+func OriginIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldOrigin, vs...))
+}
+
+// OriginNotIn applies the NotIn predicate on the "origin" field.
+func OriginNotIn(vs ...string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldOrigin, vs...))
+}
+
+// OriginGT applies the GT predicate on the "origin" field.
+func OriginGT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldOrigin, v))
+}
+
+// OriginGTE applies the GTE predicate on the "origin" field.
+func OriginGTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldOrigin, v))
+}
+
+// OriginLT applies the LT predicate on the "origin" field.
+func OriginLT(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldOrigin, v))
+}
+
+// OriginLTE applies the LTE predicate on the "origin" field.
+func OriginLTE(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldOrigin, v))
+}
+
+// OriginContains applies the Contains predicate on the "origin" field.
+func OriginContains(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContains(FieldOrigin, v))
+}
+
+// OriginHasPrefix applies the HasPrefix predicate on the "origin" field.
+func OriginHasPrefix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasPrefix(FieldOrigin, v))
+}
+
+// OriginHasSuffix applies the HasSuffix predicate on the "origin" field.
+func OriginHasSuffix(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldHasSuffix(FieldOrigin, v))
+}
+
+// OriginEqualFold applies the EqualFold predicate on the "origin" field.
+func OriginEqualFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEqualFold(FieldOrigin, v))
+}
+
+// OriginContainsFold applies the ContainsFold predicate on the "origin" field.
+func OriginContainsFold(v string) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldContainsFold(FieldOrigin, v))
 }
 
 // ReferenceNoEQ applies the EQ predicate on the "reference_no" field.

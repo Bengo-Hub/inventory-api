@@ -4,6 +4,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
+	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
 
 // BulkAdjustLine is one item's adjustment within a bulk request. When DestinationWarehouseID is
@@ -59,6 +63,36 @@ type BulkAdjustStockResult struct {
 // workflow per-line is a real follow-up, not attempted here under this turn's time constraints.
 func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req BulkAdjustStockRequest) (*BulkAdjustStockResult, error) {
 	res := &BulkAdjustStockResult{Skipped: []BulkAdjustSkipped{}}
+
+	// Batch-resolve SKU -> ItemID once, up front, only for lines that carry a destination
+	// warehouse — that's the only case that needs an Item id (for the after-the-fact transfer
+	// audit record below). A resolution miss just means that line's record-keeping is skipped;
+	// it never blocks the move itself (AdjustStock re-resolves the SKU on its own regardless).
+	itemIDBySKU := make(map[string]uuid.UUID)
+	{
+		var moveSKUs []string
+		for _, ln := range req.Lines {
+			if ln.DestinationWarehouseID != nil {
+				moveSKUs = append(moveSKUs, ln.SKU)
+			}
+		}
+		if len(moveSKUs) > 0 {
+			items, iErr := s.client.Item.Query().Where(item.TenantID(tenantID), item.SkuIn(moveSKUs...)).All(ctx)
+			if iErr == nil {
+				for _, it := range items {
+					itemIDBySKU[it.Sku] = it.ID
+				}
+			}
+		}
+	}
+	// Successfully-moved lines, grouped by destination warehouse below (source is always the
+	// single req.WarehouseID) — recorded as a completed StockTransfer AFTER the loop so every
+	// warehouse-to-warehouse move made through a bulk adjustment gets a transfer_number and shows
+	// up in the Transfers list, same as one created through the New Transfer dialog. Best-effort:
+	// the real stock movement already happened by the time this runs, so a recording failure is
+	// logged, never surfaced as a failure of the (already-succeeded) move.
+	movedByDest := make(map[uuid.UUID][]transfers.CompletedTransferLine)
+
 	for _, line := range req.Lines {
 		if line.Adjustment == 0 {
 			res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: "adjustment is zero"})
@@ -98,6 +132,10 @@ func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req B
 				res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: "moved out of source but destination leg failed: " + err.Error()})
 				continue
 			}
+			if itemID, ok := itemIDBySKU[line.SKU]; ok {
+				dest := *line.DestinationWarehouseID
+				movedByDest[dest] = append(movedByDest[dest], transfers.CompletedTransferLine{ItemID: itemID, Quantity: qty})
+			}
 			res.Processed++
 			continue
 		}
@@ -117,5 +155,20 @@ func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req B
 		}
 		res.Processed++
 	}
+
+	if s.transferRecorder != nil {
+		for destWarehouseID, lines := range movedByDest {
+			if _, rErr := s.transferRecorder.RecordCompletedTransfer(
+				ctx, tenantID, req.WarehouseID, destWarehouseID, "bulk_adjust", lines, req.AdjustedBy, req.Notes,
+			); rErr != nil {
+				// The stock has already moved successfully — a failure here only means this batch
+				// won't show up in the Transfers list with its own transfer_number, not a lost or
+				// reversed move. Log and move on rather than surface it as a bulk-adjust failure.
+				s.log.Warn("bulk adjust: record completed transfer audit failed",
+					zap.Error(rErr), zap.String("destination_warehouse_id", destWarehouseID.String()))
+			}
+		}
+	}
+
 	return res, nil
 }
