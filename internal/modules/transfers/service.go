@@ -357,6 +357,98 @@ func (s *Service) UpdateTransfer(ctx context.Context, tenantID, transferID uuid.
 	return s.buildTransferResponse(updated, lines, srcWH, destWH, itemInfo), nil
 }
 
+// CompletedTransferLine is one item's already-moved quantity for RecordCompletedTransfer.
+type CompletedTransferLine struct {
+	ItemID   uuid.UUID
+	Quantity float64
+}
+
+// RecordCompletedTransfer creates a StockTransfer + lines already in the terminal "received"
+// state, for a warehouse-to-warehouse move that ALREADY happened atomically through another
+// feature (e.g. a bulk stock adjustment whose lines specify a destination warehouse). Pure
+// after-the-fact bookkeeping — it never touches InventoryBalance itself (the caller already did
+// that) and never runs the over-quantity-vs-available check CreateTransfer does (irrelevant once
+// the move is done). This is what gives every warehouse-to-warehouse move a transfer_number and a
+// place in the Transfers list/reporting regardless of entry point, without forcing an unrelated
+// feature through the draft/ship/approval workflow meant for a chosen, still-in-flight shipment —
+// see [[stocktransfer.go]]'s `origin` field comment. Best-effort by design: the caller should log
+// and continue on error rather than treat it as a failure of the (already-succeeded) move itself.
+func (s *Service) RecordCompletedTransfer(ctx context.Context, tenantID, sourceWarehouseID, destWarehouseID uuid.UUID, origin string, lines []CompletedTransferLine, initiatedBy uuid.UUID, notes string) (*ent.StockTransfer, error) {
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("transfers: at least one line is required")
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: generate number: %w", err)
+	}
+
+	now := time.Now()
+	transferBuilder := tx.StockTransfer.Create().
+		SetTenantID(tenantID).
+		SetSourceWarehouseID(sourceWarehouseID).
+		SetDestinationWarehouseID(destWarehouseID).
+		SetTransferNumber(transferNumber).
+		SetStatus(stocktransfer.StatusReceived).
+		SetOrigin(origin).
+		SetShippedAt(now).
+		SetReceivedAt(now).
+		SetNotes(notes)
+	if initiatedBy != uuid.Nil {
+		transferBuilder = transferBuilder.SetInitiatedBy(initiatedBy)
+	}
+	transfer, err := transferBuilder.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: create transfer: %w", err)
+	}
+
+	entLines := make([]*ent.StockTransferLine, 0, len(lines))
+	for _, ln := range lines {
+		line, lerr := tx.StockTransferLine.Create().
+			SetTransferID(transfer.ID).
+			SetItemID(ln.ItemID).
+			SetQuantity(ln.Quantity).
+			SetReceivedQuantity(ln.Quantity).
+			Save(ctx)
+		if lerr != nil {
+			err = fmt.Errorf("transfers: create transfer line: %w", lerr)
+			return nil, err
+		}
+		entLines = append(entLines, line)
+	}
+
+	s.writeOutboxEvent(ctx, tx, tenantID, transfer.ID, "inventory", "transfer.completed", map[string]any{
+		"transfer_id":              transfer.ID.String(),
+		"transfer_number":          transferNumber,
+		"tenant_id":                tenantID.String(),
+		"source_warehouse_id":      sourceWarehouseID.String(),
+		"destination_warehouse_id": destWarehouseID.String(),
+		"received_at":              now.UTC().Format(time.RFC3339),
+		"origin":                   origin,
+		"items":                    s.buildLineItems(entLines),
+	})
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("transfers: commit: %w", err)
+	}
+
+	s.log.Info("completed transfer recorded",
+		zap.String("transfer_id", transfer.ID.String()),
+		zap.String("origin", origin),
+	)
+	return transfer, nil
+}
+
 // ListTransfers returns transfers for a tenant with optional filters.
 func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter TransferListFilter) ([]TransferSummary, int, error) {
 	q := s.client.StockTransfer.Query().
@@ -442,6 +534,7 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 			ID:                  t.ID,
 			TransferNumber:      t.TransferNumber,
 			Status:              string(t.Status),
+			Origin:              t.Origin,
 			SourceWarehouseName: srcName,
 			DestWarehouseName:   destName,
 			LineCount:           len(t.Edges.Lines),
@@ -835,6 +928,7 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 		TenantID:       transfer.TenantID,
 		TransferNumber: transfer.TransferNumber,
 		Status:         string(transfer.Status),
+		Origin:         transfer.Origin,
 		SourceWarehouse: WarehouseInfo{
 			ID:        srcWH.ID,
 			Name:      srcWH.Name,

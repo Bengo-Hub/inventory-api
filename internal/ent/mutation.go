@@ -88669,6 +88669,7 @@ type StockTransferMutation struct {
 	transfer_number          *string
 	status                   *stocktransfer.Status
 	initiated_by             *uuid.UUID
+	origin                   *string
 	reference_no             *string
 	shipping_charges         *float64
 	addshipping_charges      *float64
@@ -89019,6 +89020,42 @@ func (m *StockTransferMutation) InitiatedByCleared() bool {
 func (m *StockTransferMutation) ResetInitiatedBy() {
 	m.initiated_by = nil
 	delete(m.clearedFields, stocktransfer.FieldInitiatedBy)
+}
+
+// SetOrigin sets the "origin" field.
+func (m *StockTransferMutation) SetOrigin(s string) {
+	m.origin = &s
+}
+
+// Origin returns the value of the "origin" field in the mutation.
+func (m *StockTransferMutation) Origin() (r string, exists bool) {
+	v := m.origin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrigin returns the old "origin" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldOrigin(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrigin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrigin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrigin: %w", err)
+	}
+	return oldValue.Origin, nil
+}
+
+// ResetOrigin resets all changes to the "origin" field.
+func (m *StockTransferMutation) ResetOrigin() {
+	m.origin = nil
 }
 
 // SetReferenceNo sets the "reference_no" field.
@@ -89531,7 +89568,7 @@ func (m *StockTransferMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StockTransferMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.tenant_id != nil {
 		fields = append(fields, stocktransfer.FieldTenantID)
 	}
@@ -89549,6 +89586,9 @@ func (m *StockTransferMutation) Fields() []string {
 	}
 	if m.initiated_by != nil {
 		fields = append(fields, stocktransfer.FieldInitiatedBy)
+	}
+	if m.origin != nil {
+		fields = append(fields, stocktransfer.FieldOrigin)
 	}
 	if m.reference_no != nil {
 		fields = append(fields, stocktransfer.FieldReferenceNo)
@@ -89597,6 +89637,8 @@ func (m *StockTransferMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case stocktransfer.FieldInitiatedBy:
 		return m.InitiatedBy()
+	case stocktransfer.FieldOrigin:
+		return m.Origin()
 	case stocktransfer.FieldReferenceNo:
 		return m.ReferenceNo()
 	case stocktransfer.FieldShippingCharges:
@@ -89636,6 +89678,8 @@ func (m *StockTransferMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStatus(ctx)
 	case stocktransfer.FieldInitiatedBy:
 		return m.OldInitiatedBy(ctx)
+	case stocktransfer.FieldOrigin:
+		return m.OldOrigin(ctx)
 	case stocktransfer.FieldReferenceNo:
 		return m.OldReferenceNo(ctx)
 	case stocktransfer.FieldShippingCharges:
@@ -89704,6 +89748,13 @@ func (m *StockTransferMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetInitiatedBy(v)
+		return nil
+	case stocktransfer.FieldOrigin:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrigin(v)
 		return nil
 	case stocktransfer.FieldReferenceNo:
 		v, ok := value.(string)
@@ -89894,6 +89945,9 @@ func (m *StockTransferMutation) ResetField(name string) error {
 		return nil
 	case stocktransfer.FieldInitiatedBy:
 		m.ResetInitiatedBy()
+		return nil
+	case stocktransfer.FieldOrigin:
+		m.ResetOrigin()
 		return nil
 	case stocktransfer.FieldReferenceNo:
 		m.ResetReferenceNo()

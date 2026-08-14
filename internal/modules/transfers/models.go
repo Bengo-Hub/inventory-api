@@ -61,6 +61,10 @@ type TransferResponse struct {
 	TenantID             uuid.UUID              `json:"tenant_id"`
 	TransferNumber       string                 `json:"transfer_number"`
 	Status               string                 `json:"status"`
+	// Origin distinguishes a normal user-initiated transfer ("manual", the New Transfer dialog)
+	// from one auto-recorded after the fact by another feature (e.g. "bulk_adjust") — see
+	// RecordCompletedTransfer.
+	Origin               string                 `json:"origin"`
 	SourceWarehouse      WarehouseInfo          `json:"source_warehouse"`
 	DestinationWarehouse WarehouseInfo          `json:"destination_warehouse"`
 	InitiatedBy          *uuid.UUID             `json:"initiated_by,omitempty"`
@@ -107,6 +111,7 @@ type TransferSummary struct {
 	ID                  uuid.UUID  `json:"id"`
 	TransferNumber      string     `json:"transfer_number"`
 	Status              string     `json:"status"`
+	Origin              string     `json:"origin"`
 	SourceWarehouseName string     `json:"source_warehouse_name"`
 	DestWarehouseName   string     `json:"destination_warehouse_name"`
 	LineCount           int        `json:"line_count"`

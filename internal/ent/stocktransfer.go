@@ -30,6 +30,8 @@ type StockTransfer struct {
 	Status stocktransfer.Status `json:"status,omitempty"`
 	// User who initiated the transfer
 	InitiatedBy *uuid.UUID `json:"initiated_by,omitempty"`
+	// manual (New Transfer dialog) or an automated source, e.g. bulk_adjust
+	Origin string `json:"origin,omitempty"`
 	// External/business reference number for the transfer (e.g. waybill, dispatch note)
 	ReferenceNo string `json:"reference_no,omitempty"`
 	// Freight/shipping cost for moving the stock; posted to treasury as an expense on completion
@@ -81,7 +83,7 @@ func (*StockTransfer) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case stocktransfer.FieldShippingCharges:
 			values[i] = new(sql.NullFloat64)
-		case stocktransfer.FieldTransferNumber, stocktransfer.FieldStatus, stocktransfer.FieldReferenceNo, stocktransfer.FieldCarrier, stocktransfer.FieldFreightNotes, stocktransfer.FieldNotes:
+		case stocktransfer.FieldTransferNumber, stocktransfer.FieldStatus, stocktransfer.FieldOrigin, stocktransfer.FieldReferenceNo, stocktransfer.FieldCarrier, stocktransfer.FieldFreightNotes, stocktransfer.FieldNotes:
 			values[i] = new(sql.NullString)
 		case stocktransfer.FieldShippedAt, stocktransfer.FieldReceivedAt, stocktransfer.FieldCreatedAt, stocktransfer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -144,6 +146,12 @@ func (_m *StockTransfer) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.InitiatedBy = new(uuid.UUID)
 				*_m.InitiatedBy = *value.S.(*uuid.UUID)
+			}
+		case stocktransfer.FieldOrigin:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field origin", values[i])
+			} else if value.Valid {
+				_m.Origin = value.String
 			}
 		case stocktransfer.FieldReferenceNo:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -261,6 +269,9 @@ func (_m *StockTransfer) String() string {
 		builder.WriteString("initiated_by=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("origin=")
+	builder.WriteString(_m.Origin)
 	builder.WriteString(", ")
 	builder.WriteString("reference_no=")
 	builder.WriteString(_m.ReferenceNo)

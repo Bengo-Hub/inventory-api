@@ -2153,16 +2153,20 @@ func init() {
 	stocktransferDescTransferNumber := stocktransferFields[4].Descriptor()
 	// stocktransfer.TransferNumberValidator is a validator for the "transfer_number" field. It is called by the builders before save.
 	stocktransfer.TransferNumberValidator = stocktransferDescTransferNumber.Validators[0].(func(string) error)
+	// stocktransferDescOrigin is the schema descriptor for origin field.
+	stocktransferDescOrigin := stocktransferFields[7].Descriptor()
+	// stocktransfer.DefaultOrigin holds the default value on creation for the origin field.
+	stocktransfer.DefaultOrigin = stocktransferDescOrigin.Default.(string)
 	// stocktransferDescShippingCharges is the schema descriptor for shipping_charges field.
-	stocktransferDescShippingCharges := stocktransferFields[8].Descriptor()
+	stocktransferDescShippingCharges := stocktransferFields[9].Descriptor()
 	// stocktransfer.DefaultShippingCharges holds the default value on creation for the shipping_charges field.
 	stocktransfer.DefaultShippingCharges = stocktransferDescShippingCharges.Default.(float64)
 	// stocktransferDescCreatedAt is the schema descriptor for created_at field.
-	stocktransferDescCreatedAt := stocktransferFields[14].Descriptor()
+	stocktransferDescCreatedAt := stocktransferFields[15].Descriptor()
 	// stocktransfer.DefaultCreatedAt holds the default value on creation for the created_at field.
 	stocktransfer.DefaultCreatedAt = stocktransferDescCreatedAt.Default.(func() time.Time)
 	// stocktransferDescUpdatedAt is the schema descriptor for updated_at field.
-	stocktransferDescUpdatedAt := stocktransferFields[15].Descriptor()
+	stocktransferDescUpdatedAt := stocktransferFields[16].Descriptor()
 	// stocktransfer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	stocktransfer.DefaultUpdatedAt = stocktransferDescUpdatedAt.Default.(func() time.Time)
 	// stocktransfer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

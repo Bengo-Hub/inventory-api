@@ -28,6 +28,8 @@ const (
 	FieldStatus = "status"
 	// FieldInitiatedBy holds the string denoting the initiated_by field in the database.
 	FieldInitiatedBy = "initiated_by"
+	// FieldOrigin holds the string denoting the origin field in the database.
+	FieldOrigin = "origin"
 	// FieldReferenceNo holds the string denoting the reference_no field in the database.
 	FieldReferenceNo = "reference_no"
 	// FieldShippingCharges holds the string denoting the shipping_charges field in the database.
@@ -68,6 +70,7 @@ var Columns = []string{
 	FieldTransferNumber,
 	FieldStatus,
 	FieldInitiatedBy,
+	FieldOrigin,
 	FieldReferenceNo,
 	FieldShippingCharges,
 	FieldCarrier,
@@ -92,6 +95,8 @@ func ValidColumn(column string) bool {
 var (
 	// TransferNumberValidator is a validator for the "transfer_number" field. It is called by the builders before save.
 	TransferNumberValidator func(string) error
+	// DefaultOrigin holds the default value on creation for the "origin" field.
+	DefaultOrigin string
 	// DefaultShippingCharges holds the default value on creation for the "shipping_charges" field.
 	DefaultShippingCharges float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -168,6 +173,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByInitiatedBy orders the results by the initiated_by field.
 func ByInitiatedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInitiatedBy, opts...).ToFunc()
+}
+
+// ByOrigin orders the results by the origin field.
+func ByOrigin(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrigin, opts...).ToFunc()
 }
 
 // ByReferenceNo orders the results by the reference_no field.

@@ -3193,6 +3193,7 @@ var (
 		{Name: "transfer_number", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "in_transit", "received", "cancelled"}, Default: "draft"},
 		{Name: "initiated_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "origin", Type: field.TypeString, Default: "manual"},
 		{Name: "reference_no", Type: field.TypeString, Nullable: true},
 		{Name: "shipping_charges", Type: field.TypeFloat64, Default: 0},
 		{Name: "carrier", Type: field.TypeString, Nullable: true},

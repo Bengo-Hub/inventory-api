@@ -38,6 +38,16 @@ func (StockTransfer) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("User who initiated the transfer"),
+		// origin distinguishes a normal user-initiated transfer (New Transfer dialog) from one
+		// auto-recorded, already-"received", after the fact by another feature that legitimately
+		// moves stock between two warehouses outside the draft/ship/receive workflow (e.g. a bulk
+		// stock adjustment whose lines specify a destination warehouse) — so every warehouse-to-
+		// warehouse move gets a transfer_number and shows up in the Transfers list/reporting
+		// regardless of entry point, without forcing an unrelated feature through an approval gate
+		// meant for a chosen, still-in-flight shipment. See transfers.Service.RecordCompletedTransfer.
+		field.String("origin").
+			Default("manual").
+			Comment("manual (New Transfer dialog) or an automated source, e.g. bulk_adjust"),
 		field.String("reference_no").
 			Optional().
 			Comment("External/business reference number for the transfer (e.g. waybill, dispatch note)"),
