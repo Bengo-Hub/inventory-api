@@ -34,6 +34,20 @@ func (StockTransferLine) Fields() []ent.Field {
 		field.Float("quantity").
 			Default(0).
 			Comment("Quantity to transfer (fractional-capable)"),
+		// received_quantity is nil until the transfer is received. Defaults to the full drafted
+		// Quantity when the receiver doesn't specify otherwise (zero behavior change for the
+		// common full-receipt case) — set lower when what actually arrived at the destination
+		// falls short of what was shipped (breakage/loss in transit, a miscount at dispatch).
+		field.Float("received_quantity").
+			Optional().
+			Nillable().
+			Comment("Quantity actually credited to the destination warehouse at Receive; nil until received"),
+		// variance_reason classifies a shortfall (received_quantity < quantity) using the SAME
+		// vocabulary StockAdjustment/StockCountLine already use, so transfer-shortage reporting
+		// reads consistently with every other stock-variance surface in the app.
+		field.String("variance_reason").
+			Optional().
+			Comment("Classification when received_quantity < quantity: damaged/expired/shrinkage/found/correction/count_variance/other"),
 	}
 }
 

@@ -14,6 +14,13 @@ func RenderPurchaseOrderPDF(d PurchaseOrderDoc) ([]byte, error) {
 	return render.Render(&d, logo, logoType)
 }
 
+// RenderTransferPDF renders a branded A4 stock-transfer document (Dispatch/Transit Note or
+// Goods-Received Note, depending on what the caller populated on d) and returns PDF bytes.
+func RenderTransferPDF(d TransferDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderTransfer(&d, logo, logoType)
+}
+
 // FetchLogoBytes downloads a tenant logo and returns the raw bytes + fpdf image-type
 // ("PNG"/"JPG"/"GIF"). Graceful: returns (nil, "") on any failure so callers (e.g. report PDFs)
 // still render without a logo. Exported wrapper over fetchLogoBytes.

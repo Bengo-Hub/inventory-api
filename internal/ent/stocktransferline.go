@@ -28,6 +28,10 @@ type StockTransferLine struct {
 	LotID *uuid.UUID `json:"lot_id,omitempty"`
 	// Quantity to transfer (fractional-capable)
 	Quantity float64 `json:"quantity,omitempty"`
+	// Quantity actually credited to the destination warehouse at Receive; nil until received
+	ReceivedQuantity *float64 `json:"received_quantity,omitempty"`
+	// Classification when received_quantity < quantity: damaged/expired/shrinkage/found/correction/count_variance/other
+	VarianceReason string `json:"variance_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StockTransferLineQuery when eager-loading is set.
 	Edges        StockTransferLineEdges `json:"edges"`
@@ -61,8 +65,10 @@ func (*StockTransferLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case stocktransferline.FieldVariantID, stocktransferline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case stocktransferline.FieldQuantity:
+		case stocktransferline.FieldQuantity, stocktransferline.FieldReceivedQuantity:
 			values[i] = new(sql.NullFloat64)
+		case stocktransferline.FieldVarianceReason:
+			values[i] = new(sql.NullString)
 		case stocktransferline.FieldID, stocktransferline.FieldTransferID, stocktransferline.FieldItemID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -117,6 +123,19 @@ func (_m *StockTransferLine) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
 				_m.Quantity = value.Float64
+			}
+		case stocktransferline.FieldReceivedQuantity:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field received_quantity", values[i])
+			} else if value.Valid {
+				_m.ReceivedQuantity = new(float64)
+				*_m.ReceivedQuantity = value.Float64
+			}
+		case stocktransferline.FieldVarianceReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field variance_reason", values[i])
+			} else if value.Valid {
+				_m.VarianceReason = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -177,6 +196,14 @@ func (_m *StockTransferLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("quantity=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Quantity))
+	builder.WriteString(", ")
+	if v := _m.ReceivedQuantity; v != nil {
+		builder.WriteString("received_quantity=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("variance_reason=")
+	builder.WriteString(_m.VarianceReason)
 	builder.WriteByte(')')
 	return builder.String()
 }

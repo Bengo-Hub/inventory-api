@@ -15,3 +15,10 @@ type DocLine = render.DocLine
 
 // PurchaseOrderDoc is the canonical input for rendering a Purchase Order PDF.
 type PurchaseOrderDoc = render.PurchaseOrderDoc
+
+// TransferDoc is the canonical input for rendering a stock-transfer Dispatch/Transit Note or
+// Goods-Received Note PDF.
+type TransferDoc = render.TransferDoc
+
+// TransferDocLine is a single item row on a TransferDoc.
+type TransferDocLine = render.TransferDocLine

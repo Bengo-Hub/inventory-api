@@ -90013,20 +90013,23 @@ func (m *StockTransferMutation) ResetEdge(name string) error {
 // StockTransferLineMutation represents an operation that mutates the StockTransferLine nodes in the graph.
 type StockTransferLineMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	item_id         *uuid.UUID
-	variant_id      *uuid.UUID
-	lot_id          *uuid.UUID
-	quantity        *float64
-	addquantity     *float64
-	clearedFields   map[string]struct{}
-	transfer        *uuid.UUID
-	clearedtransfer bool
-	done            bool
-	oldValue        func(context.Context) (*StockTransferLine, error)
-	predicates      []predicate.StockTransferLine
+	op                   Op
+	typ                  string
+	id                   *uuid.UUID
+	item_id              *uuid.UUID
+	variant_id           *uuid.UUID
+	lot_id               *uuid.UUID
+	quantity             *float64
+	addquantity          *float64
+	received_quantity    *float64
+	addreceived_quantity *float64
+	variance_reason      *string
+	clearedFields        map[string]struct{}
+	transfer             *uuid.UUID
+	clearedtransfer      bool
+	done                 bool
+	oldValue             func(context.Context) (*StockTransferLine, error)
+	predicates           []predicate.StockTransferLine
 }
 
 var _ ent.Mutation = (*StockTransferLineMutation)(nil)
@@ -90359,6 +90362,125 @@ func (m *StockTransferLineMutation) ResetQuantity() {
 	m.addquantity = nil
 }
 
+// SetReceivedQuantity sets the "received_quantity" field.
+func (m *StockTransferLineMutation) SetReceivedQuantity(f float64) {
+	m.received_quantity = &f
+	m.addreceived_quantity = nil
+}
+
+// ReceivedQuantity returns the value of the "received_quantity" field in the mutation.
+func (m *StockTransferLineMutation) ReceivedQuantity() (r float64, exists bool) {
+	v := m.received_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReceivedQuantity returns the old "received_quantity" field's value of the StockTransferLine entity.
+// If the StockTransferLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferLineMutation) OldReceivedQuantity(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReceivedQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReceivedQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReceivedQuantity: %w", err)
+	}
+	return oldValue.ReceivedQuantity, nil
+}
+
+// AddReceivedQuantity adds f to the "received_quantity" field.
+func (m *StockTransferLineMutation) AddReceivedQuantity(f float64) {
+	if m.addreceived_quantity != nil {
+		*m.addreceived_quantity += f
+	} else {
+		m.addreceived_quantity = &f
+	}
+}
+
+// AddedReceivedQuantity returns the value that was added to the "received_quantity" field in this mutation.
+func (m *StockTransferLineMutation) AddedReceivedQuantity() (r float64, exists bool) {
+	v := m.addreceived_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (m *StockTransferLineMutation) ClearReceivedQuantity() {
+	m.received_quantity = nil
+	m.addreceived_quantity = nil
+	m.clearedFields[stocktransferline.FieldReceivedQuantity] = struct{}{}
+}
+
+// ReceivedQuantityCleared returns if the "received_quantity" field was cleared in this mutation.
+func (m *StockTransferLineMutation) ReceivedQuantityCleared() bool {
+	_, ok := m.clearedFields[stocktransferline.FieldReceivedQuantity]
+	return ok
+}
+
+// ResetReceivedQuantity resets all changes to the "received_quantity" field.
+func (m *StockTransferLineMutation) ResetReceivedQuantity() {
+	m.received_quantity = nil
+	m.addreceived_quantity = nil
+	delete(m.clearedFields, stocktransferline.FieldReceivedQuantity)
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (m *StockTransferLineMutation) SetVarianceReason(s string) {
+	m.variance_reason = &s
+}
+
+// VarianceReason returns the value of the "variance_reason" field in the mutation.
+func (m *StockTransferLineMutation) VarianceReason() (r string, exists bool) {
+	v := m.variance_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVarianceReason returns the old "variance_reason" field's value of the StockTransferLine entity.
+// If the StockTransferLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferLineMutation) OldVarianceReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVarianceReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVarianceReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVarianceReason: %w", err)
+	}
+	return oldValue.VarianceReason, nil
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (m *StockTransferLineMutation) ClearVarianceReason() {
+	m.variance_reason = nil
+	m.clearedFields[stocktransferline.FieldVarianceReason] = struct{}{}
+}
+
+// VarianceReasonCleared returns if the "variance_reason" field was cleared in this mutation.
+func (m *StockTransferLineMutation) VarianceReasonCleared() bool {
+	_, ok := m.clearedFields[stocktransferline.FieldVarianceReason]
+	return ok
+}
+
+// ResetVarianceReason resets all changes to the "variance_reason" field.
+func (m *StockTransferLineMutation) ResetVarianceReason() {
+	m.variance_reason = nil
+	delete(m.clearedFields, stocktransferline.FieldVarianceReason)
+}
+
 // ClearTransfer clears the "transfer" edge to the StockTransfer entity.
 func (m *StockTransferLineMutation) ClearTransfer() {
 	m.clearedtransfer = true
@@ -90420,7 +90542,7 @@ func (m *StockTransferLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StockTransferLineMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.transfer != nil {
 		fields = append(fields, stocktransferline.FieldTransferID)
 	}
@@ -90435,6 +90557,12 @@ func (m *StockTransferLineMutation) Fields() []string {
 	}
 	if m.quantity != nil {
 		fields = append(fields, stocktransferline.FieldQuantity)
+	}
+	if m.received_quantity != nil {
+		fields = append(fields, stocktransferline.FieldReceivedQuantity)
+	}
+	if m.variance_reason != nil {
+		fields = append(fields, stocktransferline.FieldVarianceReason)
 	}
 	return fields
 }
@@ -90454,6 +90582,10 @@ func (m *StockTransferLineMutation) Field(name string) (ent.Value, bool) {
 		return m.LotID()
 	case stocktransferline.FieldQuantity:
 		return m.Quantity()
+	case stocktransferline.FieldReceivedQuantity:
+		return m.ReceivedQuantity()
+	case stocktransferline.FieldVarianceReason:
+		return m.VarianceReason()
 	}
 	return nil, false
 }
@@ -90473,6 +90605,10 @@ func (m *StockTransferLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldLotID(ctx)
 	case stocktransferline.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case stocktransferline.FieldReceivedQuantity:
+		return m.OldReceivedQuantity(ctx)
+	case stocktransferline.FieldVarianceReason:
+		return m.OldVarianceReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown StockTransferLine field %s", name)
 }
@@ -90517,6 +90653,20 @@ func (m *StockTransferLineMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetQuantity(v)
 		return nil
+	case stocktransferline.FieldReceivedQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReceivedQuantity(v)
+		return nil
+	case stocktransferline.FieldVarianceReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVarianceReason(v)
+		return nil
 	}
 	return fmt.Errorf("unknown StockTransferLine field %s", name)
 }
@@ -90528,6 +90678,9 @@ func (m *StockTransferLineMutation) AddedFields() []string {
 	if m.addquantity != nil {
 		fields = append(fields, stocktransferline.FieldQuantity)
 	}
+	if m.addreceived_quantity != nil {
+		fields = append(fields, stocktransferline.FieldReceivedQuantity)
+	}
 	return fields
 }
 
@@ -90538,6 +90691,8 @@ func (m *StockTransferLineMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case stocktransferline.FieldQuantity:
 		return m.AddedQuantity()
+	case stocktransferline.FieldReceivedQuantity:
+		return m.AddedReceivedQuantity()
 	}
 	return nil, false
 }
@@ -90554,6 +90709,13 @@ func (m *StockTransferLineMutation) AddField(name string, value ent.Value) error
 		}
 		m.AddQuantity(v)
 		return nil
+	case stocktransferline.FieldReceivedQuantity:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReceivedQuantity(v)
+		return nil
 	}
 	return fmt.Errorf("unknown StockTransferLine numeric field %s", name)
 }
@@ -90567,6 +90729,12 @@ func (m *StockTransferLineMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(stocktransferline.FieldLotID) {
 		fields = append(fields, stocktransferline.FieldLotID)
+	}
+	if m.FieldCleared(stocktransferline.FieldReceivedQuantity) {
+		fields = append(fields, stocktransferline.FieldReceivedQuantity)
+	}
+	if m.FieldCleared(stocktransferline.FieldVarianceReason) {
+		fields = append(fields, stocktransferline.FieldVarianceReason)
 	}
 	return fields
 }
@@ -90587,6 +90755,12 @@ func (m *StockTransferLineMutation) ClearField(name string) error {
 		return nil
 	case stocktransferline.FieldLotID:
 		m.ClearLotID()
+		return nil
+	case stocktransferline.FieldReceivedQuantity:
+		m.ClearReceivedQuantity()
+		return nil
+	case stocktransferline.FieldVarianceReason:
+		m.ClearVarianceReason()
 		return nil
 	}
 	return fmt.Errorf("unknown StockTransferLine nullable field %s", name)
@@ -90610,6 +90784,12 @@ func (m *StockTransferLineMutation) ResetField(name string) error {
 		return nil
 	case stocktransferline.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case stocktransferline.FieldReceivedQuantity:
+		m.ResetReceivedQuantity()
+		return nil
+	case stocktransferline.FieldVarianceReason:
+		m.ResetVarianceReason()
 		return nil
 	}
 	return fmt.Errorf("unknown StockTransferLine field %s", name)

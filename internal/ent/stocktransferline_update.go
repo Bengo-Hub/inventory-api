@@ -118,6 +118,53 @@ func (_u *StockTransferLineUpdate) AddQuantity(v float64) *StockTransferLineUpda
 	return _u
 }
 
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_u *StockTransferLineUpdate) SetReceivedQuantity(v float64) *StockTransferLineUpdate {
+	_u.mutation.ResetReceivedQuantity()
+	_u.mutation.SetReceivedQuantity(v)
+	return _u
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_u *StockTransferLineUpdate) SetNillableReceivedQuantity(v *float64) *StockTransferLineUpdate {
+	if v != nil {
+		_u.SetReceivedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReceivedQuantity adds value to the "received_quantity" field.
+func (_u *StockTransferLineUpdate) AddReceivedQuantity(v float64) *StockTransferLineUpdate {
+	_u.mutation.AddReceivedQuantity(v)
+	return _u
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (_u *StockTransferLineUpdate) ClearReceivedQuantity() *StockTransferLineUpdate {
+	_u.mutation.ClearReceivedQuantity()
+	return _u
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (_u *StockTransferLineUpdate) SetVarianceReason(v string) *StockTransferLineUpdate {
+	_u.mutation.SetVarianceReason(v)
+	return _u
+}
+
+// SetNillableVarianceReason sets the "variance_reason" field if the given value is not nil.
+func (_u *StockTransferLineUpdate) SetNillableVarianceReason(v *string) *StockTransferLineUpdate {
+	if v != nil {
+		_u.SetVarianceReason(*v)
+	}
+	return _u
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (_u *StockTransferLineUpdate) ClearVarianceReason() *StockTransferLineUpdate {
+	_u.mutation.ClearVarianceReason()
+	return _u
+}
+
 // SetTransfer sets the "transfer" edge to the StockTransfer entity.
 func (_u *StockTransferLineUpdate) SetTransfer(v *StockTransfer) *StockTransferLineUpdate {
 	return _u.SetTransferID(v.ID)
@@ -201,6 +248,21 @@ func (_u *StockTransferLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedQuantity(); ok {
+		_spec.AddField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64, value)
+	}
+	if _u.mutation.ReceivedQuantityCleared() {
+		_spec.ClearField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VarianceReason(); ok {
+		_spec.SetField(stocktransferline.FieldVarianceReason, field.TypeString, value)
+	}
+	if _u.mutation.VarianceReasonCleared() {
+		_spec.ClearField(stocktransferline.FieldVarianceReason, field.TypeString)
 	}
 	if _u.mutation.TransferCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -340,6 +402,53 @@ func (_u *StockTransferLineUpdateOne) AddQuantity(v float64) *StockTransferLineU
 	return _u
 }
 
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_u *StockTransferLineUpdateOne) SetReceivedQuantity(v float64) *StockTransferLineUpdateOne {
+	_u.mutation.ResetReceivedQuantity()
+	_u.mutation.SetReceivedQuantity(v)
+	return _u
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_u *StockTransferLineUpdateOne) SetNillableReceivedQuantity(v *float64) *StockTransferLineUpdateOne {
+	if v != nil {
+		_u.SetReceivedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReceivedQuantity adds value to the "received_quantity" field.
+func (_u *StockTransferLineUpdateOne) AddReceivedQuantity(v float64) *StockTransferLineUpdateOne {
+	_u.mutation.AddReceivedQuantity(v)
+	return _u
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (_u *StockTransferLineUpdateOne) ClearReceivedQuantity() *StockTransferLineUpdateOne {
+	_u.mutation.ClearReceivedQuantity()
+	return _u
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (_u *StockTransferLineUpdateOne) SetVarianceReason(v string) *StockTransferLineUpdateOne {
+	_u.mutation.SetVarianceReason(v)
+	return _u
+}
+
+// SetNillableVarianceReason sets the "variance_reason" field if the given value is not nil.
+func (_u *StockTransferLineUpdateOne) SetNillableVarianceReason(v *string) *StockTransferLineUpdateOne {
+	if v != nil {
+		_u.SetVarianceReason(*v)
+	}
+	return _u
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (_u *StockTransferLineUpdateOne) ClearVarianceReason() *StockTransferLineUpdateOne {
+	_u.mutation.ClearVarianceReason()
+	return _u
+}
+
 // SetTransfer sets the "transfer" edge to the StockTransfer entity.
 func (_u *StockTransferLineUpdateOne) SetTransfer(v *StockTransfer) *StockTransferLineUpdateOne {
 	return _u.SetTransferID(v.ID)
@@ -453,6 +562,21 @@ func (_u *StockTransferLineUpdateOne) sqlSave(ctx context.Context) (_node *Stock
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
 		_spec.AddField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedQuantity(); ok {
+		_spec.AddField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64, value)
+	}
+	if _u.mutation.ReceivedQuantityCleared() {
+		_spec.ClearField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VarianceReason(); ok {
+		_spec.SetField(stocktransferline.FieldVarianceReason, field.TypeString, value)
+	}
+	if _u.mutation.VarianceReasonCleared() {
+		_spec.ClearField(stocktransferline.FieldVarianceReason, field.TypeString)
 	}
 	if _u.mutation.TransferCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -18,6 +18,35 @@ type CreateTransferRequest struct {
 	FreightNotes           string                `json:"freight_notes,omitempty"`
 }
 
+// UpdateTransferRequest is the input for amending a DRAFT transfer's line items and header
+// fields before it ships. Source/destination warehouse are immutable (not part of this
+// request) — the wrong-warehouse case is served by Cancel + a fresh Create instead.
+type UpdateTransferRequest struct {
+	Items           []TransferLineRequest `json:"items"`
+	Notes           string                `json:"notes,omitempty"`
+	ReferenceNo     string                `json:"reference_no,omitempty"`
+	ShippingCharges float64               `json:"shipping_charges,omitempty"`
+	Carrier         string                `json:"carrier,omitempty"`
+	FreightNotes    string                `json:"freight_notes,omitempty"`
+}
+
+// ReceiveTransferRequest is the input for receiving an in-transit transfer. Items is optional —
+// omit entirely (or omit a given line) for the common full-receipt case, where every line
+// credits its full drafted Quantity exactly as before. Include a line only when what actually
+// arrived at the destination differs from what was shipped.
+type ReceiveTransferRequest struct {
+	Items []ReceiveLineInput `json:"items,omitempty"`
+}
+
+// ReceiveLineInput overrides one line's received quantity, keyed by the STOCK TRANSFER LINE id
+// (not item_id — a transfer can carry more than one line for the same item, e.g. different
+// lots, so the line id is the only unambiguous key).
+type ReceiveLineInput struct {
+	LineID         uuid.UUID `json:"line_id"`
+	ReceivedQty    float64   `json:"received_qty"`
+	VarianceReason string    `json:"variance_reason,omitempty"`
+}
+
 // TransferLineRequest represents a single line item on a transfer.
 type TransferLineRequest struct {
 	ItemID    uuid.UUID  `json:"item_id"`
@@ -56,10 +85,11 @@ type TransferLineResponse struct {
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	LotID     *uuid.UUID `json:"lot_id,omitempty"`
 	Quantity  float64    `json:"quantity"`
-	// ReceivedQty is set once the transfer has been received — this flow always credits the
-	// full line Quantity to the destination (no partial-receive support), so it mirrors
-	// Quantity, but is surfaced explicitly rather than left for the caller to assume.
+	// ReceivedQty is set once the transfer has been received — defaults to Quantity (full
+	// receipt) unless the receiver recorded a shortfall via ReceiveTransferRequest.
 	ReceivedQty *float64 `json:"received_qty,omitempty"`
+	// VarianceReason classifies a shortfall (ReceivedQty < Quantity); empty on a full receipt.
+	VarianceReason string `json:"variance_reason,omitempty"`
 }
 
 // WarehouseInfo is a lightweight warehouse representation for transfer responses.
