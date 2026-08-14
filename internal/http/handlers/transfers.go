@@ -14,6 +14,7 @@ import (
 
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
@@ -21,10 +22,11 @@ import (
 // TransferServicer defines the contract for transfer operations.
 type TransferServicer interface {
 	CreateTransfer(ctx context.Context, tenantID uuid.UUID, req transfers.CreateTransferRequest) (*transfers.TransferResponse, error)
+	UpdateTransfer(ctx context.Context, tenantID, transferID uuid.UUID, req transfers.UpdateTransferRequest) (*transfers.TransferResponse, error)
 	ListTransfers(ctx context.Context, tenantID uuid.UUID, filter transfers.TransferListFilter) ([]transfers.TransferSummary, int, error)
 	GetTransfer(ctx context.Context, tenantID, transferID uuid.UUID) (*transfers.TransferResponse, error)
 	ShipTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error
-	ReceiveTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error
+	ReceiveTransfer(ctx context.Context, tenantID, transferID uuid.UUID, req transfers.ReceiveTransferRequest) error
 	CancelTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error
 }
 
@@ -34,6 +36,7 @@ type TransferHandler struct {
 	transferSvc TransferServicer
 	rbacSvc     *rbac.Service
 	appSvc      *approvals.Service
+	docSvc      *documents.Service
 }
 
 // NewTransferHandler creates a new transfer handler.
@@ -44,6 +47,12 @@ func NewTransferHandler(log *zap.Logger, transferSvc TransferServicer, rbacSvc *
 		rbacSvc:     rbacSvc,
 		appSvc:      appSvc,
 	}
+}
+
+// SetDocService wires the tenant-branding-aware document renderer used by GenerateDocument
+// (Dispatch/Transit Note + Goods-Received Note PDFs). Optional — GenerateDocument 503s until set.
+func (h *TransferHandler) SetDocService(svc *documents.Service) {
+	h.docSvc = svc
 }
 
 // RegisterRoutes wires transfer routes onto the given chi.Router.
@@ -62,6 +71,8 @@ func (h *TransferHandler) RegisterRoutes(r chi.Router) {
 		tr.With(featGate, perm(rbac.PermStockChange)).Post("/", h.CreateTransfer)
 		tr.Get("/", h.ListTransfers)
 		tr.Get("/{transferId}", h.GetTransfer)
+		tr.Get("/{transferId}/pdf", h.GenerateDocument)
+		tr.With(featGate, perm(rbac.PermStockChange)).Put("/{transferId}", h.UpdateTransfer)
 		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/ship", h.ShipTransfer)
 		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/receive", h.ReceiveTransfer)
 		tr.With(featGate, perm(rbac.PermStockChange)).Post("/{transferId}/cancel", h.CancelTransfer)
@@ -103,6 +114,53 @@ func (h *TransferHandler) CreateTransfer(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, http.StatusCreated, resp)
+}
+
+// UpdateTransfer handles PUT /v1/{tenant}/inventory/transfers/{transferId} — amends a DRAFT
+// transfer's line items and header fields before it ships (the service itself enforces the
+// draft-only guard; a 400 surfaces here for any other status).
+func (h *TransferHandler) UpdateTransfer(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+
+	transferID, err := uuid.Parse(chi.URLParam(r, "transferId"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid transfer ID")
+		return
+	}
+
+	var req transfers.UpdateTransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.Items) == 0 {
+		writeError(w, http.StatusBadRequest, "MISSING_FIELD", "at least one item is required")
+		return
+	}
+
+	// A prior Ship attempt may have auto-submitted an approval request for this transfer —
+	// amending the lines underneath a request that's already pending sign-off would leave the
+	// approver reviewing stale quantities, so block until it's resolved (reused, not
+	// duplicated: same Satisfied check ShipTransfer's gate uses).
+	if h.appSvc != nil {
+		if ok, state, aerr := h.appSvc.Satisfied(r.Context(), tenantID, "stock_transfer", transferID, 0); aerr == nil && !ok && state == "pending" {
+			writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This transfer is awaiting approval sign-off — resolve it before amending.")
+			return
+		}
+	}
+
+	resp, err := h.transferSvc.UpdateTransfer(r.Context(), tenantID, transferID, req)
+	if err != nil {
+		h.log.Error("update transfer failed", zap.Error(err))
+		writeError(w, http.StatusBadRequest, "UPDATE_FAILED", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // ListTransfers handles GET /v1/{tenant}/inventory/transfers
@@ -221,7 +279,17 @@ func (h *TransferHandler) ReceiveTransfer(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := h.transferSvc.ReceiveTransfer(r.Context(), tenantID, transferID); err != nil {
+	// Body is optional — an empty/absent body means "everything arrived as shipped" (the
+	// original, still-default behavior). Only decode when the caller actually sent one.
+	var req transfers.ReceiveTransferRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+			return
+		}
+	}
+
+	if err := h.transferSvc.ReceiveTransfer(r.Context(), tenantID, transferID, req); err != nil {
 		h.log.Error("receive transfer failed", zap.Error(err))
 		writeError(w, http.StatusBadRequest, "RECEIVE_FAILED", err.Error())
 		return

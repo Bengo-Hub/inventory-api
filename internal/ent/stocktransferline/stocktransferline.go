@@ -23,6 +23,10 @@ const (
 	FieldLotID = "lot_id"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldReceivedQuantity holds the string denoting the received_quantity field in the database.
+	FieldReceivedQuantity = "received_quantity"
+	// FieldVarianceReason holds the string denoting the variance_reason field in the database.
+	FieldVarianceReason = "variance_reason"
 	// EdgeTransfer holds the string denoting the transfer edge name in mutations.
 	EdgeTransfer = "transfer"
 	// Table holds the table name of the stocktransferline in the database.
@@ -44,6 +48,8 @@ var Columns = []string{
 	FieldVariantID,
 	FieldLotID,
 	FieldQuantity,
+	FieldReceivedQuantity,
+	FieldVarianceReason,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -94,6 +100,16 @@ func ByLotID(opts ...sql.OrderTermOption) OrderOption {
 // ByQuantity orders the results by the quantity field.
 func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByReceivedQuantity orders the results by the received_quantity field.
+func ByReceivedQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReceivedQuantity, opts...).ToFunc()
+}
+
+// ByVarianceReason orders the results by the variance_reason field.
+func ByVarianceReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVarianceReason, opts...).ToFunc()
 }
 
 // ByTransferField orders the results by transfer field.

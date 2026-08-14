@@ -3228,6 +3228,8 @@ var (
 		{Name: "variant_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "lot_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity", Type: field.TypeFloat64, Default: 0},
+		{Name: "received_quantity", Type: field.TypeFloat64, Nullable: true},
+		{Name: "variance_reason", Type: field.TypeString, Nullable: true},
 		{Name: "transfer_id", Type: field.TypeUUID},
 	}
 	// StockTransferLinesTable holds the schema information for the "stock_transfer_lines" table.
@@ -3238,7 +3240,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "stock_transfer_lines_stock_transfers_lines",
-				Columns:    []*schema.Column{StockTransferLinesColumns[5]},
+				Columns:    []*schema.Column{StockTransferLinesColumns[7]},
 				RefColumns: []*schema.Column{StockTransfersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -3247,7 +3249,7 @@ var (
 			{
 				Name:    "stocktransferline_transfer_id_item_id",
 				Unique:  false,
-				Columns: []*schema.Column{StockTransferLinesColumns[5], StockTransferLinesColumns[1]},
+				Columns: []*schema.Column{StockTransferLinesColumns[7], StockTransferLinesColumns[1]},
 			},
 		},
 	}

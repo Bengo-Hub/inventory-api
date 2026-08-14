@@ -79,6 +79,16 @@ func Quantity(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldEQ(FieldQuantity, v))
 }
 
+// ReceivedQuantity applies equality check predicate on the "received_quantity" field. It's identical to ReceivedQuantityEQ.
+func ReceivedQuantity(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldEQ(FieldReceivedQuantity, v))
+}
+
+// VarianceReason applies equality check predicate on the "variance_reason" field. It's identical to VarianceReasonEQ.
+func VarianceReason(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldEQ(FieldVarianceReason, v))
+}
+
 // TransferIDEQ applies the EQ predicate on the "transfer_id" field.
 func TransferIDEQ(v uuid.UUID) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldEQ(FieldTransferID, v))
@@ -277,6 +287,131 @@ func QuantityLT(v float64) predicate.StockTransferLine {
 // QuantityLTE applies the LTE predicate on the "quantity" field.
 func QuantityLTE(v float64) predicate.StockTransferLine {
 	return predicate.StockTransferLine(sql.FieldLTE(FieldQuantity, v))
+}
+
+// ReceivedQuantityEQ applies the EQ predicate on the "received_quantity" field.
+func ReceivedQuantityEQ(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldEQ(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityNEQ applies the NEQ predicate on the "received_quantity" field.
+func ReceivedQuantityNEQ(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNEQ(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityIn applies the In predicate on the "received_quantity" field.
+func ReceivedQuantityIn(vs ...float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldIn(FieldReceivedQuantity, vs...))
+}
+
+// ReceivedQuantityNotIn applies the NotIn predicate on the "received_quantity" field.
+func ReceivedQuantityNotIn(vs ...float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNotIn(FieldReceivedQuantity, vs...))
+}
+
+// ReceivedQuantityGT applies the GT predicate on the "received_quantity" field.
+func ReceivedQuantityGT(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldGT(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityGTE applies the GTE predicate on the "received_quantity" field.
+func ReceivedQuantityGTE(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldGTE(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityLT applies the LT predicate on the "received_quantity" field.
+func ReceivedQuantityLT(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldLT(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityLTE applies the LTE predicate on the "received_quantity" field.
+func ReceivedQuantityLTE(v float64) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldLTE(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityIsNil applies the IsNil predicate on the "received_quantity" field.
+func ReceivedQuantityIsNil() predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldIsNull(FieldReceivedQuantity))
+}
+
+// ReceivedQuantityNotNil applies the NotNil predicate on the "received_quantity" field.
+func ReceivedQuantityNotNil() predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNotNull(FieldReceivedQuantity))
+}
+
+// VarianceReasonEQ applies the EQ predicate on the "variance_reason" field.
+func VarianceReasonEQ(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldEQ(FieldVarianceReason, v))
+}
+
+// VarianceReasonNEQ applies the NEQ predicate on the "variance_reason" field.
+func VarianceReasonNEQ(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNEQ(FieldVarianceReason, v))
+}
+
+// VarianceReasonIn applies the In predicate on the "variance_reason" field.
+func VarianceReasonIn(vs ...string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldIn(FieldVarianceReason, vs...))
+}
+
+// VarianceReasonNotIn applies the NotIn predicate on the "variance_reason" field.
+func VarianceReasonNotIn(vs ...string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNotIn(FieldVarianceReason, vs...))
+}
+
+// VarianceReasonGT applies the GT predicate on the "variance_reason" field.
+func VarianceReasonGT(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldGT(FieldVarianceReason, v))
+}
+
+// VarianceReasonGTE applies the GTE predicate on the "variance_reason" field.
+func VarianceReasonGTE(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldGTE(FieldVarianceReason, v))
+}
+
+// VarianceReasonLT applies the LT predicate on the "variance_reason" field.
+func VarianceReasonLT(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldLT(FieldVarianceReason, v))
+}
+
+// VarianceReasonLTE applies the LTE predicate on the "variance_reason" field.
+func VarianceReasonLTE(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldLTE(FieldVarianceReason, v))
+}
+
+// VarianceReasonContains applies the Contains predicate on the "variance_reason" field.
+func VarianceReasonContains(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldContains(FieldVarianceReason, v))
+}
+
+// VarianceReasonHasPrefix applies the HasPrefix predicate on the "variance_reason" field.
+func VarianceReasonHasPrefix(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldHasPrefix(FieldVarianceReason, v))
+}
+
+// VarianceReasonHasSuffix applies the HasSuffix predicate on the "variance_reason" field.
+func VarianceReasonHasSuffix(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldHasSuffix(FieldVarianceReason, v))
+}
+
+// VarianceReasonIsNil applies the IsNil predicate on the "variance_reason" field.
+func VarianceReasonIsNil() predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldIsNull(FieldVarianceReason))
+}
+
+// VarianceReasonNotNil applies the NotNil predicate on the "variance_reason" field.
+func VarianceReasonNotNil() predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldNotNull(FieldVarianceReason))
+}
+
+// VarianceReasonEqualFold applies the EqualFold predicate on the "variance_reason" field.
+func VarianceReasonEqualFold(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldEqualFold(FieldVarianceReason, v))
+}
+
+// VarianceReasonContainsFold applies the ContainsFold predicate on the "variance_reason" field.
+func VarianceReasonContainsFold(v string) predicate.StockTransferLine {
+	return predicate.StockTransferLine(sql.FieldContainsFold(FieldVarianceReason, v))
 }
 
 // HasTransfer applies the HasEdge predicate on the "transfer" edge.

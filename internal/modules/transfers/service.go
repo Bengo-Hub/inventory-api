@@ -12,6 +12,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/stocktransfer"
+	"github.com/bengobox/inventory-service/internal/ent/stocktransferline"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/units"
@@ -61,6 +62,70 @@ func (s *Service) WithStockCascade(sc StockCascader) *Service {
 	return s
 }
 
+// validateTransferLines rejects a fractional quantity for any discrete/count-based item (e.g.
+// "2.5 phones") and hard-blocks over-quantity against the source warehouse's actual available
+// stock. Shared by CreateTransfer and UpdateTransfer so an amended draft's quantities are held
+// to the exact same bar as a brand-new transfer — this is the ONLY place either of them checks
+// it, closing the gap where the real over-transfer guard used to live only in adjustBalance
+// (called from ShipTransfer), letting a too-large draft exist and fail much later at Ship.
+// Unit lookup failures fail open (no unit info to judge against) rather than blocking a
+// transfer over an unrelated data gap. Returns the loaded Items (for building the response).
+func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantID, sourceWarehouseID uuid.UUID, items []TransferLineRequest) ([]*ent.Item, error) {
+	itemIDs := make([]uuid.UUID, len(items))
+	for i, ln := range items {
+		itemIDs[i] = ln.ItemID
+	}
+	lineItems, err := tx.Item.Query().Where(item.IDIn(itemIDs...)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: load items for validation: %w", err)
+	}
+	unitIDByItem := make(map[uuid.UUID]*uuid.UUID, len(lineItems))
+	for _, it := range lineItems {
+		unitIDByItem[it.ID] = it.UnitID
+	}
+	unitCache := make(map[uuid.UUID]*ent.Unit)
+	for _, ln := range items {
+		unitID := unitIDByItem[ln.ItemID]
+		if unitID == nil {
+			continue
+		}
+		u, ok := unitCache[*unitID]
+		if !ok {
+			var uErr error
+			u, uErr = tx.Unit.Get(ctx, *unitID)
+			if uErr != nil {
+				continue
+			}
+			unitCache[*unitID] = u
+		}
+		if vErr := units.ValidateQuantityForUnit(ln.Quantity, u.Type, u.Name); vErr != nil {
+			return nil, fmt.Errorf("transfers: %w", vErr)
+		}
+	}
+
+	srcBalances, err := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.WarehouseID(sourceWarehouseID), inventorybalance.ItemIDIn(itemIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: query source balances: %w", err)
+	}
+	availableByItem := make(map[uuid.UUID]float64, len(srcBalances))
+	for _, b := range srcBalances {
+		availableByItem[b.ItemID] = b.Available
+	}
+	itemNameByID := make(map[uuid.UUID]string, len(lineItems))
+	for _, it := range lineItems {
+		itemNameByID[it.ID] = it.Name
+	}
+	for _, ln := range items {
+		if available := availableByItem[ln.ItemID]; ln.Quantity > available {
+			return nil, fmt.Errorf("transfers: insufficient stock for %q at source warehouse (available %g, requested %g)",
+				itemNameByID[ln.ItemID], available, ln.Quantity)
+		}
+	}
+	return lineItems, nil
+}
+
 // CreateTransfer creates a new stock transfer in draft status.
 func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req CreateTransferRequest) (*TransferResponse, error) {
 	if req.SourceWarehouseID == req.DestinationWarehouseID {
@@ -95,68 +160,11 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		return nil, fmt.Errorf("transfers: destination warehouse not found: %w", err)
 	}
 
-	// Reject a fractional quantity for any discrete/count-based item (e.g. "2.5 phones") before
-	// creating anything — covers this endpoint's manual "New Transfer" form AND MoveStockDialog's
-	// quick-move flow, both of which post through here. Unit lookup failures fail open (no unit
-	// info to judge against) rather than blocking a transfer over unrelated data gaps.
-	itemIDs := make([]uuid.UUID, len(req.Items))
-	for i, ln := range req.Items {
-		itemIDs[i] = ln.ItemID
-	}
-	lineItems, err := tx.Item.Query().Where(item.IDIn(itemIDs...)).All(ctx)
+	// Validate quantities (whole-unit + over-quantity against source availability) — shared with
+	// UpdateTransfer so an amended draft is held to the exact same bar as a brand-new one.
+	lineItems, err := s.validateTransferLines(ctx, tx, tenantID, req.SourceWarehouseID, req.Items)
 	if err != nil {
-		return nil, fmt.Errorf("transfers: load items for validation: %w", err)
-	}
-	unitIDByItem := make(map[uuid.UUID]*uuid.UUID, len(lineItems))
-	for _, it := range lineItems {
-		unitIDByItem[it.ID] = it.UnitID
-	}
-	unitCache := make(map[uuid.UUID]*ent.Unit)
-	for _, ln := range req.Items {
-		unitID := unitIDByItem[ln.ItemID]
-		if unitID == nil {
-			continue
-		}
-		u, ok := unitCache[*unitID]
-		if !ok {
-			var uErr error
-			u, uErr = tx.Unit.Get(ctx, *unitID)
-			if uErr != nil {
-				continue
-			}
-			unitCache[*unitID] = u
-		}
-		if vErr := units.ValidateQuantityForUnit(ln.Quantity, u.Type, u.Name); vErr != nil {
-			err = fmt.Errorf("transfers: %w", vErr)
-			return nil, err
-		}
-	}
-
-	// Hard-block over-quantity at CREATION time, not just at Ship. The real over-transfer guard
-	// previously only lived in adjustBalance (called from ShipTransfer), so a draft transfer for
-	// more than what's actually on hand at the source warehouse could be created and would only
-	// fail much later when someone tried to ship it — reusing the same InventoryBalance.Available
-	// check here closes that gap.
-	srcBalances, err := tx.InventoryBalance.Query().
-		Where(inventorybalance.TenantID(tenantID), inventorybalance.WarehouseID(req.SourceWarehouseID), inventorybalance.ItemIDIn(itemIDs...)).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("transfers: query source balances: %w", err)
-	}
-	availableByItem := make(map[uuid.UUID]float64, len(srcBalances))
-	for _, b := range srcBalances {
-		availableByItem[b.ItemID] = b.Available
-	}
-	itemNameByID := make(map[uuid.UUID]string, len(lineItems))
-	for _, it := range lineItems {
-		itemNameByID[it.ID] = it.Name
-	}
-	for _, ln := range req.Items {
-		if available := availableByItem[ln.ItemID]; ln.Quantity > available {
-			err = fmt.Errorf("transfers: insufficient stock for %q at source warehouse (available %g, requested %g)",
-				itemNameByID[ln.ItemID], available, ln.Quantity)
-			return nil, err
-		}
+		return nil, err
 	}
 
 	// Generate transfer number: TRF-{YYYYMMDD}-{seq}
@@ -245,6 +253,108 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 	}
 
 	return s.buildTransferResponse(transfer, lines, srcWH, destWH, itemInfo), nil
+}
+
+// UpdateTransfer amends a DRAFT transfer's line items and header fields before it ships — the
+// tool for correcting a transfer whose drafted quantities don't match physical stock (some
+// items missing, a count discrepancy) without cancelling and recreating the whole record (which
+// would lose the transfer number, freight/carrier info, and audit continuity). Only allowed
+// while status is still "draft": once shipped, the drafted lines are exactly what was deducted
+// from the source warehouse, so editing after that point would silently desync the record from
+// reality. Source/destination warehouse are immutable here — the rare wrong-warehouse case is
+// still served by Cancel + a fresh Create. Replaces the line set wholesale (simplest correct
+// semantics for "here's what it actually is"), reusing the exact same validation CreateTransfer
+// applies to a brand-new transfer.
+func (s *Service) UpdateTransfer(ctx context.Context, tenantID, transferID uuid.UUID, req UpdateTransferRequest) (*TransferResponse, error) {
+	if len(req.Items) == 0 {
+		return nil, fmt.Errorf("transfers: at least one item is required")
+	}
+
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	transfer, err := tx.StockTransfer.Query().
+		Where(stocktransfer.ID(transferID), stocktransfer.TenantID(tenantID)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fmt.Errorf("transfers: transfer not found")
+		}
+		return nil, fmt.Errorf("transfers: query transfer: %w", err)
+	}
+	if transfer.Status != stocktransfer.StatusDraft {
+		return nil, fmt.Errorf("transfers: can only amend a draft transfer, current status: %s", transfer.Status)
+	}
+
+	lineItems, err := s.validateTransferLines(ctx, tx, tenantID, transfer.SourceWarehouseID, req.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = tx.StockTransferLine.Delete().Where(stocktransferline.TransferID(transferID)).Exec(ctx); err != nil {
+		return nil, fmt.Errorf("transfers: clear existing lines: %w", err)
+	}
+	lines := make([]*ent.StockTransferLine, 0, len(req.Items))
+	for _, ln := range req.Items {
+		line, lerr := tx.StockTransferLine.Create().
+			SetTransferID(transferID).
+			SetItemID(ln.ItemID).
+			SetQuantity(ln.Quantity).
+			SetNillableVariantID(ln.VariantID).
+			SetNillableLotID(ln.LotID).
+			Save(ctx)
+		if lerr != nil {
+			err = fmt.Errorf("transfers: create transfer line: %w", lerr)
+			return nil, err
+		}
+		lines = append(lines, line)
+	}
+
+	updated, err := tx.StockTransfer.UpdateOne(transfer).
+		SetNotes(req.Notes).
+		SetReferenceNo(req.ReferenceNo).
+		SetShippingCharges(req.ShippingCharges).
+		SetCarrier(req.Carrier).
+		SetFreightNotes(req.FreightNotes).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: update transfer: %w", err)
+	}
+
+	s.writeOutboxEvent(ctx, tx, tenantID, transferID, "inventory", "transfer.updated", map[string]any{
+		"transfer_id":     transferID.String(),
+		"transfer_number": updated.TransferNumber,
+		"tenant_id":       tenantID.String(),
+		"items":           s.buildLineItems(lines),
+	})
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("transfers: commit: %w", err)
+	}
+
+	s.log.Info("transfer updated", zap.String("transfer_id", transferID.String()))
+
+	srcWH, err := s.client.Warehouse.Get(ctx, updated.SourceWarehouseID)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: source warehouse lookup: %w", err)
+	}
+	destWH, err := s.client.Warehouse.Get(ctx, updated.DestinationWarehouseID)
+	if err != nil {
+		return nil, fmt.Errorf("transfers: destination warehouse lookup: %w", err)
+	}
+	itemInfo := make(map[uuid.UUID]itemDisplay, len(lineItems))
+	for _, it := range lineItems {
+		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+	}
+
+	return s.buildTransferResponse(updated, lines, srcWH, destWH, itemInfo), nil
 }
 
 // ListTransfers returns transfers for a tenant with optional filters.
@@ -503,8 +613,11 @@ func (s *Service) emitCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 	s.stockCascade.EmitStockChangeCascade(ctx, tx, tenantID, itemID, warehouseID, before, after, "stock_transfer")
 }
 
-// ReceiveTransfer transitions a transfer from in_transit to received.
-func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid.UUID) error {
+// ReceiveTransfer transitions a transfer from in_transit to received. Each line credits its
+// full drafted Quantity to the destination warehouse UNLESS req overrides it with what actually
+// arrived (breakage/loss in transit, a miscount at dispatch) — omit req.Items entirely for the
+// common full-receipt case; zero behavior change from before this override existed.
+func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid.UUID, req ReceiveTransferRequest) error {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("transfers: begin transaction: %w", err)
@@ -533,11 +646,44 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 		return fmt.Errorf("transfers: can only receive an in-transit transfer, current status: %s", transfer.Status)
 	}
 
-	// Credit each line's quantity to the DESTINATION warehouse balance (stock has arrived).
+	overrideByLineID := make(map[uuid.UUID]ReceiveLineInput, len(req.Items))
+	for _, ri := range req.Items {
+		overrideByLineID[ri.LineID] = ri
+	}
+
+	// Credit each line to the DESTINATION warehouse balance (stock has arrived) — the full
+	// drafted quantity by default, or the caller's override when one was supplied for that line.
+	// Persist ReceivedQuantity/VarianceReason on each line so the response, the outbox event,
+	// and any later read of this transfer all agree on what actually landed.
+	receivedLines := make([]*ent.StockTransferLine, 0, len(transfer.Edges.Lines))
 	for _, line := range transfer.Edges.Lines {
-		if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.DestinationWarehouseID, line.Quantity); err != nil {
+		receivedQty := line.Quantity
+		varianceReason := ""
+		if ri, ok := overrideByLineID[line.ID]; ok {
+			if ri.ReceivedQty < 0 {
+				err = fmt.Errorf("transfers: received quantity for line %s cannot be negative", line.ID)
+				return err
+			}
+			if ri.ReceivedQty > line.Quantity {
+				err = fmt.Errorf("transfers: received quantity for line %s (%g) cannot exceed the shipped quantity (%g)", line.ID, ri.ReceivedQty, line.Quantity)
+				return err
+			}
+			receivedQty = ri.ReceivedQty
+			varianceReason = ri.VarianceReason
+		}
+		if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.DestinationWarehouseID, receivedQty); err != nil {
 			return err
 		}
+		lineUpdate := tx.StockTransferLine.UpdateOne(line).SetReceivedQuantity(receivedQty)
+		if varianceReason != "" {
+			lineUpdate = lineUpdate.SetVarianceReason(varianceReason)
+		}
+		updatedLine, uerr := lineUpdate.Save(ctx)
+		if uerr != nil {
+			err = fmt.Errorf("transfers: record received quantity: %w", uerr)
+			return err
+		}
+		receivedLines = append(receivedLines, updatedLine)
 	}
 
 	now := time.Now()
@@ -562,7 +708,7 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 		"shipping_charges":         transfer.ShippingCharges,
 		"carrier":                  transfer.Carrier,
 		"freight_notes":            transfer.FreightNotes,
-		"items":                    s.buildLineItems(transfer.Edges.Lines),
+		"items":                    s.buildLineItems(receivedLines),
 	})
 
 	if err = tx.Commit(); err != nil {
@@ -730,7 +876,12 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 			LotID:     l.LotID,
 			Quantity:  l.Quantity,
 		}
-		if received {
+		if l.ReceivedQuantity != nil {
+			line.ReceivedQty = l.ReceivedQuantity
+			line.VarianceReason = l.VarianceReason
+		} else if received {
+			// Legacy rows received before this field existed: fall back to the drafted quantity
+			// (the only value that was ever credited before ReceivedQuantity was introduced).
 			qty := l.Quantity
 			line.ReceivedQty = &qty
 		}
@@ -753,6 +904,12 @@ func (s *Service) buildLineItems(lines []*ent.StockTransferLine) []map[string]an
 		}
 		if l.LotID != nil {
 			item["lot_id"] = l.LotID.String()
+		}
+		if l.ReceivedQuantity != nil {
+			item["received_quantity"] = *l.ReceivedQuantity
+		}
+		if l.VarianceReason != "" {
+			item["variance_reason"] = l.VarianceReason
 		}
 		items[i] = item
 	}

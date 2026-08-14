@@ -78,6 +78,34 @@ func (_c *StockTransferLineCreate) SetNillableQuantity(v *float64) *StockTransfe
 	return _c
 }
 
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_c *StockTransferLineCreate) SetReceivedQuantity(v float64) *StockTransferLineCreate {
+	_c.mutation.SetReceivedQuantity(v)
+	return _c
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_c *StockTransferLineCreate) SetNillableReceivedQuantity(v *float64) *StockTransferLineCreate {
+	if v != nil {
+		_c.SetReceivedQuantity(*v)
+	}
+	return _c
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (_c *StockTransferLineCreate) SetVarianceReason(v string) *StockTransferLineCreate {
+	_c.mutation.SetVarianceReason(v)
+	return _c
+}
+
+// SetNillableVarianceReason sets the "variance_reason" field if the given value is not nil.
+func (_c *StockTransferLineCreate) SetNillableVarianceReason(v *string) *StockTransferLineCreate {
+	if v != nil {
+		_c.SetVarianceReason(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *StockTransferLineCreate) SetID(v uuid.UUID) *StockTransferLineCreate {
 	_c.mutation.SetID(v)
@@ -207,6 +235,14 @@ func (_c *StockTransferLineCreate) createSpec() (*StockTransferLine, *sqlgraph.C
 	if value, ok := _c.mutation.Quantity(); ok {
 		_spec.SetField(stocktransferline.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
+	}
+	if value, ok := _c.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(stocktransferline.FieldReceivedQuantity, field.TypeFloat64, value)
+		_node.ReceivedQuantity = &value
+	}
+	if value, ok := _c.mutation.VarianceReason(); ok {
+		_spec.SetField(stocktransferline.FieldVarianceReason, field.TypeString, value)
+		_node.VarianceReason = value
 	}
 	if nodes := _c.mutation.TransferIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -355,6 +391,48 @@ func (u *StockTransferLineUpsert) AddQuantity(v float64) *StockTransferLineUpser
 	return u
 }
 
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *StockTransferLineUpsert) SetReceivedQuantity(v float64) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldReceivedQuantity, v)
+	return u
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateReceivedQuantity() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldReceivedQuantity)
+	return u
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *StockTransferLineUpsert) AddReceivedQuantity(v float64) *StockTransferLineUpsert {
+	u.Add(stocktransferline.FieldReceivedQuantity, v)
+	return u
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (u *StockTransferLineUpsert) ClearReceivedQuantity() *StockTransferLineUpsert {
+	u.SetNull(stocktransferline.FieldReceivedQuantity)
+	return u
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (u *StockTransferLineUpsert) SetVarianceReason(v string) *StockTransferLineUpsert {
+	u.Set(stocktransferline.FieldVarianceReason, v)
+	return u
+}
+
+// UpdateVarianceReason sets the "variance_reason" field to the value that was provided on create.
+func (u *StockTransferLineUpsert) UpdateVarianceReason() *StockTransferLineUpsert {
+	u.SetExcluded(stocktransferline.FieldVarianceReason)
+	return u
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (u *StockTransferLineUpsert) ClearVarianceReason() *StockTransferLineUpsert {
+	u.SetNull(stocktransferline.FieldVarianceReason)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -491,6 +569,55 @@ func (u *StockTransferLineUpsertOne) AddQuantity(v float64) *StockTransferLineUp
 func (u *StockTransferLineUpsertOne) UpdateQuantity() *StockTransferLineUpsertOne {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *StockTransferLineUpsertOne) SetReceivedQuantity(v float64) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetReceivedQuantity(v)
+	})
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *StockTransferLineUpsertOne) AddReceivedQuantity(v float64) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.AddReceivedQuantity(v)
+	})
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateReceivedQuantity() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateReceivedQuantity()
+	})
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (u *StockTransferLineUpsertOne) ClearReceivedQuantity() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearReceivedQuantity()
+	})
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (u *StockTransferLineUpsertOne) SetVarianceReason(v string) *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetVarianceReason(v)
+	})
+}
+
+// UpdateVarianceReason sets the "variance_reason" field to the value that was provided on create.
+func (u *StockTransferLineUpsertOne) UpdateVarianceReason() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateVarianceReason()
+	})
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (u *StockTransferLineUpsertOne) ClearVarianceReason() *StockTransferLineUpsertOne {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearVarianceReason()
 	})
 }
 
@@ -797,6 +924,55 @@ func (u *StockTransferLineUpsertBulk) AddQuantity(v float64) *StockTransferLineU
 func (u *StockTransferLineUpsertBulk) UpdateQuantity() *StockTransferLineUpsertBulk {
 	return u.Update(func(s *StockTransferLineUpsert) {
 		s.UpdateQuantity()
+	})
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *StockTransferLineUpsertBulk) SetReceivedQuantity(v float64) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetReceivedQuantity(v)
+	})
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *StockTransferLineUpsertBulk) AddReceivedQuantity(v float64) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.AddReceivedQuantity(v)
+	})
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateReceivedQuantity() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateReceivedQuantity()
+	})
+}
+
+// ClearReceivedQuantity clears the value of the "received_quantity" field.
+func (u *StockTransferLineUpsertBulk) ClearReceivedQuantity() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearReceivedQuantity()
+	})
+}
+
+// SetVarianceReason sets the "variance_reason" field.
+func (u *StockTransferLineUpsertBulk) SetVarianceReason(v string) *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.SetVarianceReason(v)
+	})
+}
+
+// UpdateVarianceReason sets the "variance_reason" field to the value that was provided on create.
+func (u *StockTransferLineUpsertBulk) UpdateVarianceReason() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.UpdateVarianceReason()
+	})
+}
+
+// ClearVarianceReason clears the value of the "variance_reason" field.
+func (u *StockTransferLineUpsertBulk) ClearVarianceReason() *StockTransferLineUpsertBulk {
+	return u.Update(func(s *StockTransferLineUpsert) {
+		s.ClearVarianceReason()
 	})
 }
 
