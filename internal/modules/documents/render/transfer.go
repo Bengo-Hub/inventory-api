@@ -33,8 +33,14 @@ func RenderTransfer(doc *TransferDoc, logo []byte, logoType string) ([]byte, err
 		y = p.drawTransferAck(doc.AcknowledgementText, y+4.0)
 	}
 	y = p.drawTransferItems(doc, y+4.0)
+	// A long item table (e.g. a multi-page GRN) can spill drawTransferItems onto page 2+;
+	// ensurePage keeps the trailing blocks from colliding with the physical page bottom
+	// while leaving the normal short-document "pin near bottom" look untouched (see
+	// primitives.go's pageBottomSafe doc comment).
+	y = p.ensurePage(y, 18.0)
 	y = p.drawTransferLowerBlocks(doc, y+5.0)
 	pdf.SetAutoPageBreak(false, 0)
+	y = p.ensurePage(y, 24.0)
 	y = p.drawTransferSignatures(doc, y+10.0)
 	p.drawTransferFooter(doc, y+6.0)
 
@@ -201,19 +207,27 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 	xRecvR := xQtyR + colRecv
 	xVarR := rightX
 
-	p.setFill(p.pal.navy)
-	p.pdf.Rect(leftX, ty, contentW, 8.0, "F")
-	p.text(xNum+2, ty+2.7, "#", "B", 8, p.pal.white)
-	p.text(xDesc+1, ty+2.7, "DESCRIPTION", "B", 8, p.pal.white)
-	p.textR(xUnitR-1, ty+2.7, "UNIT", "B", 8, p.pal.white)
-	p.textR(xQtyR-1, ty+2.7, "QTY", "B", 8, p.pal.white)
-	if showReceived {
-		p.textR(xRecvR-1, ty+2.7, "RECEIVED", "B", 8, p.pal.white)
-		p.textR(xVarR-2, ty+2.7, "VARIANCE", "B", 8, p.pal.white)
+	drawHeaderBar := func(y float64) float64 {
+		p.setFill(p.pal.navy)
+		p.pdf.Rect(leftX, y, contentW, 8.0, "F")
+		p.text(xNum+2, y+2.7, "#", "B", 8, p.pal.white)
+		p.text(xDesc+1, y+2.7, "DESCRIPTION", "B", 8, p.pal.white)
+		p.textR(xUnitR-1, y+2.7, "UNIT", "B", 8, p.pal.white)
+		p.textR(xQtyR-1, y+2.7, "QTY", "B", 8, p.pal.white)
+		if showReceived {
+			p.textR(xRecvR-1, y+2.7, "RECEIVED", "B", 8, p.pal.white)
+			p.textR(xVarR-2, y+2.7, "VARIANCE", "B", 8, p.pal.white)
+		}
+		return y + 8.0
 	}
 
-	ry := ty + 8.0
+	ry := drawHeaderBar(ty)
 	for i, it := range d.Items {
+		if rowH := p.rowHeight(it.Desc, it.SubDesc, colDesc-2); ry+2.5+rowH > pageBottomSafe {
+			p.pdf.AddPage()
+			ry = drawHeaderBar(contTopY)
+		}
+
 		rowTop := ry + 2.5
 		endY := p.multiCell(xDesc+1, rowTop, colDesc-2, 4.0, it.Desc, "B", 9.3, p.pal.navy)
 		if it.SubDesc != "" {
