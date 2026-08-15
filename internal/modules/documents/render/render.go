@@ -26,11 +26,18 @@ func Render(doc *PurchaseOrderDoc, logo []byte, logoType string) ([]byte, error)
 	y = p.drawParties(doc, y+5.0)
 	y = p.drawBanner(doc, y+4.0)
 	y = p.drawItems(doc, y+5.0)
+	// A long item table can spill drawItems onto page 2+ (see primitives.go's pageBottomSafe
+	// doc comment); ensurePage keeps totals/notes/signatures/footer from colliding with the
+	// physical page bottom in that case, while leaving the normal short-document "pin near
+	// bottom" look (below) untouched.
+	y = p.ensurePage(y, 26.0)
 	y = p.drawTotals(doc, y+4.0)
+	y = p.ensurePage(y, 18.0)
 	y = p.drawLowerBlocks(doc, y+5.0)
 	// The signature + footer blocks are deliberately bottom-pinned; turn off the auto page break
 	// so their fixed positions (footer pins to ~282mm) can't trip a spill onto a near-empty page 2.
 	pdf.SetAutoPageBreak(false, 0)
+	y = p.ensurePage(y, 24.0)
 	y = p.drawSignatures(doc, y+10.0)
 	p.drawFooter(doc, y+6.0)
 

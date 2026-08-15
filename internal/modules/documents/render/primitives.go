@@ -24,11 +24,50 @@ var smartPunct = strings.NewReplacer(
 // Page geometry (A4 portrait, mm).
 const (
 	pageW    = 210.0
+	pageH    = 297.0
 	margin   = 13.0
 	leftX    = margin
 	rightX   = pageW - margin
 	contentW = pageW - 2*margin
+
+	// pageBottomSafe is the lowest Y a new table row or fixed-height block may START at
+	// before this package forces an explicit page break. Every drawing primitive below
+	// (text/textR/textFit/box/hline/gradient) is a raw, absolute-position fpdf call and is
+	// NOT page-break aware — only multiCell (which routes through fpdf's own MultiCell/
+	// CellFormat) triggers fpdf's SetAutoPageBreak. Mixing the two in one row without an
+	// explicit check made a long item table (e.g. a 16-line goods-received note) silently
+	// break mid-row: the description's multiCell would jump to a new page while that same
+	// row's numeric columns stayed on the old page at a stale Y, producing a corrupted,
+	// visually "cut off" printout. Every multi-row/multi-block layout in this package must
+	// call rowHeight/ensurePage explicitly instead of relying on SetAutoPageBreak.
+	pageBottomSafe = 278.0
+	// contTopY is where content resumes at the top of a continuation page.
+	contTopY = 18.0
 )
+
+// ensurePage starts a new page (returning contTopY) when y doesn't leave `need` mm of room
+// before pageBottomSafe; otherwise it returns y unchanged. Use before drawing a block that
+// can't itself split across a page break (totals, notes, signature/footer stacks) so a long
+// item table spilling onto page 2 doesn't push those trailing sections past the physical page.
+func (p *painter) ensurePage(y, need float64) float64 {
+	if y+need > pageBottomSafe {
+		p.pdf.AddPage()
+		return contTopY
+	}
+	return y
+}
+
+// rowHeight measures the vertical space an item-table row (a bold description plus an optional
+// muted sub-line, e.g. SKU) will occupy at the given width — called BEFORE drawing so a row that
+// wouldn't fit on the current page can be moved to a fresh one atomically, rather than splitting
+// its cells across two pages.
+func (p *painter) rowHeight(desc, subDesc string, w float64) float64 {
+	h := float64(p.measureLines(desc, "B", 9.3, w)) * 4.0
+	if subDesc != "" {
+		h += float64(p.measureLines(subDesc, "", 8.6, w))*4.0 + 0.4
+	}
+	return h
+}
 
 // painter wraps an fpdf document with the palette and the small set of drawing
 // primitives used throughout the template.
