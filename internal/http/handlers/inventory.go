@@ -286,6 +286,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// auth here to populate claims before the feature check — otherwise logged-in
 		// users hit a spurious 401 "missing claims".
 		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/adjustments", h.ListAdjustments)
+		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/adjustments/document", h.GenerateStockAdjustmentDocument)
 		// Product stock history — unified per-item ledger (adjustments + purchases +
 		// sales + returns + transfers) with quantities-in/out summary cards. Same
 		// auth/feature gating as the adjustments listing it generalizes.
@@ -1442,6 +1443,10 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if req.Reason == "" {
 		req.Reason = "adjustment"
 	}
+	// Give an unreferenced adjustment its own document number so the movement is printable and
+	// auditable (GET /inventory/adjustments/document?reference=…). Never overwrites a reference
+	// the caller supplied.
+	req.Reference = h.ensureAdjustmentReference(r.Context(), tenantID, req.Reference)
 	// Default an unspecified warehouse to the operating outlet's own warehouse (not the tenant
 	// default) so the movement is visible on that outlet's POS terminal.
 	req.OutletID = operatingOutletID(r)
@@ -2026,6 +2031,9 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	if req.Reason == "" {
 		req.Reason = "other"
 	}
+	// Same document-number mint as /adjust: an adjustment created without a reference gets one
+	// so it can be printed and filed as a stock adjustment note.
+	req.Reference = h.ensureAdjustmentReference(r.Context(), tenantID, req.Reference)
 	// Default an unspecified warehouse to the operating outlet's own warehouse (not the tenant
 	// default) so the movement is visible on that outlet's POS terminal.
 	req.OutletID = operatingOutletID(r)

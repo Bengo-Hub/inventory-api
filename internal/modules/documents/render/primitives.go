@@ -45,6 +45,15 @@ const (
 	contTopY = 18.0
 )
 
+// newDoc creates the A4 page canvas every document in this package starts from (mm units,
+// shared margins, auto page break on) so page geometry is declared in exactly one place.
+func newDoc() *fpdf.Fpdf {
+	pdf := fpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(margin, 12, margin)
+	pdf.SetAutoPageBreak(true, 10)
+	return pdf
+}
+
 // ensurePage starts a new page (returning contTopY) when y doesn't leave `need` mm of room
 // before pageBottomSafe; otherwise it returns y unchanged. Use before drawing a block that
 // can't itself split across a page break (totals, notes, signature/footer stacks) so a long

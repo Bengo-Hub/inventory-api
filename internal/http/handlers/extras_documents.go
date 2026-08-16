@@ -119,11 +119,7 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	// documents that never required approval don't show an empty "Approved By" slot.
 	doc.PreparedBy = h.resolveUserLabel(ctx, tenantID, po.CreatedBy, "")
 	if appr, _ := h.approvals().Latest(ctx, tenantID, po.ID); appr != nil && string(appr.Status) == "approved" {
-		if act, e := h.orm.ApprovalAction.Query().
-			Where(entapprovalaction.RequestID(appr.ID), entapprovalaction.StatusEQ(entapprovalaction.StatusApproved)).
-			Order(invent.Desc(entapprovalaction.FieldSequence)).First(ctx); e == nil {
-			doc.ApprovedBy = h.resolveUserLabel(ctx, tenantID, act.ActedBy, act.ApproverRole)
-		}
+		doc.ApprovedBy = h.latestApproverLabel(ctx, tenantID, appr.ID)
 	}
 
 	pdfBytes, err := documents.RenderPurchaseOrderPDF(doc)
@@ -136,6 +132,20 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(pdfBytes)
+}
+
+// latestApproverLabel names the FINAL approver of an approval request — the human whose
+// signature belongs on the "Approved By" line of a generated document. Empty when the request
+// carries no approved action (so a document that never went through approval doesn't show an
+// empty slot). Shared by every document endpoint that surfaces an approver.
+func (h *InventoryExtrasHandler) latestApproverLabel(ctx context.Context, tenantID, approvalRequestID uuid.UUID) string {
+	act, err := h.orm.ApprovalAction.Query().
+		Where(entapprovalaction.RequestID(approvalRequestID), entapprovalaction.StatusEQ(entapprovalaction.StatusApproved)).
+		Order(invent.Desc(entapprovalaction.FieldSequence)).First(ctx)
+	if err != nil {
+		return ""
+	}
+	return h.resolveUserLabel(ctx, tenantID, act.ActedBy, act.ApproverRole)
 }
 
 // resolveUserLabel maps an auth-service user id to a human label for the signature lines:

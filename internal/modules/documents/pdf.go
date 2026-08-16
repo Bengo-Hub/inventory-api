@@ -21,6 +21,52 @@ func RenderTransferPDF(d TransferDoc) ([]byte, error) {
 	return render.RenderTransfer(&d, logo, logoType)
 }
 
+// RenderGoodsReceiptPDF renders a branded A4 goods-receipt note (GRN) for a PO receiving and
+// returns PDF bytes.
+func RenderGoodsReceiptPDF(d GoodsReceiptDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderGoodsReceipt(&d, logo, logoType)
+}
+
+// RenderRequisitionPDF renders a branded A4 purchase requisition and returns PDF bytes.
+func RenderRequisitionPDF(d RequisitionDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderRequisition(&d, logo, logoType)
+}
+
+// RenderRFQPDF renders a branded A4 request-for-quotation and returns PDF bytes.
+func RenderRFQPDF(d RFQDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderRFQ(&d, logo, logoType)
+}
+
+// RenderPurchaseReturnPDF renders a branded A4 supplier purchase-return debit note and returns
+// PDF bytes.
+func RenderPurchaseReturnPDF(d PurchaseReturnDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderPurchaseReturn(&d, logo, logoType)
+}
+
+// RenderStockAdjustmentPDF renders a branded A4 stock-adjustment note (the batch of adjustments
+// sharing one reference) and returns PDF bytes.
+func RenderStockAdjustmentPDF(d StockAdjustmentDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderStockAdjustment(&d, logo, logoType)
+}
+
+// RenderStockCountPDF renders a branded A4 stock-take document — a blank count sheet or a
+// post-count variance report, per d.Mode — and returns PDF bytes.
+func RenderStockCountPDF(d StockCountDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderStockCount(&d, logo, logoType)
+}
+
+// RenderBundleSpecPDF renders a branded A4 bundle/package spec sheet and returns PDF bytes.
+func RenderBundleSpecPDF(d BundleSpecDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderBundleSpec(&d, logo, logoType)
+}
+
 // FetchLogoBytes downloads a tenant logo and returns the raw bytes + fpdf image-type
 // ("PNG"/"JPG"/"GIF"). Graceful: returns (nil, "") on any failure so callers (e.g. report PDFs)
 // still render without a logo. Exported wrapper over fetchLogoBytes.

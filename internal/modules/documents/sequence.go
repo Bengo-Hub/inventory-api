@@ -26,6 +26,7 @@ const (
 	DocTypeRequisition     = "requisition"
 	DocTypeStockTransfer   = "stock_transfer"
 	DocTypeStockAdjustment = "stock_adjustment"
+	DocTypeStockCount      = "stock_count"
 	DocTypeEventTicket     = "event_ticket"
 )
 
@@ -48,6 +49,7 @@ var seqDefaults = map[string]seqConfig{
 	DocTypeRequisition:     {Separator: "-", Padding: 6, ResetFreq: "never"},
 	DocTypeStockTransfer:   {Separator: "-", Padding: 6, ResetFreq: "never"},
 	DocTypeStockAdjustment: {Separator: "-", Padding: 6, ResetFreq: "never"},
+	DocTypeStockCount:      {Separator: "-", Padding: 6, ResetFreq: "never"},
 	DocTypeEventTicket:     {Separator: "-", Padding: 8, ResetFreq: "never"},
 }
 
@@ -61,6 +63,7 @@ var SuggestedPrefixes = map[string]string{
 	DocTypeRequisition:     "REQ",
 	DocTypeStockTransfer:   "TRF",
 	DocTypeStockAdjustment: "ADJ",
+	DocTypeStockCount:      "CNT",
 	DocTypeEventTicket:     "TKT",
 }
 
@@ -122,7 +125,8 @@ type SeqConfigDTO struct {
 // surfaced in the Settings → Documents tab. LPO=purchase_order.
 var configuredDocTypes = []string{
 	DocTypePurchaseOrder, DocTypeGRN, DocTypeRFQ, DocTypeRequisition,
-	DocTypePurchaseReturn, DocTypeStockTransfer, DocTypeStockAdjustment, DocTypeEventTicket,
+	DocTypePurchaseReturn, DocTypeStockTransfer, DocTypeStockAdjustment, DocTypeStockCount,
+	DocTypeEventTicket,
 }
 
 func toSeqDTO(row *ent.DocumentSequence) SeqConfigDTO {

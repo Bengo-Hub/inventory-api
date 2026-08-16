@@ -18,11 +18,12 @@ import (
 	entbalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entcount "github.com/bengobox/inventory-service/internal/ent/stockcount"
-	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	entcountline "github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	enttemplate "github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
@@ -42,6 +43,7 @@ type StockCountHandler struct {
 	rbacSvc     *rbac.Service
 	auditSvc    *audit.Service
 	approvalSvc *approvals.Service
+	docSvc      *documents.Service
 }
 
 // NewStockCountHandler constructs a stock-count handler.
@@ -53,6 +55,11 @@ func NewStockCountHandler(log *zap.Logger, orm *ent.Client, stockSvc *stock.Serv
 // variance-posting Approve step. Optional — with no service (or no matching rule) the count's own
 // RBAC-gated review→approve lifecycle is the only control (auto-approve by default).
 func (h *StockCountHandler) SetApprovalService(a *approvals.Service) { h.approvalSvc = a }
+
+// SetDocService wires tenant branding + document numbering: branded count-sheet/variance-report
+// PDFs, and a minted reference for a count created without one. Optional — with no service the
+// count still works, it just carries whatever reference the caller supplied and cannot render.
+func (h *StockCountHandler) SetDocService(d *documents.Service) { h.docSvc = d }
 
 // RegisterRoutes wires stock-count routes onto the inventory group.
 func (h *StockCountHandler) RegisterRoutes(r chi.Router) {
@@ -68,6 +75,7 @@ func (h *StockCountHandler) RegisterRoutes(r chi.Router) {
 		sc.Get("/", h.List)
 		sc.With(featGate, perm(rbac.PermStockCountAdd)).Post("/", h.Create)
 		sc.Get("/{id}", h.Get)
+		sc.Get("/{id}/pdf", h.GenerateStockCountPDF)
 		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/lines", h.UpsertLine)
 		sc.With(featGate, perm(rbac.PermStockCountChange)).Post("/{id}/submit", h.Submit)
 		sc.With(featGate, perm(rbac.PermStockCountApprove)).Post("/{id}/approve", h.Approve)
@@ -141,6 +149,15 @@ func (h *StockCountHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if req.WarehouseID == uuid.Nil {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "warehouse_id is required")
 		return
+	}
+	// A count raised without a human reference ("CYCLE-2026-06", a sheet name) gets a minted
+	// document number so its printed sheet and variance report have a stable identifier. Never
+	// overwrites a reference the caller (or a template) already supplied; best-effort, since a
+	// numbering failure must not block the count.
+	if strings.TrimSpace(req.Reference) == "" && h.docSvc != nil {
+		if n, e := h.docSvc.Seq().GenerateNumber(ctx, tenantID, documents.DocTypeStockCount); e == nil && n != "" {
+			req.Reference = n
+		}
 	}
 
 	b := h.orm.StockCount.Create().
@@ -470,11 +487,11 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	// being marked approved with some variances silently dropped.
 	if len(result.FailedSKUs) > 0 {
 		writeJSON(w, http.StatusAccepted, map[string]any{
-			"status":        "partial",
-			"posted_lines":  posted,
-			"failed_skus":   result.FailedSKUs,
+			"status":         "partial",
+			"posted_lines":   posted,
+			"failed_skus":    result.FailedSKUs,
 			"total_variance": totalVar,
-			"message":       "Some variance lines could not post; resolve them and approve again to finish.",
+			"message":        "Some variance lines could not post; resolve them and approve again to finish.",
 		})
 		return
 	}
