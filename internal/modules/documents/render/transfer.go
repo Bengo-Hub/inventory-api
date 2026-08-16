@@ -126,56 +126,19 @@ func (p *painter) drawTransferMetaAndCompany(d *TransferDoc, ruleY float64) floa
 }
 
 // drawTransferParties renders the source (left) and destination (right) warehouse cards —
-// the transfer analog of drawParties' SUPPLIER/DELIVER TO layout.
+// the transfer analog of drawParties' SUPPLIER/DELIVER TO layout, over the same generic
+// drawPartyCards block in common.go.
 func (p *painter) drawTransferParties(d *TransferDoc, py float64) float64 {
-	bw := (contentW - 6.0) / 2
-	bx2 := leftX + bw + 6.0
-	innerW := bw - 6.0
-	const nameH, lineH = 4.4, 4.0
-
-	leftH := float64(p.measureLines(orDash(d.FromWarehouseName), "B", 10.5, innerW)) * nameH
-	for _, ln := range d.FromWarehouseAddr {
-		if strings.TrimSpace(ln) == "" {
-			continue
-		}
-		leftH += float64(p.measureLines(ln, "", 9, innerW)) * lineH
-	}
-	rightH := float64(p.measureLines(orDash(d.ToWarehouseName), "B", 10.5, innerW)) * nameH
-	for _, ln := range d.ToWarehouseAddr {
-		if strings.TrimSpace(ln) == "" {
-			continue
-		}
-		rightH += float64(p.measureLines(ln, "", 9, innerW)) * lineH
-	}
-	boxH := maxF(maxF(leftH, rightH)+9.0, 22.0)
-
-	p.box(leftX, py, bw, boxH)
-	p.text(leftX+3, py+3.0, "FROM WAREHOUSE", "B", 8, p.pal.blue)
-	cy := p.multiCell(leftX+3, py+5.6, innerW, nameH, orDash(d.FromWarehouseName), "B", 10.5, p.pal.navy) + 0.6
-	for _, ln := range d.FromWarehouseAddr {
-		if strings.TrimSpace(ln) == "" {
-			continue
-		}
-		cy = p.multiCell(leftX+3, cy, innerW, lineH, ln, "", 9, p.pal.grey)
-	}
-
-	p.box(bx2, py, bw, boxH)
-	p.text(bx2+3, py+3.0, "TO WAREHOUSE", "B", 8, p.pal.blue)
-	ry := p.multiCell(bx2+3, py+5.6, innerW, nameH, orDash(d.ToWarehouseName), "B", 10.5, p.pal.navy) + 0.6
-	for _, ln := range d.ToWarehouseAddr {
-		if strings.TrimSpace(ln) == "" {
-			continue
-		}
-		ry = p.multiCell(bx2+3, ry, innerW, lineH, ln, "", 9, p.pal.grey)
-	}
-
-	return py + boxH
+	return p.drawPartyCards(py,
+		partyCard{Title: "FROM WAREHOUSE", Name: d.FromWarehouseName, Lines: d.FromWarehouseAddr},
+		partyCard{Title: "TO WAREHOUSE", Name: d.ToWarehouseName, Lines: d.ToWarehouseAddr},
+	)
 }
 
 // drawTransferAck renders a bold acknowledgement lead line above the item table (mirrors
 // treasury's delivery_challan profile's acknowledgement text).
 func (p *painter) drawTransferAck(text string, y float64) float64 {
-	return p.multiCell(leftX, y, contentW, 4.2, text, "B", 9.5, p.pal.navy) + 2.0
+	return p.drawLeadLine(text, y)
 }
 
 // drawTransferItems renders the item table. Gains RECEIVED + VARIANCE columns only when at
@@ -249,61 +212,20 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 // drawTransferLowerBlocks mirrors drawLowerBlocks' Notes & Terms card (freight notes / general
 // notes), only rendered when there's content.
 func (p *painter) drawTransferLowerBlocks(d *TransferDoc, lY float64) float64 {
-	notes := nonEmpty(d.Notes)
-	if len(notes) == 0 {
-		return lY
-	}
-	innerW := contentW - 6.0
-	const lineH = 3.4
-	lines := 0
-	for _, n := range notes {
-		lines += p.measureLines("-  "+n, "", 7.3, innerW)
-	}
-	lowH := maxF(float64(lines)*lineH+8.0, 14.0)
-	p.box(leftX, lY, contentW, lowH)
-	p.text(leftX+3, lY+2.6, "NOTES", "B", 6.8, p.pal.blue)
-	y := lY + 6.0
-	for _, n := range notes {
-		y = p.multiCell(leftX+3, y, innerW, lineH, "-  "+n, "", 7.3, p.pal.grey)
-	}
-	return lY + lowH
+	return p.drawNotesBlock(lY, "NOTES", d.Notes)
 }
 
-// drawTransferSignatures reuses drawSig directly (it's already generic — role/name only) with
-// the caller-supplied labels, since "Dispatched By"/"Received By" (transit note) and "Delivered
+// drawTransferSignatures reuses drawSigPair (already generic — role/name only) with the
+// caller-supplied labels, since "Dispatched By"/"Received By" (transit note) and "Delivered
 // By"/"Received By" (GRN) both differ from the PO renderer's "Prepared By"/"Approved By".
 func (p *painter) drawTransferSignatures(d *TransferDoc, sY float64) float64 {
-	sigW := 80.0
-	p.drawSig(leftX, sY, sigW, ifEmpty(d.LeftSigLabel, "Dispatched By"), d.LeftSigName)
-	p.drawSig(rightX-sigW, sY, sigW, ifEmpty(d.RightSigLabel, "Received By"), d.RightSigName)
-	return sY
+	return p.drawSigPair(sY,
+		ifEmpty(d.LeftSigLabel, "Dispatched By"), d.LeftSigName,
+		ifEmpty(d.RightSigLabel, "Received By"), d.RightSigName)
 }
 
 func (p *painter) drawTransferFooter(d *TransferDoc, fY float64) {
-	if fY < 282.0 {
-		fY = 282.0
-	}
-	p.setDraw(p.pal.line)
-	p.pdf.SetLineWidth(0.2)
-	p.pdf.Line(leftX, fY, rightX, fY)
-
 	name := ifEmpty(d.Branding.CompanyName, "the issuer")
-	p.pdf.SetFont("Helvetica", "", 6.6)
-	p.setText(p.pal.muted)
-	p.pdf.SetXY(leftX, fY+1.6)
-	p.pdf.MultiCell(contentW, 3.2,
-		p.tr("This document records an internal stock movement between "+name+"'s own warehouses — it has no monetary value."),
-		"", "C", false)
-	if meta := footerMeta(d.Branding); meta != "" {
-		p.pdf.SetX(leftX)
-		p.pdf.MultiCell(contentW, 3.2, p.tr(meta), "", "C", false)
-	}
-	if d.Branding.ProviderFooterEnabled {
-		p.pdf.SetX(leftX)
-		p.pdf.SetFont("Helvetica", "B", 6.4)
-		p.pdf.MultiCell(contentW, 3.0, p.tr(providerFooterLead), "", "C", false)
-		p.pdf.SetX(leftX)
-		p.pdf.SetFont("Helvetica", "", 6.0)
-		p.pdf.MultiCell(contentW, 3.0, p.tr(providerFooterContact), "", "C", false)
-	}
+	p.drawDocFooter(d.Branding, fY,
+		"This document records an internal stock movement between "+name+"'s own warehouses - it has no monetary value.")
 }

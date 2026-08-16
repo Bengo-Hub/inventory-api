@@ -183,6 +183,7 @@ func (h *InventoryExtrasHandler) registerRFQRoutes(r chi.Router, perm func(strin
 	r.Get("/inventory/rfqs", h.ListRFQs)
 	r.Get("/inventory/rfqs/{rfqID}", h.GetRFQ)
 	r.Get("/inventory/rfqs/{rfqID}/comparison", h.RFQComparison)
+	r.Get("/inventory/rfqs/{rfqID}/pdf", h.GenerateRFQPDF)
 	r.With(featGate, perm(add)).Post("/inventory/rfqs", h.CreateRFQ)
 	r.With(featGate, perm(change)).Put("/inventory/rfqs/{rfqID}", h.UpdateRFQ)
 	r.With(featGate, perm(del)).Delete("/inventory/rfqs/{rfqID}", h.DeleteRFQ)

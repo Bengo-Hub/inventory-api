@@ -215,6 +215,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/inventory/bundles", h.ListBundles)
 	r.With(perm(rbac.PermItemsAdd)).Post("/inventory/bundles", h.CreateBundle)
 	r.Get("/inventory/bundles/{bundleID}", h.GetBundle)
+	r.Get("/inventory/bundles/{bundleID}/spec.pdf", h.GenerateBundleSpecPDF)
 	r.With(perm(rbac.PermItemsChange)).Put("/inventory/bundles/{bundleID}", h.UpdateBundle)
 	r.With(perm(rbac.PermItemsDelete)).Delete("/inventory/bundles/{bundleID}", h.DeleteBundle)
 

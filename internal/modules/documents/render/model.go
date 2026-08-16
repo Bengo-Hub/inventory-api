@@ -23,6 +23,14 @@ type Branding struct {
 	// per-tenant override (see modules/providerfooter.Resolve). Resolved by
 	// documents.Service.GetBranding, not this package (pure renderer).
 	ProviderFooterEnabled bool
+	// ProviderFooterLead/ProviderFooterContact are the LIVE platform-owner strings resolved
+	// from the "codevertex" tenant's auth-api record (documents.Service.ResolveProviderFooterText),
+	// so a rename/new phone number on that tenant flows into every document without a redeploy.
+	// Both are optional: an empty value falls back to this package's compiled-in
+	// providerFooterLead/providerFooterContact constants, so a Branding built without the
+	// resolve (tests, S2S callers, older code paths) still renders a complete footer.
+	ProviderFooterLead    string
+	ProviderFooterContact string
 }
 
 // DocLine is a single line item rendered in a document table.

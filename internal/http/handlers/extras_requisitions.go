@@ -156,6 +156,7 @@ func (h *InventoryExtrasHandler) registerRequisitionRoutes(r chi.Router, perm fu
 	featGate := authclient.RequireFeatureCode("requisitions")
 	r.Get("/inventory/requisitions", h.ListRequisitions)
 	r.Get("/inventory/requisitions/{reqID}", h.GetRequisition)
+	r.Get("/inventory/requisitions/{reqID}/pdf", h.GenerateRequisitionPDF)
 	r.With(featGate, perm(add)).Post("/inventory/requisitions", h.CreateRequisition)
 	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/submit", h.SubmitRequisition)
 	r.With(featGate, perm(change)).Post("/inventory/requisitions/{reqID}/review", h.ReviewRequisition)

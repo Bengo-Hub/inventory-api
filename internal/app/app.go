@@ -237,7 +237,8 @@ func New(ctx context.Context) (*App, error) {
 	transferHandler.SetDocService(docSvc)  // Dispatch/Transit Note + Goods-Received Note PDFs
 	stockSvc.WithTransferRecorder(transferSvc)
 	inventoryExtrasHandler.SetDocService(docSvc)
-	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR)
+	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR) + stock-adjustment notes
+	stockCountHandler.SetDocService(docSvc) // branded count sheet / variance report PDFs + count numbering
 	inventoryExtrasHandler.SetStockService(stockSvc)
 	inventoryExtrasHandler.SetAuditService(auditSvc) // goods-receipt cost-capture audit trail
 	inventoryExtrasHandler.SetItemsService(itemsSvc)

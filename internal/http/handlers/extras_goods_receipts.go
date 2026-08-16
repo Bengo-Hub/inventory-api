@@ -165,6 +165,7 @@ func (h *InventoryExtrasHandler) grnToDTOWithItems(ctx context.Context, tenantID
 func (h *InventoryExtrasHandler) registerGoodsReceiptRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
 	r.Get("/inventory/goods-receipts", h.ListGoodsReceipts)
 	r.Get("/inventory/goods-receipts/{grnID}", h.GetGoodsReceipt)
+	r.Get("/inventory/goods-receipts/{grnID}/pdf", h.GenerateGoodsReceiptPDF)
 	r.With(perm(add)).Post("/inventory/purchase-orders/{poID}/goods-receipts", h.CreateGoodsReceipt)
 	// Idempotency-Key guarded: a retried post (flaky connection, terminal replay) must not
 	// double-create cost layers or double-advance the PO.

@@ -59,6 +59,7 @@ func purchaseReturnToDTO(pr *ent.PurchaseReturn) purchaseReturnDTO {
 func (h *InventoryExtrasHandler) registerPurchaseReturnRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
 	r.Get("/inventory/purchase-returns", h.ListPurchaseReturns)
 	r.Get("/inventory/purchase-returns/{returnID}", h.GetPurchaseReturn)
+	r.Get("/inventory/purchase-returns/{returnID}/pdf", h.GeneratePurchaseReturnPDF)
 	r.With(perm(add)).Post("/inventory/purchase-returns", h.CreatePurchaseReturn)
 	r.With(perm(change)).Post("/inventory/purchase-returns/{returnID}/approve", h.ApprovePurchaseReturn)
 }

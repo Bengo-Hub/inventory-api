@@ -1,6 +1,9 @@
 package render
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // ifEmpty returns fallback when s is blank (after trimming), else s.
 func ifEmpty(s, fallback string) string {
@@ -33,6 +36,25 @@ func maxInt(a, b int) int {
 // Both parts degrade gracefully when empty.
 func money(currency, amount string) string {
 	return strings.TrimSpace(currencyCode(currency) + " " + strings.TrimSpace(amount))
+}
+
+// plural renders a count with a naively pluralized noun ("1 item" / "4 items") for meta-box
+// summary rows on the documents that count their own lines.
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return strconv.Itoa(n) + " " + noun + "s"
+}
+
+// moneyOrEmpty is money() that stays EMPTY for a blank amount, instead of degrading to a bare
+// currency code. Blank-means-omit is what the generic totals stack (drawTotalsStack) and meta
+// rows key off, so callers can build them unconditionally.
+func moneyOrEmpty(currency, amount string) string {
+	if strings.TrimSpace(amount) == "" {
+		return ""
+	}
+	return money(currency, amount)
 }
 
 // currencyCode returns the leading token of a currency string (e.g. "USD" from "USD ($)").

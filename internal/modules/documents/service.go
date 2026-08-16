@@ -2,6 +2,7 @@ package documents
 
 import (
 	"context"
+	"strings"
 
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/google/uuid"
@@ -72,7 +73,45 @@ func (s *Service) GetBranding(ctx context.Context, tenantID uuid.UUID) Branding 
 	// Tagline + KRA PIN come from tenant metadata (the cache lib doesn't expose tax_pin directly).
 	b.Tagline = metaString(td.Metadata, "tagline")
 	b.KRAPIN = metaString(td.Metadata, "kra_pin")
+	// Live platform-owner footer strings (best-effort — empty values fall back to the renderer's
+	// compiled-in constants, so a document ALWAYS renders a provider footer when it's enabled).
+	b.ProviderFooterLead, b.ProviderFooterContact = s.ResolveProviderFooterText(ctx)
 	return b
+}
+
+// ProviderTenantSlug is the platform-owner tenant whose public auth-api record supplies the
+// "Developed & maintained by …" document footer. Mirrors pos-api's receipt-footer resolution.
+const ProviderTenantSlug = "codevertex"
+
+// ResolveProviderFooterText resolves the platform-owner footer lines LIVE from the "codevertex"
+// tenant's cached auth-api record, so a rename / new contact number on that tenant flows into
+// every generated document without a redeploy.
+//
+// Deliberately best-effort and error-free: it returns ("", "") on any failure (no cache, no auth
+// URL, fetch error, blank fields) and the renderer then falls back to its compiled-in
+// providerFooterLead/providerFooterContact constants. A document must ALWAYS render a footer —
+// the platform advertisement is never a reason to fail a PDF.
+func (s *Service) ResolveProviderFooterText(ctx context.Context) (lead, contact string) {
+	if s == nil || s.cache == nil || s.authURL == "" {
+		return "", ""
+	}
+	td, err := sharedcache.GetTenantDetails(ctx, s.cache, s.authURL, ProviderTenantSlug, sharedcache.DefaultTenantTTL)
+	if err != nil {
+		// Debug, not Warn: the provider tenant is simply unreachable/unseeded in many
+		// environments (local, CI) and the constants cover it — this is not an incident.
+		s.log.Debug("documents: provider-footer tenant lookup failed",
+			zap.String("slug", ProviderTenantSlug), zap.Error(err))
+		return "", ""
+	}
+	if name := strings.TrimSpace(td.Name); name != "" {
+		lead = "Developed & maintained by " + name
+	}
+	contact = joinNonEmpty("  ·  ",
+		cleanWebDisplay(td.Website),
+		strings.TrimSpace(td.ContactEmail),
+		strings.TrimSpace(td.ContactPhone),
+	)
+	return lead, contact
 }
 
 // metaString reads a string value from a tenant metadata map (empty when absent).
@@ -129,4 +168,14 @@ func joinNonEmpty(sep string, parts ...string) string {
 		out += p
 	}
 	return out
+}
+
+// cleanWebDisplay strips the scheme + trailing slash for a compact printed website (e.g.
+// "https://codevertexafrica.com/" → "codevertexafrica.com") — mirrors pos-api's receipt-footer
+// resolver so both services print the platform-owner website identically.
+func cleanWebDisplay(raw string) string {
+	s := strings.TrimSpace(raw)
+	s = strings.TrimPrefix(s, "https://")
+	s = strings.TrimPrefix(s, "http://")
+	return strings.TrimRight(s, "/")
 }
