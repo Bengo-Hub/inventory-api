@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/go-pdf/fpdf"
+
+	"github.com/bengobox/inventory-service/internal/pdfcolor"
 )
 
 // Page geometry (A4 portrait / landscape, mm). Width and height SWAP between orientations — an A4
@@ -58,63 +60,45 @@ type palette struct {
 // defaultBrand is the indigo used when a tenant has no primary color set.
 var defaultBrand = rgb{99, 102, 241}
 
+// navyTextFloor/blueTextFloor cap how bright pal.navy/pal.blue may get once derived from the
+// tenant's primary color — see pdfcolor.TextSafeDarken. Both carry readable report text (chart
+// value labels, section headings, card values for navy; subtitles, outlet name, field labels,
+// accent bars for blue), so a tenant primary color that's light or near-white (a totally normal
+// choice for on-screen UI theming) can't be allowed to wash either of them out to the point of
+// disappearing on a printed report. Same floors as documents/render/palette.go, which shares this
+// exact bug class — see pdfcolor's doc comment.
+const (
+	navyTextFloor = 90
+	blueTextFloor = 150
+)
+
 // newPalette builds a cohesive palette from the tenant primary color (hex). Falls back to
 // defaultBrand on empty/invalid input.
 func newPalette(primaryHex string) palette {
 	base := defaultBrand
-	if r, g, b, ok := hexToRGB(primaryHex); ok {
+	if r, g, b, ok := pdfcolor.HexToRGB(primaryHex); ok {
 		base = rgb{r, g, b}
 	}
+	sr, sg, sb := pdfcolor.Lighten(base.r, base.g, base.b, 0.30)
+	nr, ng, nb := pdfcolor.TextSafeDarken(base.r, base.g, base.b, 0.45, navyTextFloor)
+	br, bg, bb := pdfcolor.TextSafeDarken(base.r, base.g, base.b, 0, blueTextFloor)
+	lr, lg, lb := pdfcolor.Lighten(base.r, base.g, base.b, 0.80)
+	lbr, lbg, lbb := pdfcolor.Lighten(base.r, base.g, base.b, 0.90)
+	zr, zg, zb := pdfcolor.Lighten(base.r, base.g, base.b, 0.95)
+	bsr, bsg, bsb := pdfcolor.Lighten(base.r, base.g, base.b, 0.78)
 	return palette{
-		sky:       lighten(base, 0.30),
-		blue:      base,
-		navy:      darken(base, 0.45),
+		sky:       rgb{sr, sg, sb},
+		blue:      rgb{br, bg, bb},
+		navy:      rgb{nr, ng, nb},
 		ink:       rgb{34, 48, 63},
 		grey:      rgb{82, 97, 122},
 		muted:     rgb{107, 122, 144},
-		line:      lighten(base, 0.80),
-		lightBlue: lighten(base, 0.90),
-		zebra:     lighten(base, 0.95),
+		line:      rgb{lr, lg, lb},
+		lightBlue: rgb{lbr, lbg, lbb},
+		zebra:     rgb{zr, zg, zb},
 		white:     rgb{255, 255, 255},
-		bannerSub: lighten(base, 0.78),
+		bannerSub: rgb{bsr, bsg, bsb},
 	}
-}
-
-func darken(c rgb, f float64) rgb {
-	return rgb{clamp(int(float64(c.r) * (1 - f))), clamp(int(float64(c.g) * (1 - f))), clamp(int(float64(c.b) * (1 - f)))}
-}
-
-func lighten(c rgb, f float64) rgb {
-	return rgb{
-		clamp(c.r + int(float64(255-c.r)*f)),
-		clamp(c.g + int(float64(255-c.g)*f)),
-		clamp(c.b + int(float64(255-c.b)*f)),
-	}
-}
-
-func clamp(v int) int {
-	if v < 0 {
-		return 0
-	}
-	if v > 255 {
-		return 255
-	}
-	return v
-}
-
-// hexToRGB parses "#RRGGBB" (or "RRGGBB") into RGB ints.
-func hexToRGB(hex string) (int, int, int, bool) {
-	hex = strings.TrimPrefix(strings.TrimSpace(hex), "#")
-	if len(hex) != 6 {
-		return 0, 0, 0, false
-	}
-	r, e1 := strconv.ParseInt(hex[0:2], 16, 0)
-	g, e2 := strconv.ParseInt(hex[2:4], 16, 0)
-	b, e3 := strconv.ParseInt(hex[4:6], 16, 0)
-	if e1 != nil || e2 != nil || e3 != nil {
-		return 0, 0, 0, false
-	}
-	return int(r), int(g), int(b), true
 }
 
 // painter wraps an fpdf document with the palette and the drawing primitives used by the renderer.
