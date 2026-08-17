@@ -176,7 +176,10 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 		p.text(xNum+2, y+2.7, "#", "B", 8, p.pal.white)
 		p.text(xDesc+1, y+2.7, "DESCRIPTION", "B", 8, p.pal.white)
 		p.textR(xUnitR-1, y+2.7, "UNIT", "B", 8, p.pal.white)
-		p.textR(xQtyR-1, y+2.7, "QTY", "B", 8, p.pal.white)
+		// "SHIPPED" (not the old bare "QTY") so the printed document uses the same language as the
+		// Receive Transfer screen's own "Shipped: N" line — the two are read side by side while
+		// confirming a delivery.
+		p.textR(xQtyR-1, y+2.7, "SHIPPED", "B", 8, p.pal.white)
 		if showReceived {
 			p.textR(xRecvR-1, y+2.7, "RECEIVED", "B", 8, p.pal.white)
 			p.textR(xVarR-2, y+2.7, "VARIANCE", "B", 8, p.pal.white)
@@ -186,22 +189,43 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 
 	ry := drawHeaderBar(ty)
 	for i, it := range d.Items {
-		if rowH := p.rowHeight(it.Desc, it.SubDesc, colDesc-2); ry+2.5+rowH > pageBottomSafe {
+		// Fold the variance reason ("Damaged in transit", …) into the SKU sub-line instead of a
+		// dedicated (and pagination-unsafe — see pageBottomSafe's doc comment) extra row: it's
+		// already routed through rowHeight/multiCell below, so a long reason wraps and grows the
+		// row like any other content instead of needing its own height-measurement path.
+		subDesc := it.SubDesc
+		if it.VarianceReason != "" {
+			if subDesc != "" {
+				subDesc += "  ·  Variance: " + it.VarianceReason
+			} else {
+				subDesc = "Variance: " + it.VarianceReason
+			}
+		}
+		if rowH := p.rowHeight(it.Desc, subDesc, colDesc-2); ry+2.5+rowH > pageBottomSafe {
 			p.pdf.AddPage()
 			ry = drawHeaderBar(contTopY)
 		}
 
 		rowTop := ry + 2.5
 		endY := p.multiCell(xDesc+1, rowTop, colDesc-2, 4.0, it.Desc, "B", 9.3, p.pal.navy)
-		if it.SubDesc != "" {
-			endY = p.multiCell(xDesc+1, endY+0.4, colDesc-2, 4.0, it.SubDesc, "", 8.6, p.pal.muted)
+		if subDesc != "" {
+			endY = p.multiCell(xDesc+1, endY+0.4, colDesc-2, 4.0, subDesc, "", 8.6, p.pal.muted)
 		}
 		p.text(xNum+2, rowTop, fmt.Sprintf("%d", i+1), "", 9.3, p.pal.ink)
 		p.textR(xUnitR-1, rowTop, it.Unit, "", 9.3, p.pal.ink)
 		p.textR(xQtyR-1, rowTop, it.Qty, "", 9.3, p.pal.ink)
 		if showReceived {
-			p.textR(xRecvR-1, rowTop, ifEmpty(it.ReceivedQty, it.Qty), "", 9.3, p.pal.ink)
-			p.textR(xVarR-2, rowTop, it.VarianceReason, "", 8.6, p.pal.muted)
+			received := ifEmpty(it.ReceivedQty, it.Qty)
+			p.textR(xRecvR-1, rowTop, received, "", 9.3, p.pal.ink)
+			// A numeric delta ("-2", "0") reads at a glance and is never blank, unlike the old
+			// column (which showed the reason text and so sat empty on the common case — a full,
+			// matched receipt). Only a genuine shortfall gets bolded/warn-colored; "0" stays quiet.
+			font, color := "", p.pal.ink
+			vq := varianceQtyText(it.Qty, received)
+			if vq != "" && vq != "0" {
+				font, color = "B", p.pal.warn
+			}
+			p.textR(xVarR-2, rowTop, orDash(vq), font, 9.3, color)
 		}
 		ry = endY + 2.0
 		p.hline(leftX, ry, rightX)

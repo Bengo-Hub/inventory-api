@@ -95,6 +95,27 @@ func metaRows(d *PurchaseOrderDoc) [][2]string {
 	return rows
 }
 
+// varianceQtyText computes Received − Shipped from the already-formatted quantity strings a
+// TransferDocLine carries, and formats it the same way (2dp, trailing zeros trimmed). Returns ""
+// when either side isn't a parseable number, so the caller can fall back to an em-dash instead of
+// drawing "0" for data it couldn't actually compute — the GRN's own float64s were already fully
+// resolved by the time they were formatted into Qty/ReceivedQty, so this only ever fails to parse
+// on genuinely missing data.
+func varianceQtyText(qty, receivedQty string) string {
+	q, errQ := strconv.ParseFloat(strings.TrimSpace(qty), 64)
+	r, errR := strconv.ParseFloat(strings.TrimSpace(receivedQty), 64)
+	if errQ != nil || errR != nil {
+		return ""
+	}
+	s := strconv.FormatFloat(r-q, 'f', 2, 64)
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimRight(s, ".")
+	if s == "" || s == "-0" {
+		return "0"
+	}
+	return s
+}
+
 // imgType returns the fpdf image-type string for the given raw image bytes.
 func imgType(b []byte) string {
 	switch {

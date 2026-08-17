@@ -1,9 +1,6 @@
 package render
 
-import (
-	"strconv"
-	"strings"
-)
+import "github.com/bengobox/inventory-service/internal/pdfcolor"
 
 // rgb is an 8-bit RGB color used by the fpdf renderer.
 type rgb struct{ r, g, b int }
@@ -14,8 +11,8 @@ type rgb struct{ r, g, b int }
 // text stays legible regardless of brand color.
 type palette struct {
 	sky       rgb // lightest brand tone (gradient start)
-	blue      rgb // mid brand tone (= tenant primary)
-	navy      rgb // darkest brand tone (gradient end, headings)
+	blue      rgb // mid brand tone (label text + gradient accent) — print-safe floored
+	navy      rgb // darkest brand tone (headings, descriptions) — print-safe floored
 	ink       rgb // body text
 	grey      rgb // secondary text
 	muted     rgb // tertiary text
@@ -23,71 +20,46 @@ type palette struct {
 	lightBlue rgb // light brand tint (key cells, subtotal bg)
 	white     rgb
 	bannerSub rgb // banner sub-label tone (light tint over gradient)
+	warn      rgb // fixed (not brand-derived) — flags a non-zero transfer variance
 }
 
 // defaultBrand is the house blue used when a tenant has no primary color set.
 var defaultBrand = rgb{31, 111, 178}
 
+// navyTextFloor/blueTextFloor are the brightest a channel of pal.navy/pal.blue may be — see
+// pdfcolor.TextSafeDarken. navy carries the document's primary readable text (titles, item
+// descriptions, party names, meta values), so it gets the darker floor; blue only ever carries
+// secondary label text (field labels, subtitles, taglines) alongside a couple of pure decorative
+// uses (gradient accents), so it keeps more of the brand hue.
+const (
+	navyTextFloor = 90
+	blueTextFloor = 150
+)
+
 // newPalette builds a cohesive palette from the tenant primary color (hex).
 // Falls back to defaultBrand on empty/invalid input.
 func newPalette(primaryHex string) palette {
 	base := defaultBrand
-	if c, ok := hexToRGB(primaryHex); ok {
-		base = c
+	if r, g, b, ok := pdfcolor.HexToRGB(primaryHex); ok {
+		base = rgb{r, g, b}
 	}
+	sr, sg, sb := pdfcolor.Lighten(base.r, base.g, base.b, 0.30)
+	nr, ng, nb := pdfcolor.TextSafeDarken(base.r, base.g, base.b, 0.45, navyTextFloor)
+	br, bg, bb := pdfcolor.TextSafeDarken(base.r, base.g, base.b, 0, blueTextFloor)
+	lr, lg, lb := pdfcolor.Lighten(base.r, base.g, base.b, 0.80)
+	lbr, lbg, lbb := pdfcolor.Lighten(base.r, base.g, base.b, 0.92)
+	bsr, bsg, bsb := pdfcolor.Lighten(base.r, base.g, base.b, 0.78)
 	return palette{
-		sky:       lighten(base, 0.30),
-		blue:      base,
-		navy:      darken(base, 0.45),
+		sky:       rgb{sr, sg, sb},
+		blue:      rgb{br, bg, bb},
+		navy:      rgb{nr, ng, nb},
 		ink:       rgb{34, 48, 63},
 		grey:      rgb{82, 97, 122},
 		muted:     rgb{107, 122, 144},
-		line:      lighten(base, 0.80),
-		lightBlue: lighten(base, 0.92),
+		line:      rgb{lr, lg, lb},
+		lightBlue: rgb{lbr, lbg, lbb},
 		white:     rgb{255, 255, 255},
-		bannerSub: lighten(base, 0.78),
+		bannerSub: rgb{bsr, bsg, bsb},
+		warn:      rgb{158, 30, 30},
 	}
-}
-
-// hexToRGB parses a "#RRGGBB" (or "RRGGBB") hex string. ok is false on bad input.
-func hexToRGB(hex string) (rgb, bool) {
-	hex = strings.TrimPrefix(strings.TrimSpace(hex), "#")
-	if len(hex) != 6 {
-		return rgb{}, false
-	}
-	r, e1 := strconv.ParseInt(hex[0:2], 16, 0)
-	g, e2 := strconv.ParseInt(hex[2:4], 16, 0)
-	b, e3 := strconv.ParseInt(hex[4:6], 16, 0)
-	if e1 != nil || e2 != nil || e3 != nil {
-		return rgb{}, false
-	}
-	return rgb{int(r), int(g), int(b)}, true
-}
-
-// darken scales each channel toward black by factor f (0..1).
-func darken(c rgb, f float64) rgb {
-	return rgb{
-		r: clamp(int(float64(c.r) * (1 - f))),
-		g: clamp(int(float64(c.g) * (1 - f))),
-		b: clamp(int(float64(c.b) * (1 - f))),
-	}
-}
-
-// lighten scales each channel toward white by factor f (0..1).
-func lighten(c rgb, f float64) rgb {
-	return rgb{
-		r: clamp(c.r + int(float64(255-c.r)*f)),
-		g: clamp(c.g + int(float64(255-c.g)*f)),
-		b: clamp(c.b + int(float64(255-c.b)*f)),
-	}
-}
-
-func clamp(v int) int {
-	if v < 0 {
-		return 0
-	}
-	if v > 255 {
-		return 255
-	}
-	return v
 }
