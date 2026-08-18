@@ -37,6 +37,10 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 	if !ok {
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	ctx := r.Context()
 	lines, _ := h.orm.PurchaseReturnLine.Query().
 		Where(entprline.PurchaseReturnID(pr.ID), entprline.TenantID(tenantID)).All(ctx)
@@ -113,10 +117,19 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 		doc.ApprovedBy = h.latestApproverLabel(ctx, tenantID, appr.ID)
 	}
 
-	pdfBytes, err := documents.RenderPurchaseReturnPDF(doc)
+	var fileBytes []byte
+	var err error
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderPurchaseReturnCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderPurchaseReturnXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderPurchaseReturnPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render purchase return PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render purchase return document")
 		return
 	}
-	writePDF(w, pr.ReturnNumber, pdfBytes)
+	writeDocFile(w, pr.ReturnNumber, format, fileBytes)
 }

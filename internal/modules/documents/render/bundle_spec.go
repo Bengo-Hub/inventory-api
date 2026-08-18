@@ -43,6 +43,23 @@ type BundleSpecDocLine struct {
 
 // RenderBundleSpec builds a premium, tenant-branded A4 bundle spec sheet and returns PDF bytes.
 func RenderBundleSpec(doc *BundleSpecDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(bundleSpecSimpleDoc(doc), logo, logoType)
+}
+
+// RenderBundleSpecXLSX renders the same bundle spec sheet as a styled, print-ready Excel
+// workbook — see simpledoc_xlsx.go's doc comment.
+func RenderBundleSpecXLSX(doc *BundleSpecDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(bundleSpecSimpleDoc(doc))
+}
+
+// RenderBundleSpecCSV renders the bundle spec sheet's data as plain CSV.
+func RenderBundleSpecCSV(doc *BundleSpecDoc) ([]byte, error) {
+	return renderSimpleDocCSV(bundleSpecSimpleDoc(doc))
+}
+
+// bundleSpecSimpleDoc maps a BundleSpecDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func bundleSpecSimpleDoc(doc *BundleSpecDoc) simpleDoc {
 	rows := make([]docRow, 0, len(doc.Components))
 	for _, c := range doc.Components {
 		kind := strings.ToUpper(strings.ReplaceAll(c.Kind, "_", " "))
@@ -73,7 +90,7 @@ func RenderBundleSpec(doc *BundleSpecDoc, logo []byte, logoType string) ([]byte,
 	}
 	meta = append(meta, [2]string{"Status", status})
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Bundle Spec",
 		Subtitle: doc.BundleName,
@@ -99,7 +116,7 @@ func RenderBundleSpec(doc *BundleSpecDoc, logo []byte, logoType string) ([]byte,
 		Disclaimer: "This bundle specification is a reference sheet issued by " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + " and is not a priced offer.",
 		ErrLabel: "bundle spec",
-	}, logo, logoType)
+	}
 }
 
 // humanizeConst turns a stored SCREAMING_SNAKE or snake_case enum value into "Screaming Snake"

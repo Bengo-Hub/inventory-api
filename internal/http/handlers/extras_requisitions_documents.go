@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -33,6 +32,10 @@ func (h *InventoryExtrasHandler) GenerateRequisitionPDF(w http.ResponseWriter, r
 		return
 	}
 	tenantID, rq, ok := h.loadRequisition(w, r)
+	if !ok {
+		return
+	}
+	format, ok := docFormatFromQuery(w, r)
 	if !ok {
 		return
 	}
@@ -105,12 +108,21 @@ func (h *InventoryExtrasHandler) GenerateRequisitionPDF(w http.ResponseWriter, r
 		doc.ApprovedBy = h.latestApproverLabel(ctx, tenantID, appr.ID)
 	}
 
-	pdfBytes, err := documents.RenderRequisitionPDF(doc)
+	var fileBytes []byte
+	var err error
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderRequisitionCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderRequisitionXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderRequisitionPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render requisition PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render requisition document")
 		return
 	}
-	writePDF(w, rq.ReferenceNumber, pdfBytes)
+	writeDocFile(w, rq.ReferenceNumber, format, fileBytes)
 }
 
 // outletWarehouseName resolves a human label for an outlet id by naming the warehouse that
@@ -144,17 +156,4 @@ func (h *InventoryExtrasHandler) itemSKU(ctx context.Context, tenantID, id uuid.
 		cache[id] = sku
 	}
 	return sku
-}
-
-// writePDF writes rendered PDF bytes with the inline-disposition headers every document
-// endpoint in this service uses (matching GeneratePurchaseOrderPDF).
-func writePDF(w http.ResponseWriter, filename string, body []byte) {
-	if filename == "" {
-		filename = "document"
-	}
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.pdf"`, filename))
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(body)
 }

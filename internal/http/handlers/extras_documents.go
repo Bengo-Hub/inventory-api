@@ -43,6 +43,10 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	poID, err := uuid.Parse(chi.URLParam(r, "poID"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
@@ -122,16 +126,20 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 		doc.ApprovedBy = h.latestApproverLabel(ctx, tenantID, appr.ID)
 	}
 
-	pdfBytes, err := documents.RenderPurchaseOrderPDF(doc)
+	var fileBytes []byte
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderPurchaseOrderCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderPurchaseOrderXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderPurchaseOrderPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render purchase order PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render purchase order document")
 		return
 	}
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.pdf"`, po.PoNumber))
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(pdfBytes)
+	writeDocFile(w, po.PoNumber, format, fileBytes)
 }
 
 // latestApproverLabel names the FINAL approver of an approval request — the human whose

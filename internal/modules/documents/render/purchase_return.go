@@ -49,6 +49,23 @@ type PurchaseReturnDocLine struct {
 // RenderPurchaseReturn builds a premium, tenant-branded A4 supplier return (debit note) and
 // returns PDF bytes.
 func RenderPurchaseReturn(doc *PurchaseReturnDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(purchaseReturnSimpleDoc(doc), logo, logoType)
+}
+
+// RenderPurchaseReturnXLSX renders the same purchase return as a styled, print-ready Excel
+// workbook — see simpledoc_xlsx.go's doc comment.
+func RenderPurchaseReturnXLSX(doc *PurchaseReturnDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(purchaseReturnSimpleDoc(doc))
+}
+
+// RenderPurchaseReturnCSV renders the purchase return's data as plain CSV.
+func RenderPurchaseReturnCSV(doc *PurchaseReturnDoc) ([]byte, error) {
+	return renderSimpleDocCSV(purchaseReturnSimpleDoc(doc))
+}
+
+// purchaseReturnSimpleDoc maps a PurchaseReturnDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func purchaseReturnSimpleDoc(doc *PurchaseReturnDoc) simpleDoc {
 	cur := currencyCode(doc.Currency)
 	amountTitle := "AMOUNT"
 	if cur != "" {
@@ -90,7 +107,7 @@ func RenderPurchaseReturn(doc *PurchaseReturnDoc, logo []byte, logoType string) 
 		approvedLabel = "Approved By"
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Purchase Return",
 		Subtitle: "Debit Note - Return to Supplier",
@@ -121,5 +138,5 @@ func RenderPurchaseReturn(doc *PurchaseReturnDoc, logo []byte, logoType string) 
 		Disclaimer: "This debit note claims credit for goods returned to the supplier named above by " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + ".",
 		ErrLabel: "purchase return",
-	}, logo, logoType)
+	}
 }

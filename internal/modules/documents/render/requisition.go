@@ -53,6 +53,23 @@ type RequisitionDocLine struct {
 
 // RenderRequisition builds a premium, tenant-branded A4 requisition and returns PDF bytes.
 func RenderRequisition(doc *RequisitionDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(requisitionSimpleDoc(doc), logo, logoType)
+}
+
+// RenderRequisitionXLSX renders the same requisition as a styled, print-ready Excel workbook —
+// see simpledoc_xlsx.go's doc comment.
+func RenderRequisitionXLSX(doc *RequisitionDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(requisitionSimpleDoc(doc))
+}
+
+// RenderRequisitionCSV renders the requisition's data as plain CSV.
+func RenderRequisitionCSV(doc *RequisitionDoc) ([]byte, error) {
+	return renderSimpleDocCSV(requisitionSimpleDoc(doc))
+}
+
+// requisitionSimpleDoc maps a RequisitionDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func requisitionSimpleDoc(doc *RequisitionDoc) simpleDoc {
 	cur := currencyCode(doc.Currency)
 	estTitle := "EST. TOTAL"
 	if cur != "" {
@@ -98,7 +115,7 @@ func RenderRequisition(doc *RequisitionDoc, logo []byte, logoType string) ([]byt
 		approvedLabel = "Approved By"
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Requisition",
 		Subtitle: requisitionSubtitle(doc.RequestType),
@@ -129,7 +146,7 @@ func RenderRequisition(doc *RequisitionDoc, logo []byte, logoType string) ([]byt
 		Disclaimer: "Estimated prices are indicative only and do not commit " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + " to a purchase.",
 		ErrLabel: "requisition",
-	}, logo, logoType)
+	}
 }
 
 // requisitionSubtitle maps the stored request_type enum to a human masthead caption.

@@ -52,6 +52,23 @@ type StockCountDocLine struct {
 
 // RenderStockCount builds a premium, tenant-branded A4 stock-take document and returns PDF bytes.
 func RenderStockCount(doc *StockCountDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(stockCountSimpleDoc(doc), logo, logoType)
+}
+
+// RenderStockCountXLSX renders the same stock-take document as a styled, print-ready Excel
+// workbook — see simpledoc_xlsx.go's doc comment.
+func RenderStockCountXLSX(doc *StockCountDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(stockCountSimpleDoc(doc))
+}
+
+// RenderStockCountCSV renders the stock-take document's data as plain CSV.
+func RenderStockCountCSV(doc *StockCountDoc) ([]byte, error) {
+	return renderSimpleDocCSV(stockCountSimpleDoc(doc))
+}
+
+// stockCountSimpleDoc maps a StockCountDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func stockCountSimpleDoc(doc *StockCountDoc) simpleDoc {
 	blank := strings.EqualFold(strings.TrimSpace(doc.Mode), StockCountModeBlank)
 
 	rows := make([]docRow, 0, len(doc.Items))
@@ -101,7 +118,7 @@ func RenderStockCount(doc *StockCountDoc, logo []byte, logoType string) ([]byte,
 		approvedLabel = "Verified By"
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Stock Take",
 		Subtitle: subtitle,
@@ -129,5 +146,5 @@ func RenderStockCount(doc *StockCountDoc, logo []byte, logoType string) ([]byte,
 		RightSigName:  doc.ApprovedBy,
 		Disclaimer:    disclaimer,
 		ErrLabel:      "stock count",
-	}, logo, logoType)
+	}
 }

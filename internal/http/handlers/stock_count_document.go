@@ -51,6 +51,10 @@ func (h *StockCountHandler) GenerateStockCountPDF(w http.ResponseWriter, r *http
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	countID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid count id")
@@ -151,12 +155,20 @@ func (h *StockCountHandler) GenerateStockCountPDF(w http.ResponseWriter, r *http
 		doc.ApprovedAt = count.ApprovedAt.Format("02 January 2006")
 	}
 
-	pdfBytes, err := documents.RenderStockCountPDF(doc)
+	var fileBytes []byte
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderStockCountCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderStockCountXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderStockCountPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render stock count PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render stock count document")
 		return
 	}
-	writePDF(w, ifEmptyStr(count.Reference, "stock-count")+"-"+mode, pdfBytes)
+	writeDocFile(w, ifEmptyStr(count.Reference, "stock-count")+"-"+mode, format, fileBytes)
 }
 
 // defaultStockCountMode picks the document a count's CURRENT status actually supports: once the

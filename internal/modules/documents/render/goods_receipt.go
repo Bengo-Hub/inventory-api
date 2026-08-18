@@ -64,6 +64,23 @@ type GoodsReceiptDocLine struct {
 
 // RenderGoodsReceipt builds a premium, tenant-branded A4 goods-receipt note and returns PDF bytes.
 func RenderGoodsReceipt(doc *GoodsReceiptDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(goodsReceiptSimpleDoc(doc), logo, logoType)
+}
+
+// RenderGoodsReceiptXLSX renders the same goods-receipt note as a styled, print-ready Excel
+// workbook — see simpledoc_xlsx.go's doc comment.
+func RenderGoodsReceiptXLSX(doc *GoodsReceiptDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(goodsReceiptSimpleDoc(doc))
+}
+
+// RenderGoodsReceiptCSV renders the goods-receipt note's data as plain CSV.
+func RenderGoodsReceiptCSV(doc *GoodsReceiptDoc) ([]byte, error) {
+	return renderSimpleDocCSV(goodsReceiptSimpleDoc(doc))
+}
+
+// goodsReceiptSimpleDoc maps a GoodsReceiptDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func goodsReceiptSimpleDoc(doc *GoodsReceiptDoc) simpleDoc {
 	cur := currencyCode(doc.Currency)
 	amountTitle := "AMOUNT"
 	if cur != "" {
@@ -104,7 +121,7 @@ func RenderGoodsReceipt(doc *GoodsReceiptDoc, logo []byte, logoType string) ([]b
 		approvedLabel = "Approved By"
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Goods Received Note",
 		Subtitle: "Receipt Against Purchase Order",
@@ -138,5 +155,5 @@ func RenderGoodsReceipt(doc *GoodsReceiptDoc, logo []byte, logoType string) ([]b
 		Disclaimer: "This goods received note records the physical receipt and inspection of the goods listed above by " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + ".",
 		ErrLabel: "goods receipt",
-	}, logo, logoType)
+	}
 }
