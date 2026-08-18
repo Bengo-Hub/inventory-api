@@ -75,7 +75,9 @@ func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantI
 	for i, ln := range items {
 		itemIDs[i] = ln.ItemID
 	}
-	lineItems, err := tx.Item.Query().Where(item.IDIn(itemIDs...)).All(ctx)
+	// WithUnits so the returned []*ent.Item can double as the display-info source (name/SKU/unit
+	// abbreviation) for the response the caller builds right after validating — see itemDisplay.
+	lineItems, err := tx.Item.Query().Where(item.IDIn(itemIDs...)).WithUnits().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: load items for validation: %w", err)
 	}
@@ -249,7 +251,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 	// of querying items again just to build the display map.
 	itemInfo := make(map[uuid.UUID]itemDisplay, len(lineItems))
 	for _, it := range lineItems {
-		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku, unit: unitAbbrev(it)}
 	}
 
 	return s.buildTransferResponse(transfer, lines, srcWH, destWH, itemInfo), nil
@@ -351,7 +353,7 @@ func (s *Service) UpdateTransfer(ctx context.Context, tenantID, transferID uuid.
 	}
 	itemInfo := make(map[uuid.UUID]itemDisplay, len(lineItems))
 	for _, it := range lineItems {
-		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+		itemInfo[it.ID] = itemDisplay{name: it.Name, sku: it.Sku, unit: unitAbbrev(it)}
 	}
 
 	return s.buildTransferResponse(updated, lines, srcWH, destWH, itemInfo), nil
@@ -898,25 +900,35 @@ func (s *Service) generateTransferNumber(ctx context.Context, tx *ent.Tx, tenant
 // up once per Item ID by the caller (batch, not a query per line) and handed to
 // buildTransferResponse.
 type itemDisplay struct {
-	name, sku string
+	name, sku, unit string
 }
 
-// itemDisplayMap batch-loads name/sku for a set of item IDs. Missing/unresolvable items are
-// simply absent from the map (buildTransferResponse leaves their line's name/sku blank rather
-// than failing the whole response — an item transferred and later hard-deleted must never break
-// the historical transfer record).
+// unitAbbrev reads an item's unit-of-measure abbreviation off its eager-loaded Units edge (see
+// validateTransferLines/itemDisplayMap's WithUnits()). Empty when the item has no unit assigned
+// or the edge wasn't loaded, rather than panicking on the nil edge.
+func unitAbbrev(it *ent.Item) string {
+	if it.Edges.Units == nil {
+		return ""
+	}
+	return it.Edges.Units.Abbreviation
+}
+
+// itemDisplayMap batch-loads name/sku/unit for a set of item IDs. Missing/unresolvable items are
+// simply absent from the map (buildTransferResponse leaves their line's name/sku/unit blank
+// rather than failing the whole response — an item transferred and later hard-deleted must never
+// break the historical transfer record).
 func (s *Service) itemDisplayMap(ctx context.Context, client *ent.Client, ids []uuid.UUID) map[uuid.UUID]itemDisplay {
 	out := make(map[uuid.UUID]itemDisplay, len(ids))
 	if len(ids) == 0 {
 		return out
 	}
-	items, err := client.Item.Query().Where(item.IDIn(ids...)).All(ctx)
+	items, err := client.Item.Query().Where(item.IDIn(ids...)).WithUnits().All(ctx)
 	if err != nil {
 		s.log.Warn("transfers: load item display info failed", zap.Error(err))
 		return out
 	}
 	for _, it := range items {
-		out[it.ID] = itemDisplay{name: it.Name, sku: it.Sku}
+		out[it.ID] = itemDisplay{name: it.Name, sku: it.Sku, unit: unitAbbrev(it)}
 	}
 	return out
 }
@@ -966,6 +978,7 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 			ItemID:    l.ItemID,
 			ItemName:  info.name,
 			ItemSKU:   info.sku,
+			ItemUnit:  info.unit,
 			VariantID: l.VariantID,
 			LotID:     l.LotID,
 			Quantity:  l.Quantity,

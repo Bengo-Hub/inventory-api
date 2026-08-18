@@ -94,12 +94,15 @@ func (h *InventoryExtrasHandler) GenerateGoodsReceiptPDF(w http.ResponseWriter, 
 	for _, l := range lines {
 		itemIDs = append(itemIDs, l.ItemID)
 	}
-	names, skus := map[uuid.UUID]string{}, map[uuid.UUID]string{}
+	names, skus, units := map[uuid.UUID]string{}, map[uuid.UUID]string{}, map[uuid.UUID]string{}
 	if items, e := h.orm.Item.Query().
-		Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...)).All(ctx); e == nil {
+		Where(entitem.TenantID(tenantID), entitem.IDIn(itemIDs...)).WithUnits().All(ctx); e == nil {
 		for _, it := range items {
 			names[it.ID] = it.Name
 			skus[it.ID] = it.Sku
+			if it.Edges.Units != nil {
+				units[it.ID] = it.Edges.Units.Abbreviation
+			}
 		}
 	}
 
@@ -130,6 +133,7 @@ func (h *InventoryExtrasHandler) GenerateGoodsReceiptPDF(w http.ResponseWriter, 
 		items = append(items, documents.GoodsReceiptDocLine{
 			Desc:        ifEmptyStr(names[l.ItemID], l.ItemID.String()),
 			SubDesc:     sub,
+			Unit:        units[l.ItemID],
 			OrderedQty:  ordered,
 			ReceivedQty: formatQty(l.QuantityReceived),
 			AcceptedQty: formatQty(l.QuantityAccepted),

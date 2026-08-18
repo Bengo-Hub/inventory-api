@@ -115,13 +115,17 @@ func pendingTransferOrderFromTransfer(t *transfers.TransferResponse) documents.T
 		items[i] = documents.TransferDocLine{
 			Desc:    ifEmptyStr(l.ItemName, l.ItemID.String()),
 			SubDesc: l.ItemSKU,
+			Unit:    l.ItemUnit,
 			Qty:     formatQty(l.Quantity),
 		}
 	}
 	return documents.TransferDoc{
-		DocTitle:            "Transfer Order",
-		DocSubtitle:         "Pending Dispatch",
-		Status:              t.Status,
+		DocTitle:    "Transfer Order",
+		DocSubtitle: "Pending Dispatch",
+		Status:      t.Status,
+		// Nothing has shipped yet at this stage — "QTY" (not "SHIPPED") is the field's true name
+		// on a still-pending transfer order; see transfer.go's drawTransferItems doc comment.
+		QtyColumnLabel:      "QTY",
 		TransferNumber:      t.TransferNumber,
 		Date:                t.CreatedAt.Format("02 January 2006"),
 		Reference:           t.ReferenceNo,
@@ -147,6 +151,7 @@ func deliveryNoteFromTransfer(t *transfers.TransferResponse) documents.TransferD
 		items[i] = documents.TransferDocLine{
 			Desc:    ifEmptyStr(l.ItemName, l.ItemID.String()),
 			SubDesc: l.ItemSKU,
+			Unit:    l.ItemUnit,
 			Qty:     formatQty(l.Quantity),
 		}
 	}
@@ -187,6 +192,7 @@ func goodsReceivedNoteFromTransfer(t *transfers.TransferResponse) documents.Tran
 		items[i] = documents.TransferDocLine{
 			Desc:           ifEmptyStr(l.ItemName, l.ItemID.String()),
 			SubDesc:        l.ItemSKU,
+			Unit:           l.ItemUnit,
 			Qty:            formatQty(l.Quantity),
 			ReceivedQty:    formatQty(received),
 			VarianceReason: l.VarianceReason,

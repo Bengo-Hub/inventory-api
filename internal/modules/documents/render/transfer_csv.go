@@ -24,7 +24,7 @@ func RenderTransferCSV(d *TransferDoc) ([]byte, error) {
 			break
 		}
 	}
-	header := []string{"#", "Description", "SKU", "Unit", "Shipped"}
+	header := []string{"#", "Description", "SKU", "Unit", ifEmpty(d.QtyColumnLabel, "Shipped")}
 	if showReceived {
 		header = append(header, "Received", "Variance", "Notes")
 	}

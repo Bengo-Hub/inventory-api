@@ -134,10 +134,71 @@ func TestRenderTransferXLSX_DeliveryNote_NoReceivedColumns(t *testing.T) {
 			if len(row) != 5 {
 				t.Fatalf("delivery note header row = %v, want exactly 5 columns (no RECEIVED/VARIANCE/NOTES)", row)
 			}
+			if row[4] != "SHIPPED" {
+				t.Fatalf("delivery note qty column header = %q, want %q (goods have actually shipped at this stage)", row[4], "SHIPPED")
+			}
 			return
 		}
 	}
 	t.Fatalf("did not find the item table header row in %v", rows)
+}
+
+// TestRenderTransferXLSX_PendingOrder_QtyColumnNotLabeledShipped is a regression test: a
+// not-yet-dispatched Transfer Order used to inherit the delivery note's "SHIPPED" header even
+// though nothing has shipped yet, and never carried the item's unit-of-measure either. Both must
+// be fixed via QtyColumnLabel and TransferDocLine.Unit respectively.
+func TestRenderTransferXLSX_PendingOrder_QtyColumnNotLabeledShipped(t *testing.T) {
+	doc := &TransferDoc{
+		Branding:          Branding{CompanyName: "BOI Enterprises"},
+		DocTitle:          "Transfer Order",
+		DocSubtitle:       "Pending Dispatch",
+		QtyColumnLabel:    "QTY",
+		TransferNumber:    "TRF-260818-000098",
+		FromWarehouseName: "BOI Enterprises",
+		ToWarehouseName:   "Eldoret Enterprises",
+		Items: []TransferDocLine{
+			{Desc: "X6840 64/4 SMART 20 INFINIX", SubDesc: "10625", Unit: "PCS", Qty: "10"},
+		},
+		LeftSigLabel:  "Prepared By",
+		RightSigLabel: "Authorized By",
+	}
+	b, err := RenderTransferXLSX(doc)
+	if err != nil {
+		t.Fatalf("RenderTransferXLSX: %v", err)
+	}
+	f, err := excelize.OpenReader(bytes.NewReader(b))
+	if err != nil {
+		t.Fatalf("re-open generated xlsx: %v", err)
+	}
+	defer f.Close()
+	rows, err := f.GetRows(f.GetSheetList()[0])
+	if err != nil {
+		t.Fatalf("GetRows: %v", err)
+	}
+	var headerRow, dataRow []string
+	for i, row := range rows {
+		if len(row) > 0 && row[0] == "#" {
+			headerRow = row
+			if i+1 < len(rows) {
+				dataRow = rows[i+1]
+			}
+			break
+		}
+	}
+	if headerRow == nil {
+		t.Fatalf("did not find the item table header row in %v", rows)
+	}
+	if headerRow[4] != "QTY" {
+		t.Fatalf("pending transfer order qty column header = %q, want %q (nothing has shipped yet)", headerRow[4], "QTY")
+	}
+	for _, h := range headerRow {
+		if h == "SHIPPED" {
+			t.Fatalf("pending transfer order header row = %v must not say SHIPPED anywhere", headerRow)
+		}
+	}
+	if dataRow == nil || dataRow[3] != "PCS" {
+		t.Fatalf("pending transfer order UNIT cell = %v, want \"PCS\" in the UNIT column", dataRow)
+	}
 }
 
 func TestRenderTransferXLSX_EmptyPrimaryColorDoesNotError(t *testing.T) {
