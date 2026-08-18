@@ -21,6 +21,18 @@ func RenderTransferPDF(d TransferDoc) ([]byte, error) {
 	return render.RenderTransfer(&d, logo, logoType)
 }
 
+// RenderTransferXLSX renders the same stock-transfer document as a styled, print-ready Excel
+// workbook (colored/bordered item table, totals footer, A4 page setup) — see
+// render.RenderTransferXLSX's doc comment.
+func RenderTransferXLSX(d TransferDoc) ([]byte, error) {
+	return render.RenderTransferXLSX(&d)
+}
+
+// RenderTransferCSV renders the stock-transfer document's data as plain CSV.
+func RenderTransferCSV(d TransferDoc) ([]byte, error) {
+	return render.RenderTransferCSV(&d)
+}
+
 // RenderGoodsReceiptPDF renders a branded A4 goods-receipt note (GRN) for a PO receiving and
 // returns PDF bytes.
 func RenderGoodsReceiptPDF(d GoodsReceiptDoc) ([]byte, error) {

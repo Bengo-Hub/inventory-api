@@ -8,6 +8,7 @@
 package pdfcolor
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -25,6 +26,12 @@ func HexToRGB(hex string) (r, g, b int, ok bool) {
 		return 0, 0, 0, false
 	}
 	return int(rv), int(gv), int(bv), true
+}
+
+// ToHex formats r,g,b as an uppercase "RRGGBB" string (no leading "#") — the form excelize's
+// Style.Fill/Font.Color and Border.Color expect, so PDF and XLSX exports can share one palette.
+func ToHex(r, g, b int) string {
+	return fmt.Sprintf("%02X%02X%02X", Clamp(r), Clamp(g), Clamp(b))
 }
 
 // Clamp restricts v to the valid 8-bit color range.

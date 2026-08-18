@@ -107,7 +107,14 @@ func varianceQtyText(qty, receivedQty string) string {
 	if errQ != nil || errR != nil {
 		return ""
 	}
-	s := strconv.FormatFloat(r-q, 'f', 2, 64)
+	return formatQtyDelta(r - q)
+}
+
+// formatQtyDelta formats a quantity (or a quantity delta) with up to 2 decimals and no trailing
+// zeros — e.g. "5", "4.5", "-2". "-0" (a delta that rounds to zero from the negative side)
+// normalizes to "0" so a fully-reconciled row never prints a stray minus sign.
+func formatQtyDelta(v float64) string {
+	s := strconv.FormatFloat(v, 'f', 2, 64)
 	s = strings.TrimRight(s, "0")
 	s = strings.TrimRight(s, ".")
 	if s == "" || s == "-0" {
