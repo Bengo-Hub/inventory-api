@@ -162,6 +162,7 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 		colRecv, colVar = 0, 0
 	}
 	colDesc := contentW - colNum - colUnit - colQty - colRecv - colVar
+	qtyColLabel := ifEmpty(d.QtyColumnLabel, "SHIPPED")
 
 	xNum := leftX
 	xDesc := xNum + colNum
@@ -176,10 +177,11 @@ func (p *painter) drawTransferItems(d *TransferDoc, ty float64) float64 {
 		p.text(xNum+2, y+2.7, "#", "B", 8, p.pal.white)
 		p.text(xDesc+1, y+2.7, "DESCRIPTION", "B", 8, p.pal.white)
 		p.textR(xUnitR-1, y+2.7, "UNIT", "B", 8, p.pal.white)
-		// "SHIPPED" (not the old bare "QTY") so the printed document uses the same language as the
-		// Receive Transfer screen's own "Shipped: N" line — the two are read side by side while
-		// confirming a delivery.
-		p.textR(xQtyR-1, y+2.7, "SHIPPED", "B", 8, p.pal.white)
+		// Defaults to "SHIPPED" (not the old bare "QTY") so the delivery note/GRN use the same
+		// language as the Receive Transfer screen's own "Shipped: N" line — the two are read side
+		// by side while confirming a delivery. A pending Transfer Order overrides this via
+		// QtyColumnLabel, since nothing has shipped yet at that stage.
+		p.textR(xQtyR-1, y+2.7, qtyColLabel, "B", 8, p.pal.white)
 		if showReceived {
 			p.textR(xRecvR-1, y+2.7, "RECEIVED", "B", 8, p.pal.white)
 			p.textR(xVarR-2, y+2.7, "VARIANCE", "B", 8, p.pal.white)

@@ -86,6 +86,9 @@ type TransferLineResponse struct {
 	ItemID    uuid.UUID  `json:"item_id"`
 	ItemName  string     `json:"item_name,omitempty"`
 	ItemSKU   string     `json:"item_sku,omitempty"`
+	// ItemUnit is the item's unit-of-measure abbreviation (e.g. "PCS", "KG") — blank when the
+	// item has no unit assigned.
+	ItemUnit  string     `json:"item_unit,omitempty"`
 	VariantID *uuid.UUID `json:"variant_id,omitempty"`
 	LotID     *uuid.UUID `json:"lot_id,omitempty"`
 	Quantity  float64    `json:"quantity"`

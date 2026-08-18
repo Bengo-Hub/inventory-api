@@ -80,13 +80,17 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	items := make([]documents.DocLine, 0, len(lines))
 	var subtotal float64
 	for _, l := range lines {
-		desc := l.ItemID.String()
-		if it, e := h.orm.Item.Query().Where(entitem.ID(l.ItemID)).Only(ctx); e == nil {
+		desc, unit := l.ItemID.String(), ""
+		if it, e := h.orm.Item.Query().Where(entitem.ID(l.ItemID)).WithUnits().Only(ctx); e == nil {
 			desc = it.Name
+			if it.Edges.Units != nil {
+				unit = it.Edges.Units.Abbreviation
+			}
 		}
 		subtotal += l.TotalPrice
 		items = append(items, documents.DocLine{
 			Desc:   desc,
+			Unit:   unit,
 			Qty:    fmt.Sprintf("%g", l.QuantityOrdered),
 			Rate:   formatMoney(l.UnitPrice),
 			Amount: formatMoney(l.TotalPrice),

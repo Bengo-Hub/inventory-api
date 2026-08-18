@@ -23,6 +23,13 @@ type TransferDoc struct {
 	ToWarehouseName   string
 	ToWarehouseAddr   []string
 
+	// QtyColumnLabel titles the item table's quantity column — "SHIPPED" only makes sense once
+	// goods have actually left the source warehouse (the delivery note and GRN); a pending,
+	// not-yet-dispatched Transfer Order shows the same field as a planned quantity, so it must
+	// say something else ("QTY"). Empty defaults to "SHIPPED" for backward compatibility with
+	// every existing caller.
+	QtyColumnLabel string
+
 	Items []TransferDocLine
 
 	// AcknowledgementText, when set, renders a bold lead line above the item table (mirrors

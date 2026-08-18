@@ -204,8 +204,9 @@ func RenderTransferXLSX(d *TransferDoc) ([]byte, error) {
 		row += 2
 	}
 
-	// ── Item table ──
-	headers := []string{"#", "DESCRIPTION", "SKU", "UNIT", "SHIPPED"}
+	// ── Item table ── (label defaults to "SHIPPED"; a pending Transfer Order overrides via
+	// QtyColumnLabel — see transfer.go's drawTransferItems doc comment for why).
+	headers := []string{"#", "DESCRIPTION", "SKU", "UNIT", ifEmpty(d.QtyColumnLabel, "SHIPPED")}
 	if showReceived {
 		headers = append(headers, "RECEIVED", "VARIANCE", "NOTES")
 	}
