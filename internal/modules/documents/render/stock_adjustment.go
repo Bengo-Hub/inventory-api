@@ -39,6 +39,23 @@ type StockAdjustmentDocLine struct {
 // RenderStockAdjustment builds a premium, tenant-branded A4 stock-adjustment note and returns
 // PDF bytes.
 func RenderStockAdjustment(doc *StockAdjustmentDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(stockAdjustmentSimpleDoc(doc), logo, logoType)
+}
+
+// RenderStockAdjustmentXLSX renders the same stock-adjustment note as a styled, print-ready Excel
+// workbook — see simpledoc_xlsx.go's doc comment.
+func RenderStockAdjustmentXLSX(doc *StockAdjustmentDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(stockAdjustmentSimpleDoc(doc))
+}
+
+// RenderStockAdjustmentCSV renders the stock-adjustment note's data as plain CSV.
+func RenderStockAdjustmentCSV(doc *StockAdjustmentDoc) ([]byte, error) {
+	return renderSimpleDocCSV(stockAdjustmentSimpleDoc(doc))
+}
+
+// stockAdjustmentSimpleDoc maps a StockAdjustmentDoc into the shared simpleDoc pipeline — the one
+// definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
+func stockAdjustmentSimpleDoc(doc *StockAdjustmentDoc) simpleDoc {
 	rows := make([]docRow, 0, len(doc.Items))
 	for _, it := range doc.Items {
 		rows = append(rows, docRow{
@@ -56,7 +73,7 @@ func RenderStockAdjustment(doc *StockAdjustmentDoc, logo []byte, logoType string
 		{"Lines", plural(len(doc.Items), "item")},
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Stock Adjustment",
 		Subtitle: "Inventory Correction Note",
@@ -84,5 +101,5 @@ func RenderStockAdjustment(doc *StockAdjustmentDoc, logo []byte, logoType string
 		Disclaimer: "This note records manual inventory corrections made by " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + " and carries no monetary value.",
 		ErrLabel: "stock adjustment",
-	}, logo, logoType)
+	}
 }

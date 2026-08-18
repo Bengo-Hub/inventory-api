@@ -66,6 +66,10 @@ func (h *InventoryHandler) GenerateStockAdjustmentDocument(w http.ResponseWriter
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	reference := strings.TrimSpace(r.URL.Query().Get("reference"))
 	if reference == "" {
 		writeError(w, http.StatusBadRequest, "MISSING_REFERENCE", "reference is required")
@@ -149,12 +153,20 @@ func (h *InventoryHandler) GenerateStockAdjustmentDocument(w http.ResponseWriter
 		Notes:         batchNotes,
 	}
 
-	pdfBytes, err := documents.RenderStockAdjustmentPDF(doc)
+	var fileBytes []byte
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderStockAdjustmentCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderStockAdjustmentXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderStockAdjustmentPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render stock adjustment document")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render stock adjustment document")
 		return
 	}
-	writePDF(w, reference, pdfBytes)
+	writeDocFile(w, reference, format, fileBytes)
 }
 
 // adjusterLabel resolves the acting user's display name, falling back to empty (rather than a

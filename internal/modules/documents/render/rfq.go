@@ -52,6 +52,23 @@ type RFQDocQuote struct {
 
 // RenderRFQ builds a premium, tenant-branded A4 request-for-quotation and returns PDF bytes.
 func RenderRFQ(doc *RFQDoc, logo []byte, logoType string) ([]byte, error) {
+	return renderSimpleDoc(rfqSimpleDoc(doc), logo, logoType)
+}
+
+// RenderRFQXLSX renders the same request-for-quotation as a styled, print-ready Excel workbook —
+// see simpledoc_xlsx.go's doc comment.
+func RenderRFQXLSX(doc *RFQDoc) ([]byte, error) {
+	return renderSimpleDocXLSX(rfqSimpleDoc(doc))
+}
+
+// RenderRFQCSV renders the RFQ's data as plain CSV.
+func RenderRFQCSV(doc *RFQDoc) ([]byte, error) {
+	return renderSimpleDocCSV(rfqSimpleDoc(doc))
+}
+
+// rfqSimpleDoc maps an RFQDoc into the shared simpleDoc pipeline — the one definition of this
+// document's shape shared by every export format (PDF/XLSX/CSV above).
+func rfqSimpleDoc(doc *RFQDoc) simpleDoc {
 	rows := make([]docRow, 0, len(doc.Items))
 	for _, it := range doc.Items {
 		rows = append(rows, docRow{
@@ -90,7 +107,7 @@ func RenderRFQ(doc *RFQDoc, logo []byte, logoType string) ([]byte, error) {
 		meta = append(meta, [2]string{"Requisition", doc.RequisitionNumber})
 	}
 
-	return renderSimpleDoc(simpleDoc{
+	return simpleDoc{
 		Branding: doc.Branding,
 		Title:    "Request for Quotation",
 		Subtitle: doc.Title,
@@ -130,5 +147,5 @@ func RenderRFQ(doc *RFQDoc, logo []byte, logoType string) ([]byte, error) {
 		Disclaimer: "This request for quotation is not an order and places no obligation on " +
 			ifEmpty(doc.Branding.CompanyName, "the issuer") + " to purchase.",
 		ErrLabel: "rfq",
-	}, logo, logoType)
+	}
 }

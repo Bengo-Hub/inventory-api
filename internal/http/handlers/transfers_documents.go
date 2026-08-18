@@ -12,21 +12,12 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
 
-// transferDocFormats maps a ?format= value to its content type and file extension. pdf is the
-// default (and the only inline-previewable one — csv/xlsx always download, since neither renders
-// in the shared PdfPreview modal the UI opens for pdf).
-var transferDocFormats = map[string]struct{ mime, ext string }{
-	"pdf":  {"application/pdf", "pdf"},
-	"csv":  {"text/csv", "csv"},
-	"xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"},
-}
-
-// GenerateDocument handles GET /v1/{tenant}/inventory/transfers/{transferId}/pdf?type=delivery_note|grn&format=pdf|csv|xlsx
-// — renders the transfer's Dispatch/Transit Note (once shipped) or Goods-Received Note (once
-// received) in the requested export format (format defaults to pdf, kept for every existing
-// caller of this endpoint). Both document types reuse the transfer's own already-issued
-// transfer_number; no separate document sequence. type defaults to whichever document the
-// transfer's CURRENT status supports.
+// GenerateDocument handles GET /v1/{tenant}/inventory/transfers/{transferId}/pdf?type=transfer_order|delivery_note|grn&format=pdf|csv|xlsx
+// — renders the transfer's pending Transfer Order (while still a draft), Dispatch/Transit Note
+// (once shipped), or Goods-Received Note (once received), in the requested export format (format
+// defaults to pdf, kept for every existing caller of this endpoint). Every document type reuses
+// the transfer's own already-issued transfer_number; no separate document sequence. type defaults
+// to whichever document the transfer's CURRENT status supports.
 func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Request) {
 	if h.docSvc == nil {
 		writeError(w, http.StatusServiceUnavailable, "DOC_SVC_UNAVAILABLE", "Document service not configured")
@@ -49,29 +40,32 @@ func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	format := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
-	if format == "" {
-		format = "pdf"
-	}
-	formatMeta, ok := transferDocFormats[format]
+	format, ok := docFormatFromQuery(w, r)
 	if !ok {
-		writeError(w, http.StatusBadRequest, "INVALID_FORMAT", `format must be "pdf", "csv", or "xlsx"`)
 		return
 	}
 
 	docType := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("type")))
 	if docType == "" {
-		// Default to whichever document the CURRENT status actually supports — a received
-		// transfer's natural document is the GRN, everything else falls back to the dispatch note.
-		if transfer.Status == "received" {
+		// Default to whichever document the CURRENT status actually supports.
+		switch transfer.Status {
+		case "received":
 			docType = "grn"
-		} else {
+		case "draft":
+			docType = "transfer_order"
+		default:
 			docType = "delivery_note"
 		}
 	}
 
 	var doc documents.TransferDoc
 	switch docType {
+	case "transfer_order":
+		if transfer.Status != "draft" {
+			writeError(w, http.StatusConflict, "NOT_PENDING", "The transfer order is only available while the transfer is still pending dispatch")
+			return
+		}
+		doc = pendingTransferOrderFromTransfer(transfer)
 	case "delivery_note":
 		if transfer.Status != "in_transit" && transfer.Status != "received" {
 			writeError(w, http.StatusConflict, "NOT_SHIPPED", "The delivery/transit note is only available once the transfer has shipped")
@@ -85,7 +79,7 @@ func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Reques
 		}
 		doc = goodsReceivedNoteFromTransfer(transfer)
 	default:
-		writeError(w, http.StatusBadRequest, "INVALID_TYPE", `type must be "delivery_note" or "grn"`)
+		writeError(w, http.StatusBadRequest, "INVALID_TYPE", `type must be "transfer_order", "delivery_note", or "grn"`)
 		return
 	}
 	doc.Branding = h.docSvc.GetBranding(r.Context(), tenantID)
@@ -106,18 +100,42 @@ func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Reques
 		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render transfer document")
 		return
 	}
+	writeDocFile(w, fmt.Sprintf("%s-%s", transfer.TransferNumber, docType), format, fileBytes)
+}
 
-	// pdf renders inline (the shared PdfPreview modal streams it into an <iframe>); csv/xlsx
-	// always download — neither format has an in-browser preview in the UI.
-	disposition := "inline"
-	if format != "pdf" {
-		disposition = "attachment"
+// pendingTransferOrderFromTransfer builds the pre-dispatch Transfer Order — the picking/packing
+// reference for warehouse staff to prepare the goods against, issued while the transfer is still
+// a draft (before anything has shipped, so no shipped/received/variance data exists yet). Reuses
+// the SAME TransferDoc/render pipeline as the delivery note and GRN — only the title, purpose
+// line, and sign-off labels differ, since drawTransferItems only shows RECEIVED/VARIANCE columns
+// when a line actually carries a ReceivedQty (never true here).
+func pendingTransferOrderFromTransfer(t *transfers.TransferResponse) documents.TransferDoc {
+	items := make([]documents.TransferDocLine, len(t.Lines))
+	for i, l := range t.Lines {
+		items[i] = documents.TransferDocLine{
+			Desc:    ifEmptyStr(l.ItemName, l.ItemID.String()),
+			SubDesc: l.ItemSKU,
+			Qty:     formatQty(l.Quantity),
+		}
 	}
-	w.Header().Set("Content-Type", formatMeta.mime)
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s-%s.%s"`, disposition, transfer.TransferNumber, docType, formatMeta.ext))
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(fileBytes)
+	return documents.TransferDoc{
+		DocTitle:            "Transfer Order",
+		DocSubtitle:         "Pending Dispatch",
+		Status:              t.Status,
+		TransferNumber:      t.TransferNumber,
+		Date:                t.CreatedAt.Format("02 January 2006"),
+		Reference:           t.ReferenceNo,
+		Carrier:             t.Carrier,
+		FromWarehouseName:   t.SourceWarehouse.Name,
+		FromWarehouseAddr:   addrLines(t.SourceWarehouse.Address),
+		ToWarehouseName:     t.DestinationWarehouse.Name,
+		ToWarehouseAddr:     addrLines(t.DestinationWarehouse.Address),
+		Items:               items,
+		AcknowledgementText: "The following items are scheduled for transfer. Please pick and prepare the goods below for dispatch:",
+		Notes:               nonEmptyStrs(t.Notes, t.FreightNotes),
+		LeftSigLabel:        "Prepared By",
+		RightSigLabel:       "Authorized By",
+	}
 }
 
 // deliveryNoteFromTransfer builds the ship-time Dispatch/Transit Note — no received/variance

@@ -40,6 +40,10 @@ func (h *InventoryExtrasHandler) GenerateBundleSpecPDF(w http.ResponseWriter, r 
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	bundleID, err := uuid.Parse(chi.URLParam(r, "bundleID"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid bundle ID")
@@ -96,10 +100,18 @@ func (h *InventoryExtrasHandler) GenerateBundleSpecPDF(w http.ResponseWriter, r 
 		Components:  components,
 	}
 
-	pdfBytes, err := documents.RenderBundleSpecPDF(doc)
+	var fileBytes []byte
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderBundleSpecCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderBundleSpecXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderBundleSpecPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render bundle spec PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render bundle spec document")
 		return
 	}
-	writePDF(w, ifEmptyStr(b.Name, "bundle-spec"), pdfBytes)
+	writeDocFile(w, ifEmptyStr(b.Name, "bundle-spec"), format, fileBytes)
 }

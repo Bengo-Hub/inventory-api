@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -36,6 +35,10 @@ func (h *InventoryExtrasHandler) GenerateGoodsReceiptPDF(w http.ResponseWriter, 
 		return
 	}
 	tenantID, g, ok := h.loadGRN(w, r)
+	if !ok {
+		return
+	}
+	format, ok := docFormatFromQuery(w, r)
 	if !ok {
 		return
 	}
@@ -156,16 +159,21 @@ func (h *InventoryExtrasHandler) GenerateGoodsReceiptPDF(w http.ResponseWriter, 
 	}
 	doc.PreparedBy = h.resolveUserLabel(ctx, tenantID, g.ReceivedBy, "")
 
-	pdfBytes, err := documents.RenderGoodsReceiptPDF(doc)
+	var fileBytes []byte
+	var err error
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderGoodsReceiptCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderGoodsReceiptXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderGoodsReceiptPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render goods receipt PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render goods receipt document")
 		return
 	}
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.pdf"`, g.GrnNumber))
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(pdfBytes)
+	writeDocFile(w, g.GrnNumber, format, fileBytes)
 }
 
 // joinDetail appends a detail fragment to a document sub-line, inserting the separator only

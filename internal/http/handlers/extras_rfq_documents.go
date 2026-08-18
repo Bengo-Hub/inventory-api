@@ -36,6 +36,10 @@ func (h *InventoryExtrasHandler) GenerateRFQPDF(w http.ResponseWriter, r *http.R
 	if !ok {
 		return
 	}
+	format, ok := docFormatFromQuery(w, r)
+	if !ok {
+		return
+	}
 	ctx := r.Context()
 	full, err := h.loadRFQFull(ctx, tenantID, rfqID)
 	if err != nil {
@@ -122,10 +126,18 @@ func (h *InventoryExtrasHandler) GenerateRFQPDF(w http.ResponseWriter, r *http.R
 		doc.DueDate = full.DueDate.Format("02 January 2006")
 	}
 
-	pdfBytes, err := documents.RenderRFQPDF(doc)
+	var fileBytes []byte
+	switch format {
+	case "csv":
+		fileBytes, err = documents.RenderRFQCSV(doc)
+	case "xlsx":
+		fileBytes, err = documents.RenderRFQXLSX(doc)
+	default:
+		fileBytes, err = documents.RenderRFQPDF(doc)
+	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render RFQ PDF")
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render RFQ document")
 		return
 	}
-	writePDF(w, full.RfqNumber, pdfBytes)
+	writeDocFile(w, full.RfqNumber, format, fileBytes)
 }
