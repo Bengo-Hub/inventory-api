@@ -12,10 +12,21 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
 
-// GenerateDocument handles GET /v1/{tenant}/inventory/transfers/{transferId}/pdf?type=delivery_note|grn
+// transferDocFormats maps a ?format= value to its content type and file extension. pdf is the
+// default (and the only inline-previewable one — csv/xlsx always download, since neither renders
+// in the shared PdfPreview modal the UI opens for pdf).
+var transferDocFormats = map[string]struct{ mime, ext string }{
+	"pdf":  {"application/pdf", "pdf"},
+	"csv":  {"text/csv", "csv"},
+	"xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"},
+}
+
+// GenerateDocument handles GET /v1/{tenant}/inventory/transfers/{transferId}/pdf?type=delivery_note|grn&format=pdf|csv|xlsx
 // — renders the transfer's Dispatch/Transit Note (once shipped) or Goods-Received Note (once
-// received). Both reuse the transfer's own already-issued transfer_number; no separate document
-// sequence. type defaults to whichever document the transfer's CURRENT status supports.
+// received) in the requested export format (format defaults to pdf, kept for every existing
+// caller of this endpoint). Both document types reuse the transfer's own already-issued
+// transfer_number; no separate document sequence. type defaults to whichever document the
+// transfer's CURRENT status supports.
 func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Request) {
 	if h.docSvc == nil {
 		writeError(w, http.StatusServiceUnavailable, "DOC_SVC_UNAVAILABLE", "Document service not configured")
@@ -35,6 +46,16 @@ func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Reques
 	transfer, err := h.transferSvc.GetTransfer(r.Context(), tenantID, transferID)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", err.Error())
+		return
+	}
+
+	format := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("format")))
+	if format == "" {
+		format = "pdf"
+	}
+	formatMeta, ok := transferDocFormats[format]
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_FORMAT", `format must be "pdf", "csv", or "xlsx"`)
 		return
 	}
 
@@ -69,17 +90,34 @@ func (h *TransferHandler) GenerateDocument(w http.ResponseWriter, r *http.Reques
 	}
 	doc.Branding = h.docSvc.GetBranding(r.Context(), tenantID)
 
-	pdfBytes, err := documents.RenderTransferPDF(doc)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "PDF_FAILED", "Failed to render transfer document")
+	var (
+		fileBytes []byte
+		renderErr error
+	)
+	switch format {
+	case "csv":
+		fileBytes, renderErr = documents.RenderTransferCSV(doc)
+	case "xlsx":
+		fileBytes, renderErr = documents.RenderTransferXLSX(doc)
+	default:
+		fileBytes, renderErr = documents.RenderTransferPDF(doc)
+	}
+	if renderErr != nil {
+		writeError(w, http.StatusInternalServerError, "DOC_RENDER_FAILED", "Failed to render transfer document")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s-%s.pdf"`, transfer.TransferNumber, docType))
+	// pdf renders inline (the shared PdfPreview modal streams it into an <iframe>); csv/xlsx
+	// always download — neither format has an in-browser preview in the UI.
+	disposition := "inline"
+	if format != "pdf" {
+		disposition = "attachment"
+	}
+	w.Header().Set("Content-Type", formatMeta.mime)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s-%s.%s"`, disposition, transfer.TransferNumber, docType, formatMeta.ext))
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(pdfBytes)
+	_, _ = w.Write(fileBytes)
 }
 
 // deliveryNoteFromTransfer builds the ship-time Dispatch/Transit Note — no received/variance
