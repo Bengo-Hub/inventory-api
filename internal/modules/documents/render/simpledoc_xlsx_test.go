@@ -50,12 +50,20 @@ func TestRenderGoodsReceiptXLSX_StructureAndTotals(t *testing.T) {
 	}
 
 	var headerRow, grandRow []string
+	var itemRows [][]string
+	headerSeen := false
 	for _, row := range rows {
 		if len(row) > 0 && row[0] == "#" {
 			headerRow = row
+			headerSeen = true
+			continue
 		}
 		if len(row) > 0 && row[0] == "Total Received Value" {
 			grandRow = row
+			continue
+		}
+		if headerSeen && grandRow == nil && len(row) > 1 && (row[0] == "1" || row[0] == "2") {
+			itemRows = append(itemRows, row)
 		}
 	}
 	wantHeader := []string{"#", "DESCRIPTION", "ORDERED", "RECEIVED", "ACCEPTED", "REJECTED", "UNIT COST", "AMOUNT (KES)"}
@@ -72,6 +80,21 @@ func TestRenderGoodsReceiptXLSX_StructureAndTotals(t *testing.T) {
 	}
 	if got := grandRow[len(grandRow)-1]; got != "KES 14,550.00" {
 		t.Fatalf("grand total value = %q, want %q", got, "KES 14,550.00")
+	}
+
+	// Regression test for a real off-by-one bug: the numbered "#" column shifted every data
+	// column over by one, so DESCRIPTION showed the ORDERED quantity, ORDERED showed RECEIVED,
+	// and so on — invisible on line 1 (10/10/10/0) where every shifted-in value happens to match,
+	// but not on line 2, whose six numbers (20/18/17/1/150.00/2,550.00) are all distinct.
+	if len(itemRows) != 2 {
+		t.Fatalf("expected 2 item rows, got %d: %v", len(itemRows), itemRows)
+	}
+	row2 := itemRows[1]
+	wantRow2 := []string{"2", "Milk 1L\r\nSKU-002", "20", "18", "17", "1", "150", "2550"}
+	for i, want := range wantRow2 {
+		if row2[i] != want {
+			t.Fatalf("item row 2, column %d (%s) = %q, want %q — full row: %v", i, wantHeader[i], row2[i], want, row2)
+		}
 	}
 }
 

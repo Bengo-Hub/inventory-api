@@ -193,6 +193,14 @@ func (p *painter) drawDocTable(ty float64, numbered bool, cols []docColumn, rows
 	if numbered {
 		cols = append([]docColumn{{Title: "#", Width: 9.0}}, cols...)
 	}
+	// Every caller builds docRow.Cells positionally against ITS OWN cols slice — Cells[0] is
+	// always the first REAL (non-"#") column, never against the "#"-prepended cols above. So once
+	// "#" is injected, a numbered table's column index i is one AHEAD of the matching Cells index;
+	// cellOffset (used by cell() below) corrects for that. Getting this wrong silently shifted
+	// every column over by one on every numbered document (goods receipt, requisition, RFQ,
+	// purchase return, stock adjustment, stock count, bundle spec): DESCRIPTION showed the first
+	// numeric column's value instead of the item name, every other numeric column showed its
+	// NEXT neighbor's value, and the last column read past the end of Cells and rendered blank.
 
 	// Resolve the flex column and per-column widths/x-offsets.
 	flexIdx, fixed := -1, 0.0
@@ -229,9 +237,14 @@ func (p *painter) drawDocTable(ty float64, numbered bool, cols []docColumn, rows
 		return y + 8.0
 	}
 
+	cellOffset := 0
+	if numbered {
+		cellOffset = 1
+	}
 	cell := func(row docRow, i int) string {
-		if i < len(row.Cells) {
-			return row.Cells[i]
+		j := i - cellOffset
+		if j >= 0 && j < len(row.Cells) {
+			return row.Cells[j]
 		}
 		return ""
 	}

@@ -311,6 +311,21 @@ func xlsxDrawTable(f *excelize.File, sheet string, set func(string, int, interfa
 			break
 		}
 	}
+	// Every caller builds docRow.Cells positionally against its OWN column list — Cells[0] is
+	// always the first real (non-"#") column. cols here already has "#" prepended when numbered,
+	// so a column index ci is one AHEAD of its matching Cells index; cellAt corrects for that. See
+	// common.go's drawDocTable doc comment for the exact bug this mirrors and fixes.
+	cellOffset := 0
+	if numbered {
+		cellOffset = 1
+	}
+	cellAt := func(r docRow, ci int) string {
+		j := ci - cellOffset
+		if j >= 0 && j < len(r.Cells) {
+			return r.Cells[j]
+		}
+		return ""
+	}
 	row := ty
 	for i, c := range cols {
 		set(letters[i], row, c.Title, st.header)
@@ -329,10 +344,7 @@ func xlsxDrawTable(f *excelize.File, sheet string, set func(string, int, interfa
 			ref := letters[ci]
 			switch {
 			case ci == flexIdx:
-				desc := ""
-				if ci < len(r.Cells) {
-					desc = r.Cells[ci]
-				}
+				desc := cellAt(r, ci)
 				setRichDescCell(f, sheet, ref+strconv.Itoa(row), desc, r.SubDesc, r.Emphasis, st)
 				_ = f.SetCellStyle(sheet, ref+strconv.Itoa(row), ref+strconv.Itoa(row), cellStyle)
 			default:
@@ -340,8 +352,8 @@ func xlsxDrawTable(f *excelize.File, sheet string, set func(string, int, interfa
 				switch {
 				case numbered && ci == 0:
 					v = strconv.Itoa(ri + 1)
-				case ci < len(r.Cells):
-					v = r.Cells[ci]
+				default:
+					v = cellAt(r, ci)
 				}
 				if c.Right {
 					if n, err := strconv.ParseFloat(strings.TrimSpace(stripThousands(v)), 64); err == nil {
@@ -429,7 +441,12 @@ func xlsxSetPrintSetup(f *excelize.File, sheet, lastCol string, tableHeaderRow, 
 func renderSimpleDocCSV(d simpleDoc) ([]byte, error) {
 	cols := d.Columns
 	if d.Numbered {
-		cols = append([]docColumn{{Title: "#"}}, cols...)
+		// Width must be > 0 here — csvFromColumnsAndRows finds the flex/description column by
+		// its FIRST Width<=0 entry, and the zero value of an unset Width field is 0, which would
+		// otherwise make this synthetic "#" column look like the flex column instead of the real
+		// DESCRIPTION column one slot over (see renderSimpleDocXLSX's matching "#" prepend, which
+		// already sets Width: 9 for the same reason).
+		cols = append([]docColumn{{Title: "#", Width: 9}}, cols...)
 	}
 	return csvFromColumnsAndRows(strings.ToUpper(ifEmpty(d.Title, "DOCUMENT")), d.MetaRows, d.Numbered, cols, d.Rows, d.Totals, d.Notes)
 }

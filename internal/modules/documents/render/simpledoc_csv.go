@@ -25,6 +25,14 @@ func csvFromColumnsAndRows(title string, metaRows [][2]string, numbered bool, co
 	if width == 0 {
 		width = 1
 	}
+	// Every caller builds docRow.Cells positionally against its OWN column list — Cells[0] is
+	// always the first real (non-"#") column; cols here already has "#" prepended when numbered,
+	// so column index ci is one AHEAD of its matching Cells index. See common.go's drawDocTable
+	// doc comment for the exact bug this mirrors and fixes.
+	cellOffset := 0
+	if numbered {
+		cellOffset = 1
+	}
 
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
@@ -52,8 +60,10 @@ func csvFromColumnsAndRows(title string, metaRows [][2]string, numbered bool, co
 			switch {
 			case numbered && ci == 0:
 				fields[ci] = strconv.Itoa(i + 1)
-			case ci < len(r.Cells):
-				fields[ci] = r.Cells[ci]
+			default:
+				if j := ci - cellOffset; j >= 0 && j < len(r.Cells) {
+					fields[ci] = r.Cells[j]
+				}
 			}
 		}
 		if flexIdx >= 0 && flexIdx < width && strings.TrimSpace(r.SubDesc) != "" {
