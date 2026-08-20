@@ -8,7 +8,7 @@ This document provides detailed integration information for all external service
 
 ## Table of Contents
 
-1. [Internal Codevertex Service Integrations](#internal-bengobox-service-integrations)
+1. [Internal Codevertex Service Integrations](#internal-codevertex-service-integrations)
 2. [External Third-Party Integrations](#external-third-party-integrations)
 3. [Integration Patterns](#integration-patterns)
 4. [Two-Tier Configuration Management](#two-tier-configuration-management)
