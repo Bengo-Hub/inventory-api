@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -77,5 +79,14 @@ func (ItemVariant) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("item_id", "sku").Unique(),
 		index.Fields("barcode"),
+		// Backs items.ListItems' `item.HasVariantsWith(itemvariant.BarcodeContainsFold(search))` —
+		// see the matching comment on the Item schema's trgmIndex helper for why GIN+gin_trgm_ops
+		// (not the plain btree above) is what an ILIKE '%term%' scan actually needs.
+		index.Fields("barcode").
+			StorageKey("itemvariant_barcode_trgm").
+			Annotations(
+				entsql.IndexTypes(map[string]string{dialect.Postgres: "GIN"}),
+				entsql.OpClass("gin_trgm_ops"),
+			),
 	}
 }

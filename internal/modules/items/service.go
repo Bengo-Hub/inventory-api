@@ -1045,11 +1045,34 @@ func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID 
 	for _, id := range wIDs {
 		warehouseIDs[id] = struct{}{}
 	}
-	bals, err := s.client.InventoryBalance.Query().
-		Where(inventorybalance.TenantIDEQ(tenantID)).
-		All(ctx)
+
+	// Fast path: this outlet has never had ANY balance row (positive, zero, or removed) at its
+	// own warehouse(s) — a fresh/untouched outlet (kiosk, or a tenant with a large unreceived
+	// bulk-import backlog, both called out in the comments above). A cheap indexed existence
+	// check answers this without loading the tenant's entire balance table: when it's false,
+	// stockedHere/removedHere are GUARANTEED empty (both are strict subsets of "rows at this
+	// outlet's own warehouses"), so `candidates` stays nil either way — byte-identical result to
+	// the full computation below, just without paying for it.
+	anyBalanceHere, err := s.client.InventoryBalance.Query().
+		Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(wIDs...)).
+		Exist(ctx)
 	if err != nil {
 		return nil, false, warehouseIDs, err
+	}
+	if !anyBalanceHere {
+		return nil, false, warehouseIDs, nil
+	}
+	hasOperationalHistory = true
+
+	// Project only the 3 columns actually read below — InventoryBalance also carries
+	// cost/quantity/reorder fields that are irrelevant here, so this cuts bytes-on-wire and Go
+	// allocations versus a full-row fetch without changing which rows are examined.
+	bals, err := s.client.InventoryBalance.Query().
+		Where(inventorybalance.TenantIDEQ(tenantID)).
+		Select(inventorybalance.FieldItemID, inventorybalance.FieldWarehouseID, inventorybalance.FieldRemovedFromLocation).
+		All(ctx)
+	if err != nil {
+		return nil, hasOperationalHistory, warehouseIDs, err
 	}
 	stockedHere := make(map[uuid.UUID]struct{})
 	// removedHere: this item has a balance at one of THIS outlet's own warehouses that was
@@ -1058,13 +1081,8 @@ func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID 
 	// but still actively stocked at this outlet's warehouse B isn't wrongly hidden.
 	removedHere := make(map[uuid.UUID]struct{})
 	stockedElsewhere := make(map[uuid.UUID]struct{})
-	// anyBalanceHere: ANY balance row at this outlet's own warehouse(s), regardless of status —
-	// used only to decide whether the outlet has EVER interacted with the stock system at all
-	// (hasOperationalHistory below), not to decide any individual item's visibility.
-	anyBalanceHere := false
 	for _, b := range bals {
 		if _, ok := warehouseIDs[b.WarehouseID]; ok {
-			anyBalanceHere = true
 			if b.RemovedFromLocation {
 				removedHere[b.ItemID] = struct{}{}
 			} else {
@@ -1074,7 +1092,6 @@ func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID 
 			stockedElsewhere[b.ItemID] = struct{}{}
 		}
 	}
-	hasOperationalHistory = anyBalanceHere
 	var candidates []uuid.UUID
 	// An outlet that stocks NOTHING itself (fresh outlet, kiosk served from a central store) is
 	// not location-separated — it sells the tenant catalog and receives stock later. Only
