@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -385,6 +387,22 @@ func (Item) Edges() []ent.Edge {
 
 // Indexes of the Item.
 func (Item) Indexes() []ent.Index {
+	// trgmIndex builds a GIN trigram index for a single text column, backing the ILIKE '%term%'
+	// searches ListItems runs via *ContainsFold (Postgres dialect emits `col ILIKE '%term%'` — see
+	// entgo.io/ent's escapedLikeFold — which pg_trgm's gin_trgm_ops matches directly, no functional
+	// lower() index needed). Requires `CREATE EXTENSION IF NOT EXISTS pg_trgm` on the target
+	// database (trusted extension, installable by the DB owner without superuser since PG13) —
+	// this is NOT something ent's declarative Schema.Create manages, so it must be enabled once,
+	// out of band, before this index can be created (matches this fleet's existing convention for
+	// extensions on already-initialized databases, see devops-k8s's postgresql-pgvector init
+	// script comment: "for existing databases, run these CREATE EXTENSION statements manually").
+	trgmIndex := func(field string) ent.Index {
+		return index.Fields(field).
+			Annotations(
+				entsql.IndexTypes(map[string]string{dialect.Postgres: "GIN"}),
+				entsql.OpClass("gin_trgm_ops"),
+			)
+	}
 	return []ent.Index{
 		index.Fields("tenant_id", "sku").Unique(),
 		index.Fields("tenant_id", "category_id"),
@@ -395,5 +413,12 @@ func (Item) Indexes() []ent.Index {
 		index.Fields("tenant_id", "created_at"),
 		index.Fields("tenant_id", "unit_id"),
 		index.Fields("tenant_id", "preferred_supplier_id"),
+		// Every ListItems `search=` term is matched via *ContainsFold against these 4 columns
+		// (service.go OutletScope/ListItems) — none of the plain btree indexes above help a
+		// leading-wildcard ILIKE, so every keystroke re-scanned the tenant's active-item set.
+		trgmIndex("name"),
+		trgmIndex("sku"),
+		trgmIndex("barcode"),
+		trgmIndex("gtin"),
 	}
 }

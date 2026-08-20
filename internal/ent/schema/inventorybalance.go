@@ -91,5 +91,6 @@ func (InventoryBalance) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "item_id", "warehouse_id").Unique(),
 		index.Fields("tenant_id", "item_id"),
+		index.Fields("tenant_id", "warehouse_id"),
 	}
 }

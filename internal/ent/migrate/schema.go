@@ -1218,6 +1218,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[13]},
 			},
+			{
+				Name:    "inventorybalance_tenant_id_warehouse_id",
+				Unique:  false,
+				Columns: []*schema.Column{InventoryBalancesColumns[1], InventoryBalancesColumns[14]},
+			},
 		},
 	}
 	// InventoryLotsColumns holds the columns for the "inventory_lots" table.
@@ -1624,6 +1629,50 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ItemsColumns[79], ItemsColumns[78]},
 			},
+			{
+				Name:    "item_name",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					OpClass: "gin_trgm_ops",
+					Types: map[string]string{
+						"postgres": "GIN",
+					},
+				},
+			},
+			{
+				Name:    "item_sku",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[1]},
+				Annotation: &entsql.IndexAnnotation{
+					OpClass: "gin_trgm_ops",
+					Types: map[string]string{
+						"postgres": "GIN",
+					},
+				},
+			},
+			{
+				Name:    "item_barcode",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[31]},
+				Annotation: &entsql.IndexAnnotation{
+					OpClass: "gin_trgm_ops",
+					Types: map[string]string{
+						"postgres": "GIN",
+					},
+				},
+			},
+			{
+				Name:    "item_gtin",
+				Unique:  false,
+				Columns: []*schema.Column{ItemsColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					OpClass: "gin_trgm_ops",
+					Types: map[string]string{
+						"postgres": "GIN",
+					},
+				},
+			},
 		},
 	}
 	// ItemAssetsColumns holds the columns for the "item_assets" table.
@@ -1942,6 +1991,17 @@ var (
 				Name:    "itemvariant_barcode",
 				Unique:  false,
 				Columns: []*schema.Column{ItemVariantsColumns[5]},
+			},
+			{
+				Name:    "itemvariant_barcode_trgm",
+				Unique:  false,
+				Columns: []*schema.Column{ItemVariantsColumns[5]},
+				Annotation: &entsql.IndexAnnotation{
+					OpClass: "gin_trgm_ops",
+					Types: map[string]string{
+						"postgres": "GIN",
+					},
+				},
 			},
 		},
 	}
