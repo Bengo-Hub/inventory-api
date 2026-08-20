@@ -27,6 +27,8 @@ func TestClassifyAdjustment(t *testing.T) {
 		{"correction", 2, "adjustment"},
 		{"count_variance", -1, "adjustment"},
 		{"internal_consumption", -6, "adjustment"},
+		{"location_hidden", 0, "adjustment"},
+		{"location_unhidden", 0, "adjustment"},
 		{"other", 9, "adjustment"},
 	}
 	for _, c := range cases {
