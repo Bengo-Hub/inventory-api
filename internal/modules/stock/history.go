@@ -110,6 +110,10 @@ func classifyAdjustment(reason string, change float64) (mvType, label string) {
 		return "transfer_in", "Transfer In"
 	case "transfer_out":
 		return "transfer_out", "Transfer Out"
+	case "location_hidden":
+		return "adjustment", "Hidden from Outlet"
+	case "location_unhidden":
+		return "adjustment", "Unhidden — Stock Restored"
 	case "return":
 		// Positive = customer/sell return coming back in; negative = stock
 		// leaving for a supplier/purchase return.

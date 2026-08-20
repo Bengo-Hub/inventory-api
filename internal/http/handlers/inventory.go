@@ -1690,6 +1690,11 @@ type setItemOutletMembershipRequest struct {
 	// this with the user before sending it, since it's the one mode that can make real on-hand
 	// quantity vanish rather than relocate.
 	ZeroStockMode bool `json:"zero_stock_mode,omitempty"`
+	// MoveWithStock: opt-in — dropped outlets' quantity is carried to the newly-added outlet(s)
+	// instead of the default (just hide, quantity untouched). Requires at least one warehouse in
+	// TargetWarehouseIDs; mutually exclusive with ZeroStockMode. Omitting both flags is the safe
+	// default: an unchecked outlet is hidden only, never moved or cleared.
+	MoveWithStock bool `json:"move_with_stock,omitempty"`
 }
 
 // SetItemOutletMembership handles POST /v1/{tenant}/inventory/stock/set-membership — the
@@ -1761,6 +1766,13 @@ func (h *InventoryHandler) SetItemOutletMembership(w http.ResponseWriter, r *htt
 		Notes:              req.Notes,
 		MoveQuantity:       req.MoveQuantity,
 		ZeroStockMode:      req.ZeroStockMode,
+		MoveWithStock:      req.MoveWithStock,
+	}
+	// Validate synchronously so a bad request (e.g. move-with-stock with no destination outlet)
+	// gets an immediate 400 instead of a background job that reports "failed" a moment later.
+	if vErr := stock.ValidateSetItemOutletMembershipRequest(membershipReq); vErr != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_MEMBERSHIP_REQUEST", vErr.Error())
+		return
 	}
 	// nil: this batch can span several target warehouses/outlets at once (that's the point of
 	// outlet-membership editing), so there is no single outlet to scope the completion push to —
