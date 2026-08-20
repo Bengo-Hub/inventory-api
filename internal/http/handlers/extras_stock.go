@@ -37,6 +37,10 @@ type stockLevelDTO struct {
 	CategoryID    *uuid.UUID `json:"category_id"`
 	CategoryName  string     `json:"category_name"`
 	Type          string     `json:"type"`
+	// RemovedFromLocation: true when this balance was hidden from this warehouse via the Set
+	// Outlets checkbox modal (stock.SetItemOutletMembership) — its quantity is frozen, not
+	// zeroed, and it only appears in a response at all when the caller passed IncludeHidden.
+	RemovedFromLocation bool `json:"removed_from_location"`
 }
 
 // stockableTypes are the item types that hold physical on-hand stock. SERVICE,
@@ -61,6 +65,12 @@ type stockLevelFilters struct {
 	// OutletID scopes to an outlet's own warehouses (+ shared/HQ warehouses with no outlet
 	// link) when no explicit WarehouseID is given — mirrors the ListItems outlet separation.
 	OutletID *uuid.UUID
+	// IncludeHidden lifts the default RemovedFromLocation(false) exclusion so a caller can see
+	// EVERY warehouse an item has ever had a balance at, hidden ones included (with
+	// RemovedFromLocation=true on those rows) — used by the item drawer's outlet breakdown, not
+	// by the main Stock Levels list/export/POS-facing lookups, which must keep today's
+	// hidden-excluded default unchanged.
+	IncludeHidden bool
 }
 
 // parseStockLevelFilters reads the shared stock-list query params. explicitOutlet lets a
@@ -69,10 +79,11 @@ type stockLevelFilters struct {
 func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLevelFilters {
 	q := r.URL.Query()
 	f := stockLevelFilters{
-		Search:     q.Get("search"),
-		LowStock:   q.Get("low_stock") == "true",
-		OutOfStock: q.Get("out_of_stock") == "true",
-		TypeFilter: strings.ToUpper(strings.TrimSpace(q.Get("type"))),
+		Search:        q.Get("search"),
+		LowStock:      q.Get("low_stock") == "true",
+		OutOfStock:    q.Get("out_of_stock") == "true",
+		TypeFilter:    strings.ToUpper(strings.TrimSpace(q.Get("type"))),
+		IncludeHidden: q.Get("include_hidden") == "true",
 	}
 	if cid, e := uuid.Parse(q.Get("category_id")); e == nil {
 		f.CategoryID = &cid
@@ -116,13 +127,16 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 	balQuery := h.orm.InventoryBalance.Query().
 		Where(entinventorybalance.TenantID(tenantID)).
 		Where(entinventorybalance.HasItemWith(itemPreds...)).
-		// A balance explicitly moved/removed from this warehouse (Move Stock shipping the last
-		// unit out) is not a location the item is "in" any more — unlike an organic stock-out,
-		// which keeps its row here so it still surfaces for reordering.
-		Where(entinventorybalance.RemovedFromLocation(false)).
 		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
 		WithWarehouse().
 		WithLocation()
+	if !f.IncludeHidden {
+		// A balance explicitly hidden from this warehouse (Set Outlets, or Move Stock shipping
+		// the last unit out) is not a location the item is "in" any more — unlike an organic
+		// stock-out, which keeps its row here so it still surfaces for reordering. Skipped when
+		// IncludeHidden is set (the item drawer's outlet breakdown wants to see these too).
+		balQuery = balQuery.Where(entinventorybalance.RemovedFromLocation(false))
+	}
 	if f.LocationID != nil {
 		balQuery = balQuery.Where(entinventorybalance.LocationID(*f.LocationID))
 	}
@@ -196,22 +210,23 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 		}
 
 		result = append(result, stockLevelDTO{
-			ID:            b.ID,
-			ItemName:      itemName,
-			SKU:           sku,
-			WarehouseName: warehouseName,
-			WarehouseID:   b.WarehouseID,
-			LocationID:    b.LocationID,
-			LocationName:  locationName,
-			OnHand:        b.OnHand,
-			Available:     b.Available,
-			Reserved:      b.Reserved,
-			ReorderPoint:  reorderPoint,
-			Unit:          b.UnitOfMeasure,
-			UnitID:        unitID,
-			CategoryID:    categoryID,
-			CategoryName:  categoryName,
-			Type:          typeStr,
+			ID:                  b.ID,
+			ItemName:            itemName,
+			SKU:                 sku,
+			WarehouseName:       warehouseName,
+			WarehouseID:         b.WarehouseID,
+			LocationID:          b.LocationID,
+			LocationName:        locationName,
+			OnHand:              b.OnHand,
+			Available:           b.Available,
+			Reserved:            b.Reserved,
+			ReorderPoint:        reorderPoint,
+			Unit:                b.UnitOfMeasure,
+			UnitID:              unitID,
+			CategoryID:          categoryID,
+			CategoryName:        categoryName,
+			Type:                typeStr,
+			RemovedFromLocation: b.RemovedFromLocation,
 		})
 	}
 	return result, nil
