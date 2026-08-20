@@ -82,7 +82,12 @@ type HTTPConfig struct {
 }
 
 type PostgresConfig struct {
-	URL                      string        `envconfig:"POSTGRES_URL" default:"postgres://postgres:postgres@localhost:5432/inventory?sslmode=disable"`
+	URL string `envconfig:"POSTGRES_URL" default:"postgres://postgres:postgres@localhost:5432/inventory?sslmode=disable"`
+	// ReadOnlyURL points at a read replica (through pgbouncer's inventory_ro alias in prod) for
+	// the handful of heavy, staleness-tolerant read endpoints wired to use it (ListItems' catalog
+	// search/list today — see app.go). Empty (the default everywhere this isn't explicitly
+	// configured, incl. local dev) falls back to the primary client — zero behavior change.
+	ReadOnlyURL              string        `envconfig:"POSTGRES_READONLY_URL"`
 	MaxOpenConns             int           `envconfig:"POSTGRES_MAX_OPEN_CONNS" default:"5"`
 	MaxIdleConns             int           `envconfig:"POSTGRES_MAX_IDLE_CONNS" default:"3"`
 	ConnMaxLifetime          time.Duration `envconfig:"POSTGRES_CONN_MAX_LIFETIME" default:"5m"`

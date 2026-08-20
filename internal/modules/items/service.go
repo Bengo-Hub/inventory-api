@@ -470,6 +470,11 @@ type Service struct {
 	mediaRoot    string      // filesystem root for persisting uploaded item images (MEDIA_ROOT)
 	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
 	auditSvc     *audit.Service
+	// readClient, when set, is used ONLY for ListItems' multi-row catalog fetch (see rc()) — a
+	// heavy, staleness-tolerant read routed to a replica when one is configured. Every other
+	// query in this service (single-item lookups, writes, OutletScope) always uses client
+	// (primary), unchanged.
+	readClient *ent.Client
 }
 
 // NewService creates a new items service.
@@ -479,6 +484,18 @@ func NewService(client *ent.Client, log *zap.Logger, mediaURLBase string) *Servi
 		mediaURLBase: strings.TrimRight(mediaURLBase, "/"),
 		log:          log.Named("items.service"),
 	}
+}
+
+// SetReadClient wires an optional read-replica Ent client for ListItems' heavy catalog fetch.
+// Nil (the default) means rc() falls back to client (primary) — zero behavior change when unset.
+func (s *Service) SetReadClient(c *ent.Client) { s.readClient = c }
+
+// rc returns the read-replica client when one is configured, else the primary — see readClient.
+func (s *Service) rc() *ent.Client {
+	if s.readClient != nil {
+		return s.readClient
+	}
+	return s.client
 }
 
 // resolveMediaURL converts a relative /media/ path to a full URL using MEDIA_URL_BASE.
@@ -1195,7 +1212,16 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	}
 
 	buildQuery := func() *ent.ItemQuery {
-		q := s.client.Item.Query().Where(item.TenantID(tenantID))
+		// The heavy, potentially-many-row catalog fetch this function exists for — routed to a
+		// read replica when configured (see rc()), EXCEPT the single-item detail fetch below:
+		// that one stays on the primary so a just-created/edited item's detail page never shows
+		// "not found" or stale data because of replication lag. OutletScope above and every
+		// OTHER query in this file deliberately stay on s.client (primary) too, unchanged.
+		listClient := s.client
+		if itemIDFilter(ctx) == nil {
+			listClient = s.rc()
+		}
+		q := listClient.Item.Query().Where(item.TenantID(tenantID))
 		// Single-item detail fetch (?id=<uuid>): scope to exactly this item and let the rest
 		// of the filters/enrichment run unchanged so the detail page gets the same shape as a
 		// list row.

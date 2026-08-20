@@ -67,6 +67,32 @@ func terminalJWTSecret(cfg *config.Config) string {
 	return cfg.Auth.APIKey
 }
 
+// newReadOnlyEntClient opens a separate Ent client against cfg.ReadOnlyURL (a read replica, via
+// pgbouncer's inventory_ro alias in prod) for the read-routing described where ormClient/
+// readOrmClient are built in New(). A smaller pool than the primary's — this backs a handful of
+// specific endpoints (ListItems' catalog fetch), not general traffic. No migration/schema
+// management here; the replica streams the primary's schema.
+func newReadOnlyEntClient(cfg config.PostgresConfig) (*ent.Client, error) {
+	sqlDB, err := sql.Open("pgx", cfg.ReadOnlyURL)
+	if err != nil {
+		return nil, fmt.Errorf("sql open for read-replica ent client: %w", err)
+	}
+	if err := sqlDB.Ping(); err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("read-replica ping: %w", err)
+	}
+	maxOpen := cfg.MaxOpenConns / 2
+	if maxOpen < 2 {
+		maxOpen = 2
+	}
+	sqlDB.SetMaxOpenConns(maxOpen)
+	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
+	return ent.NewClient(ent.Driver(drv)), nil
+}
+
 type App struct {
 	cfg                           *config.Config
 	log                           *zap.Logger
@@ -140,6 +166,21 @@ func New(ctx context.Context) (*App, error) {
 	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
 	ormClient := ent.NewClient(ent.Driver(drv))
 
+	// readOrmClient points ListItems' heavy catalog fetch (search/list — POS terminal, Add Sale,
+	// catalog browse) at a read replica instead of the primary, via cfg.Postgres.ReadOnlyURL
+	// (pgbouncer's inventory_ro alias in prod — see devops-k8s). Unset (every environment that
+	// hasn't been explicitly given the env var, incl. local dev) falls back to ormClient itself —
+	// zero behavior change. A replica connection failure at startup is logged and swallowed, not
+	// fatal: ListItems just keeps using the primary, same as before this existed.
+	readOrmClient := ormClient
+	if cfg.Postgres.ReadOnlyURL != "" {
+		if roClient, err := newReadOnlyEntClient(cfg.Postgres); err != nil {
+			log.Warn("read-replica postgres connection failed — read-heavy endpoints will use the primary", zap.Error(err))
+		} else {
+			readOrmClient = roClient
+		}
+	}
+
 	// Run versioned migrations only when explicitly enabled.
 	// In production, migrations are run by the entrypoint (cmd/migrate) before the server starts —
 	// this inline path is a dev/local convenience only. Same WithDropColumn/WithDropIndex flags as
@@ -187,6 +228,8 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize business modules
 	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
+	// ListItems' heavy catalog fetch routed to a read replica when configured — see readOrmClient.
+	itemsSvc.SetReadClient(readOrmClient)
 	itemsSvc.SetCache(cacheAside)
 	itemsSvc.SetMediaRoot(cfg.Media.Root) // persist multi-image uploads under MEDIA_ROOT
 	// Treasury is the source of truth for tax codes/rates; resolve + cache VAT rates for item
