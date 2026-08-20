@@ -755,6 +755,16 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		"pay_term_days":        derefInt(po.PayTermDays),
 		"lines":                grLineArr,
 	}
+	// The receiving warehouse's own outlet — lets treasury attribute the resulting vendor bill's
+	// GL entry to the receiving outlet (previously dropped entirely, leaving every inventory-
+	// sourced vendor bill tenant-wide/unattributed with no way to recover it after the fact).
+	if warehouseID != uuid.Nil {
+		if wh, werr := h.orm.Warehouse.Query().
+			Where(entwarehouse.ID(warehouseID)).
+			Only(ctx); werr == nil && wh.OutletID != nil {
+			grPayload["outlet_id"] = wh.OutletID.String()
+		}
+	}
 	// Carry the PO's project so treasury attributes the per-GR vendor bill to that project.
 	if po.ProjectID != nil {
 		grPayload["project_id"] = po.ProjectID
@@ -831,6 +841,16 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 	// to the project's budget actuals.
 	if po.ProjectID != nil {
 		payload["project_id"] = po.ProjectID
+	}
+	// The PO's own receiving warehouse's outlet — same purpose as goods_receipt.posted's outlet_id
+	// (this event is only the FALLBACK path for inventory deployments with no per-GR events, but
+	// it deserves the same attribution).
+	if po.WarehouseID != nil {
+		if wh, werr := h.orm.Warehouse.Query().
+			Where(entwarehouse.ID(*po.WarehouseID)).
+			Only(context.Background()); werr == nil && wh.OutletID != nil {
+			payload["outlet_id"] = wh.OutletID.String()
+		}
 	}
 	for k, v := range supplierPaymentFields(po) {
 		payload[k] = v
