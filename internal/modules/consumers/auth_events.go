@@ -13,6 +13,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
+	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
@@ -82,6 +83,7 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 		// for up to the 6h TTL.
 		{"auth.tenant.updated", "inv-auth-tenant-updated", c.handleTenantChanged},
 		{"auth.tenant.created", "inv-auth-tenant-created", c.handleTenantChanged},
+		{"auth.user.deleted", "inv-auth-user-deleted", c.handleUserDeleted},
 	}
 
 	for _, s := range subs {
@@ -217,6 +219,52 @@ func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents
 	// now so the very first PIN login resolves the correct permissions (PIN sessions have no
 	// SSO JWT to derive roles from; without this a PIN user logs in with zero permissions).
 	c.syncServiceRoles(ctx, evt.TenantID, userID, email, evt.Payload)
+	return nil
+}
+
+// handleUserDeleted hard-deletes this user's local inventory-api rows after auth-api
+// permanently deletes the account (AdminPurgeUser). user_role_assignments has a real
+// OnDelete:NoAction FK to inventory_users, so it must go first; user_outlets has no DB
+// FK (app-level only) but is cleaned up too, for hygiene, before deleting the user row.
+func (c *AuthEventsConsumer) handleUserDeleted(ctx context.Context, evt *sharedevents.Event) error {
+	userIDStr, _ := evt.Payload["user_id"].(string)
+	authServiceUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid user_id %q: %w", userIDStr, err)
+	}
+
+	tx, err := c.orm.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("start tx: %w", err)
+	}
+
+	invUser, err := tx.InventoryUser.Query().Where(entinvuser.AuthServiceUserID(authServiceUserID)).Only(ctx)
+	if err != nil {
+		_ = tx.Rollback()
+		if ent.IsNotFound(err) {
+			return nil // never synced locally — nothing to clean up
+		}
+		return fmt.Errorf("query inventory user: %w", err)
+	}
+
+	if _, err := tx.UserRoleAssignment.Delete().Where(userroleassignment.UserID(invUser.ID)).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete user role assignments: %w", err)
+	}
+	if _, err := tx.UserOutlet.Delete().Where(entuseroutlet.UserID(authServiceUserID)).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete user outlets: %w", err)
+	}
+	if err := tx.InventoryUser.DeleteOne(invUser).Exec(ctx); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete inventory user: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	c.log.Info("user hard-deleted from auth.user.deleted event", zap.String("user_id", userIDStr))
 	return nil
 }
 
