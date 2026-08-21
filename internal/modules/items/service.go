@@ -1479,8 +1479,37 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		return dtos, nil
 	}
 
-	// DB-level pagination for all queries (including tag-filtered).
-	total, err := buildQuery().Count(ctx)
+	// DB-level pagination for all queries (including tag-filtered). Count() re-runs the exact
+	// same filtered query on every page of pos-api's paginated catalog sweep even though the
+	// filters — hence the result — never change within one sweep (same redundant-recompute class
+	// as OutletScope above, see outletScopeCacheTTL's comment for the live BOI incident this is
+	// closing). Cache it the same way, keyed by every dimension that can change the predicate.
+	// Skipped for a single-item lookup (?id=) — rare, cheap, and correctness there (never showing
+	// a false "not found") matters more than saving one Count() call.
+	var total int
+	var err error
+	if id := itemIDFilter(ctx); id != nil {
+		total, err = buildQuery().Count(ctx)
+	} else {
+		categoryKey, unitKey, outletKey := "-", "-", "-"
+		if categoryID != nil {
+			categoryKey = categoryID.String()
+		}
+		if unitID != nil {
+			unitKey = unitID.String()
+		}
+		if outletID != nil {
+			outletKey = outletID.String()
+		}
+		countKey := sharedcache.Key("inv", "items-count", tenantID.String(),
+			typeFilter, statusFilter, useCase, notForSaleFilter(ctx),
+			categoryKey, unitKey, outletKey, search, strings.Join(tagsFilter, ","),
+			fmt.Sprintf("recipe=%v,nonbill=%v", recipeInputScope(ctx), includeNonBillable(ctx)),
+		)
+		total, err = sharedcache.GetOrSet(ctx, s.cache, countKey, outletScopeCacheTTL, func(ctx context.Context) (int, error) {
+			return buildQuery().Count(ctx)
+		})
+	}
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: count: %w", err)
 	}
