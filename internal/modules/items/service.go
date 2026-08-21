@@ -1036,22 +1036,69 @@ func enumPtrToStr[T ~string](v *T) *string {
 	return &s
 }
 
+// outletScopeCacheTTL bounds how long a computed outlet-visibility scope is reused across the
+// many page-fetches of one catalog sweep. pos-api's fetchAllInventoryItemPages walks a tenant's
+// full catalog up to 8 pages concurrently (comment there: "every branch's stock can need ~35-40
+// pages"), and — before this cache — EVERY one of those pages re-ran OutletScope's full-tenant
+// InventoryBalance scan from scratch. Confirmed live on boi-enterprises (3,896 items / 7
+// warehouses / 7,305 balance rows, needing ~39 pages): the resulting redundant load saturated the
+// 8-connection DB pool badly enough that some pages missed pos-api's per-call 15s S2S timeout,
+// logging "items: count: context canceled" here and leaving the terminal/inventory screen looking
+// broken right after a perfectly valid PIN login. A short TTL is enough to dedupe one sweep's
+// repeated calls without meaningfully delaying how fast a stock move changes what an outlet sells.
+const outletScopeCacheTTL = sharedcache.TTLOperational
+
+// outletScopeCached is OutletScope's result in a JSON-serialisable (cache-friendly) shape —
+// warehouseIDs as a slice instead of a map, reassembled by OutletScope after a cache hit.
+type outletScopeCached struct {
+	ExcludeIDs            []uuid.UUID `json:"exclude_ids"`
+	HasOperationalHistory bool        `json:"has_operational_history"`
+	WarehouseIDs          []uuid.UUID `json:"warehouse_ids"`
+}
+
 // OutletScope computes an outlet's catalog-visibility scope: which items to exclude, whether
 // the outlet has operational history, and the warehouse set it sells from. This is the single
 // source of truth behind ListItems' outlet filtering (see the long rule comment there) — any
 // other consumer that reports per-outlet item/stock counts (e.g. dashboard analytics) MUST
 // reuse this instead of re-deriving the rule, or its numbers will silently drift from the
 // Products list the moment either copy changes.
-// outletID == nil returns zero values (no scoping).
+// outletID == nil returns zero values (no scoping). Result is cached per (tenant, outlet) for
+// outletScopeCacheTTL — see that constant's comment for why. A nil/unconfigured s.cache (e.g.
+// tests) falls back to computing fresh on every call, unchanged from before this cache existed.
 func (s *Service) OutletScope(ctx context.Context, tenantID uuid.UUID, outletID *uuid.UUID) (excludeIDs []uuid.UUID, hasOperationalHistory bool, warehouseIDs map[uuid.UUID]struct{}, err error) {
 	if outletID == nil {
 		return nil, false, nil, nil
 	}
+	key := sharedcache.Key("inv", "outlet-scope", tenantID.String(), outletID.String())
+	cached, err := sharedcache.GetOrSet(ctx, s.cache, key, outletScopeCacheTTL, func(ctx context.Context) (outletScopeCached, error) {
+		ids, hist, whIDs, ferr := s.outletScopeUncached(ctx, tenantID, *outletID)
+		if ferr != nil {
+			return outletScopeCached{}, ferr
+		}
+		whSlice := make([]uuid.UUID, 0, len(whIDs))
+		for id := range whIDs {
+			whSlice = append(whSlice, id)
+		}
+		return outletScopeCached{ExcludeIDs: ids, HasOperationalHistory: hist, WarehouseIDs: whSlice}, nil
+	})
+	if err != nil {
+		return nil, false, nil, err
+	}
+	warehouseIDs = make(map[uuid.UUID]struct{}, len(cached.WarehouseIDs))
+	for _, id := range cached.WarehouseIDs {
+		warehouseIDs[id] = struct{}{}
+	}
+	return cached.ExcludeIDs, cached.HasOperationalHistory, warehouseIDs, nil
+}
+
+// outletScopeUncached is OutletScope's actual computation, unchanged from before caching was
+// added — see OutletScope for the cache wrapper now in front of it.
+func (s *Service) outletScopeUncached(ctx context.Context, tenantID uuid.UUID, outletID uuid.UUID) (excludeIDs []uuid.UUID, hasOperationalHistory bool, warehouseIDs map[uuid.UUID]struct{}, err error) {
 	wIDs, err := s.client.Warehouse.Query().
 		Where(
 			warehouse.TenantID(tenantID),
 			warehouse.Or(
-				warehouse.OutletIDEQ(*outletID),
+				warehouse.OutletIDEQ(outletID),
 				warehouse.OutletIDIsNil(),
 			),
 		).IDs(ctx)
