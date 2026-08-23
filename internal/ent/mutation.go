@@ -88676,6 +88676,7 @@ type StockTransferMutation struct {
 	carrier                  *string
 	freight_notes            *string
 	notes                    *string
+	transfer_date            *time.Time
 	shipped_at               *time.Time
 	received_at              *time.Time
 	created_at               *time.Time
@@ -89310,6 +89311,55 @@ func (m *StockTransferMutation) ResetNotes() {
 	delete(m.clearedFields, stocktransfer.FieldNotes)
 }
 
+// SetTransferDate sets the "transfer_date" field.
+func (m *StockTransferMutation) SetTransferDate(t time.Time) {
+	m.transfer_date = &t
+}
+
+// TransferDate returns the value of the "transfer_date" field in the mutation.
+func (m *StockTransferMutation) TransferDate() (r time.Time, exists bool) {
+	v := m.transfer_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransferDate returns the old "transfer_date" field's value of the StockTransfer entity.
+// If the StockTransfer object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockTransferMutation) OldTransferDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransferDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransferDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransferDate: %w", err)
+	}
+	return oldValue.TransferDate, nil
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (m *StockTransferMutation) ClearTransferDate() {
+	m.transfer_date = nil
+	m.clearedFields[stocktransfer.FieldTransferDate] = struct{}{}
+}
+
+// TransferDateCleared returns if the "transfer_date" field was cleared in this mutation.
+func (m *StockTransferMutation) TransferDateCleared() bool {
+	_, ok := m.clearedFields[stocktransfer.FieldTransferDate]
+	return ok
+}
+
+// ResetTransferDate resets all changes to the "transfer_date" field.
+func (m *StockTransferMutation) ResetTransferDate() {
+	m.transfer_date = nil
+	delete(m.clearedFields, stocktransfer.FieldTransferDate)
+}
+
 // SetShippedAt sets the "shipped_at" field.
 func (m *StockTransferMutation) SetShippedAt(t time.Time) {
 	m.shipped_at = &t
@@ -89568,7 +89618,7 @@ func (m *StockTransferMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *StockTransferMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.tenant_id != nil {
 		fields = append(fields, stocktransfer.FieldTenantID)
 	}
@@ -89604,6 +89654,9 @@ func (m *StockTransferMutation) Fields() []string {
 	}
 	if m.notes != nil {
 		fields = append(fields, stocktransfer.FieldNotes)
+	}
+	if m.transfer_date != nil {
+		fields = append(fields, stocktransfer.FieldTransferDate)
 	}
 	if m.shipped_at != nil {
 		fields = append(fields, stocktransfer.FieldShippedAt)
@@ -89649,6 +89702,8 @@ func (m *StockTransferMutation) Field(name string) (ent.Value, bool) {
 		return m.FreightNotes()
 	case stocktransfer.FieldNotes:
 		return m.Notes()
+	case stocktransfer.FieldTransferDate:
+		return m.TransferDate()
 	case stocktransfer.FieldShippedAt:
 		return m.ShippedAt()
 	case stocktransfer.FieldReceivedAt:
@@ -89690,6 +89745,8 @@ func (m *StockTransferMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldFreightNotes(ctx)
 	case stocktransfer.FieldNotes:
 		return m.OldNotes(ctx)
+	case stocktransfer.FieldTransferDate:
+		return m.OldTransferDate(ctx)
 	case stocktransfer.FieldShippedAt:
 		return m.OldShippedAt(ctx)
 	case stocktransfer.FieldReceivedAt:
@@ -89791,6 +89848,13 @@ func (m *StockTransferMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetNotes(v)
 		return nil
+	case stocktransfer.FieldTransferDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransferDate(v)
+		return nil
 	case stocktransfer.FieldShippedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -89879,6 +89943,9 @@ func (m *StockTransferMutation) ClearedFields() []string {
 	if m.FieldCleared(stocktransfer.FieldNotes) {
 		fields = append(fields, stocktransfer.FieldNotes)
 	}
+	if m.FieldCleared(stocktransfer.FieldTransferDate) {
+		fields = append(fields, stocktransfer.FieldTransferDate)
+	}
 	if m.FieldCleared(stocktransfer.FieldShippedAt) {
 		fields = append(fields, stocktransfer.FieldShippedAt)
 	}
@@ -89913,6 +89980,9 @@ func (m *StockTransferMutation) ClearField(name string) error {
 		return nil
 	case stocktransfer.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case stocktransfer.FieldTransferDate:
+		m.ClearTransferDate()
 		return nil
 	case stocktransfer.FieldShippedAt:
 		m.ClearShippedAt()
@@ -89963,6 +90033,9 @@ func (m *StockTransferMutation) ResetField(name string) error {
 		return nil
 	case stocktransfer.FieldNotes:
 		m.ResetNotes()
+		return nil
+	case stocktransfer.FieldTransferDate:
+		m.ResetTransferDate()
 		return nil
 	case stocktransfer.FieldShippedAt:
 		m.ResetShippedAt()

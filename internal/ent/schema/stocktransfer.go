@@ -62,6 +62,17 @@ func (StockTransfer) Fields() []ent.Field {
 			Comment("Notes about the shipment/freight (route, handling, seal references)"),
 		field.Text("notes").
 			Optional(),
+		// transfer_date is a user-editable override of which calendar day this transfer is
+		// recorded/reported under, distinct from the immutable created_at (server-entry
+		// timestamp) — lets staff backdate a transfer entered late (stock physically moved days
+		// ago, only logged today) or schedule one ahead for a planned future shipment. Unlike
+		// pos-api's POSOrder.business_date (backdate-only, capped at "not in the future"), a
+		// transfer may legitimately go either direction — client-requested "back date au tupeleke
+		// date mbele" (back-date or push the date forward). Nil = display/report under created_at,
+		// identical to every row that existed before this field. See transfers.EffectiveTransferDate.
+		field.Time("transfer_date").
+			Optional().
+			Nillable(),
 		field.Time("shipped_at").
 			Optional().
 			Nillable(),

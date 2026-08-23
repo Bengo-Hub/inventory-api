@@ -161,6 +161,20 @@ func (_c *StockTransferCreate) SetNillableNotes(v *string) *StockTransferCreate 
 	return _c
 }
 
+// SetTransferDate sets the "transfer_date" field.
+func (_c *StockTransferCreate) SetTransferDate(v time.Time) *StockTransferCreate {
+	_c.mutation.SetTransferDate(v)
+	return _c
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_c *StockTransferCreate) SetNillableTransferDate(v *time.Time) *StockTransferCreate {
+	if v != nil {
+		_c.SetTransferDate(*v)
+	}
+	return _c
+}
+
 // SetShippedAt sets the "shipped_at" field.
 func (_c *StockTransferCreate) SetShippedAt(v time.Time) *StockTransferCreate {
 	_c.mutation.SetShippedAt(v)
@@ -430,6 +444,10 @@ func (_c *StockTransferCreate) createSpec() (*StockTransfer, *sqlgraph.CreateSpe
 		_spec.SetField(stocktransfer.FieldNotes, field.TypeString, value)
 		_node.Notes = value
 	}
+	if value, ok := _c.mutation.TransferDate(); ok {
+		_spec.SetField(stocktransfer.FieldTransferDate, field.TypeTime, value)
+		_node.TransferDate = &value
+	}
 	if value, ok := _c.mutation.ShippedAt(); ok {
 		_spec.SetField(stocktransfer.FieldShippedAt, field.TypeTime, value)
 		_node.ShippedAt = &value
@@ -691,6 +709,24 @@ func (u *StockTransferUpsert) UpdateNotes() *StockTransferUpsert {
 // ClearNotes clears the value of the "notes" field.
 func (u *StockTransferUpsert) ClearNotes() *StockTransferUpsert {
 	u.SetNull(stocktransfer.FieldNotes)
+	return u
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *StockTransferUpsert) SetTransferDate(v time.Time) *StockTransferUpsert {
+	u.Set(stocktransfer.FieldTransferDate, v)
+	return u
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *StockTransferUpsert) UpdateTransferDate() *StockTransferUpsert {
+	u.SetExcluded(stocktransfer.FieldTransferDate)
+	return u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *StockTransferUpsert) ClearTransferDate() *StockTransferUpsert {
+	u.SetNull(stocktransfer.FieldTransferDate)
 	return u
 }
 
@@ -1000,6 +1036,27 @@ func (u *StockTransferUpsertOne) UpdateNotes() *StockTransferUpsertOne {
 func (u *StockTransferUpsertOne) ClearNotes() *StockTransferUpsertOne {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *StockTransferUpsertOne) SetTransferDate(v time.Time) *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetTransferDate(v)
+	})
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *StockTransferUpsertOne) UpdateTransferDate() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateTransferDate()
+	})
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *StockTransferUpsertOne) ClearTransferDate() *StockTransferUpsertOne {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearTransferDate()
 	})
 }
 
@@ -1484,6 +1541,27 @@ func (u *StockTransferUpsertBulk) UpdateNotes() *StockTransferUpsertBulk {
 func (u *StockTransferUpsertBulk) ClearNotes() *StockTransferUpsertBulk {
 	return u.Update(func(s *StockTransferUpsert) {
 		s.ClearNotes()
+	})
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *StockTransferUpsertBulk) SetTransferDate(v time.Time) *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.SetTransferDate(v)
+	})
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *StockTransferUpsertBulk) UpdateTransferDate() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.UpdateTransferDate()
+	})
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *StockTransferUpsertBulk) ClearTransferDate() *StockTransferUpsertBulk {
+	return u.Update(func(s *StockTransferUpsert) {
+		s.ClearTransferDate()
 	})
 }
 

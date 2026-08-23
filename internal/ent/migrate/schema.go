@@ -3259,6 +3259,7 @@ var (
 		{Name: "carrier", Type: field.TypeString, Nullable: true},
 		{Name: "freight_notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "transfer_date", Type: field.TypeTime, Nullable: true},
 		{Name: "shipped_at", Type: field.TypeTime, Nullable: true},
 		{Name: "received_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
