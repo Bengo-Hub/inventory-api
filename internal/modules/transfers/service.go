@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -188,6 +189,27 @@ func EffectiveTransferDate(t *ent.StockTransfer) time.Time {
 		return *t.TransferDate
 	}
 	return t.CreatedAt
+}
+
+// orderByEffectiveDate sorts StockTransfer rows by the same effective date the ListTransfers
+// from/to filter and EffectiveTransferDate use (transfer_date when set, else created_at),
+// descending by default — so a backdated/postdated transfer sorts into its true chronological
+// position among the rows actually entered that day, instead of always floating to the top of
+// the list under its real entry date. Needs a raw SQL expression because ent's generated Asc/Desc
+// only order by a single column, not a COALESCE across two. A secondary "created_at DESC" term
+// keeps same-effective-date rows in a stable, real-entry-order tiebreak. Mirrors pos-api's
+// identically-named handlers.orderByEffectiveDate for POSOrder.business_date.
+func orderByEffectiveDate(desc bool) stocktransfer.OrderOption {
+	dir := "ASC"
+	if desc {
+		dir = "DESC"
+	}
+	return func(s *sql.Selector) {
+		expr := "COALESCE(" + s.C(stocktransfer.FieldTransferDate) + ", " + s.C(stocktransfer.FieldCreatedAt) + ")"
+		s.OrderExprFunc(func(b *sql.Builder) {
+			b.WriteString(expr + " " + dir + ", " + s.C(stocktransfer.FieldCreatedAt) + " " + dir)
+		})
+	}
 }
 
 // CreateTransfer creates a new stock transfer in draft status.
@@ -579,7 +601,7 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 
 	transfers, err := q.
 		WithLines().
-		Order(ent.Desc(stocktransfer.FieldCreatedAt)).
+		Order(orderByEffectiveDate(true)).
 		Limit(limit).
 		Offset(offset).
 		All(ctx)
