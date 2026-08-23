@@ -79,8 +79,21 @@ func NewSequenceService(client *ent.Client) *SequenceService {
 }
 
 // GenerateNumber atomically increments the (tenant, docType) counter and returns a
-// formatted document number. Retries up to 5 times on CAS contention.
+// formatted document number, dated with the current time. Retries up to 5 times on CAS
+// contention. Equivalent to GenerateNumberAt(ctx, tenantID, docType, time.Now()).
 func (s *SequenceService) GenerateNumber(ctx context.Context, tenantID uuid.UUID, docType string) (string, error) {
+	return s.GenerateNumberAt(ctx, tenantID, docType, time.Now())
+}
+
+// GenerateNumberAt is GenerateNumber with an explicit date for the number's date component (e.g.
+// the "260811" in "TRF-260811-000110"). The atomic counter itself (current_val) always advances
+// in real call order regardless of `at` — only the printed date portion changes — so this stays
+// safe to use alongside GenerateNumber for other callers of the same (tenant, docType) sequence:
+// no two numbers can ever collide, they just may not sort chronologically by their own date
+// portion if `at` is backdated/postdated relative to when they were actually issued. Lets a
+// caller number a document under its own business/effective date (e.g. a backdated stock
+// transfer) instead of the moment it was entered.
+func (s *SequenceService) GenerateNumberAt(ctx context.Context, tenantID uuid.UUID, docType string, at time.Time) (string, error) {
 	var lastErr error
 	for attempt := 0; attempt < 5; attempt++ {
 		if attempt > 0 {
@@ -104,7 +117,7 @@ func (s *SequenceService) GenerateNumber(ctx context.Context, tenantID uuid.UUID
 			lastErr = fmt.Errorf("sequence CAS contention")
 			continue
 		}
-		return formatNumber(row, old+1, time.Now()), nil
+		return formatNumber(row, old+1, at), nil
 	}
 	return "", fmt.Errorf("generate document number after retries: %w", lastErr)
 }
