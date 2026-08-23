@@ -40,6 +40,8 @@ const (
 	FieldFreightNotes = "freight_notes"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldTransferDate holds the string denoting the transfer_date field in the database.
+	FieldTransferDate = "transfer_date"
 	// FieldShippedAt holds the string denoting the shipped_at field in the database.
 	FieldShippedAt = "shipped_at"
 	// FieldReceivedAt holds the string denoting the received_at field in the database.
@@ -76,6 +78,7 @@ var Columns = []string{
 	FieldCarrier,
 	FieldFreightNotes,
 	FieldNotes,
+	FieldTransferDate,
 	FieldShippedAt,
 	FieldReceivedAt,
 	FieldCreatedAt,
@@ -203,6 +206,11 @@ func ByFreightNotes(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByTransferDate orders the results by the transfer_date field.
+func ByTransferDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferDate, opts...).ToFunc()
 }
 
 // ByShippedAt orders the results by the shipped_at field.

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -108,6 +109,10 @@ func (h *TransferHandler) CreateTransfer(w http.ResponseWriter, r *http.Request)
 
 	resp, err := h.transferSvc.CreateTransfer(r.Context(), tenantID, req)
 	if err != nil {
+		if errors.Is(err, transfers.ErrInvalidTransferDate) {
+			writeError(w, http.StatusBadRequest, "INVALID_TRANSFER_DATE", err.Error())
+			return
+		}
 		h.log.Error("create transfer failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
 		return
@@ -155,6 +160,10 @@ func (h *TransferHandler) UpdateTransfer(w http.ResponseWriter, r *http.Request)
 
 	resp, err := h.transferSvc.UpdateTransfer(r.Context(), tenantID, transferID, req)
 	if err != nil {
+		if errors.Is(err, transfers.ErrInvalidTransferDate) {
+			writeError(w, http.StatusBadRequest, "INVALID_TRANSFER_DATE", err.Error())
+			return
+		}
 		h.log.Error("update transfer failed", zap.Error(err))
 		writeError(w, http.StatusBadRequest, "UPDATE_FAILED", err.Error())
 		return

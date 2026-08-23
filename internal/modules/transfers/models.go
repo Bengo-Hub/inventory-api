@@ -16,6 +16,10 @@ type CreateTransferRequest struct {
 	ShippingCharges        float64               `json:"shipping_charges,omitempty"`
 	Carrier                string                `json:"carrier,omitempty"`
 	FreightNotes           string                `json:"freight_notes,omitempty"`
+	// TransferDate optionally backdates or postdates this transfer's reporting date ("YYYY-MM-DD").
+	// Empty = report under created_at (today), same as before this field existed. See
+	// parseAndValidateTransferDate for the accepted range.
+	TransferDate string `json:"transfer_date,omitempty"`
 }
 
 // UpdateTransferRequest is the input for amending a DRAFT transfer's line items and header
@@ -28,6 +32,9 @@ type UpdateTransferRequest struct {
 	ShippingCharges float64               `json:"shipping_charges,omitempty"`
 	Carrier         string                `json:"carrier,omitempty"`
 	FreightNotes    string                `json:"freight_notes,omitempty"`
+	// TransferDate mirrors CreateTransferRequest's field — full-replace like every other header
+	// field on this request: empty clears back to reporting under created_at.
+	TransferDate string `json:"transfer_date,omitempty"`
 }
 
 // ReceiveTransferRequest is the input for receiving an in-transit transfer. Items is optional —
@@ -57,35 +64,39 @@ type TransferLineRequest struct {
 
 // TransferResponse is the full representation of a stock transfer with lines.
 type TransferResponse struct {
-	ID                   uuid.UUID              `json:"id"`
-	TenantID             uuid.UUID              `json:"tenant_id"`
-	TransferNumber       string                 `json:"transfer_number"`
-	Status               string                 `json:"status"`
+	ID             uuid.UUID `json:"id"`
+	TenantID       uuid.UUID `json:"tenant_id"`
+	TransferNumber string    `json:"transfer_number"`
+	Status         string    `json:"status"`
 	// Origin distinguishes a normal user-initiated transfer ("manual", the New Transfer dialog)
 	// from one auto-recorded after the fact by another feature (e.g. "bulk_adjust") — see
 	// RecordCompletedTransfer.
-	Origin               string                 `json:"origin"`
-	SourceWarehouse      WarehouseInfo          `json:"source_warehouse"`
-	DestinationWarehouse WarehouseInfo          `json:"destination_warehouse"`
-	InitiatedBy          *uuid.UUID             `json:"initiated_by,omitempty"`
-	Notes                string                 `json:"notes,omitempty"`
-	ReferenceNo          string                 `json:"reference_no,omitempty"`
-	ShippingCharges      float64                `json:"shipping_charges"`
-	Carrier              string                 `json:"carrier,omitempty"`
-	FreightNotes         string                 `json:"freight_notes,omitempty"`
-	ShippedAt            *time.Time             `json:"shipped_at,omitempty"`
-	ReceivedAt           *time.Time             `json:"received_at,omitempty"`
-	CreatedAt            time.Time              `json:"created_at"`
-	UpdatedAt            time.Time              `json:"updated_at"`
-	Lines                []TransferLineResponse `json:"lines"`
+	Origin               string        `json:"origin"`
+	SourceWarehouse      WarehouseInfo `json:"source_warehouse"`
+	DestinationWarehouse WarehouseInfo `json:"destination_warehouse"`
+	InitiatedBy          *uuid.UUID    `json:"initiated_by,omitempty"`
+	Notes                string        `json:"notes,omitempty"`
+	ReferenceNo          string        `json:"reference_no,omitempty"`
+	ShippingCharges      float64       `json:"shipping_charges"`
+	Carrier              string        `json:"carrier,omitempty"`
+	FreightNotes         string        `json:"freight_notes,omitempty"`
+	ShippedAt            *time.Time    `json:"shipped_at,omitempty"`
+	ReceivedAt           *time.Time    `json:"received_at,omitempty"`
+	// TransferDate is the admin/staff-set override of which calendar day this transfer counts
+	// toward in reports (see StockTransfer.transfer_date schema comment). Nil = report under
+	// CreatedAt, same as every transfer created before this field existed.
+	TransferDate *time.Time             `json:"transfer_date,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+	Lines        []TransferLineResponse `json:"lines"`
 }
 
 // TransferLineResponse represents a single line in a transfer response.
 type TransferLineResponse struct {
-	ID        uuid.UUID  `json:"id"`
-	ItemID    uuid.UUID  `json:"item_id"`
-	ItemName  string     `json:"item_name,omitempty"`
-	ItemSKU   string     `json:"item_sku,omitempty"`
+	ID       uuid.UUID `json:"id"`
+	ItemID   uuid.UUID `json:"item_id"`
+	ItemName string    `json:"item_name,omitempty"`
+	ItemSKU  string    `json:"item_sku,omitempty"`
 	// ItemUnit is the item's unit-of-measure abbreviation (e.g. "PCS", "KG") — blank when the
 	// item has no unit assigned.
 	ItemUnit  string     `json:"item_unit,omitempty"`
@@ -120,6 +131,7 @@ type TransferSummary struct {
 	LineCount           int        `json:"line_count"`
 	ShippedAt           *time.Time `json:"shipped_at,omitempty"`
 	ReceivedAt          *time.Time `json:"received_at,omitempty"`
+	TransferDate        *time.Time `json:"transfer_date,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
 }
 

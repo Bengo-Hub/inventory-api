@@ -2,7 +2,9 @@ package transfers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -128,6 +130,66 @@ func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantI
 	return lineItems, nil
 }
 
+// ErrInvalidTransferDate is returned when Create/UpdateTransfer's optional transfer_date field
+// fails parseAndValidateTransferDate (malformed, or outside the accepted window). Handlers map
+// this to 400 instead of an opaque 500.
+var ErrInvalidTransferDate = errors.New("invalid transfer_date")
+
+// maxTransferDateBackDays/maxTransferDateForwardDays bound transfer_date on EITHER side of today
+// (unlike pos-api's business_date, which is backdate-only) — a tenant may log a transfer days
+// after the stock actually moved, or schedule one ahead for a planned future shipment (client
+// request: "WEKA DATE... back date au tupeleke date mbele" — back-date or push the date
+// forward). A year of slack in each direction comfortably covers legitimate corrections/planning
+// while still rejecting an obvious typo (e.g. a wrong year).
+const (
+	maxTransferDateBackDays    = 366
+	maxTransferDateForwardDays = 366
+)
+
+// parseAndValidateTransferDate parses a "YYYY-MM-DD" calendar day (UTC — inventory-api has no
+// per-tenant timezone concept, matching parseCreatedAtRange's existing convention) and bounds it
+// to maxTransferDateBackDays/maxTransferDateForwardDays on either side of today.
+func parseAndValidateTransferDate(dateStr string) (time.Time, error) {
+	d, err := time.Parse("2006-01-02", strings.TrimSpace(dateStr))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("transfer_date must be YYYY-MM-DD")
+	}
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	if d.After(today.AddDate(0, 0, maxTransferDateForwardDays)) {
+		return time.Time{}, fmt.Errorf("transfer_date is too far in the future (more than %d days after today)", maxTransferDateForwardDays)
+	}
+	if d.Before(today.AddDate(0, 0, -maxTransferDateBackDays)) {
+		return time.Time{}, fmt.Errorf("transfer_date is too far in the past (more than %d days before today)", maxTransferDateBackDays)
+	}
+	return d, nil
+}
+
+// resolveTransferDate parses and validates req's optional transfer_date string, returning nil
+// when it's blank (report under created_at, the pre-existing default). Shared by Create and
+// UpdateTransfer so both enforce the identical contract.
+func resolveTransferDate(dateStr string) (*time.Time, error) {
+	if strings.TrimSpace(dateStr) == "" {
+		return nil, nil
+	}
+	parsed, err := parseAndValidateTransferDate(dateStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrInvalidTransferDate, err.Error())
+	}
+	return &parsed, nil
+}
+
+// EffectiveTransferDate returns the calendar day a transfer counts toward in reports: the
+// user-set transfer_date override when present, else CreatedAt (server ingestion time). List/
+// report queries that need to honor a backdated/postdated transfer should filter on this
+// precedence rather than raw CreatedAt — see ListTransfers.
+func EffectiveTransferDate(t *ent.StockTransfer) time.Time {
+	if t.TransferDate != nil {
+		return *t.TransferDate
+	}
+	return t.CreatedAt
+}
+
 // CreateTransfer creates a new stock transfer in draft status.
 func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req CreateTransferRequest) (*TransferResponse, error) {
 	if req.SourceWarehouseID == req.DestinationWarehouseID {
@@ -135,6 +197,11 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 	}
 	if len(req.Items) == 0 {
 		return nil, fmt.Errorf("transfers: at least one item is required")
+	}
+	// Fail fast, before opening the transaction, on a malformed or out-of-range date.
+	transferDate, err := resolveTransferDate(req.TransferDate)
+	if err != nil {
+		return nil, err
 	}
 
 	tx, err := s.client.Tx(ctx)
@@ -187,6 +254,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		SetShippingCharges(req.ShippingCharges).
 		SetCarrier(req.Carrier).
 		SetFreightNotes(req.FreightNotes).
+		SetNillableTransferDate(transferDate).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: create transfer: %w", err)
@@ -271,6 +339,10 @@ func (s *Service) UpdateTransfer(ctx context.Context, tenantID, transferID uuid.
 	if len(req.Items) == 0 {
 		return nil, fmt.Errorf("transfers: at least one item is required")
 	}
+	transferDate, err := resolveTransferDate(req.TransferDate)
+	if err != nil {
+		return nil, err
+	}
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
@@ -319,13 +391,20 @@ func (s *Service) UpdateTransfer(ctx context.Context, tenantID, transferID uuid.
 		lines = append(lines, line)
 	}
 
-	updated, err := tx.StockTransfer.UpdateOne(transfer).
+	updateBuilder := tx.StockTransfer.UpdateOne(transfer).
 		SetNotes(req.Notes).
 		SetReferenceNo(req.ReferenceNo).
 		SetShippingCharges(req.ShippingCharges).
 		SetCarrier(req.Carrier).
-		SetFreightNotes(req.FreightNotes).
-		Save(ctx)
+		SetFreightNotes(req.FreightNotes)
+	// Full-replace, like every other header field on this request: a blank transfer_date clears
+	// the override back to reporting under created_at instead of leaving a stale value in place.
+	if transferDate != nil {
+		updateBuilder = updateBuilder.SetTransferDate(*transferDate)
+	} else {
+		updateBuilder = updateBuilder.ClearTransferDate()
+	}
+	updated, err := updateBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: update transfer: %w", err)
 	}
@@ -465,11 +544,22 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 	if filter.Search != "" {
 		q = q.Where(stocktransfer.TransferNumberContainsFold(filter.Search))
 	}
+	// Filter on the EFFECTIVE date (transfer_date override when set, else created_at) rather than
+	// raw created_at — otherwise a backdated/postdated transfer would be correctly displayed under
+	// its overridden date but silently excluded from (or wrongly included in) a from/to search for
+	// that date, the exact display/filter mismatch pos-api hit with POSOrder.business_date. See
+	// EffectiveTransferDate.
 	if !filter.From.IsZero() {
-		q = q.Where(stocktransfer.CreatedAtGTE(filter.From))
+		q = q.Where(stocktransfer.Or(
+			stocktransfer.And(stocktransfer.TransferDateNotNil(), stocktransfer.TransferDateGTE(filter.From)),
+			stocktransfer.And(stocktransfer.TransferDateIsNil(), stocktransfer.CreatedAtGTE(filter.From)),
+		))
 	}
 	if !filter.To.IsZero() {
-		q = q.Where(stocktransfer.CreatedAtLTE(filter.To))
+		q = q.Where(stocktransfer.Or(
+			stocktransfer.And(stocktransfer.TransferDateNotNil(), stocktransfer.TransferDateLTE(filter.To)),
+			stocktransfer.And(stocktransfer.TransferDateIsNil(), stocktransfer.CreatedAtLTE(filter.To)),
+		))
 	}
 
 	// Get total count before pagination
@@ -542,6 +632,7 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 			LineCount:           len(t.Edges.Lines),
 			ShippedAt:           t.ShippedAt,
 			ReceivedAt:          t.ReceivedAt,
+			TransferDate:        t.TransferDate,
 			CreatedAt:           t.CreatedAt,
 		}
 	}
@@ -965,6 +1056,7 @@ func (s *Service) buildTransferResponse(transfer *ent.StockTransfer, lines []*en
 		FreightNotes:    transfer.FreightNotes,
 		ShippedAt:       transfer.ShippedAt,
 		ReceivedAt:      transfer.ReceivedAt,
+		TransferDate:    transfer.TransferDate,
 		CreatedAt:       transfer.CreatedAt,
 		UpdatedAt:       transfer.UpdatedAt,
 	}

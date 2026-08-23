@@ -42,6 +42,8 @@ type StockTransfer struct {
 	FreightNotes string `json:"freight_notes,omitempty"`
 	// Notes holds the value of the "notes" field.
 	Notes string `json:"notes,omitempty"`
+	// TransferDate holds the value of the "transfer_date" field.
+	TransferDate *time.Time `json:"transfer_date,omitempty"`
 	// ShippedAt holds the value of the "shipped_at" field.
 	ShippedAt *time.Time `json:"shipped_at,omitempty"`
 	// ReceivedAt holds the value of the "received_at" field.
@@ -85,7 +87,7 @@ func (*StockTransfer) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case stocktransfer.FieldTransferNumber, stocktransfer.FieldStatus, stocktransfer.FieldOrigin, stocktransfer.FieldReferenceNo, stocktransfer.FieldCarrier, stocktransfer.FieldFreightNotes, stocktransfer.FieldNotes:
 			values[i] = new(sql.NullString)
-		case stocktransfer.FieldShippedAt, stocktransfer.FieldReceivedAt, stocktransfer.FieldCreatedAt, stocktransfer.FieldUpdatedAt:
+		case stocktransfer.FieldTransferDate, stocktransfer.FieldShippedAt, stocktransfer.FieldReceivedAt, stocktransfer.FieldCreatedAt, stocktransfer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case stocktransfer.FieldID, stocktransfer.FieldTenantID, stocktransfer.FieldSourceWarehouseID, stocktransfer.FieldDestinationWarehouseID:
 			values[i] = new(uuid.UUID)
@@ -182,6 +184,13 @@ func (_m *StockTransfer) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field notes", values[i])
 			} else if value.Valid {
 				_m.Notes = value.String
+			}
+		case stocktransfer.FieldTransferDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_date", values[i])
+			} else if value.Valid {
+				_m.TransferDate = new(time.Time)
+				*_m.TransferDate = value.Time
 			}
 		case stocktransfer.FieldShippedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -287,6 +296,11 @@ func (_m *StockTransfer) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("notes=")
 	builder.WriteString(_m.Notes)
+	builder.WriteString(", ")
+	if v := _m.TransferDate; v != nil {
+		builder.WriteString("transfer_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.ShippedAt; v != nil {
 		builder.WriteString("shipped_at=")

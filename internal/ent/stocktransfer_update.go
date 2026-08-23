@@ -235,6 +235,26 @@ func (_u *StockTransferUpdate) ClearNotes() *StockTransferUpdate {
 	return _u
 }
 
+// SetTransferDate sets the "transfer_date" field.
+func (_u *StockTransferUpdate) SetTransferDate(v time.Time) *StockTransferUpdate {
+	_u.mutation.SetTransferDate(v)
+	return _u
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_u *StockTransferUpdate) SetNillableTransferDate(v *time.Time) *StockTransferUpdate {
+	if v != nil {
+		_u.SetTransferDate(*v)
+	}
+	return _u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (_u *StockTransferUpdate) ClearTransferDate() *StockTransferUpdate {
+	_u.mutation.ClearTransferDate()
+	return _u
+}
+
 // SetShippedAt sets the "shipped_at" field.
 func (_u *StockTransferUpdate) SetShippedAt(v time.Time) *StockTransferUpdate {
 	_u.mutation.SetShippedAt(v)
@@ -438,6 +458,12 @@ func (_u *StockTransferUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(stocktransfer.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.TransferDate(); ok {
+		_spec.SetField(stocktransfer.FieldTransferDate, field.TypeTime, value)
+	}
+	if _u.mutation.TransferDateCleared() {
+		_spec.ClearField(stocktransfer.FieldTransferDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ShippedAt(); ok {
 		_spec.SetField(stocktransfer.FieldShippedAt, field.TypeTime, value)
@@ -724,6 +750,26 @@ func (_u *StockTransferUpdateOne) ClearNotes() *StockTransferUpdateOne {
 	return _u
 }
 
+// SetTransferDate sets the "transfer_date" field.
+func (_u *StockTransferUpdateOne) SetTransferDate(v time.Time) *StockTransferUpdateOne {
+	_u.mutation.SetTransferDate(v)
+	return _u
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_u *StockTransferUpdateOne) SetNillableTransferDate(v *time.Time) *StockTransferUpdateOne {
+	if v != nil {
+		_u.SetTransferDate(*v)
+	}
+	return _u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (_u *StockTransferUpdateOne) ClearTransferDate() *StockTransferUpdateOne {
+	_u.mutation.ClearTransferDate()
+	return _u
+}
+
 // SetShippedAt sets the "shipped_at" field.
 func (_u *StockTransferUpdateOne) SetShippedAt(v time.Time) *StockTransferUpdateOne {
 	_u.mutation.SetShippedAt(v)
@@ -957,6 +1003,12 @@ func (_u *StockTransferUpdateOne) sqlSave(ctx context.Context) (_node *StockTran
 	}
 	if _u.mutation.NotesCleared() {
 		_spec.ClearField(stocktransfer.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.TransferDate(); ok {
+		_spec.SetField(stocktransfer.FieldTransferDate, field.TypeTime, value)
+	}
+	if _u.mutation.TransferDateCleared() {
+		_spec.ClearField(stocktransfer.FieldTransferDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ShippedAt(); ok {
 		_spec.SetField(stocktransfer.FieldShippedAt, field.TypeTime, value)

@@ -111,6 +111,11 @@ func Notes(v string) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldNotes, v))
 }
 
+// TransferDate applies equality check predicate on the "transfer_date" field. It's identical to TransferDateEQ.
+func TransferDate(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldTransferDate, v))
+}
+
 // ShippedAt applies equality check predicate on the "shipped_at" field. It's identical to ShippedAtEQ.
 func ShippedAt(v time.Time) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldEQ(FieldShippedAt, v))
@@ -789,6 +794,56 @@ func NotesEqualFold(v string) predicate.StockTransfer {
 // NotesContainsFold applies the ContainsFold predicate on the "notes" field.
 func NotesContainsFold(v string) predicate.StockTransfer {
 	return predicate.StockTransfer(sql.FieldContainsFold(FieldNotes, v))
+}
+
+// TransferDateEQ applies the EQ predicate on the "transfer_date" field.
+func TransferDateEQ(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldEQ(FieldTransferDate, v))
+}
+
+// TransferDateNEQ applies the NEQ predicate on the "transfer_date" field.
+func TransferDateNEQ(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNEQ(FieldTransferDate, v))
+}
+
+// TransferDateIn applies the In predicate on the "transfer_date" field.
+func TransferDateIn(vs ...time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIn(FieldTransferDate, vs...))
+}
+
+// TransferDateNotIn applies the NotIn predicate on the "transfer_date" field.
+func TransferDateNotIn(vs ...time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotIn(FieldTransferDate, vs...))
+}
+
+// TransferDateGT applies the GT predicate on the "transfer_date" field.
+func TransferDateGT(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGT(FieldTransferDate, v))
+}
+
+// TransferDateGTE applies the GTE predicate on the "transfer_date" field.
+func TransferDateGTE(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldGTE(FieldTransferDate, v))
+}
+
+// TransferDateLT applies the LT predicate on the "transfer_date" field.
+func TransferDateLT(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLT(FieldTransferDate, v))
+}
+
+// TransferDateLTE applies the LTE predicate on the "transfer_date" field.
+func TransferDateLTE(v time.Time) predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldLTE(FieldTransferDate, v))
+}
+
+// TransferDateIsNil applies the IsNil predicate on the "transfer_date" field.
+func TransferDateIsNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldIsNull(FieldTransferDate))
+}
+
+// TransferDateNotNil applies the NotNil predicate on the "transfer_date" field.
+func TransferDateNotNil() predicate.StockTransfer {
+	return predicate.StockTransfer(sql.FieldNotNull(FieldTransferDate))
 }
 
 // ShippedAtEQ applies the EQ predicate on the "shipped_at" field.

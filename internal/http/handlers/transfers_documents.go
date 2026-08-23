@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -11,6 +12,21 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 )
+
+// effectiveTransferDisplayDate mirrors transfers.EffectiveTransferDate but operates on the
+// already-built TransferResponse (doc-gen only has the response, not the ent entity). Used only
+// by pendingTransferOrderFromTransfer: the delivery note and GRN print ShippedAt/ReceivedAt —
+// real event timestamps that transfer_date deliberately never overrides — but the pending
+// Transfer Order is issued before either exists, so its "Date" field is the one place that must
+// reflect a backdated/postdated transfer_date rather than the raw entry timestamp (the exact
+// display gap pos-api's business_date feature hit before its receipt/report call-sites were
+// fixed to read the effective date instead of raw created_at).
+func effectiveTransferDisplayDate(t *transfers.TransferResponse) time.Time {
+	if t.TransferDate != nil {
+		return *t.TransferDate
+	}
+	return t.CreatedAt
+}
 
 // GenerateDocument handles GET /v1/{tenant}/inventory/transfers/{transferId}/pdf?type=transfer_order|delivery_note|grn&format=pdf|csv|xlsx
 // — renders the transfer's pending Transfer Order (while still a draft), Dispatch/Transit Note
@@ -127,7 +143,7 @@ func pendingTransferOrderFromTransfer(t *transfers.TransferResponse) documents.T
 		// on a still-pending transfer order; see transfer.go's drawTransferItems doc comment.
 		QtyColumnLabel:      "QTY",
 		TransferNumber:      t.TransferNumber,
-		Date:                t.CreatedAt.Format("02 January 2006"),
+		Date:                effectiveTransferDisplayDate(t).Format("02 January 2006"),
 		Reference:           t.ReferenceNo,
 		Carrier:             t.Carrier,
 		FromWarehouseName:   t.SourceWarehouse.Name,
