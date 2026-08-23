@@ -258,8 +258,13 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		return nil, err
 	}
 
-	// Generate transfer number: TRF-{YYYYMMDD}-{seq}
-	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID)
+	// Transfer number is dated to the transfer's own effective date when backdated/postdated
+	// (transferDate), so it reads consistently with the Date column instead of always today.
+	numberDate := time.Now()
+	if transferDate != nil {
+		numberDate = *transferDate
+	}
+	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID, numberDate)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: generate number: %w", err)
 	}
@@ -491,12 +496,12 @@ func (s *Service) RecordCompletedTransfer(ctx context.Context, tenantID, sourceW
 		}
 	}()
 
-	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID)
+	now := time.Now()
+	transferNumber, err := s.generateTransferNumber(ctx, tx, tenantID, now)
 	if err != nil {
 		return nil, fmt.Errorf("transfers: generate number: %w", err)
 	}
 
-	now := time.Now()
 	transferBuilder := tx.StockTransfer.Create().
 		SetTenantID(tenantID).
 		SetSourceWarehouseID(sourceWarehouseID).
@@ -984,15 +989,20 @@ func (s *Service) CancelTransfer(ctx context.Context, tenantID, transferID uuid.
 	return nil
 }
 
-// generateTransferNumber generates a unique transfer number for a tenant.
-// Format: TRF-{YYYYMMDD}-{seq}
-func (s *Service) generateTransferNumber(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID) (string, error) {
+// generateTransferNumber generates a unique transfer number for a tenant, dated `at` — the
+// transfer's own effective date when backdated/postdated (see resolveTransferDate), else
+// time.Now() for a normal same-day transfer or an auto-recorded one (RecordCompletedTransfer).
+// The atomic counter behind it (SequenceService.GenerateNumberAt) always advances in real call
+// order regardless of `at`, so this never collides with another number — only the number's own
+// printed date portion (when the tenant's sequence config includes one) reflects `at` instead of
+// always today. Format: TRF-{date}-{seq} (tenant-configured) or the legacy TRF-{YYYYMMDD}-{seq}.
+func (s *Service) generateTransferNumber(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, at time.Time) (string, error) {
 	if s.seq != nil {
-		if n, err := s.seq.GenerateNumber(ctx, tenantID, documents.DocTypeStockTransfer); err == nil && n != "" {
+		if n, err := s.seq.GenerateNumberAt(ctx, tenantID, documents.DocTypeStockTransfer, at); err == nil && n != "" {
 			return n, nil
 		}
 	}
-	today := time.Now().Format("20060102")
+	today := at.Format("20060102")
 	prefix := fmt.Sprintf("TRF-%s-", today)
 
 	// Count existing transfers for this tenant today to determine sequence
