@@ -1139,6 +1139,18 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// ?brand_id=<uuid> / ?model=<text> — catalog filter bar (Brand/Model comboboxes),
+	// same shape as category_id above; carried via ctx (not a new positional param) like
+	// every other optional ListItems filter below.
+	if bidStr := r.URL.Query().Get("brand_id"); bidStr != "" {
+		if bID, parseErr := uuid.Parse(bidStr); parseErr == nil {
+			ctx = items.WithBrandFilter(ctx, bID)
+		}
+	}
+	if model := strings.TrimSpace(r.URL.Query().Get("model")); model != "" {
+		ctx = items.WithModelFilter(ctx, model)
+	}
+
 	// ?include=variants opts into eager-loading each item's active variations.
 	for _, inc := range strings.Split(r.URL.Query().Get("include"), ",") {
 		if strings.TrimSpace(inc) == "variants" {

@@ -139,6 +139,37 @@ func notForSaleFilter(ctx context.Context) string {
 	return v
 }
 
+// brandFilterKey is a context flag set by the HTTP layer (?brand_id=) — scopes ListItems to
+// one ItemBrand master row, same shape as the categoryID positional filter.
+type brandFilterKey struct{}
+
+// WithBrandFilter scopes ListItems to items on the given ItemBrand.
+func WithBrandFilter(ctx context.Context, brandID uuid.UUID) context.Context {
+	return context.WithValue(ctx, brandFilterKey{}, brandID)
+}
+
+func brandFilter(ctx context.Context) *uuid.UUID {
+	if v, ok := ctx.Value(brandFilterKey{}).(uuid.UUID); ok {
+		return &v
+	}
+	return nil
+}
+
+// modelFilterKey is a context flag set by the HTTP layer (?model=) — exact match
+// (case-insensitive) on the item's free-text Model field, same value space as
+// ModelCombobox's per-item suggestions (there is no Model master).
+type modelFilterKey struct{}
+
+// WithModelFilter scopes ListItems to items whose Model equals the given value.
+func WithModelFilter(ctx context.Context, model string) context.Context {
+	return context.WithValue(ctx, modelFilterKey{}, model)
+}
+
+func modelFilter(ctx context.Context) string {
+	v, _ := ctx.Value(modelFilterKey{}).(string)
+	return v
+}
+
 // listSortKey carries a validated ?sort=&dir= request into ListItems (DataTable server sort).
 type listSortKey struct{}
 
@@ -1328,6 +1359,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		if categoryID != nil {
 			q = q.Where(item.CategoryID(*categoryID))
 		}
+		if bid := brandFilter(ctx); bid != nil {
+			q = q.Where(item.BrandID(*bid))
+		}
+		if m := modelFilter(ctx); m != "" {
+			q = q.Where(item.ModelEqualFold(m))
+		}
 		if unitID != nil {
 			q = q.Where(item.UnitID(*unitID))
 		}
@@ -1491,7 +1528,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	if id := itemIDFilter(ctx); id != nil {
 		total, err = buildQuery().Count(ctx)
 	} else {
-		categoryKey, unitKey, outletKey := "-", "-", "-"
+		categoryKey, unitKey, outletKey, brandKey := "-", "-", "-", "-"
 		if categoryID != nil {
 			categoryKey = categoryID.String()
 		}
@@ -1501,9 +1538,12 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		if outletID != nil {
 			outletKey = outletID.String()
 		}
+		if bid := brandFilter(ctx); bid != nil {
+			brandKey = bid.String()
+		}
 		countKey := sharedcache.Key("inv", "items-count", tenantID.String(),
 			typeFilter, statusFilter, useCase, notForSaleFilter(ctx),
-			categoryKey, unitKey, outletKey, search, strings.Join(tagsFilter, ","),
+			categoryKey, unitKey, outletKey, brandKey, modelFilter(ctx), search, strings.Join(tagsFilter, ","),
 			fmt.Sprintf("recipe=%v,nonbill=%v", recipeInputScope(ctx), includeNonBillable(ctx)),
 		)
 		total, err = sharedcache.GetOrSet(ctx, s.cache, countKey, outletScopeCacheTTL, func(ctx context.Context) (int, error) {
