@@ -104,10 +104,13 @@ type grnDTO struct {
 	PurchaseOrderID uuid.UUID    `json:"purchase_order_id"`
 	SupplierID      *uuid.UUID   `json:"supplier_id"`
 	WarehouseID     *uuid.UUID   `json:"warehouse_id"`
-	Status          string       `json:"status"`
-	Notes           string       `json:"notes"`
-	ReceivedDate    time.Time    `json:"received_date"`
-	Lines           []grnLineDTO `json:"lines,omitempty"`
+	// WarehouseName is the receiving outlet/warehouse's human name — enriched by the API so
+	// list/detail views never have to render (or re-fetch) a raw warehouse UUID.
+	WarehouseName string       `json:"warehouse_name,omitempty"`
+	Status        string       `json:"status"`
+	Notes         string       `json:"notes"`
+	ReceivedDate  time.Time    `json:"received_date"`
+	Lines         []grnLineDTO `json:"lines,omitempty"`
 }
 
 func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
@@ -128,11 +131,37 @@ func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 	return dto
 }
 
-// grnToDTOWithItems is grnToDTO plus item name/SKU/barcode enrichment for line-bearing
-// responses — the receipt drawer must show human identifiers, never raw item UUIDs. The
-// posted-event path already fetched names/SKUs but the API DTO never carried them.
+// warehouseNamesByID batch-resolves warehouse names for a set of ids — the same "enrich once,
+// per page/response, never N+1" shape as the item name/SKU lookups elsewhere in this file.
+// Missing/zero ids are simply absent from the returned map.
+func (h *InventoryExtrasHandler) warehouseNamesByID(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID) map[uuid.UUID]string {
+	names := make(map[uuid.UUID]string, len(ids))
+	if len(ids) == 0 {
+		return names
+	}
+	warehouses, err := h.orm.Warehouse.Query().
+		Where(entwarehouse.TenantID(tenantID), entwarehouse.IDIn(ids...)).
+		Select(entwarehouse.FieldID, entwarehouse.FieldName).
+		All(ctx)
+	if err != nil {
+		return names
+	}
+	for _, wh := range warehouses {
+		names[wh.ID] = wh.Name
+	}
+	return names
+}
+
+// grnToDTOWithItems is grnToDTO plus item name/SKU/barcode + warehouse name enrichment for
+// line-bearing responses — the receipt drawer must show human identifiers, never raw UUIDs. The
+// posted-event path already fetched item names/SKUs but the API DTO never carried them.
 func (h *InventoryExtrasHandler) grnToDTOWithItems(ctx context.Context, tenantID uuid.UUID, g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 	dto := grnToDTO(g, lines)
+	if g.WarehouseID != nil {
+		if names := h.warehouseNamesByID(ctx, tenantID, []uuid.UUID{*g.WarehouseID}); names[*g.WarehouseID] != "" {
+			dto.WarehouseName = names[*g.WarehouseID]
+		}
+	}
 	if len(lines) == 0 {
 		return dto
 	}
@@ -265,9 +294,19 @@ func (h *InventoryExtrasHandler) ListGoodsReceipts(w http.ResponseWriter, r *htt
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list goods receipts")
 		return
 	}
+	warehouseIDs := make([]uuid.UUID, 0, len(rows))
+	for _, g := range rows {
+		if g.WarehouseID != nil {
+			warehouseIDs = append(warehouseIDs, *g.WarehouseID)
+		}
+	}
+	warehouseNames := h.warehouseNamesByID(r.Context(), tenantID, warehouseIDs)
 	out := make([]grnDTO, len(rows))
 	for i, g := range rows {
 		out[i] = grnToDTO(g, nil)
+		if g.WarehouseID != nil {
+			out[i].WarehouseName = warehouseNames[*g.WarehouseID]
+		}
 	}
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))
 }
