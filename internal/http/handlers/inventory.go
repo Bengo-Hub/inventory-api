@@ -319,14 +319,19 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/reports/deadstock.pdf", h.StockDeadstockReportPDF)
 		inv.Get("/reports/fast-moving", h.StockFastMovingReport)
 
-		// Recipes / BOM — hospitality & quick_service (menu recipes) plus warehouse
-		// & manufacturing (bills of materials). HQ/platform users bypass gating.
+		// Recipes / BOM — hospitality & quick_service (menu recipes), warehouse &
+		// manufacturing (bills of materials), plus retail (fractional/refill sale
+		// pricing e.g. selling a bottled item by the ml, and in-house production
+		// e.g. a shop that bakes its own cupcakes). HQ/platform users bypass gating.
+		// Retail's actual entitlement to USE recipes/production is enforced by the
+		// "manufacturing" subscription feature in inventory-ui (frontend-only, matches
+		// this route's existing lack of a feature-code check for every other use_case).
 		inv.Group(func(rec chi.Router) {
 			// Populate claims first (GET routes skip the group-level auth), then gate by
 			// the active outlet's use_case — so the read list is gated for non-HQ users too,
 			// not just the mutations.
 			rec.Use(h.requireAuthForFeatureGet())
-			rec.Use(invmiddleware.RequireOutletUseCase(h.orm, h.log, "hospitality", "quick_service", "warehouse", "manufacturing"))
+			rec.Use(invmiddleware.RequireOutletUseCase(h.orm, h.log, "hospitality", "quick_service", "warehouse", "manufacturing", "retail"))
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
 			rec.Get("/recipes/unit-audit", h.AuditRecipeUnits)

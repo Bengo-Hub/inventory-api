@@ -299,7 +299,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	// bulk-import InitialStock sheet, which posts opening quantities through here too.
 	if itm.UnitID != nil {
 		if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
-			if vErr := units.ValidateQuantityForUnit(qtyAfter, u.Type, u.Name); vErr != nil {
+			if vErr := units.ValidateQuantityForUnit(qtyAfter, u.Type, u.Name, itm.UnitContentQty != nil); vErr != nil {
 				err = fmt.Errorf("stock: %w (sku=%s)", vErr, req.SKU)
 				return nil, err
 			}

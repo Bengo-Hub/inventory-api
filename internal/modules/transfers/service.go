@@ -85,8 +85,10 @@ func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantI
 		return nil, fmt.Errorf("transfers: load items for validation: %w", err)
 	}
 	unitIDByItem := make(map[uuid.UUID]*uuid.UUID, len(lineItems))
+	contentBridgeByItem := make(map[uuid.UUID]bool, len(lineItems))
 	for _, it := range lineItems {
 		unitIDByItem[it.ID] = it.UnitID
+		contentBridgeByItem[it.ID] = it.UnitContentQty != nil
 	}
 	unitCache := make(map[uuid.UUID]*ent.Unit)
 	for _, ln := range items {
@@ -103,7 +105,7 @@ func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantI
 			}
 			unitCache[*unitID] = u
 		}
-		if vErr := units.ValidateQuantityForUnit(ln.Quantity, u.Type, u.Name); vErr != nil {
+		if vErr := units.ValidateQuantityForUnit(ln.Quantity, u.Type, u.Name, contentBridgeByItem[ln.ItemID]); vErr != nil {
 			return nil, fmt.Errorf("transfers: %w", vErr)
 		}
 	}

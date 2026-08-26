@@ -2334,7 +2334,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 	// sheet's initial_quantity column, both of which flow through here.
 	if dto.UnitID != nil && dto.InitialQuantity != 0 {
 		if u, uErr := s.client.Unit.Get(ctx, *dto.UnitID); uErr == nil {
-			if vErr := units.ValidateQuantityForUnit(dto.InitialQuantity, u.Type, u.Name); vErr != nil {
+			if vErr := units.ValidateQuantityForUnit(dto.InitialQuantity, u.Type, u.Name, dto.UnitContentQty != nil); vErr != nil {
 				return nil, fmt.Errorf("items: %w", vErr)
 			}
 		}

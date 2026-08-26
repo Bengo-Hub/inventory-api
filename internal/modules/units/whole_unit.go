@@ -20,8 +20,14 @@ func IsWholeUnitOnly(unitType string) bool {
 // ValidateQuantityForUnit rejects a non-integer quantity when unitType is whole-unit-only
 // (see IsWholeUnitOnly) — e.g. "4427.67 phones" or "0.33 boxes" is never a valid stock
 // quantity. unitName is used only to name the unit in the error message.
-func ValidateQuantityForUnit(qty float64, unitType, unitName string) error {
-	if !IsWholeUnitOnly(unitType) {
+//
+// hasContentBridge is true when the item has Item.unit_content_qty set (e.g. a 50ml bottle
+// stocked in pieces/bottles but also decanted/refilled by the ml via a linked recipe or "tot")
+// — for that item the count-based unit no longer implies "always whole": once a bottle is
+// partially consumed, 1.41 bottles is exactly how much remains, not a data error. The
+// whole-unit rule is skipped entirely for these items, regardless of unitType.
+func ValidateQuantityForUnit(qty float64, unitType, unitName string, hasContentBridge bool) error {
+	if hasContentBridge || !IsWholeUnitOnly(unitType) {
 		return nil
 	}
 	if qty != math.Trunc(qty) {
