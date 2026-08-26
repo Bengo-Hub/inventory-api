@@ -277,56 +277,92 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		}
 	}
 
-	qtyBefore := float64(bal.OnHand)
-	qtyChange := float64(req.Adjustment)
+	// Read-compute-write with an optimistic-concurrency guard, retried on conflict: a plain
+	// read-then-write here (read bal, compute newOnHand in Go, write it back) would race a
+	// concurrent adjustment/consumption of the SAME balance row — both read the same stale
+	// on_hand, both compute off it, and the second write silently clobbers the first's change
+	// instead of compounding it, corrupting both the balance AND this function's own
+	// quantity_before/quantity_change/quantity_after audit trail (which must reflect what was
+	// REALLY there at write time). The `.Where(OnHand(...), Available(...))` guard makes the
+	// final write affect 0 rows (ent surfaces this as NotFound) if either value moved between
+	// our read and write; on that signal we re-read the fresh row and recompute from scratch
+	// rather than proceed on data we know is stale.
+	var qtyBefore, qtyChange, qtyAfter, newOnHand, newAvailable float64
+	var updatedBal *ent.InventoryBalance
+	const maxAdjustRetries = 5
+	for attempt := 0; ; attempt++ {
+		qtyBefore = bal.OnHand
+		qtyChange = req.Adjustment
 
-	newOnHand := bal.OnHand + req.Adjustment
-	if newOnHand < 0 {
-		newOnHand = 0
-	}
-	newAvailable := bal.Available + req.Adjustment
-	if newAvailable < 0 {
-		newAvailable = 0
-	}
+		newOnHand = bal.OnHand + req.Adjustment
+		if newOnHand < 0 {
+			newOnHand = 0
+		}
+		newAvailable = bal.Available + req.Adjustment
+		if newAvailable < 0 {
+			newAvailable = 0
+		}
 
-	qtyAfter := float64(newOnHand)
+		qtyAfter = newOnHand
 
-	// Reject a result that leaves a discrete/count-based item (e.g. a phone stocked in PIECE)
-	// with a fractional balance — checked on the RESULT, not the raw delta, so a corrective
-	// adjustment that fixes an already-fractional balance back to a whole number (e.g. -0.67 to
-	// bring 4427.67 down to 4427) is allowed, while a delta that would newly introduce or worsen
-	// a fraction is rejected. Covers this endpoint's manual "Record Adjustment" callers AND the
-	// bulk-import InitialStock sheet, which posts opening quantities through here too.
-	if itm.UnitID != nil {
-		if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
-			if vErr := units.ValidateQuantityForUnit(qtyAfter, u.Type, u.Name, itm.UnitContentQty != nil); vErr != nil {
-				err = fmt.Errorf("stock: %w (sku=%s)", vErr, req.SKU)
-				return nil, err
+		// Reject a result that leaves a discrete/count-based item (e.g. a phone stocked in PIECE)
+		// with a fractional balance — checked on the RESULT, not the raw delta, so a corrective
+		// adjustment that fixes an already-fractional balance back to a whole number (e.g. -0.67 to
+		// bring 4427.67 down to 4427) is allowed, while a delta that would newly introduce or worsen
+		// a fraction is rejected. Covers this endpoint's manual "Record Adjustment" callers AND the
+		// bulk-import InitialStock sheet, which posts opening quantities through here too.
+		if itm.UnitID != nil {
+			if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
+				if vErr := units.ValidateQuantityForUnit(qtyAfter, u.Type, u.Name, itm.UnitContentQty != nil); vErr != nil {
+					err = fmt.Errorf("stock: %w (sku=%s)", vErr, req.SKU)
+					return nil, err
+				}
 			}
 		}
-	}
 
-	balUpdate := tx.InventoryBalance.UpdateOne(bal).
-		SetOnHand(newOnHand).
-		SetAvailable(newAvailable)
-	// A positive result means the item is genuinely present here again — clear any prior
-	// "removed from this location" marker (set by a transfer shipping the last unit out)
-	// regardless of how the restock happened (manual correction, purchase, stock take, opening
-	// balance all route through here). Never SET the flag from this function on a decrement to
-	// zero — that's an organic stock-out/correction, which must keep showing for reordering.
-	if newOnHand > 0 && bal.RemovedFromLocation {
-		balUpdate = balUpdate.SetRemovedFromLocation(false)
-	}
-	// Record the unit of measure when the caller specifies one (defaults to the
-	// existing balance UoM / item base unit when omitted).
-	if req.UnitID != nil {
-		if u, uErr := tx.Unit.Get(ctx, *req.UnitID); uErr == nil && u.Name != "" {
-			balUpdate = balUpdate.SetUnitOfMeasure(u.Name)
+		balUpdate := tx.InventoryBalance.UpdateOne(bal).
+			SetOnHand(newOnHand).
+			SetAvailable(newAvailable).
+			Where(inventorybalance.OnHand(bal.OnHand), inventorybalance.Available(bal.Available))
+		// A positive result means the item is genuinely present here again — clear any prior
+		// "removed from this location" marker (set by a transfer shipping the last unit out)
+		// regardless of how the restock happened (manual correction, purchase, stock take, opening
+		// balance all route through here). Never SET the flag from this function on a decrement to
+		// zero — that's an organic stock-out/correction, which must keep showing for reordering.
+		if newOnHand > 0 && bal.RemovedFromLocation {
+			balUpdate = balUpdate.SetRemovedFromLocation(false)
 		}
-	}
-	updatedBal, err := balUpdate.Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("stock: update balance for sku=%s: %w", req.SKU, err)
+		// Record the unit of measure when the caller specifies one (defaults to the
+		// existing balance UoM / item base unit when omitted).
+		if req.UnitID != nil {
+			if u, uErr := tx.Unit.Get(ctx, *req.UnitID); uErr == nil && u.Name != "" {
+				balUpdate = balUpdate.SetUnitOfMeasure(u.Name)
+			}
+		}
+
+		// Reuse the function-scoped err (not a fresh local) — the deferred rollback above checks
+		// this exact variable, so every error path here must assign to it, not a shadow.
+		updatedBal, err = balUpdate.Save(ctx)
+		if err == nil {
+			break
+		}
+		if !ent.IsNotFound(err) {
+			return nil, fmt.Errorf("stock: update balance for sku=%s: %w", req.SKU, err)
+		}
+		if attempt >= maxAdjustRetries {
+			err = fmt.Errorf("stock: update balance for sku=%s: concurrent adjustment conflict, exhausted %d retries", req.SKU, maxAdjustRetries)
+			return nil, err
+		}
+		bal, err = tx.InventoryBalance.Query().
+			Where(
+				inventorybalance.TenantID(tenantID),
+				inventorybalance.ItemID(itm.ID),
+				inventorybalance.WarehouseID(whID),
+			).
+			Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("stock: re-read balance for sku=%s: %w", req.SKU, err)
+		}
 	}
 
 	// Validate reason for the enum
@@ -1733,22 +1769,54 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		switch {
 		case berr == nil:
 			deduct := cl.Quantity // keep fractional — do not truncate sub-unit consumption
-			if deduct > bal.OnHand {
+
+			// Atomic SQL-level decrement (SET on_hand = on_hand + $delta), not a read-then-
+			// computed-write — two concurrent consumptions against the SAME balance row (e.g.
+			// two POS terminals ringing up refills of the same fractional-content-bridge
+			// bottle, or two tots pulled off the same bottle, at once) previously raced: both
+			// read the same starting on_hand, both computed their new value off that one
+			// stale snapshot, and the second UPDATE silently clobbered the first's decrement
+			// instead of compounding it (a lost update — remaining stock read as higher than
+			// it really was, and a real oversell could go completely undetected). AddOnHand/
+			// AddAvailable let Postgres apply the delta at the row itself; Postgres's own
+			// per-row UPDATE lock (held for the rest of THIS transaction) means a concurrent
+			// consumer of the same row blocks until this one fully commits — including the
+			// shortfall clamp below — so the two always correctly compound in some real order,
+			// never lose each other's decrement.
+			// Reuse the function-scoped err (not a fresh local) — this function's own deferred
+			// rollback (below, at tx creation) checks this exact variable, so every error path
+			// here must assign to it rather than shadow it with a fresh :=.
+			var updatedBal *ent.InventoryBalance
+			updatedBal, err = tx.InventoryBalance.UpdateOneID(bal.ID).
+				AddOnHand(-deduct).
+				AddAvailable(-deduct).
+				Save(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.SKU, err)
+			}
+			if updatedBal.OnHand < 0 {
 				// Oversell signal: theoretical need exceeded on-hand; balances floor at
 				// zero but the gap is recorded for actual-vs-theoretical reconciliation.
-				entry.ShortfallQty = round4(deduct - bal.OnHand)
+				// The clamp is itself a second atomic update scoped to this same locked row —
+				// safe to apply unconditionally here since nothing else can be racing it
+				// mid-transaction.
+				entry.ShortfallQty = round4(-updatedBal.OnHand)
 				s.log.Warn("consumption exceeds on-hand — floored at zero",
 					zap.String("sku", cl.SKU),
 					zap.Float64("needed", deduct),
-					zap.Float64("on_hand", bal.OnHand),
+					zap.Float64("resulting_on_hand", updatedBal.OnHand),
 				)
 			}
-			updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
-				SetOnHand(max(0, bal.OnHand-deduct)).
-				SetAvailable(max(0, bal.Available-deduct)).
-				Save(ctx)
-			if updateErr != nil {
-				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.SKU, updateErr)
+			if updatedBal.OnHand < 0 || updatedBal.Available < 0 {
+				var clampedBal *ent.InventoryBalance
+				clampedBal, err = tx.InventoryBalance.UpdateOneID(bal.ID).
+					SetOnHand(max(0, updatedBal.OnHand)).
+					SetAvailable(max(0, updatedBal.Available)).
+					Save(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("stock: clamp balance for sku=%s: %w", cl.SKU, err)
+				}
+				updatedBal = clampedBal
 			}
 
 			// Check for low stock after consumption
