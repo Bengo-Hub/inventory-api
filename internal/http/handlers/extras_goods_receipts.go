@@ -110,14 +110,18 @@ type grnDTO struct {
 	Status        string       `json:"status"`
 	Notes         string       `json:"notes"`
 	ReceivedDate  time.Time    `json:"received_date"`
-	Lines         []grnLineDTO `json:"lines,omitempty"`
+	ReceivedBy    *uuid.UUID   `json:"received_by,omitempty"`
+	// ReceivedByName is ReceivedBy resolved to a display name — who actually received this
+	// stock, surfaced so admins/managers can audit purchases the same way as adjustments.
+	ReceivedByName string       `json:"received_by_name,omitempty"`
+	Lines          []grnLineDTO `json:"lines,omitempty"`
 }
 
 func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 	dto := grnDTO{
 		ID: g.ID, GrnNumber: g.GrnNumber, PurchaseOrderID: g.PurchaseOrderID,
 		SupplierID: g.SupplierID, WarehouseID: g.WarehouseID, Status: string(g.Status),
-		Notes: g.Notes, ReceivedDate: g.ReceivedDate,
+		Notes: g.Notes, ReceivedDate: g.ReceivedDate, ReceivedBy: g.ReceivedBy,
 	}
 	for _, l := range lines {
 		dto.Lines = append(dto.Lines, grnLineDTO{
@@ -295,17 +299,25 @@ func (h *InventoryExtrasHandler) ListGoodsReceipts(w http.ResponseWriter, r *htt
 		return
 	}
 	warehouseIDs := make([]uuid.UUID, 0, len(rows))
+	receivedByIDs := make([]uuid.UUID, 0, len(rows))
 	for _, g := range rows {
 		if g.WarehouseID != nil {
 			warehouseIDs = append(warehouseIDs, *g.WarehouseID)
 		}
+		if g.ReceivedBy != nil {
+			receivedByIDs = append(receivedByIDs, *g.ReceivedBy)
+		}
 	}
 	warehouseNames := h.warehouseNamesByID(r.Context(), tenantID, warehouseIDs)
+	receivedByNames := actorNamesByID(r.Context(), h.orm, tenantID, receivedByIDs)
 	out := make([]grnDTO, len(rows))
 	for i, g := range rows {
 		out[i] = grnToDTO(g, nil)
 		if g.WarehouseID != nil {
 			out[i].WarehouseName = warehouseNames[*g.WarehouseID]
+		}
+		if g.ReceivedBy != nil {
+			out[i].ReceivedByName = receivedByNames[*g.ReceivedBy]
 		}
 	}
 	writeJSON(w, http.StatusOK, pagination.NewResponse(out, total, p))

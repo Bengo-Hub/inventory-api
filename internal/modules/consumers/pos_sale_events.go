@@ -132,6 +132,15 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 			OutletID    string        `json:"outlet_id"`
 			WarehouseID string        `json:"warehouse_id"`
 			Items       []posSaleItem `json:"items"`
+			// OrderNumber/CustomerName/CustomerPhone/ServedByUserID/ServedByName are already
+			// published by pos-api's publishSaleFinalized (payments/service.go) — denormalized
+			// onto each ConsumptionLine so the stock-history ledger can show the real order
+			// number, buyer and cashier instead of a truncated order UUID / the sold SKU.
+			OrderNumber    string `json:"order_number"`
+			CustomerName   string `json:"customer_name"`
+			CustomerPhone  string `json:"customer_phone"`
+			ServedByUserID string `json:"served_by_user_id"`
+			ServedByName   string `json:"served_by_name"`
 		} `json:"payload"`
 		EventType string `json:"event_type"`
 	}
@@ -194,7 +203,21 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 		consumable = append(consumable, it)
 	}
 
-	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, consumable); err != nil {
+	var servedByUserID *uuid.UUID
+	if envelope.Payload.ServedByUserID != "" {
+		if id, pErr := uuid.Parse(envelope.Payload.ServedByUserID); pErr == nil {
+			servedByUserID = &id
+		}
+	}
+	saleInfo := saleFinalizedInfo{
+		OrderNumber:    envelope.Payload.OrderNumber,
+		CustomerName:   envelope.Payload.CustomerName,
+		CustomerPhone:  envelope.Payload.CustomerPhone,
+		ServedByUserID: servedByUserID,
+		ServedByName:   envelope.Payload.ServedByName,
+	}
+
+	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, consumable, saleInfo); err != nil {
 		c.log.Error("pos sale events: handle sale finalized failed",
 			zap.Error(err),
 			zap.String("order_id", orderID.String()),
@@ -212,7 +235,18 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 // stock.Service.RecordConsumption (the ONE shared deduction path also used by the S2S
 // consumption/reservation endpoints) — the consumer only validates SKUs (so one unknown
 // line never NAK-loops the event) and flips sold serials.
-func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantID, orderID, warehouseID, outletID uuid.UUID, saleItems []posSaleItem) error {
+// saleFinalizedInfo carries the triggering sale's own identity (order number, buyer, cashier)
+// through to stock.ConsumptionRequest — denormalized onto each ConsumptionLine, see
+// stock.ItemStockHistory's use of these fields.
+type saleFinalizedInfo struct {
+	OrderNumber    string
+	CustomerName   string
+	CustomerPhone  string
+	ServedByUserID *uuid.UUID
+	ServedByName   string
+}
+
+func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantID, orderID, warehouseID, outletID uuid.UUID, saleItems []posSaleItem, saleInfo saleFinalizedInfo) error {
 	var consumptionItems []stock.ConsumptionItem
 
 	for _, si := range saleItems {
@@ -274,6 +308,11 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		Items:          consumptionItems,
 		Reason:         "pos_sale",
 		IdempotencyKey: fmt.Sprintf("pos-sale-%s", orderID.String()),
+		OrderNumber:    saleInfo.OrderNumber,
+		CustomerName:   saleInfo.CustomerName,
+		CustomerPhone:  saleInfo.CustomerPhone,
+		ServedByUserID: saleInfo.ServedByUserID,
+		ServedByName:   saleInfo.ServedByName,
 	})
 	if err != nil {
 		return fmt.Errorf("record consumption for order %s: %w", orderID, err)

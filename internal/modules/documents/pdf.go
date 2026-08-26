@@ -122,6 +122,24 @@ func RenderStockAdjustmentCSV(d StockAdjustmentDoc) ([]byte, error) {
 	return render.RenderStockAdjustmentCSV(&d)
 }
 
+// RenderStockHistoryPDF renders a branded A4 stock-history export (the item ledger under
+// whatever warehouse/date/type filter the caller applied) and returns PDF bytes.
+func RenderStockHistoryPDF(d StockHistoryDoc) ([]byte, error) {
+	logo, logoType := fetchLogoBytes(d.Branding.LogoURL)
+	return render.RenderStockHistory(&d, logo, logoType)
+}
+
+// RenderStockHistoryXLSX renders the same stock-history export as a styled, print-ready Excel
+// workbook.
+func RenderStockHistoryXLSX(d StockHistoryDoc) ([]byte, error) {
+	return render.RenderStockHistoryXLSX(&d)
+}
+
+// RenderStockHistoryCSV renders the stock-history export's data as plain CSV.
+func RenderStockHistoryCSV(d StockHistoryDoc) ([]byte, error) {
+	return render.RenderStockHistoryCSV(&d)
+}
+
 // RenderStockCountPDF renders a branded A4 stock-take document — a blank count sheet or a
 // post-count variance report, per d.Mode — and returns PDF bytes.
 func RenderStockCountPDF(d StockCountDoc) ([]byte, error) {

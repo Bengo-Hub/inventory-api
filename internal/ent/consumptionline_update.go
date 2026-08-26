@@ -71,6 +71,106 @@ func (_u *ConsumptionLineUpdate) SetNillableOrderID(v *uuid.UUID) *ConsumptionLi
 	return _u
 }
 
+// SetOrderNumber sets the "order_number" field.
+func (_u *ConsumptionLineUpdate) SetOrderNumber(v string) *ConsumptionLineUpdate {
+	_u.mutation.SetOrderNumber(v)
+	return _u
+}
+
+// SetNillableOrderNumber sets the "order_number" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableOrderNumber(v *string) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetOrderNumber(*v)
+	}
+	return _u
+}
+
+// ClearOrderNumber clears the value of the "order_number" field.
+func (_u *ConsumptionLineUpdate) ClearOrderNumber() *ConsumptionLineUpdate {
+	_u.mutation.ClearOrderNumber()
+	return _u
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (_u *ConsumptionLineUpdate) SetCustomerName(v string) *ConsumptionLineUpdate {
+	_u.mutation.SetCustomerName(v)
+	return _u
+}
+
+// SetNillableCustomerName sets the "customer_name" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableCustomerName(v *string) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetCustomerName(*v)
+	}
+	return _u
+}
+
+// ClearCustomerName clears the value of the "customer_name" field.
+func (_u *ConsumptionLineUpdate) ClearCustomerName() *ConsumptionLineUpdate {
+	_u.mutation.ClearCustomerName()
+	return _u
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (_u *ConsumptionLineUpdate) SetCustomerPhone(v string) *ConsumptionLineUpdate {
+	_u.mutation.SetCustomerPhone(v)
+	return _u
+}
+
+// SetNillableCustomerPhone sets the "customer_phone" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableCustomerPhone(v *string) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetCustomerPhone(*v)
+	}
+	return _u
+}
+
+// ClearCustomerPhone clears the value of the "customer_phone" field.
+func (_u *ConsumptionLineUpdate) ClearCustomerPhone() *ConsumptionLineUpdate {
+	_u.mutation.ClearCustomerPhone()
+	return _u
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (_u *ConsumptionLineUpdate) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpdate {
+	_u.mutation.SetServedByUserID(v)
+	return _u
+}
+
+// SetNillableServedByUserID sets the "served_by_user_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableServedByUserID(v *uuid.UUID) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetServedByUserID(*v)
+	}
+	return _u
+}
+
+// ClearServedByUserID clears the value of the "served_by_user_id" field.
+func (_u *ConsumptionLineUpdate) ClearServedByUserID() *ConsumptionLineUpdate {
+	_u.mutation.ClearServedByUserID()
+	return _u
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (_u *ConsumptionLineUpdate) SetServedByName(v string) *ConsumptionLineUpdate {
+	_u.mutation.SetServedByName(v)
+	return _u
+}
+
+// SetNillableServedByName sets the "served_by_name" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableServedByName(v *string) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetServedByName(*v)
+	}
+	return _u
+}
+
+// ClearServedByName clears the value of the "served_by_name" field.
+func (_u *ConsumptionLineUpdate) ClearServedByName() *ConsumptionLineUpdate {
+	_u.mutation.ClearServedByName()
+	return _u
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_u *ConsumptionLineUpdate) SetWarehouseID(v uuid.UUID) *ConsumptionLineUpdate {
 	_u.mutation.SetWarehouseID(v)
@@ -428,6 +528,36 @@ func (_u *ConsumptionLineUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.OrderID(); ok {
 		_spec.SetField(consumptionline.FieldOrderID, field.TypeUUID, value)
 	}
+	if value, ok := _u.mutation.OrderNumber(); ok {
+		_spec.SetField(consumptionline.FieldOrderNumber, field.TypeString, value)
+	}
+	if _u.mutation.OrderNumberCleared() {
+		_spec.ClearField(consumptionline.FieldOrderNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomerName(); ok {
+		_spec.SetField(consumptionline.FieldCustomerName, field.TypeString, value)
+	}
+	if _u.mutation.CustomerNameCleared() {
+		_spec.ClearField(consumptionline.FieldCustomerName, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomerPhone(); ok {
+		_spec.SetField(consumptionline.FieldCustomerPhone, field.TypeString, value)
+	}
+	if _u.mutation.CustomerPhoneCleared() {
+		_spec.ClearField(consumptionline.FieldCustomerPhone, field.TypeString)
+	}
+	if value, ok := _u.mutation.ServedByUserID(); ok {
+		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)
+	}
+	if _u.mutation.ServedByUserIDCleared() {
+		_spec.ClearField(consumptionline.FieldServedByUserID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ServedByName(); ok {
+		_spec.SetField(consumptionline.FieldServedByName, field.TypeString, value)
+	}
+	if _u.mutation.ServedByNameCleared() {
+		_spec.ClearField(consumptionline.FieldServedByName, field.TypeString)
+	}
 	if value, ok := _u.mutation.WarehouseID(); ok {
 		_spec.SetField(consumptionline.FieldWarehouseID, field.TypeUUID, value)
 	}
@@ -571,6 +701,106 @@ func (_u *ConsumptionLineUpdateOne) SetNillableOrderID(v *uuid.UUID) *Consumptio
 	if v != nil {
 		_u.SetOrderID(*v)
 	}
+	return _u
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (_u *ConsumptionLineUpdateOne) SetOrderNumber(v string) *ConsumptionLineUpdateOne {
+	_u.mutation.SetOrderNumber(v)
+	return _u
+}
+
+// SetNillableOrderNumber sets the "order_number" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableOrderNumber(v *string) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetOrderNumber(*v)
+	}
+	return _u
+}
+
+// ClearOrderNumber clears the value of the "order_number" field.
+func (_u *ConsumptionLineUpdateOne) ClearOrderNumber() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearOrderNumber()
+	return _u
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (_u *ConsumptionLineUpdateOne) SetCustomerName(v string) *ConsumptionLineUpdateOne {
+	_u.mutation.SetCustomerName(v)
+	return _u
+}
+
+// SetNillableCustomerName sets the "customer_name" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableCustomerName(v *string) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetCustomerName(*v)
+	}
+	return _u
+}
+
+// ClearCustomerName clears the value of the "customer_name" field.
+func (_u *ConsumptionLineUpdateOne) ClearCustomerName() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearCustomerName()
+	return _u
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (_u *ConsumptionLineUpdateOne) SetCustomerPhone(v string) *ConsumptionLineUpdateOne {
+	_u.mutation.SetCustomerPhone(v)
+	return _u
+}
+
+// SetNillableCustomerPhone sets the "customer_phone" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableCustomerPhone(v *string) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetCustomerPhone(*v)
+	}
+	return _u
+}
+
+// ClearCustomerPhone clears the value of the "customer_phone" field.
+func (_u *ConsumptionLineUpdateOne) ClearCustomerPhone() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearCustomerPhone()
+	return _u
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (_u *ConsumptionLineUpdateOne) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpdateOne {
+	_u.mutation.SetServedByUserID(v)
+	return _u
+}
+
+// SetNillableServedByUserID sets the "served_by_user_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableServedByUserID(v *uuid.UUID) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetServedByUserID(*v)
+	}
+	return _u
+}
+
+// ClearServedByUserID clears the value of the "served_by_user_id" field.
+func (_u *ConsumptionLineUpdateOne) ClearServedByUserID() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearServedByUserID()
+	return _u
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (_u *ConsumptionLineUpdateOne) SetServedByName(v string) *ConsumptionLineUpdateOne {
+	_u.mutation.SetServedByName(v)
+	return _u
+}
+
+// SetNillableServedByName sets the "served_by_name" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableServedByName(v *string) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetServedByName(*v)
+	}
+	return _u
+}
+
+// ClearServedByName clears the value of the "served_by_name" field.
+func (_u *ConsumptionLineUpdateOne) ClearServedByName() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearServedByName()
 	return _u
 }
 
@@ -960,6 +1190,36 @@ func (_u *ConsumptionLineUpdateOne) sqlSave(ctx context.Context) (_node *Consump
 	}
 	if value, ok := _u.mutation.OrderID(); ok {
 		_spec.SetField(consumptionline.FieldOrderID, field.TypeUUID, value)
+	}
+	if value, ok := _u.mutation.OrderNumber(); ok {
+		_spec.SetField(consumptionline.FieldOrderNumber, field.TypeString, value)
+	}
+	if _u.mutation.OrderNumberCleared() {
+		_spec.ClearField(consumptionline.FieldOrderNumber, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomerName(); ok {
+		_spec.SetField(consumptionline.FieldCustomerName, field.TypeString, value)
+	}
+	if _u.mutation.CustomerNameCleared() {
+		_spec.ClearField(consumptionline.FieldCustomerName, field.TypeString)
+	}
+	if value, ok := _u.mutation.CustomerPhone(); ok {
+		_spec.SetField(consumptionline.FieldCustomerPhone, field.TypeString, value)
+	}
+	if _u.mutation.CustomerPhoneCleared() {
+		_spec.ClearField(consumptionline.FieldCustomerPhone, field.TypeString)
+	}
+	if value, ok := _u.mutation.ServedByUserID(); ok {
+		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)
+	}
+	if _u.mutation.ServedByUserIDCleared() {
+		_spec.ClearField(consumptionline.FieldServedByUserID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.ServedByName(); ok {
+		_spec.SetField(consumptionline.FieldServedByName, field.TypeString, value)
+	}
+	if _u.mutation.ServedByNameCleared() {
+		_spec.ClearField(consumptionline.FieldServedByName, field.TypeString)
 	}
 	if value, ok := _u.mutation.WarehouseID(); ok {
 		_spec.SetField(consumptionline.FieldWarehouseID, field.TypeUUID, value)

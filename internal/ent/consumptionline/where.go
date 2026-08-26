@@ -70,6 +70,31 @@ func OrderID(v uuid.UUID) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldOrderID, v))
 }
 
+// OrderNumber applies equality check predicate on the "order_number" field. It's identical to OrderNumberEQ.
+func OrderNumber(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldOrderNumber, v))
+}
+
+// CustomerName applies equality check predicate on the "customer_name" field. It's identical to CustomerNameEQ.
+func CustomerName(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCustomerName, v))
+}
+
+// CustomerPhone applies equality check predicate on the "customer_phone" field. It's identical to CustomerPhoneEQ.
+func CustomerPhone(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCustomerPhone, v))
+}
+
+// ServedByUserID applies equality check predicate on the "served_by_user_id" field. It's identical to ServedByUserIDEQ.
+func ServedByUserID(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldServedByUserID, v))
+}
+
+// ServedByName applies equality check predicate on the "served_by_name" field. It's identical to ServedByNameEQ.
+func ServedByName(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldServedByName, v))
+}
+
 // WarehouseID applies equality check predicate on the "warehouse_id" field. It's identical to WarehouseIDEQ.
 func WarehouseID(v uuid.UUID) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldWarehouseID, v))
@@ -278,6 +303,356 @@ func OrderIDLT(v uuid.UUID) predicate.ConsumptionLine {
 // OrderIDLTE applies the LTE predicate on the "order_id" field.
 func OrderIDLTE(v uuid.UUID) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldLTE(FieldOrderID, v))
+}
+
+// OrderNumberEQ applies the EQ predicate on the "order_number" field.
+func OrderNumberEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldOrderNumber, v))
+}
+
+// OrderNumberNEQ applies the NEQ predicate on the "order_number" field.
+func OrderNumberNEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldOrderNumber, v))
+}
+
+// OrderNumberIn applies the In predicate on the "order_number" field.
+func OrderNumberIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldOrderNumber, vs...))
+}
+
+// OrderNumberNotIn applies the NotIn predicate on the "order_number" field.
+func OrderNumberNotIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldOrderNumber, vs...))
+}
+
+// OrderNumberGT applies the GT predicate on the "order_number" field.
+func OrderNumberGT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldOrderNumber, v))
+}
+
+// OrderNumberGTE applies the GTE predicate on the "order_number" field.
+func OrderNumberGTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldOrderNumber, v))
+}
+
+// OrderNumberLT applies the LT predicate on the "order_number" field.
+func OrderNumberLT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldOrderNumber, v))
+}
+
+// OrderNumberLTE applies the LTE predicate on the "order_number" field.
+func OrderNumberLTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldOrderNumber, v))
+}
+
+// OrderNumberContains applies the Contains predicate on the "order_number" field.
+func OrderNumberContains(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContains(FieldOrderNumber, v))
+}
+
+// OrderNumberHasPrefix applies the HasPrefix predicate on the "order_number" field.
+func OrderNumberHasPrefix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasPrefix(FieldOrderNumber, v))
+}
+
+// OrderNumberHasSuffix applies the HasSuffix predicate on the "order_number" field.
+func OrderNumberHasSuffix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasSuffix(FieldOrderNumber, v))
+}
+
+// OrderNumberIsNil applies the IsNil predicate on the "order_number" field.
+func OrderNumberIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldOrderNumber))
+}
+
+// OrderNumberNotNil applies the NotNil predicate on the "order_number" field.
+func OrderNumberNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldOrderNumber))
+}
+
+// OrderNumberEqualFold applies the EqualFold predicate on the "order_number" field.
+func OrderNumberEqualFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEqualFold(FieldOrderNumber, v))
+}
+
+// OrderNumberContainsFold applies the ContainsFold predicate on the "order_number" field.
+func OrderNumberContainsFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldOrderNumber, v))
+}
+
+// CustomerNameEQ applies the EQ predicate on the "customer_name" field.
+func CustomerNameEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCustomerName, v))
+}
+
+// CustomerNameNEQ applies the NEQ predicate on the "customer_name" field.
+func CustomerNameNEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldCustomerName, v))
+}
+
+// CustomerNameIn applies the In predicate on the "customer_name" field.
+func CustomerNameIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldCustomerName, vs...))
+}
+
+// CustomerNameNotIn applies the NotIn predicate on the "customer_name" field.
+func CustomerNameNotIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldCustomerName, vs...))
+}
+
+// CustomerNameGT applies the GT predicate on the "customer_name" field.
+func CustomerNameGT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldCustomerName, v))
+}
+
+// CustomerNameGTE applies the GTE predicate on the "customer_name" field.
+func CustomerNameGTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldCustomerName, v))
+}
+
+// CustomerNameLT applies the LT predicate on the "customer_name" field.
+func CustomerNameLT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldCustomerName, v))
+}
+
+// CustomerNameLTE applies the LTE predicate on the "customer_name" field.
+func CustomerNameLTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldCustomerName, v))
+}
+
+// CustomerNameContains applies the Contains predicate on the "customer_name" field.
+func CustomerNameContains(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContains(FieldCustomerName, v))
+}
+
+// CustomerNameHasPrefix applies the HasPrefix predicate on the "customer_name" field.
+func CustomerNameHasPrefix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasPrefix(FieldCustomerName, v))
+}
+
+// CustomerNameHasSuffix applies the HasSuffix predicate on the "customer_name" field.
+func CustomerNameHasSuffix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasSuffix(FieldCustomerName, v))
+}
+
+// CustomerNameIsNil applies the IsNil predicate on the "customer_name" field.
+func CustomerNameIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldCustomerName))
+}
+
+// CustomerNameNotNil applies the NotNil predicate on the "customer_name" field.
+func CustomerNameNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldCustomerName))
+}
+
+// CustomerNameEqualFold applies the EqualFold predicate on the "customer_name" field.
+func CustomerNameEqualFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEqualFold(FieldCustomerName, v))
+}
+
+// CustomerNameContainsFold applies the ContainsFold predicate on the "customer_name" field.
+func CustomerNameContainsFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldCustomerName, v))
+}
+
+// CustomerPhoneEQ applies the EQ predicate on the "customer_phone" field.
+func CustomerPhoneEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneNEQ applies the NEQ predicate on the "customer_phone" field.
+func CustomerPhoneNEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneIn applies the In predicate on the "customer_phone" field.
+func CustomerPhoneIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldCustomerPhone, vs...))
+}
+
+// CustomerPhoneNotIn applies the NotIn predicate on the "customer_phone" field.
+func CustomerPhoneNotIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldCustomerPhone, vs...))
+}
+
+// CustomerPhoneGT applies the GT predicate on the "customer_phone" field.
+func CustomerPhoneGT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneGTE applies the GTE predicate on the "customer_phone" field.
+func CustomerPhoneGTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneLT applies the LT predicate on the "customer_phone" field.
+func CustomerPhoneLT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneLTE applies the LTE predicate on the "customer_phone" field.
+func CustomerPhoneLTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneContains applies the Contains predicate on the "customer_phone" field.
+func CustomerPhoneContains(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContains(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneHasPrefix applies the HasPrefix predicate on the "customer_phone" field.
+func CustomerPhoneHasPrefix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasPrefix(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneHasSuffix applies the HasSuffix predicate on the "customer_phone" field.
+func CustomerPhoneHasSuffix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasSuffix(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneIsNil applies the IsNil predicate on the "customer_phone" field.
+func CustomerPhoneIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldCustomerPhone))
+}
+
+// CustomerPhoneNotNil applies the NotNil predicate on the "customer_phone" field.
+func CustomerPhoneNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldCustomerPhone))
+}
+
+// CustomerPhoneEqualFold applies the EqualFold predicate on the "customer_phone" field.
+func CustomerPhoneEqualFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEqualFold(FieldCustomerPhone, v))
+}
+
+// CustomerPhoneContainsFold applies the ContainsFold predicate on the "customer_phone" field.
+func CustomerPhoneContainsFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldCustomerPhone, v))
+}
+
+// ServedByUserIDEQ applies the EQ predicate on the "served_by_user_id" field.
+func ServedByUserIDEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldServedByUserID, v))
+}
+
+// ServedByUserIDNEQ applies the NEQ predicate on the "served_by_user_id" field.
+func ServedByUserIDNEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldServedByUserID, v))
+}
+
+// ServedByUserIDIn applies the In predicate on the "served_by_user_id" field.
+func ServedByUserIDIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldServedByUserID, vs...))
+}
+
+// ServedByUserIDNotIn applies the NotIn predicate on the "served_by_user_id" field.
+func ServedByUserIDNotIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldServedByUserID, vs...))
+}
+
+// ServedByUserIDGT applies the GT predicate on the "served_by_user_id" field.
+func ServedByUserIDGT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldServedByUserID, v))
+}
+
+// ServedByUserIDGTE applies the GTE predicate on the "served_by_user_id" field.
+func ServedByUserIDGTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldServedByUserID, v))
+}
+
+// ServedByUserIDLT applies the LT predicate on the "served_by_user_id" field.
+func ServedByUserIDLT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldServedByUserID, v))
+}
+
+// ServedByUserIDLTE applies the LTE predicate on the "served_by_user_id" field.
+func ServedByUserIDLTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldServedByUserID, v))
+}
+
+// ServedByUserIDIsNil applies the IsNil predicate on the "served_by_user_id" field.
+func ServedByUserIDIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldServedByUserID))
+}
+
+// ServedByUserIDNotNil applies the NotNil predicate on the "served_by_user_id" field.
+func ServedByUserIDNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldServedByUserID))
+}
+
+// ServedByNameEQ applies the EQ predicate on the "served_by_name" field.
+func ServedByNameEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldServedByName, v))
+}
+
+// ServedByNameNEQ applies the NEQ predicate on the "served_by_name" field.
+func ServedByNameNEQ(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldServedByName, v))
+}
+
+// ServedByNameIn applies the In predicate on the "served_by_name" field.
+func ServedByNameIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldServedByName, vs...))
+}
+
+// ServedByNameNotIn applies the NotIn predicate on the "served_by_name" field.
+func ServedByNameNotIn(vs ...string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldServedByName, vs...))
+}
+
+// ServedByNameGT applies the GT predicate on the "served_by_name" field.
+func ServedByNameGT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldServedByName, v))
+}
+
+// ServedByNameGTE applies the GTE predicate on the "served_by_name" field.
+func ServedByNameGTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldServedByName, v))
+}
+
+// ServedByNameLT applies the LT predicate on the "served_by_name" field.
+func ServedByNameLT(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldServedByName, v))
+}
+
+// ServedByNameLTE applies the LTE predicate on the "served_by_name" field.
+func ServedByNameLTE(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldServedByName, v))
+}
+
+// ServedByNameContains applies the Contains predicate on the "served_by_name" field.
+func ServedByNameContains(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContains(FieldServedByName, v))
+}
+
+// ServedByNameHasPrefix applies the HasPrefix predicate on the "served_by_name" field.
+func ServedByNameHasPrefix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasPrefix(FieldServedByName, v))
+}
+
+// ServedByNameHasSuffix applies the HasSuffix predicate on the "served_by_name" field.
+func ServedByNameHasSuffix(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldHasSuffix(FieldServedByName, v))
+}
+
+// ServedByNameIsNil applies the IsNil predicate on the "served_by_name" field.
+func ServedByNameIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldServedByName))
+}
+
+// ServedByNameNotNil applies the NotNil predicate on the "served_by_name" field.
+func ServedByNameNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldServedByName))
+}
+
+// ServedByNameEqualFold applies the EqualFold predicate on the "served_by_name" field.
+func ServedByNameEqualFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEqualFold(FieldServedByName, v))
+}
+
+// ServedByNameContainsFold applies the ContainsFold predicate on the "served_by_name" field.
+func ServedByNameContainsFold(v string) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldServedByName, v))
 }
 
 // WarehouseIDEQ applies the EQ predicate on the "warehouse_id" field.

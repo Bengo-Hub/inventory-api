@@ -291,6 +291,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// sales + returns + transfers) with quantities-in/out summary cards. Same
 		// auth/feature gating as the adjustments listing it generalizes.
 		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/items/{sku}/stock-history", h.ItemStockHistory)
+		inv.With(h.requireAuthForFeatureGet(), authclient.RequireFeatureCode("stock_tracking")).Get("/items/{sku}/stock-history/document", h.GenerateStockHistoryDocument)
 
 		// Categories
 		inv.Get("/categories", h.ListCategories)

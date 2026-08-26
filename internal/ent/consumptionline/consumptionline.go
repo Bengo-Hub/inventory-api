@@ -20,6 +20,16 @@ const (
 	FieldConsumptionID = "consumption_id"
 	// FieldOrderID holds the string denoting the order_id field in the database.
 	FieldOrderID = "order_id"
+	// FieldOrderNumber holds the string denoting the order_number field in the database.
+	FieldOrderNumber = "order_number"
+	// FieldCustomerName holds the string denoting the customer_name field in the database.
+	FieldCustomerName = "customer_name"
+	// FieldCustomerPhone holds the string denoting the customer_phone field in the database.
+	FieldCustomerPhone = "customer_phone"
+	// FieldServedByUserID holds the string denoting the served_by_user_id field in the database.
+	FieldServedByUserID = "served_by_user_id"
+	// FieldServedByName holds the string denoting the served_by_name field in the database.
+	FieldServedByName = "served_by_name"
 	// FieldWarehouseID holds the string denoting the warehouse_id field in the database.
 	FieldWarehouseID = "warehouse_id"
 	// FieldOutletID holds the string denoting the outlet_id field in the database.
@@ -66,6 +76,11 @@ var Columns = []string{
 	FieldTenantID,
 	FieldConsumptionID,
 	FieldOrderID,
+	FieldOrderNumber,
+	FieldCustomerName,
+	FieldCustomerPhone,
+	FieldServedByUserID,
+	FieldServedByName,
 	FieldWarehouseID,
 	FieldOutletID,
 	FieldRecipeID,
@@ -132,6 +147,31 @@ func ByConsumptionID(opts ...sql.OrderTermOption) OrderOption {
 // ByOrderID orders the results by the order_id field.
 func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOrderID, opts...).ToFunc()
+}
+
+// ByOrderNumber orders the results by the order_number field.
+func ByOrderNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrderNumber, opts...).ToFunc()
+}
+
+// ByCustomerName orders the results by the customer_name field.
+func ByCustomerName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomerName, opts...).ToFunc()
+}
+
+// ByCustomerPhone orders the results by the customer_phone field.
+func ByCustomerPhone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCustomerPhone, opts...).ToFunc()
+}
+
+// ByServedByUserID orders the results by the served_by_user_id field.
+func ByServedByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldServedByUserID, opts...).ToFunc()
+}
+
+// ByServedByName orders the results by the served_by_name field.
+func ByServedByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldServedByName, opts...).ToFunc()
 }
 
 // ByWarehouseID orders the results by the warehouse_id field.

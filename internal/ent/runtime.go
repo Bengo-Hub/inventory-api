@@ -556,23 +556,23 @@ func init() {
 	consumptionlineFields := schema.ConsumptionLine{}.Fields()
 	_ = consumptionlineFields
 	// consumptionlineDescUnitCost is the schema descriptor for unit_cost field.
-	consumptionlineDescUnitCost := consumptionlineFields[13].Descriptor()
+	consumptionlineDescUnitCost := consumptionlineFields[18].Descriptor()
 	// consumptionline.DefaultUnitCost holds the default value on creation for the unit_cost field.
 	consumptionline.DefaultUnitCost = consumptionlineDescUnitCost.Default.(float64)
 	// consumptionlineDescTotalCost is the schema descriptor for total_cost field.
-	consumptionlineDescTotalCost := consumptionlineFields[14].Descriptor()
+	consumptionlineDescTotalCost := consumptionlineFields[19].Descriptor()
 	// consumptionline.DefaultTotalCost holds the default value on creation for the total_cost field.
 	consumptionline.DefaultTotalCost = consumptionlineDescTotalCost.Default.(float64)
 	// consumptionlineDescTheoretical is the schema descriptor for theoretical field.
-	consumptionlineDescTheoretical := consumptionlineFields[15].Descriptor()
+	consumptionlineDescTheoretical := consumptionlineFields[20].Descriptor()
 	// consumptionline.DefaultTheoretical holds the default value on creation for the theoretical field.
 	consumptionline.DefaultTheoretical = consumptionlineDescTheoretical.Default.(bool)
 	// consumptionlineDescReason is the schema descriptor for reason field.
-	consumptionlineDescReason := consumptionlineFields[16].Descriptor()
+	consumptionlineDescReason := consumptionlineFields[21].Descriptor()
 	// consumptionline.DefaultReason holds the default value on creation for the reason field.
 	consumptionline.DefaultReason = consumptionlineDescReason.Default.(string)
 	// consumptionlineDescCreatedAt is the schema descriptor for created_at field.
-	consumptionlineDescCreatedAt := consumptionlineFields[21].Descriptor()
+	consumptionlineDescCreatedAt := consumptionlineFields[26].Descriptor()
 	// consumptionline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	consumptionline.DefaultCreatedAt = consumptionlineDescCreatedAt.Default.(func() time.Time)
 	// consumptionlineDescID is the schema descriptor for id field.

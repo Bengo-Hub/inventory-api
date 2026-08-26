@@ -283,6 +283,11 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 			consumptionID:    reversalID,
 			orderID:          req.OrderID,
+			orderNumber:      l.OrderNumber,
+			customerName:     l.CustomerName,
+			customerPhone:    l.CustomerPhone,
+			servedByUserID:   l.ServedByUserID,
+			servedByName:     l.ServedByName,
 			warehouseID:      lineWarehouseID,
 			outletID:         l.OutletID,
 			recipeID:         lineRecipeID,

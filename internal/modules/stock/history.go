@@ -12,8 +12,10 @@ import (
 	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	entgoodsreceipt "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entgoodsreceiptline "github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
+	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	entstocktransfer "github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	entstocktransferline "github.com/bengobox/inventory-service/internal/ent/stocktransferline"
@@ -51,9 +53,12 @@ type MovementRow struct {
 	Reference     string     `json:"reference,omitempty"`
 	WarehouseID   *uuid.UUID `json:"warehouse_id,omitempty"`
 	WarehouseName string     `json:"warehouse_name,omitempty"`
-	// ActorID is the adjusting/receiving/initiating user when recorded.
+	// ActorID is the adjusting/receiving/initiating/serving user when recorded.
 	ActorID      *uuid.UUID `json:"actor_id,omitempty"`
-	// Counterparty: supplier name (purchases) or order reference (sales).
+	// ActorName is ActorID resolved to a display name — who performed this movement,
+	// surfaced so admins/managers can audit which user did what on critical transactions.
+	ActorName string `json:"actor_name,omitempty"`
+	// Counterparty: supplier name (purchases) or customer name (sales/sell returns).
 	Counterparty string `json:"counterparty,omitempty"`
 }
 
@@ -92,8 +97,25 @@ type StockHistoryFilter struct {
 	WarehouseID *uuid.UUID
 	DateFrom    *time.Time
 	DateTo      *time.Time
-	Limit       int
-	Offset      int
+	// Types, when non-empty, restricts the returned ledger ROWS to these movement types
+	// (see MovementRow.Type for the vocabulary). Applied after the summary cards are
+	// computed, so narrowing the table view never changes the aggregate totals.
+	Types  []string
+	Limit  int
+	Offset int
+}
+
+// matchesType reports whether mvType passes the optional type filter (empty = match all).
+func (f StockHistoryFilter) matchesType(mvType string) bool {
+	if len(f.Types) == 0 {
+		return true
+	}
+	for _, t := range f.Types {
+		if t == mvType {
+			return true
+		}
+	}
+	return false
 }
 
 // perSourceCap bounds each source query — history is per-item so row counts are
@@ -228,10 +250,14 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		}
 		recByID := make(map[uuid.UUID]*ent.GoodsReceipt, len(receipts))
 		supplierIDs := make([]uuid.UUID, 0)
+		poIDs := make([]uuid.UUID, 0)
 		for _, r := range receipts {
 			recByID[r.ID] = r
 			if r.SupplierID != nil {
 				supplierIDs = append(supplierIDs, *r.SupplierID)
+			}
+			if r.PurchaseOrderID != uuid.Nil {
+				poIDs = append(poIDs, r.PurchaseOrderID)
 			}
 		}
 		supplierNames := map[uuid.UUID]string{}
@@ -239,6 +265,20 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			if sups, sErr := s.client.Supplier.Query().Where(entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
 				for _, sp := range sups {
 					supplierNames[sp.ID] = sp.Name
+				}
+			}
+		}
+		// The purchase reference should be the ORIGINATING Purchase Order number (what the
+		// buyer actually raised), not the GRN's own receiving-note number — the GRN number is
+		// kept only as a fallback for a receipt with no linked PO (a direct/ad-hoc receipt).
+		poNumbers := map[uuid.UUID]string{}
+		if len(poIDs) > 0 {
+			if pos, pErr := s.client.PurchaseOrder.Query().
+				Where(entpurchaseorder.IDIn(poIDs...)).
+				Select(entpurchaseorder.FieldID, entpurchaseorder.FieldPoNumber).
+				All(ctx); pErr == nil {
+				for _, po := range pos {
+					poNumbers[po.ID] = po.PoNumber
 				}
 			}
 		}
@@ -257,10 +297,14 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			if rec.SupplierID != nil {
 				counterparty = supplierNames[*rec.SupplierID]
 			}
+			reference := poNumbers[rec.PurchaseOrderID]
+			if reference == "" {
+				reference = rec.GrnNumber
+			}
 			rows = append(rows, MovementRow{
 				Type: "purchase", Label: "Purchase (GRN)",
 				QuantityChange: l.QuantityAccepted,
-				OccurredAt:     rec.ReceivedDate, Reference: rec.GrnNumber,
+				OccurredAt:     rec.ReceivedDate, Reference: reference,
 				WarehouseID: rec.WarehouseID, ActorID: rec.ReceivedBy,
 				Counterparty: counterparty,
 			})
@@ -338,8 +382,23 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			continue
 		}
 		wid := c.WarehouseID
-		ref := c.FinishedItemSku
-		counterparty := "Order " + shortID(c.OrderID)
+		// The real POS order/receipt number when the sale carried one (denormalized from
+		// pos.sale.finalized — see ConsumptionLine schema); a pre-fix historical row (or a
+		// non-POS consumer, e.g. ordering-backend) that never carried it falls back to a
+		// short order-id reference rather than the item's own SKU, which is what this used
+		// to (incorrectly) show for every row here regardless of which order it was.
+		reference := c.OrderNumber
+		if reference == "" {
+			reference = "Order " + shortID(c.OrderID)
+		}
+		counterparty := c.CustomerName
+		if counterparty == "" {
+			counterparty = "Walk-in"
+		}
+		var actorID *uuid.UUID
+		if c.ServedByUserID != nil {
+			actorID = c.ServedByUserID
+		}
 		if c.Reason == reversalReason || c.Quantity < 0 {
 			qty := c.Quantity
 			if qty < 0 {
@@ -348,14 +407,16 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			rows = append(rows, MovementRow{
 				Type: "sell_return", Label: "Sell Return / Reversal",
 				QuantityChange: qty, OccurredAt: c.ConsumedAt,
-				Reference: ref, WarehouseID: wid, Counterparty: counterparty,
+				Reference: reference, WarehouseID: wid, Counterparty: counterparty,
+				ActorID: actorID, ActorName: c.ServedByName,
 			})
 			continue
 		}
 		rows = append(rows, MovementRow{
 			Type: "sale", Label: "Sold",
 			QuantityChange: -c.Quantity, OccurredAt: c.ConsumedAt,
-			Reference: ref, WarehouseID: wid, Counterparty: counterparty,
+			Reference: reference, WarehouseID: wid, Counterparty: counterparty,
+			ActorID: actorID, ActorName: c.ServedByName,
 		})
 	}
 
@@ -399,6 +460,53 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 				}
 			}
 		}
+	}
+
+	// Resolve actor names once — every row already carrying a denormalized name (sale/sell
+	// return rows carry ConsumptionLine.served_by_name) keeps it; everything else (adjustment
+	// adjusted_by, purchase received_by, transfer initiated_by) is batch-resolved here, the one
+	// place a raw actor UUID becomes a real "who did this" name for the ledger's User column.
+	actorIDs := map[uuid.UUID]struct{}{}
+	for _, r := range rows {
+		if r.ActorID != nil && r.ActorName == "" {
+			actorIDs[*r.ActorID] = struct{}{}
+		}
+	}
+	if len(actorIDs) > 0 {
+		ids := make([]uuid.UUID, 0, len(actorIDs))
+		for id := range actorIDs {
+			ids = append(ids, id)
+		}
+		if users, uErr := s.client.InventoryUser.Query().
+			Where(entinvuser.TenantID(tenantID), entinvuser.AuthServiceUserIDIn(ids...)).
+			All(ctx); uErr == nil {
+			names := make(map[uuid.UUID]string, len(users))
+			for _, u := range users {
+				if u.Name != "" {
+					names[u.AuthServiceUserID] = u.Name
+				} else {
+					names[u.AuthServiceUserID] = u.Email
+				}
+			}
+			for i := range rows {
+				if rows[i].ActorID != nil && rows[i].ActorName == "" {
+					rows[i].ActorName = names[*rows[i].ActorID]
+				}
+			}
+		}
+	}
+
+	// Movement-type filter narrows the TABLE view only — applied after the summary cards
+	// (above) are computed from the full filtered range, so switching "Type" in the UI never
+	// changes the Quantities In/Out totals.
+	if len(f.Types) > 0 {
+		filtered := rows[:0]
+		for _, r := range rows {
+			if f.matchesType(r.Type) {
+				filtered = append(filtered, r)
+			}
+		}
+		rows = filtered
 	}
 
 	// Newest first, then stable page slice.

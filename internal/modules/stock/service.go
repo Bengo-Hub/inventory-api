@@ -15,6 +15,7 @@ import (
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
@@ -96,6 +97,16 @@ type ConsumptionRequest struct {
 	Items          []ConsumptionItem `json:"items"`
 	Reason         string            `json:"reason,omitempty"`
 	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+	// OrderNumber/CustomerName/CustomerPhone/ServedByUserID/ServedByName denormalize the
+	// triggering sale's own identity onto every ConsumptionLine this call writes, so the
+	// stock-history ledger (see stock.ItemStockHistory) can show the real POS order number,
+	// buyer and cashier without a cross-service call. All optional — S2S/ordering callers
+	// with no POS order simply omit them.
+	OrderNumber    string     `json:"order_number,omitempty"`
+	CustomerName   string     `json:"customer_name,omitempty"`
+	CustomerPhone  string     `json:"customer_phone,omitempty"`
+	ServedByUserID *uuid.UUID `json:"served_by_user_id,omitempty"`
+	ServedByName   string     `json:"served_by_name,omitempty"`
 }
 
 // ConsumptionItem represents an item to consume.
@@ -201,6 +212,7 @@ type StockAdjustmentDTO struct {
 	Reference      string    `json:"reference,omitempty"`
 	Notes          string    `json:"notes,omitempty"`
 	AdjustedBy     uuid.UUID `json:"adjusted_by"`
+	AdjustedByName string    `json:"adjusted_by_name,omitempty"`
 	AdjustedAt     time.Time `json:"adjusted_at"`
 	CreatedAt      time.Time `json:"created_at"`
 }
@@ -554,6 +566,34 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 		}
 	}
 
+	// Batch-resolve the adjusting user's display name — surfaced so admins/managers can audit
+	// who made each stock correction, matching the same lookup the adjustment-note PDF already
+	// does per-batch (handlers.adjusterLabel) but here for every row on the list in one query.
+	adjustedByNames := make(map[uuid.UUID]string)
+	actorIDSet := make(map[uuid.UUID]struct{})
+	for _, a := range adjustments {
+		if a.AdjustedBy != uuid.Nil {
+			actorIDSet[a.AdjustedBy] = struct{}{}
+		}
+	}
+	if len(actorIDSet) > 0 {
+		actorIDs := make([]uuid.UUID, 0, len(actorIDSet))
+		for id := range actorIDSet {
+			actorIDs = append(actorIDs, id)
+		}
+		if users, uErr := s.client.InventoryUser.Query().
+			Where(entinvuser.TenantID(tenantID), entinvuser.AuthServiceUserIDIn(actorIDs...)).
+			All(ctx); uErr == nil {
+			for _, u := range users {
+				if u.Name != "" {
+					adjustedByNames[u.AuthServiceUserID] = u.Name
+				} else {
+					adjustedByNames[u.AuthServiceUserID] = u.Email
+				}
+			}
+		}
+	}
+
 	result := make([]StockAdjustmentDTO, len(adjustments))
 	for i, a := range adjustments {
 		result[i] = StockAdjustmentDTO{
@@ -570,6 +610,7 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 			Reference:      a.Reference,
 			Notes:          a.Notes,
 			AdjustedBy:     a.AdjustedBy,
+			AdjustedByName: adjustedByNames[a.AdjustedBy],
 			AdjustedAt:     a.AdjustedAt,
 			CreatedAt:      a.CreatedAt,
 		}
@@ -1660,6 +1701,11 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 					consumptionID:    consumptionID,
 					orderID:          req.OrderID,
+					orderNumber:      req.OrderNumber,
+					customerName:     req.CustomerName,
+					customerPhone:    req.CustomerPhone,
+					servedByUserID:   req.ServedByUserID,
+					servedByName:     req.ServedByName,
 					warehouseID:      whID,
 					outletID:         outletID,
 					recipeID:         cl.RecipeID,
@@ -1735,6 +1781,11 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 					consumptionID:    consumptionID,
 					orderID:          req.OrderID,
+					orderNumber:      req.OrderNumber,
+					customerName:     req.CustomerName,
+					customerPhone:    req.CustomerPhone,
+					servedByUserID:   req.ServedByUserID,
+					servedByName:     req.ServedByName,
 					warehouseID:      whID,
 					outletID:         outletID,
 					recipeID:         cl.RecipeID,
@@ -1769,6 +1820,11 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 					consumptionID:    consumptionID,
 					orderID:          req.OrderID,
+					orderNumber:      req.OrderNumber,
+					customerName:     req.CustomerName,
+					customerPhone:    req.CustomerPhone,
+					servedByUserID:   req.ServedByUserID,
+					servedByName:     req.ServedByName,
 					warehouseID:      whID,
 					outletID:         outletID,
 					recipeID:         cl.RecipeID,
