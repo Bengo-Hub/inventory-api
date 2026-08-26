@@ -56,6 +56,12 @@ type StockAdjustmentDoc = render.StockAdjustmentDoc
 // StockAdjustmentDocLine is a single adjusted item on a StockAdjustmentDoc.
 type StockAdjustmentDocLine = render.StockAdjustmentDocLine
 
+// StockHistoryDoc is the canonical input for rendering a stock-history export.
+type StockHistoryDoc = render.StockHistoryDoc
+
+// StockHistoryDocLine is a single ledger row on a StockHistoryDoc.
+type StockHistoryDocLine = render.StockHistoryDocLine
+
 // StockCountDoc is the canonical input for rendering a stock-take sheet or variance report.
 type StockCountDoc = render.StockCountDoc
 

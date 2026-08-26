@@ -185,6 +185,33 @@ func (h *InventoryHandler) adjusterLabel(ctx context.Context, tenantID, userID u
 	return ""
 }
 
+// actorNamesByID batch-resolves display names for a set of actor (auth-service) user ids in one
+// query — the list-view counterpart of adjusterLabel (which resolves one id for a printed
+// document's sign-off line). Used anywhere a list DTO carries a raw "who did this" UUID
+// (adjusted_by, received_by, initiated_by…) that the UI should render as a name, not a UUID.
+// Missing/zero ids are simply absent from the returned map. A package-level function (not a
+// method) so every handler struct in this package can share it without a common base type.
+func actorNamesByID(ctx context.Context, orm *ent.Client, tenantID uuid.UUID, ids []uuid.UUID) map[uuid.UUID]string {
+	names := make(map[uuid.UUID]string, len(ids))
+	if len(ids) == 0 || orm == nil {
+		return names
+	}
+	users, err := orm.InventoryUser.Query().
+		Where(entinvuser.TenantID(tenantID), entinvuser.AuthServiceUserIDIn(ids...)).
+		All(ctx)
+	if err != nil {
+		return names
+	}
+	for _, u := range users {
+		if u.Name != "" {
+			names[u.AuthServiceUserID] = u.Name
+		} else {
+			names[u.AuthServiceUserID] = u.Email
+		}
+	}
+	return names
+}
+
 // signedQty formats a quantity delta with an explicit sign, so "+3" and "-12" read unambiguously
 // in the CHANGE column.
 func signedQty(q float64) string {

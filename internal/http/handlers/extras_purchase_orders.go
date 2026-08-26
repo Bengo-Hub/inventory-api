@@ -38,7 +38,11 @@ type purchaseOrderDTO struct {
 	Notes                     string     `json:"notes"`
 	PayTermDays               *int       `json:"pay_term_days"`
 	AdditionalShippingCharges float64    `json:"additional_shipping_charges"`
-	CreatedAt                 time.Time  `json:"created_at"`
+	CreatedBy                 *uuid.UUID `json:"created_by,omitempty"`
+	// CreatedByName is CreatedBy resolved to a display name — who raised this purchase order,
+	// surfaced for the same "who did what" audit trail as adjustments/goods receipts.
+	CreatedByName string    `json:"created_by_name,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // ListPurchaseOrders handles GET /inventory/purchase-orders.
@@ -90,6 +94,14 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		return
 	}
 
+	createdByIDs := make([]uuid.UUID, 0, len(orders))
+	for _, o := range orders {
+		if o.CreatedBy != nil {
+			createdByIDs = append(createdByIDs, *o.CreatedBy)
+		}
+	}
+	createdByNames := actorNamesByID(r.Context(), h.orm, tenantID, createdByIDs)
+
 	result := make([]purchaseOrderDTO, 0, len(orders))
 	for _, o := range orders {
 		supplierName := ""
@@ -112,7 +124,11 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 			Notes:                     o.Notes,
 			PayTermDays:               o.PayTermDays,
 			AdditionalShippingCharges: o.AdditionalShippingCharges,
+			CreatedBy:                 o.CreatedBy,
 			CreatedAt:                 o.CreatedAt,
+		}
+		if o.CreatedBy != nil {
+			dto.CreatedByName = createdByNames[*o.CreatedBy]
 		}
 		if o.ExpectedDate != nil {
 			dto.ExpectedDate = o.ExpectedDate

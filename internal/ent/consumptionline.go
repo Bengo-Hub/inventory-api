@@ -24,6 +24,16 @@ type ConsumptionLine struct {
 	ConsumptionID uuid.UUID `json:"consumption_id,omitempty"`
 	// The order that triggered consumption (denormalized for direct range queries)
 	OrderID uuid.UUID `json:"order_id,omitempty"`
+	// Human-readable POS order/receipt number (e.g. "10707"), denormalized from pos.sale.finalized so the stock-history ledger can show it without a cross-service call
+	OrderNumber string `json:"order_number,omitempty"`
+	// Buyer name snapshot from the triggering sale ("Walk-in" when absent) — the stock-history ledger's Customer/Supplier column for a sale row
+	CustomerName string `json:"customer_name,omitempty"`
+	// CustomerPhone holds the value of the "customer_phone" field.
+	CustomerPhone string `json:"customer_phone,omitempty"`
+	// The cashier/staff who served the sale (POSOrder.served_by_user_id), for the stock-history ledger's User column
+	ServedByUserID *uuid.UUID `json:"served_by_user_id,omitempty"`
+	// Denormalized display name for served_by_user_id — avoids an S2S lookup per ledger row
+	ServedByName string `json:"served_by_name,omitempty"`
 	// WarehouseID holds the value of the "warehouse_id" field.
 	WarehouseID *uuid.UUID `json:"warehouse_id,omitempty"`
 	// Resolved from warehouse at write time, so reports don't need a join
@@ -68,13 +78,13 @@ func (*ConsumptionLine) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID, consumptionline.FieldLotID:
+		case consumptionline.FieldServedByUserID, consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID, consumptionline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case consumptionline.FieldTheoretical:
 			values[i] = new(sql.NullBool)
 		case consumptionline.FieldQuantity, consumptionline.FieldUnitCost, consumptionline.FieldTotalCost:
 			values[i] = new(sql.NullFloat64)
-		case consumptionline.FieldRecipeSku, consumptionline.FieldFinishedItemSku, consumptionline.FieldIngredientSku, consumptionline.FieldUnit, consumptionline.FieldReason, consumptionline.FieldLotNumber:
+		case consumptionline.FieldOrderNumber, consumptionline.FieldCustomerName, consumptionline.FieldCustomerPhone, consumptionline.FieldServedByName, consumptionline.FieldRecipeSku, consumptionline.FieldFinishedItemSku, consumptionline.FieldIngredientSku, consumptionline.FieldUnit, consumptionline.FieldReason, consumptionline.FieldLotNumber:
 			values[i] = new(sql.NullString)
 		case consumptionline.FieldConsumedAt, consumptionline.FieldExpiryDate, consumptionline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -118,6 +128,37 @@ func (_m *ConsumptionLine) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field order_id", values[i])
 			} else if value != nil {
 				_m.OrderID = *value
+			}
+		case consumptionline.FieldOrderNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field order_number", values[i])
+			} else if value.Valid {
+				_m.OrderNumber = value.String
+			}
+		case consumptionline.FieldCustomerName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field customer_name", values[i])
+			} else if value.Valid {
+				_m.CustomerName = value.String
+			}
+		case consumptionline.FieldCustomerPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field customer_phone", values[i])
+			} else if value.Valid {
+				_m.CustomerPhone = value.String
+			}
+		case consumptionline.FieldServedByUserID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field served_by_user_id", values[i])
+			} else if value.Valid {
+				_m.ServedByUserID = new(uuid.UUID)
+				*_m.ServedByUserID = *value.S.(*uuid.UUID)
+			}
+		case consumptionline.FieldServedByName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field served_by_name", values[i])
+			} else if value.Valid {
+				_m.ServedByName = value.String
 			}
 		case consumptionline.FieldWarehouseID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -276,6 +317,23 @@ func (_m *ConsumptionLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("order_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OrderID))
+	builder.WriteString(", ")
+	builder.WriteString("order_number=")
+	builder.WriteString(_m.OrderNumber)
+	builder.WriteString(", ")
+	builder.WriteString("customer_name=")
+	builder.WriteString(_m.CustomerName)
+	builder.WriteString(", ")
+	builder.WriteString("customer_phone=")
+	builder.WriteString(_m.CustomerPhone)
+	builder.WriteString(", ")
+	if v := _m.ServedByUserID; v != nil {
+		builder.WriteString("served_by_user_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("served_by_name=")
+	builder.WriteString(_m.ServedByName)
 	builder.WriteString(", ")
 	if v := _m.WarehouseID; v != nil {
 		builder.WriteString("warehouse_id=")

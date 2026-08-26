@@ -42,6 +42,76 @@ func (_c *ConsumptionLineCreate) SetOrderID(v uuid.UUID) *ConsumptionLineCreate 
 	return _c
 }
 
+// SetOrderNumber sets the "order_number" field.
+func (_c *ConsumptionLineCreate) SetOrderNumber(v string) *ConsumptionLineCreate {
+	_c.mutation.SetOrderNumber(v)
+	return _c
+}
+
+// SetNillableOrderNumber sets the "order_number" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableOrderNumber(v *string) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetOrderNumber(*v)
+	}
+	return _c
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (_c *ConsumptionLineCreate) SetCustomerName(v string) *ConsumptionLineCreate {
+	_c.mutation.SetCustomerName(v)
+	return _c
+}
+
+// SetNillableCustomerName sets the "customer_name" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableCustomerName(v *string) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetCustomerName(*v)
+	}
+	return _c
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (_c *ConsumptionLineCreate) SetCustomerPhone(v string) *ConsumptionLineCreate {
+	_c.mutation.SetCustomerPhone(v)
+	return _c
+}
+
+// SetNillableCustomerPhone sets the "customer_phone" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableCustomerPhone(v *string) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetCustomerPhone(*v)
+	}
+	return _c
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (_c *ConsumptionLineCreate) SetServedByUserID(v uuid.UUID) *ConsumptionLineCreate {
+	_c.mutation.SetServedByUserID(v)
+	return _c
+}
+
+// SetNillableServedByUserID sets the "served_by_user_id" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableServedByUserID(v *uuid.UUID) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetServedByUserID(*v)
+	}
+	return _c
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (_c *ConsumptionLineCreate) SetServedByName(v string) *ConsumptionLineCreate {
+	_c.mutation.SetServedByName(v)
+	return _c
+}
+
+// SetNillableServedByName sets the "served_by_name" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableServedByName(v *string) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetServedByName(*v)
+	}
+	return _c
+}
+
 // SetWarehouseID sets the "warehouse_id" field.
 func (_c *ConsumptionLineCreate) SetWarehouseID(v uuid.UUID) *ConsumptionLineCreate {
 	_c.mutation.SetWarehouseID(v)
@@ -418,6 +488,26 @@ func (_c *ConsumptionLineCreate) createSpec() (*ConsumptionLine, *sqlgraph.Creat
 		_spec.SetField(consumptionline.FieldOrderID, field.TypeUUID, value)
 		_node.OrderID = value
 	}
+	if value, ok := _c.mutation.OrderNumber(); ok {
+		_spec.SetField(consumptionline.FieldOrderNumber, field.TypeString, value)
+		_node.OrderNumber = value
+	}
+	if value, ok := _c.mutation.CustomerName(); ok {
+		_spec.SetField(consumptionline.FieldCustomerName, field.TypeString, value)
+		_node.CustomerName = value
+	}
+	if value, ok := _c.mutation.CustomerPhone(); ok {
+		_spec.SetField(consumptionline.FieldCustomerPhone, field.TypeString, value)
+		_node.CustomerPhone = value
+	}
+	if value, ok := _c.mutation.ServedByUserID(); ok {
+		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)
+		_node.ServedByUserID = &value
+	}
+	if value, ok := _c.mutation.ServedByName(); ok {
+		_spec.SetField(consumptionline.FieldServedByName, field.TypeString, value)
+		_node.ServedByName = value
+	}
 	if value, ok := _c.mutation.WarehouseID(); ok {
 		_spec.SetField(consumptionline.FieldWarehouseID, field.TypeUUID, value)
 		_node.WarehouseID = &value
@@ -575,6 +665,96 @@ func (u *ConsumptionLineUpsert) SetOrderID(v uuid.UUID) *ConsumptionLineUpsert {
 // UpdateOrderID sets the "order_id" field to the value that was provided on create.
 func (u *ConsumptionLineUpsert) UpdateOrderID() *ConsumptionLineUpsert {
 	u.SetExcluded(consumptionline.FieldOrderID)
+	return u
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (u *ConsumptionLineUpsert) SetOrderNumber(v string) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldOrderNumber, v)
+	return u
+}
+
+// UpdateOrderNumber sets the "order_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateOrderNumber() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldOrderNumber)
+	return u
+}
+
+// ClearOrderNumber clears the value of the "order_number" field.
+func (u *ConsumptionLineUpsert) ClearOrderNumber() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldOrderNumber)
+	return u
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (u *ConsumptionLineUpsert) SetCustomerName(v string) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldCustomerName, v)
+	return u
+}
+
+// UpdateCustomerName sets the "customer_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateCustomerName() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldCustomerName)
+	return u
+}
+
+// ClearCustomerName clears the value of the "customer_name" field.
+func (u *ConsumptionLineUpsert) ClearCustomerName() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldCustomerName)
+	return u
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (u *ConsumptionLineUpsert) SetCustomerPhone(v string) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldCustomerPhone, v)
+	return u
+}
+
+// UpdateCustomerPhone sets the "customer_phone" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateCustomerPhone() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldCustomerPhone)
+	return u
+}
+
+// ClearCustomerPhone clears the value of the "customer_phone" field.
+func (u *ConsumptionLineUpsert) ClearCustomerPhone() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldCustomerPhone)
+	return u
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (u *ConsumptionLineUpsert) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldServedByUserID, v)
+	return u
+}
+
+// UpdateServedByUserID sets the "served_by_user_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateServedByUserID() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldServedByUserID)
+	return u
+}
+
+// ClearServedByUserID clears the value of the "served_by_user_id" field.
+func (u *ConsumptionLineUpsert) ClearServedByUserID() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldServedByUserID)
+	return u
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (u *ConsumptionLineUpsert) SetServedByName(v string) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldServedByName, v)
+	return u
+}
+
+// UpdateServedByName sets the "served_by_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateServedByName() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldServedByName)
+	return u
+}
+
+// ClearServedByName clears the value of the "served_by_name" field.
+func (u *ConsumptionLineUpsert) ClearServedByName() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldServedByName)
 	return u
 }
 
@@ -938,6 +1118,111 @@ func (u *ConsumptionLineUpsertOne) SetOrderID(v uuid.UUID) *ConsumptionLineUpser
 func (u *ConsumptionLineUpsertOne) UpdateOrderID() *ConsumptionLineUpsertOne {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.UpdateOrderID()
+	})
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (u *ConsumptionLineUpsertOne) SetOrderNumber(v string) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetOrderNumber(v)
+	})
+}
+
+// UpdateOrderNumber sets the "order_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateOrderNumber() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateOrderNumber()
+	})
+}
+
+// ClearOrderNumber clears the value of the "order_number" field.
+func (u *ConsumptionLineUpsertOne) ClearOrderNumber() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearOrderNumber()
+	})
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (u *ConsumptionLineUpsertOne) SetCustomerName(v string) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCustomerName(v)
+	})
+}
+
+// UpdateCustomerName sets the "customer_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateCustomerName() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCustomerName()
+	})
+}
+
+// ClearCustomerName clears the value of the "customer_name" field.
+func (u *ConsumptionLineUpsertOne) ClearCustomerName() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCustomerName()
+	})
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (u *ConsumptionLineUpsertOne) SetCustomerPhone(v string) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCustomerPhone(v)
+	})
+}
+
+// UpdateCustomerPhone sets the "customer_phone" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateCustomerPhone() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCustomerPhone()
+	})
+}
+
+// ClearCustomerPhone clears the value of the "customer_phone" field.
+func (u *ConsumptionLineUpsertOne) ClearCustomerPhone() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCustomerPhone()
+	})
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (u *ConsumptionLineUpsertOne) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetServedByUserID(v)
+	})
+}
+
+// UpdateServedByUserID sets the "served_by_user_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateServedByUserID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateServedByUserID()
+	})
+}
+
+// ClearServedByUserID clears the value of the "served_by_user_id" field.
+func (u *ConsumptionLineUpsertOne) ClearServedByUserID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearServedByUserID()
+	})
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (u *ConsumptionLineUpsertOne) SetServedByName(v string) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetServedByName(v)
+	})
+}
+
+// UpdateServedByName sets the "served_by_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateServedByName() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateServedByName()
+	})
+}
+
+// ClearServedByName clears the value of the "served_by_name" field.
+func (u *ConsumptionLineUpsertOne) ClearServedByName() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearServedByName()
 	})
 }
 
@@ -1513,6 +1798,111 @@ func (u *ConsumptionLineUpsertBulk) SetOrderID(v uuid.UUID) *ConsumptionLineUpse
 func (u *ConsumptionLineUpsertBulk) UpdateOrderID() *ConsumptionLineUpsertBulk {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.UpdateOrderID()
+	})
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (u *ConsumptionLineUpsertBulk) SetOrderNumber(v string) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetOrderNumber(v)
+	})
+}
+
+// UpdateOrderNumber sets the "order_number" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateOrderNumber() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateOrderNumber()
+	})
+}
+
+// ClearOrderNumber clears the value of the "order_number" field.
+func (u *ConsumptionLineUpsertBulk) ClearOrderNumber() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearOrderNumber()
+	})
+}
+
+// SetCustomerName sets the "customer_name" field.
+func (u *ConsumptionLineUpsertBulk) SetCustomerName(v string) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCustomerName(v)
+	})
+}
+
+// UpdateCustomerName sets the "customer_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateCustomerName() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCustomerName()
+	})
+}
+
+// ClearCustomerName clears the value of the "customer_name" field.
+func (u *ConsumptionLineUpsertBulk) ClearCustomerName() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCustomerName()
+	})
+}
+
+// SetCustomerPhone sets the "customer_phone" field.
+func (u *ConsumptionLineUpsertBulk) SetCustomerPhone(v string) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCustomerPhone(v)
+	})
+}
+
+// UpdateCustomerPhone sets the "customer_phone" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateCustomerPhone() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCustomerPhone()
+	})
+}
+
+// ClearCustomerPhone clears the value of the "customer_phone" field.
+func (u *ConsumptionLineUpsertBulk) ClearCustomerPhone() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCustomerPhone()
+	})
+}
+
+// SetServedByUserID sets the "served_by_user_id" field.
+func (u *ConsumptionLineUpsertBulk) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetServedByUserID(v)
+	})
+}
+
+// UpdateServedByUserID sets the "served_by_user_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateServedByUserID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateServedByUserID()
+	})
+}
+
+// ClearServedByUserID clears the value of the "served_by_user_id" field.
+func (u *ConsumptionLineUpsertBulk) ClearServedByUserID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearServedByUserID()
+	})
+}
+
+// SetServedByName sets the "served_by_name" field.
+func (u *ConsumptionLineUpsertBulk) SetServedByName(v string) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetServedByName(v)
+	})
+}
+
+// UpdateServedByName sets the "served_by_name" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateServedByName() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateServedByName()
+	})
+}
+
+// ClearServedByName clears the value of the "served_by_name" field.
+func (u *ConsumptionLineUpsertBulk) ClearServedByName() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearServedByName()
 	})
 }
 

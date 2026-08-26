@@ -29,6 +29,14 @@ type consumptionLineInput struct {
 	theoretical      bool
 	reason           string
 	consumedAt       time.Time
+	// orderNumber/customerName/customerPhone/servedByUserID/servedByName denormalize the
+	// triggering sale's own identity onto the line — see ConsumptionLine schema doc comment.
+	// Empty/nil on non-sale reasons (e.g. ordering-backend consumption with no POS order).
+	orderNumber    string
+	customerName   string
+	customerPhone  string
+	servedByUserID *uuid.UUID
+	servedByName   string
 	// Lot traceability (pharmacy DAWA use-case) — set when this line was drawn from a
 	// specific InventoryLot via consumeLots. Nil for wavg-costed items.
 	lotID      *uuid.UUID
@@ -57,6 +65,22 @@ func (s *Service) recordConsumptionLine(ctx context.Context, tx *ent.Tx, tenantI
 		SetTotalCost(totalCost).
 		SetTheoretical(in.theoretical).
 		SetConsumedAt(in.consumedAt)
+
+	if in.orderNumber != "" {
+		create.SetOrderNumber(in.orderNumber)
+	}
+	if in.customerName != "" {
+		create.SetCustomerName(in.customerName)
+	}
+	if in.customerPhone != "" {
+		create.SetCustomerPhone(in.customerPhone)
+	}
+	if in.servedByUserID != nil {
+		create.SetServedByUserID(*in.servedByUserID)
+	}
+	if in.servedByName != "" {
+		create.SetServedByName(in.servedByName)
+	}
 
 	if in.outletID != nil {
 		create.SetOutletID(*in.outletID)

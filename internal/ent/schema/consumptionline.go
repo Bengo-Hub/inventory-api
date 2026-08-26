@@ -30,6 +30,21 @@ func (ConsumptionLine) Fields() []ent.Field {
 			Comment("The parent Consumption row this line belongs to"),
 		field.UUID("order_id", uuid.UUID{}).
 			Comment("The order that triggered consumption (denormalized for direct range queries)"),
+		field.String("order_number").
+			Optional().
+			Comment("Human-readable POS order/receipt number (e.g. \"10707\"), denormalized from pos.sale.finalized so the stock-history ledger can show it without a cross-service call"),
+		field.String("customer_name").
+			Optional().
+			Comment("Buyer name snapshot from the triggering sale (\"Walk-in\" when absent) — the stock-history ledger's Customer/Supplier column for a sale row"),
+		field.String("customer_phone").
+			Optional(),
+		field.UUID("served_by_user_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("The cashier/staff who served the sale (POSOrder.served_by_user_id), for the stock-history ledger's User column"),
+		field.String("served_by_name").
+			Optional().
+			Comment("Denormalized display name for served_by_user_id — avoids an S2S lookup per ledger row"),
 		field.UUID("warehouse_id", uuid.UUID{}).
 			Optional().
 			Nillable(),
