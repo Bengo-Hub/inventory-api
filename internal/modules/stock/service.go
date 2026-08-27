@@ -107,6 +107,13 @@ type ConsumptionRequest struct {
 	CustomerPhone  string     `json:"customer_phone,omitempty"`
 	ServedByUserID *uuid.UUID `json:"served_by_user_id,omitempty"`
 	ServedByName   string     `json:"served_by_name,omitempty"`
+	// SaleDate, when set, is the date this consumption's ConsumptionLine rows are stamped
+	// with (stock-history ledger "Date" column) — the triggering sale's own effective date
+	// (business_date backdate when set, else CreatedAt), NOT necessarily when this request is
+	// processed. Nil (S2S/ordering callers with no such concept, or an older pos-api build)
+	// falls back to time.Now(), the pre-existing behavior. Deliberately does NOT affect
+	// Consumption.ProcessedAt, which stays the real processing timestamp for ops/audit.
+	SaleDate *time.Time `json:"sale_date,omitempty"`
 }
 
 // ConsumptionItem represents an item to consume.
@@ -1692,6 +1699,15 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 	}
 	consumptionID := uuid.New()
 	now := time.Now()
+	// saleDate is what every ConsumptionLine.consumed_at below is stamped with (drives the
+	// stock-history ledger's "Date" column) — the triggering sale's own effective date when the
+	// caller supplied one (see ConsumptionRequest.SaleDate), else the real processing time `now`
+	// (unchanged pre-existing behavior for S2S/ordering callers). `now` itself is left untouched
+	// for Consumption.ProcessedAt below, which must stay the real audit timestamp.
+	saleDate := now
+	if req.SaleDate != nil {
+		saleDate = *req.SaleDate
+	}
 	outletID := s.resolveOutletID(ctx, tx, whID)
 
 	consumptionItems := make([]entschema.ConsumptionItemJSON, 0, len(flattened))
@@ -1753,7 +1769,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					unitCost:         itemCostPrice(itm),
 					theoretical:      true,
 					reason:           reason,
-					consumedAt:       now,
+					consumedAt:       saleDate,
 				})
 			}
 			continue
@@ -1864,7 +1880,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					quantity:         lot.QtyTaken,
 					unitCost:         unitCost,
 					reason:           reason,
-					consumedAt:       now,
+					consumedAt:       saleDate,
 					lotID:            &lid,
 					lotNumber:        lotNumber,
 					expiryDate:       expiryDate,
@@ -1903,7 +1919,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					quantity:         shortfall,
 					unitCost:         itemCostPrice(itm),
 					reason:           reason,
-					consumedAt:       now,
+					consumedAt:       saleDate,
 				})
 			}
 		case ent.IsNotFound(berr):
