@@ -141,6 +141,13 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 			CustomerPhone  string `json:"customer_phone"`
 			ServedByUserID string `json:"served_by_user_id"`
 			ServedByName   string `json:"served_by_name"`
+			// SaleDate is the order's effective date (business_date backdate when set, else
+			// CreatedAt) — the same date printed on the receipt/All-Sales, NOT the wall-clock
+			// time this event happens to be processed at. A sale finalized a day (or more)
+			// after it was rung up (e.g. a tab paid the next day) would otherwise stamp the
+			// stock-history ledger with today's date while the receipt shows yesterday's.
+			// RFC3339; empty/unparseable falls back to time.Now() (old behavior).
+			SaleDate string `json:"sale_date"`
 		} `json:"payload"`
 		EventType string `json:"event_type"`
 	}
@@ -209,12 +216,22 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 			servedByUserID = &id
 		}
 	}
+	var saleDate *time.Time
+	if envelope.Payload.SaleDate != "" {
+		if t, pErr := time.Parse(time.RFC3339, envelope.Payload.SaleDate); pErr == nil {
+			saleDate = &t
+		} else {
+			c.log.Warn("pos sale events: invalid sale_date, falling back to now",
+				zap.String("raw", envelope.Payload.SaleDate), zap.Error(pErr))
+		}
+	}
 	saleInfo := saleFinalizedInfo{
 		OrderNumber:    envelope.Payload.OrderNumber,
 		CustomerName:   envelope.Payload.CustomerName,
 		CustomerPhone:  envelope.Payload.CustomerPhone,
 		ServedByUserID: servedByUserID,
 		ServedByName:   envelope.Payload.ServedByName,
+		SaleDate:       saleDate,
 	}
 
 	if err := c.handleSaleFinalized(ctx, tenantID, orderID, warehouseID, outletID, consumable, saleInfo); err != nil {
@@ -244,6 +261,10 @@ type saleFinalizedInfo struct {
 	CustomerPhone  string
 	ServedByUserID *uuid.UUID
 	ServedByName   string
+	// SaleDate is the order's effective date (see envelope.Payload.SaleDate's doc comment).
+	// Nil when the event carried none (older pos-api build) — RecordConsumption then falls
+	// back to time.Now(), the pre-existing behavior.
+	SaleDate *time.Time
 }
 
 func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantID, orderID, warehouseID, outletID uuid.UUID, saleItems []posSaleItem, saleInfo saleFinalizedInfo) error {
@@ -313,6 +334,7 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		CustomerPhone:  saleInfo.CustomerPhone,
 		ServedByUserID: saleInfo.ServedByUserID,
 		ServedByName:   saleInfo.ServedByName,
+		SaleDate:       saleInfo.SaleDate,
 	})
 	if err != nil {
 		return fmt.Errorf("record consumption for order %s: %w", orderID, err)
