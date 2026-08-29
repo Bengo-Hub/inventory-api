@@ -77,7 +77,7 @@ type StockServicer interface {
 	GetReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)
 	GetReservationsByOrderID(ctx context.Context, tenantID, orderID uuid.UUID) ([]stock.ReservationResponse, error)
 	ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
-	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error
+	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ConsumeReservationResponse, error)
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	ReverseConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ReverseConsumptionRequest) (*stock.ReverseConsumptionResponse, error)
 	AdjustStock(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
@@ -621,13 +621,14 @@ func (h *InventoryHandler) ConsumeReservation(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.stockSvc.ConsumeReservation(r.Context(), tenantID, reservationID); err != nil {
+	resp, err := h.stockSvc.ConsumeReservation(r.Context(), tenantID, reservationID)
+	if err != nil {
 		h.log.Error("consume reservation failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CONSUME_FAILED", err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"status": "consumed"})
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // RecordConsumption handles POST /v1/{tenant}/inventory/consumption

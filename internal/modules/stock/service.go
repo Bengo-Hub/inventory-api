@@ -153,6 +153,14 @@ type ConsumedLot struct {
 	Quantity   float64    `json:"quantity"`
 }
 
+// ConsumeReservationResponse reports which lot(s) a reservation's items were actually drawn
+// from at consume time, mirroring ConsumptionResponse.LotsConsumed. Additive — callers that
+// only checked the old bare-error return (ordering-backend, hotel checkout) are unaffected.
+type ConsumeReservationResponse struct {
+	Status       string        `json:"status"`
+	LotsConsumed []ConsumedLot `json:"lots_consumed,omitempty"`
+}
+
 // Service handles stock reservation and consumption business logic.
 type Service struct {
 	client *ent.Client
@@ -1501,10 +1509,10 @@ func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationI
 }
 
 // ConsumeReservation converts a reservation to actual consumption, deducting on-hand stock.
-func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error {
+func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*ConsumeReservationResponse, error) {
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
-		return fmt.Errorf("stock: begin transaction: %w", err)
+		return nil, fmt.Errorf("stock: begin transaction: %w", err)
 	}
 	defer func() {
 		if err != nil {
@@ -1521,15 +1529,18 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return fmt.Errorf("stock: reservation not found or already consumed")
+			return nil, fmt.Errorf("stock: reservation not found or already consumed")
 		}
-		return fmt.Errorf("stock: query reservation: %w", err)
+		return nil, fmt.Errorf("stock: query reservation: %w", err)
 	}
 
 	whID := uuid.Nil
 	if resv.WarehouseID != nil {
 		whID = *resv.WarehouseID
 	}
+
+	method := s.costingMethod(ctx, tenantID)
+	var lotsConsumed []ConsumedLot
 
 	for _, ri := range resv.Items {
 		if ri.ReservedQty <= 0 {
@@ -1560,7 +1571,27 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 			Save(ctx)
 		if updateErr != nil {
 			err = updateErr
-			return fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+			return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+		}
+
+		// Draw down lot cost-layers in FIFO/LIFO/FEFO/wavg order, same mechanism
+		// RecordConsumption/AdjustStock already use — previously ConsumeReservation only moved
+		// the aggregate InventoryBalance and never touched InventoryLot at all, so a
+		// FEFO-costed tenant's reservation-based dispense (e.g. a pharmacy prescription) had no
+		// server-verified batch/expiry per unit dispensed, only whatever a clinician typed in by
+		// hand. Reservations are already exploded down to raw SKUs at CreateReservation time, so
+		// no BOM/recipe handling is needed here (unlike RecordConsumption).
+		for _, lot := range s.consumeLots(ctx, tx, tenantID, itm.ID, whID, ri.ReservedQty, method) {
+			if lot.IsCostLayer {
+				continue // no lot identity a caller should ever see
+			}
+			lotsConsumed = append(lotsConsumed, ConsumedLot{
+				SKU:        ri.SKU,
+				LotID:      lot.LotID,
+				LotNumber:  lot.LotNumber,
+				ExpiryDate: lot.ExpiryDate,
+				Quantity:   lot.QtyTaken,
+			})
 		}
 
 		// Check for low stock after consumption
@@ -1573,7 +1604,7 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 		SetConfirmedAt(now).
 		Save(ctx)
 	if err != nil {
-		return fmt.Errorf("stock: update reservation status: %w", err)
+		return nil, fmt.Errorf("stock: update reservation status: %w", err)
 	}
 
 	s.writeOutboxEvent(ctx, tx, tenantID, reservationID, "inventory", "stock.consumed", map[string]any{
@@ -1583,13 +1614,14 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 	})
 
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("stock: commit consume: %w", err)
+		return nil, fmt.Errorf("stock: commit consume: %w", err)
 	}
 
 	s.log.Info("reservation consumed",
 		zap.String("reservation_id", reservationID.String()),
+		zap.Int("lots_consumed", len(lotsConsumed)),
 	)
-	return nil
+	return &ConsumeReservationResponse{Status: "consumed", LotsConsumed: lotsConsumed}, nil
 }
 
 // RecordConsumption records direct stock consumption without a prior reservation.
