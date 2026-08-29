@@ -29,6 +29,10 @@ var inventoryAcceptedUseCases = map[string]bool{
 	"services":      true,
 	"warehouse":     true,
 	"manufacturing": true,
+	// hospital-service outlets (wards, biomedical-equipment stores, blood bank) hold
+	// non-drug stock separately from the "pharmacy" dispensary counter — see
+	// hospital-service/hospital-api/docs/migration-pos-pharmacy.md.
+	"hospital": true,
 }
 
 const authStream = "auth"

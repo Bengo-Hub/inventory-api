@@ -196,7 +196,7 @@ type mockStockSvc struct {
 	getReservationFn         func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)
 	getReservationsByOrderFn func(ctx context.Context, tenantID, orderID uuid.UUID) ([]stock.ReservationResponse, error)
 	releaseReservationFn     func(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
-	consumeReservationFn     func(ctx context.Context, tenantID, reservationID uuid.UUID) error
+	consumeReservationFn     func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ConsumeReservationResponse, error)
 	recordConsumptionFn      func(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	adjustStockFn            func(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 	listAdjustmentsFn        func(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
@@ -238,11 +238,11 @@ func (m *mockStockSvc) ReleaseReservation(ctx context.Context, tenantID, reserva
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockStockSvc) ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) error {
+func (m *mockStockSvc) ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ConsumeReservationResponse, error) {
 	if m.consumeReservationFn != nil {
 		return m.consumeReservationFn(ctx, tenantID, reservationID)
 	}
-	return fmt.Errorf("not implemented")
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (m *mockStockSvc) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error) {
@@ -544,8 +544,8 @@ func TestReleaseReservation_Success(t *testing.T) {
 
 func TestConsumeReservation_Success(t *testing.T) {
 	stockMock := &mockStockSvc{
-		consumeReservationFn: func(_ context.Context, _, _ uuid.UUID) error {
-			return nil
+		consumeReservationFn: func(_ context.Context, _, _ uuid.UUID) (*stock.ConsumeReservationResponse, error) {
+			return &stock.ConsumeReservationResponse{Status: "consumed"}, nil
 		},
 	}
 
