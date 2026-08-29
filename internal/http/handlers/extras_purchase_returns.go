@@ -34,7 +34,22 @@ type purchaseReturnPayload struct {
 	PurchaseOrderID *uuid.UUID                  `json:"purchase_order_id"`
 	SupplierID      *uuid.UUID                  `json:"supplier_id"`
 	Reason          string                      `json:"reason"`
-	Lines           []purchaseReturnLinePayload `json:"lines"`
+	// DateReturned accepts "YYYY-MM-DD" or RFC3339; when omitted the return still defaults to
+	// now (same as before this field existed).
+	DateReturned *string                     `json:"date_returned"`
+	Lines        []purchaseReturnLinePayload `json:"lines"`
+}
+
+// parseFlexibleDate accepts a plain "YYYY-MM-DD" (as sent by an <input type="date">) or a full
+// RFC3339 timestamp — the same two formats extras_purchase_orders.go's ExpectedDate accepts.
+func parseFlexibleDate(s string) (time.Time, bool) {
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		return t, true
+	}
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t, true
+	}
+	return time.Time{}, false
 }
 
 type purchaseReturnDTO struct {
@@ -170,6 +185,11 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 	}
 	if req.SupplierID != nil {
 		create = create.SetSupplierID(*req.SupplierID)
+	}
+	if req.DateReturned != nil && *req.DateReturned != "" {
+		if t, ok := parseFlexibleDate(*req.DateReturned); ok {
+			create = create.SetDateReturned(t)
+		}
 	}
 	pr, err := create.Save(r.Context())
 	if err != nil {
