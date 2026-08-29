@@ -169,6 +169,25 @@ func applyToSummary(sum *StockHistorySummary, mvType string, change float64) {
 	}
 }
 
+// backfillQuantityAfter fills the QuantityAfter of any row that doesn't already carry one
+// (purchases, transfers, sales, sell-returns — only StockAdjustment rows record a real
+// snapshot at write time). rows MUST already be sorted newest-first. Walks backward from
+// currentStock, treating each row's stored QuantityAfter (when present) as an authoritative
+// anchor — so genuine adjustment snapshots are never overwritten, only trusted and resynced
+// from — and running-balance-filling the gaps in between. Pure for tests.
+func backfillQuantityAfter(rows []MovementRow, currentStock float64) {
+	after := currentStock
+	for i := range rows {
+		if rows[i].QuantityAfter != nil {
+			after = *rows[i].QuantityAfter
+		} else {
+			snapshot := after
+			rows[i].QuantityAfter = &snapshot
+		}
+		after -= rows[i].QuantityChange
+	}
+}
+
 // inRange applies the optional date window.
 func (f StockHistoryFilter) inRange(t time.Time) bool {
 	if f.DateFrom != nil && t.Before(*f.DateFrom) {
@@ -496,9 +515,22 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		}
 	}
 
-	// Movement-type filter narrows the TABLE view only — applied after the summary cards
-	// (above) are computed from the full filtered range, so switching "Type" in the UI never
-	// changes the Quantities In/Out totals.
+	// Newest first — required before backfillQuantityAfter, which walks the ledger in this
+	// order, and done before the type filter so the running balance always reflects the FULL
+	// history (a row's "New quantity" must stay correct even when the Type filter hides the
+	// other rows around it).
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].OccurredAt.After(rows[j].OccurredAt) })
+
+	// Only StockAdjustment rows record their own QuantityAfter at write time; purchases,
+	// transfers, sales and sell-returns leave it nil (the historical "dashes" in the New
+	// quantity column). Back-fill those from a running balance anchored on the live current
+	// stock and any known adjustment snapshots.
+	backfillQuantityAfter(rows, res.Summary.CurrentStock)
+
+	// Movement-type filter narrows the TABLE view only — applied after the summary cards and
+	// the running-balance backfill (both above) are computed from the full filtered range, so
+	// switching "Type" in the UI never changes the Quantities In/Out totals or the New
+	// quantity values.
 	if len(f.Types) > 0 {
 		filtered := rows[:0]
 		for _, r := range rows {
@@ -509,8 +541,6 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		rows = filtered
 	}
 
-	// Newest first, then stable page slice.
-	sort.SliceStable(rows, func(i, j int) bool { return rows[i].OccurredAt.After(rows[j].OccurredAt) })
 	res.Total = len(rows)
 	start := f.Offset
 	if start > len(rows) {

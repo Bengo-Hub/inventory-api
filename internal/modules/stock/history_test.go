@@ -90,6 +90,38 @@ func TestApplyToSummary(t *testing.T) {
 	}
 }
 
+// backfillQuantityAfter must fill every nil QuantityAfter (purchase/sale/transfer rows) via a
+// running balance anchored on current stock, while leaving genuine adjustment snapshots
+// untouched and resyncing the running balance from them.
+func TestBackfillQuantityAfter(t *testing.T) {
+	adjAfter := 40.0
+	// Rows are newest-first (index 0 = most recent), as the caller always sorts before calling.
+	rows := []MovementRow{
+		{Type: "sale", QuantityChange: -5},                                  // most recent: sold 5
+		{Type: "purchase", QuantityChange: 20},                              // older: bought 20
+		{Type: "adjustment", QuantityChange: -3, QuantityAfter: &adjAfter}, // known snapshot: 40 after
+		{Type: "sale", QuantityChange: -2},                                  // oldest: sold 2
+	}
+	backfillQuantityAfter(rows, 55) // current stock = 55 (i.e. the level right after the most recent row)
+
+	// Reading oldest→newest: 43 (after oldest sale) -3 adjustment-> 40 (the known snapshot)
+	// +20 purchase-> 60 -5 most-recent sale-> 55 (current stock).
+	want := []float64{55, 60, 40, 43}
+	for i, w := range want {
+		if rows[i].QuantityAfter == nil {
+			t.Fatalf("row %d: QuantityAfter is nil, want %v", i, w)
+		}
+		if *rows[i].QuantityAfter != w {
+			t.Errorf("row %d: QuantityAfter = %v, want %v", i, *rows[i].QuantityAfter, w)
+		}
+	}
+	// The stored adjustment snapshot must be the exact same pointer value, not silently
+	// recomputed/overwritten.
+	if *rows[2].QuantityAfter != adjAfter {
+		t.Errorf("adjustment row QuantityAfter was overwritten: got %v, want %v", *rows[2].QuantityAfter, adjAfter)
+	}
+}
+
 // Date-window filter: inclusive bounds behaviour.
 func TestStockHistoryFilterInRange(t *testing.T) {
 	from := time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
