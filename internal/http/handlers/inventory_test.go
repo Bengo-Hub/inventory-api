@@ -199,7 +199,7 @@ type mockStockSvc struct {
 	consumeReservationFn     func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ConsumeReservationResponse, error)
 	recordConsumptionFn      func(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	adjustStockFn            func(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
-	listAdjustmentsFn        func(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
+	listAdjustmentsFn        func(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, int, error)
 }
 
 func (m *mockStockSvc) CreateReservation(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error) {
@@ -275,11 +275,11 @@ func (m *mockStockSvc) ItemStockHistory(ctx context.Context, tenantID uuid.UUID,
 	return &stock.StockHistoryResult{Movements: []stock.MovementRow{}}, nil
 }
 
-func (m *mockStockSvc) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error) {
+func (m *mockStockSvc) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, int, error) {
 	if m.listAdjustmentsFn != nil {
 		return m.listAdjustmentsFn(ctx, tenantID, req)
 	}
-	return nil, fmt.Errorf("not implemented")
+	return nil, 0, fmt.Errorf("not implemented")
 }
 
 // ─── Test Helpers ───────────────────────────────────────────────────────

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/pagination"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
@@ -187,12 +187,13 @@ func (h *TransferHandler) ListTransfers(w http.ResponseWriter, r *http.Request) 
 	if from, to, ok := parseCreatedAtRange(r); ok {
 		filter.From, filter.To = from, to
 	}
-	if l := r.URL.Query().Get("limit"); l != "" {
-		filter.Limit, _ = strconv.Atoi(l)
-	}
-	if o := r.URL.Query().Get("offset"); o != "" {
-		filter.Offset, _ = strconv.Atoi(o)
-	}
+	// Shared page/limit/offset parsing (same helper ItemStockHistory and the items list use) so a
+	// caller can page with either `page`+`limit` or a raw `offset` — previously this endpoint only
+	// understood `limit`/`offset` and inventory-ui's Transfers page sent neither, silently capping
+	// every load at the 50-row fallback inside Service.ListTransfers with no way to reach page 2.
+	p := pagination.Parse(r)
+	filter.Limit = p.Limit
+	filter.Offset = p.Offset
 
 	items, total, err := h.transferSvc.ListTransfers(r.Context(), tenantID, filter)
 	if err != nil {
@@ -202,8 +203,11 @@ func (h *TransferHandler) ListTransfers(w http.ResponseWriter, r *http.Request) 
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"items": items,
-		"total": total,
+		"items":   items,
+		"total":   total,
+		"limit":   p.Limit,
+		"page":    p.Page,
+		"hasMore": p.Offset+len(items) < total,
 	})
 }
 

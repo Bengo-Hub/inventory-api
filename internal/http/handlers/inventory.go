@@ -85,7 +85,7 @@ type StockServicer interface {
 	RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, req stock.RelocateItemLocationRequest) (*stock.RelocateItemLocationResult, error)
 	SetItemOutletMembership(ctx context.Context, tenantID uuid.UUID, req stock.SetItemOutletMembershipRequest) (*stock.SetItemOutletMembershipResult, error)
 	Breakdown(ctx context.Context, tenantID uuid.UUID, req stock.BreakdownRequest) (*stock.BreakdownResponse, error)
-	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, error)
+	ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, int, error)
 	ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku string, f stock.StockHistoryFilter) (*stock.StockHistoryResult, error)
 }
 
@@ -2190,7 +2190,15 @@ func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Reques
 		req.DateTo = t
 	}
 
-	results, err := h.stockSvc.ListAdjustments(r.Context(), tenantID, req)
+	req.Search = r.URL.Query().Get("search")
+	// Shared page/limit/offset parsing (same helper transfers and ItemStockHistory use) — this
+	// endpoint previously hard-capped at 200 rows with no way to page past it, and reported
+	// "total": len(results), which is just the size of that same capped page, not a real count.
+	p := pagination.Parse(r)
+	req.Limit = p.Limit
+	req.Offset = p.Offset
+
+	results, total, err := h.stockSvc.ListAdjustments(r.Context(), tenantID, req)
 	if err != nil {
 		h.log.Error("list adjustments failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list adjustments")
@@ -2198,8 +2206,11 @@ func (h *InventoryHandler) ListAdjustments(w http.ResponseWriter, r *http.Reques
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"data":  results,
-		"total": len(results),
+		"data":    results,
+		"total":   total,
+		"limit":   p.Limit,
+		"page":    p.Page,
+		"hasMore": p.Offset+len(results) < total,
 	})
 }
 
