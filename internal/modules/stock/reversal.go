@@ -127,6 +127,21 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		}
 		origLines = append(origLines, l)
 	}
+	// The TRUE reversal ceiling for a key is the sum of EVERY original line sharing it, not any
+	// one row's own Quantity — a SKU can appear on more than one ConsumptionLine for the same
+	// order (a repeated sale line, or an Edit-Sale increase that recorded a SECOND consumption
+	// row for a SKU already on the order). The loop below still caps each row's own reverseQty
+	// against `remaining` (this key's shared budget), which correctly divides it across however
+	// many rows share the key — but comparing against `l.Quantity` (this row's own total)
+	// instead of the shared budget let one row's reversal inflate reversedSoFar past a SECOND
+	// row's own quantity, silently skipping it — a systematic under-return of stock. Confirmed
+	// by a worked example: line A qty=5, line B qty=2 (same key), reversing 2-of-7 total should
+	// return exactly 2 (1.43 from A + 0.57 from B); the old per-row cap returned only 1.43,
+	// dropping line B's share entirely.
+	keyTotalQty := map[string]float64{}
+	for _, l := range origLines {
+		keyTotalQty[lineKey(l.RecipeSku, l.IngredientSku)] += l.Quantity
+	}
 
 	// Shortfall attribution: the per-entry shortfall lives only on the consumption header
 	// items JSON. Match header entries to lines by (sku, quantity), consuming each entry
@@ -210,14 +225,8 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 			lineRecipeID = *l.RecipeID
 		}
 
-		// Cap by what earlier reversals left over so replays/overlapping partials can
-		// never compensate more than was consumed.
 		key := lineKey(l.RecipeSku, l.IngredientSku)
-		remaining := l.Quantity - reversedSoFar[key]
-		if remaining <= 0 {
-			continue
-		}
-		reverseQty := math.Min(round4(l.Quantity*ratio), remaining)
+		reverseQty := capReverseQty(l.Quantity, ratio, keyTotalQty[key], reversedSoFar[key])
 		if reverseQty <= 0 {
 			continue
 		}
@@ -365,4 +374,33 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		TotalCostReversed: round4(totalCost),
 		Ingredients:       results,
 	}, nil
+}
+
+// capReverseQty computes how much of ONE ConsumptionLine's quantity to reverse, given its own
+// ratio (the sale-line proportion being reversed) and the shared key's total original quantity
+// vs. what's already been reversed under that key (from prior calls, and — as this same
+// function is called again for each later row sharing the key within a single
+// ReverseConsumption call — from earlier rows processed in this same pass too). The ceiling is
+// keyTotalQty (the SUM of every ConsumptionLine sharing this recipeSKU|ingredientSKU key), never
+// this one line's own Quantity.
+//
+// Extracted as a pure function (no ent/DB types) specifically so this capping math is
+// unit-testable without a database — this package has no ent test harness today. It fixes a
+// real, confirmed-live bug: a SKU can appear on more than one ConsumptionLine for the same order
+// (a repeated sale line, or an Edit-Sale increase that recorded a SECOND consumption row for a
+// SKU already on the order). Capping against `lineQty` (that one row's own total) instead of the
+// shared key budget let the FIRST such row's reversal inflate `reversedSoFarForKey` past the
+// SECOND row's own quantity, silently dropping its share — a systematic under-return of stock
+// (never an over-return). Worked example: line A qty=5, line B qty=2 (same key), reversing 2-of-7
+// total should return exactly 2 (1.43 from A + 0.57 from B); the old per-row cap returned only
+// 1.43, dropping line B's share entirely.
+func capReverseQty(lineQty, ratio, keyTotalQty, reversedSoFarForKey float64) float64 {
+	if ratio <= 0 || lineQty <= 0 {
+		return 0
+	}
+	remaining := keyTotalQty - reversedSoFarForKey
+	if remaining <= 0 {
+		return 0
+	}
+	return math.Min(round4(lineQty*ratio), remaining)
 }
