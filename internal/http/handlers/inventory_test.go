@@ -200,6 +200,7 @@ type mockStockSvc struct {
 	recordConsumptionFn      func(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
 	adjustStockFn            func(ctx context.Context, tenantID uuid.UUID, req stock.AdjustStockRequest) (*stock.AdjustStockResponse, error)
 	listAdjustmentsFn        func(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, int, error)
+	listReservationsFn       func(ctx context.Context, tenantID uuid.UUID, filter stock.ReservationListFilter) ([]stock.ReservationSummary, int, error)
 }
 
 func (m *mockStockSvc) CreateReservation(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error) {
@@ -278,6 +279,13 @@ func (m *mockStockSvc) ItemStockHistory(ctx context.Context, tenantID uuid.UUID,
 func (m *mockStockSvc) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req stock.ListAdjustmentsRequest) ([]stock.StockAdjustmentDTO, int, error) {
 	if m.listAdjustmentsFn != nil {
 		return m.listAdjustmentsFn(ctx, tenantID, req)
+	}
+	return nil, 0, fmt.Errorf("not implemented")
+}
+
+func (m *mockStockSvc) ListReservations(ctx context.Context, tenantID uuid.UUID, filter stock.ReservationListFilter) ([]stock.ReservationSummary, int, error) {
+	if m.listReservationsFn != nil {
+		return m.listReservationsFn(ctx, tenantID, filter)
 	}
 	return nil, 0, fmt.Errorf("not implemented")
 }

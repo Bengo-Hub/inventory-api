@@ -1466,6 +1466,113 @@ func (s *Service) GetReservationsByOrderID(ctx context.Context, tenantID, orderI
 	return result, nil
 }
 
+// ReservationListFilter filters ListReservations' tenant-wide view.
+type ReservationListFilter struct {
+	Status string
+	// OrderID, when set, scopes to a single order. The only other native, indexed field on
+	// Reservation besides tenant/status/order_id is the `items` JSON blob (sku/qty pairs, no
+	// item name) — not a queryable column — so an order-ID lookup is the whole of "search" here.
+	OrderID *uuid.UUID
+	Limit   int
+	Offset  int
+}
+
+// ReservationSummary is one row of the tenant-wide Reservations list — one row PER Reservation
+// (a single order's hold, possibly across several items), matching how every other multi-line
+// document list in this codebase (Transfers, Adjustments) summarizes a document as one row
+// rather than flattening every line into the top-level list.
+type ReservationSummary struct {
+	ID            uuid.UUID      `json:"id"`
+	OrderID       uuid.UUID      `json:"order_id"`
+	WarehouseID   *uuid.UUID     `json:"warehouse_id,omitempty"`
+	WarehouseName string         `json:"warehouse_name,omitempty"`
+	Status        string         `json:"status"`
+	Items         []ReservedItem `json:"items"`
+	ItemCount     int            `json:"item_count"`
+	TotalQuantity float64        `json:"total_quantity"`
+	ExpiresAt     *time.Time     `json:"expires_at,omitempty"`
+	ConfirmedAt   *time.Time     `json:"confirmed_at,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// ListReservations returns a tenant-wide, paginated view of stock reservations — real
+// limit/offset with an accurate total, same shape as ListTransfers/ListAdjustments. Before this,
+// GetReservationsByOrderID was the ONLY way to read reservations, and it hard-required an
+// order_id (400s without one) — so inventory-ui's Reservations page, which has no order context
+// to supply, could never load anything at all.
+func (s *Service) ListReservations(ctx context.Context, tenantID uuid.UUID, filter ReservationListFilter) ([]ReservationSummary, int, error) {
+	q := s.client.Reservation.Query().Where(reservation.TenantID(tenantID))
+	if filter.Status != "" {
+		q = q.Where(reservation.Status(filter.Status))
+	}
+	if filter.OrderID != nil {
+		q = q.Where(reservation.OrderID(*filter.OrderID))
+	}
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("stock: count reservations: %w", err)
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	reservations, err := q.
+		Order(ent.Desc(reservation.FieldCreatedAt)).
+		Limit(limit).
+		Offset(filter.Offset).
+		All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("stock: list reservations: %w", err)
+	}
+
+	// Batch-resolve warehouse names for display — one query for the whole page, mirroring the
+	// itemDisplayMap/actorNamesByID batch-lookup pattern used elsewhere rather than a query per row.
+	whIDs := make(map[uuid.UUID]bool, len(reservations))
+	for _, r := range reservations {
+		if r.WarehouseID != nil {
+			whIDs[*r.WarehouseID] = true
+		}
+	}
+	whIDSlice := make([]uuid.UUID, 0, len(whIDs))
+	for id := range whIDs {
+		whIDSlice = append(whIDSlice, id)
+	}
+	whNameByID := make(map[uuid.UUID]string, len(whIDSlice))
+	if len(whIDSlice) > 0 {
+		if warehouses, werr := s.client.Warehouse.Query().Where(warehouse.IDIn(whIDSlice...)).All(ctx); werr == nil {
+			for _, w := range warehouses {
+				whNameByID[w.ID] = w.Name
+			}
+		}
+	}
+
+	result := make([]ReservationSummary, len(reservations))
+	for i, r := range reservations {
+		mapped := s.mapReservation(r)
+		summary := ReservationSummary{
+			ID:          mapped.ID,
+			OrderID:     mapped.OrderID,
+			WarehouseID: r.WarehouseID,
+			Status:      mapped.Status,
+			Items:       mapped.Items,
+			ItemCount:   len(mapped.Items),
+			ExpiresAt:   mapped.ExpiresAt,
+			ConfirmedAt: mapped.ConfirmedAt,
+			CreatedAt:   mapped.CreatedAt,
+		}
+		if r.WarehouseID != nil {
+			summary.WarehouseName = whNameByID[*r.WarehouseID]
+		}
+		for _, it := range mapped.Items {
+			summary.TotalQuantity += it.ReservedQty
+		}
+		result[i] = summary
+	}
+	return result, total, nil
+}
+
 // ReleaseReservation releases a stock reservation, restoring available quantities.
 func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error {
 	tx, err := s.client.Tx(ctx)

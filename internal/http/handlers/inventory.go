@@ -76,6 +76,7 @@ type StockServicer interface {
 	CreateReservation(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error)
 	GetReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)
 	GetReservationsByOrderID(ctx context.Context, tenantID, orderID uuid.UUID) ([]stock.ReservationResponse, error)
+	ListReservations(ctx context.Context, tenantID uuid.UUID, filter stock.ReservationListFilter) ([]stock.ReservationSummary, int, error)
 	ReleaseReservation(ctx context.Context, tenantID, reservationID uuid.UUID, reason string) error
 	ConsumeReservation(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ConsumeReservationResponse, error)
 	RecordConsumption(ctx context.Context, tenantID uuid.UUID, req stock.ConsumptionRequest) (*stock.ConsumptionResponse, error)
@@ -547,7 +548,12 @@ func (h *InventoryHandler) GetReservation(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, result)
 }
 
-// GetReservationsByOrder handles GET /v1/{tenant}/inventory/reservations?order_id={id}
+// GetReservationsByOrder handles GET /v1/{tenant}/inventory/reservations. With an `order_id`
+// query param it returns that order's reservations as a raw array (unchanged since this is a
+// live S2S contract — pos-api, hospital-api, ordering-backend and Cafe's client all call it this
+// way and decode a bare array). Without one, it returns a tenant-wide, paginated list (a new
+// capability — this path previously 400'd unconditionally with MISSING_ORDER_ID, which is why
+// inventory-ui's Reservations page could never load anything at all).
 func (h *InventoryHandler) GetReservationsByOrder(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -555,26 +561,47 @@ func (h *InventoryHandler) GetReservationsByOrder(w http.ResponseWriter, r *http
 		return
 	}
 
-	orderIDStr := r.URL.Query().Get("order_id")
-	if orderIDStr == "" {
-		writeError(w, http.StatusBadRequest, "MISSING_ORDER_ID", "order_id query parameter is required")
+	if orderIDStr := r.URL.Query().Get("order_id"); orderIDStr != "" {
+		orderID, err := uuid.Parse(orderIDStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_ORDER_ID", "Invalid order_id")
+			return
+		}
+		results, err := h.stockSvc.GetReservationsByOrderID(r.Context(), tenantID, orderID)
+		if err != nil {
+			h.log.Error("get reservations by order failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, results)
 		return
 	}
 
-	orderID, err := uuid.Parse(orderIDStr)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_ORDER_ID", "Invalid order_id")
-		return
+	filter := stock.ReservationListFilter{Status: r.URL.Query().Get("status")}
+	// The list has no other searchable text field (see ReservationListFilter's doc comment) — a
+	// UUID-shaped `search` term is treated as an order-ID lookup, same as passing `order_id`
+	// directly, so the page's search box still does something useful for its most common use.
+	if search := strings.TrimSpace(r.URL.Query().Get("search")); search != "" {
+		if oid, perr := uuid.Parse(search); perr == nil {
+			filter.OrderID = &oid
+		}
 	}
+	p := pagination.Parse(r)
+	filter.Limit, filter.Offset = p.Limit, p.Offset
 
-	results, err := h.stockSvc.GetReservationsByOrderID(r.Context(), tenantID, orderID)
+	results, total, err := h.stockSvc.ListReservations(r.Context(), tenantID, filter)
 	if err != nil {
-		h.log.Error("get reservations by order failed", zap.Error(err))
+		h.log.Error("list reservations failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
 		return
 	}
-
-	writeJSON(w, http.StatusOK, results)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data":    results,
+		"total":   total,
+		"limit":   p.Limit,
+		"page":    p.Page,
+		"hasMore": p.Offset+len(results) < total,
+	})
 }
 
 // ReleaseReservation handles POST /v1/{tenant}/inventory/reservations/{reservationID}/release
