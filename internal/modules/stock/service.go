@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ import (
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
@@ -242,6 +244,15 @@ type ListAdjustmentsRequest struct {
 	Reason       string      `json:"reason,omitempty"`
 	DateFrom     time.Time   `json:"date_from,omitempty"`
 	DateTo       time.Time   `json:"date_to,omitempty"`
+	// Search matches against the adjustment's own reference/batch number plus the linked item's
+	// and warehouse's names (resolved via a name lookup, since StockAdjustment stores only their
+	// IDs) — mirrors what the Adjustments page's search box promises ("item, reason, or
+	// warehouse"), now applied server-side instead of only over whatever page happened to load.
+	Search string
+	// Limit/Offset page through the full matching set (see pagination.Parse in the handler).
+	// Zero Limit falls back to the pre-pagination default of 200 for any caller that doesn't set it.
+	Limit  int
+	Offset int
 }
 
 // AdjustStock adjusts stock levels for an item, creates an audit trail, and publishes events.
@@ -538,8 +549,11 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	}, nil
 }
 
-// ListAdjustments returns stock adjustments filtered by the given criteria.
-func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req ListAdjustmentsRequest) ([]StockAdjustmentDTO, error) {
+// ListAdjustments returns stock adjustments filtered by the given criteria, along with the true
+// total matching count (independent of Limit/Offset) so a caller can page through the full set —
+// previously this hard-capped at 200 rows with no way to reach anything older, silently making
+// any adjustment past that cutoff invisible once a tenant had more than 200 on record.
+func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req ListAdjustmentsRequest) ([]StockAdjustmentDTO, int, error) {
 	q := s.client.StockAdjustment.Query().
 		Where(stockadjustment.TenantID(tenantID))
 
@@ -563,13 +577,43 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 	if !req.DateTo.IsZero() {
 		q = q.Where(stockadjustment.AdjustedAtLTE(req.DateTo))
 	}
+	if search := strings.TrimSpace(req.Search); search != "" {
+		// StockAdjustment only stores item_id/warehouse_id, not their names, so a name match has
+		// to be resolved via a separate lookup first — same idea as TransferNumberContainsFold,
+		// just one join short of being a native column search.
+		searchPreds := []predicate.StockAdjustment{stockadjustment.ReferenceContainsFold(search)}
+		if itemIDs, ierr := s.client.Item.Query().
+			Where(item.TenantID(tenantID), item.NameContainsFold(search)).
+			IDs(ctx); ierr == nil && len(itemIDs) > 0 {
+			searchPreds = append(searchPreds, stockadjustment.ItemIDIn(itemIDs...))
+		}
+		if whIDs, werr := s.client.Warehouse.Query().
+			Where(warehouse.TenantID(tenantID), warehouse.NameContainsFold(search)).
+			IDs(ctx); werr == nil && len(whIDs) > 0 {
+			searchPreds = append(searchPreds, stockadjustment.WarehouseIDIn(whIDs...))
+		}
+		q = q.Where(stockadjustment.Or(searchPreds...))
+	}
+
+	// Count the full matching set BEFORE Limit/Offset — this is the real total the frontend
+	// pager needs; `len(page-of-results)` (the previous behavior) is only ever <= the page size.
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("stock: count adjustments: %w", err)
+	}
+
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 200 // pre-pagination default, kept for any caller that doesn't set Limit
+	}
 
 	adjustments, err := q.
 		Order(ent.Desc(stockadjustment.FieldAdjustedAt)).
-		Limit(200).
+		Limit(limit).
+		Offset(req.Offset).
 		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("stock: list adjustments: %w", err)
+		return nil, 0, fmt.Errorf("stock: list adjustments: %w", err)
 	}
 
 	// Collect unique item and warehouse IDs for batch lookup.
@@ -666,7 +710,7 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 			CreatedAt:      a.CreatedAt,
 		}
 	}
-	return result, nil
+	return result, total, nil
 }
 
 // checkAndPublishLowStock checks if stock is at or below reorder level and publishes an event.
