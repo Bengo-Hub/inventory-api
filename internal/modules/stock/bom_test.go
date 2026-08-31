@@ -35,7 +35,7 @@ func TestConvertToStockUnit(t *testing.T) {
 		{"KG line, gram stock (case/synonym)", itemWithUnit("g"), 1.5, "KG", 1500, true},
 		{"PIECE line, pc stock", itemWithUnit("pc"), 2, "PIECE", 2, true},
 		{"no line unit — legacy passthrough", itemWithUnit("ml"), 30, "", 30, true},
-		{"no stock unit — legacy passthrough", itemWithUnit(""), 30, "ml", 30, true},
+		{"no stock unit at all — refused, not a silent raw passthrough", itemWithUnit(""), 30, "ml", 30, false},
 		{
 			"30ml tot from 750ml bottle stocked in pieces",
 			func() *ent.Item {

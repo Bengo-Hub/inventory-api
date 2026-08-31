@@ -31,6 +31,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
@@ -397,10 +398,24 @@ type ItemDTO struct {
 	SingleSupplement *float64 `json:"single_supplement,omitempty"`
 	// Current stock levels (aggregated across all warehouses).
 	// Populated by ListItems; nil when no balance row exists.
-	Available *float64  `json:"available,omitempty"`
-	OnHand    *float64  `json:"on_hand,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Available *float64 `json:"available,omitempty"`
+	OnHand    *float64 `json:"on_hand,omitempty"`
+	// UnitAbbreviation/UnitName resolve UnitID to display text (e.g. "btl"/"BOTTLE") so a
+	// bridged item's on_hand/available (a fractional STOCK-unit count, not the content unit)
+	// never renders as a bare, unlabeled number — see AvailableContentQty below for the
+	// content-bridge companion figure. Populated by ListItems/buildDTOs; empty when the item
+	// has no unit_id.
+	UnitAbbreviation string `json:"unit_abbreviation,omitempty"`
+	UnitName         string `json:"unit_name,omitempty"`
+	// AvailableContentQty is Available expressed in the item's content-bridge unit (e.g. a
+	// 0.86 btl balance with unit_content_qty=50/uom=ml -> 43 ml) — nil unless the item has a
+	// unit_content bridge configured. Lets the UI show "0.86 btl (~43 ml)" instead of a bare
+	// fractional stock-unit count that reads as meaningless to anyone not versed in the
+	// content-bridge model.
+	AvailableContentQty *float64  `json:"available_content_qty,omitempty"`
+	OnHandContentQty    *float64  `json:"on_hand_content_qty,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
 	// ModifierGroups: this item's selectable modifiers (e.g. "Extra Honey" on a Dawa),
 	// enriched by enrichModifierGroups. Populated by ListItems for every catalog-facing
 	// caller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.
@@ -1411,6 +1426,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	buildDTOs := func(innerCtx context.Context, itms []*ent.Item) ([]ItemDTO, error) {
 		catIDs := make([]uuid.UUID, 0, len(itms))
 		brandIDs := make([]uuid.UUID, 0, len(itms))
+		unitIDs := make([]uuid.UUID, 0, len(itms))
 		itemIDs := make([]uuid.UUID, 0, len(itms))
 		for _, it := range itms {
 			if it.CategoryID != nil {
@@ -1418,6 +1434,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			}
 			if it.BrandID != nil {
 				brandIDs = append(brandIDs, *it.BrandID)
+			}
+			if it.UnitID != nil {
+				unitIDs = append(unitIDs, *it.UnitID)
 			}
 			itemIDs = append(itemIDs, it.ID)
 		}
@@ -1434,6 +1453,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			brands, _ := s.client.ItemBrand.Query().Where(itembrand.IDIn(brandIDs...)).All(innerCtx)
 			for _, b := range brands {
 				brandInfo[b.ID] = brandMeta{name: b.Name, code: b.Code}
+			}
+		}
+		type unitMeta struct{ abbr, name string }
+		unitInfo := make(map[uuid.UUID]unitMeta)
+		if len(unitIDs) > 0 {
+			us, _ := s.client.Unit.Query().Where(entunit.IDIn(unitIDs...)).All(innerCtx)
+			for _, u := range us {
+				unitInfo[u.ID] = unitMeta{abbr: u.Abbreviation, name: u.Name}
 			}
 		}
 		// Load balances per item to surface reorder_level, reorder_quantity, and total available/on_hand.
@@ -1485,11 +1512,23 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					dto.BrandCode = bm.code
 				}
 			}
+			if it.UnitID != nil {
+				if um, ok := unitInfo[*it.UnitID]; ok {
+					dto.UnitAbbreviation = um.abbr
+					dto.UnitName = um.name
+				}
+			}
 			if bs, ok := balMap[it.ID]; ok {
 				dto.ReorderLevel = bs.reorderLevel
 				dto.ReorderQuantity = bs.reorderQuantity
 				dto.Available = &bs.available
 				dto.OnHand = &bs.onHand
+				if it.UnitContentQty != nil && *it.UnitContentQty > 0 {
+					availContent := math.Round(bs.available**it.UnitContentQty*10000) / 10000
+					onHandContent := math.Round(bs.onHand**it.UnitContentQty*10000) / 10000
+					dto.AvailableContentQty = &availContent
+					dto.OnHandContentQty = &onHandContent
+				}
 			}
 			// Cost-plus-margin suggested price for GOODS ONLY: prefer the item's own
 			// target_margin_percent, falling back to the tenant default. price = cost/(1-m).
