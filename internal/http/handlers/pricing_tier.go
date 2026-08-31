@@ -440,10 +440,11 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 			currency = "KES"
 		}
 
-		// Supersede, never overwrite: close out the current active row (if any) at this
-		// effective_from, then insert the new price as its own row. This is what makes a real
-		// price HISTORY exist — GetItemPrice always resolves the single is_active=true row, so
-		// nothing downstream needs to change to keep working.
+		// Supersede, never overwrite: delete the current active row (if any), then insert the
+		// new price as its own row. No price history is kept (2026-08-31: changed from
+		// soft-deactivate to hard-delete on tenant request — the is_active=false rows were
+		// never read anywhere) — GetItemPrice always resolves the single is_active=true row,
+		// so nothing downstream needs to change to keep working.
 		if qErr == nil && existing.Price == entry.Price && entry.TierBasis == string(existing.TierBasis) {
 			// No real change — skip the churn of closing + reopening an identical row.
 			saved := existing
@@ -451,9 +452,11 @@ func (h *PricingTierHandler) UpsertItemPricing(w http.ResponseWriter, r *http.Re
 			continue
 		}
 		if qErr == nil {
-			if _, cErr := existing.Update().SetIsActive(false).SetEffectiveTo(effectiveFrom).Save(ctx); cErr != nil {
+			// Hard-delete the superseded row (tenant request: stop accumulating unread
+			// is_active=false price history) instead of soft-deactivating it.
+			if cErr := tx.ItemPricing.DeleteOne(existing).Exec(ctx); cErr != nil {
 				_ = tx.Rollback()
-				h.log.Error("close out prior item pricing failed", zap.Error(cErr))
+				h.log.Error("delete prior item pricing failed", zap.Error(cErr))
 				writeError(w, http.StatusInternalServerError, "UPSERT_FAILED", "Failed to upsert item pricing")
 				return
 			}
@@ -684,9 +687,11 @@ func (h *PricingTierHandler) upsertTierPrice(ctx context.Context, tx *ent.Tx, te
 	case err == nil:
 		p := existing.Price
 		prevPrice = &p
-		// Supersede, never overwrite: close out the current row, insert the new price as its
-		// own row, so a real price history accumulates from bulk tier-regenerate too.
-		if _, cErr := existing.Update().SetIsActive(false).SetEffectiveTo(now).Save(ctx); cErr != nil {
+		// Supersede, never overwrite: delete the current row, insert the new price as its own
+		// row. No price history is kept (2026-08-31: hard-delete, not soft-deactivate — see
+		// the sibling upsert paths in this file and items/pricing_enrich.go for why this is
+		// safe against the concurrent-write race the soft-delete pattern originally guarded).
+		if cErr := tx.ItemPricing.DeleteOne(existing).Exec(ctx); cErr != nil {
 			return nil, cErr
 		}
 		saved, err = tx.ItemPricing.Create().

@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
-	"github.com/bengobox/inventory-service/internal/modules/units"
-	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
@@ -26,6 +24,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/units"
+	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 )
 
 // ReservationRequest matches the ordering-backend client DTO.
@@ -182,13 +182,13 @@ func NewService(client *ent.Client, log *zap.Logger) *Service {
 
 // AdjustStockRequest represents a stock adjustment request.
 type AdjustStockRequest struct {
-	SKU         string     `json:"sku"`
-	Adjustment  float64    `json:"adjustment"`
-	Reason      string     `json:"reason"`
-	Reference   string     `json:"reference,omitempty"`
-	Notes       string     `json:"notes,omitempty"`
-	AdjustedBy  uuid.UUID  `json:"adjusted_by"`
-	WarehouseID uuid.UUID  `json:"warehouse_id,omitempty"`
+	SKU         string    `json:"sku"`
+	Adjustment  float64   `json:"adjustment"`
+	Reason      string    `json:"reason"`
+	Reference   string    `json:"reference,omitempty"`
+	Notes       string    `json:"notes,omitempty"`
+	AdjustedBy  uuid.UUID `json:"adjusted_by"`
+	WarehouseID uuid.UUID `json:"warehouse_id,omitempty"`
 	// OutletID is the operating outlet (from the X-Outlet-ID request context). When WarehouseID is
 	// omitted the adjustment defaults to this outlet's own warehouse, not the tenant default — set
 	// by the handler, not trusted from the request body.
@@ -320,11 +320,11 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		qtyBefore = bal.OnHand
 		qtyChange = req.Adjustment
 
-		newOnHand = bal.OnHand + req.Adjustment
+		newOnHand = round4(bal.OnHand + req.Adjustment)
 		if newOnHand < 0 {
 			newOnHand = 0
 		}
-		newAvailable = bal.Available + req.Adjustment
+		newAvailable = round4(bal.Available + req.Adjustment)
 		if newAvailable < 0 {
 			newAvailable = 0
 		}
@@ -1996,9 +1996,6 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			if updatedBal.OnHand < 0 {
 				// Oversell signal: theoretical need exceeded on-hand; balances floor at
 				// zero but the gap is recorded for actual-vs-theoretical reconciliation.
-				// The clamp is itself a second atomic update scoped to this same locked row —
-				// safe to apply unconditionally here since nothing else can be racing it
-				// mid-transaction.
 				entry.ShortfallQty = round4(-updatedBal.OnHand)
 				s.log.Warn("consumption exceeds on-hand — floored at zero",
 					zap.String("sku", cl.SKU),
@@ -2006,11 +2003,17 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					zap.Float64("resulting_on_hand", updatedBal.OnHand),
 				)
 			}
-			if updatedBal.OnHand < 0 || updatedBal.Available < 0 {
+			// Clamp negatives to zero AND round away float64 accumulation drift (repeated
+			// AddOnHand/AddAvailable calls on a long-lived row otherwise drift to noise like
+			// 0.8999999999999999) in the same follow-up update — this is itself a second
+			// atomic update scoped to this same locked row, safe to apply unconditionally
+			// since nothing else can be racing it mid-transaction.
+			roundedOnHand, roundedAvailable := round4(max(0, updatedBal.OnHand)), round4(max(0, updatedBal.Available))
+			if roundedOnHand != updatedBal.OnHand || roundedAvailable != updatedBal.Available {
 				var clampedBal *ent.InventoryBalance
 				clampedBal, err = tx.InventoryBalance.UpdateOneID(bal.ID).
-					SetOnHand(max(0, updatedBal.OnHand)).
-					SetAvailable(max(0, updatedBal.Available)).
+					SetOnHand(roundedOnHand).
+					SetAvailable(roundedAvailable).
 					Save(ctx)
 				if err != nil {
 					return nil, fmt.Errorf("stock: clamp balance for sku=%s: %w", cl.SKU, err)

@@ -482,11 +482,26 @@ func (s *Service) tryUpsertItemTierPrice(ctx context.Context, tenantID, itemID, 
 			return true, tx.Commit() // no real change — don't spam a history row
 		}
 		now := time.Now()
-		if _, err := existing.Update().SetIsActive(false).SetEffectiveTo(now).Save(ctx); err != nil {
-			if ent.IsConstraintError(err) {
+		// Hard-delete the superseded row instead of soft-deactivating it (tenant request:
+		// stop accumulating is_active=false price history — it was never read anywhere).
+		// This does NOT reintroduce the 2026-08-12 race the comment above documents: that
+		// race is guarded by the itempricing_active_no_outlet/itempricing_active_outlet
+		// partial unique indexes on the INSERT below, which fire identically whether the
+		// prior row was soft-deactivated or hard-deleted — only the surviving audit trail
+		// changes, not the concurrency guarantee.
+		if err := tx.ItemPricing.DeleteOne(existing).Exec(ctx); err != nil {
+			// A concurrent writer racing this same tuple can make this DELETE fail two
+			// different ways depending on timing: a constraint error (rare — deactivating
+			// under the old soft-delete code could theoretically hit one) or, more likely
+			// with a hard delete, ent.IsNotFound (the other transaction already deleted this
+			// exact row out from under us between our read and this delete, since the SELECT
+			// above takes no row lock). Both mean the same thing — the row changed, retry
+			// fresh — so both must retry, not just the constraint case the prior soft-delete
+			// code only needed to check.
+			if ent.IsConstraintError(err) || ent.IsNotFound(err) {
 				return false, err // lost the race closing out the prior row — retry fresh
 			}
-			return true, fmt.Errorf("items: close out prior tier price: %w", err)
+			return true, fmt.Errorf("items: delete prior tier price: %w", err)
 		}
 		if _, err := tx.ItemPricing.Create().
 			SetTenantID(tenantID).
