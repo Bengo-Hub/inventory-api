@@ -34,7 +34,14 @@ import (
 //     returns, count variances (carries quantity_before/after + actor).
 //   - GoodsReceiptLine  — purchases in (POSTED receipts only).
 //   - StockTransferLine — transfers between warehouses (out at shipped_at from
-//     the source, in at received_at into the destination).
+//     the source, in at received_at into the destination); a transfer that was
+//     explicitly back/post-dated via transfer_date at entry shows that date
+//     instead (see ledgerMovementDate) — the real shipped_at/received_at is
+//     still carried on the row as EnteredAt, only the primary ledger date and
+//     the date-range filter honor the override. The delivery-note/GRN PDF
+//     documents deliberately keep printing the raw timestamps regardless
+//     (transfers_documents.go's effectiveTransferDisplayDate doc comment) —
+//     those are the shipment/receipt paperwork itself, not a reporting view.
 //   - ConsumptionLine   — sales depletion (POS/ordering BOM path); reversal
 //     rows (reason "reversal" / negative qty) surface as sell returns. Rows
 //     flagged `theoretical` never moved stock and are EXCLUDED.
@@ -60,6 +67,10 @@ type MovementRow struct {
 	ActorName string `json:"actor_name,omitempty"`
 	// Counterparty: supplier name (purchases) or customer name (sales/sell returns).
 	Counterparty string `json:"counterparty,omitempty"`
+	// EnteredAt is the real ship/receive event timestamp, present only when OccurredAt was
+	// overridden away from it by a transfer's transfer_date (see ledgerMovementDate) — never
+	// hides the real audit timestamp, just stops it from being the misleading headline date.
+	EnteredAt *time.Time `json:"entered_at,omitempty"`
 }
 
 // StockHistorySummary mirrors the Go-Digital quantities-in/out cards.
@@ -197,6 +208,20 @@ func (f StockHistoryFilter) inRange(t time.Time) bool {
 		return false
 	}
 	return true
+}
+
+// ledgerMovementDate resolves a transfer leg's ledger date: the transfer_date override
+// (transfers.EffectiveTransferDate's precedence) when the tenant explicitly back/post-dated the
+// whole transfer at entry, else real unchanged (the raw shipped_at/received_at). enteredAt
+// carries the real event timestamp whenever overridden — the ledger's "New quantity" running
+// balance still sorts/anchors on OccurredAt, so a backdated transfer correctly lands among its
+// chronological neighbors instead of floating under today (same reasoning as
+// transfers.orderByEffectiveDate for the Transfers list).
+func ledgerMovementDate(tr *ent.StockTransfer, real time.Time) (occurred time.Time, enteredAt *time.Time) {
+	if tr.TransferDate == nil {
+		return real, nil
+	}
+	return *tr.TransferDate, &real
 }
 
 // ItemStockHistory builds the unified per-item ledger + summary.
@@ -358,26 +383,31 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 				continue
 			}
 			// OUT leg: stock left the source when shipped.
-			if tr.ShippedAt != nil && f.inRange(*tr.ShippedAt) &&
-				(f.WarehouseID == nil || tr.SourceWarehouseID == *f.WarehouseID) {
-				srcID := tr.SourceWarehouseID
-				rows = append(rows, MovementRow{
-					Type: "transfer_out", Label: "Transfer Out",
-					QuantityChange: -l.Quantity,
-					OccurredAt:     *tr.ShippedAt, Reference: tr.TransferNumber,
-					WarehouseID: &srcID, ActorID: tr.InitiatedBy,
-				})
+			if tr.ShippedAt != nil && (f.WarehouseID == nil || tr.SourceWarehouseID == *f.WarehouseID) {
+				occurred, enteredAt := ledgerMovementDate(tr, *tr.ShippedAt)
+				if f.inRange(occurred) {
+					srcID := tr.SourceWarehouseID
+					rows = append(rows, MovementRow{
+						Type: "transfer_out", Label: "Transfer Out",
+						QuantityChange: -l.Quantity,
+						OccurredAt:     occurred, EnteredAt: enteredAt, Reference: tr.TransferNumber,
+						WarehouseID: &srcID, ActorID: tr.InitiatedBy,
+					})
+				}
 			}
 			// IN leg: stock arrived at the destination when received.
-			if tr.Status == "received" && tr.ReceivedAt != nil && f.inRange(*tr.ReceivedAt) &&
+			if tr.Status == "received" && tr.ReceivedAt != nil &&
 				(f.WarehouseID == nil || tr.DestinationWarehouseID == *f.WarehouseID) {
-				dstID := tr.DestinationWarehouseID
-				rows = append(rows, MovementRow{
-					Type: "transfer_in", Label: "Transfer In",
-					QuantityChange: l.Quantity,
-					OccurredAt:     *tr.ReceivedAt, Reference: tr.TransferNumber,
-					WarehouseID: &dstID, ActorID: tr.InitiatedBy,
-				})
+				occurred, enteredAt := ledgerMovementDate(tr, *tr.ReceivedAt)
+				if f.inRange(occurred) {
+					dstID := tr.DestinationWarehouseID
+					rows = append(rows, MovementRow{
+						Type: "transfer_in", Label: "Transfer In",
+						QuantityChange: l.Quantity,
+						OccurredAt:     occurred, EnteredAt: enteredAt, Reference: tr.TransferNumber,
+						WarehouseID: &dstID, ActorID: tr.InitiatedBy,
+					})
+				}
 			}
 		}
 	}

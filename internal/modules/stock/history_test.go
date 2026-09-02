@@ -3,6 +3,8 @@ package stock
 import (
 	"testing"
 	"time"
+
+	"github.com/bengobox/inventory-service/internal/ent"
 )
 
 // classifyAdjustment maps every StockAdjustment reason into the unified
@@ -145,4 +147,36 @@ func TestStockHistoryFilterInRange(t *testing.T) {
 	if !open.inRange(time.Now()) || !open.inRange(time.Time{}) {
 		t.Error("open filter must accept any time")
 	}
+}
+
+// ledgerMovementDate: the case this test guards against is BOI Enterprises' reported bug — a
+// transfer created/shipped/received in one sitting but backdated via transfer_date (e.g. entered
+// today under a transfer_date from two days ago) must show the backdated day in the stock-history
+// ledger, not the raw received_at/shipped_at event timestamp, while still surfacing the real
+// timestamp via EnteredAt rather than discarding it.
+func TestLedgerMovementDate(t *testing.T) {
+	real := time.Date(2026, 9, 1, 12, 7, 52, 0, time.UTC)
+
+	t.Run("no override — real timestamp passes through unchanged", func(t *testing.T) {
+		tr := &ent.StockTransfer{}
+		occurred, enteredAt := ledgerMovementDate(tr, real)
+		if !occurred.Equal(real) {
+			t.Errorf("occurred = %v, want %v", occurred, real)
+		}
+		if enteredAt != nil {
+			t.Errorf("enteredAt = %v, want nil (no override was set)", enteredAt)
+		}
+	})
+
+	t.Run("transfer_date override — ledger shows the backdated day, real timestamp preserved as EnteredAt", func(t *testing.T) {
+		backdated := time.Date(2026, 8, 30, 0, 0, 0, 0, time.UTC)
+		tr := &ent.StockTransfer{TransferDate: &backdated}
+		occurred, enteredAt := ledgerMovementDate(tr, real)
+		if !occurred.Equal(backdated) {
+			t.Errorf("occurred = %v, want the transfer_date override %v", occurred, backdated)
+		}
+		if enteredAt == nil || !enteredAt.Equal(real) {
+			t.Errorf("enteredAt = %v, want the real event timestamp %v", enteredAt, real)
+		}
+	})
 }
