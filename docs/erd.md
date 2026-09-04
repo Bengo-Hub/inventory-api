@@ -117,6 +117,19 @@ On consumption:   on_hand  -= qty, reserved -= qty
 On release:       available += qty, reserved -= qty
 ```
 
+**Negative balances are the correct representation of an unsettled oversell (2026-09-04).**
+When a POS sale (approved via the client-side oversell override) or a reservation consumes more
+than `on_hand`, the balance is allowed to go negative — it is not floored to zero. That negative
+value is the item's real backorder debt: the next transfer, GRN, or manual adjustment settles it
+by simply adding on top (an unclamped delta), the same way any of those paths already worked.
+The restock/"back in stock" cascade only fires on the `on_hand` transition from `<=0` to `>0`, so
+an item stays correctly hidden/out-of-stock until the debt is fully paid off, not just until any
+stock arrives. This supersedes the original 2026-07-06 stock-depletion design's "keep flooring,
+negative-stock policy = explicit non-goal" decision (`.claude/plans/inventory-stock-tracking-audit-and-fixes.md`).
+See `internal/modules/stock/service.go` (`RecordConsumption`, `AdjustStock`,
+`ConsumeReservation`) and the shared `eventShortfall`/`apportionDeducted` helpers in `bom.go`/
+`reversal.go`.
+
 ---
 
 ## Reservations & Consumptions
