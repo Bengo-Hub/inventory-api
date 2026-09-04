@@ -714,7 +714,11 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 		}
 	}
 
-	if minPortions == math.MaxFloat64 {
+	if minPortions == math.MaxFloat64 || minPortions < 0 {
+		// A negative minPortions means at least one ingredient is itself in oversold/negative
+		// balance territory (now a legitimate state — see [[oversell-negative-stock-settlement]]).
+		// "Portions currently producible" can't itself be negative, so floor at 0 here — mirrors
+		// stock/cascade.go's produciblePortions, which already does the same.
 		minPortions = 0
 	}
 

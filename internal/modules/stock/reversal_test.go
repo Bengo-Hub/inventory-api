@@ -70,3 +70,42 @@ func TestCapReverseQty_BudgetExhausted_ReturnsZero(t *testing.T) {
 		t.Errorf("reverseQty = %v, want 0 (nothing left of the shared budget)", got)
 	}
 }
+
+// TestApportionDeducted_MultiLineGroup_ShortfallExceedsFirstLine is the regression test for
+// the multi-lot/layer-fallback over-return bug: a sale's deduction for one SKU split across two
+// ConsumptionLine rows (e.g. two cost layers drawn from), with a shortfall LARGER than the
+// first line's own quantity. The old (sku, exact-quantity) matching heuristic attributed the
+// entire shortfall to whichever line matched first and returned 0 for the other, over-crediting
+// the group's total deducted amount. Worked example: line A qty=1, line B qty=4 (group total 5),
+// header shortfall=2 → true group-deducted total is 3, apportioned 0.6/2.4 by each line's share.
+func TestApportionDeducted_MultiLineGroup_ShortfallExceedsFirstLine(t *testing.T) {
+	const groupTotalQty = 1 + 4
+	const groupShortfall = 2.0
+
+	gotA := apportionDeducted(1, groupTotalQty, groupShortfall)
+	if want := 0.6; gotA != want {
+		t.Errorf("line A deducted = %v, want %v", gotA, want)
+	}
+	gotB := apportionDeducted(4, groupTotalQty, groupShortfall)
+	if want := 2.4; gotB != want {
+		t.Errorf("line B deducted = %v, want %v", gotB, want)
+	}
+	if total := gotA + gotB; total != 3.0 {
+		t.Errorf("total deducted across both lines = %v, want 3.0 (5 needed - 2 shortfall); the old heuristic over-returned this to 4.0", total)
+	}
+}
+
+// TestApportionDeducted_SingleLine_NoShortfall covers the common case: one line, fully covered.
+func TestApportionDeducted_SingleLine_NoShortfall(t *testing.T) {
+	if got, want := apportionDeducted(5, 5, 0), 5.0; got != want {
+		t.Errorf("apportionDeducted(5, 5, 0) = %v, want %v", got, want)
+	}
+}
+
+// TestApportionDeducted_ZeroGroupTotal_FallsBackToLineQty guards the (theoretically unreachable
+// in practice, since callers skip zero/theoretical lines before calling) division-by-zero edge.
+func TestApportionDeducted_ZeroGroupTotal_FallsBackToLineQty(t *testing.T) {
+	if got, want := apportionDeducted(3, 0, 0), 3.0; got != want {
+		t.Errorf("apportionDeducted(3, 0, 0) = %v, want %v", got, want)
+	}
+}

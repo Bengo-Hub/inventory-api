@@ -320,14 +320,13 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		qtyBefore = bal.OnHand
 		qtyChange = req.Adjustment
 
+		// A manual adjustment applies the literal delta a manager enters, whatever sign the
+		// result lands on. Floor-at-zero here used to silently destroy a real oversell debt
+		// instead of settling it — a restock adjustment after an oversold sale must be able to
+		// bring on_hand from e.g. -3 up to -1, not reset it to a fresh positive number. See
+		// [[oversell-negative-stock-settlement]].
 		newOnHand = round4(bal.OnHand + req.Adjustment)
-		if newOnHand < 0 {
-			newOnHand = 0
-		}
 		newAvailable = round4(bal.Available + req.Adjustment)
-		if newAvailable < 0 {
-			newAvailable = 0
-		}
 
 		qtyAfter = newOnHand
 
@@ -1712,17 +1711,51 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 				inventorybalance.WarehouseID(whID),
 			).
 			First(ctx)
+		if ent.IsNotFound(err) {
+			// First-ever consumption of this item at this warehouse — auto-create a zero
+			// balance (same pattern as RecordConsumption/AdjustStock) instead of silently
+			// skipping the line: without a row to decrement, this reservation's consumption
+			// left no trace anywhere. See [[oversell-negative-stock-settlement]].
+			bal, err = tx.InventoryBalance.Create().
+				SetTenantID(tenantID).
+				SetItemID(itm.ID).
+				SetWarehouseID(whID).
+				Save(ctx)
+		}
 		if err != nil {
 			continue
 		}
 
+		// Atomic on_hand delta (matches RecordConsumption's pattern, closes a lost-update race
+		// under concurrent consumption of the same row) with NO floor at zero — a reservation
+		// drawn against stock that's already run out while pending must carry the resulting
+		// debt as negative on_hand, same as a direct-sale oversell, so a later
+		// transfer/GRN/adjustment settles it instead of a floor silently erasing it. Reserved
+		// keeps its own floor-at-0 (a currently-held-reservations count should never go
+		// negative — unrelated, correct invariant). See [[oversell-negative-stock-settlement]].
+		onHandBefore := bal.OnHand
 		updatedBal, updateErr := tx.InventoryBalance.UpdateOne(bal).
-			SetOnHand(max(0, bal.OnHand-ri.ReservedQty)).
-			SetReserved(max(0, bal.Reserved-ri.ReservedQty)).
+			AddOnHand(-ri.ReservedQty).
+			SetReserved(round4(max(0, bal.Reserved-ri.ReservedQty))).
 			Save(ctx)
 		if updateErr != nil {
 			err = updateErr
 			return nil, fmt.Errorf("stock: update balance for sku=%s: %w", ri.SKU, err)
+		}
+		if roundedOnHand := round4(updatedBal.OnHand); roundedOnHand != updatedBal.OnHand {
+			updatedBal, updateErr = tx.InventoryBalance.UpdateOne(updatedBal).SetOnHand(roundedOnHand).Save(ctx)
+			if updateErr != nil {
+				err = updateErr
+				return nil, fmt.Errorf("stock: round balance for sku=%s: %w", ri.SKU, err)
+			}
+		}
+		if sf := eventShortfall(ri.ReservedQty, onHandBefore); sf > 0 {
+			s.log.Warn("reservation consume exceeds on-hand — balance now carries the debt as negative stock",
+				zap.String("sku", ri.SKU),
+				zap.Float64("needed", ri.ReservedQty),
+				zap.Float64("shortfall", sf),
+				zap.Float64("resulting_on_hand", updatedBal.OnHand),
+			)
 		}
 
 		// Draw down lot cost-layers in FIFO/LIFO/FEFO/wavg order, same mechanism
@@ -1965,6 +1998,25 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				inventorybalance.WarehouseID(whID),
 			).
 			First(ctx)
+		if ent.IsNotFound(berr) {
+			// No balance row exists yet for this item in this warehouse — this can be a
+			// genuinely first-ever sale at a new outlet/warehouse, not just a data gap.
+			// Auto-create a zero balance (the same first-touch pattern AdjustStock already
+			// uses) instead of silently no-opping the deduction below: without a row to
+			// decrement, an oversell here left ZERO trace anywhere at all — worse than the
+			// floor-at-zero bug, since not even a negative balance or shortfall signal
+			// survived. See [[oversell-negative-stock-settlement]].
+			var createErr error
+			bal, createErr = tx.InventoryBalance.Create().
+				SetTenantID(tenantID).
+				SetItemID(itm.ID).
+				SetWarehouseID(whID).
+				Save(ctx)
+			if createErr != nil {
+				return nil, fmt.Errorf("stock: init balance for sku=%s: %w", cl.SKU, createErr)
+			}
+			berr = nil
+		}
 		switch {
 		case berr == nil:
 			deduct := cl.Quantity // keep fractional — do not truncate sub-unit consumption
@@ -1993,32 +2045,43 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 			if err != nil {
 				return nil, fmt.Errorf("stock: update balance for sku=%s: %w", cl.SKU, err)
 			}
-			if updatedBal.OnHand < 0 {
-				// Oversell signal: theoretical need exceeded on-hand; balances floor at
-				// zero but the gap is recorded for actual-vs-theoretical reconciliation.
-				entry.ShortfallQty = round4(-updatedBal.OnHand)
-				s.log.Warn("consumption exceeds on-hand — floored at zero",
+			// Isolate THIS event's own contribution to any shortfall — not the balance's total
+			// carried-forward debt, which would double-count an earlier sale's unsettled
+			// shortfall as if it were new. onHandBefore is the pre-delta value (AddOnHand
+			// above already applied -deduct).
+			onHandBefore := updatedBal.OnHand + deduct
+			if thisEventShortfall := eventShortfall(deduct, onHandBefore); thisEventShortfall > 0 {
+				// Oversell signal: this consumption's own need exceeded what was really
+				// on-hand at the time. The balance now carries the resulting debt as a
+				// genuine negative on_hand/available — a later transfer/GRN/adjustment
+				// settles it by adding on top, instead of the debt being silently erased by
+				// a floor-at-zero clamp (the prior, deliberately-deferred behavior — see
+				// [[oversell-negative-stock-settlement]]).
+				entry.ShortfallQty = thisEventShortfall
+				s.log.Warn("consumption exceeds on-hand — balance now carries the debt as negative stock",
 					zap.String("sku", cl.SKU),
 					zap.Float64("needed", deduct),
+					zap.Float64("shortfall", thisEventShortfall),
 					zap.Float64("resulting_on_hand", updatedBal.OnHand),
 				)
 			}
-			// Clamp negatives to zero AND round away float64 accumulation drift (repeated
-			// AddOnHand/AddAvailable calls on a long-lived row otherwise drift to noise like
-			// 0.8999999999999999) in the same follow-up update — this is itself a second
-			// atomic update scoped to this same locked row, safe to apply unconditionally
-			// since nothing else can be racing it mid-transaction.
-			roundedOnHand, roundedAvailable := round4(max(0, updatedBal.OnHand)), round4(max(0, updatedBal.Available))
+			// Round away float64 accumulation drift (repeated AddOnHand/AddAvailable calls on
+			// a long-lived row otherwise drift to noise like 0.8999999999999999) in the same
+			// follow-up update — this is itself a second atomic update scoped to this same
+			// locked row, safe to apply unconditionally since nothing else can be racing it
+			// mid-transaction. Negative values are NOT clamped: a genuinely oversold balance
+			// stays negative until real stock arrives to settle it.
+			roundedOnHand, roundedAvailable := round4(updatedBal.OnHand), round4(updatedBal.Available)
 			if roundedOnHand != updatedBal.OnHand || roundedAvailable != updatedBal.Available {
-				var clampedBal *ent.InventoryBalance
-				clampedBal, err = tx.InventoryBalance.UpdateOneID(bal.ID).
+				var roundedBal *ent.InventoryBalance
+				roundedBal, err = tx.InventoryBalance.UpdateOneID(bal.ID).
 					SetOnHand(roundedOnHand).
 					SetAvailable(roundedAvailable).
 					Save(ctx)
 				if err != nil {
-					return nil, fmt.Errorf("stock: clamp balance for sku=%s: %w", cl.SKU, err)
+					return nil, fmt.Errorf("stock: round balance for sku=%s: %w", cl.SKU, err)
 				}
-				updatedBal = clampedBal
+				updatedBal = roundedBal
 			}
 
 			// Check for low stock after consumption
@@ -2108,11 +2171,10 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					consumedAt:       saleDate,
 				})
 			}
-		case ent.IsNotFound(berr):
-			// No balance row here: nothing to deduct — record the full quantity as
-			// shortfall instead of silently pretending the stock moved.
-			entry.ShortfallQty = cl.Quantity
 		default:
+			// A real query error — the no-balance-row case is handled above (auto-creates a
+			// zero balance and falls into the berr==nil branch), so berr here is never
+			// ent.IsNotFound.
 			return nil, fmt.Errorf("stock: query balance for sku=%s: %w", cl.SKU, berr)
 		}
 

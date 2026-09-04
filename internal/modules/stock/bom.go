@@ -55,6 +55,18 @@ type explodedIngredient struct {
 // round4 rounds to 4 decimal places to avoid floating-point drift accumulating on balances.
 func round4(v float64) float64 { return math.Round(v*10000) / 10000 }
 
+// eventShortfall isolates ONE consumption/reservation-consume event's own contribution to a
+// shortfall, given how much it needed (deduct) and what was really on-hand immediately before
+// this event ran (onHandBefore — which may itself already be negative, carrying forward an
+// earlier, still-unsettled oversell). Only the portion of `deduct` that exceeded genuinely
+// available stock at the time counts as THIS event's shortfall; it must never be computed from
+// the balance's total post-delta value, which would double-count carried-forward debt from a
+// prior sale as if it were newly caused by this one. See [[oversell-negative-stock-settlement]].
+func eventShortfall(deduct, onHandBefore float64) float64 {
+	fulfilled := min(deduct, max(0, onHandBefore))
+	return round4(deduct - fulfilled)
+}
+
 // expenseBearingReason reports whether a downward stock adjustment must post an
 // operating-expense/wastage journal entry in treasury: internal consumption of
 // floor-stock consumables (serviettes, tissues) and stock written off as damaged,
