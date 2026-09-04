@@ -143,32 +143,42 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		keyTotalQty[lineKey(l.RecipeSku, l.IngredientSku)] += l.Quantity
 	}
 
-	// Shortfall attribution: the per-entry shortfall lives only on the consumption header
-	// items JSON. Match header entries to lines by (sku, quantity), consuming each entry
-	// once — identical duplicates (two of the same drink) are interchangeable, so first
-	// match is safe.
-	type headerEntry struct {
-		entschema.ConsumptionItemJSON
-		used bool
-	}
-	var headerEntries []*headerEntry
+	// Shortfall attribution: the per-entry shortfall lives only on the consumption header's
+	// items JSON, keyed by (consumption event, ingredient sku) — NOT by any one
+	// ConsumptionLine's own quantity. A single header entry's deduction can be split across
+	// several ConsumptionLine rows (one per cost-layer/lot actually drawn from, plus a
+	// standard-cost fallback line for whatever layers couldn't cover — see RecordConsumption's
+	// lot-draw loop), so matching by exact (sku, quantity) against one line at a time silently
+	// missed the shortfall whenever a sale's deduction spanned more than one line — previously
+	// let a reversal restore more than was truly deducted. Group by (consumption_id, sku)
+	// instead: sum every line's own quantity, subtract the header's shortfall ONCE for the
+	// whole group, and apportion the result back across the group's lines by their own share —
+	// correct regardless of how many layers/lines the deduction happened to split across, and
+	// no longer order-dependent. See [[oversell-negative-stock-settlement]].
+	groupKey := func(consumptionID uuid.UUID, sku string) string { return consumptionID.String() + "|" + sku }
+	groupShortfall := map[string]float64{}
 	for _, c := range originals {
-		for i := range c.Items {
-			headerEntries = append(headerEntries, &headerEntry{ConsumptionItemJSON: c.Items[i]})
+		for _, it := range c.Items {
+			if it.ShortfallQty > 0 {
+				groupShortfall[groupKey(c.ID, it.SKU)] += it.ShortfallQty
+			}
 		}
 	}
-	shortfallFor := func(l *ent.ConsumptionLine) float64 {
-		for _, he := range headerEntries {
-			if he.used || he.SKU != l.IngredientSku {
-				continue
-			}
-			if math.Abs(he.Quantity-l.Quantity) > 0.0001 {
-				continue
-			}
-			he.used = true
-			return he.ShortfallQty
+	groupTotalQty := map[string]float64{}
+	for _, l := range origLines {
+		if l.Theoretical {
+			continue
 		}
-		return 0
+		groupTotalQty[groupKey(l.ConsumptionID, l.IngredientSku)] += l.Quantity
+	}
+	// deductedFor returns how much of line l's own quantity was actually taken out of stock
+	// (net of its group's shortfall, apportioned by this line's share of the group total).
+	deductedFor := func(l *ent.ConsumptionLine) float64 {
+		if l.Theoretical {
+			return 0
+		}
+		gKey := groupKey(l.ConsumptionID, l.IngredientSku)
+		return apportionDeducted(l.Quantity, groupTotalQty[gKey], groupShortfall[gKey])
 	}
 
 	// Ratio per sale-line SKU (matched against the line's finished_item_sku, falling back
@@ -234,12 +244,7 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 
 		// Stock only ever moved for the deducted portion (theoretical lines and the
 		// shortfall gap were recorded, not deducted). Prorate the deducted portion.
-		deducted := l.Quantity
-		if l.Theoretical {
-			deducted = 0
-		} else if sf := shortfallFor(l); sf > 0 {
-			deducted = math.Max(0, l.Quantity-sf)
-		}
+		deducted := deductedFor(l)
 		stockReturn := round4(deducted * (reverseQty / l.Quantity))
 
 		if stockReturn > 0 {
@@ -403,4 +408,19 @@ func capReverseQty(lineQty, ratio, keyTotalQty, reversedSoFarForKey float64) flo
 		return 0
 	}
 	return math.Min(round4(lineQty*ratio), remaining)
+}
+
+// apportionDeducted returns how much of ONE ConsumptionLine's own quantity was actually taken
+// out of stock, given the total quantity and total shortfall recorded across every line sharing
+// its (consumption event, ingredient sku) group. The group's real deducted total
+// (groupTotalQty - groupShortfall, floored at 0) is apportioned back across lines by each line's
+// own share of groupTotalQty — correct no matter how many lines/lots the original deduction
+// happened to split across, and independent of the order lines are processed in (unlike
+// naively subtracting the full shortfall from just the first-matched line).
+func apportionDeducted(lineQty, groupTotalQty, groupShortfall float64) float64 {
+	if groupTotalQty <= 0 {
+		return lineQty
+	}
+	groupDeducted := math.Max(0, groupTotalQty-groupShortfall)
+	return round4(groupDeducted * (lineQty / groupTotalQty))
 }

@@ -7,6 +7,42 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 )
 
+// TestEventShortfall_NewOversellFromPositiveOnHand covers the ordinary case: on_hand was
+// positive before this event, and the event needed more than was available.
+func TestEventShortfall_NewOversellFromPositiveOnHand(t *testing.T) {
+	// on_hand=5 before, this sale needs 8 → 3 is a genuinely new shortfall.
+	if got, want := eventShortfall(8, 5), 3.0; got != want {
+		t.Errorf("eventShortfall(8, 5) = %v, want %v", got, want)
+	}
+}
+
+// TestEventShortfall_FullyCoveredByOnHand covers the common non-oversell case: no shortfall.
+func TestEventShortfall_FullyCoveredByOnHand(t *testing.T) {
+	if got, want := eventShortfall(3, 5), 0.0; got != want {
+		t.Errorf("eventShortfall(3, 5) = %v, want %v", got, want)
+	}
+}
+
+// TestEventShortfall_CarriedForwardDebtNotDoubleCounted is the key regression this fix exists
+// for: on_hand is ALREADY negative (an earlier sale's unsettled oversell debt) before this
+// event runs. This event's OWN shortfall must equal exactly what IT needed — none of it should
+// be attributed to (or hidden by) the pre-existing debt.
+func TestEventShortfall_CarriedForwardDebtNotDoubleCounted(t *testing.T) {
+	// on_hand=-4 before (carried debt from an earlier sale), this sale needs 2 more — all 2 are
+	// this event's own shortfall, not 6 (which would double-count the earlier debt).
+	if got, want := eventShortfall(2, -4), 2.0; got != want {
+		t.Errorf("eventShortfall(2, -4) = %v, want %v (must not double-count carried-forward debt)", got, want)
+	}
+}
+
+// TestEventShortfall_ZeroOnHand covers the boundary the old floor-at-zero behavior always
+// landed on: on_hand exactly 0 before this event.
+func TestEventShortfall_ZeroOnHand(t *testing.T) {
+	if got, want := eventShortfall(5, 0), 5.0; got != want {
+		t.Errorf("eventShortfall(5, 0) = %v, want %v", got, want)
+	}
+}
+
 func itemWithUnit(abbrev string) *ent.Item {
 	itm := &ent.Item{}
 	if abbrev != "" {
