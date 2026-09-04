@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/modules/docs"
@@ -146,7 +147,16 @@ func (h *InventoryHandler) StockValuationReportPDF(w http.ResponseWriter, r *htt
 		return
 	}
 	ctx := r.Context()
-	val, err := h.itemsSvc.StockValuation(ctx, tenantID)
+	warehouseID := uuid.Nil
+	if wid := r.URL.Query().Get("warehouse_id"); wid != "" {
+		parsed, werr := uuid.Parse(wid)
+		if werr != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE_ID", "Invalid warehouse_id")
+			return
+		}
+		warehouseID = parsed
+	}
+	val, err := h.itemsSvc.StockValuation(ctx, tenantID, warehouseID)
 	if err != nil {
 		h.log.Error("stock valuation report pdf failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute stock valuation")
@@ -154,9 +164,15 @@ func (h *InventoryHandler) StockValuationReportPDF(w http.ResponseWriter, r *htt
 	}
 	cur := currencyOr(val.Currency)
 
+	subtitle := "Inventory On-Hand Valuation — All Locations"
+	if warehouseID != uuid.Nil {
+		if wh, wErr := h.orm.Warehouse.Get(ctx, warehouseID); wErr == nil {
+			subtitle = "Inventory On-Hand Valuation — " + wh.Name
+		}
+	}
 	rep := &docs.Report{
 		Title:       "Stock Valuation Report",
-		Subtitle:    "Inventory On-Hand Valuation",
+		Subtitle:    subtitle,
 		Currency:    cur,
 		GeneratedAt: time.Now().UTC(),
 		Cards: []docs.Card{

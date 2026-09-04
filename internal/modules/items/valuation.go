@@ -56,11 +56,16 @@ type StockValuation struct {
 // on_hand × the item's standard cost, and are flagged via CostBasis so the gap is visible on the
 // report rather than silently blended in. Returns the grand total, a per-category breakdown, and
 // the top-20 items by value.
-func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*StockValuation, error) {
-	balances, err := s.client.InventoryBalance.Query().
-		Where(inventorybalance.TenantID(tenantID)).
-		WithItem().
-		All(ctx)
+//
+// warehouseID scopes the whole report to one location when set (uuid.Nil = tenant-wide, every
+// warehouse blended together) — a multi-outlet tenant needs each location's OWN valuation, not
+// one number dominated by whichever warehouse holds the most stock.
+func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*StockValuation, error) {
+	balQuery := s.client.InventoryBalance.Query().Where(inventorybalance.TenantID(tenantID))
+	if warehouseID != uuid.Nil {
+		balQuery = balQuery.Where(inventorybalance.WarehouseID(warehouseID))
+	}
+	balances, err := balQuery.WithItem().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock valuation: query balances: %w", err)
 	}
@@ -72,11 +77,15 @@ func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID) (*Stoc
 	}
 
 	// Per-item layer totals: quantity + value across every active, cost-recorded lot (real lots
-	// AND internal cost layers — same table), regardless of warehouse, matching the balance
-	// aggregation below (this report is tenant-wide, not per-warehouse).
-	layers, err := s.client.InventoryLot.Query().
-		Where(entlot.TenantID(tenantID), entlot.StatusEQ(entlot.StatusActive), entlot.CostPriceNotNil()).
-		All(ctx)
+	// AND internal cost layers — same table). Scoped to the same warehouse as the balance query
+	// above when one is set, so a location's valuation only draws on cost layers actually held
+	// at that location — mixing in another warehouse's layers would misprice this one's stock.
+	lotQuery := s.client.InventoryLot.Query().
+		Where(entlot.TenantID(tenantID), entlot.StatusEQ(entlot.StatusActive), entlot.CostPriceNotNil())
+	if warehouseID != uuid.Nil {
+		lotQuery = lotQuery.Where(entlot.WarehouseID(warehouseID))
+	}
+	layers, err := lotQuery.All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock valuation: query cost layers: %w", err)
 	}
