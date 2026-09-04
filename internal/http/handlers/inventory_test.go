@@ -72,7 +72,7 @@ func (m *mockItemsSvc) HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UU
 	return nil
 }
 
-func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID) (*items.StockValuation, error) {
+func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*items.StockValuation, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
