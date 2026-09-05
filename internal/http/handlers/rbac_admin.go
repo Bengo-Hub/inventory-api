@@ -50,10 +50,14 @@ func toPermDTO(p *rbac.InventoryPermission) permDTO {
 
 // userDTO is the JSON shape of a user for the Accounts tab.
 type userDTO struct {
-	ID         uuid.UUID `json:"id"`
-	Email      string    `json:"email"`
-	Status     string    `json:"status"`
-	SyncStatus string    `json:"sync_status,omitempty"`
+	ID uuid.UUID `json:"id"`
+	// AuthServiceUserID is the real auth-service account id — distinct from ID (this
+	// service's own local InventoryUser row id). The Team page needs it to call
+	// auth-api's account-level admin actions (hard delete, password reset) directly.
+	AuthServiceUserID uuid.UUID `json:"auth_service_user_id"`
+	Email             string    `json:"email"`
+	Status            string    `json:"status"`
+	SyncStatus        string    `json:"sync_status,omitempty"`
 }
 
 // assignmentDTO is the JSON shape of a user-role assignment.
