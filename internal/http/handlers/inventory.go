@@ -1348,6 +1348,11 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.itemsSvc.CreateItem(r.Context(), tenantID, req)
 	if err != nil {
+		var dupErr *items.DuplicateSKUError
+		if errors.As(err, &dupErr) {
+			writeError(w, http.StatusConflict, "DUPLICATE_SKU", fmt.Sprintf("SKU %q is already in use for this tenant — choose a different one.", dupErr.SKU))
+			return
+		}
 		h.log.Error("create item failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", err.Error())
 		return

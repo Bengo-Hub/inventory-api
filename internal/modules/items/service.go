@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -2269,18 +2270,31 @@ func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryI
 
 	prefix := catCode + "-" + typeCode + "-"
 
-	// Count existing items with this prefix to determine next sequence
-	count, err := s.client.Item.Query().
+	// Next sequence number is derived from the HIGHEST existing suffix under this prefix, not a
+	// row count — a plain count silently collides once any item in the sequence has ever been
+	// hard-deleted (count drops, but the max-numbered SKU is still in use), which is exactly how
+	// boi-enterprises hit "duplicate key value violates unique constraint item_tenant_id_sku" on
+	// a plain Add Product. CreateItem's caller additionally retries on a collision, covering the
+	// remaining true-concurrency window (two requests generating the same next number at once).
+	existingSKUs, err := s.client.Item.Query().
 		Where(
 			item.TenantID(tenantID),
 			item.SkuHasPrefix(prefix),
 		).
-		Count(ctx)
+		Select(item.FieldSku).
+		Strings(ctx)
 	if err != nil {
-		return "", fmt.Errorf("items: count items for SKU prefix %s: %w", prefix, err)
+		return "", fmt.Errorf("items: list items for SKU prefix %s: %w", prefix, err)
+	}
+	maxSeq := 0
+	for _, sku := range existingSKUs {
+		suffix := strings.TrimPrefix(sku, prefix)
+		if n, convErr := strconv.Atoi(suffix); convErr == nil && n > maxSeq {
+			maxSeq = n
+		}
 	}
 
-	return fmt.Sprintf("%s%03d", prefix, count+1), nil
+	return fmt.Sprintf("%s%03d", prefix, maxSeq+1), nil
 }
 
 // resolveEPCost auto-computes cost_price (EP unit cost) from purchase fields when all three
@@ -2357,15 +2371,62 @@ func isStockTracked(t item.Type) bool {
 }
 
 // CreateItem creates a new item and records an outbox event within a transaction.
+// DuplicateSKUError is returned by CreateItem when the (tenant_id, sku) unique constraint is
+// violated — either an explicitly-provided SKU that already belongs to another item, or (after
+// maxSKUGenerationAttempts retries) a persistently colliding auto-generated one. Handlers use
+// errors.As to map this to a 409 with an actionable message instead of the raw ent/Postgres
+// constraint error leaking straight to the UI (found live: boi-enterprises' Add Product surfaced
+// "ent: constraint failed: ERROR: duplicate key value violates unique constraint
+// \"item_tenant_id_sku\"" verbatim).
+type DuplicateSKUError struct{ SKU string }
+
+func (e *DuplicateSKUError) Error() string {
+	return fmt.Sprintf("SKU %q is already in use for this tenant", e.SKU)
+}
+
+// maxSKUGenerationAttempts bounds CreateItem's auto-generated-SKU retry loop below.
+const maxSKUGenerationAttempts = 5
+
+// CreateItem creates a new inventory item, auto-generating a SKU when the caller didn't supply
+// one. Item is the ONLY unique index on Item (tenant_id, sku) — see the schema — so any
+// constraint violation from the create below is unambiguously a SKU collision.
+//
+// GenerateSKU's next-sequence-number itself is now gap-safe (derived from the max existing
+// suffix, not a row count), but a concurrent create racing for the exact same next number is
+// still possible — retrying with a freshly generated SKU closes that window instead of
+// surfacing a raw duplicate-key error to the cashier mid-Add-Product.
 func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
-	// Auto-generate SKU if not provided
-	if dto.SKU == "" {
-		sku, err := s.GenerateSKU(ctx, tenantID, dto.CategoryID, dto.Type)
-		if err != nil {
-			return nil, fmt.Errorf("items: auto-generate SKU: %w", err)
+	autoSKU := dto.SKU == ""
+	for attempt := 0; ; attempt++ {
+		if dto.SKU == "" {
+			sku, err := s.GenerateSKU(ctx, tenantID, dto.CategoryID, dto.Type)
+			if err != nil {
+				return nil, fmt.Errorf("items: auto-generate SKU: %w", err)
+			}
+			dto.SKU = sku
 		}
-		dto.SKU = sku
+		result, err := s.createItemOnce(ctx, tenantID, dto)
+		if err == nil {
+			return result, nil
+		}
+		if ent.IsConstraintError(err) {
+			if !autoSKU {
+				return nil, &DuplicateSKUError{SKU: dto.SKU}
+			}
+			if attempt+1 < maxSKUGenerationAttempts {
+				dto.SKU = "" // force GenerateSKU to pick a fresh one next attempt
+				continue
+			}
+			return nil, &DuplicateSKUError{SKU: dto.SKU}
+		}
+		return nil, err
 	}
+}
+
+// createItemOnce does the actual create attempt for a single, already-resolved SKU — split out
+// of CreateItem so the SKU-collision retry loop above can call it repeatedly without duplicating
+// the rest of item creation (opening balance, events, ...).
+func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
 	if err := validatePriceBand(&dto); err != nil {
 		return nil, fmt.Errorf("items: %w", err)
 	}

@@ -6,6 +6,12 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Fixed (2026-09-05 — Add Product duplicate-SKU crash)
+- **`GenerateSKU` was count-based, not max-based:** the next auto-generated SKU sequence number was derived from `COUNT(items with this prefix)`, which silently collides with an existing item's SKU the moment any item in the sequence has ever been hard-deleted (count drops below the true max in use). Found live on boi-enterprises' Add Product, surfacing a raw `ent: constraint failed: ERROR: duplicate key value violates unique constraint "item_tenant_id_sku"` straight to the UI. Now derived from the **max existing numeric suffix** instead.
+- **`CreateItem` now retries on a SKU collision** (bounded, 5 attempts) when the SKU was auto-generated, closing the remaining true-concurrency window (two requests landing on the same next number at once) instead of failing outright.
+- **New `items.DuplicateSKUError`**, mapped by the `CreateItem` handler to a clean `409 DUPLICATE_SKU` — mirrors the existing `units.DuplicateUnitError` pattern. An explicitly-typed (not auto-generated) SKU that collides with an existing item now gets this clean error instead of the raw DB constraint text.
+- **inventory-ui**: the Add/Edit Product form now does a live, debounced exact-SKU lookup (`GET /inventory/items/{sku}`) as the SKU field is typed and blocks Save with an inline message when it's already taken — catches the conflict before submission instead of only after a 409.
+
 ### Added (2026-07-20 — End-of-Life products)
 - **EOL lifecycle:** New nullable `Item.end_of_life_at` field + index `item_tenant_id_end_of_life_at` (Atlas migration `20260720120000_add_item_end_of_life.sql`). Non-null = the item is marked End-of-Life.
 - **Mark / restore endpoints:** `POST /inventory/items/{sku}/eol` and `POST /inventory/items/{sku}/eol/restore` (both require `inventory.items.delete`). Marking sets `is_active=false` + `end_of_life_at=now` in one transaction and emits an enriched `inventory.item.updated` outbox event, so the item disappears immediately from item lists, the POS live catalog (fetched with `status=active`), and ordering, and the pos-api catalog consumer flips `pos_catalog_override.is_available=false` + bumps the catalog version. Restore clears the timestamp and re-activates.
