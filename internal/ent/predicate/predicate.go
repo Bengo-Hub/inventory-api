@@ -225,6 +225,9 @@ type StockAdjustment func(*sql.Selector)
 // StockBreakdown is the predicate function for stockbreakdown builders.
 type StockBreakdown func(*sql.Selector)
 
+// StockClearance is the predicate function for stockclearance builders.
+type StockClearance func(*sql.Selector)
+
 // StockCount is the predicate function for stockcount builders.
 type StockCount func(*sql.Selector)
 

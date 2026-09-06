@@ -362,6 +362,55 @@ func (_u *TenantInventoryConfigUpdate) SetNillableSupplierManagementEnabled(v *b
 	return _u
 }
 
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (_u *TenantInventoryConfigUpdate) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetPerOutletPricingEnabled(v)
+	return _u
+}
+
+// SetNillablePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillablePerOutletPricingEnabled(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetPerOutletPricingEnabled(*v)
+	}
+	return _u
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (_u *TenantInventoryConfigUpdate) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetBatchPeriodPricingEnabled(v)
+	return _u
+}
+
+// SetNillableBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableBatchPeriodPricingEnabled(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetBatchPeriodPricingEnabled(*v)
+	}
+	return _u
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (_u *TenantInventoryConfigUpdate) SetStockAgingThresholdDays(v int) *TenantInventoryConfigUpdate {
+	_u.mutation.ResetStockAgingThresholdDays()
+	_u.mutation.SetStockAgingThresholdDays(v)
+	return _u
+}
+
+// SetNillableStockAgingThresholdDays sets the "stock_aging_threshold_days" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableStockAgingThresholdDays(v *int) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetStockAgingThresholdDays(*v)
+	}
+	return _u
+}
+
+// AddStockAgingThresholdDays adds value to the "stock_aging_threshold_days" field.
+func (_u *TenantInventoryConfigUpdate) AddStockAgingThresholdDays(v int) *TenantInventoryConfigUpdate {
+	_u.mutation.AddStockAgingThresholdDays(v)
+	return _u
+}
+
 // SetEnableRoomPricing sets the "enable_room_pricing" field.
 func (_u *TenantInventoryConfigUpdate) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpdate {
 	_u.mutation.SetEnableRoomPricing(v)
@@ -637,6 +686,18 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PerOutletPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPerOutletPricingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.BatchPeriodPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldBatchPeriodPricingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.StockAgingThresholdDays(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldStockAgingThresholdDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStockAgingThresholdDays(); ok {
+		_spec.AddField(tenantinventoryconfig.FieldStockAgingThresholdDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.EnableRoomPricing(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)
@@ -1026,6 +1087,55 @@ func (_u *TenantInventoryConfigUpdateOne) SetNillableSupplierManagementEnabled(v
 	return _u
 }
 
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (_u *TenantInventoryConfigUpdateOne) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetPerOutletPricingEnabled(v)
+	return _u
+}
+
+// SetNillablePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillablePerOutletPricingEnabled(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetPerOutletPricingEnabled(*v)
+	}
+	return _u
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (_u *TenantInventoryConfigUpdateOne) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetBatchPeriodPricingEnabled(v)
+	return _u
+}
+
+// SetNillableBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableBatchPeriodPricingEnabled(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetBatchPeriodPricingEnabled(*v)
+	}
+	return _u
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (_u *TenantInventoryConfigUpdateOne) SetStockAgingThresholdDays(v int) *TenantInventoryConfigUpdateOne {
+	_u.mutation.ResetStockAgingThresholdDays()
+	_u.mutation.SetStockAgingThresholdDays(v)
+	return _u
+}
+
+// SetNillableStockAgingThresholdDays sets the "stock_aging_threshold_days" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableStockAgingThresholdDays(v *int) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetStockAgingThresholdDays(*v)
+	}
+	return _u
+}
+
+// AddStockAgingThresholdDays adds value to the "stock_aging_threshold_days" field.
+func (_u *TenantInventoryConfigUpdateOne) AddStockAgingThresholdDays(v int) *TenantInventoryConfigUpdateOne {
+	_u.mutation.AddStockAgingThresholdDays(v)
+	return _u
+}
+
 // SetEnableRoomPricing sets the "enable_room_pricing" field.
 func (_u *TenantInventoryConfigUpdateOne) SetEnableRoomPricing(v bool) *TenantInventoryConfigUpdateOne {
 	_u.mutation.SetEnableRoomPricing(v)
@@ -1331,6 +1441,18 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.PerOutletPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPerOutletPricingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.BatchPeriodPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldBatchPeriodPricingEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.StockAgingThresholdDays(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldStockAgingThresholdDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStockAgingThresholdDays(); ok {
+		_spec.AddField(tenantinventoryconfig.FieldStockAgingThresholdDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.EnableRoomPricing(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)

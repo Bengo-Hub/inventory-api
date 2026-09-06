@@ -303,6 +303,48 @@ func (_c *TenantInventoryConfigCreate) SetNillableSupplierManagementEnabled(v *b
 	return _c
 }
 
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (_c *TenantInventoryConfigCreate) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetPerOutletPricingEnabled(v)
+	return _c
+}
+
+// SetNillablePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillablePerOutletPricingEnabled(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetPerOutletPricingEnabled(*v)
+	}
+	return _c
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (_c *TenantInventoryConfigCreate) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetBatchPeriodPricingEnabled(v)
+	return _c
+}
+
+// SetNillableBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableBatchPeriodPricingEnabled(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetBatchPeriodPricingEnabled(*v)
+	}
+	return _c
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (_c *TenantInventoryConfigCreate) SetStockAgingThresholdDays(v int) *TenantInventoryConfigCreate {
+	_c.mutation.SetStockAgingThresholdDays(v)
+	return _c
+}
+
+// SetNillableStockAgingThresholdDays sets the "stock_aging_threshold_days" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableStockAgingThresholdDays(v *int) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetStockAgingThresholdDays(*v)
+	}
+	return _c
+}
+
 // SetEnableRoomPricing sets the "enable_room_pricing" field.
 func (_c *TenantInventoryConfigCreate) SetEnableRoomPricing(v bool) *TenantInventoryConfigCreate {
 	_c.mutation.SetEnableRoomPricing(v)
@@ -546,6 +588,18 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultSupplierManagementEnabled
 		_c.mutation.SetSupplierManagementEnabled(v)
 	}
+	if _, ok := _c.mutation.PerOutletPricingEnabled(); !ok {
+		v := tenantinventoryconfig.DefaultPerOutletPricingEnabled
+		_c.mutation.SetPerOutletPricingEnabled(v)
+	}
+	if _, ok := _c.mutation.BatchPeriodPricingEnabled(); !ok {
+		v := tenantinventoryconfig.DefaultBatchPeriodPricingEnabled
+		_c.mutation.SetBatchPeriodPricingEnabled(v)
+	}
+	if _, ok := _c.mutation.StockAgingThresholdDays(); !ok {
+		v := tenantinventoryconfig.DefaultStockAgingThresholdDays
+		_c.mutation.SetStockAgingThresholdDays(v)
+	}
 	if _, ok := _c.mutation.EnableRoomPricing(); !ok {
 		v := tenantinventoryconfig.DefaultEnableRoomPricing
 		_c.mutation.SetEnableRoomPricing(v)
@@ -640,6 +694,15 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.SupplierManagementEnabled(); !ok {
 		return &ValidationError{Name: "supplier_management_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.supplier_management_enabled"`)}
+	}
+	if _, ok := _c.mutation.PerOutletPricingEnabled(); !ok {
+		return &ValidationError{Name: "per_outlet_pricing_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.per_outlet_pricing_enabled"`)}
+	}
+	if _, ok := _c.mutation.BatchPeriodPricingEnabled(); !ok {
+		return &ValidationError{Name: "batch_period_pricing_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.batch_period_pricing_enabled"`)}
+	}
+	if _, ok := _c.mutation.StockAgingThresholdDays(); !ok {
+		return &ValidationError{Name: "stock_aging_threshold_days", err: errors.New(`ent: missing required field "TenantInventoryConfig.stock_aging_threshold_days"`)}
 	}
 	if _, ok := _c.mutation.EnableRoomPricing(); !ok {
 		return &ValidationError{Name: "enable_room_pricing", err: errors.New(`ent: missing required field "TenantInventoryConfig.enable_room_pricing"`)}
@@ -778,6 +841,18 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.SupplierManagementEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldSupplierManagementEnabled, field.TypeBool, value)
 		_node.SupplierManagementEnabled = value
+	}
+	if value, ok := _c.mutation.PerOutletPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldPerOutletPricingEnabled, field.TypeBool, value)
+		_node.PerOutletPricingEnabled = value
+	}
+	if value, ok := _c.mutation.BatchPeriodPricingEnabled(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldBatchPeriodPricingEnabled, field.TypeBool, value)
+		_node.BatchPeriodPricingEnabled = value
+	}
+	if value, ok := _c.mutation.StockAgingThresholdDays(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldStockAgingThresholdDays, field.TypeInt, value)
+		_node.StockAgingThresholdDays = value
 	}
 	if value, ok := _c.mutation.EnableRoomPricing(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldEnableRoomPricing, field.TypeBool, value)
@@ -1158,6 +1233,48 @@ func (u *TenantInventoryConfigUpsert) SetSupplierManagementEnabled(v bool) *Tena
 // UpdateSupplierManagementEnabled sets the "supplier_management_enabled" field to the value that was provided on create.
 func (u *TenantInventoryConfigUpsert) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsert {
 	u.SetExcluded(tenantinventoryconfig.FieldSupplierManagementEnabled)
+	return u
+}
+
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsert) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldPerOutletPricingEnabled, v)
+	return u
+}
+
+// UpdatePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdatePerOutletPricingEnabled() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldPerOutletPricingEnabled)
+	return u
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsert) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldBatchPeriodPricingEnabled, v)
+	return u
+}
+
+// UpdateBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateBatchPeriodPricingEnabled() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldBatchPeriodPricingEnabled)
+	return u
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsert) SetStockAgingThresholdDays(v int) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldStockAgingThresholdDays, v)
+	return u
+}
+
+// UpdateStockAgingThresholdDays sets the "stock_aging_threshold_days" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateStockAgingThresholdDays() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldStockAgingThresholdDays)
+	return u
+}
+
+// AddStockAgingThresholdDays adds v to the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsert) AddStockAgingThresholdDays(v int) *TenantInventoryConfigUpsert {
+	u.Add(tenantinventoryconfig.FieldStockAgingThresholdDays, v)
 	return u
 }
 
@@ -1672,6 +1789,55 @@ func (u *TenantInventoryConfigUpsertOne) SetSupplierManagementEnabled(v bool) *T
 func (u *TenantInventoryConfigUpsertOne) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsertOne) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetPerOutletPricingEnabled(v)
+	})
+}
+
+// UpdatePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdatePerOutletPricingEnabled() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdatePerOutletPricingEnabled()
+	})
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsertOne) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetBatchPeriodPricingEnabled(v)
+	})
+}
+
+// UpdateBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateBatchPeriodPricingEnabled() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateBatchPeriodPricingEnabled()
+	})
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsertOne) SetStockAgingThresholdDays(v int) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetStockAgingThresholdDays(v)
+	})
+}
+
+// AddStockAgingThresholdDays adds v to the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsertOne) AddStockAgingThresholdDays(v int) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.AddStockAgingThresholdDays(v)
+	})
+}
+
+// UpdateStockAgingThresholdDays sets the "stock_aging_threshold_days" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateStockAgingThresholdDays() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateStockAgingThresholdDays()
 	})
 }
 
@@ -2373,6 +2539,55 @@ func (u *TenantInventoryConfigUpsertBulk) SetSupplierManagementEnabled(v bool) *
 func (u *TenantInventoryConfigUpsertBulk) UpdateSupplierManagementEnabled() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateSupplierManagementEnabled()
+	})
+}
+
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsertBulk) SetPerOutletPricingEnabled(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetPerOutletPricingEnabled(v)
+	})
+}
+
+// UpdatePerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdatePerOutletPricingEnabled() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdatePerOutletPricingEnabled()
+	})
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (u *TenantInventoryConfigUpsertBulk) SetBatchPeriodPricingEnabled(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetBatchPeriodPricingEnabled(v)
+	})
+}
+
+// UpdateBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateBatchPeriodPricingEnabled() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateBatchPeriodPricingEnabled()
+	})
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsertBulk) SetStockAgingThresholdDays(v int) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetStockAgingThresholdDays(v)
+	})
+}
+
+// AddStockAgingThresholdDays adds v to the "stock_aging_threshold_days" field.
+func (u *TenantInventoryConfigUpsertBulk) AddStockAgingThresholdDays(v int) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.AddStockAgingThresholdDays(v)
+	})
+}
+
+// UpdateStockAgingThresholdDays sets the "stock_aging_threshold_days" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateStockAgingThresholdDays() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateStockAgingThresholdDays()
 	})
 }
 

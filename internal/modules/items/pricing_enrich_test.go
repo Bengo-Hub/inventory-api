@@ -89,25 +89,34 @@ func TestApplyItemTax(t *testing.T) {
 	})
 }
 
-// effectivePrice: recipe price > default-tier price > merchant's max_selling_price ceiling >
-// cost+margin SuggestedPrice (last resort). Regression coverage for the live incident this session
-// diagnosed (boi-enterprises SKU 17606, "2160 Itel Copy" not reflecting a price change) — the item
-// is a GOODS item (no recipe), so its correct source is the default-tier price, which is exactly
-// what a duplicate/stale tierPrice entry would corrupt.
+// effectivePrice: active clearance markdown > recipe price > default-tier price > merchant's
+// max_selling_price ceiling > cost+margin SuggestedPrice (last resort). Regression coverage for
+// the live incident this session diagnosed (boi-enterprises SKU 17606, "2160 Itel Copy" not
+// reflecting a price change) — the item is a GOODS item (no recipe), so its correct source is the
+// default-tier price, which is exactly what a duplicate/stale tierPrice entry would corrupt.
 func TestEffectivePrice(t *testing.T) {
 	id := uuid.New()
 	maxPrice := 1000.0
 	suggested := 500.0
 
 	tests := []struct {
-		name   string
-		item   *ItemDTO
-		recipe map[uuid.UUID]float64
-		tier   map[uuid.UUID]float64
-		want   float64
+		name      string
+		item      *ItemDTO
+		clearance map[uuid.UUID]float64
+		recipe    map[uuid.UUID]float64
+		tier      map[uuid.UUID]float64
+		want      float64
 	}{
 		{
-			name:   "recipe price wins over everything",
+			name:      "an active clearance markdown wins over everything, including recipe",
+			item:      &ItemDTO{ID: id, MaxSellingPrice: &maxPrice, SuggestedPrice: &suggested},
+			clearance: map[uuid.UUID]float64{id: 300},
+			recipe:    map[uuid.UUID]float64{id: 1200},
+			tier:      map[uuid.UUID]float64{id: 700},
+			want:      300,
+		},
+		{
+			name:   "recipe price wins over everything else",
 			item:   &ItemDTO{ID: id, MaxSellingPrice: &maxPrice, SuggestedPrice: &suggested},
 			recipe: map[uuid.UUID]float64{id: 1200},
 			tier:   map[uuid.UUID]float64{id: 700},
@@ -135,16 +144,17 @@ func TestEffectivePrice(t *testing.T) {
 			want: 0,
 		},
 		{
-			name:   "a zero/negative recipe or tier price is ignored, not treated as authoritative",
-			item:   &ItemDTO{ID: id, MaxSellingPrice: &maxPrice},
-			recipe: map[uuid.UUID]float64{id: 0},
-			tier:   map[uuid.UUID]float64{id: -5},
-			want:   1000,
+			name:      "a zero/negative clearance, recipe or tier price is ignored, not treated as authoritative",
+			item:      &ItemDTO{ID: id, MaxSellingPrice: &maxPrice},
+			clearance: map[uuid.UUID]float64{id: -1},
+			recipe:    map[uuid.UUID]float64{id: 0},
+			tier:      map[uuid.UUID]float64{id: -5},
+			want:      1000,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := effectivePrice(tt.item, tt.recipe, tt.tier); got != tt.want {
+			if got := effectivePrice(tt.item, tt.clearance, tt.recipe, tt.tier); got != tt.want {
 				t.Errorf("effectivePrice() = %v, want %v", got, tt.want)
 			}
 		})

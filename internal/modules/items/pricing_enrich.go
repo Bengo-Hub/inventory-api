@@ -16,6 +16,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/pendingpricechange"
 	"github.com/bengobox/inventory-service/internal/ent/pricingtier"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 )
 
 // enrichPrices populates SellingPrice + the tax split (NetPrice/TaxAmount/TaxRate) on the given
@@ -33,6 +34,12 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 		itemIDs[i] = dtos[i].ID
 	}
 
+	// Best-effort: an item's clearance can lapse (time or depletion) between requests; this
+	// keeps bulk listing's price in sync without a scheduler, same lazy-promotion idiom as
+	// PromotePendingPriceChanges (called explicitly on the single-item/list-all pricing
+	// endpoints — this bulk catalog path piggybacks on the same check here).
+	s.PromoteExpiredClearances(ctx, tenantID, itemIDs)
+	clearancePrice := s.activeClearancePrices(ctx, tenantID, itemIDs)
 	recipePrice := s.recipeSellingPrices(ctx, tenantID, cfg, itemIDs)
 	tierPrice := s.defaultTierPrices(ctx, tenantID, itemIDs)
 	recipeCost := s.recipeCostPerPortion(ctx, tenantID, itemIDs)
@@ -81,7 +88,7 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 			}
 		}
 
-		price := effectivePrice(d, recipePrice, tierPrice)
+		price := effectivePrice(d, clearancePrice, recipePrice, tierPrice)
 		if price <= 0 {
 			continue
 		}
@@ -146,14 +153,20 @@ func applyItemTax(d *ItemDTO, price, rate float64, rateCode, defaultTaxCode stri
 	}
 }
 
-// effectivePrice resolves an item's customer price: recipe → default tier → the merchant's
-// max/ceiling selling price → cost+margin suggestion (last resort only).
+// effectivePrice resolves an item's customer price: active clearance markdown → recipe →
+// default tier → the merchant's max/ceiling selling price → cost+margin suggestion (last resort
+// only).
 //
-// The max_selling_price (the merchant-entered retail ceiling) is preferred over the cost+margin
+// A clearance wins over everything else when active — it exists specifically to temporarily
+// override whatever the item would otherwise sell for (see stock_clearance.go). The
+// max_selling_price (the merchant-entered retail ceiling) is preferred over the cost+margin
 // SuggestedPrice so a GOODS item that has a real selling price never surfaces a "cooked" price on
 // the POS/ordering channels. SuggestedPrice remains the very last fallback so a fully-costed item
 // with no explicit price is still sellable rather than priced 0/hidden.
-func effectivePrice(d *ItemDTO, recipePrice, tierPrice map[uuid.UUID]float64) float64 {
+func effectivePrice(d *ItemDTO, clearancePrice, recipePrice, tierPrice map[uuid.UUID]float64) float64 {
+	if p, ok := clearancePrice[d.ID]; ok && p > 0 {
+		return p
+	}
 	if p, ok := recipePrice[d.ID]; ok && p > 0 {
 		return p
 	}
@@ -607,12 +620,50 @@ func (s *Service) recipeCostPerPortion(ctx context.Context, tenantID uuid.UUID, 
 	return out
 }
 
+// OutletRank scores an ItemPricing candidate by how well its outlet scope matches the
+// operating outlet: an exact match ranks best, an all-outlets (nil) row is the fallback, and a
+// row scoped to a DIFFERENT outlet ranks worst (never preferred over the above two). Shared by
+// the bulk resolution path (defaultTierPrices below) and the single-item quantity-aware endpoint
+// (pricing_tier.go's GetItemPrice) so the two never disagree about which row wins for a given
+// outlet — before the 2026-09-06 per-branch-pricing pass, only the single-item path was
+// outlet-aware; bulk item listing silently ignored outlet_id entirely.
+func OutletRank(p *ent.ItemPricing, operatingOutlet *uuid.UUID) int {
+	switch {
+	case operatingOutlet != nil && p.OutletID != nil && *p.OutletID == *operatingOutlet:
+		return 2
+	case p.OutletID == nil:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// BetterOutletPricing reports whether candidate should replace current as the chosen price row
+// for one item+tier: outlet rank wins first, then the more recently effective row wins.
+func BetterOutletPricing(candidate, current *ent.ItemPricing, operatingOutlet *uuid.UUID) bool {
+	if current == nil {
+		return true
+	}
+	if cr, curr := OutletRank(candidate, operatingOutlet), OutletRank(current, operatingOutlet); cr != curr {
+		return cr > curr
+	}
+	return candidate.EffectiveFrom.After(current.EffectiveFrom)
+}
+
 // defaultTierPrices maps item_id → price from the tenant's default pricing tier, falling back
-// to any active tier's price when no default tier is configured.
+// to any active tier's price when no default tier is configured. Outlet-aware: when the request
+// carries an operating outlet (X-Outlet-ID), a row scoped to that exact outlet wins over an
+// all-outlets row for the same item+tier, matching GetItemPrice's single-item resolution.
 func (s *Service) defaultTierPrices(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]float64 {
 	out := map[uuid.UUID]float64{}
 	if len(itemIDs) == 0 {
 		return out
+	}
+	var operatingOutlet *uuid.UUID
+	if outletStr := invmiddleware.GetOutletID(ctx); outletStr != "" {
+		if oid, perr := uuid.Parse(outletStr); perr == nil {
+			operatingOutlet = &oid
+		}
 	}
 	var defaultTierID uuid.UUID
 	if t, err := s.client.PricingTier.Query().
@@ -620,35 +671,37 @@ func (s *Service) defaultTierPrices(ctx context.Context, tenantID uuid.UUID, ite
 		First(ctx); err == nil {
 		defaultTierID = t.ID
 	}
-	// Ordered by effective_from ascending so that IF more than one row is ever active at once for
-	// the same item+tier (the DB now guards against this via itempricing_active_no_outlet/
-	// itempricing_active_outlet, but this loop is cheap insurance against any row that predates
-	// that guard or a future regression), the LAST write below wins deterministically — the most
-	// recently effective price — instead of whatever order Postgres happened to return.
 	prices, err := s.client.ItemPricing.Query().
 		Where(itempricing.TenantID(tenantID), itempricing.IsActive(true), itempricing.ItemIDIn(itemIDs...)).
-		Order(ent.Asc(itempricing.FieldEffectiveFrom)).
 		All(ctx)
 	if err != nil {
 		return out
 	}
-	// latestNonDefault tracks the most recent active price on ANY tier, for items with no
-	// default-tier row at all — unconditional overwrite (not "first wins") so, combined with the
-	// ascending effective_from order above, the last one processed is the most recent, matching the
-	// default-tier branch's own "latest wins" behavior below.
-	latestNonDefault := map[uuid.UUID]float64{}
-	for _, p := range prices {
+	// Best candidate per item on the default tier, and per item across any tier (fallback for
+	// items with no default-tier row) — picked via the same outlet-rank-then-recency comparator
+	// GetItemPrice uses, instead of the old "whichever active row has the latest effective_from"
+	// rule, which was blind to outlet scope and could pick an unrelated outlet's price.
+	bestDefault := make(map[uuid.UUID]*ent.ItemPricing, len(itemIDs))
+	bestAny := make(map[uuid.UUID]*ent.ItemPricing, len(itemIDs))
+	for i := range prices {
+		p := prices[i]
 		if p.Price <= 0 {
 			continue
 		}
-		latestNonDefault[p.ItemID] = p.Price
-		if defaultTierID != uuid.Nil && p.PricingTierID == defaultTierID {
-			out[p.ItemID] = p.Price // default tier wins
+		if BetterOutletPricing(p, bestAny[p.ItemID], operatingOutlet) {
+			bestAny[p.ItemID] = p
+		}
+		if defaultTierID != uuid.Nil && p.PricingTierID == defaultTierID &&
+			BetterOutletPricing(p, bestDefault[p.ItemID], operatingOutlet) {
+			bestDefault[p.ItemID] = p
 		}
 	}
-	for id, p := range latestNonDefault {
+	for id, p := range bestDefault {
+		out[id] = p.Price
+	}
+	for id, p := range bestAny {
 		if _, ok := out[id]; !ok {
-			out[id] = p
+			out[id] = p.Price
 		}
 	}
 	return out

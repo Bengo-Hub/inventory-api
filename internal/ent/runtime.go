@@ -78,6 +78,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
+	"github.com/bengobox/inventory-service/internal/ent/stockclearance"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
@@ -2057,6 +2058,26 @@ func init() {
 	stockbreakdownDescID := stockbreakdownFields[0].Descriptor()
 	// stockbreakdown.DefaultID holds the default value on creation for the id field.
 	stockbreakdown.DefaultID = stockbreakdownDescID.Default.(func() uuid.UUID)
+	stockclearanceFields := schema.StockClearance{}.Fields()
+	_ = stockclearanceFields
+	// stockclearanceDescStartsAt is the schema descriptor for starts_at field.
+	stockclearanceDescStartsAt := stockclearanceFields[5].Descriptor()
+	// stockclearance.DefaultStartsAt holds the default value on creation for the starts_at field.
+	stockclearance.DefaultStartsAt = stockclearanceDescStartsAt.Default.(func() time.Time)
+	// stockclearanceDescCreatedAt is the schema descriptor for created_at field.
+	stockclearanceDescCreatedAt := stockclearanceFields[11].Descriptor()
+	// stockclearance.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockclearance.DefaultCreatedAt = stockclearanceDescCreatedAt.Default.(func() time.Time)
+	// stockclearanceDescUpdatedAt is the schema descriptor for updated_at field.
+	stockclearanceDescUpdatedAt := stockclearanceFields[12].Descriptor()
+	// stockclearance.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockclearance.DefaultUpdatedAt = stockclearanceDescUpdatedAt.Default.(func() time.Time)
+	// stockclearance.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockclearance.UpdateDefaultUpdatedAt = stockclearanceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockclearanceDescID is the schema descriptor for id field.
+	stockclearanceDescID := stockclearanceFields[0].Descriptor()
+	// stockclearance.DefaultID holds the default value on creation for the id field.
+	stockclearance.DefaultID = stockclearanceDescID.Default.(func() uuid.UUID)
 	stockcountFields := schema.StockCount{}.Fields()
 	_ = stockcountFields
 	// stockcountDescCreatedAt is the schema descriptor for created_at field.
@@ -2377,32 +2398,44 @@ func init() {
 	tenantinventoryconfigDescSupplierManagementEnabled := tenantinventoryconfigFields[21].Descriptor()
 	// tenantinventoryconfig.DefaultSupplierManagementEnabled holds the default value on creation for the supplier_management_enabled field.
 	tenantinventoryconfig.DefaultSupplierManagementEnabled = tenantinventoryconfigDescSupplierManagementEnabled.Default.(bool)
+	// tenantinventoryconfigDescPerOutletPricingEnabled is the schema descriptor for per_outlet_pricing_enabled field.
+	tenantinventoryconfigDescPerOutletPricingEnabled := tenantinventoryconfigFields[22].Descriptor()
+	// tenantinventoryconfig.DefaultPerOutletPricingEnabled holds the default value on creation for the per_outlet_pricing_enabled field.
+	tenantinventoryconfig.DefaultPerOutletPricingEnabled = tenantinventoryconfigDescPerOutletPricingEnabled.Default.(bool)
+	// tenantinventoryconfigDescBatchPeriodPricingEnabled is the schema descriptor for batch_period_pricing_enabled field.
+	tenantinventoryconfigDescBatchPeriodPricingEnabled := tenantinventoryconfigFields[23].Descriptor()
+	// tenantinventoryconfig.DefaultBatchPeriodPricingEnabled holds the default value on creation for the batch_period_pricing_enabled field.
+	tenantinventoryconfig.DefaultBatchPeriodPricingEnabled = tenantinventoryconfigDescBatchPeriodPricingEnabled.Default.(bool)
+	// tenantinventoryconfigDescStockAgingThresholdDays is the schema descriptor for stock_aging_threshold_days field.
+	tenantinventoryconfigDescStockAgingThresholdDays := tenantinventoryconfigFields[24].Descriptor()
+	// tenantinventoryconfig.DefaultStockAgingThresholdDays holds the default value on creation for the stock_aging_threshold_days field.
+	tenantinventoryconfig.DefaultStockAgingThresholdDays = tenantinventoryconfigDescStockAgingThresholdDays.Default.(int)
 	// tenantinventoryconfigDescEnableRoomPricing is the schema descriptor for enable_room_pricing field.
-	tenantinventoryconfigDescEnableRoomPricing := tenantinventoryconfigFields[22].Descriptor()
+	tenantinventoryconfigDescEnableRoomPricing := tenantinventoryconfigFields[25].Descriptor()
 	// tenantinventoryconfig.DefaultEnableRoomPricing holds the default value on creation for the enable_room_pricing field.
 	tenantinventoryconfig.DefaultEnableRoomPricing = tenantinventoryconfigDescEnableRoomPricing.Default.(bool)
 	// tenantinventoryconfigDescEnableFacilityBooking is the schema descriptor for enable_facility_booking field.
-	tenantinventoryconfigDescEnableFacilityBooking := tenantinventoryconfigFields[23].Descriptor()
+	tenantinventoryconfigDescEnableFacilityBooking := tenantinventoryconfigFields[26].Descriptor()
 	// tenantinventoryconfig.DefaultEnableFacilityBooking holds the default value on creation for the enable_facility_booking field.
 	tenantinventoryconfig.DefaultEnableFacilityBooking = tenantinventoryconfigDescEnableFacilityBooking.Default.(bool)
 	// tenantinventoryconfigDescEnableConferencePackages is the schema descriptor for enable_conference_packages field.
-	tenantinventoryconfigDescEnableConferencePackages := tenantinventoryconfigFields[24].Descriptor()
+	tenantinventoryconfigDescEnableConferencePackages := tenantinventoryconfigFields[27].Descriptor()
 	// tenantinventoryconfig.DefaultEnableConferencePackages holds the default value on creation for the enable_conference_packages field.
 	tenantinventoryconfig.DefaultEnableConferencePackages = tenantinventoryconfigDescEnableConferencePackages.Default.(bool)
 	// tenantinventoryconfigDescDefaultTargetMarginPercent is the schema descriptor for default_target_margin_percent field.
-	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[25].Descriptor()
+	tenantinventoryconfigDescDefaultTargetMarginPercent := tenantinventoryconfigFields[28].Descriptor()
 	// tenantinventoryconfig.DefaultDefaultTargetMarginPercent holds the default value on creation for the default_target_margin_percent field.
 	tenantinventoryconfig.DefaultDefaultTargetMarginPercent = tenantinventoryconfigDescDefaultTargetMarginPercent.Default.(float64)
 	// tenantinventoryconfigDescPricesInclusiveOfTax is the schema descriptor for prices_inclusive_of_tax field.
-	tenantinventoryconfigDescPricesInclusiveOfTax := tenantinventoryconfigFields[26].Descriptor()
+	tenantinventoryconfigDescPricesInclusiveOfTax := tenantinventoryconfigFields[29].Descriptor()
 	// tenantinventoryconfig.DefaultPricesInclusiveOfTax holds the default value on creation for the prices_inclusive_of_tax field.
 	tenantinventoryconfig.DefaultPricesInclusiveOfTax = tenantinventoryconfigDescPricesInclusiveOfTax.Default.(bool)
 	// tenantinventoryconfigDescCreatedAt is the schema descriptor for created_at field.
-	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[29].Descriptor()
+	tenantinventoryconfigDescCreatedAt := tenantinventoryconfigFields[32].Descriptor()
 	// tenantinventoryconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
 	tenantinventoryconfig.DefaultCreatedAt = tenantinventoryconfigDescCreatedAt.Default.(func() time.Time)
 	// tenantinventoryconfigDescUpdatedAt is the schema descriptor for updated_at field.
-	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[30].Descriptor()
+	tenantinventoryconfigDescUpdatedAt := tenantinventoryconfigFields[33].Descriptor()
 	// tenantinventoryconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	tenantinventoryconfig.DefaultUpdatedAt = tenantinventoryconfigDescUpdatedAt.Default.(func() time.Time)
 	// tenantinventoryconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

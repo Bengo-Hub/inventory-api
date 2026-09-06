@@ -89,6 +89,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
+	"github.com/bengobox/inventory-service/internal/ent/stockclearance"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
@@ -262,6 +263,8 @@ type Client struct {
 	StockAdjustment *StockAdjustmentClient
 	// StockBreakdown is the client for interacting with the StockBreakdown builders.
 	StockBreakdown *StockBreakdownClient
+	// StockClearance is the client for interacting with the StockClearance builders.
+	StockClearance *StockClearanceClient
 	// StockCount is the client for interacting with the StockCount builders.
 	StockCount *StockCountClient
 	// StockCountLine is the client for interacting with the StockCountLine builders.
@@ -386,6 +389,7 @@ func (c *Client) init() {
 	c.ServiceDelivery = NewServiceDeliveryClient(c.config)
 	c.StockAdjustment = NewStockAdjustmentClient(c.config)
 	c.StockBreakdown = NewStockBreakdownClient(c.config)
+	c.StockClearance = NewStockClearanceClient(c.config)
 	c.StockCount = NewStockCountClient(c.config)
 	c.StockCountLine = NewStockCountLineClient(c.config)
 	c.StockCountTemplate = NewStockCountTemplateClient(c.config)
@@ -571,6 +575,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ServiceDelivery:        NewServiceDeliveryClient(cfg),
 		StockAdjustment:        NewStockAdjustmentClient(cfg),
 		StockBreakdown:         NewStockBreakdownClient(cfg),
+		StockClearance:         NewStockClearanceClient(cfg),
 		StockCount:             NewStockCountClient(cfg),
 		StockCountLine:         NewStockCountLineClient(cfg),
 		StockCountTemplate:     NewStockCountTemplateClient(cfg),
@@ -683,6 +688,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ServiceDelivery:        NewServiceDeliveryClient(cfg),
 		StockAdjustment:        NewStockAdjustmentClient(cfg),
 		StockBreakdown:         NewStockBreakdownClient(cfg),
+		StockClearance:         NewStockClearanceClient(cfg),
 		StockCount:             NewStockCountClient(cfg),
 		StockCountLine:         NewStockCountLineClient(cfg),
 		StockCountTemplate:     NewStockCountTemplateClient(cfg),
@@ -749,11 +755,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
-		c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.StockClearance, c.StockCount, c.StockCountLine, c.StockCountTemplate,
+		c.StockLevelEvent, c.StockTransfer, c.StockTransferLine, c.Supplier,
+		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
+		c.Ticket, c.Unit, c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute,
+		c.VendorBalanceCache, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Use(hooks...)
 	}
@@ -780,11 +786,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
-		c.StockCount, c.StockCountLine, c.StockCountTemplate, c.StockLevelEvent,
-		c.StockTransfer, c.StockTransferLine, c.Supplier, c.SupplierPerformance,
-		c.SupplierResponse, c.Tenant, c.TenantInventoryConfig, c.Ticket, c.Unit,
-		c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute, c.VendorBalanceCache,
-		c.Warehouse, c.WarehouseLocation, c.Warranty,
+		c.StockClearance, c.StockCount, c.StockCountLine, c.StockCountTemplate,
+		c.StockLevelEvent, c.StockTransfer, c.StockTransferLine, c.Supplier,
+		c.SupplierPerformance, c.SupplierResponse, c.Tenant, c.TenantInventoryConfig,
+		c.Ticket, c.Unit, c.UserOutlet, c.UserRoleAssignment, c.VariantAttribute,
+		c.VendorBalanceCache, c.Warehouse, c.WarehouseLocation, c.Warranty,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -939,6 +945,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.StockAdjustment.mutate(ctx, m)
 	case *StockBreakdownMutation:
 		return c.StockBreakdown.mutate(ctx, m)
+	case *StockClearanceMutation:
+		return c.StockClearance.mutate(ctx, m)
 	case *StockCountMutation:
 		return c.StockCount.mutate(ctx, m)
 	case *StockCountLineMutation:
@@ -12005,6 +12013,139 @@ func (c *StockBreakdownClient) mutate(ctx context.Context, m *StockBreakdownMuta
 	}
 }
 
+// StockClearanceClient is a client for the StockClearance schema.
+type StockClearanceClient struct {
+	config
+}
+
+// NewStockClearanceClient returns a client for the StockClearance from the given config.
+func NewStockClearanceClient(c config) *StockClearanceClient {
+	return &StockClearanceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stockclearance.Hooks(f(g(h())))`.
+func (c *StockClearanceClient) Use(hooks ...Hook) {
+	c.hooks.StockClearance = append(c.hooks.StockClearance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stockclearance.Intercept(f(g(h())))`.
+func (c *StockClearanceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockClearance = append(c.inters.StockClearance, interceptors...)
+}
+
+// Create returns a builder for creating a StockClearance entity.
+func (c *StockClearanceClient) Create() *StockClearanceCreate {
+	mutation := newStockClearanceMutation(c.config, OpCreate)
+	return &StockClearanceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockClearance entities.
+func (c *StockClearanceClient) CreateBulk(builders ...*StockClearanceCreate) *StockClearanceCreateBulk {
+	return &StockClearanceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockClearanceClient) MapCreateBulk(slice any, setFunc func(*StockClearanceCreate, int)) *StockClearanceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockClearanceCreateBulk{err: fmt.Errorf("calling to StockClearanceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockClearanceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockClearanceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockClearance.
+func (c *StockClearanceClient) Update() *StockClearanceUpdate {
+	mutation := newStockClearanceMutation(c.config, OpUpdate)
+	return &StockClearanceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockClearanceClient) UpdateOne(_m *StockClearance) *StockClearanceUpdateOne {
+	mutation := newStockClearanceMutation(c.config, OpUpdateOne, withStockClearance(_m))
+	return &StockClearanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockClearanceClient) UpdateOneID(id uuid.UUID) *StockClearanceUpdateOne {
+	mutation := newStockClearanceMutation(c.config, OpUpdateOne, withStockClearanceID(id))
+	return &StockClearanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockClearance.
+func (c *StockClearanceClient) Delete() *StockClearanceDelete {
+	mutation := newStockClearanceMutation(c.config, OpDelete)
+	return &StockClearanceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockClearanceClient) DeleteOne(_m *StockClearance) *StockClearanceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockClearanceClient) DeleteOneID(id uuid.UUID) *StockClearanceDeleteOne {
+	builder := c.Delete().Where(stockclearance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockClearanceDeleteOne{builder}
+}
+
+// Query returns a query builder for StockClearance.
+func (c *StockClearanceClient) Query() *StockClearanceQuery {
+	return &StockClearanceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockClearance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockClearance entity by its id.
+func (c *StockClearanceClient) Get(ctx context.Context, id uuid.UUID) (*StockClearance, error) {
+	return c.Query().Where(stockclearance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockClearanceClient) GetX(ctx context.Context, id uuid.UUID) *StockClearance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockClearanceClient) Hooks() []Hook {
+	return c.hooks.StockClearance
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockClearanceClient) Interceptors() []Interceptor {
+	return c.inters.StockClearance
+}
+
+func (c *StockClearanceClient) mutate(ctx context.Context, m *StockClearanceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockClearanceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockClearanceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockClearanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockClearanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockClearance mutation op: %q", m.Op())
+	}
+}
+
 // StockCountClient is a client for the StockCount schema.
 type StockCountClient struct {
 	config
@@ -14971,11 +15112,12 @@ type (
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
 		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
-		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Hook
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockClearance, StockCount,
+		StockCountLine, StockCountTemplate, StockLevelEvent, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserOutlet, UserRoleAssignment,
+		VariantAttribute, VendorBalanceCache, Warehouse, WarehouseLocation,
+		Warranty []ent.Hook
 	}
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
@@ -14993,10 +15135,11 @@ type (
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
 		RFQAward, RFQLine, RateLimitConfig, RawMaterialUsage, Recipe, RecipeIngredient,
 		Requisition, RequisitionLine, Reservation, RolePermission, ServiceConfig,
-		ServiceDelivery, StockAdjustment, StockBreakdown, StockCount, StockCountLine,
-		StockCountTemplate, StockLevelEvent, StockTransfer, StockTransferLine,
-		Supplier, SupplierPerformance, SupplierResponse, Tenant, TenantInventoryConfig,
-		Ticket, Unit, UserOutlet, UserRoleAssignment, VariantAttribute,
-		VendorBalanceCache, Warehouse, WarehouseLocation, Warranty []ent.Interceptor
+		ServiceDelivery, StockAdjustment, StockBreakdown, StockClearance, StockCount,
+		StockCountLine, StockCountTemplate, StockLevelEvent, StockTransfer,
+		StockTransferLine, Supplier, SupplierPerformance, SupplierResponse, Tenant,
+		TenantInventoryConfig, Ticket, Unit, UserOutlet, UserRoleAssignment,
+		VariantAttribute, VendorBalanceCache, Warehouse, WarehouseLocation,
+		Warranty []ent.Interceptor
 	}
 )

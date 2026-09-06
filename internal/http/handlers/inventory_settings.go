@@ -90,6 +90,10 @@ type inventorySettingsResponse struct {
 	RecipesModuleEnabled      bool `json:"recipes_module_enabled"`
 	PurchaseOrdersEnabled     bool `json:"purchase_orders_enabled"`
 	SupplierManagementEnabled bool `json:"supplier_management_enabled"`
+	// Add-on (platform-admin grant required, see subscriptions-api's TenantFeatureGrant)
+	PerOutletPricingEnabled   bool `json:"per_outlet_pricing_enabled"`
+	BatchPeriodPricingEnabled bool `json:"batch_period_pricing_enabled"`
+	StockAgingThresholdDays   int  `json:"stock_aging_threshold_days"`
 	// Hospitality modules
 	EnableRoomPricing        bool `json:"enable_room_pricing"`
 	EnableFacilityBooking    bool `json:"enable_facility_booking"`
@@ -131,6 +135,9 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		RecipesModuleEnabled:           c.RecipesModuleEnabled,
 		PurchaseOrdersEnabled:          c.PurchaseOrdersEnabled,
 		SupplierManagementEnabled:      c.SupplierManagementEnabled,
+		PerOutletPricingEnabled:        c.PerOutletPricingEnabled,
+		BatchPeriodPricingEnabled:      c.BatchPeriodPricingEnabled,
+		StockAgingThresholdDays:        c.StockAgingThresholdDays,
 		EnableRoomPricing:              c.EnableRoomPricing,
 		EnableFacilityBooking:          c.EnableFacilityBooking,
 		EnableConferencePackages:       c.EnableConferencePackages,
@@ -194,6 +201,9 @@ type updateInventorySettingsInput struct {
 	EnableRoomPricing              *bool                      `json:"enable_room_pricing"`
 	EnableFacilityBooking          *bool                      `json:"enable_facility_booking"`
 	EnableConferencePackages       *bool                      `json:"enable_conference_packages"`
+	PerOutletPricingEnabled        *bool                      `json:"per_outlet_pricing_enabled"`
+	BatchPeriodPricingEnabled      *bool                      `json:"batch_period_pricing_enabled"`
+	StockAgingThresholdDays        *int                       `json:"stock_aging_threshold_days"`
 	DefaultTargetMarginPercent     *float64                   `json:"default_target_margin_percent"`
 	PricesInclusiveOfTax           *bool                      `json:"prices_inclusive_of_tax"`
 	DefaultTaxCode                 *string                    `json:"default_tax_code"`
@@ -235,6 +245,12 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 			return
 		case wantsLocked(input.EnableExpiryTracking, "batch_expiry_tracking"):
 			authclient.WriteFeatureLocked(w, "batch_expiry_tracking", "")
+			return
+		case wantsLocked(input.PerOutletPricingEnabled, "multi_branch_pricing"):
+			authclient.WriteFeatureLocked(w, "multi_branch_pricing", "")
+			return
+		case wantsLocked(input.BatchPeriodPricingEnabled, "batch_period_pricing"):
+			authclient.WriteFeatureLocked(w, "batch_period_pricing", "")
 			return
 		}
 	}
@@ -303,6 +319,15 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	}
 	if input.EnableConferencePackages != nil {
 		upd = upd.SetEnableConferencePackages(*input.EnableConferencePackages)
+	}
+	if input.PerOutletPricingEnabled != nil {
+		upd = upd.SetPerOutletPricingEnabled(*input.PerOutletPricingEnabled)
+	}
+	if input.BatchPeriodPricingEnabled != nil {
+		upd = upd.SetBatchPeriodPricingEnabled(*input.BatchPeriodPricingEnabled)
+	}
+	if input.StockAgingThresholdDays != nil {
+		upd = upd.SetStockAgingThresholdDays(*input.StockAgingThresholdDays)
 	}
 	if input.DefaultTargetMarginPercent != nil {
 		upd = upd.SetDefaultTargetMarginPercent(*input.DefaultTargetMarginPercent)

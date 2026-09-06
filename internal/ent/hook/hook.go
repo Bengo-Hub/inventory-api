@@ -885,6 +885,18 @@ func (f StockBreakdownFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockBreakdownMutation", m)
 }
 
+// The StockClearanceFunc type is an adapter to allow the use of ordinary
+// function as StockClearance mutator.
+type StockClearanceFunc func(context.Context, *ent.StockClearanceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StockClearanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.StockClearanceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StockClearanceMutation", m)
+}
+
 // The StockCountFunc type is an adapter to allow the use of ordinary
 // function as StockCount mutator.
 type StockCountFunc func(context.Context, *ent.StockCountMutation) (ent.Value, error)

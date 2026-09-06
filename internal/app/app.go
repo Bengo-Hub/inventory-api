@@ -429,6 +429,10 @@ func New(ctx context.Context) (*App, error) {
 	inventorySettingsHandler.SetRBACService(rbacService)
 	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
 
+	// Aging Stock report + Start/Cancel Clearance (2026-09-06 pricing/tiering plan, Phase 2)
+	stockClearanceHandler := handlers.NewStockClearanceHandler(log, itemsSvc, inventorySettingsHandler)
+	stockClearanceHandler.SetRBACService(rbacService)
+
 	// Tenant-scoped backups + daily 02:00 auto-backup scheduler + retention churn.
 	backupSvc := backupmod.NewService(sqlDB, ormClient, cfg.Backup.Dir, log)
 	// Pluggable backup destination (PVC primary + best-effort rclone remote mirror).
@@ -463,7 +467,7 @@ func New(ctx context.Context) (*App, error) {
 
 	notificationsStreamHandler := handlers.NewNotificationsStreamHandler(log, notifHub)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler, stockClearanceHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
