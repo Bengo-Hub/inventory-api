@@ -276,11 +276,12 @@ func New(ctx context.Context) (*App, error) {
 	reportsSvc := reports.NewService(ormClient, log)
 	inventoryExtrasHandler.SetReportsService(reportsSvc)
 	docSvc := documents.NewService(ormClient, cacheAside, cfg.Auth.ServiceURL, log)
-	transferSvc.WithSequence(docSvc.Seq()) // numeric-by-default transfer numbers via document sequence
-	transferHandler.SetDocService(docSvc)  // Dispatch/Transit Note + Goods-Received Note PDFs
+	transferSvc.WithSequence(docSvc.Seq())    // numeric-by-default transfer numbers via document sequence
+	itemsSvc.SetSequenceService(docSvc.Seq()) // numeric-by-default SKUs via document sequence; legacy per-category prefix mode when a tenant has one configured
+	transferHandler.SetDocService(docSvc)     // Dispatch/Transit Note + Goods-Received Note PDFs
 	stockSvc.WithTransferRecorder(transferSvc)
 	inventoryExtrasHandler.SetDocService(docSvc)
-	inventoryHandler.SetDocService(docSvc) // branded event-ticket PDFs (with QR) + stock-adjustment notes
+	inventoryHandler.SetDocService(docSvc)  // branded event-ticket PDFs (with QR) + stock-adjustment notes
 	stockCountHandler.SetDocService(docSvc) // branded count sheet / variance report PDFs + count numbering
 	inventoryExtrasHandler.SetStockService(stockSvc)
 	inventoryExtrasHandler.SetAuditService(auditSvc) // goods-receipt cost-capture audit trail
@@ -294,8 +295,8 @@ func New(ctx context.Context) (*App, error) {
 	}
 	analyticsHandler := handlers.NewAnalyticsHandler(log, ormClient)
 	analyticsHandler.SetItemsService(itemsSvc) // outlet-scoped dashboard figures must match the Products list
-	handlers.SetTenantDB(ormClient)        // Enable local slug-to-UUID lookups
-	handlers.SetTenantSyncer(tenantSyncer) // Enable slug-to-UUID resolution via auth-api
+	handlers.SetTenantDB(ormClient)            // Enable local slug-to-UUID lookups
+	handlers.SetTenantSyncer(tenantSyncer)     // Enable slug-to-UUID resolution via auth-api
 
 	// Subscriptions S2S client + gate: restrict cross-service stock sync (ordering/POS →
 	// inventory) to tenants entitled to basic_inventory_access. Cached per tenant; fails open
