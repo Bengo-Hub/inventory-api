@@ -150,6 +150,21 @@ func SupplierManagementEnabled(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldSupplierManagementEnabled, v))
 }
 
+// PerOutletPricingEnabled applies equality check predicate on the "per_outlet_pricing_enabled" field. It's identical to PerOutletPricingEnabledEQ.
+func PerOutletPricingEnabled(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldPerOutletPricingEnabled, v))
+}
+
+// BatchPeriodPricingEnabled applies equality check predicate on the "batch_period_pricing_enabled" field. It's identical to BatchPeriodPricingEnabledEQ.
+func BatchPeriodPricingEnabled(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldBatchPeriodPricingEnabled, v))
+}
+
+// StockAgingThresholdDays applies equality check predicate on the "stock_aging_threshold_days" field. It's identical to StockAgingThresholdDaysEQ.
+func StockAgingThresholdDays(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldStockAgingThresholdDays, v))
+}
+
 // EnableRoomPricing applies equality check predicate on the "enable_room_pricing" field. It's identical to EnableRoomPricingEQ.
 func EnableRoomPricing(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldEnableRoomPricing, v))
@@ -688,6 +703,66 @@ func SupplierManagementEnabledEQ(v bool) predicate.TenantInventoryConfig {
 // SupplierManagementEnabledNEQ applies the NEQ predicate on the "supplier_management_enabled" field.
 func SupplierManagementEnabledNEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldSupplierManagementEnabled, v))
+}
+
+// PerOutletPricingEnabledEQ applies the EQ predicate on the "per_outlet_pricing_enabled" field.
+func PerOutletPricingEnabledEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldPerOutletPricingEnabled, v))
+}
+
+// PerOutletPricingEnabledNEQ applies the NEQ predicate on the "per_outlet_pricing_enabled" field.
+func PerOutletPricingEnabledNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldPerOutletPricingEnabled, v))
+}
+
+// BatchPeriodPricingEnabledEQ applies the EQ predicate on the "batch_period_pricing_enabled" field.
+func BatchPeriodPricingEnabledEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldBatchPeriodPricingEnabled, v))
+}
+
+// BatchPeriodPricingEnabledNEQ applies the NEQ predicate on the "batch_period_pricing_enabled" field.
+func BatchPeriodPricingEnabledNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldBatchPeriodPricingEnabled, v))
+}
+
+// StockAgingThresholdDaysEQ applies the EQ predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysEQ(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldStockAgingThresholdDays, v))
+}
+
+// StockAgingThresholdDaysNEQ applies the NEQ predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysNEQ(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldStockAgingThresholdDays, v))
+}
+
+// StockAgingThresholdDaysIn applies the In predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysIn(vs ...int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldIn(FieldStockAgingThresholdDays, vs...))
+}
+
+// StockAgingThresholdDaysNotIn applies the NotIn predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysNotIn(vs ...int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNotIn(FieldStockAgingThresholdDays, vs...))
+}
+
+// StockAgingThresholdDaysGT applies the GT predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysGT(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGT(FieldStockAgingThresholdDays, v))
+}
+
+// StockAgingThresholdDaysGTE applies the GTE predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysGTE(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldGTE(FieldStockAgingThresholdDays, v))
+}
+
+// StockAgingThresholdDaysLT applies the LT predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysLT(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLT(FieldStockAgingThresholdDays, v))
+}
+
+// StockAgingThresholdDaysLTE applies the LTE predicate on the "stock_aging_threshold_days" field.
+func StockAgingThresholdDaysLTE(v int) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldLTE(FieldStockAgingThresholdDays, v))
 }
 
 // EnableRoomPricingEQ applies the EQ predicate on the "enable_room_pricing" field.

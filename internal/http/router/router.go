@@ -79,6 +79,7 @@ func New(
 	pinAuthHandler *handlers.PINAuthHandler,
 	internalServiceKey string,
 	notificationsStreamHandler *handlers.NotificationsStreamHandler,
+	stockClearanceHandler *handlers.StockClearanceHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -332,6 +333,9 @@ func New(
 					if pricingTierHandler != nil {
 						pricingTierHandler.RegisterRoutes(g)
 					}
+					if stockClearanceHandler != nil {
+						stockClearanceHandler.RegisterRoutes(g)
+					}
 					if brandHandler != nil {
 						brandHandler.RegisterRoutes(g)
 					}
@@ -395,6 +399,9 @@ func New(
 					}
 					if pricingTierHandler != nil {
 						pricingTierHandler.RegisterRoutes(g)
+					}
+					if stockClearanceHandler != nil {
+						stockClearanceHandler.RegisterRoutes(g)
 					}
 					if brandHandler != nil {
 						brandHandler.RegisterRoutes(g)

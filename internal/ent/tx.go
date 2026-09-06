@@ -158,6 +158,8 @@ type Tx struct {
 	StockAdjustment *StockAdjustmentClient
 	// StockBreakdown is the client for interacting with the StockBreakdown builders.
 	StockBreakdown *StockBreakdownClient
+	// StockClearance is the client for interacting with the StockClearance builders.
+	StockClearance *StockClearanceClient
 	// StockCount is the client for interacting with the StockCount builders.
 	StockCount *StockCountClient
 	// StockCountLine is the client for interacting with the StockCountLine builders.
@@ -402,6 +404,7 @@ func (tx *Tx) init() {
 	tx.ServiceDelivery = NewServiceDeliveryClient(tx.config)
 	tx.StockAdjustment = NewStockAdjustmentClient(tx.config)
 	tx.StockBreakdown = NewStockBreakdownClient(tx.config)
+	tx.StockClearance = NewStockClearanceClient(tx.config)
 	tx.StockCount = NewStockCountClient(tx.config)
 	tx.StockCountLine = NewStockCountLineClient(tx.config)
 	tx.StockCountTemplate = NewStockCountTemplateClient(tx.config)

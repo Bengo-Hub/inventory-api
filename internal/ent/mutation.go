@@ -87,6 +87,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/servicedelivery"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stockbreakdown"
+	"github.com/bengobox/inventory-service/internal/ent/stockclearance"
 	"github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	"github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
@@ -192,6 +193,7 @@ const (
 	TypeServiceDelivery        = "ServiceDelivery"
 	TypeStockAdjustment        = "StockAdjustment"
 	TypeStockBreakdown         = "StockBreakdown"
+	TypeStockClearance         = "StockClearance"
 	TypeStockCount             = "StockCount"
 	TypeStockCountLine         = "StockCountLine"
 	TypeStockCountTemplate     = "StockCountTemplate"
@@ -85392,6 +85394,1047 @@ func (m *StockBreakdownMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown StockBreakdown edge %s", name)
 }
 
+// StockClearanceMutation represents an operation that mutates the StockClearance nodes in the graph.
+type StockClearanceMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	tenant_id         *uuid.UUID
+	item_id           *uuid.UUID
+	markdown_price    *float64
+	addmarkdown_price *float64
+	reference_before  *time.Time
+	starts_at         *time.Time
+	ends_at           *time.Time
+	status            *stockclearance.Status
+	ended_at          *time.Time
+	created_by        *uuid.UUID
+	notes             *string
+	created_at        *time.Time
+	updated_at        *time.Time
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*StockClearance, error)
+	predicates        []predicate.StockClearance
+}
+
+var _ ent.Mutation = (*StockClearanceMutation)(nil)
+
+// stockclearanceOption allows management of the mutation configuration using functional options.
+type stockclearanceOption func(*StockClearanceMutation)
+
+// newStockClearanceMutation creates new mutation for the StockClearance entity.
+func newStockClearanceMutation(c config, op Op, opts ...stockclearanceOption) *StockClearanceMutation {
+	m := &StockClearanceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStockClearance,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStockClearanceID sets the ID field of the mutation.
+func withStockClearanceID(id uuid.UUID) stockclearanceOption {
+	return func(m *StockClearanceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StockClearance
+		)
+		m.oldValue = func(ctx context.Context) (*StockClearance, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StockClearance.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStockClearance sets the old StockClearance of the mutation.
+func withStockClearance(node *StockClearance) stockclearanceOption {
+	return func(m *StockClearanceMutation) {
+		m.oldValue = func(context.Context) (*StockClearance, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StockClearanceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StockClearanceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StockClearance entities.
+func (m *StockClearanceMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StockClearanceMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StockClearanceMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StockClearance.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *StockClearanceMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *StockClearanceMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *StockClearanceMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetItemID sets the "item_id" field.
+func (m *StockClearanceMutation) SetItemID(u uuid.UUID) {
+	m.item_id = &u
+}
+
+// ItemID returns the value of the "item_id" field in the mutation.
+func (m *StockClearanceMutation) ItemID() (r uuid.UUID, exists bool) {
+	v := m.item_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldItemID returns the old "item_id" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldItemID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldItemID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldItemID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldItemID: %w", err)
+	}
+	return oldValue.ItemID, nil
+}
+
+// ResetItemID resets all changes to the "item_id" field.
+func (m *StockClearanceMutation) ResetItemID() {
+	m.item_id = nil
+}
+
+// SetMarkdownPrice sets the "markdown_price" field.
+func (m *StockClearanceMutation) SetMarkdownPrice(f float64) {
+	m.markdown_price = &f
+	m.addmarkdown_price = nil
+}
+
+// MarkdownPrice returns the value of the "markdown_price" field in the mutation.
+func (m *StockClearanceMutation) MarkdownPrice() (r float64, exists bool) {
+	v := m.markdown_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMarkdownPrice returns the old "markdown_price" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldMarkdownPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMarkdownPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMarkdownPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMarkdownPrice: %w", err)
+	}
+	return oldValue.MarkdownPrice, nil
+}
+
+// AddMarkdownPrice adds f to the "markdown_price" field.
+func (m *StockClearanceMutation) AddMarkdownPrice(f float64) {
+	if m.addmarkdown_price != nil {
+		*m.addmarkdown_price += f
+	} else {
+		m.addmarkdown_price = &f
+	}
+}
+
+// AddedMarkdownPrice returns the value that was added to the "markdown_price" field in this mutation.
+func (m *StockClearanceMutation) AddedMarkdownPrice() (r float64, exists bool) {
+	v := m.addmarkdown_price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMarkdownPrice resets all changes to the "markdown_price" field.
+func (m *StockClearanceMutation) ResetMarkdownPrice() {
+	m.markdown_price = nil
+	m.addmarkdown_price = nil
+}
+
+// SetReferenceBefore sets the "reference_before" field.
+func (m *StockClearanceMutation) SetReferenceBefore(t time.Time) {
+	m.reference_before = &t
+}
+
+// ReferenceBefore returns the value of the "reference_before" field in the mutation.
+func (m *StockClearanceMutation) ReferenceBefore() (r time.Time, exists bool) {
+	v := m.reference_before
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferenceBefore returns the old "reference_before" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldReferenceBefore(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferenceBefore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferenceBefore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferenceBefore: %w", err)
+	}
+	return oldValue.ReferenceBefore, nil
+}
+
+// ResetReferenceBefore resets all changes to the "reference_before" field.
+func (m *StockClearanceMutation) ResetReferenceBefore() {
+	m.reference_before = nil
+}
+
+// SetStartsAt sets the "starts_at" field.
+func (m *StockClearanceMutation) SetStartsAt(t time.Time) {
+	m.starts_at = &t
+}
+
+// StartsAt returns the value of the "starts_at" field in the mutation.
+func (m *StockClearanceMutation) StartsAt() (r time.Time, exists bool) {
+	v := m.starts_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartsAt returns the old "starts_at" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldStartsAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartsAt: %w", err)
+	}
+	return oldValue.StartsAt, nil
+}
+
+// ResetStartsAt resets all changes to the "starts_at" field.
+func (m *StockClearanceMutation) ResetStartsAt() {
+	m.starts_at = nil
+}
+
+// SetEndsAt sets the "ends_at" field.
+func (m *StockClearanceMutation) SetEndsAt(t time.Time) {
+	m.ends_at = &t
+}
+
+// EndsAt returns the value of the "ends_at" field in the mutation.
+func (m *StockClearanceMutation) EndsAt() (r time.Time, exists bool) {
+	v := m.ends_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndsAt returns the old "ends_at" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldEndsAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndsAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndsAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndsAt: %w", err)
+	}
+	return oldValue.EndsAt, nil
+}
+
+// ClearEndsAt clears the value of the "ends_at" field.
+func (m *StockClearanceMutation) ClearEndsAt() {
+	m.ends_at = nil
+	m.clearedFields[stockclearance.FieldEndsAt] = struct{}{}
+}
+
+// EndsAtCleared returns if the "ends_at" field was cleared in this mutation.
+func (m *StockClearanceMutation) EndsAtCleared() bool {
+	_, ok := m.clearedFields[stockclearance.FieldEndsAt]
+	return ok
+}
+
+// ResetEndsAt resets all changes to the "ends_at" field.
+func (m *StockClearanceMutation) ResetEndsAt() {
+	m.ends_at = nil
+	delete(m.clearedFields, stockclearance.FieldEndsAt)
+}
+
+// SetStatus sets the "status" field.
+func (m *StockClearanceMutation) SetStatus(s stockclearance.Status) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *StockClearanceMutation) Status() (r stockclearance.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldStatus(ctx context.Context) (v stockclearance.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *StockClearanceMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (m *StockClearanceMutation) SetEndedAt(t time.Time) {
+	m.ended_at = &t
+}
+
+// EndedAt returns the value of the "ended_at" field in the mutation.
+func (m *StockClearanceMutation) EndedAt() (r time.Time, exists bool) {
+	v := m.ended_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndedAt returns the old "ended_at" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldEndedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndedAt: %w", err)
+	}
+	return oldValue.EndedAt, nil
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (m *StockClearanceMutation) ClearEndedAt() {
+	m.ended_at = nil
+	m.clearedFields[stockclearance.FieldEndedAt] = struct{}{}
+}
+
+// EndedAtCleared returns if the "ended_at" field was cleared in this mutation.
+func (m *StockClearanceMutation) EndedAtCleared() bool {
+	_, ok := m.clearedFields[stockclearance.FieldEndedAt]
+	return ok
+}
+
+// ResetEndedAt resets all changes to the "ended_at" field.
+func (m *StockClearanceMutation) ResetEndedAt() {
+	m.ended_at = nil
+	delete(m.clearedFields, stockclearance.FieldEndedAt)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *StockClearanceMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *StockClearanceMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldCreatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *StockClearanceMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.clearedFields[stockclearance.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *StockClearanceMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[stockclearance.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *StockClearanceMutation) ResetCreatedBy() {
+	m.created_by = nil
+	delete(m.clearedFields, stockclearance.FieldCreatedBy)
+}
+
+// SetNotes sets the "notes" field.
+func (m *StockClearanceMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *StockClearanceMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *StockClearanceMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[stockclearance.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *StockClearanceMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[stockclearance.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *StockClearanceMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, stockclearance.FieldNotes)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *StockClearanceMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *StockClearanceMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *StockClearanceMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *StockClearanceMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *StockClearanceMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the StockClearance entity.
+// If the StockClearance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockClearanceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *StockClearanceMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the StockClearanceMutation builder.
+func (m *StockClearanceMutation) Where(ps ...predicate.StockClearance) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StockClearanceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StockClearanceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StockClearance, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StockClearanceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StockClearanceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StockClearance).
+func (m *StockClearanceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StockClearanceMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.tenant_id != nil {
+		fields = append(fields, stockclearance.FieldTenantID)
+	}
+	if m.item_id != nil {
+		fields = append(fields, stockclearance.FieldItemID)
+	}
+	if m.markdown_price != nil {
+		fields = append(fields, stockclearance.FieldMarkdownPrice)
+	}
+	if m.reference_before != nil {
+		fields = append(fields, stockclearance.FieldReferenceBefore)
+	}
+	if m.starts_at != nil {
+		fields = append(fields, stockclearance.FieldStartsAt)
+	}
+	if m.ends_at != nil {
+		fields = append(fields, stockclearance.FieldEndsAt)
+	}
+	if m.status != nil {
+		fields = append(fields, stockclearance.FieldStatus)
+	}
+	if m.ended_at != nil {
+		fields = append(fields, stockclearance.FieldEndedAt)
+	}
+	if m.created_by != nil {
+		fields = append(fields, stockclearance.FieldCreatedBy)
+	}
+	if m.notes != nil {
+		fields = append(fields, stockclearance.FieldNotes)
+	}
+	if m.created_at != nil {
+		fields = append(fields, stockclearance.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, stockclearance.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StockClearanceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case stockclearance.FieldTenantID:
+		return m.TenantID()
+	case stockclearance.FieldItemID:
+		return m.ItemID()
+	case stockclearance.FieldMarkdownPrice:
+		return m.MarkdownPrice()
+	case stockclearance.FieldReferenceBefore:
+		return m.ReferenceBefore()
+	case stockclearance.FieldStartsAt:
+		return m.StartsAt()
+	case stockclearance.FieldEndsAt:
+		return m.EndsAt()
+	case stockclearance.FieldStatus:
+		return m.Status()
+	case stockclearance.FieldEndedAt:
+		return m.EndedAt()
+	case stockclearance.FieldCreatedBy:
+		return m.CreatedBy()
+	case stockclearance.FieldNotes:
+		return m.Notes()
+	case stockclearance.FieldCreatedAt:
+		return m.CreatedAt()
+	case stockclearance.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StockClearanceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case stockclearance.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case stockclearance.FieldItemID:
+		return m.OldItemID(ctx)
+	case stockclearance.FieldMarkdownPrice:
+		return m.OldMarkdownPrice(ctx)
+	case stockclearance.FieldReferenceBefore:
+		return m.OldReferenceBefore(ctx)
+	case stockclearance.FieldStartsAt:
+		return m.OldStartsAt(ctx)
+	case stockclearance.FieldEndsAt:
+		return m.OldEndsAt(ctx)
+	case stockclearance.FieldStatus:
+		return m.OldStatus(ctx)
+	case stockclearance.FieldEndedAt:
+		return m.OldEndedAt(ctx)
+	case stockclearance.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case stockclearance.FieldNotes:
+		return m.OldNotes(ctx)
+	case stockclearance.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case stockclearance.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown StockClearance field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockClearanceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case stockclearance.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case stockclearance.FieldItemID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetItemID(v)
+		return nil
+	case stockclearance.FieldMarkdownPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMarkdownPrice(v)
+		return nil
+	case stockclearance.FieldReferenceBefore:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferenceBefore(v)
+		return nil
+	case stockclearance.FieldStartsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartsAt(v)
+		return nil
+	case stockclearance.FieldEndsAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndsAt(v)
+		return nil
+	case stockclearance.FieldStatus:
+		v, ok := value.(stockclearance.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case stockclearance.FieldEndedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndedAt(v)
+		return nil
+	case stockclearance.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case stockclearance.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case stockclearance.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case stockclearance.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockClearance field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StockClearanceMutation) AddedFields() []string {
+	var fields []string
+	if m.addmarkdown_price != nil {
+		fields = append(fields, stockclearance.FieldMarkdownPrice)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StockClearanceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case stockclearance.FieldMarkdownPrice:
+		return m.AddedMarkdownPrice()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockClearanceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case stockclearance.FieldMarkdownPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMarkdownPrice(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockClearance numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StockClearanceMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(stockclearance.FieldEndsAt) {
+		fields = append(fields, stockclearance.FieldEndsAt)
+	}
+	if m.FieldCleared(stockclearance.FieldEndedAt) {
+		fields = append(fields, stockclearance.FieldEndedAt)
+	}
+	if m.FieldCleared(stockclearance.FieldCreatedBy) {
+		fields = append(fields, stockclearance.FieldCreatedBy)
+	}
+	if m.FieldCleared(stockclearance.FieldNotes) {
+		fields = append(fields, stockclearance.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StockClearanceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StockClearanceMutation) ClearField(name string) error {
+	switch name {
+	case stockclearance.FieldEndsAt:
+		m.ClearEndsAt()
+		return nil
+	case stockclearance.FieldEndedAt:
+		m.ClearEndedAt()
+		return nil
+	case stockclearance.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case stockclearance.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown StockClearance nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StockClearanceMutation) ResetField(name string) error {
+	switch name {
+	case stockclearance.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case stockclearance.FieldItemID:
+		m.ResetItemID()
+		return nil
+	case stockclearance.FieldMarkdownPrice:
+		m.ResetMarkdownPrice()
+		return nil
+	case stockclearance.FieldReferenceBefore:
+		m.ResetReferenceBefore()
+		return nil
+	case stockclearance.FieldStartsAt:
+		m.ResetStartsAt()
+		return nil
+	case stockclearance.FieldEndsAt:
+		m.ResetEndsAt()
+		return nil
+	case stockclearance.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case stockclearance.FieldEndedAt:
+		m.ResetEndedAt()
+		return nil
+	case stockclearance.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case stockclearance.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case stockclearance.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case stockclearance.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown StockClearance field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StockClearanceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StockClearanceMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StockClearanceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StockClearanceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StockClearanceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StockClearanceMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StockClearanceMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StockClearance unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StockClearanceMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StockClearance edge %s", name)
+}
+
 // StockCountMutation represents an operation that mutates the StockCount nodes in the graph.
 type StockCountMutation struct {
 	config
@@ -97341,6 +98384,10 @@ type TenantInventoryConfigMutation struct {
 	recipes_module_enabled             *bool
 	purchase_orders_enabled            *bool
 	supplier_management_enabled        *bool
+	per_outlet_pricing_enabled         *bool
+	batch_period_pricing_enabled       *bool
+	stock_aging_threshold_days         *int
+	addstock_aging_threshold_days      *int
 	enable_room_pricing                *bool
 	enable_facility_booking            *bool
 	enable_conference_packages         *bool
@@ -98336,6 +99383,134 @@ func (m *TenantInventoryConfigMutation) ResetSupplierManagementEnabled() {
 	m.supplier_management_enabled = nil
 }
 
+// SetPerOutletPricingEnabled sets the "per_outlet_pricing_enabled" field.
+func (m *TenantInventoryConfigMutation) SetPerOutletPricingEnabled(b bool) {
+	m.per_outlet_pricing_enabled = &b
+}
+
+// PerOutletPricingEnabled returns the value of the "per_outlet_pricing_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) PerOutletPricingEnabled() (r bool, exists bool) {
+	v := m.per_outlet_pricing_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPerOutletPricingEnabled returns the old "per_outlet_pricing_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldPerOutletPricingEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPerOutletPricingEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPerOutletPricingEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPerOutletPricingEnabled: %w", err)
+	}
+	return oldValue.PerOutletPricingEnabled, nil
+}
+
+// ResetPerOutletPricingEnabled resets all changes to the "per_outlet_pricing_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetPerOutletPricingEnabled() {
+	m.per_outlet_pricing_enabled = nil
+}
+
+// SetBatchPeriodPricingEnabled sets the "batch_period_pricing_enabled" field.
+func (m *TenantInventoryConfigMutation) SetBatchPeriodPricingEnabled(b bool) {
+	m.batch_period_pricing_enabled = &b
+}
+
+// BatchPeriodPricingEnabled returns the value of the "batch_period_pricing_enabled" field in the mutation.
+func (m *TenantInventoryConfigMutation) BatchPeriodPricingEnabled() (r bool, exists bool) {
+	v := m.batch_period_pricing_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBatchPeriodPricingEnabled returns the old "batch_period_pricing_enabled" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldBatchPeriodPricingEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBatchPeriodPricingEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBatchPeriodPricingEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBatchPeriodPricingEnabled: %w", err)
+	}
+	return oldValue.BatchPeriodPricingEnabled, nil
+}
+
+// ResetBatchPeriodPricingEnabled resets all changes to the "batch_period_pricing_enabled" field.
+func (m *TenantInventoryConfigMutation) ResetBatchPeriodPricingEnabled() {
+	m.batch_period_pricing_enabled = nil
+}
+
+// SetStockAgingThresholdDays sets the "stock_aging_threshold_days" field.
+func (m *TenantInventoryConfigMutation) SetStockAgingThresholdDays(i int) {
+	m.stock_aging_threshold_days = &i
+	m.addstock_aging_threshold_days = nil
+}
+
+// StockAgingThresholdDays returns the value of the "stock_aging_threshold_days" field in the mutation.
+func (m *TenantInventoryConfigMutation) StockAgingThresholdDays() (r int, exists bool) {
+	v := m.stock_aging_threshold_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockAgingThresholdDays returns the old "stock_aging_threshold_days" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldStockAgingThresholdDays(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockAgingThresholdDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockAgingThresholdDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockAgingThresholdDays: %w", err)
+	}
+	return oldValue.StockAgingThresholdDays, nil
+}
+
+// AddStockAgingThresholdDays adds i to the "stock_aging_threshold_days" field.
+func (m *TenantInventoryConfigMutation) AddStockAgingThresholdDays(i int) {
+	if m.addstock_aging_threshold_days != nil {
+		*m.addstock_aging_threshold_days += i
+	} else {
+		m.addstock_aging_threshold_days = &i
+	}
+}
+
+// AddedStockAgingThresholdDays returns the value that was added to the "stock_aging_threshold_days" field in this mutation.
+func (m *TenantInventoryConfigMutation) AddedStockAgingThresholdDays() (r int, exists bool) {
+	v := m.addstock_aging_threshold_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStockAgingThresholdDays resets all changes to the "stock_aging_threshold_days" field.
+func (m *TenantInventoryConfigMutation) ResetStockAgingThresholdDays() {
+	m.stock_aging_threshold_days = nil
+	m.addstock_aging_threshold_days = nil
+}
+
 // SetEnableRoomPricing sets the "enable_room_pricing" field.
 func (m *TenantInventoryConfigMutation) SetEnableRoomPricing(b bool) {
 	m.enable_room_pricing = &b
@@ -98754,7 +99929,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 33)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -98817,6 +99992,15 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	}
 	if m.supplier_management_enabled != nil {
 		fields = append(fields, tenantinventoryconfig.FieldSupplierManagementEnabled)
+	}
+	if m.per_outlet_pricing_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldPerOutletPricingEnabled)
+	}
+	if m.batch_period_pricing_enabled != nil {
+		fields = append(fields, tenantinventoryconfig.FieldBatchPeriodPricingEnabled)
+	}
+	if m.stock_aging_threshold_days != nil {
+		fields = append(fields, tenantinventoryconfig.FieldStockAgingThresholdDays)
 	}
 	if m.enable_room_pricing != nil {
 		fields = append(fields, tenantinventoryconfig.FieldEnableRoomPricing)
@@ -98895,6 +100079,12 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.PurchaseOrdersEnabled()
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.SupplierManagementEnabled()
+	case tenantinventoryconfig.FieldPerOutletPricingEnabled:
+		return m.PerOutletPricingEnabled()
+	case tenantinventoryconfig.FieldBatchPeriodPricingEnabled:
+		return m.BatchPeriodPricingEnabled()
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		return m.StockAgingThresholdDays()
 	case tenantinventoryconfig.FieldEnableRoomPricing:
 		return m.EnableRoomPricing()
 	case tenantinventoryconfig.FieldEnableFacilityBooking:
@@ -98964,6 +100154,12 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldPurchaseOrdersEnabled(ctx)
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		return m.OldSupplierManagementEnabled(ctx)
+	case tenantinventoryconfig.FieldPerOutletPricingEnabled:
+		return m.OldPerOutletPricingEnabled(ctx)
+	case tenantinventoryconfig.FieldBatchPeriodPricingEnabled:
+		return m.OldBatchPeriodPricingEnabled(ctx)
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		return m.OldStockAgingThresholdDays(ctx)
 	case tenantinventoryconfig.FieldEnableRoomPricing:
 		return m.OldEnableRoomPricing(ctx)
 	case tenantinventoryconfig.FieldEnableFacilityBooking:
@@ -99138,6 +100334,27 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 		}
 		m.SetSupplierManagementEnabled(v)
 		return nil
+	case tenantinventoryconfig.FieldPerOutletPricingEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPerOutletPricingEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldBatchPeriodPricingEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBatchPeriodPricingEnabled(v)
+		return nil
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockAgingThresholdDays(v)
+		return nil
 	case tenantinventoryconfig.FieldEnableRoomPricing:
 		v, ok := value.(bool)
 		if !ok {
@@ -99221,6 +100438,9 @@ func (m *TenantInventoryConfigMutation) AddedFields() []string {
 	if m.addexpiry_warning_days != nil {
 		fields = append(fields, tenantinventoryconfig.FieldExpiryWarningDays)
 	}
+	if m.addstock_aging_threshold_days != nil {
+		fields = append(fields, tenantinventoryconfig.FieldStockAgingThresholdDays)
+	}
 	if m.adddefault_target_margin_percent != nil {
 		fields = append(fields, tenantinventoryconfig.FieldDefaultTargetMarginPercent)
 	}
@@ -99240,6 +100460,8 @@ func (m *TenantInventoryConfigMutation) AddedField(name string) (ent.Value, bool
 		return m.AddedDefaultReorderLevel()
 	case tenantinventoryconfig.FieldExpiryWarningDays:
 		return m.AddedExpiryWarningDays()
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		return m.AddedStockAgingThresholdDays()
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		return m.AddedDefaultTargetMarginPercent()
 	}
@@ -99278,6 +100500,13 @@ func (m *TenantInventoryConfigMutation) AddField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddExpiryWarningDays(v)
+		return nil
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStockAgingThresholdDays(v)
 		return nil
 	case tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 		v, ok := value.(float64)
@@ -99414,6 +100643,15 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldSupplierManagementEnabled:
 		m.ResetSupplierManagementEnabled()
+		return nil
+	case tenantinventoryconfig.FieldPerOutletPricingEnabled:
+		m.ResetPerOutletPricingEnabled()
+		return nil
+	case tenantinventoryconfig.FieldBatchPeriodPricingEnabled:
+		m.ResetBatchPeriodPricingEnabled()
+		return nil
+	case tenantinventoryconfig.FieldStockAgingThresholdDays:
+		m.ResetStockAgingThresholdDays()
 		return nil
 	case tenantinventoryconfig.FieldEnableRoomPricing:
 		m.ResetEnableRoomPricing()

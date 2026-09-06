@@ -3128,6 +3128,43 @@ var (
 			},
 		},
 	}
+	// StockClearancesColumns holds the columns for the "stock_clearances" table.
+	StockClearancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "item_id", Type: field.TypeUUID},
+		{Name: "markdown_price", Type: field.TypeFloat64},
+		{Name: "reference_before", Type: field.TypeTime},
+		{Name: "starts_at", Type: field.TypeTime},
+		{Name: "ends_at", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "expired", "depleted", "cancelled"}, Default: "active"},
+		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// StockClearancesTable holds the schema information for the "stock_clearances" table.
+	StockClearancesTable = &schema.Table{
+		Name:       "stock_clearances",
+		Columns:    StockClearancesColumns,
+		PrimaryKey: []*schema.Column{StockClearancesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockclearance_tenant_item_lookup",
+				Unique:  false,
+				Columns: []*schema.Column{StockClearancesColumns[1], StockClearancesColumns[2]},
+			},
+			{
+				Name:    "stockclearance_active_unique",
+				Unique:  true,
+				Columns: []*schema.Column{StockClearancesColumns[1], StockClearancesColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'active'",
+				},
+			},
+		},
+	}
 	// StockCountsColumns holds the columns for the "stock_counts" table.
 	StockCountsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -3505,6 +3542,9 @@ var (
 		{Name: "recipes_module_enabled", Type: field.TypeBool, Default: false},
 		{Name: "purchase_orders_enabled", Type: field.TypeBool, Default: true},
 		{Name: "supplier_management_enabled", Type: field.TypeBool, Default: true},
+		{Name: "per_outlet_pricing_enabled", Type: field.TypeBool, Default: false},
+		{Name: "batch_period_pricing_enabled", Type: field.TypeBool, Default: false},
+		{Name: "stock_aging_threshold_days", Type: field.TypeInt, Default: 90},
 		{Name: "enable_room_pricing", Type: field.TypeBool, Default: false},
 		{Name: "enable_facility_booking", Type: field.TypeBool, Default: false},
 		{Name: "enable_conference_packages", Type: field.TypeBool, Default: false},
@@ -3983,6 +4023,7 @@ var (
 		ServiceDeliveriesTable,
 		StockAdjustmentsTable,
 		StockBreakdownsTable,
+		StockClearancesTable,
 		StockCountsTable,
 		StockCountLinesTable,
 		StockCountTemplatesTable,

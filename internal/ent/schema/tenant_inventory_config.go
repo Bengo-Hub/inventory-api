@@ -107,6 +107,23 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Bool("supplier_management_enabled").
 			Default(true).
 			Comment("Supplier directory and contract management"),
+		// Add-on: per-branch/outlet pricing (2026-09-06 pricing/tiering plan, Phase 1). Gated on
+		// the platform-admin-granted "multi_branch_pricing" feature (see subscriptions-api's
+		// TenantFeatureGrant) the same way lots_batches/stock_alerts below are -- ENABLING requires
+		// the feature, disabling is always allowed. When on, inventory-ui's Item Pricing tab shows
+		// an outlet picker so ItemPricing.outlet_id rows can be created via PUT
+		// /inventory/items/{id}/pricing (already outlet-capable end to end; this only exposes it).
+		field.Bool("per_outlet_pricing_enabled").
+			Default(false).
+			Comment("Add-on: lets this tenant set a different base price per outlet for the same item"),
+		// Add-on: stock-age/batch markdown pricing (Phase 2 of the same plan). Gated on the
+		// platform-admin-granted "batch_period_pricing" feature the same way as above.
+		field.Bool("batch_period_pricing_enabled").
+			Default(false).
+			Comment("Add-on: lets this tenant mark down old stock by receiving-batch age (clearance pricing)"),
+		field.Int("stock_aging_threshold_days").
+			Default(90).
+			Comment("An item's oldest active lot older than this many days surfaces on the Aging Stock report as a clearance candidate"),
 		// Hospitality module toggles
 		field.Bool("enable_room_pricing").
 			Default(false).

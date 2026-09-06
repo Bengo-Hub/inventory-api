@@ -62,6 +62,12 @@ type TenantInventoryConfig struct {
 	PurchaseOrdersEnabled bool `json:"purchase_orders_enabled,omitempty"`
 	// Supplier directory and contract management
 	SupplierManagementEnabled bool `json:"supplier_management_enabled,omitempty"`
+	// Add-on: lets this tenant set a different base price per outlet for the same item
+	PerOutletPricingEnabled bool `json:"per_outlet_pricing_enabled,omitempty"`
+	// Add-on: lets this tenant mark down old stock by receiving-batch age (clearance pricing)
+	BatchPeriodPricingEnabled bool `json:"batch_period_pricing_enabled,omitempty"`
+	// An item's oldest active lot older than this many days surfaces on the Aging Stock report as a clearance candidate
+	StockAgingThresholdDays int `json:"stock_aging_threshold_days,omitempty"`
 	// Enable hotel room-type SERVICE items and nightly rate plans
 	EnableRoomPricing bool `json:"enable_room_pricing,omitempty"`
 	// Enable facility/conference-hall SERVICE items and session rates
@@ -90,11 +96,11 @@ func (*TenantInventoryConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenantinventoryconfig.FieldUnitReorderDefaults, tenantinventoryconfig.FieldLabelPrintDefaults:
 			values[i] = new([]byte)
-		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, tenantinventoryconfig.FieldRecordTheoreticalUsage, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
+		case tenantinventoryconfig.FieldEnableLowStockNotifications, tenantinventoryconfig.FieldEnableExpiryNotifications, tenantinventoryconfig.FieldEnableLotTracking, tenantinventoryconfig.FieldEnableExpiryTracking, tenantinventoryconfig.FieldPurchaseOrderApprovalRequired, tenantinventoryconfig.FieldAutoAdjustOnTransfer, tenantinventoryconfig.FieldRecipeItemsNonDepletingDefault, tenantinventoryconfig.FieldRecordTheoreticalUsage, tenantinventoryconfig.FieldLotsModuleEnabled, tenantinventoryconfig.FieldRecipesModuleEnabled, tenantinventoryconfig.FieldPurchaseOrdersEnabled, tenantinventoryconfig.FieldSupplierManagementEnabled, tenantinventoryconfig.FieldPerOutletPricingEnabled, tenantinventoryconfig.FieldBatchPeriodPricingEnabled, tenantinventoryconfig.FieldEnableRoomPricing, tenantinventoryconfig.FieldEnableFacilityBooking, tenantinventoryconfig.FieldEnableConferencePackages, tenantinventoryconfig.FieldPricesInclusiveOfTax:
 			values[i] = new(sql.NullBool)
 		case tenantinventoryconfig.FieldLowStockThresholdPct, tenantinventoryconfig.FieldCriticalStockThresholdPct, tenantinventoryconfig.FieldDefaultTargetMarginPercent:
 			values[i] = new(sql.NullFloat64)
-		case tenantinventoryconfig.FieldDefaultReorderLevel, tenantinventoryconfig.FieldExpiryWarningDays:
+		case tenantinventoryconfig.FieldDefaultReorderLevel, tenantinventoryconfig.FieldExpiryWarningDays, tenantinventoryconfig.FieldStockAgingThresholdDays:
 			values[i] = new(sql.NullInt64)
 		case tenantinventoryconfig.FieldNotificationEmail, tenantinventoryconfig.FieldDefaultWarehouseID, tenantinventoryconfig.FieldCostingMethod, tenantinventoryconfig.FieldDefaultTaxCode:
 			values[i] = new(sql.NullString)
@@ -252,6 +258,24 @@ func (_m *TenantInventoryConfig) assignValues(columns []string, values []any) er
 				return fmt.Errorf("unexpected type %T for field supplier_management_enabled", values[i])
 			} else if value.Valid {
 				_m.SupplierManagementEnabled = value.Bool
+			}
+		case tenantinventoryconfig.FieldPerOutletPricingEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field per_outlet_pricing_enabled", values[i])
+			} else if value.Valid {
+				_m.PerOutletPricingEnabled = value.Bool
+			}
+		case tenantinventoryconfig.FieldBatchPeriodPricingEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field batch_period_pricing_enabled", values[i])
+			} else if value.Valid {
+				_m.BatchPeriodPricingEnabled = value.Bool
+			}
+		case tenantinventoryconfig.FieldStockAgingThresholdDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_aging_threshold_days", values[i])
+			} else if value.Valid {
+				_m.StockAgingThresholdDays = int(value.Int64)
 			}
 		case tenantinventoryconfig.FieldEnableRoomPricing:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -412,6 +436,15 @@ func (_m *TenantInventoryConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("supplier_management_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SupplierManagementEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("per_outlet_pricing_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PerOutletPricingEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("batch_period_pricing_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.BatchPeriodPricingEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("stock_aging_threshold_days=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockAgingThresholdDays))
 	builder.WriteString(", ")
 	builder.WriteString("enable_room_pricing=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EnableRoomPricing))

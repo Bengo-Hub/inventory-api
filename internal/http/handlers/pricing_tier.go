@@ -951,31 +951,17 @@ func (h *PricingTierHandler) GetItemPrice(w http.ResponseWriter, r *http.Request
 
 	// Prefer a row scoped to the operating outlet (X-Outlet-ID) over an all-outlets row for the
 	// SAME tier — previously outlet_id was ignored entirely, so an outlet-specific override could
-	// silently lose to whichever row the DB happened to return first.
+	// silently lose to whichever row the DB happened to return first. Shared with the bulk
+	// resolution path (items.defaultTierPrices) via items.OutletRank/BetterOutletPricing so the
+	// two never disagree about which row wins for a given outlet.
 	var operatingOutlet *uuid.UUID
 	if outletStr := invmiddleware.GetOutletID(ctx); outletStr != "" {
 		if oid, perr := uuid.Parse(outletStr); perr == nil {
 			operatingOutlet = &oid
 		}
 	}
-	outletRank := func(p *ent.ItemPricing) int {
-		switch {
-		case operatingOutlet != nil && p.OutletID != nil && *p.OutletID == *operatingOutlet:
-			return 2 // exact outlet match — best
-		case p.OutletID == nil:
-			return 1 // all-outlets fallback
-		default:
-			return 0 // scoped to a DIFFERENT outlet — worst, never preferred over the above
-		}
-	}
 	betterCandidate := func(candidate, current *ent.ItemPricing) bool {
-		if current == nil {
-			return true
-		}
-		if cr, curr := outletRank(candidate), outletRank(current); cr != curr {
-			return cr > curr
-		}
-		return candidate.EffectiveFrom.After(current.EffectiveFrom)
+		return items.BetterOutletPricing(candidate, current, operatingOutlet)
 	}
 
 	var chosen *ent.ItemPricing

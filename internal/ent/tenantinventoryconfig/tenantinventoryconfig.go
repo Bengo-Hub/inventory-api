@@ -57,6 +57,12 @@ const (
 	FieldPurchaseOrdersEnabled = "purchase_orders_enabled"
 	// FieldSupplierManagementEnabled holds the string denoting the supplier_management_enabled field in the database.
 	FieldSupplierManagementEnabled = "supplier_management_enabled"
+	// FieldPerOutletPricingEnabled holds the string denoting the per_outlet_pricing_enabled field in the database.
+	FieldPerOutletPricingEnabled = "per_outlet_pricing_enabled"
+	// FieldBatchPeriodPricingEnabled holds the string denoting the batch_period_pricing_enabled field in the database.
+	FieldBatchPeriodPricingEnabled = "batch_period_pricing_enabled"
+	// FieldStockAgingThresholdDays holds the string denoting the stock_aging_threshold_days field in the database.
+	FieldStockAgingThresholdDays = "stock_aging_threshold_days"
 	// FieldEnableRoomPricing holds the string denoting the enable_room_pricing field in the database.
 	FieldEnableRoomPricing = "enable_room_pricing"
 	// FieldEnableFacilityBooking holds the string denoting the enable_facility_booking field in the database.
@@ -103,6 +109,9 @@ var Columns = []string{
 	FieldRecipesModuleEnabled,
 	FieldPurchaseOrdersEnabled,
 	FieldSupplierManagementEnabled,
+	FieldPerOutletPricingEnabled,
+	FieldBatchPeriodPricingEnabled,
+	FieldStockAgingThresholdDays,
 	FieldEnableRoomPricing,
 	FieldEnableFacilityBooking,
 	FieldEnableConferencePackages,
@@ -157,6 +166,12 @@ var (
 	DefaultPurchaseOrdersEnabled bool
 	// DefaultSupplierManagementEnabled holds the default value on creation for the "supplier_management_enabled" field.
 	DefaultSupplierManagementEnabled bool
+	// DefaultPerOutletPricingEnabled holds the default value on creation for the "per_outlet_pricing_enabled" field.
+	DefaultPerOutletPricingEnabled bool
+	// DefaultBatchPeriodPricingEnabled holds the default value on creation for the "batch_period_pricing_enabled" field.
+	DefaultBatchPeriodPricingEnabled bool
+	// DefaultStockAgingThresholdDays holds the default value on creation for the "stock_aging_threshold_days" field.
+	DefaultStockAgingThresholdDays int
 	// DefaultEnableRoomPricing holds the default value on creation for the "enable_room_pricing" field.
 	DefaultEnableRoomPricing bool
 	// DefaultEnableFacilityBooking holds the default value on creation for the "enable_facility_booking" field.
@@ -311,6 +326,21 @@ func ByPurchaseOrdersEnabled(opts ...sql.OrderTermOption) OrderOption {
 // BySupplierManagementEnabled orders the results by the supplier_management_enabled field.
 func BySupplierManagementEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSupplierManagementEnabled, opts...).ToFunc()
+}
+
+// ByPerOutletPricingEnabled orders the results by the per_outlet_pricing_enabled field.
+func ByPerOutletPricingEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPerOutletPricingEnabled, opts...).ToFunc()
+}
+
+// ByBatchPeriodPricingEnabled orders the results by the batch_period_pricing_enabled field.
+func ByBatchPeriodPricingEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBatchPeriodPricingEnabled, opts...).ToFunc()
+}
+
+// ByStockAgingThresholdDays orders the results by the stock_aging_threshold_days field.
+func ByStockAgingThresholdDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockAgingThresholdDays, opts...).ToFunc()
 }
 
 // ByEnableRoomPricing orders the results by the enable_room_pricing field.
