@@ -28,6 +28,10 @@ const (
 	DocTypeStockAdjustment = "stock_adjustment"
 	DocTypeStockCount      = "stock_count"
 	DocTypeEventTicket     = "event_ticket"
+	// DocTypeItemSKU drives items.Service.GenerateSKU's numeric-by-default auto-generated SKUs.
+	// Unlike every other doc type here, a non-empty Prefix on this one is a boolean gate, not a
+	// literal string injected into the value — see GenerateSKU's own comment for why.
+	DocTypeItemSKU = "item_sku"
 )
 
 type seqConfig struct {
@@ -51,6 +55,7 @@ var seqDefaults = map[string]seqConfig{
 	DocTypeStockAdjustment: {Separator: "-", Padding: 6, ResetFreq: "never"},
 	DocTypeStockCount:      {Separator: "-", Padding: 6, ResetFreq: "never"},
 	DocTypeEventTicket:     {Separator: "-", Padding: 8, ResetFreq: "never"},
+	DocTypeItemSKU:         {Separator: "-", Padding: 6, ResetFreq: "never"},
 }
 
 // SuggestedPrefixes are the pre-fill hints the Settings UI offers when a tenant switches a doc
@@ -139,7 +144,7 @@ type SeqConfigDTO struct {
 var configuredDocTypes = []string{
 	DocTypePurchaseOrder, DocTypeGRN, DocTypeRFQ, DocTypeRequisition,
 	DocTypePurchaseReturn, DocTypeStockTransfer, DocTypeStockAdjustment, DocTypeStockCount,
-	DocTypeEventTicket,
+	DocTypeEventTicket, DocTypeItemSKU,
 }
 
 func toSeqDTO(row *ent.DocumentSequence) SeqConfigDTO {
@@ -161,6 +166,18 @@ func (s *SequenceService) ListConfigs(ctx context.Context, tenantID uuid.UUID) (
 		out = append(out, toSeqDTO(row))
 	}
 	return out, nil
+}
+
+// GetConfig returns the (auto-seeding) sequence config for a doc type — the same row
+// ListConfigs/PreviewNext read internally, exposed for callers that need to branch on the config
+// itself (e.g. items.GenerateSKU checking whether a tenant has opted into prefixed SKUs) instead
+// of duplicating getOrCreate's query.
+func (s *SequenceService) GetConfig(ctx context.Context, tenantID uuid.UUID, docType string) (SeqConfigDTO, error) {
+	row, err := s.getOrCreate(ctx, tenantID, docType)
+	if err != nil {
+		return SeqConfigDTO{}, err
+	}
+	return toSeqDTO(row), nil
 }
 
 // PreviewNext returns the next document number without consuming the counter.

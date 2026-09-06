@@ -34,6 +34,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -522,6 +523,10 @@ type Service struct {
 	// query in this service (single-item lookups, writes, OutletScope) always uses client
 	// (primary), unchanged.
 	readClient *ent.Client
+	// seq, when set, drives GenerateSKU's numeric-by-default auto-generated SKUs via the shared
+	// document-sequence system. Nil (e.g. unwired scripts/tests) falls back to the legacy
+	// category-prefix algorithm unconditionally — see GenerateSKU.
+	seq *documents.SequenceService
 }
 
 // NewService creates a new items service.
@@ -536,6 +541,11 @@ func NewService(client *ent.Client, log *zap.Logger, mediaURLBase string) *Servi
 // SetReadClient wires an optional read-replica Ent client for ListItems' heavy catalog fetch.
 // Nil (the default) means rc() falls back to client (primary) — zero behavior change when unset.
 func (s *Service) SetReadClient(c *ent.Client) { s.readClient = c }
+
+// SetSequenceService wires the document-sequence service so auto-generated SKUs are minted
+// numeric-by-default (per tenant), falling back to the legacy category-prefix algorithm when
+// unset — see GenerateSKU.
+func (s *Service) SetSequenceService(seq *documents.SequenceService) { s.seq = seq }
 
 // rc returns the read-replica client when one is configured, else the primary — see readClient.
 func (s *Service) rc() *ent.Client {
@@ -2245,8 +2255,31 @@ var itemTypeCode = map[string]string{
 	"EQUIPMENT":  "EQP",
 }
 
-// GenerateSKU creates a unique SKU in the format {CAT_CODE}-{TYPE_CODE}-{SEQ:03d}.
+// GenerateSKU creates a unique auto-generated SKU for a tenant. Two modes, selected per tenant
+// via the item_sku document-sequence config (Settings → Documents), exactly like every other
+// inventory document number:
+//
+//   - Numeric (platform default, and boi-enterprises' convention — 98.5% of its live catalog
+//     was already plain numeric before this was wired in): a plain zero-padded counter from
+//     documents.SequenceService, e.g. "037124". No category/type logic at all.
+//   - Prefix (opt-in; the convention every tenant that had ever auto-generated a SKU before this
+//     was wired in was already using): the legacy dynamic {CAT_CODE}-{TYPE_CODE}-{SEQ:03d}
+//     format below, unchanged. The item_sku sequence's configured Prefix string is a boolean
+//     gate here ONLY — unlike PO/GRN/etc. it is never injected literally into the SKU, since the
+//     legacy format's prefix varies per item (by category+type), not per tenant.
+//
+// s.seq == nil (unwired scripts/tests) always falls through to the legacy algorithm.
 func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryID *uuid.UUID, itemType string) (string, error) {
+	if s.seq != nil {
+		cfg, err := s.seq.GetConfig(ctx, tenantID, documents.DocTypeItemSKU)
+		if err != nil {
+			return "", fmt.Errorf("items: load item_sku sequence config: %w", err)
+		}
+		if cfg.Prefix == "" {
+			return s.seq.GenerateNumber(ctx, tenantID, documents.DocTypeItemSKU)
+		}
+	}
+
 	catCode := "GEN"
 	if categoryID != nil {
 		cat, err := s.client.ItemCategory.Get(ctx, *categoryID)
