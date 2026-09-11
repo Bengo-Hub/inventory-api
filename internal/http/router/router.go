@@ -269,50 +269,64 @@ func New(
 					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
 					private.Use(authclient.RequireActiveSubscription())
 				}
-				// Auth sync endpoint — inventory-ui calls this after SSO callback to get local RBAC
+				// Auth sync endpoint — inventory-ui calls this after SSO callback to get local RBAC.
+				// Kept OUTSIDE the module gate below (unlike everything else in this group) so a
+				// tenant whose plan doesn't include inventory at all can still bootstrap identity
+				// and see a graceful "not included in your plan" message instead of a raw 403 on
+				// its very first authenticated call.
 				if authHandler != nil {
 					authHandler.RegisterAuthRoutes(private)
 				}
-				userHandler.RegisterRoutes(private)
-				if rbacHandler != nil {
-					rbacHandler.RegisterRBACRoutes(private)
-				}
-				// User-outlet assignment, my-outlets, and audit-log read API
-				// (always require auth → registered in the private group).
-				if warehouseHandler != nil {
-					warehouseHandler.RegisterPrivateRoutes(private)
-				}
-				if serviceConfigHandler != nil {
-					serviceConfigHandler.RegisterTenantRoutes(private)
-				}
-				if inventorySettingsHandler != nil {
-					inventorySettingsHandler.RegisterRoutes(private)
-				}
-				// Tenant-scoped backups (this tenant's data only) — settings-gated.
-				if backupsHandler != nil {
-					backupsHandler.RegisterRoutes(private)
-				}
-				// Per-tenant backup-destination override (mirrors backups off the PVC)
-				// — same settings permission gate as the tenant backups routes.
-				if backupDestHandler != nil {
-					backupDestHandler.RegisterRoutes(private)
-				}
-				// Self-service "Set PIN" (Team page) — unlike PINOutlets/IdentifyByPIN/Login
-				// above (the public, pre-auth PIN *login* surface), this is a manager action
-				// that requires an authenticated SSO session, so it lives in the private
-				// group and is gated by the same permission as the other Team-page
-				// user-management routes (see user_outlet.go's RegisterPrivateRoutes).
-				if pinAuthHandler != nil && rbacService != nil {
-					private.With(ratelimitmw.RequirePermission(rbacService, log, rbac.PermUsersManage)).
-						Post("/inventory/auth/pin/set", pinAuthHandler.SetPIN)
-				}
-				// Real-time push (stock changes) — inventory-ui connects here so a stock change
-				// shows up live instead of on a manual refresh. Same group as everything else
-				// above, so RequireAnyAuth's ?access_token= promotion (added alongside this) covers
-				// the WebSocket handshake exactly like pos-api's equivalent notifications stream.
-				if notificationsStreamHandler != nil {
-					private.Get("/inventory/notifications/stream", notificationsStreamHandler.StreamNotifications)
-				}
+
+				// Module gate: block the WHOLE inventory module (reads and writes alike) for a
+				// tenant whose plan never included inventory at all. Distinct from the mutations-
+				// only RequireActiveSubscription above (subscription STATUS, not module
+				// membership) — without this, any SSO user of any tenant could still reach these
+				// basic, ungated routes regardless of their plan.
+				private.Group(func(inv chi.Router) {
+					inv.Use(authclient.RequireServiceAccess("inventory"))
+
+					userHandler.RegisterRoutes(inv)
+					if rbacHandler != nil {
+						rbacHandler.RegisterRBACRoutes(inv)
+					}
+					// User-outlet assignment, my-outlets, and audit-log read API
+					// (always require auth → registered in the private group).
+					if warehouseHandler != nil {
+						warehouseHandler.RegisterPrivateRoutes(inv)
+					}
+					if serviceConfigHandler != nil {
+						serviceConfigHandler.RegisterTenantRoutes(inv)
+					}
+					if inventorySettingsHandler != nil {
+						inventorySettingsHandler.RegisterRoutes(inv)
+					}
+					// Tenant-scoped backups (this tenant's data only) — settings-gated.
+					if backupsHandler != nil {
+						backupsHandler.RegisterRoutes(inv)
+					}
+					// Per-tenant backup-destination override (mirrors backups off the PVC)
+					// — same settings permission gate as the tenant backups routes.
+					if backupDestHandler != nil {
+						backupDestHandler.RegisterRoutes(inv)
+					}
+					// Self-service "Set PIN" (Team page) — unlike PINOutlets/IdentifyByPIN/Login
+					// above (the public, pre-auth PIN *login* surface), this is a manager action
+					// that requires an authenticated SSO session, so it lives in the private
+					// group and is gated by the same permission as the other Team-page
+					// user-management routes (see user_outlet.go's RegisterPrivateRoutes).
+					if pinAuthHandler != nil && rbacService != nil {
+						inv.With(ratelimitmw.RequirePermission(rbacService, log, rbac.PermUsersManage)).
+							Post("/inventory/auth/pin/set", pinAuthHandler.SetPIN)
+					}
+					// Real-time push (stock changes) — inventory-ui connects here so a stock change
+					// shows up live instead of on a manual refresh. Same group as everything else
+					// above, so RequireAnyAuth's ?access_token= promotion (added alongside this) covers
+					// the WebSocket handshake exactly like pos-api's equivalent notifications stream.
+					if notificationsStreamHandler != nil {
+						inv.Get("/inventory/notifications/stream", notificationsStreamHandler.StreamNotifications)
+					}
+				})
 			})
 
 			// Inventory Routes (Granular auth)
@@ -323,6 +337,10 @@ func New(
 					g.Use(publicCatalogReads(pinSecret, authMiddleware))
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
+					// Module gate: block the WHOLE inventory module for an AUTHENTICATED tenant
+					// whose plan never included it (anonymous public-storefront GETs above have no
+					// claims and pass through unaffected, same as every other gate in this group).
+					g.Use(authclient.RequireServiceAccess("inventory"))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
@@ -390,6 +408,10 @@ func New(
 					g.Use(requireInternalKeyOrAuth(internalServiceKey, pinSecret, authMiddleware))
 					// Subscription gate for mutations
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
+					// Module gate — no-op for genuine S2S/API-key callers (HasServiceAccess fails
+					// open for IsService), real enforcement for a user JWT reaching this path via
+					// requireInternalKeyOrAuth's fallback.
+					g.Use(authclient.RequireServiceAccess("inventory"))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
