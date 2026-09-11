@@ -141,6 +141,13 @@ func (h *PINAuthHandler) terminalClaimsFor(ctx context.Context, t *ent.Tenant, u
 					tc.SubscriptionExpires = &unix
 				}
 			}
+			tc.SupportFeeStatus = e.SupportFeeStatus
+			if e.SupportFeeDueAt != "" {
+				if pt, perr := time.Parse(time.RFC3339, e.SupportFeeDueAt); perr == nil {
+					unix := pt.Unix()
+					tc.SupportFeeDueAt = &unix
+				}
+			}
 		}
 	}
 	return tc

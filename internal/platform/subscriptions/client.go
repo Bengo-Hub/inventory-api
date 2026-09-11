@@ -56,6 +56,12 @@ type Entitlements struct {
 	// regardless of the tenant's real plan (2026-09-11 incident: SSO logins worked, PIN logins
 	// didn't, because an SSO-only fix upstream never reaches this separate token-minting path).
 	ActiveServiceTags []string `json:"active_service_tags"`
+	// SupportFeeStatus/SupportFeeDueAt feed shared-auth-client's
+	// RequireSupportFeeCurrentForMutations — same rationale as ActiveServiceTags above. RFC3339
+	// string (mirrors CurrentPeriodEnd's own shape/parsing above) — empty = no support-fee
+	// obligation at all.
+	SupportFeeStatus string `json:"support_fee_status,omitempty"`
+	SupportFeeDueAt  string `json:"support_fee_due_at,omitempty"`
 }
 
 // Client interacts with the subscriptions service over S2S (X-API-Key, no user JWT), built on
