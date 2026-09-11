@@ -289,6 +289,11 @@ func New(
 				// sessions were force-revoked — see auth-api revocation runbook.
 				private.Group(func(inv chi.Router) {
 					inv.Use(authclient.RequireServiceAccess("inventory"))
+					// Mutations-only annual support-fee gate (e.g. a perpetual-license tenant whose
+					// support fee is overdue past its 7-day grace window) — independent axis from
+					// the subscription gates above, which never catch a one-time license (it never
+					// expires). No-ops for every tenant without a support-fee obligation at all.
+					inv.Use(authclient.RequireSupportFeeCurrentForMutations(7))
 
 					userHandler.RegisterRoutes(inv)
 					if rbacHandler != nil {
@@ -347,6 +352,9 @@ func New(
 					// 2026-09-11: restored after all active sessions were force-revoked — see
 					// auth-api revocation runbook.
 					g.Use(authclient.RequireServiceAccess("inventory"))
+					// Mutations-only annual support-fee gate — see the matching comment on the
+					// private-user-routes group above for the full rationale.
+					g.Use(authclient.RequireSupportFeeCurrentForMutations(7))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
@@ -419,6 +427,9 @@ func New(
 					// requireInternalKeyOrAuth's fallback. 2026-09-11: restored after all active
 					// sessions were force-revoked — see auth-api revocation runbook.
 					g.Use(authclient.RequireServiceAccess("inventory"))
+					// Mutations-only annual support-fee gate — see the matching comment on the
+					// private-user-routes group above for the full rationale.
+					g.Use(authclient.RequireSupportFeeCurrentForMutations(7))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
