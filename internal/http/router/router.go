@@ -278,13 +278,18 @@ func New(
 					authHandler.RegisterAuthRoutes(private)
 				}
 
-				// EMERGENCY REVERT 2026-09-11: RequireServiceAccess blocked every tenant fleet-
-				// wide within ~40 minutes of deploy. subscriptions-api's active_service_tags
-				// claim is omitempty, indistinguishable from "claim never existed" on any token
-				// minted before it shipped. Reverting enforcement only (all 3 sites in this
-				// file). Do NOT re-enable until Claims carries an explicit presence flag with a
-				// safe fail-open default for "claim absent".
+				// Module gate: block the WHOLE inventory module (reads and writes alike) for a
+				// tenant whose plan never included inventory at all. Distinct from the mutations-
+				// only RequireActiveSubscription above (subscription STATUS, not module
+				// membership) — without this, any SSO user of any tenant could still reach these
+				// basic, ungated routes regardless of their plan.
+				//
+				// 2026-09-11: caused a fleet-wide outage on first deploy (every already-issued
+				// JWT lacked the brand-new active_service_tags claim). Restored after all active
+				// sessions were force-revoked — see auth-api revocation runbook.
 				private.Group(func(inv chi.Router) {
+					inv.Use(authclient.RequireServiceAccess("inventory"))
+
 					userHandler.RegisterRoutes(inv)
 					if rbacHandler != nil {
 						rbacHandler.RegisterRBACRoutes(inv)
@@ -336,8 +341,12 @@ func New(
 					g.Use(publicCatalogReads(pinSecret, authMiddleware))
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
-					// EMERGENCY REVERT 2026-09-11 (see other sites in this file): module gate
-					// disabled — blocked every tenant fleet-wide.
+					// Module gate: block the WHOLE inventory module for an AUTHENTICATED tenant
+					// whose plan never included it (anonymous public-storefront GETs above have no
+					// claims and pass through unaffected, same as every other gate in this group).
+					// 2026-09-11: restored after all active sessions were force-revoked — see
+					// auth-api revocation runbook.
+					g.Use(authclient.RequireServiceAccess("inventory"))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
@@ -405,8 +414,11 @@ func New(
 					g.Use(requireInternalKeyOrAuth(internalServiceKey, pinSecret, authMiddleware))
 					// Subscription gate for mutations
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
-					// EMERGENCY REVERT 2026-09-11 (see other sites in this file): module gate
-					// disabled — blocked every tenant fleet-wide.
+					// Module gate — no-op for genuine S2S/API-key callers (HasServiceAccess fails
+					// open for IsService), real enforcement for a user JWT reaching this path via
+					// requireInternalKeyOrAuth's fallback. 2026-09-11: restored after all active
+					// sessions were force-revoked — see auth-api revocation runbook.
+					g.Use(authclient.RequireServiceAccess("inventory"))
 					inventoryHandler.RegisterRoutes(g)
 					if warehouseHandler != nil {
 						warehouseHandler.RegisterRoutes(g)
