@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -260,6 +262,88 @@ func appendUniqueStrContains(slice []string, s string) bool {
 // RegisterAuthRoutes mounts auth routes on the supplied router.
 func (h *AuthHandler) RegisterAuthRoutes(r chi.Router) {
 	r.Get("/auth/me", h.Me)
+	r.Post("/auth/verify-email/send-code", h.SendMyEmailCode)
+	r.Post("/auth/verify-email/verify-code", h.VerifyMyEmailCode)
+}
+
+// SendMyEmailCode proxies the embedded verify-email dialog's "send code" action to auth-api.
+// POST /auth/verify-email/send-code  body: {email}
+func (h *AuthHandler) SendMyEmailCode(w http.ResponseWriter, r *http.Request) {
+	h.proxyEmailCode(w, r, "send-code")
+}
+
+// VerifyMyEmailCode proxies the embedded verify-email dialog's "verify code" action to auth-api.
+// POST /auth/verify-email/verify-code  body: {email, code}
+func (h *AuthHandler) VerifyMyEmailCode(w http.ResponseWriter, r *http.Request) {
+	h.proxyEmailCode(w, r, "verify-code")
+}
+
+// proxyEmailCode forwards the shared VerifyEmailBanner's send/verify-code call to auth-api's S2S
+// endpoint (INTERNAL_SERVICE_KEY), resolving the real auth-api user id from the CALLER'S OWN
+// claims — the same id regardless of whether they authenticated via SSO or a local terminal/PIN
+// JWT. That distinction is the reason this proxy exists at all: the embedded dialog used to POST
+// straight to auth-api with the user's session token as a Bearer credential, which works for an
+// SSO session (a real auth-api-signed JWT) but can NEVER work for a terminal/PIN session (signed
+// with inventory-api's own HMAC secret) — auth-api has no key to verify a token it didn't sign,
+// so every PIN-logged-in user got a hard "missing or invalid auth" with no code ever sent. Routing
+// through inventory-api's own RequireAnyAuth (which already accepts both token kinds) and forwarding
+// S2S fixes both session kinds uniformly. The response status and body are relayed back unchanged
+// so the UI sees the exact error/success shape auth-api itself returned.
+//
+// Deliberately named /auth/verify-email/*, NOT /auth/me/email/*: apiClient's 401 handler skips
+// its refresh-and-retry for any URL containing "/auth/me", so keeping that substring out of this
+// path is what lets an expired-but-refreshable token recover silently instead of forcing a logout.
+func (h *AuthHandler) proxyEmailCode(w http.ResponseWriter, r *http.Request, action string) {
+	if h.authURL == "" || h.internalKey == "" {
+		writeError(w, http.StatusServiceUnavailable, "unavailable", "email verification not configured")
+		return
+	}
+	claims, ok := authclient.ClaimsFromContext(r.Context())
+	if !ok || claims.Subject == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+	userID, err := claims.UserID()
+	if err != nil || userID == uuid.Nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "invalid user ID in token")
+		return
+	}
+
+	var body map[string]any
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	if body == nil {
+		body = map[string]any{}
+	}
+	// Send with the user's real tenant id so notifications-api can resolve tenant branding
+	// (a nil tenant makes the tenant resolver fail and strips branding).
+	if action == "send-code" {
+		if tenantID, terr := claims.TenantUUID(); terr == nil && tenantID != nil {
+			body["tenant_id"] = tenantID.String()
+		}
+	}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "invalid JSON payload")
+		return
+	}
+
+	url := strings.TrimRight(h.authURL, "/") + "/api/v1/s2s/users/" + userID.String() + "/email/" + action
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, url, bytes.NewReader(payload))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "server_error", "could not build request")
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", h.internalKey)
+	resp, err := h.http.Do(req)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "upstream_error", "could not reach auth service")
+		return
+	}
+	defer resp.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 // appendUniqueStr appends s to slice only if not already present.
