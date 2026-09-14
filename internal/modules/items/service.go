@@ -1670,32 +1670,6 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	if err != nil {
 		return nil, 0, fmt.Errorf("items: list: %w", err)
 	}
-	// TEMP DIAGNOSTIC 2026-09-14 — chasing gram-auto-spares Spark Plugs (PLG-*) vanishing from
-	// every list response despite matching every WHERE condition in a raw-SQL replica. Scoped to
-	// this one tenant to avoid fleet-wide log noise; remove once root-caused.
-	if tenantID.String() == "370fef2e-06b6-4923-b64a-be2207cd56b8" {
-		skus := make([]string, 0, len(itms))
-		plgCount := 0
-		for _, it := range itms {
-			skus = append(skus, it.Sku)
-			if strings.HasPrefix(it.Sku, "PLG-") {
-				plgCount++
-			}
-		}
-		s.log.Info("DIAG gram-auto-spares list result",
-			zap.Int("rowCount", len(itms)),
-			zap.Int("total", total),
-			zap.Int("limit", limit),
-			zap.Int("offset", offset),
-			zap.Int("plgCount", plgCount),
-			zap.Bool("hasOperationalHistory", hasOperationalHistory),
-			zap.Int("outletExcludeIDsLen", len(outletExcludeIDs)),
-			zap.Int("outletWarehouseIDsLen", len(outletWarehouseIDs)),
-			zap.String("typeFilter", typeFilter),
-			zap.String("statusFilter", statusFilter),
-			zap.Strings("skus", skus),
-		)
-	}
 	dtos, err := buildDTOs(ctx, itms)
 	if err != nil {
 		return nil, 0, err
