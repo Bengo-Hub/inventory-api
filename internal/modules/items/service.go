@@ -2120,6 +2120,25 @@ func (s *Service) ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+	// A group/parent category is legitimately "has items" if any DESCENDANT has items, even
+	// when it has zero items linked to it directly — real catalogs almost always link items to
+	// leaf categories only, never the group parent itself. Without this, a parent silently
+	// fails the direct-only check above, drops out of the filtered result, and every one of its
+	// children (which DO have direct items) ends up with a parentId that resolves to nothing —
+	// every consumer of this list (the ordering-frontend "Shop by Category" tree included)
+	// treats an unresolvable parentId as "this is a root", so the whole tree collapses into a
+	// flat list of what look like top-level categories. Path is a materialized ancestor-ID
+	// chain ("root-id/parent-id/self-id", see resolveCategoryPath/CreateCategory below), so this
+	// is free to compute from data already loaded in `all` — no extra queries.
+	pathByID := make(map[uuid.UUID]string, len(all))
+	for _, c := range all {
+		pathByID[c.ID] = c.Path
+	}
+	for id := range withItems {
+		for _, ancestorID := range ancestorIDsFromPath(pathByID[id]) {
+			withItems[ancestorID] = struct{}{}
+		}
+	}
 	filtered := make([]CategoryDTO, 0, len(all))
 	for _, c := range all {
 		if _, ok := withItems[c.ID]; ok {
@@ -2127,6 +2146,24 @@ func (s *Service) ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID
 		}
 	}
 	return filtered, nil
+}
+
+// ancestorIDsFromPath parses a materialized category path ("root-id/parent-id/self-id") into
+// its ancestor IDs, excluding the node itself (the last segment). Malformed/empty segments are
+// skipped rather than erroring — a category's own "has items" status never depends on being
+// able to parse its ancestors' path.
+func ancestorIDsFromPath(path string) []uuid.UUID {
+	segments := strings.Split(path, "/")
+	if len(segments) <= 1 {
+		return nil
+	}
+	ancestors := make([]uuid.UUID, 0, len(segments)-1)
+	for _, seg := range segments[:len(segments)-1] {
+		if id, err := uuid.Parse(seg); err == nil {
+			ancestors = append(ancestors, id)
+		}
+	}
+	return ancestors
 }
 
 // categoryIDsWithItems returns the set of category IDs that have at least one active
