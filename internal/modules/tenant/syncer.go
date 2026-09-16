@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
@@ -22,6 +23,17 @@ import (
 // driftProbeClient carries a short timeout so the per-call drift check against auth-api can
 // never hang a request path; on timeout the caller falls back to the local projection.
 var driftProbeClient = &http.Client{Timeout: 5 * time.Second}
+
+// syncFetchClient bounds the "no local row yet" fetch-and-create path below. This used to be a
+// bare http.Get with no timeout at all: under any auth-api slowness (or just normal latency
+// multiplied by a burst of concurrent requests for the same uncached tenant) every one of those
+// requests would hang until the caller's own request deadline fired, each holding a goroutine +
+// a DB connection from the pool the whole time — the exact thundering-herd pattern that turned a
+// pgbouncer pool hiccup into a sustained 504 storm on 2026-09-16 (see pgbouncer inventory
+// pool_size incident). Independent of the caller's context deliberately: this fetch is shared
+// across every request coalesced by sf below, so it must not die just because the first caller's
+// own HTTP request was aborted or timed out.
+var syncFetchClient = &http.Client{Timeout: 8 * time.Second}
 
 // driftCheckInterval throttles the auth-api drift probe. SyncTenant runs from request
 // middleware on EVERY API call, so probing per call would put an auth-api round trip in
@@ -37,6 +49,14 @@ type Syncer struct {
 
 	driftMu       sync.Mutex
 	lastDriftScan map[string]time.Time
+
+	// sf coalesces concurrent SyncTenant calls for the same slug into one execution. Without
+	// this, a burst of N concurrent requests arriving before the tenant is cached locally (or
+	// while the local lookup itself is slow/erroring under DB pressure) each independently fire
+	// their own outbound auth-api call plus their own DB create/update — N times the load for
+	// what should be one lookup, compounding exactly the kind of pool contention that caused
+	// them to miss the local cache in the first place.
+	sf singleflight.Group
 }
 
 // NewSyncer creates a new TenantSyncer.
@@ -67,7 +87,20 @@ type authAPITenantResponse struct {
 // SyncTenant fetches the tenant record from auth-api and persists only the
 // minimal reference fields locally (id, name, slug, status, use_case).
 // Branding, contact info, and subscription data remain in auth-api only.
+//
+// Coalesced via sf: concurrent callers for the same slug share one execution and one result
+// instead of each independently hitting the DB and auth-api.
 func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error) {
+	v, err, _ := s.sf.Do(slug, func() (interface{}, error) {
+		return s.syncTenant(ctx, slug)
+	})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return v.(uuid.UUID), nil
+}
+
+func (s *Syncer) syncTenant(ctx context.Context, slug string) (uuid.UUID, error) {
 	existingFast, fastErr := s.client.Tenant.Query().Where(enttenant.SlugEQ(slug)).Only(ctx)
 	hasLocal := fastErr == nil && existingFast != nil
 
@@ -99,7 +132,15 @@ func (s *Syncer) SyncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 	}
 
 	log.Printf("  [tenant-sync] dynamically fetching %s from %s", slug, endpoint)
-	resp, err := http.Get(endpoint) //nolint:noctx
+	// Bounded + independent of ctx (see syncFetchClient) rather than the caller's request
+	// context: this call is shared by every request sf coalesced onto this execution.
+	fetchCtx, cancel := context.WithTimeout(context.Background(), syncFetchClient.Timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("tenant.Syncer: build request for %s: %w", endpoint, err)
+	}
+	resp, err := syncFetchClient.Do(req)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("tenant.Syncer: GET %s: %w", endpoint, err)
 	}
